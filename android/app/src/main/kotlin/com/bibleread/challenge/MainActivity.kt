@@ -1,4 +1,4 @@
-package com.example.bible_read
+package com.bibleread.challenge
 
 import io.flutter.embedding.android.FlutterActivity
 
