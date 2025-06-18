@@ -3,6 +3,7 @@ import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,8 +45,79 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool _readToday = false;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReadStatus();
+  }
+
+  Future<void> _loadReadStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final today = DateTime.now();
+    final dateKey = '${today.year}-${today.month}-${today.day}';
+
+    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDoc = await userDocRef.get();
+    if (!userDoc.exists) {
+      await userDocRef.set({
+        'name': user.displayName ?? '',
+        'email': user.email ?? '',
+      });
+    }
+
+    final doc = await userDocRef
+        .collection('reading')
+        .doc(dateKey)
+        .get();
+
+    if (doc.exists && doc.data() != null) {
+      setState(() {
+        _readToday = doc['read'] ?? false;
+      });
+    }
+    setState(() {
+      _loading = false;
+    });
+  }
+
+  Future<void> _toggleReadStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final today = DateTime.now();
+    final dateKey = '${today.year}-${today.month}-${today.day}';
+
+    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDoc = await userDocRef.get();
+    if (!userDoc.exists) {
+      await userDocRef.set({
+        'name': user.displayName ?? '',
+        'email': user.email ?? '',
+      });
+    }
+
+    setState(() {
+      _readToday = !_readToday;
+    });
+
+    await userDocRef
+        .collection('reading')
+        .doc(dateKey)
+        .set({'read': _readToday});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,11 +126,18 @@ class HomePage extends StatelessWidget {
         title: const Text('Bible Reading Challenge'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: const Center(
-        child: Text(
-          'Welcome to the Bible Reading Challenge!',
-          style: TextStyle(fontSize: 20),
-        ),
+      body: Center(
+        child: _loading
+            ? const CircularProgressIndicator()
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _toggleReadStatus,
+                    child: Text(_readToday ? 'Mark as Unread' : 'Mark as Read'),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -142,6 +221,17 @@ class UserProfilePage extends StatefulWidget {
 
 class UserProfilePageState extends State<UserProfilePage> {
   bool _isSigningIn = false;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration.zero, () {
+      setState(() {
+        _loading = false;
+      });
+    });
+  }
 
   Future<void> _handleSignIn() async {
     setState(() {
@@ -194,37 +284,39 @@ class UserProfilePageState extends State<UserProfilePage> {
         title: const Text('Bible Reading Challenge'),
       ),
       body: Center(
-        child: user == null
-            ? ElevatedButton(
-                onPressed: _isSigningIn ? null : _handleSignIn,
-                child: _isSigningIn
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Sign in with Google'),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (user.photoUrl != null)
-                    CircleAvatar(
-                      backgroundImage: NetworkImage(user.photoUrl!),
-                      radius: 40,
-                    ),
-                  const SizedBox(height: 16),
-                  Text(
-                    user.displayName ?? 'No Name',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    user.email,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
+        child: _loading
+            ? const CircularProgressIndicator()
+            : (user == null
+                ? ElevatedButton(
+                    onPressed: _isSigningIn ? null : _handleSignIn,
+                    child: _isSigningIn
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Sign in with Google'),
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (user.photoUrl != null)
+                        CircleAvatar(
+                          backgroundImage: NetworkImage(user.photoUrl!),
+                          radius: 40,
+                        ),
+                      const SizedBox(height: 16),
+                      Text(
+                        user.displayName ?? 'No Name',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        user.email,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  )),
       ),
     );
   }
