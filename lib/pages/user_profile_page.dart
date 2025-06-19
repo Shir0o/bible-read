@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../widgets/common_styles.dart';
 import 'main_page.dart';
 
 class UserProfilePage extends StatefulWidget {
@@ -72,44 +73,44 @@ class UserProfilePageState extends State<UserProfilePage> {
   Widget build(BuildContext context) {
     final user = widget.user;
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Bible Reading Challenge'),
-      ),
-      body: Center(
-        child: _loading
-            ? const CircularProgressIndicator()
-            : (user == null
-            ? ElevatedButton(
-          onPressed: _isSigningIn ? null : _handleSignIn,
-          child: _isSigningIn
-              ? const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-              : const Text('Sign in with Google'),
-        )
-            : Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (user.photoUrl != null)
-              CircleAvatar(
-                backgroundImage: NetworkImage(user.photoUrl!),
-                radius: 40,
-              ),
-            const SizedBox(height: 16),
-            Text(
-              user.displayName ?? 'No Name',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              user.email,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        )),
+      appBar: CommonStyles.buildAppBar('Bible Reading Challenge'),
+      body: Container(
+        decoration: CommonStyles.backgroundGradient,
+        child: Center(
+          child: _loading
+              ? const CircularProgressIndicator()
+              : (user == null
+                  ? ElevatedButton(
+                      onPressed: _isSigningIn ? null : _handleSignIn,
+                      child: _isSigningIn
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Sign in with Google'),
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (user.photoUrl != null)
+                          CircleAvatar(
+                            backgroundImage: NetworkImage(user.photoUrl!),
+                            radius: 40,
+                          ),
+                        const SizedBox(height: 16),
+                        Text(
+                          user.displayName ?? 'No Name',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          user.email,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    )),
+        ),
       ),
     );
   }
