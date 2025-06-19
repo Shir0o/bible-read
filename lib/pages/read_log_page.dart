@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/common_styles.dart';
+
 class ReadLogPage extends StatefulWidget {
   const ReadLogPage({super.key});
 
@@ -86,30 +88,50 @@ class _ReadLogPageState extends State<ReadLogPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Today's Readers")),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: _logs.length,
-              itemBuilder: (context, index) {
-                final log = _logs[index];
-                final isLiked = (log['liked'] as bool? ?? false);
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: ListTile(
-                    leading: const Icon(Icons.check_circle, color: Colors.green),
-                    title: Text('${log['name']} read today!'),
-                    trailing: IconButton(
-                      icon: Icon(
-                        isLiked ? Icons.favorite : Icons.favorite_border,
-                        color: isLiked ? Colors.red : null,
-                      ),
-                      onPressed: () => _toggleLike(log['uid']),
+      appBar: AppBar(
+        title: const Text(
+          "Today's Readers",
+          style: CommonStyles.appBarTitleText,
+        ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        shape: CommonStyles.roundedAppBar,
+      ),
+      body: Container(
+        decoration: CommonStyles.backgroundGradient,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                itemCount: _logs.length,
+                itemBuilder: (context, index) {
+                  final log = _logs[index];
+                  final isLiked = (log['liked'] as bool? ?? false);
+                  return Card(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  ),
-                );
-              },
-            ),
+                    child: ListTile(
+                      leading: const Icon(Icons.check_circle, color: Colors.green),
+                      title: Text(
+                        '${log['name']} read today!',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      trailing: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: IconButton(
+                          icon: Icon(
+                            isLiked ? Icons.favorite : Icons.favorite_border,
+                            color: isLiked ? Colors.red : null,
+                          ),
+                          onPressed: () => _toggleLike(log['uid']),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
     );
   }
 }
