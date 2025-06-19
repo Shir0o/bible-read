@@ -33,7 +33,9 @@ class _MainPageState extends State<MainPage> {
         idToken: auth.idToken,
       );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      if (FirebaseAuth.instance.currentUser == null) {
+        await FirebaseAuth.instance.signInWithCredential(credential);
+      }
 
       setState(() {
         _user = account;
@@ -51,7 +53,7 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     final List<Widget> pages = <Widget>[
       const HomePage(),
-      const PublicReadLogPage(),
+      const ReadLogPage(),
       UserProfilePage(user: _user),
     ];
 

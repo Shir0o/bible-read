@@ -66,26 +66,25 @@ class _HomePageState extends State<HomePage> {
     final today = DateTime.now();
     final dateKey = '${today.year}-${today.month}-${today.day}';
 
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-    final userDoc = await userDocRef.get();
-    if (!userDoc.exists) {
-      await userDocRef.set({
-        'name': user.displayName ?? '',
-        'email': user.email ?? '',
-      });
-    }
-
     setState(() {
       _readToday = !_readToday;
     });
 
-    await userDocRef
-        .collection('reading')
+    await FirebaseFirestore.instance
+        .collection('read_logs')
         .doc(dateKey)
-        .set({'read': _readToday});
+        .collection('entries')
+        .doc(user.uid)
+        .set({
+          'name': user.displayName ?? '',
+          'email': user.email ?? '',
+          'timestamp': Timestamp.now(),
+          'read': _readToday,
+        });
 
     // Ensure the 'likes' subcollection exists by referencing it.
     // No placeholder documents are created here.
+    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
     final likesCollection = userDocRef.collection('reading').doc(dateKey).collection('likes');
     // No write operation needed here unless a like is added.
   }
