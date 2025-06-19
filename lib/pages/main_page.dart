@@ -1,10 +1,11 @@
 import 'package:bible_read/pages/user_profile_page.dart';
+import 'package:bible_read/widgets/common_styles.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-import 'read_log_page.dart';
 import 'home_page.dart';
+import 'read_log_page.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -58,7 +59,10 @@ class _MainPageState extends State<MainPage> {
     ];
 
     return Scaffold(
-      body: pages[_selectedIndex],
+      body: Container(
+        decoration: CommonStyles.backgroundGradient,
+        child: pages[_selectedIndex],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         selectedItemColor: Colors.black,

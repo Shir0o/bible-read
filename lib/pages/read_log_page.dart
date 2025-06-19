@@ -88,14 +88,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Today's Readers",
-          style: CommonStyles.appBarTitleText,
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        shape: CommonStyles.roundedAppBar,
-      ),
+      appBar: CommonStyles.buildAppBar("Today's Readers"),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
         child: _loading
