@@ -1,0 +1,116 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
+import 'main_page.dart';
+
+class UserProfilePage extends StatefulWidget {
+  final GoogleSignInAccount? user;
+  const UserProfilePage({super.key, this.user});
+
+  @override
+  State<UserProfilePage> createState() => UserProfilePageState();
+}
+
+class UserProfilePageState extends State<UserProfilePage> {
+  bool _isSigningIn = false;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration.zero, () {
+      setState(() {
+        _loading = false;
+      });
+    });
+  }
+
+  Future<void> _handleSignIn() async {
+    setState(() {
+      _isSigningIn = true;
+    });
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? account = await googleSignIn.signIn();
+      if (account != null) {
+        final GoogleSignInAuthentication auth = await account.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: auth.accessToken,
+          idToken: auth.idToken,
+        );
+
+        await FirebaseAuth.instance.signInWithCredential(credential);
+
+        setState(() {
+          // Update the user passed from parent by calling widget.user is final, so we can't update it directly
+          // Instead, rebuild parent or manage user state differently if needed
+          // For now, just rebuild to reflect sign in
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const MainPage(),
+            ),
+          );
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sign in cancelled')),
+        );
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign in failed: $error')),
+      );
+    } finally {
+      setState(() {
+        _isSigningIn = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = widget.user;
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: const Text('Bible Reading Challenge'),
+      ),
+      body: Center(
+        child: _loading
+            ? const CircularProgressIndicator()
+            : (user == null
+            ? ElevatedButton(
+          onPressed: _isSigningIn ? null : _handleSignIn,
+          child: _isSigningIn
+              ? const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+              : const Text('Sign in with Google'),
+        )
+            : Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (user.photoUrl != null)
+              CircleAvatar(
+                backgroundImage: NetworkImage(user.photoUrl!),
+                radius: 40,
+              ),
+            const SizedBox(height: 16),
+            Text(
+              user.displayName ?? 'No Name',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              user.email,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        )),
+      ),
+    );
+  }
+}
