@@ -76,12 +76,12 @@ class _HomePageState extends State<HomePage> {
       savedMonth.add(savedMonthIndices.contains(i + 1));
     }
 
-    if (savedWeek.isEmpty) {
+    if (savedWeekIndices.isEmpty) {
       final weekStatus = await _getReadStatusForRange(7);
       savedWeek.clear();
       savedWeek.addAll(weekStatus);
     }
-    if (savedMonth.isEmpty) {
+    if (savedMonthIndices.isEmpty) {
       final monthStatus = await _getReadStatusForRange(30);
       savedMonth.clear();
       savedMonth.addAll(monthStatus);
