@@ -1,8 +1,26 @@
 # Agent instructions
 
+This repository hosts a Flutter application. The code you will usually modify
+lives in the Dart sources under `lib/` and the tests under `test/`.
+
+## Overview of the codebase
+
+- `lib/` – main application code
+  - `lib/pages/` contains page widgets like `home_page.dart`
+  - `lib/widgets/` contains reusable UI components
+  - `lib/firebase_options.dart` configures Firebase and is generated
+- `test/` – unit and widget tests
+
+Some parts of the UI are currently being migrated to a more modular widget
+structure. Focus on the Dart files above rather than the platform specific
+directories (`android/`, `ios/`, etc.). The `flutter/` directory holds the SDK
+and **must not be committed**.
+
 ## Environment setup
 
-To run Flutter commands in this repository, the Codex environment must set up the local Flutter SDK. The setup script should clone the Flutter repository, add the SDK to the `PATH`, and fetch dependencies.
+To run Flutter commands in this repository, the Codex environment must set up
+the local Flutter SDK. The setup script should clone the Flutter repository, add
+the SDK to the `PATH`, and fetch dependencies.
 
 ```
 # 1. Install Flutter SDK (locally in the project)
@@ -22,6 +40,37 @@ yes | flutter doctor --android-licenses || true
 flutter pub get
 ```
 
+## Contribution and style guidelines
+
+- Format Dart code with `flutter format .` before committing.
+- Follow the lints defined in `analysis_options.yaml`; run `flutter analyze` to
+  verify there are no warnings.
+- Use `const` constructors when possible and prefer camelCase names.
+- Wrap asynchronous work in `try`/`catch` blocks and return `Future<void>`.
+- Document public functions with brief comments.
+
+### Parts being migrated
+
+The pages in `lib/pages` are gradually being broken into smaller widgets found
+in `lib/widgets`. When adding features prefer creating a widget in the widgets
+folder and composing pages from those widgets.
+
 ## Programmatic checks
 
-Run `flutter test` to execute the project's automated tests before committing changes.
+Make sure the Flutter SDK is installed and on your `PATH` before running lints
+or tests. After performing the environment setup above run:
+
+```bash
+flutter format .
+flutter analyze
+flutter test
+```
+
+## Agent workflow
+
+- Explore `README.md` and existing Dart sources for context before editing.
+- Write or update documentation when introducing new features or behaviour.
+- Summarize changes and reference file paths in the PR description.
+- Include a "Testing" section in the PR with the results of running the checks
+  above.
+
