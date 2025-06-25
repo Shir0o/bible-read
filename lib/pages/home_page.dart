@@ -334,7 +334,7 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _syncSummaryForUser,
+        onPressed: () async => await _syncSummaryForUser(),
         child: Icon(Icons.sync),
         tooltip: 'Sync Summary',
       ),
