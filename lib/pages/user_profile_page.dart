@@ -81,7 +81,7 @@ class UserProfilePageState extends State<UserProfilePage> {
               ? const CircularProgressIndicator()
               : (user == null
                   ? ElevatedButton(
-                      onPressed: _isSigningIn ? null : _handleSignIn,
+                      onPressed: _isSigningIn ? null : () async => await _handleSignIn(),
                       child: _isSigningIn
                           ? const SizedBox(
                               width: 20,
