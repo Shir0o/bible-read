@@ -11,7 +11,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin {
   bool _disposed = false;
   bool _readToday = false;
   bool _toggleLoading = false;
@@ -33,7 +34,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       final today = DateTime.now();
       final dateKey = '${today.year}-${today.month}-${today.day}';
 
-      final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final userDocRef =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
       final userDoc = await userDocRef.get();
       if (!userDoc.exists) {
         await userDocRef.set({
@@ -42,20 +44,22 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         });
 
         final friendsCollection = userDocRef.collection('friends');
-        final friendRequestsSentCollection = userDocRef.collection('friendRequestsSent');
+        final friendRequestsSentCollection =
+            userDocRef.collection('friendRequestsSent');
 
         // These can be created later when adding/accepting friends,
         // but you can prepopulate with empty docs or placeholders if needed:
         // Example: initialize placeholder if needed
-        await friendsCollection.doc('init').set({'status': 'placeholder', 'timestamp': Timestamp.now()}, SetOptions(merge: true));
-        await friendRequestsSentCollection.doc('init').set({'status': 'placeholder', 'timestamp': Timestamp.now()}, SetOptions(merge: true));
+        await friendsCollection.doc('init').set(
+            {'status': 'placeholder', 'timestamp': Timestamp.now()},
+            SetOptions(merge: true));
+        await friendRequestsSentCollection.doc('init').set(
+            {'status': 'placeholder', 'timestamp': Timestamp.now()},
+            SetOptions(merge: true));
       }
 
       _toggleLoading = true;
-      final doc = await userDocRef
-          .collection('reading')
-          .doc(dateKey)
-          .get();
+      final doc = await userDocRef.collection('reading').doc(dateKey).get();
 
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
@@ -74,49 +78,16 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         }
       }
 
-      final summaryDoc = await userDocRef.collection('summary').doc('data').get();
-      final data = summaryDoc.data() ?? {};
-      int streak = (data['streak'] is int) ? data['streak'] : 0;
-
-      final savedWeek = <bool>[];
-      final savedWeekIndices = List<int>.from(data['pastWeekReadDays'] ?? []);
-      for (int i = 0; i < 7; i++) {
-        savedWeek.add(savedWeekIndices.contains(i + 1));
-      }
-
-      final savedMonth = <bool>[];
-      final savedMonthIndices = List<int>.from(data['pastMonthReadDays'] ?? []);
-      for (int i = 0; i < 30; i++) {
-        savedMonth.add(savedMonthIndices.contains(i + 1));
-      }
-
-      if (savedWeekIndices.isEmpty) {
-        final weekStatus = await _getReadStatusForRange(7);
-        savedWeek.clear();
-        savedWeek.addAll(weekStatus);
-      }
-      if (savedMonthIndices.isEmpty) {
-        final monthStatus = await _getReadStatusForRange(30);
-        savedMonth.clear();
-        savedMonth.addAll(monthStatus);
-      }
-
-      if (!_disposed && mounted) {
-        setState(() {
-          _streak = streak;
-          _pastWeek = savedWeek;
-          _pastMonth = savedMonth;
-        });
-      }
-    } catch (e) {
-    }
+      await _updateSummary(userDocRef);
+    } catch (e) {}
   }
 
   Future<List<bool>> _getReadStatusForRange(int daysBack) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return [];
 
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDocRef =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
     final readingCollection = userDocRef.collection('reading');
 
     List<bool> statuses = [];
@@ -129,6 +100,74 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     }
 
     return statuses.reversed.toList();
+  }
+
+  Future<int> _calculateStreak() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return 0;
+
+    final userDocRef =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final readingCollection = userDocRef.collection('reading');
+
+    final now = DateTime.now();
+    final cutoff = now.subtract(const Duration(days: 60));
+    final snapshot = await readingCollection
+        .where('read', isEqualTo: true)
+        .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(cutoff))
+        .orderBy('timestamp', descending: true)
+        .limit(60)
+        .get();
+
+    int streak = 0;
+    DateTime expected = DateTime(now.year, now.month, now.day);
+    for (final doc in snapshot.docs) {
+      final ts = doc.data()['timestamp'];
+      if (ts is! Timestamp) break;
+      final date = ts.toDate();
+      final normalized = DateTime(date.year, date.month, date.day);
+      if (normalized == expected) {
+        streak++;
+        expected = expected.subtract(const Duration(days: 1));
+      } else if (normalized.isBefore(expected)) {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  Future<void> _updateSummary(DocumentReference userDocRef) async {
+    final streak = await _calculateStreak();
+    final pastWeekStatus = await _getReadStatusForRange(7);
+    final pastMonthStatus = await _getReadStatusForRange(30);
+
+    final pastWeekReadDays = <int>[];
+    for (int i = 0; i < pastWeekStatus.length; i++) {
+      final day = DateTime.now()
+          .subtract(Duration(days: pastWeekStatus.length - 1 - i));
+      if (pastWeekStatus[i]) pastWeekReadDays.add(day.weekday);
+    }
+
+    final pastMonthReadDays = <int>[];
+    for (int i = 0; i < pastMonthStatus.length; i++) {
+      final day = DateTime.now()
+          .subtract(Duration(days: pastMonthStatus.length - 1 - i));
+      if (pastMonthStatus[i]) pastMonthReadDays.add(day.day);
+    }
+
+    await userDocRef.collection('summary').doc('data').set({
+      'streak': streak,
+      'pastWeekReadDays': pastWeekReadDays,
+      'pastMonthReadDays': pastMonthReadDays,
+    }, SetOptions(merge: true));
+
+    if (!_disposed && mounted) {
+      setState(() {
+        _streak = streak;
+        _pastWeek = pastWeekStatus;
+        _pastMonth = pastMonthStatus;
+      });
+    }
   }
 
   Future<void> _toggleReadStatus() async {
@@ -152,61 +191,23 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         .collection('entries')
         .doc(user.uid)
         .set({
-          'name': user.displayName ?? '',
-          'email': user.email ?? '',
-          'timestamp': Timestamp.now(),
-          'read': true,
-        });
+      'name': user.displayName ?? '',
+      'email': user.email ?? '',
+      'timestamp': Timestamp.now(),
+      'read': true,
+    });
 
     await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('reading')
         .doc(dateKey)
-        .set({'read': true}, SetOptions(merge: true));
+        .set({'read': true, 'timestamp': Timestamp.now()},
+            SetOptions(merge: true));
 
-    // Recalculate summary
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-    final readingCollection = userDocRef.collection('reading');
-
-    // Get 60-day streak
-    final streakRange = List.generate(60, (i) => DateTime.now().subtract(Duration(days: i)));
-    final streakDocs = await Future.wait(streakRange.map((date) async {
-      final key = '${date.year}-${date.month}-${date.day}';
-      final doc = await readingCollection.doc(key).get();
-      return doc.exists && doc.data()?['read'] == true;
-    }));
-    int streak = 0;
-    for (final read in streakDocs) {
-      if (read) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-
-    final pastWeekStatus = await _getReadStatusForRange(7);
-    final pastMonthStatus = await _getReadStatusForRange(30);
-
-    final pastWeekReadDays = <int>[];
-    for (int i = 0; i < pastWeekStatus.length; i++) {
-      final day = DateTime.now().subtract(Duration(days: pastWeekStatus.length - 1 - i));
-      if (pastWeekStatus[i]) pastWeekReadDays.add(day.weekday);
-    }
-
-    final pastMonthReadDays = <int>[];
-    for (int i = 0; i < pastMonthStatus.length; i++) {
-      final day = DateTime.now().subtract(Duration(days: pastMonthStatus.length - 1 - i));
-      if (pastMonthStatus[i]) pastMonthReadDays.add(day.day);
-    }
-
-    await userDocRef.collection('summary').doc('data').set({
-      'streak': streak,
-      'pastWeekReadDays': pastWeekReadDays,
-      'pastMonthReadDays': pastMonthReadDays,
-    }, SetOptions(merge: true));
-
-    await _loadReadStatus();
+    final userDocRef =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
+    await _updateSummary(userDocRef);
   }
 
   Future<void> likeReading() async {
@@ -215,7 +216,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
     final today = DateTime.now();
     final dateKey = '${today.year}-${today.month}-${today.day}';
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDocRef =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
 
     await userDocRef
         .collection('reading')
@@ -231,7 +233,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
     final today = DateTime.now();
     final dateKey = '${today.year}-${today.month}-${today.day}';
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDocRef =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
 
     await userDocRef
         .collection('reading')
@@ -250,7 +253,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bible Reading Challenge', style: CommonStyles.appBarTitleText),
+        title: const Text('Bible Reading Challenge',
+            style: CommonStyles.appBarTitleText),
         backgroundColor: Theme.of(context).colorScheme.primary,
         shape: CommonStyles.roundedAppBar,
       ),
@@ -273,9 +277,11 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       onRefresh: () async {
         try {
           await _loadReadStatus();
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Refreshed successfully')));
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Refreshed successfully')));
         } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Refresh failed: $e')));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('Refresh failed: $e')));
         }
       },
       child: SingleChildScrollView(
@@ -289,11 +295,13 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.local_fire_department, color: Colors.orange),
+                    const Icon(Icons.local_fire_department,
+                        color: Colors.orange),
                     const SizedBox(width: 8),
                     Text(
                       "Streak: $_streak day${_streak == 1 ? '' : 's'}",
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -311,7 +319,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                       )
                     : SwitchListTile(
                         value: _readToday,
-                        onChanged: _readToday ? null : (value) => _toggleReadStatus(),
+                        onChanged:
+                            _readToday ? null : (value) => _toggleReadStatus(),
                         title: const Text("Bible Read Today"),
                         activeColor: Colors.green,
                       ),
@@ -325,14 +334,21 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                       builder: (context) {
                         final weekData = _pastWeek.length == 7
                             ? _pastWeek
-                            : List<bool>.generate(7, (i) => i < _pastWeek.length ? _pastWeek[i] : false);
+                            : List<bool>.generate(
+                                7,
+                                (i) => i < _pastWeek.length
+                                    ? _pastWeek[i]
+                                    : false);
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: List.generate(7, (i) {
                             return Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
                               child: Icon(
-                                weekData[i] ? Icons.check_circle : Icons.radio_button_unchecked,
+                                weekData[i]
+                                    ? Icons.check_circle
+                                    : Icons.radio_button_unchecked,
                                 color: weekData[i] ? Colors.green : Colors.grey,
                                 size: 20,
                               ),
@@ -353,7 +369,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                   children: [
                     Text(
                       "${DateTime.now().year} – ${_monthName(DateTime.now().month)}",
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                     Table(
                       defaultColumnWidth: const FixedColumnWidth(32),
@@ -361,8 +378,12 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                         TableRow(
                           children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
                               .map((d) => Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 4),
-                                    child: Center(child: Text(d, style: const TextStyle(fontSize: 10))),
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 4),
+                                    child: Center(
+                                        child: Text(d,
+                                            style:
+                                                const TextStyle(fontSize: 10))),
                                   ))
                               .toList(),
                         ),
@@ -421,11 +442,22 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
   String _monthName(int month) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     return months[month - 1];
   }
+
   @override
   void dispose() {
     _disposed = true;
