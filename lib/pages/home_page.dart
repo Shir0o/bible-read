@@ -43,10 +43,6 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
         final friendsCollection = userDocRef.collection('friends');
         final friendRequestsSentCollection = userDocRef.collection('friendRequestsSent');
-
-        // These can be created later when adding/accepting friends,
-        // but you can prepopulate with empty docs or placeholders if needed:
-        // Example: initialize placeholder if needed
         await friendsCollection.doc('init').set({'status': 'placeholder', 'timestamp': Timestamp.now()}, SetOptions(merge: true));
         await friendRequestsSentCollection.doc('init').set({'status': 'placeholder', 'timestamp': Timestamp.now()}, SetOptions(merge: true));
       }
@@ -74,9 +70,10 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         }
       }
 
+      // Always load streak from summary doc (no fallback to recalc)
       final summaryDoc = await userDocRef.collection('summary').doc('data').get();
       final data = summaryDoc.data() ?? {};
-      int streak = (data['streak'] is int) ? data['streak'] : 0;
+      int streak = data['streak'] ?? 0;
 
       final savedWeek = <bool>[];
       final savedWeekIndices = List<int>.from(data['pastWeekReadDays'] ?? []);
@@ -131,6 +128,54 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     return statuses.reversed.toList();
   }
 
+  /// Recalculates the streak, past-week, and past-month data and writes to summary collection.
+  Future<void> _updateSummary() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final readingCollection = userDocRef.collection('reading');
+
+    // Calculate streak, starting from today and counting backward in time
+    int streak = 0;
+    while (true) {
+      final date = DateTime.now().subtract(Duration(days: streak));
+      final key = '${date.year}-${date.month}-${date.day}';
+      final doc = await readingCollection.doc(key).get();
+      if (doc.exists && doc.data()?['read'] == true) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    // Past 7 days
+    final pastWeekStatus = await _getReadStatusForRange(7);
+    final pastWeekReadDays = <int>[];
+    for (int i = 0; i < pastWeekStatus.length; i++) {
+      if (pastWeekStatus[i]) {
+        final day = DateTime.now().subtract(Duration(days: pastWeekStatus.length - 1 - i));
+        pastWeekReadDays.add(day.weekday);
+      }
+    }
+
+    // Past 30 days
+    final pastMonthStatus = await _getReadStatusForRange(30);
+    final pastMonthReadDays = <int>[];
+    for (int i = 0; i < pastMonthStatus.length; i++) {
+      if (pastMonthStatus[i]) {
+        final day = DateTime.now().subtract(Duration(days: pastMonthStatus.length - 1 - i));
+        pastMonthReadDays.add(day.day);
+      }
+    }
+
+    // Write to summary doc (store only cached streak, past week, past month)
+    await userDocRef.collection('summary').doc('data').set({
+      'streak': streak,
+      'pastWeekReadDays': pastWeekReadDays,
+      'pastMonthReadDays': pastMonthReadDays,
+    }, SetOptions(merge: true));
+  }
+
   Future<void> _toggleReadStatus() async {
     if (_readToday) return;
 
@@ -165,48 +210,40 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         .doc(dateKey)
         .set({'read': true}, SetOptions(merge: true));
 
-    // Recalculate summary
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-    final readingCollection = userDocRef.collection('reading');
-
-    // Get 60-day streak
-    final streakRange = List.generate(60, (i) => DateTime.now().subtract(Duration(days: i)));
-    final streakDocs = await Future.wait(streakRange.map((date) async {
-      final key = '${date.year}-${date.month}-${date.day}';
-      final doc = await readingCollection.doc(key).get();
-      return doc.exists && doc.data()?['read'] == true;
-    }));
-    int streak = 0;
-    for (final read in streakDocs) {
-      if (read) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-
-    final pastWeekStatus = await _getReadStatusForRange(7);
-    final pastMonthStatus = await _getReadStatusForRange(30);
-
-    final pastWeekReadDays = <int>[];
-    for (int i = 0; i < pastWeekStatus.length; i++) {
-      final day = DateTime.now().subtract(Duration(days: pastWeekStatus.length - 1 - i));
-      if (pastWeekStatus[i]) pastWeekReadDays.add(day.weekday);
-    }
-
-    final pastMonthReadDays = <int>[];
-    for (int i = 0; i < pastMonthStatus.length; i++) {
-      final day = DateTime.now().subtract(Duration(days: pastMonthStatus.length - 1 - i));
-      if (pastMonthStatus[i]) pastMonthReadDays.add(day.day);
-    }
-
-    await userDocRef.collection('summary').doc('data').set({
-      'streak': streak,
-      'pastWeekReadDays': pastWeekReadDays,
-      'pastMonthReadDays': pastMonthReadDays,
-    }, SetOptions(merge: true));
+    // Update summary collection (lightweight update)
+    await _updateSummaryWithToday();
 
     await _loadReadStatus();
+  }
+
+  /// Lightweight summary update for today's read.
+  Future<void> _updateSummaryWithToday() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final summaryDocRef = userDocRef.collection('summary').doc('data');
+    final doc = await summaryDocRef.get();
+    final data = doc.data() ?? {};
+
+    int streak = (data['streak'] is int) ? data['streak'] : 0;
+    final today = DateTime.now();
+    final weekday = today.weekday;
+    final day = today.day;
+
+    final pastWeek = List<int>.from(data['pastWeekReadDays'] ?? []);
+    final pastMonth = List<int>.from(data['pastMonthReadDays'] ?? []);
+
+    if (!pastWeek.contains(weekday)) pastWeek.add(weekday);
+    if (!pastMonth.contains(day)) pastMonth.add(day);
+
+    streak += 1;
+
+    await summaryDocRef.set({
+      'streak': streak,
+      'pastWeekReadDays': pastWeek,
+      'pastMonthReadDays': pastMonth,
+    }, SetOptions(merge: true));
   }
 
   Future<void> likeReading() async {
@@ -272,6 +309,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     return RefreshIndicator(
       onRefresh: () async {
         try {
+          await _updateSummary();
           await _loadReadStatus();
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Refreshed successfully')));
         } catch (e) {
