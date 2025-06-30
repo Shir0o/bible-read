@@ -1,5 +1,6 @@
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/common_styles.dart';
+import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -58,32 +59,15 @@ class _MainPageState extends State<MainPage> {
       UserProfilePage(user: _user),
     ];
 
-    return Scaffold(
-      body: Container(
-        decoration: CommonStyles.backgroundGradient,
-        child: pages[_selectedIndex],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.feed),
-            label: 'Feed',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
+    return ResponsiveScaffold(
+      selectedIndex: _selectedIndex,
+      onDestinationSelected: _onItemTapped,
+      pages: pages,
+      destinations: const [
+        NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+        NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
+        NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+      ],
     );
   }
 }
