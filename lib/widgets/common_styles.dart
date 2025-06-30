@@ -23,13 +23,14 @@ class CommonStyles {
 
   static const Color appBarColor = Color(0xFF673AB7); // Example purple
 
-  static Card buildCard({required Widget child}) {
+  static Card buildCard({required Widget child, EdgeInsetsGeometry? margin}) {
     return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      margin: const EdgeInsets.symmetric(horizontal: 24),
+      elevation: 1,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(16.0),
         child: child,
       ),
     );
