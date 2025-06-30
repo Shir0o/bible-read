@@ -75,24 +75,32 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       final data = summaryDoc.data() ?? {};
       int streak = data['streak'] ?? 0;
 
-      final savedWeek = <bool>[];
-      final savedWeekIndices = List<int>.from(data['pastWeekReadDays'] ?? []);
+      final weekDates = List<String>.from(data['pastWeekReadDates'] ?? []);
+      final savedWeek = List<bool>.filled(7, false);
+      // Compute this week's Sunday (calendar week: Sunday to Saturday)
+      final currentWeekday = today.weekday; // 1 = Mon, ..., 7 = Sun
+      final sunday = today.subtract(Duration(days: currentWeekday % 7)); // get this week's Sunday
       for (int i = 0; i < 7; i++) {
-        savedWeek.add(savedWeekIndices.contains(i + 1));
+        final date = sunday.add(Duration(days: i)); // Sunday to Saturday
+        final key = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        savedWeek[i] = weekDates.contains(key);
       }
 
       final savedMonth = <bool>[];
-      final savedMonthIndices = List<int>.from(data['pastMonthReadDays'] ?? []);
-      for (int i = 0; i < 30; i++) {
-        savedMonth.add(savedMonthIndices.contains(i + 1));
+      final monthDates = List<String>.from(data['pastMonthReadDates'] ?? []);
+      final now = DateTime.now();
+      final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+      for (int i = 1; i <= daysInMonth; i++) {
+        final key = '${now.year}-${now.month.toString().padLeft(2, '0')}-${i.toString().padLeft(2, '0')}';
+        savedMonth.add(monthDates.contains(key));
       }
 
-      if (savedWeekIndices.isEmpty) {
+      if (weekDates.isEmpty) {
         final weekStatus = await _getReadStatusForRange(7);
         savedWeek.clear();
         savedWeek.addAll(weekStatus);
       }
-      if (savedMonthIndices.isEmpty) {
+      if (monthDates.isEmpty) {
         final monthStatus = await _getReadStatusForRange(30);
         savedMonth.clear();
         savedMonth.addAll(monthStatus);
@@ -150,29 +158,29 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
     // Past 7 days
     final pastWeekStatus = await _getReadStatusForRange(7);
-    final pastWeekReadDays = <int>[];
+    final pastWeekReadDates = <String>[];
     for (int i = 0; i < pastWeekStatus.length; i++) {
       if (pastWeekStatus[i]) {
         final day = DateTime.now().subtract(Duration(days: pastWeekStatus.length - 1 - i));
-        pastWeekReadDays.add(day.weekday);
+        pastWeekReadDates.add('${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
       }
     }
 
     // Past 30 days
     final pastMonthStatus = await _getReadStatusForRange(30);
-    final pastMonthReadDays = <int>[];
+    final pastMonthReadDates = <String>[];
     for (int i = 0; i < pastMonthStatus.length; i++) {
       if (pastMonthStatus[i]) {
         final day = DateTime.now().subtract(Duration(days: pastMonthStatus.length - 1 - i));
-        pastMonthReadDays.add(day.day);
+        pastMonthReadDates.add('${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
       }
     }
 
     // Write to summary doc (store only cached streak, past week, past month)
     await userDocRef.collection('summary').doc('data').set({
       'streak': streak,
-      'pastWeekReadDays': pastWeekReadDays,
-      'pastMonthReadDays': pastMonthReadDays,
+      'pastWeekReadDates': pastWeekReadDates,
+      'pastMonthReadDates': pastMonthReadDates,
     }, SetOptions(merge: true));
   }
 
@@ -397,7 +405,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                       defaultColumnWidth: const FixedColumnWidth(32),
                       children: [
                         TableRow(
-                          children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                          children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
                               .map((d) => Padding(
                                     padding: const EdgeInsets.symmetric(vertical: 4),
                                     child: Center(child: Text(d, style: const TextStyle(fontSize: 10))),
