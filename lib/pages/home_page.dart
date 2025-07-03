@@ -23,6 +23,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   @override
   void initState() {
     super.initState();
+    _loadReadStatus();
   }
 
   Future<void> _loadReadStatus() async {
@@ -235,22 +236,27 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     final data = doc.data() ?? {};
 
     int streak = (data['streak'] is int) ? data['streak'] : 0;
-    final today = DateTime.now();
-    final weekday = today.weekday;
-    final day = today.day;
-
-    final pastWeek = List<int>.from(data['pastWeekReadDays'] ?? []);
-    final pastMonth = List<int>.from(data['pastMonthReadDays'] ?? []);
-
-    if (!pastWeek.contains(weekday)) pastWeek.add(weekday);
-    if (!pastMonth.contains(day)) pastMonth.add(day);
-
     streak += 1;
+
+    final today = DateTime.now();
+    final dateKey =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+    final pastWeekReadDates = List<String>.from(data['pastWeekReadDates'] ?? []);
+    if (!pastWeekReadDates.contains(dateKey)) {
+      pastWeekReadDates.add(dateKey);
+    }
+
+    final pastMonthReadDates =
+        List<String>.from(data['pastMonthReadDates'] ?? []);
+    if (!pastMonthReadDates.contains(dateKey)) {
+      pastMonthReadDates.add(dateKey);
+    }
 
     await summaryDocRef.set({
       'streak': streak,
-      'pastWeekReadDays': pastWeek,
-      'pastMonthReadDays': pastMonth,
+      'pastWeekReadDates': pastWeekReadDates,
+      'pastMonthReadDates': pastMonthReadDates,
     }, SetOptions(merge: true));
   }
 
@@ -289,10 +295,6 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    if (!_loadedOnce) {
-      _loadedOnce = true;
-      _loadReadStatus();
-    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bible Reading Challenge', style: CommonStyles.appBarTitleText),
