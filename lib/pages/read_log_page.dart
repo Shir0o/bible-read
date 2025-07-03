@@ -94,6 +94,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : ListView.builder(
+                padding: const EdgeInsets.only(top: 16.0, bottom: 48.0),
                 itemCount: _logs.length,
                 itemBuilder: (context, index) {
                   final log = _logs[index];

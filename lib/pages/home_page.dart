@@ -18,7 +18,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   int _streak = 0;
   List<bool> _pastWeek = [];
   List<bool> _pastMonth = [];
-  bool _loadedOnce = false;
+  final bool _loadedOnce = false;
 
   @override
   void initState() {
@@ -298,8 +298,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bible Reading Challenge', style: CommonStyles.appBarTitleText),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        shape: CommonStyles.roundedAppBar,
+        backgroundColor: Colors.black,
+        
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
@@ -328,7 +328,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(top: 24, bottom: 48),
+        padding: const EdgeInsets.only(top: 16.0, bottom: 48),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,

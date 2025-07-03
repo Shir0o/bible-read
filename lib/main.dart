@@ -21,9 +21,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Bible Reading Challenge',
       theme: ThemeData(
+        brightness: Brightness.dark,
         // This is the theme of your application.
         // It uses Material 3 with a purple seed color.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo.shade900, brightness: Brightness.dark),
         useMaterial3: true,
       ),
       home: const MainPage(),
