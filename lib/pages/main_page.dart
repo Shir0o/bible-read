@@ -1,3 +1,4 @@
+import 'package:bible_read/pages/leaderboard_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/common_styles.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
@@ -56,6 +57,7 @@ class _MainPageState extends State<MainPage> {
     final List<Widget> pages = <Widget>[
       const HomePage(),
       const ReadLogPage(),
+      const LeaderboardPage(),
       UserProfilePage(user: _user),
     ];
 
@@ -66,6 +68,7 @@ class _MainPageState extends State<MainPage> {
       destinations: const [
         NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
         NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
+        NavigationDestination(icon: Icon(Icons.leaderboard), label: 'Leaderboard'),
         NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
       ],
     );
