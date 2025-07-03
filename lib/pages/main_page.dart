@@ -1,6 +1,5 @@
 import 'package:bible_read/pages/leaderboard_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
-import 'package:bible_read/widgets/common_styles.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

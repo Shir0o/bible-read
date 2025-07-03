@@ -73,8 +73,8 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Leaderboard', style: CommonStyles.appBarTitleText),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        shape: CommonStyles.roundedAppBar,
+        backgroundColor: Colors.black,
+        
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
@@ -85,6 +85,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                 : RefreshIndicator(
                     onRefresh: _loadLeaderboardData,
                     child: ListView.builder(
+                      padding: const EdgeInsets.only(top: 16.0, bottom: 48.0),
                       itemCount: _leaderboardData.length,
                       itemBuilder: (context, index) {
                         final user = _leaderboardData[index];
