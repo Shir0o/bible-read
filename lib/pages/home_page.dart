@@ -327,10 +327,9 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(top: 16.0, bottom: 48),
-        child: Center(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 16.0, bottom: 48, left: 16, right: 16),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               CommonStyles.buildCard(
                 child: Row(
@@ -402,18 +401,23 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                       "${DateTime.now().year} – ${_monthName(DateTime.now().month)}",
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                     ),
-                    Table(
-                      defaultColumnWidth: const FixedColumnWidth(32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        TableRow(
-                          children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-                              .map((d) => Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 4),
-                                    child: Center(child: Text(d, style: const TextStyle(fontSize: 10))),
-                                  ))
-                              .toList(),
+                        Table(
+                          defaultColumnWidth: const FixedColumnWidth(32),
+                          children: [
+                            TableRow(
+                              children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+                                  .map((d) => Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                        child: Center(child: Text(d, style: const TextStyle(fontSize: 10))),
+                                      ))
+                                  .toList(),
+                            ),
+                            ..._buildMonthCalendar(),
+                          ],
                         ),
-                        ..._buildMonthCalendar(),
                       ],
                     ),
                     const SizedBox(height: 4),

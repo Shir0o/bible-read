@@ -92,38 +92,43 @@ class _ReadLogPageState extends State<ReadLogPage> {
       body: Container(
         decoration: CommonStyles.backgroundGradient,
         child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : ListView.builder(
-                padding: const EdgeInsets.only(top: 16.0, bottom: 48.0),
-                itemCount: _logs.length,
-                itemBuilder: (context, index) {
-                  final log = _logs[index];
-                  final isLiked = (log['liked'] as bool? ?? false);
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ListTile(
-                      leading: const Icon(Icons.check_circle, color: Colors.green),
-                      title: Text(
-                        '${log['name']} read today!',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+            ? Container(
+                alignment: Alignment.center,
+                child: const CircularProgressIndicator(),
+              )
+            : Padding(
+                padding: const EdgeInsets.only(top: 16.0, bottom: 48.0, left: 16, right: 16),
+                child: ListView.builder(
+                  itemCount: _logs.length,
+                  itemBuilder: (context, index) {
+                    final log = _logs[index];
+                    final isLiked = (log['liked'] as bool? ?? false);
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      trailing: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: IconButton(
-                          icon: Icon(
-                            isLiked ? Icons.favorite : Icons.favorite_border,
-                            color: isLiked ? Colors.red : null,
+                      child: ListTile(
+                        leading: const Icon(Icons.check_circle, color: Colors.green),
+                        title: Text(
+                          '${log['name']} read today!',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        trailing: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          child: IconButton(
+                            icon: Icon(
+                              isLiked ? Icons.favorite : Icons.favorite_border,
+                              color: isLiked ? Colors.red : null,
+                            ),
+                            onPressed: () => _toggleLike(log['uid']),
                           ),
-                          onPressed: () => _toggleLike(log['uid']),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
       ),
     );
