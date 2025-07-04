@@ -7,7 +7,7 @@ class CommonStyles {
   );
 
   static const TextStyle appBarTitleText = TextStyle(
-    fontFamily: 'Poppins',
+    fontFamily: 'IBMPlexMono',
     fontSize: 20,
     fontWeight: FontWeight.bold,
     color: Colors.white,

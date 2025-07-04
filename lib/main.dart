@@ -26,6 +26,7 @@ class MyApp extends StatelessWidget {
         // It uses Material 3 with a purple seed color.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo.shade900, brightness: Brightness.dark),
         useMaterial3: true,
+        fontFamily: 'IBMPlexMono',
       ),
       home: const MainPage(),
     );
