@@ -432,7 +432,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     final now = DateTime.now();
     final firstDay = DateTime(now.year, now.month, 1);
     final totalDays = DateTime(now.year, now.month + 1, 0).day;
-    final weekdayOffset = (firstDay.weekday - 1) % 7;
+    final weekdayOffset = firstDay.weekday % 7;
 
     final rows = <TableRow>[];
     List<Widget> currentRow = List.filled(7, const SizedBox.shrink());
