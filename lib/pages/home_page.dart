@@ -18,7 +18,6 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   int _streak = 0;
   List<bool> _pastWeek = [];
   List<bool> _pastMonth = [];
-  final bool _loadedOnce = false;
 
   @override
   void initState() {
@@ -390,7 +389,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                       },
                     ),
                     const SizedBox(height: 8),
-                    const Text("This Week", style: TextStyle(fontSize: 12)),
+                    const Text("This Week"),
                   ],
                 ),
               ),
@@ -418,7 +417,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                       ],
                     ),
                     const SizedBox(height: 4),
-                    const Text("This Month", style: TextStyle(fontSize: 12)),
+                    const Text("This Month"),
                   ],
                 ),
               ),
