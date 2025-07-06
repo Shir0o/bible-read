@@ -5,14 +5,27 @@ import 'package:flutter/material.dart';
 import '../widgets/common_styles.dart';
 
 class ReadLogPage extends StatefulWidget {
-  const ReadLogPage({super.key});
+  final FirebaseFirestore firestore;
+  final FirebaseAuth auth;
+
+  ReadLogPage({
+    super.key,
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<ReadLogPage> createState() => _ReadLogPageState();
 
-  static Future<void> writeReadLogEntry(User user) async {
-    final dateKey = '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
-    await FirebaseFirestore.instance
+  static Future<void> writeReadLogEntry(
+    User user, {
+    FirebaseFirestore? firestore,
+  }) async {
+    final db = firestore ?? FirebaseFirestore.instance;
+    final dateKey =
+        '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+    await db
         .collection('read_logs')
         .doc(dateKey)
         .collection('entries')
@@ -36,9 +49,10 @@ class _ReadLogPageState extends State<ReadLogPage> {
   }
 
   Future<void> _loadLogs() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    final dateKey = '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
-    final snapshot = await FirebaseFirestore.instance
+    final currentUser = widget.auth.currentUser;
+    final dateKey =
+        '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+    final snapshot = await widget.firestore
         .collection('read_logs')
         .doc(dateKey)
         .collection('entries')
@@ -54,7 +68,9 @@ class _ReadLogPageState extends State<ReadLogPage> {
         'uid': doc.id,
         'name': (data['name'] ?? doc.id).toString().split(' ').first,
         'read': true,
-        'liked': (currentUser != null && likeDoc != null && likeDoc.exists) ? true : false,
+        'liked': (currentUser != null && likeDoc != null && likeDoc.exists)
+            ? true
+            : false,
       };
     }).toList());
 
@@ -65,10 +81,11 @@ class _ReadLogPageState extends State<ReadLogPage> {
   }
 
   Future<void> _toggleLike(String logUid) async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = widget.auth.currentUser;
     if (user == null) return;
-    final dateKey = '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
-    final likeRef = FirebaseFirestore.instance
+    final dateKey =
+        '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+    final likeRef = widget.firestore
         .collection('read_logs')
         .doc(dateKey)
         .collection('entries')
@@ -97,7 +114,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
                 child: const CircularProgressIndicator(),
               )
             : Padding(
-                padding: const EdgeInsets.only(top: 16.0, bottom: 48.0, left: 16, right: 16),
+                padding: const EdgeInsets.only(
+                    top: 16.0, bottom: 48.0, left: 16, right: 16),
                 child: ListView.builder(
                   itemCount: _logs.length,
                   itemBuilder: (context, index) {
@@ -110,7 +128,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: ListTile(
-                        leading: const Icon(Icons.check_circle, color: Colors.green),
+                        leading:
+                            const Icon(Icons.check_circle, color: Colors.green),
                         title: Text(
                           '${log['name']} read today!',
                           style: const TextStyle(fontWeight: FontWeight.w600),
