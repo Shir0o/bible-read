@@ -55,7 +55,7 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     final List<Widget> pages = <Widget>[
       const HomePage(),
-      const ReadLogPage(),
+      ReadLogPage(),
       const LeaderboardPage(),
       UserProfilePage(user: _user),
     ];
@@ -67,7 +67,8 @@ class _MainPageState extends State<MainPage> {
       destinations: const [
         NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
         NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
-        NavigationDestination(icon: Icon(Icons.leaderboard), label: 'Leaderboard'),
+        NavigationDestination(
+            icon: Icon(Icons.leaderboard), label: 'Leaderboard'),
         NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
       ],
     );
