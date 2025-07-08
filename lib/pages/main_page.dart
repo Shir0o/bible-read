@@ -1,6 +1,7 @@
 import 'package:bible_read/pages/leaderboard_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -9,7 +10,18 @@ import 'home_page.dart';
 import 'read_log_page.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  final FirebaseFirestore firestore;
+  final FirebaseAuth auth;
+  final GoogleSignIn Function() googleSignInProvider;
+
+  MainPage({
+    super.key,
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+    GoogleSignIn Function()? googleSignInProvider,
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -26,7 +38,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future<void> _attemptSilentSignIn() async {
-    final GoogleSignIn googleSignIn = GoogleSignIn();
+    final GoogleSignIn googleSignIn = widget.googleSignInProvider();
     final GoogleSignInAccount? account = await googleSignIn.signInSilently();
     if (account != null) {
       final GoogleSignInAuthentication auth = await account.authentication;
@@ -35,8 +47,8 @@ class _MainPageState extends State<MainPage> {
         idToken: auth.idToken,
       );
 
-      if (FirebaseAuth.instance.currentUser == null) {
-        await FirebaseAuth.instance.signInWithCredential(credential);
+      if (widget.auth.currentUser == null) {
+        await widget.auth.signInWithCredential(credential);
       }
 
       setState(() {
@@ -54,10 +66,16 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = <Widget>[
-      HomePage(),
-      ReadLogPage(),
-      LeaderboardPage(),
-      _user != null ? UserProfilePage(user: _user) : const Center(child: Text('Please sign in')),
+      HomePage(firestore: widget.firestore, auth: widget.auth),
+      ReadLogPage(firestore: widget.firestore, auth: widget.auth),
+      LeaderboardPage(firestore: widget.firestore),
+      _user != null
+          ? UserProfilePage(
+              user: _user,
+              googleSignInProvider: widget.googleSignInProvider,
+              auth: widget.auth,
+            )
+          : const Center(child: Text('Please sign in')),
     ];
 
     return ResponsiveScaffold(
