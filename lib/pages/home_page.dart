@@ -85,7 +85,7 @@ class _HomePageState extends State<HomePage>
       int streak = data['streak'] ?? 0;
 
       final weekDates = List<String>.from(data['pastWeekReadDates'] ?? []);
-      final savedWeek = List<bool>.filled(7, false);
+      final savedWeek = List<bool>.filled(7, false, growable: true);
       // Compute this week's Sunday (calendar week: Sunday to Saturday)
       final currentWeekday = today.weekday; // 1 = Mon, ..., 7 = Sun
       final sunday = today.subtract(
