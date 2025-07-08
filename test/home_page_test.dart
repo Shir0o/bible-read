@@ -18,8 +18,7 @@ void main() {
     expect(find.text('Bible Reading Challenge'), findsOneWidget);
     expect(find.textContaining('Streak:'), findsOneWidget);
     expect(find.text('Bible Read Today'), findsOneWidget);
-    expect(find.text('This Week'), findsOneWidget);
-    expect(find.text('This Month'), findsOneWidget);
+    expect(find.textContaining('Week of'), findsOneWidget);
   });
 
   testWidgets('HomePage week row has seven icons', (tester) async {

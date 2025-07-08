@@ -85,7 +85,7 @@ class _HomePageState extends State<HomePage>
       int streak = data['streak'] ?? 0;
 
       final weekDates = List<String>.from(data['pastWeekReadDates'] ?? []);
-      final savedWeek = List<bool>.filled(7, false);
+      final savedWeek = List<bool>.filled(7, false, growable: true);
       // Compute this week's Sunday (calendar week: Sunday to Saturday)
       final currentWeekday = today.weekday; // 1 = Mon, ..., 7 = Sun
       final sunday = today.subtract(
@@ -408,13 +408,16 @@ class _HomePageState extends State<HomePage>
                     Builder(
                       builder: (context) {
                         final now = DateTime.now();
-                        final sunday = now.subtract(Duration(days: now.weekday % 7));
+                        final sunday =
+                            now.subtract(Duration(days: now.weekday % 7));
                         final weekOf = '${sunday.month}/${sunday.day}';
                         const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
                         return Column(
                           children: [
-                            Text('Week of $weekOf', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                            Text('Week of $weekOf',
+                                style: const TextStyle(
+                                    fontSize: 14, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -431,13 +434,16 @@ class _HomePageState extends State<HomePage>
                                       const EdgeInsets.symmetric(horizontal: 4),
                                   child: Column(
                                     children: [
-                                      Text(days[i], style: const TextStyle(fontSize: 10)),
+                                      Text(days[i],
+                                          style: const TextStyle(fontSize: 10)),
                                       const SizedBox(height: 4),
                                       Icon(
                                         weekData[i]
                                             ? Icons.check_circle
                                             : Icons.radio_button_unchecked,
-                                        color: weekData[i] ? Colors.green : Colors.grey,
+                                        color: weekData[i]
+                                            ? Colors.green
+                                            : Colors.grey,
                                         size: 20,
                                       ),
                                     ],
@@ -449,7 +455,6 @@ class _HomePageState extends State<HomePage>
                         );
                       },
                     ),
-                    
                   ],
                 ),
               ),
@@ -486,7 +491,6 @@ class _HomePageState extends State<HomePage>
                         ),
                       ],
                     ),
-                    
                   ],
                 ),
               ),
