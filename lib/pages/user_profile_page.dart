@@ -7,7 +7,16 @@ import 'main_page.dart';
 
 class UserProfilePage extends StatefulWidget {
   final GoogleSignInAccount? user;
-  const UserProfilePage({super.key, this.user});
+  final GoogleSignIn Function() googleSignInProvider;
+  final FirebaseAuth auth;
+
+  UserProfilePage({
+    super.key,
+    this.user,
+    GoogleSignIn Function()? googleSignInProvider,
+    FirebaseAuth? auth,
+  })  : googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
+        auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<UserProfilePage> createState() => UserProfilePageState();
@@ -32,7 +41,7 @@ class UserProfilePageState extends State<UserProfilePage> {
       _isSigningIn = true;
     });
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignIn googleSignIn = widget.googleSignInProvider();
       final GoogleSignInAccount? account = await googleSignIn.signIn();
       if (account != null) {
         final GoogleSignInAuthentication auth = await account.authentication;
@@ -41,8 +50,9 @@ class UserProfilePageState extends State<UserProfilePage> {
           idToken: auth.idToken,
         );
 
-        await FirebaseAuth.instance.signInWithCredential(credential);
+        await widget.auth.signInWithCredential(credential);
 
+        if (!mounted) return;
         setState(() {
           // Update the user passed from parent by calling widget.user is final, so we can't update it directly
           // Instead, rebuild parent or manage user state differently if needed
@@ -54,18 +64,23 @@ class UserProfilePageState extends State<UserProfilePage> {
           );
         });
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Sign in cancelled')),
         );
       }
     } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign in failed: $error')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign in failed: $error')),
+        );
+      }
     } finally {
-      setState(() {
-        _isSigningIn = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSigningIn = false;
+        });
+      }
     }
   }
 
@@ -81,7 +96,9 @@ class UserProfilePageState extends State<UserProfilePage> {
               ? const CircularProgressIndicator()
               : (user == null
                   ? ElevatedButton(
-                      onPressed: _isSigningIn ? null : () async => await _handleSignIn(),
+                      onPressed: _isSigningIn
+                          ? null
+                          : () async => await _handleSignIn(),
                       child: _isSigningIn
                           ? const SizedBox(
                               width: 20,

@@ -125,7 +125,9 @@ class _HomePageState extends State<HomePage>
           _pastMonth = savedMonth;
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Error loading status: $e');
+    }
   }
 
   Future<List<bool>> _getReadStatusForRange(int daysBack) async {
@@ -336,9 +338,12 @@ class _HomePageState extends State<HomePage>
         try {
           await _updateSummary();
           await _loadReadStatus();
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Refreshed successfully')));
+            const SnackBar(content: Text('Refreshed successfully')),
+          );
         } catch (e) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text('Refresh failed: $e')));
         }
