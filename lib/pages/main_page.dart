@@ -57,7 +57,7 @@ class _MainPageState extends State<MainPage> {
       HomePage(),
       ReadLogPage(),
       const LeaderboardPage(),
-      UserProfilePage(user: _user),
+      _user != null ? UserProfilePage(user: _user) : const Center(child: Text('Please sign in')),
     ];
 
     return ResponsiveScaffold(
