@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'IBMPlexMono',
       ),
-      home: const MainPage(),
+      home: MainPage(),
     );
   }
 }
