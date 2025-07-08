@@ -5,13 +5,19 @@ import 'package:flutter/material.dart';
 import '../widgets/common_styles.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final FirebaseFirestore firestore;
+  final FirebaseAuth auth;
+
+  HomePage({super.key, FirebaseFirestore? firestore, FirebaseAuth? auth})
+      : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin {
   bool _disposed = false;
   bool _readToday = false;
   bool _toggleLoading = false;
@@ -27,13 +33,13 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
   Future<void> _loadReadStatus() async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
+      final user = widget.auth.currentUser;
       if (user == null) return;
 
       final today = DateTime.now();
       final dateKey = '${today.year}-${today.month}-${today.day}';
 
-      final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final userDocRef = widget.firestore.collection('users').doc(user.uid);
       final userDoc = await userDocRef.get();
       if (!userDoc.exists) {
         await userDocRef.set({
@@ -42,16 +48,18 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         });
 
         final friendsCollection = userDocRef.collection('friends');
-        final friendRequestsSentCollection = userDocRef.collection('friendRequestsSent');
-        await friendsCollection.doc('init').set({'status': 'placeholder', 'timestamp': Timestamp.now()}, SetOptions(merge: true));
-        await friendRequestsSentCollection.doc('init').set({'status': 'placeholder', 'timestamp': Timestamp.now()}, SetOptions(merge: true));
+        final friendRequestsSentCollection =
+            userDocRef.collection('friendRequestsSent');
+        await friendsCollection.doc('init').set(
+            {'status': 'placeholder', 'timestamp': Timestamp.now()},
+            SetOptions(merge: true));
+        await friendRequestsSentCollection.doc('init').set(
+            {'status': 'placeholder', 'timestamp': Timestamp.now()},
+            SetOptions(merge: true));
       }
 
       _toggleLoading = true;
-      final doc = await userDocRef
-          .collection('reading')
-          .doc(dateKey)
-          .get();
+      final doc = await userDocRef.collection('reading').doc(dateKey).get();
 
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
@@ -71,7 +79,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       }
 
       // Always load streak from summary doc (no fallback to recalc)
-      final summaryDoc = await userDocRef.collection('summary').doc('data').get();
+      final summaryDoc =
+          await userDocRef.collection('summary').doc('data').get();
       final data = summaryDoc.data() ?? {};
       int streak = data['streak'] ?? 0;
 
@@ -79,10 +88,12 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       final savedWeek = List<bool>.filled(7, false);
       // Compute this week's Sunday (calendar week: Sunday to Saturday)
       final currentWeekday = today.weekday; // 1 = Mon, ..., 7 = Sun
-      final sunday = today.subtract(Duration(days: currentWeekday % 7)); // get this week's Sunday
+      final sunday = today.subtract(
+          Duration(days: currentWeekday % 7)); // get this week's Sunday
       for (int i = 0; i < 7; i++) {
         final date = sunday.add(Duration(days: i)); // Sunday to Saturday
-        final key = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        final key =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
         savedWeek[i] = weekDates.contains(key);
       }
 
@@ -91,7 +102,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       final now = DateTime.now();
       final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
       for (int i = 1; i <= daysInMonth; i++) {
-        final key = '${now.year}-${now.month.toString().padLeft(2, '0')}-${i.toString().padLeft(2, '0')}';
+        final key =
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-${i.toString().padLeft(2, '0')}';
         savedMonth.add(monthDates.contains(key));
       }
 
@@ -114,14 +126,15 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         });
       }
     } catch (e) {
+      debugPrint('Error loading status: $e');
     }
   }
 
   Future<List<bool>> _getReadStatusForRange(int daysBack) async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = widget.auth.currentUser;
     if (user == null) return [];
 
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDocRef = widget.firestore.collection('users').doc(user.uid);
     final readingCollection = userDocRef.collection('reading');
 
     List<bool> statuses = [];
@@ -138,9 +151,9 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
   /// Recalculates the streak, past-week, and past-month data and writes to summary collection.
   Future<void> _updateSummary() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = widget.auth.currentUser;
     if (user == null) return;
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDocRef = widget.firestore.collection('users').doc(user.uid);
     final readingCollection = userDocRef.collection('reading');
 
     // Calculate streak, starting from today and counting backward in time
@@ -161,8 +174,10 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     final pastWeekReadDates = <String>[];
     for (int i = 0; i < pastWeekStatus.length; i++) {
       if (pastWeekStatus[i]) {
-        final day = DateTime.now().subtract(Duration(days: pastWeekStatus.length - 1 - i));
-        pastWeekReadDates.add('${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
+        final day = DateTime.now()
+            .subtract(Duration(days: pastWeekStatus.length - 1 - i));
+        pastWeekReadDates.add(
+            '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
       }
     }
 
@@ -171,8 +186,10 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     final pastMonthReadDates = <String>[];
     for (int i = 0; i < pastMonthStatus.length; i++) {
       if (pastMonthStatus[i]) {
-        final day = DateTime.now().subtract(Duration(days: pastMonthStatus.length - 1 - i));
-        pastMonthReadDates.add('${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
+        final day = DateTime.now()
+            .subtract(Duration(days: pastMonthStatus.length - 1 - i));
+        pastMonthReadDates.add(
+            '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
       }
     }
 
@@ -187,7 +204,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   Future<void> _toggleReadStatus() async {
     if (_readToday) return;
 
-    final user = FirebaseAuth.instance.currentUser;
+    final user = widget.auth.currentUser;
     if (user == null) return;
 
     if (!_disposed && mounted) {
@@ -199,19 +216,19 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     final today = DateTime.now();
     final dateKey = '${today.year}-${today.month}-${today.day}';
 
-    await FirebaseFirestore.instance
+    await widget.firestore
         .collection('read_logs')
         .doc(dateKey)
         .collection('entries')
         .doc(user.uid)
         .set({
-          'name': user.displayName ?? '',
-          'email': user.email ?? '',
-          'timestamp': Timestamp.now(),
-          'read': true,
-        });
+      'name': user.displayName ?? '',
+      'email': user.email ?? '',
+      'timestamp': Timestamp.now(),
+      'read': true,
+    });
 
-    await FirebaseFirestore.instance
+    await widget.firestore
         .collection('users')
         .doc(user.uid)
         .collection('reading')
@@ -226,10 +243,10 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
   /// Lightweight summary update for today's read.
   Future<void> _updateSummaryWithToday() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = widget.auth.currentUser;
     if (user == null) return;
 
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDocRef = widget.firestore.collection('users').doc(user.uid);
     final summaryDocRef = userDocRef.collection('summary').doc('data');
     final doc = await summaryDocRef.get();
     final data = doc.data() ?? {};
@@ -252,7 +269,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     final dateKey =
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
-    final pastWeekReadDates = List<String>.from(data['pastWeekReadDates'] ?? []);
+    final pastWeekReadDates =
+        List<String>.from(data['pastWeekReadDates'] ?? []);
     if (!pastWeekReadDates.contains(dateKey)) {
       pastWeekReadDates.add(dateKey);
     }
@@ -271,12 +289,12 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   }
 
   Future<void> likeReading() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = widget.auth.currentUser;
     if (user == null) return;
 
     final today = DateTime.now();
     final dateKey = '${today.year}-${today.month}-${today.day}';
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDocRef = widget.firestore.collection('users').doc(user.uid);
 
     await userDocRef
         .collection('reading')
@@ -287,12 +305,12 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   }
 
   Future<void> unlikeReading() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = widget.auth.currentUser;
     if (user == null) return;
 
     final today = DateTime.now();
     final dateKey = '${today.year}-${today.month}-${today.day}';
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDocRef = widget.firestore.collection('users').doc(user.uid);
 
     await userDocRef
         .collection('reading')
@@ -307,9 +325,9 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     super.build(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bible Reading Challenge', style: CommonStyles.appBarTitleText),
+        title: const Text('Bible Reading Challenge',
+            style: CommonStyles.appBarTitleText),
         backgroundColor: Colors.black,
-        
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
@@ -331,26 +349,34 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         try {
           await _updateSummary();
           await _loadReadStatus();
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Refreshed successfully')));
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Refreshed successfully')),
+          );
         } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Refresh failed: $e')));
+          if (!mounted) return;
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('Refresh failed: $e')));
         }
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.only(top: 16.0, bottom: 48, left: 16, right: 16),
+          padding:
+              const EdgeInsets.only(top: 16.0, bottom: 48, left: 16, right: 16),
           child: Column(
             children: [
               CommonStyles.buildCard(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.local_fire_department, color: Colors.orange),
+                    const Icon(Icons.local_fire_department,
+                        color: Colors.orange),
                     const SizedBox(width: 8),
                     Text(
                       "Streak: $_streak day${_streak == 1 ? '' : 's'}",
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -368,7 +394,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                       )
                     : SwitchListTile(
                         value: _readToday,
-                        onChanged: _readToday ? null : (value) => _toggleReadStatus(),
+                        onChanged:
+                            _readToday ? null : (value) => _toggleReadStatus(),
                         title: const Text("Bible Read Today"),
                         activeColor: Colors.green,
                       ),
@@ -382,14 +409,21 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                       builder: (context) {
                         final weekData = _pastWeek.length == 7
                             ? _pastWeek
-                            : List<bool>.generate(7, (i) => i < _pastWeek.length ? _pastWeek[i] : false);
+                            : List<bool>.generate(
+                                7,
+                                (i) => i < _pastWeek.length
+                                    ? _pastWeek[i]
+                                    : false);
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: List.generate(7, (i) {
                             return Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
                               child: Icon(
-                                weekData[i] ? Icons.check_circle : Icons.radio_button_unchecked,
+                                weekData[i]
+                                    ? Icons.check_circle
+                                    : Icons.radio_button_unchecked,
                                 color: weekData[i] ? Colors.green : Colors.grey,
                                 size: 20,
                               ),
@@ -410,7 +444,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                   children: [
                     Text(
                       "${DateTime.now().year} – ${_monthName(DateTime.now().month)}",
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -421,8 +456,12 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                             TableRow(
                               children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
                                   .map((d) => Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 4),
-                                        child: Center(child: Text(d, style: const TextStyle(fontSize: 10))),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 4),
+                                        child: Center(
+                                            child: Text(d,
+                                                style: const TextStyle(
+                                                    fontSize: 10))),
                                       ))
                                   .toList(),
                             ),
@@ -483,11 +522,22 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
   String _monthName(int month) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     return months[month - 1];
   }
+
   @override
   void dispose() {
     _disposed = true;
