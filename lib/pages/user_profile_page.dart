@@ -58,9 +58,9 @@ class UserProfilePageState extends State<UserProfilePage> {
           // Instead, rebuild parent or manage user state differently if needed
           // For now, just rebuild to reflect sign in
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const MainPage(),
-            ),
+              MaterialPageRoute(
+                builder: (context) => MainPage(),
+              ),
           );
         });
       } else {
