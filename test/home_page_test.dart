@@ -18,8 +18,24 @@ void main() {
     expect(find.text('Bible Reading Challenge'), findsOneWidget);
     expect(find.textContaining('Streak:'), findsOneWidget);
     expect(find.text('Bible Read Today'), findsOneWidget);
-    expect(find.text('This Week'), findsOneWidget);
-    expect(find.text('This Month'), findsOneWidget);
+    expect(find.textContaining('Week of'), findsOneWidget);
+    final months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+    final header =
+        '${DateTime.now().year} – ${months[DateTime.now().month - 1]}';
+    expect(find.text(header), findsOneWidget);
   });
 
   testWidgets('HomePage week row has seven icons', (tester) async {
