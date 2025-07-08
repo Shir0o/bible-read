@@ -56,7 +56,7 @@ class _MainPageState extends State<MainPage> {
     final List<Widget> pages = <Widget>[
       HomePage(),
       ReadLogPage(),
-      const LeaderboardPage(),
+      LeaderboardPage(),
       UserProfilePage(user: _user),
     ];
 
