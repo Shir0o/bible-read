@@ -56,8 +56,8 @@ class _MainPageState extends State<MainPage> {
     final List<Widget> pages = <Widget>[
       HomePage(),
       ReadLogPage(),
-      LeaderboardPage(),
-      UserProfilePage(user: _user),
+      const LeaderboardPage(),
+      _user != null ? UserProfilePage(user: _user) : const Center(child: Text('Please sign in')),
     ];
 
     return ResponsiveScaffold(

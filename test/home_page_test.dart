@@ -14,28 +14,13 @@ void main() {
         MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
 
     expect(find.text('Bible Reading Challenge'), findsOneWidget);
     expect(find.textContaining('Streak:'), findsOneWidget);
     expect(find.text('Bible Read Today'), findsOneWidget);
     expect(find.textContaining('Week of'), findsOneWidget);
-    final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
-    final header =
-        '${DateTime.now().year} – ${months[DateTime.now().month - 1]}';
-    expect(find.text(header), findsOneWidget);
+    expect(find.textContaining('${DateTime.now().year} –'), findsOneWidget);
   });
 
   testWidgets('HomePage week row has seven icons', (tester) async {
@@ -44,6 +29,7 @@ void main() {
         MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
 
     // There should be exactly seven icons for the week status row. All are
     // unchecked by default since no data is loaded in tests.
@@ -57,6 +43,7 @@ void main() {
         MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
 
     // Verify the month header text
     final now = DateTime.now();
@@ -94,6 +81,7 @@ void main() {
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byType(SwitchListTile));
     await tester.pump();
@@ -114,6 +102,7 @@ void main() {
 
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 
     final state = tester.state(find.byType(HomePage)) as dynamic;
@@ -163,6 +152,7 @@ void main() {
 
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 
     await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
