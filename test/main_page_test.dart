@@ -81,7 +81,7 @@ void main() {
   });
 
   testWidgets('MainPage navigation to profile', (WidgetTester tester) async {
-    await tester.pumpWidget(const MaterialApp(home: MainPage()));
+    await tester.pumpWidget(MaterialApp(home: MainPage()));
 
     // HomePage should be shown by default
     expect(find.text('Bible Reading Challenge'), findsOneWidget);
@@ -93,7 +93,7 @@ void main() {
   });
 
   testWidgets('navigation updates selected index', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: MainPage()));
+    await tester.pumpWidget(MaterialApp(home: MainPage()));
     await tester.tap(find.text('Feed'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
@@ -106,14 +106,14 @@ void main() {
       id: '123',
       displayName: 'Test',
     );
-    await tester.pumpWidget(const MaterialApp(home: MainPage()));
+    await tester.pumpWidget(MaterialApp(home: MainPage()));
     await tester.pump();
     expect(fakePlatform.silentSignInCount, 1);
   });
 
   testWidgets('responsive scaffold switches layout', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: MediaQuery(
           data: MediaQueryData(size: Size(800, 600)),
           child: MainPage(),
@@ -124,7 +124,7 @@ void main() {
     expect(find.byType(NavigationBar), findsNothing);
 
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: MediaQuery(
           data: MediaQueryData(size: Size(400, 600)),
           child: MainPage(),
