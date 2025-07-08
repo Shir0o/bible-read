@@ -20,8 +20,8 @@ void main() {
     expect(find.text('Bible Reading Challenge'), findsOneWidget);
 
     // Tap Profile navigation item
-    await tester.tap(find.text('Profile'));
+    await tester.tap(find.byIcon(Icons.person));
     await tester.pumpAndSettle();
-    expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('Please sign in'), findsOneWidget);
   });
 }
