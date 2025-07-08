@@ -234,10 +234,21 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     final doc = await summaryDocRef.get();
     final data = doc.data() ?? {};
 
-    int streak = (data['streak'] is int) ? data['streak'] : 0;
-    streak += 1;
-
     final today = DateTime.now();
+    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterdayDateKey =
+        '${yesterday.year}-${yesterday.month}-${yesterday.day}';
+
+    final yesterdayDoc =
+        await userDocRef.collection('reading').doc(yesterdayDateKey).get();
+
+    int streak = (data['streak'] is int) ? data['streak'] : 0;
+    if (yesterdayDoc.exists && yesterdayDoc.data()?['read'] == true) {
+      streak += 1;
+    } else {
+      streak = 1; // Reset streak if yesterday was missed
+    }
+
     final dateKey =
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
