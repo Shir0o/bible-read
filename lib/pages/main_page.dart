@@ -54,7 +54,7 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = <Widget>[
-      const HomePage(),
+      HomePage(),
       ReadLogPage(),
       const LeaderboardPage(),
       UserProfilePage(user: _user),
