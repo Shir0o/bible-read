@@ -88,7 +88,7 @@ class UserProfilePageState extends State<UserProfilePage> {
   Widget build(BuildContext context) {
     final user = widget.user;
     return Scaffold(
-      appBar: CommonStyles.buildAppBar('Bible Reading Challenge'),
+      appBar: CommonStyles.buildAppBar('Profile'),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
         child: Center(
