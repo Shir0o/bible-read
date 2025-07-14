@@ -20,7 +20,7 @@ class ResponsiveScaffold extends StatelessWidget {
     return Scaffold(
       body: Row(
         children: [
-          if (isWide)
+          if (isWide && destinations.length > 1)
             NavigationRail(
               selectedIndex: selectedIndex,
               onDestinationSelected: onDestinationSelected,
@@ -38,7 +38,7 @@ class ResponsiveScaffold extends StatelessWidget {
           Expanded(child: pages[selectedIndex]),
         ],
       ),
-      bottomNavigationBar: isWide
+      bottomNavigationBar: isWide || destinations.length <= 1
           ? null
           : NavigationBar(
               selectedIndex: selectedIndex,
