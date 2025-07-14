@@ -34,6 +34,18 @@ void main() {
       expect(snapshot.data()?['email'], 'test@example.com');
     });
 
+    testWidgets('shows "User not signed in" when not authenticated', (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final auth = MockFirebaseAuth(signedIn: false);
+
+      await tester.pumpWidget(MaterialApp(
+          home: ReadLogPage(firestore: firestore, auth: auth)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('User not signed in.'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
     testWidgets('loadLogs populates _logs list', (tester) async {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1');

@@ -1,3 +1,4 @@
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -17,15 +18,29 @@ void main() {
 
   testWidgets('displays message when no data', (tester) async {
     final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(signedIn: true);
     await tester
-        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore)));
+        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
 
     expect(find.text('No one is on the leaderboard yet.'), findsOneWidget);
   });
 
+  testWidgets('shows "User not signed in" when not authenticated', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(signedIn: false);
+
+    await tester.pumpWidget(MaterialApp(
+        home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('User not signed in.'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
   testWidgets('shows sorted leaderboard', (tester) async {
     final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(signedIn: true);
     await firestore.collection('users').doc('u1').set({'name': 'Alice'});
     await firestore.collection('users').doc('u2').set({'name': 'Bob'});
     await firestore
@@ -42,7 +57,7 @@ void main() {
         .set({'streak': 5});
 
     await tester
-        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore)));
+        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
 
     final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
@@ -53,6 +68,7 @@ void main() {
 
   testWidgets('refresh reloads data', (tester) async {
     final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(signedIn: true);
     await firestore.collection('users').doc('u1').set({'name': 'Alice'});
     await firestore
         .collection('users')
@@ -62,7 +78,7 @@ void main() {
         .set({'streak': 1});
 
     await tester
-        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore)));
+        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
 
     expect(find.byType(ListTile), findsOneWidget);
@@ -85,8 +101,9 @@ void main() {
 
   testWidgets('error shows snackbar', (tester) async {
     final firestore = _ErrorFirestore();
+    final auth = MockFirebaseAuth(signedIn: true);
     await tester
-        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore)));
+        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pump();
     await tester.pump();
 
