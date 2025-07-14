@@ -106,8 +106,11 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             : widget.auth.currentUser == null
                 ? Center(
                     child: Text(
-                      'User not signed in.',
-                      style: TextStyle(fontSize: 18, color: Colors.white70, fontFamily: 'IBMPlexMono'),
+                      'Please sign in to view the leaderboard.',
+                      style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white70,
+                          fontFamily: 'IBMPlexMono'),
                     ),
                   )
                 : _leaderboardData.isEmpty
@@ -125,7 +128,8 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                               final user = _leaderboardData[index];
                               final rank = index + 1;
                               return Card(
-                                margin: const EdgeInsets.symmetric(vertical: 4.0),
+                                margin:
+                                    const EdgeInsets.symmetric(vertical: 4.0),
                                 elevation: 2.0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12.0),
@@ -135,8 +139,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                                       style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold)),
-                                  title: Text(
-                                      (user['name'] ?? 'No Name').split(' ').first),
+                                  title: Text((user['name'] ?? 'No Name')
+                                      .split(' ')
+                                      .first),
                                   trailing: Text('${user['streak']} days',
                                       style: const TextStyle(
                                           fontSize: 16,
