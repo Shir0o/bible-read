@@ -68,7 +68,7 @@ class _MainPageState extends State<MainPage> {
     final List<Widget> pages = <Widget>[
       HomePage(firestore: widget.firestore, auth: widget.auth),
       ReadLogPage(firestore: widget.firestore, auth: widget.auth),
-      LeaderboardPage(firestore: widget.firestore),
+      LeaderboardPage(firestore: widget.firestore, auth: widget.auth),
       UserProfilePage(
         user: _user,
         googleSignInProvider: widget.googleSignInProvider,

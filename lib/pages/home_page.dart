@@ -31,10 +31,24 @@ class _HomePageState extends State<HomePage>
     _loadReadStatus();
   }
 
-  Future<void> _loadReadStatus() async {
+    Future<void> _loadReadStatus() async {
+    if (!_disposed && mounted) {
+      setState(() {
+        _toggleLoading = true; // Start loading
+      });
+    }
+
     try {
       final user = widget.auth.currentUser;
-      if (user == null) return;
+      if (user == null) {
+        // If user is null, stop loading and return
+        if (!_disposed && mounted) {
+          setState(() {
+            _toggleLoading = false;
+          });
+        }
+        return;
+      }
 
       final today = DateTime.now();
       final dateKey = '${today.year}-${today.month}-${today.day}';
@@ -58,7 +72,6 @@ class _HomePageState extends State<HomePage>
             SetOptions(merge: true));
       }
 
-      _toggleLoading = true;
       final doc = await userDocRef.collection('reading').doc(dateKey).get();
 
       if (doc.exists && doc.data() != null) {
@@ -67,13 +80,6 @@ class _HomePageState extends State<HomePage>
         if (!_disposed && mounted) {
           setState(() {
             _readToday = hasRead;
-            _toggleLoading = false;
-          });
-        }
-      } else {
-        if (!_disposed && mounted) {
-          setState(() {
-            _toggleLoading = false;
           });
         }
       }
@@ -127,6 +133,12 @@ class _HomePageState extends State<HomePage>
       }
     } catch (e) {
       debugPrint('Error loading status: $e');
+    } finally {
+      if (!_disposed && mounted) {
+        setState(() {
+          _toggleLoading = false; // Always stop loading
+        });
+      }
     }
   }
 
@@ -344,6 +356,15 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget _buildMainContent() {
+    if (widget.auth.currentUser == null) {
+      return Center(
+        child: Text(
+          'User not signed in.',
+          style: TextStyle(fontSize: 18, color: Colors.white70, fontFamily: 'IBMPlexMono'),
+        ),
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: () async {
         try {

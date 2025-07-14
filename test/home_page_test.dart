@@ -23,6 +23,18 @@ void main() {
     expect(find.textContaining('${DateTime.now().year} –'), findsOneWidget);
   });
 
+  testWidgets('shows "User not signed in" when not authenticated', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(signedIn: false);
+
+    await tester.pumpWidget(MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('User not signed in.'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
   testWidgets('HomePage week row has seven icons', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth =
