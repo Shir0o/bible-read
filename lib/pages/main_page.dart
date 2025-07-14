@@ -34,13 +34,7 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    _attemptSilentSignIn().then((_) {
-      if (widget.auth.currentUser == null) {
-        setState(() {
-          _selectedIndex = 0; // Index for UserProfilePage when not logged in
-        });
-      }
-    });
+    _attemptSilentSignIn();
   }
 
   Future<void> _attemptSilentSignIn() async {
@@ -64,10 +58,6 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _onItemTapped(int index) {
-    if (widget.auth.currentUser == null && index != 3) {
-      // If not logged in, only allow navigation to the profile page (index 3)
-      return;
-    }
     setState(() {
       _selectedIndex = index;
     });
@@ -75,46 +65,28 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isLoggedIn = widget.auth.currentUser != null;
-
-    final List<Widget> pages = isLoggedIn
-        ? <Widget>[
-            HomePage(firestore: widget.firestore, auth: widget.auth),
-            ReadLogPage(firestore: widget.firestore, auth: widget.auth),
-            LeaderboardPage(firestore: widget.firestore, auth: widget.auth),
-            UserProfilePage(
-              user: _user,
-              googleSignInProvider: widget.googleSignInProvider,
-              auth: widget.auth,
-            ),
-          ]
-        : <Widget>[
-            // Only show UserProfilePage if not logged in
-            UserProfilePage(
-              user: _user,
-              googleSignInProvider: widget.googleSignInProvider,
-              auth: widget.auth,
-            ),
-          ];
-
-    final List<NavigationDestination> destinations = isLoggedIn
-        ? const [
-            NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-            NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
-            NavigationDestination(
-                icon: Icon(Icons.leaderboard), label: 'Leaderboard'),
-            NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
-          ]
-        : const [
-            // Only show Profile destination if not logged in
-            NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
-          ];
+    final List<Widget> pages = <Widget>[
+      HomePage(firestore: widget.firestore, auth: widget.auth),
+      ReadLogPage(firestore: widget.firestore, auth: widget.auth),
+      LeaderboardPage(firestore: widget.firestore),
+      UserProfilePage(
+        user: _user,
+        googleSignInProvider: widget.googleSignInProvider,
+        auth: widget.auth,
+      ),
+    ];
 
     return ResponsiveScaffold(
       selectedIndex: _selectedIndex,
       onDestinationSelected: _onItemTapped,
       pages: pages,
-      destinations: destinations,
+      destinations: const [
+        NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+        NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
+        NavigationDestination(
+            icon: Icon(Icons.leaderboard), label: 'Leaderboard'),
+        NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+      ],
     );
   }
 }

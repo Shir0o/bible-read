@@ -38,7 +38,7 @@ class ResponsiveScaffold extends StatelessWidget {
           Expanded(child: pages[selectedIndex]),
         ],
       ),
-      bottomNavigationBar: isWide || destinations.length < 2
+      bottomNavigationBar: isWide
           ? null
           : NavigationBar(
               selectedIndex: selectedIndex,
