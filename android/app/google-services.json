@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "82330382748-2p05l088d3gb3c2verqp961i8s4pic3o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bibleread.challenge",
+            "certificate_hash": "3986aff75198cd9ed5b35c2d264b5df807a680fd"
+          }
+        },
+        {
           "client_id": "82330382748-ttmque251qiflc7qhee74f7dl1rq0bj6.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
