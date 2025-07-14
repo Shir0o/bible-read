@@ -89,7 +89,7 @@ void main() {
     // Tap Profile navigation item
     await tester.tap(find.byIcon(Icons.person));
     await tester.pumpAndSettle();
-    expect(find.text('Please sign in'), findsOneWidget);
+    expect(find.text('Sign in with Google'), findsOneWidget);
   });
 
   testWidgets('navigation updates selected index', (tester) async {
