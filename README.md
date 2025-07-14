@@ -17,9 +17,13 @@ samples, guidance on mobile development, and a full API reference.
 
 ## Installing Flutter
 
-The integration tests bundled with this project require a local Flutter SDK. If the SDK is missing they will be skipped.
+The integration tests bundled with this project require a local Flutter SDK.
+If the SDK is missing they will be skipped.
 
-The simplest way to install Flutter for local development is to clone the official repository and run its setup scripts. The installation downloads artifacts from `storage.googleapis.com` so make sure your network allows access to that domain.
+The simplest way to install Flutter for local development is to clone the
+official repository and run its setup scripts. The installation downloads
+artifacts from `storage.googleapis.com` so make sure your network allows access
+to that domain.
 
 ```bash
 # Clone the stable channel of the Flutter SDK into a directory named `flutter`
