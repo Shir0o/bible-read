@@ -1,3 +1,11 @@
+# Release 1.2.1
+
+This release includes minor updates and fixes.
+
+## Updates
+
+*   Updated `google-services.json` file.
+
 # Release 1.2.0
 
 This release focuses on improving the user experience by addressing loading states and ensuring consistent messaging across different sections of the app.
