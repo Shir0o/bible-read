@@ -58,6 +58,11 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _onItemTapped(int index) {
+    final bool signedIn = widget.auth.currentUser != null;
+    final int profileIndex = signedIn ? 3 : 0;
+    if (!signedIn && index != profileIndex) {
+      return;
+    }
     setState(() {
       _selectedIndex = index;
     });
@@ -65,10 +70,13 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = <Widget>[
-      HomePage(firestore: widget.firestore, auth: widget.auth),
-      ReadLogPage(firestore: widget.firestore, auth: widget.auth),
-      LeaderboardPage(firestore: widget.firestore, auth: widget.auth),
+    final bool signedIn = widget.auth.currentUser != null;
+    final List<Widget> pages = [
+      if (signedIn) ...[
+        HomePage(firestore: widget.firestore, auth: widget.auth),
+        ReadLogPage(firestore: widget.firestore, auth: widget.auth),
+        LeaderboardPage(firestore: widget.firestore, auth: widget.auth),
+      ],
       UserProfilePage(
         user: _user,
         googleSignInProvider: widget.googleSignInProvider,
@@ -80,12 +88,14 @@ class _MainPageState extends State<MainPage> {
       selectedIndex: _selectedIndex,
       onDestinationSelected: _onItemTapped,
       pages: pages,
-      destinations: const [
-        NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
-        NavigationDestination(
-            icon: Icon(Icons.leaderboard), label: 'Leaderboard'),
-        NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+      destinations: [
+        if (signedIn) ...const [
+          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
+          NavigationDestination(
+              icon: Icon(Icons.leaderboard), label: 'Leaderboard'),
+        ],
+        const NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
       ],
     );
   }
