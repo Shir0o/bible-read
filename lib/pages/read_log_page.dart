@@ -119,8 +119,11 @@ class _ReadLogPageState extends State<ReadLogPage> {
             : widget.auth.currentUser == null
                 ? Center(
                     child: Text(
-                      'User not signed in.',
-                      style: TextStyle(fontSize: 18, color: Colors.white70, fontFamily: 'IBMPlexMono'),
+                      'Please sign in to view your read log.',
+                      style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white70,
+                          fontFamily: 'IBMPlexMono'),
                     ),
                   )
                 : Padding(
