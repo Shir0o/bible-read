@@ -19,22 +19,36 @@ void main() {
   testWidgets('displays message when no data', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: true);
-    await tester
-        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpWidget(
+        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
 
     expect(find.text('No one is on the leaderboard yet.'), findsOneWidget);
   });
 
-  testWidgets('shows "User not signed in" when not authenticated', (tester) async {
+  testWidgets('shows sign in prompt when not authenticated', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: false);
 
-    await tester.pumpWidget(MaterialApp(
-        home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpWidget(
+        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
 
-    expect(find.text('User not signed in.'), findsOneWidget);
+    expect(
+        find.text('Please sign in to view the leaderboard.'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('shows sign in prompt when auth has no user', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth();
+
+    await tester.pumpWidget(
+        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
+
+    expect(
+        find.text('Please sign in to view the leaderboard.'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
@@ -56,8 +70,8 @@ void main() {
         .doc('data')
         .set({'streak': 5});
 
-    await tester
-        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpWidget(
+        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
 
     final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
@@ -77,8 +91,8 @@ void main() {
         .doc('data')
         .set({'streak': 1});
 
-    await tester
-        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpWidget(
+        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
 
     expect(find.byType(ListTile), findsOneWidget);
@@ -102,8 +116,8 @@ void main() {
   testWidgets('error shows snackbar', (tester) async {
     final firestore = _ErrorFirestore();
     final auth = MockFirebaseAuth(signedIn: true);
-    await tester
-        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpWidget(
+        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pump();
     await tester.pump();
 
