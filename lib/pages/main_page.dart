@@ -69,13 +69,11 @@ class _MainPageState extends State<MainPage> {
       HomePage(firestore: widget.firestore, auth: widget.auth),
       ReadLogPage(firestore: widget.firestore, auth: widget.auth),
       LeaderboardPage(firestore: widget.firestore),
-      _user != null
-          ? UserProfilePage(
-              user: _user,
-              googleSignInProvider: widget.googleSignInProvider,
-              auth: widget.auth,
-            )
-          : const Center(child: Text('Please sign in')),
+      UserProfilePage(
+        user: _user,
+        googleSignInProvider: widget.googleSignInProvider,
+        auth: widget.auth,
+      ),
     ];
 
     return ResponsiveScaffold(
