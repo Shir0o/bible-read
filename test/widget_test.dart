@@ -22,6 +22,7 @@ void main() {
 
   testWidgets('Main page loads', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
 
     // Verify that MainPage is shown.
     expect(find.byType(MainPage), findsOneWidget);

@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/read_log_page.dart';
@@ -81,19 +82,34 @@ void main() {
   });
 
   testWidgets('MainPage navigation to profile', (WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(home: MainPage()));
+    final auth = MockFirebaseAuth();
+    fakePlatform.user = GoogleSignInUserData(
+      email: 'test@example.com',
+      id: '123',
+      displayName: 'Tester',
+    );
+    await tester.pumpWidget(MaterialApp(home: MainPage(auth: auth)));
+    await tester.pumpAndSettle();
 
-    // HomePage should be shown by default
+    // HomePage should be shown by default when signed in
     expect(find.text('Bible Reading Challenge'), findsOneWidget);
 
     // Tap Profile navigation item
     await tester.tap(find.byIcon(Icons.person));
     await tester.pumpAndSettle();
-    expect(find.text('Please sign in'), findsOneWidget);
+    expect(find.text('Tester'), findsOneWidget);
+    await tester.pumpAndSettle();
   });
 
   testWidgets('navigation updates selected index', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: MainPage()));
+    final auth = MockFirebaseAuth();
+    fakePlatform.user = GoogleSignInUserData(
+      email: 'test2@example.com',
+      id: '456',
+      displayName: 'User2',
+    );
+    await tester.pumpWidget(MaterialApp(home: MainPage(auth: auth)));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Feed'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
@@ -106,17 +122,20 @@ void main() {
       id: '123',
       displayName: 'Test',
     );
-    await tester.pumpWidget(MaterialApp(home: MainPage()));
-    await tester.pump();
+    final auth = MockFirebaseAuth();
+    await tester.pumpWidget(MaterialApp(home: MainPage(auth: auth)));
+    await tester.pumpAndSettle();
     expect(fakePlatform.silentSignInCount, 1);
   });
 
   testWidgets('responsive scaffold switches layout', (tester) async {
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u3'), signedIn: true);
     await tester.pumpWidget(
       MaterialApp(
         home: MediaQuery(
           data: MediaQueryData(size: Size(800, 600)),
-          child: MainPage(),
+          child: MainPage(auth: auth),
         ),
       ),
     );
@@ -127,7 +146,7 @@ void main() {
       MaterialApp(
         home: MediaQuery(
           data: MediaQueryData(size: Size(400, 600)),
-          child: MainPage(),
+          child: MainPage(auth: auth),
         ),
       ),
     );

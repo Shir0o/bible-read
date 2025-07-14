@@ -4,6 +4,7 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bible_read/pages/leaderboard_page.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 
 class _ErrorFirestore extends FakeFirebaseFirestore {
   @override
@@ -17,8 +18,10 @@ void main() {
 
   testWidgets('displays message when no data', (tester) async {
     final firestore = FakeFirebaseFirestore();
-    await tester
-        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore)));
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    await tester.pumpWidget(
+        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
 
     expect(find.text('No one is on the leaderboard yet.'), findsOneWidget);
@@ -41,8 +44,10 @@ void main() {
         .doc('data')
         .set({'streak': 5});
 
-    await tester
-        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore)));
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u2'), signedIn: true);
+    await tester.pumpWidget(
+        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
 
     final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
@@ -61,8 +66,10 @@ void main() {
         .doc('data')
         .set({'streak': 1});
 
-    await tester
-        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore)));
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u3'), signedIn: true);
+    await tester.pumpWidget(
+        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
 
     expect(find.byType(ListTile), findsOneWidget);
@@ -85,8 +92,10 @@ void main() {
 
   testWidgets('error shows snackbar', (tester) async {
     final firestore = _ErrorFirestore();
-    await tester
-        .pumpWidget(MaterialApp(home: LeaderboardPage(firestore: firestore)));
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u4'), signedIn: true);
+    await tester.pumpWidget(
+        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pump();
     await tester.pump();
 

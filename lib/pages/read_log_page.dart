@@ -73,9 +73,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
         'uid': doc.id,
         'name': (data['name'] ?? doc.id).toString().split(' ').first,
         'read': true,
-        'liked': (likeDoc != null && likeDoc.exists)
-            ? true
-            : false,
+        'liked': likeDoc.exists ? true : false,
       };
     }).toList());
 
