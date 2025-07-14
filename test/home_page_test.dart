@@ -23,12 +23,13 @@ void main() {
     expect(find.textContaining('${DateTime.now().year} –'), findsOneWidget);
   });
 
-  testWidgets('shows "User not signed in" when not authenticated', (tester) async {
+  testWidgets('shows "User not signed in" when not authenticated',
+      (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: false);
 
-    await tester.pumpWidget(MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth)));
+    await tester.pumpWidget(
+        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
 
     expect(find.text('User not signed in.'), findsOneWidget);
@@ -105,6 +106,52 @@ void main() {
     final switchTile =
         tester.widget<SwitchListTile>(find.byType(SwitchListTile));
     expect(switchTile.onChanged, isNull);
+  });
+
+  testWidgets('marking reading done creates Firestore entries', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user =
+        MockUser(uid: 'u-read', displayName: 'Tester', email: 't@example.com');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    await tester.pumpWidget(
+        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(SwitchListTile));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 500));
+    });
+    await tester.pumpAndSettle();
+
+    final dateKey =
+        '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+
+    final logDoc = await firestore
+        .collection('read_logs')
+        .doc(dateKey)
+        .collection('entries')
+        .doc(user.uid)
+        .get();
+    expect(logDoc.exists, isTrue);
+
+    final readingDoc = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading')
+        .doc(dateKey)
+        .get();
+    expect(readingDoc.exists, isTrue);
+
+    final summaryDoc = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('summary')
+        .doc('data')
+        .get();
+    expect(summaryDoc.data()?['streak'], 1);
   });
 
   testWidgets('like and unlike reading update Firestore', (tester) async {
