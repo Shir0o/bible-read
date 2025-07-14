@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import "package:firebase_auth/firebase_auth.dart";
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
@@ -127,5 +128,32 @@ void main() {
 
     expect(find.textContaining('Sign in failed'), findsOneWidget);
     expect(auth.signInCalled, isFalse);
+  });
+
+  testWidgets('shows user info when user provided', (tester) async {
+    final userData = GoogleSignInUserData(
+      email: 'test@example.com',
+      id: 'id',
+      displayName: 'Test User',
+    );
+    final googlePlatform = FakeGoogleSignInPlatform(userData: userData);
+    GoogleSignInPlatform.instance = googlePlatform;
+
+    final account = await GoogleSignIn().signIn();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UserProfilePage(user: account),
+      ),
+    );
+
+    // Loading indicator shown first
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Test User'), findsOneWidget);
+    expect(find.text('test@example.com'), findsOneWidget);
+    expect(find.text('Sign in with Google'), findsNothing);
   });
 }
