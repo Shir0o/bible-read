@@ -34,15 +34,16 @@ void main() {
       expect(snapshot.data()?['email'], 'test@example.com');
     });
 
-    testWidgets('shows "User not signed in" when not authenticated', (tester) async {
+    testWidgets('shows sign in prompt when not authenticated', (tester) async {
       final firestore = FakeFirebaseFirestore();
-      final auth = MockFirebaseAuth(signedIn: false);
+      final auth = MockFirebaseAuth();
 
-      await tester.pumpWidget(MaterialApp(
-          home: ReadLogPage(firestore: firestore, auth: auth)));
+      await tester.pumpWidget(
+          MaterialApp(home: ReadLogPage(firestore: firestore, auth: auth)));
       await tester.pumpAndSettle();
 
-      expect(find.text('User not signed in.'), findsOneWidget);
+      expect(find.text('Please sign in to view your read log.'), findsOneWidget);
+      expect(find.byType(ListTile), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
