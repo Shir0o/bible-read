@@ -50,6 +50,13 @@ class _ReadLogPageState extends State<ReadLogPage> {
 
   Future<void> _loadLogs() async {
     final currentUser = widget.auth.currentUser;
+    if (currentUser == null) {
+      setState(() {
+        _loading = false;
+      });
+      return;
+    }
+
     final dateKey =
         '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
     final snapshot = await widget.firestore
@@ -61,14 +68,12 @@ class _ReadLogPageState extends State<ReadLogPage> {
 
     final logs = await Future.wait(snapshot.docs.map((doc) async {
       final data = doc.data();
-      final likeDoc = currentUser != null
-          ? await doc.reference.collection('likes').doc(currentUser.uid).get()
-          : null;
+      final likeDoc = await doc.reference.collection('likes').doc(currentUser.uid).get();
       return {
         'uid': doc.id,
         'name': (data['name'] ?? doc.id).toString().split(' ').first,
         'read': true,
-        'liked': (currentUser != null && likeDoc != null && likeDoc.exists)
+        'liked': (likeDoc != null && likeDoc.exists)
             ? true
             : false,
       };
@@ -113,42 +118,43 @@ class _ReadLogPageState extends State<ReadLogPage> {
                 alignment: Alignment.center,
                 child: const CircularProgressIndicator(),
               )
-            : Padding(
-                padding: const EdgeInsets.only(
-                    top: 16.0, bottom: 48.0, left: 16, right: 16),
-                child: ListView.builder(
-                  itemCount: _logs.length,
-                  itemBuilder: (context, index) {
-                    final log = _logs[index];
-                    final isLiked = (log['liked'] as bool? ?? false);
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: ListTile(
-                        leading:
-                            const Icon(Icons.check_circle, color: Colors.green),
-                        title: Text(
-                          '${log['name']} read today!',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        trailing: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                          child: IconButton(
-                            icon: Icon(
-                              isLiked ? Icons.favorite : Icons.favorite_border,
-                              color: isLiked ? Colors.red : null,
-                            ),
-                            onPressed: () => _toggleLike(log['uid']),
+            : (widget.auth.currentUser == null
+                ? const Center(child: Text('Please sign in to view your read log.'))
+                : Padding(
+                    padding: const EdgeInsets.only(
+                        top: 16.0, bottom: 48.0, left: 16, right: 16),
+                    child: ListView.builder(
+                      itemCount: _logs.length,
+                      itemBuilder: (context, index) {
+                        final log = _logs[index];
+                        final isLiked = (log['liked'] as bool? ?? false);
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+                          child: ListTile(
+                            leading: const Icon(Icons.check_circle, color: Colors.green),
+                            title: Text(
+                              '${log['name']} read today!',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            trailing: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                              child: IconButton(
+                                icon: Icon(
+                                  isLiked ? Icons.favorite : Icons.favorite_border,
+                                  color: isLiked ? Colors.red : null,
+                                ),
+                                onPressed: () => _toggleLike(log['uid']),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  )),
       ),
     );
   }
