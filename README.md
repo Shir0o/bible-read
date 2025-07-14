@@ -1,19 +1,45 @@
-# bible_read
+# Bible Reading Challenge App
 
-A new Flutter project.
+A Flutter application designed to help individuals and groups track their daily Bible reading, build streaks, and engage with a community.
+
+## Features
+
+*   **Daily Reading Tracker:** Mark each day that you read the Bible to build your streak.
+*   **Weekly and Monthly Views:** See your reading progress at a glance with weekly and monthly calendar views.
+*   **Leaderboard:** See how your reading streak compares to others.
+*   **Reading Feed:** See who else has read the Bible today and give them a like to encourage them.
+*   **User Profile:** View your profile information and sign in with your Google account.
 
 ## Getting Started
 
 This project is a starting point for a Flutter application.
 
-A few resources to get you started if this is your first Flutter project:
+### Prerequisites
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+*   Flutter SDK installed (version 3.5.4 or higher recommended).
+*   Firebase project set up with Google Sign-In enabled.
+*   `google-services.json` (for Android) and `GoogleService-Info.plist` (for iOS) configured in their respective project directories.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Installation
+
+1.  Clone the repository:
+
+    ```bash
+    git clone https://github.com/your-repo/bible_read.git
+    cd bible_read
+    ```
+
+2.  Fetch dependencies:
+
+    ```bash
+    flutter pub get
+    ```
+
+3.  Run the app:
+
+    ```bash
+    flutter run
+    ```
 
 ## Installing Flutter
 
