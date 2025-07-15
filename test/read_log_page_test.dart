@@ -42,7 +42,8 @@ void main() {
           MaterialApp(home: ReadLogPage(firestore: firestore, auth: auth)));
       await tester.pumpAndSettle();
 
-      expect(find.text('Please sign in to view your read log.'), findsOneWidget);
+      expect(
+          find.text('Please sign in to view your read log.'), findsOneWidget);
       expect(find.byType(ListTile), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
@@ -96,6 +97,18 @@ void main() {
       await tester.tap(find.byIcon(Icons.favorite_border));
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.favorite), findsOneWidget);
+
+      final likeDoc = await firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc('u2')
+          .collection('likes')
+          .doc('u1')
+          .get();
+      expect(likeDoc.exists, isTrue);
+      expect(likeDoc.data()?['name'], '');
+      expect(likeDoc.data()?['timestamp'], isNotNull);
 
       await tester.tap(find.byIcon(Icons.favorite));
       await tester.pumpAndSettle();

@@ -68,7 +68,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
 
     final logs = await Future.wait(snapshot.docs.map((doc) async {
       final data = doc.data();
-      final likeDoc = await doc.reference.collection('likes').doc(currentUser.uid).get();
+      final likeDoc =
+          await doc.reference.collection('likes').doc(currentUser.uid).get();
       return {
         'uid': doc.id,
         'name': (data['name'] ?? doc.id).toString().split(' ').first,
@@ -100,7 +101,10 @@ class _ReadLogPageState extends State<ReadLogPage> {
     if (likeDoc.exists) {
       await likeRef.delete();
     } else {
-      await likeRef.set({'timestamp': Timestamp.now()});
+      await likeRef.set({
+        'timestamp': Timestamp.now(),
+        'name': (user.displayName ?? '').split(' ').first,
+      });
     }
     _loadLogs(); // Refresh the UI
   }
@@ -141,16 +145,21 @@ class _ReadLogPageState extends State<ReadLogPage> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: ListTile(
-                            leading: const Icon(Icons.check_circle, color: Colors.green),
+                            leading: const Icon(Icons.check_circle,
+                                color: Colors.green),
                             title: Text(
                               '${log['name']} read today!',
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             trailing: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4.0),
                               child: IconButton(
                                 icon: Icon(
-                                  isLiked ? Icons.favorite : Icons.favorite_border,
+                                  isLiked
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
                                   color: isLiked ? Colors.red : null,
                                 ),
                                 onPressed: () => _toggleLike(log['uid']),
