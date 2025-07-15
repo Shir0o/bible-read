@@ -47,7 +47,10 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform {
 }
 
 class TrackingAuth extends MockFirebaseAuth {
+  TrackingAuth({super.mockUser, super.signedIn = false});
+
   bool signInCalled = false;
+  bool signOutCalled = false;
   AuthCredential? receivedCredential;
 
   @override
@@ -55,6 +58,12 @@ class TrackingAuth extends MockFirebaseAuth {
     signInCalled = true;
     receivedCredential = credential;
     return super.signInWithCredential(credential);
+  }
+
+  @override
+  Future<void> signOut() {
+    signOutCalled = true;
+    return super.signOut();
   }
 }
 
@@ -155,5 +164,32 @@ void main() {
     expect(find.text('Test User'), findsOneWidget);
     expect(find.text('test@example.com'), findsOneWidget);
     expect(find.text('Sign in with Google'), findsNothing);
+  });
+
+  testWidgets('sign out signs out and returns to sign in screen',
+      (tester) async {
+    final userData = GoogleSignInUserData(
+      email: 'e',
+      id: 'id',
+      displayName: 'd',
+    );
+    final googlePlatform = FakeGoogleSignInPlatform(userData: userData);
+    GoogleSignInPlatform.instance = googlePlatform;
+
+    final account = await GoogleSignIn().signIn();
+    final auth = TrackingAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UserProfilePage(user: account, auth: auth),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Sign Out'));
+    await tester.pumpAndSettle();
+
+    expect(auth.signOutCalled, isTrue);
+    expect(find.text('Sign in with Google'), findsOneWidget);
   });
 }
