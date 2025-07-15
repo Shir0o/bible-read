@@ -114,5 +114,42 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.favorite_border), findsOneWidget);
     });
+
+    testWidgets('toggleLike stores first name with displayName', (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final auth = MockFirebaseAuth(
+          mockUser: MockUser(uid: 'u1', displayName: 'Test User'), signedIn: true);
+      final dateKey =
+          '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+      await firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc('u2')
+          .set({
+        'name': 'User Two',
+        'email': 'u2@test.com',
+        'timestamp': Timestamp.now()
+      });
+
+      await tester.pumpWidget(
+          MaterialApp(home: ReadLogPage(firestore: firestore, auth: auth)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.pumpAndSettle();
+
+      final likeDoc = await firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc('u2')
+          .collection('likes')
+          .doc('u1')
+          .get();
+      expect(likeDoc.exists, isTrue);
+      expect(likeDoc.data()?['name'], 'Test');
+      expect(likeDoc.data()?['timestamp'], isNotNull);
+    });
   });
 }
