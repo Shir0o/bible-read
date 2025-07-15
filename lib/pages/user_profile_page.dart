@@ -66,6 +66,21 @@ class UserProfilePageState extends State<UserProfilePage> {
         await widget.firestore.collection('users').doc(user.uid).delete();
         await user.delete();
       }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        if (e.code == 'requires-recent-login') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please sign in again to delete your account.'),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Delete failed: ${e.message ?? e.code}')),
+          );
+        }
+      }
+      return;
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
