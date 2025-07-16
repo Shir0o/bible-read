@@ -42,7 +42,8 @@ void main() {
           MaterialApp(home: ReadLogPage(firestore: firestore, auth: auth)));
       await tester.pumpAndSettle();
 
-      expect(find.text('Please sign in to view your read log.'), findsOneWidget);
+      expect(
+          find.text('Please sign in to view your read log.'), findsOneWidget);
       expect(find.byType(ListTile), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
@@ -62,6 +63,14 @@ void main() {
         'email': 'u1@test.com',
         'timestamp': Timestamp.now()
       });
+      await firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc('u1')
+          .collection('likes')
+          .doc('l1')
+          .set({'timestamp': Timestamp.now(), 'name': 'Liker'});
 
       await tester.pumpWidget(MaterialApp(
           home: ReadLogPage(
@@ -70,12 +79,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('User read today!'), findsOneWidget);
+      expect(find.textContaining('Liked by'), findsOneWidget);
     });
 
     testWidgets('toggleLike adds and removes like', (tester) async {
       final firestore = FakeFirebaseFirestore();
-      final auth =
-          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final user = MockUser(uid: 'u1', displayName: 'Tester One');
+      final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
       final dateKey =
           '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
       await firestore
@@ -96,6 +106,18 @@ void main() {
       await tester.tap(find.byIcon(Icons.favorite_border));
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.favorite), findsOneWidget);
+
+      await tester.runAsync(() async {
+        final likeDoc = await firestore
+            .collection('read_logs')
+            .doc(dateKey)
+            .collection('entries')
+            .doc('u2')
+            .collection('likes')
+            .doc(user.uid)
+            .get();
+        expect(likeDoc.data()?['name'], 'Tester');
+      });
 
       await tester.tap(find.byIcon(Icons.favorite));
       await tester.pumpAndSettle();
