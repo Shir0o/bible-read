@@ -161,17 +161,13 @@ class UserProfilePageState extends State<UserProfilePage> {
                           const SizedBox(height: 8),
                           SizedBox(
                             height: 150,
-                            child: Builder(builder: (context) {
-                              final current = currentUser;
-                              if (current == null) {
-                                return const Text('Please sign in');
-                              }
-                              return FriendRequestWidget(
-                                service: widget.friendService,
-                                currentUid: current.uid,
-                                currentName: current.displayName ?? 'Unknown',
-                              );
-                            }),
+                            child: currentUser == null
+                                ? const Text('Please sign in')
+                                : FriendRequestWidget(
+                                    service: widget.friendService,
+                                    currentUid: currentUser.uid,
+                                    currentName: currentUser.displayName ?? 'Unknown',
+                                  ),
                           ),
                           const SizedBox(height: 24),
                           Align(

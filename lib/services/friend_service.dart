@@ -56,6 +56,9 @@ class FriendService {
     required String fromName,
     required String toUid,
   }) async {
+    if (fromUid == toUid) {
+      throw ArgumentError('Cannot send a friend request to yourself.');
+    }
     final now = Timestamp.now();
     final batch = firestore.batch();
     batch.set(
