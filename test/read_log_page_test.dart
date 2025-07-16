@@ -123,5 +123,44 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.favorite_border), findsOneWidget);
     });
+
+    testWidgets('toggleLike creates notification for owner', (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final liker = MockUser(uid: 'liker', displayName: 'Jane Doe');
+      final auth = MockFirebaseAuth(mockUser: liker, signedIn: true);
+      final ownerUid = 'owner1';
+      final dateKey =
+          '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+
+      await firestore.collection('users').doc(ownerUid).set({'name': 'Owner'});
+      await firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc(ownerUid)
+          .set({
+        'name': 'Owner',
+        'email': 'o@test.com',
+        'timestamp': Timestamp.now(),
+      });
+
+      await tester.pumpWidget(
+          MaterialApp(home: ReadLogPage(firestore: firestore, auth: auth)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.pumpAndSettle();
+
+      await tester.runAsync(() async {
+        final notifications = await firestore
+            .collection('users')
+            .doc(ownerUid)
+            .collection('notifications')
+            .get();
+        expect(notifications.docs.length, 1);
+        expect(notifications.docs.first.data()['type'], 'like');
+        expect(notifications.docs.first.data()['likerName'], 'Jane');
+      });
+    });
   });
 }

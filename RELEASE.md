@@ -1,3 +1,11 @@
+# Release 1.2.2
+
+This release introduces notifications when your read log receives a like.
+
+## Enhancements
+
+* Added Firestore notifications for read log likes.
+
 # Release 1.2.1
 
 This release includes minor updates and fixes.

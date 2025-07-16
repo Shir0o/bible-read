@@ -42,6 +42,19 @@ class _ReadLogPageState extends State<ReadLogPage> {
   List<Map<String, dynamic>> _logs = [];
   bool _loading = true;
 
+  Future<void> _sendLikeNotification(
+      {required String ownerUid, required String likerName}) async {
+    await widget.firestore
+        .collection('users')
+        .doc(ownerUid)
+        .collection('notifications')
+        .add({
+      'type': 'like',
+      'likerName': likerName,
+      'timestamp': Timestamp.now(),
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -110,6 +123,12 @@ class _ReadLogPageState extends State<ReadLogPage> {
         'timestamp': Timestamp.now(),
         'name': (user.displayName ?? '').split(' ').first,
       });
+      if (logUid != user.uid) {
+        await _sendLikeNotification(
+          ownerUid: logUid,
+          likerName: (user.displayName ?? '').split(' ').first,
+        );
+      }
     }
     _loadLogs(); // Refresh the UI
   }
@@ -158,7 +177,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                   const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             subtitle: () {
-                              final likeNames = (log['likeNames'] as List?) ?? [];
+                              final likeNames =
+                                  (log['likeNames'] as List?) ?? [];
                               if (likeNames.isEmpty) return null;
 
                               const maxToShow = 3;
