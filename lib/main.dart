@@ -1,6 +1,10 @@
 import 'package:bible_read/pages/main_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'firebase_options.dart';
 
@@ -9,7 +13,51 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await _setupMessaging();
   runApp(const MyApp());
+}
+
+final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+Future<void> _setupMessaging() async {
+  final messaging = FirebaseMessaging.instance;
+  await messaging.requestPermission();
+
+  const initializationSettings = InitializationSettings(
+    android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+  );
+  await _localNotificationsPlugin.initialize(initializationSettings);
+
+  FirebaseMessaging.onMessage.listen((message) async {
+    final notification = message.notification;
+    if (notification != null) {
+      await _localNotificationsPlugin.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'default_channel',
+            'Notifications',
+            importance: Importance.defaultImportance,
+          ),
+        ),
+      );
+    }
+  });
+
+  FirebaseAuth.instance.authStateChanges().listen((user) async {
+    if (user != null) {
+      final token = await messaging.getToken();
+      if (token != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .set({'fcmToken': token}, SetOptions(merge: true));
+      }
+    }
+  });
 }
 
 class MyApp extends StatelessWidget {

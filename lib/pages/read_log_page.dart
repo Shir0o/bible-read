@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/common_styles.dart';
@@ -7,11 +8,15 @@ import '../widgets/common_styles.dart';
 class ReadLogPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final Future<void> Function(
+      {required String ownerUid,
+      required String likerName})? onSendLikeNotification;
 
   ReadLogPage({
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
+    this.onSendLikeNotification,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance;
 
@@ -44,14 +49,18 @@ class _ReadLogPageState extends State<ReadLogPage> {
 
   Future<void> _sendLikeNotification(
       {required String ownerUid, required String likerName}) async {
-    await widget.firestore
-        .collection('users')
-        .doc(ownerUid)
-        .collection('notifications')
-        .add({
-      'type': 'like',
+    final handler =
+        widget.onSendLikeNotification ?? _defaultSendLikeNotification;
+    await handler(ownerUid: ownerUid, likerName: likerName);
+  }
+
+  Future<void> _defaultSendLikeNotification(
+      {required String ownerUid, required String likerName}) async {
+    final callable =
+        FirebaseFunctions.instance.httpsCallable('sendLikeNotification');
+    await callable(<String, dynamic>{
+      'ownerUid': ownerUid,
       'likerName': likerName,
-      'timestamp': Timestamp.now(),
     });
   }
 
