@@ -15,21 +15,29 @@ class FriendService {
     required String fromName,
     required String toUid,
   }) async {
-    final now = Timestamp.now();
-    await Future.wait([
-      firestore
-          .collection('users')
-          .doc(fromUid)
-          .collection('friendRequestsSent')
-          .doc(toUid)
-          .set({'timestamp': now}),
-      firestore
-          .collection('users')
-          .doc(toUid)
-          .collection('friendRequestsReceived')
-          .doc(fromUid)
-          .set({'timestamp': now, 'name': fromName}),
-    ]);
+    try {
+      final now = Timestamp.now();
+      final batch = firestore.batch();
+      batch.set(
+        firestore
+            .collection('users')
+            .doc(fromUid)
+            .collection('friendRequestsSent')
+            .doc(toUid),
+        {'timestamp': now},
+      );
+      batch.set(
+        firestore
+            .collection('users')
+            .doc(toUid)
+            .collection('friendRequestsReceived')
+            .doc(fromUid),
+        {'timestamp': now, 'name': fromName},
+      );
+      await batch.commit();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Accept a friend request sent by [fromUid] to [currentUid].
@@ -45,18 +53,22 @@ class FriendService {
     final fromName = fromData.data()?['name'] ?? '';
     final toName = toData.data()?['name'] ?? '';
 
-    await Future.wait([
-      fromRef.collection('friendRequestsSent').doc(currentUid).delete(),
-      toRef.collection('friendRequestsReceived').doc(fromUid).delete(),
-      fromRef
-          .collection('friends')
-          .doc(currentUid)
-          .set({'timestamp': Timestamp.now(), 'name': toName}),
-      toRef
-          .collection('friends')
-          .doc(fromUid)
-          .set({'timestamp': Timestamp.now(), 'name': fromName}),
-    ]);
+    try {
+      final batch = firestore.batch();
+      batch.delete(fromRef.collection('friendRequestsSent').doc(currentUid));
+      batch.delete(toRef.collection('friendRequestsReceived').doc(fromUid));
+      batch.set(
+        fromRef.collection('friends').doc(currentUid),
+        {'timestamp': Timestamp.now(), 'name': toName},
+      );
+      batch.set(
+        toRef.collection('friends').doc(fromUid),
+        {'timestamp': Timestamp.now(), 'name': fromName},
+      );
+      await batch.commit();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Decline a friend request sent by [fromUid] to [currentUid].
@@ -64,20 +76,22 @@ class FriendService {
     required String currentUid,
     required String fromUid,
   }) async {
-    await Future.wait([
-      firestore
+    try {
+      final batch = firestore.batch();
+      batch.delete(firestore
           .collection('users')
           .doc(fromUid)
           .collection('friendRequestsSent')
-          .doc(currentUid)
-          .delete(),
-      firestore
+          .doc(currentUid));
+      batch.delete(firestore
           .collection('users')
           .doc(currentUid)
           .collection('friendRequestsReceived')
-          .doc(fromUid)
-          .delete(),
-    ]);
+          .doc(fromUid));
+      await batch.commit();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Stream of pending friend requests for [uid].

@@ -77,4 +77,52 @@ void main() {
     expect(requestDoc.exists, isFalse);
     expect(find.text('Alice'), findsNothing);
   });
+
+  testWidgets('declining request removes it without adding friends',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final service = FriendService(firestore: firestore);
+
+    await service.sendFriendRequest(
+      fromUid: 'a',
+      fromName: 'Alice',
+      toUid: 'b',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FriendRequestWidget(service: service, currentUid: 'b'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+
+    final sentDoc = await firestore
+        .collection('users')
+        .doc('a')
+        .collection('friendRequestsSent')
+        .doc('b')
+        .get();
+    final receivedDoc = await firestore
+        .collection('users')
+        .doc('b')
+        .collection('friendRequestsReceived')
+        .doc('a')
+        .get();
+    final friendDocA = await firestore
+        .collection('users')
+        .doc('a')
+        .collection('friends')
+        .doc('b')
+        .get();
+
+    expect(sentDoc.exists, isFalse);
+    expect(receivedDoc.exists, isFalse);
+    expect(friendDocA.exists, isFalse);
+    expect(find.text('Alice'), findsNothing);
+  });
 }
