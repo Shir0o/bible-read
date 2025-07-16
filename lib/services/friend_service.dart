@@ -1,5 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Represents a pending friend request.
+class FriendRequest {
+  /// UID of the user who sent the request.
+  final String uid;
+
+  /// Display name of the sender.
+  final String name;
+
+  /// Creates a [FriendRequest].
+  const FriendRequest({required this.uid, required this.name});
+}
+
 /// Provides helper methods for friend request CRUD operations.
 class FriendService {
   /// Firestore instance used for database operations.
@@ -44,22 +56,18 @@ class FriendService {
   Future<void> acceptFriendRequest({
     required String currentUid,
     required String fromUid,
+    required String currentName,
+    required String fromName,
   }) async {
-    final fromRef = firestore.collection('users').doc(fromUid);
-    final toRef = firestore.collection('users').doc(currentUid);
-
-    final fromData = await fromRef.get();
-    final toData = await toRef.get();
-    final fromName = fromData.data()?['name'] ?? '';
-    final toName = toData.data()?['name'] ?? '';
-
     try {
       final batch = firestore.batch();
+      final fromRef = firestore.collection('users').doc(fromUid);
+      final toRef = firestore.collection('users').doc(currentUid);
       batch.delete(fromRef.collection('friendRequestsSent').doc(currentUid));
       batch.delete(toRef.collection('friendRequestsReceived').doc(fromUid));
       batch.set(
         fromRef.collection('friends').doc(currentUid),
-        {'timestamp': Timestamp.now(), 'name': toName},
+        {'timestamp': Timestamp.now(), 'name': currentName},
       );
       batch.set(
         toRef.collection('friends').doc(fromUid),
@@ -95,16 +103,19 @@ class FriendService {
   }
 
   /// Stream of pending friend requests for [uid].
-  Stream<List<Map<String, dynamic>>> pendingRequests(String uid) {
+  Stream<List<FriendRequest>> pendingRequests(String uid) {
     return firestore
         .collection('users')
         .doc(uid)
         .collection('friendRequestsReceived')
         .snapshots()
-        .map((s) => s.docs
-            .where((d) => d.id != 'init')
-            .map((d) => {'uid': d.id, ...d.data()})
-            .toList());
+        .map((s) => s.docs.where((d) => d.id != 'init').map((d) {
+              final data = d.data();
+              return FriendRequest(
+                uid: d.id,
+                name: (data['name'] ?? '') as String,
+              );
+            }).toList());
   }
 
   /// Stream of friends for [uid].

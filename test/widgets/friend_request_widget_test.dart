@@ -21,7 +21,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: FriendRequestWidget(service: service, currentUid: 'b'),
+          body: FriendRequestWidget(
+            service: service,
+            currentUid: 'b',
+            currentName: 'Bob',
+          ),
         ),
       ),
     );
@@ -44,7 +48,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: FriendRequestWidget(service: service, currentUid: 'b'),
+          body: FriendRequestWidget(
+            service: service,
+            currentUid: 'b',
+            currentName: 'Bob',
+          ),
         ),
       ),
     );
@@ -92,7 +100,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: FriendRequestWidget(service: service, currentUid: 'b'),
+          body: FriendRequestWidget(
+            service: service,
+            currentUid: 'b',
+            currentName: 'Bob',
+          ),
         ),
       ),
     );
