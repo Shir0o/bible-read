@@ -132,7 +132,7 @@ class FriendService {
               final data = d.data();
               return FriendRequest(
                 uid: d.id,
-                name: (data['name'] ?? '') as String,
+                name: data['name'] is String ? data['name'] : '',
               );
             }).toList());
   }
@@ -148,7 +148,7 @@ class FriendService {
               final data = d.data();
               return Friend(
                 uid: d.id,
-                name: (data['name'] ?? '') as String,
+                name: data['name'] is String ? data['name'] : '',
               );
             }).toList());
   }
