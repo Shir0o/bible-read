@@ -2,23 +2,32 @@ import 'package:bible_read/pages/leaderboard_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'home_page.dart';
 import 'read_log_page.dart';
+
+typedef SendLikeNotification = Future<void> Function({
+  required String ownerUid,
+  required String likerName,
+});
 
 class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
+  final SendLikeNotification? sendLikeNotification;
 
   MainPage({
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     GoogleSignIn Function()? googleSignInProvider,
+    this.sendLikeNotification,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new;
@@ -54,6 +63,20 @@ class _MainPageState extends State<MainPage> {
       setState(() {
         _user = account;
       });
+
+      // 🔔 Register FCM token after login
+      final messaging = FirebaseMessaging.instance;
+
+      // iOS: Request permission
+      await messaging.requestPermission();
+
+      final fcmToken = await messaging.getToken();
+      if (fcmToken != null) {
+        await widget.firestore
+            .collection('users')
+            .doc(widget.auth.currentUser!.uid)
+            .update({'fcmToken': fcmToken});
+      }
     }
   }
 
@@ -74,7 +97,22 @@ class _MainPageState extends State<MainPage> {
     final List<Widget> pages = [
       if (signedIn) ...[
         HomePage(firestore: widget.firestore, auth: widget.auth),
-        ReadLogPage(firestore: widget.firestore, auth: widget.auth),
+        ReadLogPage(
+          firestore: widget.firestore,
+          auth: widget.auth,
+          onSendLikeNotification: widget.sendLikeNotification ??
+              ({
+                required String ownerUid,
+                required String likerName,
+              }) async {
+            final callable =
+                FirebaseFunctions.instance.httpsCallable('sendLikeNotification');
+            await callable.call({
+              'ownerUid': ownerUid,
+              'likerName': likerName,
+            });
+          },
+        ),
         LeaderboardPage(firestore: widget.firestore, auth: widget.auth),
       ],
       UserProfilePage(
