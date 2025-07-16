@@ -1,10 +1,10 @@
 # Release 1.2.2
 
-This release introduces notifications when your read log receives a like.
+This release introduces push notifications when your read log receives a like.
 
 ## Enhancements
 
-* Added Firestore notifications for read log likes.
+* Added push notifications for read log likes using FCM.
 
 # Release 1.2.1
 

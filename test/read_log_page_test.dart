@@ -38,8 +38,13 @@ void main() {
       final firestore = FakeFirebaseFirestore();
       final auth = MockFirebaseAuth();
 
-      await tester.pumpWidget(
-          MaterialApp(home: ReadLogPage(firestore: firestore, auth: auth)));
+      await tester.pumpWidget(MaterialApp(
+          home: ReadLogPage(
+              firestore: firestore,
+              auth: auth,
+              onSendLikeNotification: (
+                  {required String ownerUid,
+                  required String likerName}) async {})));
       await tester.pumpAndSettle();
 
       expect(
@@ -75,7 +80,10 @@ void main() {
       await tester.pumpWidget(MaterialApp(
           home: ReadLogPage(
               firestore: firestore,
-              auth: MockFirebaseAuth(mockUser: user, signedIn: true))));
+              auth: MockFirebaseAuth(mockUser: user, signedIn: true),
+              onSendLikeNotification: (
+                  {required String ownerUid,
+                  required String likerName}) async {})));
       await tester.pumpAndSettle();
 
       expect(find.text('User read today!'), findsOneWidget);
@@ -99,8 +107,13 @@ void main() {
         'timestamp': Timestamp.now()
       });
 
-      await tester.pumpWidget(
-          MaterialApp(home: ReadLogPage(firestore: firestore, auth: auth)));
+      await tester.pumpWidget(MaterialApp(
+          home: ReadLogPage(
+              firestore: firestore,
+              auth: auth,
+              onSendLikeNotification: (
+                  {required String ownerUid,
+                  required String likerName}) async {})));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.favorite_border));
@@ -124,7 +137,7 @@ void main() {
       expect(find.byIcon(Icons.favorite_border), findsOneWidget);
     });
 
-    testWidgets('toggleLike creates notification for owner', (tester) async {
+    testWidgets('toggleLike triggers push notification', (tester) async {
       final firestore = FakeFirebaseFirestore();
       final liker = MockUser(uid: 'liker', displayName: 'Jane Doe');
       final auth = MockFirebaseAuth(mockUser: liker, signedIn: true);
@@ -132,7 +145,6 @@ void main() {
       final dateKey =
           '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
 
-      await firestore.collection('users').doc(ownerUid).set({'name': 'Owner'});
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -144,23 +156,25 @@ void main() {
         'timestamp': Timestamp.now(),
       });
 
-      await tester.pumpWidget(
-          MaterialApp(home: ReadLogPage(firestore: firestore, auth: auth)));
+      var called = 0;
+      Future<void> mockNotification(
+          {required String ownerUid, required String likerName}) async {
+        called++;
+        expect(ownerUid, 'owner1');
+        expect(likerName, 'Jane');
+      }
+
+      await tester.pumpWidget(MaterialApp(
+          home: ReadLogPage(
+              firestore: firestore,
+              auth: auth,
+              onSendLikeNotification: mockNotification)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.favorite_border));
       await tester.pumpAndSettle();
 
-      await tester.runAsync(() async {
-        final notifications = await firestore
-            .collection('users')
-            .doc(ownerUid)
-            .collection('notifications')
-            .get();
-        expect(notifications.docs.length, 1);
-        expect(notifications.docs.first.data()['type'], 'like');
-        expect(notifications.docs.first.data()['likerName'], 'Jane');
-      });
+      expect(called, 1);
     });
   });
 }

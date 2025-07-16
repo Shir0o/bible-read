@@ -9,7 +9,7 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **Leaderboard:** See how your reading streak compares to others.
 *   **Reading Feed:** See who else has read the Bible today and give them a like to encourage them.
 *   **User Profile:** View your profile information and sign in with your Google account.
-*   **Like Notifications:** Receive a notification when someone likes your read log.
+*   **Like Notifications:** Receive a push notification when someone likes your read log.
 
 ## Getting Started
 
