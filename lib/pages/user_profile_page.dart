@@ -25,8 +25,7 @@ class UserProfilePage extends StatefulWidget {
   })  : googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
         auth = auth ?? FirebaseAuth.instance,
         firestore = firestore ?? FirebaseFirestore.instance,
-        friendService = friendService ??
-            FriendService(firestore: firestore ?? FirebaseFirestore.instance);
+        friendService = friendService ?? FriendService(firestore: firestore);
 
   @override
   State<UserProfilePage> createState() => UserProfilePageState();
