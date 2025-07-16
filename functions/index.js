@@ -76,7 +76,7 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
     },
   };
 
-  await admin.messaging().send(message);
+  return admin.messaging().send(message);
 });
 
 // Create and deploy your first functions
