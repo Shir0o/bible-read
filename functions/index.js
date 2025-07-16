@@ -40,7 +40,7 @@ exports.sendLikeNotification = functions.https.onCall(async (data, context) => {
   }
 
   const userDoc = await admin.firestore().collection('users').doc(ownerUid).get();
-  const token = userDoc.get('fcmToken');
+  const token = userDoc.data()?.fcmToken;
 
   if (!token) {
     console.log(
