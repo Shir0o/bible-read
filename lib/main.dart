@@ -19,7 +19,7 @@ void main() async {
   await FirebaseAuth.instance.authStateChanges().first;
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug, // Use playIntegrity in prod
-    appleProvider: AppleProvider.debug,     // Use deviceCheck in prod
+    appleProvider: AppleProvider.debug, // Use deviceCheck in prod
   );
   // Print App Check debug token after activation.
   FirebaseAppCheck.instance.getToken(true).then((token) {
@@ -74,15 +74,20 @@ Future<void> _setupMessaging() async {
       Future.delayed(Duration(seconds: 2), () async {
         try {
           final user = FirebaseAuth.instance.currentUser;
-          final idToken = await user?.getIdToken(true); // Force refresh ID token
-          print('📨 About to call function as user: ${user?.uid}, token: $idToken');
+          final idToken =
+              await user?.getIdToken(true); // Force refresh ID token
+          print(
+              '📨 About to call function as user: ${user?.uid}, token: $idToken');
 
           print('🔥 Firebase App name: ${Firebase.app().name}');
           print('🔥 Firebase App options: ${Firebase.app().options.projectId}');
 
           final result = await FirebaseFunctions.instance
               .httpsCallable('sendLikeNotification')
-              .call({'uid': user?.uid});
+              .call({
+            'ownerUid': user?.uid,
+            'likerName': (user?.displayName ?? '').split(' ').first,
+          });
 
           print('✅ sendLikeNotification result: $result');
         } catch (e, stack) {
