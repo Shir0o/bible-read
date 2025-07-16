@@ -80,39 +80,6 @@ void main() {
     expect((tiles[1].title as Text).data, 'Alice');
   });
 
-  testWidgets('refresh reloads data', (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(signedIn: true);
-    await firestore.collection('users').doc('u1').set({'name': 'Alice'});
-    await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('summary')
-        .doc('data')
-        .set({'streak': 1});
-
-    await tester.pumpWidget(
-        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(ListTile), findsOneWidget);
-
-    await firestore.collection('users').doc('u2').set({'name': 'Bob'});
-    await firestore
-        .collection('users')
-        .doc('u2')
-        .collection('summary')
-        .doc('data')
-        .set({'streak': 2});
-
-    await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(ListTile), findsNWidgets(2));
-  });
-
   testWidgets('error shows snackbar', (tester) async {
     final firestore = _ErrorFirestore();
     final auth = MockFirebaseAuth(signedIn: true);

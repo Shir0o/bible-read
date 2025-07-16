@@ -117,39 +117,35 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                     ? Container(
                         alignment: Alignment.center,
                         child: const Text('No one is on the leaderboard yet.'))
-                    : RefreshIndicator(
-                        onRefresh: _loadLeaderboardData,
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                              top: 16.0, bottom: 48.0, left: 16, right: 16),
-                          child: ListView.builder(
-                            itemCount: _leaderboardData.length,
-                            itemBuilder: (context, index) {
-                              final user = _leaderboardData[index];
-                              final rank = index + 1;
-                              return Card(
-                                margin:
-                                    const EdgeInsets.symmetric(vertical: 4.0),
-                                elevation: 2.0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                                child: ListTile(
-                                  leading: Text('$rank',
-                                      style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold)),
-                                  title: Text((user['name'] ?? 'No Name')
-                                      .split(' ')
-                                      .first),
-                                  trailing: Text('${user['streak']} days',
-                                      style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold)),
-                                ),
-                              );
-                            },
-                          ),
+                    : Padding(
+                        padding: const EdgeInsets.only(
+                            top: 16.0, bottom: 48.0, left: 16, right: 16),
+                        child: ListView.builder(
+                          itemCount: _leaderboardData.length,
+                          itemBuilder: (context, index) {
+                            final user = _leaderboardData[index];
+                            final rank = index + 1;
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              elevation: 2.0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                              ),
+                              child: ListTile(
+                                leading: Text('$rank',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold)),
+                                title: Text((user['name'] ?? 'No Name')
+                                    .split(' ')
+                                    .first),
+                                trailing: Text('${user['streak']} days',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                            );
+                          },
                         ),
                       ),
       ),
