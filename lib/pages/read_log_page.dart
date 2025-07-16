@@ -128,14 +128,15 @@ class _ReadLogPageState extends State<ReadLogPage> {
     if (likeDoc.exists) {
       await likeRef.delete();
     } else {
+      final likerName = (user.displayName ?? '').split(' ').first;
       await likeRef.set({
         'timestamp': Timestamp.now(),
-        'name': (user.displayName ?? '').split(' ').first,
+        'name': likerName,
       });
       if (logUid != user.uid) {
         await _sendLikeNotification(
           ownerUid: logUid,
-          likerName: (user.displayName ?? '').split(' ').first,
+          likerName: likerName,
         );
       }
     }

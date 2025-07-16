@@ -20,8 +20,9 @@ void main() {
 
       await ReadLogPage.writeReadLogEntry(user, firestore: firestore);
 
+      final fixedDate = DateTime(2025, 7, 15);
       final dateKey =
-          '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+          '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
       final snapshot = await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -56,8 +57,9 @@ void main() {
     testWidgets('loadLogs populates _logs list', (tester) async {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1');
+      final fixedDate = DateTime(2025, 7, 15);
       final dateKey =
-          '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+          '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -94,8 +96,9 @@ void main() {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1', displayName: 'Tester One');
       final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+      final fixedDate = DateTime(2025, 7, 15);
       final dateKey =
-          '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+          '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -142,8 +145,9 @@ void main() {
       final liker = MockUser(uid: 'liker', displayName: 'Jane Doe');
       final auth = MockFirebaseAuth(mockUser: liker, signedIn: true);
       final ownerUid = 'owner1';
+      final fixedDate = DateTime(2025, 7, 15);
       final dateKey =
-          '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+          '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
 
       await firestore
           .collection('read_logs')
