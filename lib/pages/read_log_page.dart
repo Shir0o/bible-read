@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/common_styles.dart';
@@ -8,17 +7,21 @@ import '../widgets/common_styles.dart';
 class ReadLogPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
-  final Future<void> Function(
-      {required String ownerUid,
-      required String likerName}) onSendLikeNotification;
+  final Future<void> Function({
+    required String ownerUid,
+    required String likerName,
+  }) onSendLikeNotification;
+  final DateTime Function() dateProvider;
 
   ReadLogPage({
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     required this.onSendLikeNotification,
+    DateTime Function()? dateProvider,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance;
+        auth = auth ?? FirebaseAuth.instance,
+        dateProvider = dateProvider ?? DateTime.now;
 
   @override
   State<ReadLogPage> createState() => _ReadLogPageState();
@@ -26,10 +29,11 @@ class ReadLogPage extends StatefulWidget {
   static Future<void> writeReadLogEntry(
     User user, {
     FirebaseFirestore? firestore,
+    DateTime Function()? dateProvider,
   }) async {
     final db = firestore ?? FirebaseFirestore.instance;
-    final dateKey =
-        '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+    final now = (dateProvider ?? DateTime.now)();
+    final dateKey = '${now.year}-${now.month}-${now.day}';
     await db
         .collection('read_logs')
         .doc(dateKey)
@@ -70,8 +74,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
       return;
     }
 
-    final dateKey =
-        '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+    final now = widget.dateProvider();
+    final dateKey = '${now.year}-${now.month}-${now.day}';
     final snapshot = await widget.firestore
         .collection('read_logs')
         .doc(dateKey)
@@ -105,8 +109,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
   Future<void> _toggleLike(String logUid) async {
     final user = widget.auth.currentUser;
     if (user == null) return;
-    final dateKey =
-        '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+    final now = widget.dateProvider();
+    final dateKey = '${now.year}-${now.month}-${now.day}';
     final likeRef = widget.firestore
         .collection('read_logs')
         .doc(dateKey)
