@@ -68,17 +68,17 @@ class _ReadLogPageState extends State<ReadLogPage> {
 
     final logs = await Future.wait(snapshot.docs.map((doc) async {
       final data = doc.data();
-      final likeDoc =
-          await doc.reference.collection('likes').doc(currentUser.uid).get();
       final likesSnapshot = await doc.reference.collection('likes').get();
-      final likeNames = likesSnapshot.docs
+      final likeDocs = likesSnapshot.docs;
+      final liked = likeDocs.any((d) => d.id == currentUser.uid);
+      final likeNames = likeDocs
           .map((d) => (d.data()['name'] ?? 'Unknown').toString())
           .toList();
       return {
         'uid': doc.id,
         'name': (data['name'] ?? doc.id).toString().split(' ').first,
         'read': true,
-        'liked': likeDoc.exists,
+        'liked': liked,
         'likeNames': likeNames,
       };
     }).toList());
@@ -157,10 +157,13 @@ class _ReadLogPageState extends State<ReadLogPage> {
                               style:
                                   const TextStyle(fontWeight: FontWeight.w600),
                             ),
-                            subtitle: (log['likeNames'] as List).isNotEmpty
-                                ? Text(
-                                    'Liked by ${(log['likeNames'] as List).join(", ")}')
-                                : null,
+                            subtitle: () {
+                              final likeNames = (log['likeNames'] as List?) ?? [];
+                              if (likeNames.isEmpty) {
+                                return null;
+                              }
+                              return Text('Liked by ${likeNames.join(", ")}');
+                            }(),
                             trailing: Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 4.0),
