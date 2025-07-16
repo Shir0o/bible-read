@@ -63,8 +63,6 @@ class _MainPageState extends State<MainPage> {
       setState(() {
         _user = account;
       });
-
-      
     }
   }
 
