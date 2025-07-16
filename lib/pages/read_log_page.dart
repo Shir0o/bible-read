@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/common_styles.dart';
@@ -7,11 +8,15 @@ import '../widgets/common_styles.dart';
 class ReadLogPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final Future<void> Function(
+      {required String ownerUid,
+      required String likerName}) onSendLikeNotification;
 
   ReadLogPage({
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
+    required this.onSendLikeNotification,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance;
 
@@ -41,6 +46,14 @@ class ReadLogPage extends StatefulWidget {
 class _ReadLogPageState extends State<ReadLogPage> {
   List<Map<String, dynamic>> _logs = [];
   bool _loading = true;
+
+  Future<void> _sendLikeNotification(
+      {required String ownerUid, required String likerName}) async {
+    await widget.onSendLikeNotification(
+      ownerUid: ownerUid,
+      likerName: likerName,
+    );
+  }
 
   @override
   void initState() {
@@ -106,10 +119,17 @@ class _ReadLogPageState extends State<ReadLogPage> {
     if (likeDoc.exists) {
       await likeRef.delete();
     } else {
+      final likerName = (user.displayName ?? '').split(' ').first;
       await likeRef.set({
         'timestamp': Timestamp.now(),
-        'name': (user.displayName ?? '').split(' ').first,
+        'name': likerName,
       });
+      if (logUid != user.uid) {
+        await _sendLikeNotification(
+          ownerUid: logUid,
+          likerName: likerName,
+        );
+      }
     }
     _loadLogs(); // Refresh the UI
   }
@@ -158,7 +178,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                   const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             subtitle: () {
-                              final likeNames = (log['likeNames'] as List?) ?? [];
+                              final likeNames =
+                                  (log['likeNames'] as List?) ?? [];
                               if (likeNames.isEmpty) return null;
 
                               const maxToShow = 3;

@@ -20,8 +20,9 @@ void main() {
 
       await ReadLogPage.writeReadLogEntry(user, firestore: firestore);
 
+      final fixedDate = DateTime(2025, 7, 15);
       final dateKey =
-          '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+          '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
       final snapshot = await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -38,8 +39,13 @@ void main() {
       final firestore = FakeFirebaseFirestore();
       final auth = MockFirebaseAuth();
 
-      await tester.pumpWidget(
-          MaterialApp(home: ReadLogPage(firestore: firestore, auth: auth)));
+      await tester.pumpWidget(MaterialApp(
+          home: ReadLogPage(
+              firestore: firestore,
+              auth: auth,
+              onSendLikeNotification: (
+                  {required String ownerUid,
+                  required String likerName}) async {})));
       await tester.pumpAndSettle();
 
       expect(
@@ -51,8 +57,9 @@ void main() {
     testWidgets('loadLogs populates _logs list', (tester) async {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1');
+      final fixedDate = DateTime(2025, 7, 15);
       final dateKey =
-          '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+          '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -75,7 +82,10 @@ void main() {
       await tester.pumpWidget(MaterialApp(
           home: ReadLogPage(
               firestore: firestore,
-              auth: MockFirebaseAuth(mockUser: user, signedIn: true))));
+              auth: MockFirebaseAuth(mockUser: user, signedIn: true),
+              onSendLikeNotification: (
+                  {required String ownerUid,
+                  required String likerName}) async {})));
       await tester.pumpAndSettle();
 
       expect(find.text('User read today!'), findsOneWidget);
@@ -86,8 +96,9 @@ void main() {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1', displayName: 'Tester One');
       final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+      final fixedDate = DateTime(2025, 7, 15);
       final dateKey =
-          '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+          '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -99,8 +110,13 @@ void main() {
         'timestamp': Timestamp.now()
       });
 
-      await tester.pumpWidget(
-          MaterialApp(home: ReadLogPage(firestore: firestore, auth: auth)));
+      await tester.pumpWidget(MaterialApp(
+          home: ReadLogPage(
+              firestore: firestore,
+              auth: auth,
+              onSendLikeNotification: (
+                  {required String ownerUid,
+                  required String likerName}) async {})));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.favorite_border));
@@ -122,6 +138,47 @@ void main() {
       await tester.tap(find.byIcon(Icons.favorite));
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+    });
+
+    testWidgets('toggleLike triggers push notification', (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final liker = MockUser(uid: 'liker', displayName: 'Jane Doe');
+      final auth = MockFirebaseAuth(mockUser: liker, signedIn: true);
+      final ownerUid = 'owner1';
+      final fixedDate = DateTime(2025, 7, 15);
+      final dateKey =
+          '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+
+      await firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc(ownerUid)
+          .set({
+        'name': 'Owner',
+        'email': 'o@test.com',
+        'timestamp': Timestamp.now(),
+      });
+
+      var called = 0;
+      Future<void> mockNotification(
+          {required String ownerUid, required String likerName}) async {
+        called++;
+        expect(ownerUid, 'owner1');
+        expect(likerName, 'Jane');
+      }
+
+      await tester.pumpWidget(MaterialApp(
+          home: ReadLogPage(
+              firestore: firestore,
+              auth: auth,
+              onSendLikeNotification: mockNotification)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.pumpAndSettle();
+
+      expect(called, 1);
     });
   });
 }

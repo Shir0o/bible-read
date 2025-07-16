@@ -1,3 +1,11 @@
+# Release 1.2.2
+
+This release introduces push notifications when your read log receives a like.
+
+## Enhancements
+
+* Added push notifications for read log likes using FCM.
+
 # Release 1.2.1
 
 This release includes minor updates and fixes.
