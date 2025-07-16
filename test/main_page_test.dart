@@ -205,11 +205,23 @@ void main() {
     String? calledName;
 
     final fakeFirestore = FakeFirebaseFirestore();
-    final testUser = MockUser(uid: 'liker123');
+    final testUser = MockUser(uid: 'liker123', displayName: 'Test Liker');
     final auth = MockFirebaseAuth(mockUser: testUser, signedIn: true);
 
     // Insert a dummy user doc to like
     await fakeFirestore.collection('users').doc('owner456').set({});
+
+    // Add a read log entry for 'owner456'
+    final dateKey = '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+    await fakeFirestore
+        .collection('read_logs')
+        .doc(dateKey)
+        .collection('entries')
+        .doc('owner456')
+        .set({
+      'name': 'Owner User',
+      'timestamp': Timestamp.now(),
+    });
 
     await tester.pumpWidget(MaterialApp(
       home: MainPage(
@@ -232,18 +244,20 @@ void main() {
     await tester.tap(find.text('Feed'));
     await tester.pumpAndSettle();
 
-    // At this point, in a real test you'd simulate liking logic
-    // For now we simulate a manual trigger
-    final state = tester.state(find.byType(ReadLogPage)) as dynamic;
-    if (state.widget.sendLikeNotification != null) {
-      await state.widget.sendLikeNotification!(
-        ownerUid: 'owner456',
-        likerName: 'Test User',
-      );
-    }
+    // Find the ListTile for 'Owner User' and tap the like button
+    final ownerLogFinder = find.byWidgetPredicate(
+      (widget) => widget is ListTile && widget.title is Text && (widget.title as Text).data == 'Owner User read today!',
+    );
+    expect(ownerLogFinder, findsOneWidget);
+
+    await tester.tap(find.descendant(
+      of: ownerLogFinder,
+      matching: find.byIcon(Icons.favorite_border),
+    ));
+    await tester.pumpAndSettle();
 
     expect(wasCalled, isTrue);
     expect(calledUid, 'owner456');
-    expect(calledName, 'Test User');
+    expect(calledName, 'Test Liker');
   });
 }

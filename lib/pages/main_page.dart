@@ -64,19 +64,7 @@ class _MainPageState extends State<MainPage> {
         _user = account;
       });
 
-      // 🔔 Register FCM token after login
-      final messaging = FirebaseMessaging.instance;
-
-      // iOS: Request permission
-      await messaging.requestPermission();
-
-      final fcmToken = await messaging.getToken();
-      if (fcmToken != null) {
-        await widget.firestore
-            .collection('users')
-            .doc(widget.auth.currentUser!.uid)
-            .update({'fcmToken': fcmToken});
-      }
+      
     }
   }
 
@@ -100,11 +88,10 @@ class _MainPageState extends State<MainPage> {
         ReadLogPage(
           firestore: widget.firestore,
           auth: widget.auth,
-          onSendLikeNotification: widget.sendLikeNotification ??
-              ({
-                required String ownerUid,
-                required String likerName,
-              }) async {
+          onSendLikeNotification: ({
+            required String ownerUid,
+            required String likerName,
+          }) async {
             final callable =
                 FirebaseFunctions.instance.httpsCallable('sendLikeNotification');
             await callable.call({

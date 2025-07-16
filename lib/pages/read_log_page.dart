@@ -10,13 +10,13 @@ class ReadLogPage extends StatefulWidget {
   final FirebaseAuth auth;
   final Future<void> Function(
       {required String ownerUid,
-      required String likerName})? onSendLikeNotification;
+      required String likerName}) onSendLikeNotification;
 
   ReadLogPage({
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-    this.onSendLikeNotification,
+    required this.onSendLikeNotification,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance;
 
@@ -49,19 +49,10 @@ class _ReadLogPageState extends State<ReadLogPage> {
 
   Future<void> _sendLikeNotification(
       {required String ownerUid, required String likerName}) async {
-    final handler =
-        widget.onSendLikeNotification ?? _defaultSendLikeNotification;
-    await handler(ownerUid: ownerUid, likerName: likerName);
-  }
-
-  Future<void> _defaultSendLikeNotification(
-      {required String ownerUid, required String likerName}) async {
-    final callable =
-        FirebaseFunctions.instance.httpsCallable('sendLikeNotification');
-    await callable(<String, dynamic>{
-      'ownerUid': ownerUid,
-      'likerName': likerName,
-    });
+    await widget.onSendLikeNotification(
+      ownerUid: ownerUid,
+      likerName: likerName,
+    );
   }
 
   @override

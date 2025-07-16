@@ -26,6 +26,13 @@ admin.initializeApp();
 setGlobalOptions({ maxInstances: 10 });
 
 exports.sendLikeNotification = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "The function must be called while authenticated.",
+    );
+  }
+
   const { ownerUid, likerName } = data;
 
   if (!ownerUid || !likerName) {
