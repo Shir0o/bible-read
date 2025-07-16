@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/common_styles.dart';
+import '../models/leaderboard_entry.dart';
 
 class LeaderboardPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -16,7 +17,7 @@ class LeaderboardPage extends StatefulWidget {
 }
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
-  List<Map<String, dynamic>> _leaderboardData = [];
+  List<LeaderboardEntry> _leaderboardData = [];
   bool _isLoading = true;
 
   @override
@@ -40,32 +41,30 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
     try {
       final usersSnapshot = await widget.firestore.collection('users').get();
-      final usersData = usersSnapshot.docs
-          .map((doc) => {
-                'uid': doc.id,
-                'name': doc.data()['name'] ?? 'No Name',
-                'email': doc.data()['email'] ?? 'No Email',
-              })
-          .toList();
 
-      final leaderboard = <Map<String, dynamic>>[];
-      for (final user in usersData) {
+      final leaderboard = <LeaderboardEntry>[];
+      for (final doc in usersSnapshot.docs) {
         final summaryDoc = await widget.firestore
             .collection('users')
-            .doc(user['uid'])
+            .doc(doc.id)
             .collection('summary')
             .doc('data')
             .get();
 
+        final data = doc.data();
         final streak =
-            summaryDoc.exists ? summaryDoc.data()!['streak'] ?? 0 : 0;
-        leaderboard.add({
-          ...user,
-          'streak': streak,
-        });
+            summaryDoc.exists ? (summaryDoc.data()?['streak'] ?? 0) : 0;
+        leaderboard.add(
+          LeaderboardEntry(
+            uid: doc.id,
+            name: data['name'] ?? 'No Name',
+            email: data['email'] ?? 'No Email',
+            streak: streak,
+          ),
+        );
       }
 
-      leaderboard.sort((a, b) => b['streak'].compareTo(a['streak']));
+      leaderboard.sort((a, b) => b.streak.compareTo(a.streak));
 
       if (mounted) {
         setState(() {
@@ -123,7 +122,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                         child: ListView.builder(
                           itemCount: _leaderboardData.length,
                           itemBuilder: (context, index) {
-                            final user = _leaderboardData[index];
+                            final entry = _leaderboardData[index];
                             final rank = index + 1;
                             return Card(
                               margin: const EdgeInsets.symmetric(vertical: 4.0),
@@ -136,10 +135,8 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                                     style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold)),
-                                title: Text((user['name'] ?? 'No Name')
-                                    .split(' ')
-                                    .first),
-                                trailing: Text('${user['streak']} days',
+                                title: Text(entry.name.split(' ').first),
+                                trailing: Text('${entry.streak} days',
                                     style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold)),

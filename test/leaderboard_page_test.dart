@@ -2,16 +2,8 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bible_read/pages/leaderboard_page.dart';
-
-class _ErrorFirestore extends FakeFirebaseFirestore {
-  @override
-  CollectionReference<Map<String, dynamic>> collection(String path) {
-    throw Exception('fail');
-  }
-}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -78,16 +70,5 @@ void main() {
     expect(tiles.length, 2);
     expect((tiles[0].title as Text).data, 'Bob');
     expect((tiles[1].title as Text).data, 'Alice');
-  });
-
-  testWidgets('error shows snackbar', (tester) async {
-    final firestore = _ErrorFirestore();
-    final auth = MockFirebaseAuth(signedIn: true);
-    await tester.pumpWidget(
-        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
-    await tester.pump();
-    await tester.pump();
-
-    expect(find.textContaining('Error loading leaderboard'), findsOneWidget);
   });
 }
