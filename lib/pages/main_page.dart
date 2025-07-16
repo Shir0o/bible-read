@@ -125,8 +125,17 @@ class _MainPageState extends State<MainPage> {
                 required String ownerUid,
                 required String likerName,
               }) async {
-                final callable = FirebaseFunctions.instance
+                final user = FirebaseAuth.instance.currentUser;
+                if (user == null) {
+                  debugPrint('Skipping sendLikeNotification: user is not signed in.');
+                  return;
+                }
+
+                await user.getIdToken(true); // Force refresh
+
+                final callable = FirebaseFunctions.instanceFor(region: 'us-central1')
                     .httpsCallable('sendLikeNotification');
+
                 await callable.call({
                   'ownerUid': ownerUid,
                   'likerName': likerName,
