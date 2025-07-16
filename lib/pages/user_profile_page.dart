@@ -15,17 +15,33 @@ class UserProfilePage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FriendService friendService;
 
-  UserProfilePage({
-    super.key,
-    this.user,
+  factory UserProfilePage({
+    Key? key,
+    GoogleSignInAccount? user,
     GoogleSignIn Function()? googleSignInProvider,
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     FriendService? friendService,
-  })  : googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
-        auth = auth ?? FirebaseAuth.instance,
-        firestore = firestore ?? FirebaseFirestore.instance,
-        friendService = friendService ?? FriendService(firestore: firestore);
+  }) {
+    final fs = firestore ?? FirebaseFirestore.instance;
+    return UserProfilePage._(
+      key: key,
+      user: user,
+      googleSignInProvider: googleSignInProvider ?? GoogleSignIn.new,
+      auth: auth ?? FirebaseAuth.instance,
+      firestore: fs,
+      friendService: friendService ?? FriendService(firestore: fs),
+    );
+  }
+
+  const UserProfilePage._({
+    super.key,
+    this.user,
+    required this.googleSignInProvider,
+    required this.auth,
+    required this.firestore,
+    required this.friendService,
+  });
 
   @override
   State<UserProfilePage> createState() => UserProfilePageState();
@@ -143,15 +159,17 @@ class UserProfilePageState extends State<UserProfilePage> {
                         const SizedBox(height: 8),
                         SizedBox(
                           height: 150,
-                          child: widget.auth.currentUser == null
-                              ? const Text('Please sign in')
-                              : FriendRequestWidget(
-                                  service: widget.friendService,
-                                  currentUid: widget.auth.currentUser!.uid,
-                                  currentName:
-                                      widget.auth.currentUser!.displayName ??
-                                          'Unknown',
-                                ),
+                          child: Builder(builder: (context) {
+                            final current = widget.auth.currentUser;
+                            if (current == null) {
+                              return const Text('Please sign in');
+                            }
+                            return FriendRequestWidget(
+                              service: widget.friendService,
+                              currentUid: current.uid,
+                              currentName: current.displayName ?? 'Unknown',
+                            );
+                          }),
                         ),
                         const SizedBox(height: 24),
                         Align(
@@ -162,33 +180,33 @@ class UserProfilePageState extends State<UserProfilePage> {
                         const SizedBox(height: 8),
                         SizedBox(
                           height: 150,
-                          child: widget.auth.currentUser == null
-                              ? const SizedBox.shrink()
-                              : StreamBuilder<List<Map<String, dynamic>>>(
-                                  stream: widget.friendService
-                                      .friends(widget.auth.currentUser!.uid),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.hasError) {
-                                      return Text('Error: ${snapshot.error}');
-                                    }
-                                    if (!snapshot.hasData) {
-                                      return const Center(
-                                          child: CircularProgressIndicator());
-                                    }
-                                    final friends = snapshot.data!;
-                                    if (friends.isEmpty) {
-                                      return const Text('No friends yet');
-                                    }
-                                    return ListView(
-                                      children: friends
-                                          .map((f) => ListTile(
-                                                title:
-                                                    Text(f['name'] ?? f['uid']),
-                                              ))
-                                          .toList(),
-                                    );
-                                  },
-                                ),
+                          child: Builder(builder: (context) {
+                            final current = widget.auth.currentUser;
+                            if (current == null) {
+                              return const SizedBox.shrink();
+                            }
+                            return StreamBuilder<List<Friend>>(
+                              stream: widget.friendService.friends(current.uid),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasError) {
+                                  return Text('Error: ${snapshot.error}');
+                                }
+                                if (!snapshot.hasData) {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }
+                                final friends = snapshot.data!;
+                                if (friends.isEmpty) {
+                                  return const Text('No friends yet');
+                                }
+                                return ListView(
+                                  children: friends
+                                      .map((f) => ListTile(title: Text(f.name)))
+                                      .toList(),
+                                );
+                              },
+                            );
+                          }),
                         ),
                       ],
                     )),

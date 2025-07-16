@@ -1,5 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Names of Firestore collections used for friend features.
+class FriendCollections {
+  FriendCollections._();
+
+  /// top-level users collection
+  static const String users = 'users';
+
+  /// Sub-collection containing requests the user has sent.
+  static const String sentRequests = 'friendRequestsSent';
+
+  /// Sub-collection containing requests the user has received.
+  static const String receivedRequests = 'friendRequestsReceived';
+
+  /// Sub-collection containing a user's friends.
+  static const String friends = 'friends';
+}
+
 /// Represents a pending friend request.
 class FriendRequest {
   /// UID of the user who sent the request.
@@ -10,6 +27,18 @@ class FriendRequest {
 
   /// Creates a [FriendRequest].
   const FriendRequest({required this.uid, required this.name});
+}
+
+/// Represents an existing friend.
+class Friend {
+  /// UID of the friend.
+  final String uid;
+
+  /// Display name of the friend.
+  final String name;
+
+  /// Creates a [Friend].
+  const Friend({required this.uid, required this.name});
 }
 
 /// Provides helper methods for friend request CRUD operations.
@@ -27,29 +56,25 @@ class FriendService {
     required String fromName,
     required String toUid,
   }) async {
-    try {
-      final now = Timestamp.now();
-      final batch = firestore.batch();
-      batch.set(
-        firestore
-            .collection('users')
-            .doc(fromUid)
-            .collection('friendRequestsSent')
-            .doc(toUid),
-        {'timestamp': now},
-      );
-      batch.set(
-        firestore
-            .collection('users')
-            .doc(toUid)
-            .collection('friendRequestsReceived')
-            .doc(fromUid),
-        {'timestamp': now, 'name': fromName},
-      );
-      await batch.commit();
-    } catch (e) {
-      rethrow;
-    }
+    final now = Timestamp.now();
+    final batch = firestore.batch();
+    batch.set(
+      firestore
+          .collection(FriendCollections.users)
+          .doc(fromUid)
+          .collection(FriendCollections.sentRequests)
+          .doc(toUid),
+      {'timestamp': now},
+    );
+    batch.set(
+      firestore
+          .collection(FriendCollections.users)
+          .doc(toUid)
+          .collection(FriendCollections.receivedRequests)
+          .doc(fromUid),
+      {'timestamp': now, 'name': fromName},
+    );
+    await batch.commit();
   }
 
   /// Accept a friend request sent by [fromUid] to [currentUid].
@@ -59,24 +84,22 @@ class FriendService {
     required String currentName,
     required String fromName,
   }) async {
-    try {
-      final batch = firestore.batch();
-      final fromRef = firestore.collection('users').doc(fromUid);
-      final toRef = firestore.collection('users').doc(currentUid);
-      batch.delete(fromRef.collection('friendRequestsSent').doc(currentUid));
-      batch.delete(toRef.collection('friendRequestsReceived').doc(fromUid));
-      batch.set(
-        fromRef.collection('friends').doc(currentUid),
-        {'timestamp': Timestamp.now(), 'name': currentName},
-      );
-      batch.set(
-        toRef.collection('friends').doc(fromUid),
-        {'timestamp': Timestamp.now(), 'name': fromName},
-      );
-      await batch.commit();
-    } catch (e) {
-      rethrow;
-    }
+    final batch = firestore.batch();
+    final fromRef = firestore.collection(FriendCollections.users).doc(fromUid);
+    final toRef = firestore.collection(FriendCollections.users).doc(currentUid);
+    batch.delete(
+        fromRef.collection(FriendCollections.sentRequests).doc(currentUid));
+    batch.delete(
+        toRef.collection(FriendCollections.receivedRequests).doc(fromUid));
+    batch.set(
+      fromRef.collection(FriendCollections.friends).doc(currentUid),
+      {'timestamp': Timestamp.now(), 'name': currentName},
+    );
+    batch.set(
+      toRef.collection(FriendCollections.friends).doc(fromUid),
+      {'timestamp': Timestamp.now(), 'name': fromName},
+    );
+    await batch.commit();
   }
 
   /// Decline a friend request sent by [fromUid] to [currentUid].
@@ -84,30 +107,26 @@ class FriendService {
     required String currentUid,
     required String fromUid,
   }) async {
-    try {
-      final batch = firestore.batch();
-      batch.delete(firestore
-          .collection('users')
-          .doc(fromUid)
-          .collection('friendRequestsSent')
-          .doc(currentUid));
-      batch.delete(firestore
-          .collection('users')
-          .doc(currentUid)
-          .collection('friendRequestsReceived')
-          .doc(fromUid));
-      await batch.commit();
-    } catch (e) {
-      rethrow;
-    }
+    final batch = firestore.batch();
+    batch.delete(firestore
+        .collection(FriendCollections.users)
+        .doc(fromUid)
+        .collection(FriendCollections.sentRequests)
+        .doc(currentUid));
+    batch.delete(firestore
+        .collection(FriendCollections.users)
+        .doc(currentUid)
+        .collection(FriendCollections.receivedRequests)
+        .doc(fromUid));
+    await batch.commit();
   }
 
   /// Stream of pending friend requests for [uid].
   Stream<List<FriendRequest>> pendingRequests(String uid) {
     return firestore
-        .collection('users')
+        .collection(FriendCollections.users)
         .doc(uid)
-        .collection('friendRequestsReceived')
+        .collection(FriendCollections.receivedRequests)
         .snapshots()
         .map((s) => s.docs.where((d) => d.id != 'init').map((d) {
               final data = d.data();
@@ -119,15 +138,18 @@ class FriendService {
   }
 
   /// Stream of friends for [uid].
-  Stream<List<Map<String, dynamic>>> friends(String uid) {
+  Stream<List<Friend>> friends(String uid) {
     return firestore
-        .collection('users')
+        .collection(FriendCollections.users)
         .doc(uid)
-        .collection('friends')
+        .collection(FriendCollections.friends)
         .snapshots()
-        .map((s) => s.docs
-            .where((d) => d.id != 'init')
-            .map((d) => {'uid': d.id, ...d.data()})
-            .toList());
+        .map((s) => s.docs.where((d) => d.id != 'init').map((d) {
+              final data = d.data();
+              return Friend(
+                uid: d.id,
+                name: (data['name'] ?? '') as String,
+              );
+            }).toList());
   }
 }
