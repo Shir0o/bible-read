@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -170,5 +172,93 @@ void main() {
     await tester.pump();
 
     expect(find.text('Sign in with Google'), findsOneWidget);
+  });
+
+  testWidgets('saves FCM token to Firestore on silent sign-in', (tester) async {
+    fakePlatform.user = GoogleSignInUserData(
+      email: 'test@example.com',
+      id: '123',
+      displayName: 'Test',
+    );
+
+    final fakeFirestore = FakeFirebaseFirestore();
+    final testUser = MockUser(uid: 'u123');
+    final auth = MockFirebaseAuth(mockUser: testUser, signedIn: true);
+
+    // Insert a dummy user doc
+    await fakeFirestore.collection('users').doc(testUser.uid).set({});
+
+    await tester.pumpWidget(MaterialApp(
+      home: MainPage(auth: auth, firestore: fakeFirestore),
+    ));
+
+    await tester.pumpAndSettle();
+
+    final userDoc =
+        await fakeFirestore.collection('users').doc(testUser.uid).get();
+
+    expect(userDoc.exists, isTrue);
+    expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
+  });
+  testWidgets('calls sendLikeNotification when a like is triggered', (tester) async {
+    bool wasCalled = false;
+    String? calledUid;
+    String? calledName;
+
+    final fakeFirestore = FakeFirebaseFirestore();
+    final testUser = MockUser(uid: 'liker123', displayName: 'Test Liker');
+    final auth = MockFirebaseAuth(mockUser: testUser, signedIn: true);
+
+    // Insert a dummy user doc to like
+    await fakeFirestore.collection('users').doc('owner456').set({});
+
+    // Add a read log entry for 'owner456'
+    final dateKey = '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+    await fakeFirestore
+        .collection('read_logs')
+        .doc(dateKey)
+        .collection('entries')
+        .doc('owner456')
+        .set({
+      'name': 'Owner User',
+      'timestamp': Timestamp.now(),
+    });
+
+    await tester.pumpWidget(MaterialApp(
+      home: MainPage(
+        auth: auth,
+        firestore: fakeFirestore,
+        sendLikeNotification: ({
+          required String ownerUid,
+          required String likerName,
+        }) async {
+          wasCalled = true;
+          calledUid = ownerUid;
+          calledName = likerName;
+        },
+      ),
+    ));
+
+    await tester.pumpAndSettle();
+
+    // Navigate to Feed (ReadLogPage)
+    await tester.tap(find.text('Feed'));
+    await tester.pumpAndSettle();
+
+    // Find the ListTile for 'Owner User' and tap the like button
+    final ownerLogFinder = find.byWidgetPredicate(
+      (widget) => widget is ListTile && widget.title is Text && (widget.title as Text).data == 'Owner User read today!',
+    );
+    expect(ownerLogFinder, findsOneWidget);
+
+    await tester.tap(find.descendant(
+      of: ownerLogFinder,
+      matching: find.byIcon(Icons.favorite_border),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(wasCalled, isTrue);
+    expect(calledUid, 'owner456');
+    expect(calledName, 'Test Liker');
   });
 }
