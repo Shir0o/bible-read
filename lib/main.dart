@@ -1,5 +1,7 @@
 import 'package:bible_read/pages/main_page.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -13,6 +15,18 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  // Wait for FirebaseAuth to be ready before activating App Check.
+  await FirebaseAuth.instance.authStateChanges().first;
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.debug, // Use playIntegrity in prod
+    appleProvider: AppleProvider.debug,     // Use deviceCheck in prod
+  );
+  // Print App Check debug token after activation.
+  FirebaseAppCheck.instance.getToken(true).then((token) {
+    print('🔥 App Check debug token: $token');
+  });
+  final user = FirebaseAuth.instance.currentUser;
+  print('👤 Firebase currentUser: ${user?.uid}, email: ${user?.email}');
   await _setupMessaging();
   runApp(const MyApp());
 }
@@ -56,6 +70,26 @@ Future<void> _setupMessaging() async {
             .doc(user.uid)
             .set({'fcmToken': token}, SetOptions(merge: true));
       }
+      // Add a small delay and call the sendLikeNotification function for testing.
+      Future.delayed(Duration(seconds: 2), () async {
+        try {
+          final user = FirebaseAuth.instance.currentUser;
+          final idToken = await user?.getIdToken(true); // Force refresh ID token
+          print('📨 About to call function as user: ${user?.uid}, token: $idToken');
+
+          print('🔥 Firebase App name: ${Firebase.app().name}');
+          print('🔥 Firebase App options: ${Firebase.app().options.projectId}');
+
+          final result = await FirebaseFunctions.instance
+              .httpsCallable('sendLikeNotification')
+              .call({'uid': user?.uid});
+
+          print('✅ sendLikeNotification result: $result');
+        } catch (e, stack) {
+          print('❌ Error calling sendLikeNotification: $e');
+          print('📍 Stack: $stack');
+        }
+      });
     }
   });
 }

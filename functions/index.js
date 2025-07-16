@@ -1,4 +1,4 @@
-/**
+/****
  * Import function triggers from their respective submodules:
  *
  * const {onCall} = require("firebase-functions/v2/https");
@@ -7,7 +7,7 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-const {setGlobalOptions} = require("firebase-functions");
+const { setGlobalOptions } = require("firebase-functions/v2");
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
@@ -26,6 +26,8 @@ admin.initializeApp();
 setGlobalOptions({ maxInstances: 10 });
 
 exports.sendLikeNotification = functions.https.onCall(async (data, context) => {
+  console.log('👤 context.auth:', context.auth);
+  console.log('🔥 Admin project ID:', admin.app().options.projectId);
   if (!context.auth) {
     throw new functions.https.HttpsError(
       "unauthenticated",
