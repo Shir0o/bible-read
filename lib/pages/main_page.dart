@@ -91,11 +91,30 @@ class _MainPageState extends State<MainPage> {
         }
       }
       final token = await widget.messaging.getToken();
-      if (token != null) {
-        await widget.firestore
-            .collection('users')
-            .doc(widget.auth.currentUser!.uid)
-            .set({'fcmToken': token}, SetOptions(merge: true));
+      final user = widget.auth.currentUser;
+      if (token != null && user != null) {
+        try {
+          await user.getIdToken(true); // Force-refresh ID token
+          await widget.firestore.collection('users').doc(user.uid).set({
+            'fcmToken': token,
+            'name': user.displayName,
+            'email': user.email,
+          }, SetOptions(merge: true));
+        } catch (e) {
+          debugPrint('Initial Firestore write failed: $e. Retrying...');
+          await Future.delayed(Duration(seconds: 1));
+          try {
+            await widget.firestore.collection('users').doc(user.uid).set({
+              'fcmToken': token,
+              'name': user.displayName,
+              'email': user.email,
+            }, SetOptions(merge: true));
+          } catch (e2) {
+            debugPrint('Second Firestore write failed: $e2');
+          }
+        }
+      } else {
+        debugPrint('Skipping Firestore write: user or token is null');
       }
     }
   }

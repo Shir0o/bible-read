@@ -7,6 +7,16 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
+/****
+ * Import function triggers from their respective submodules:
+ *
+ * const {onCall} = require("firebase-functions/v2/https");
+ * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
+ *
+ * See a full list of supported triggers at https://firebase.google.com/docs/functions
+ */
+
+const { onCall } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
@@ -25,20 +35,17 @@ admin.initializeApp();
 // this will be the maximum concurrent request count.
 setGlobalOptions({ maxInstances: 10 });
 
-exports.sendLikeNotification = functions.https.onCall(async (data, context) => {
-  console.log('👤 context.auth:', context.auth);
+exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => {
+  console.log('👤 req.auth:', req.auth);
   console.log('🔥 Admin project ID:', admin.app().options.projectId);
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "The function must be called while authenticated.",
-    );
+  if (!req.auth) {
+    throw new Error("unauthenticated: The function must be called while authenticated.");
   }
 
-  const { ownerUid, likerName } = data;
+  const { ownerUid, likerName } = req.data;
 
   if (!ownerUid || !likerName) {
-    throw new functions.https.HttpsError("invalid-argument", "Missing data");
+    throw new Error("invalid-argument: Missing data");
   }
 
   const userDoc = await admin.firestore().collection('users').doc(ownerUid).get();
