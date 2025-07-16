@@ -1,22 +1,32 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/common_styles.dart';
+import '../widgets/friend_request_widget.dart';
+import '../services/friend_service.dart';
 import 'main_page.dart';
 
 class UserProfilePage extends StatefulWidget {
   final GoogleSignInAccount? user;
   final GoogleSignIn Function() googleSignInProvider;
   final FirebaseAuth auth;
+  final FirebaseFirestore firestore;
+  final FriendService friendService;
 
   UserProfilePage({
     super.key,
     this.user,
     GoogleSignIn Function()? googleSignInProvider,
     FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+    FriendService? friendService,
   })  : googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
-        auth = auth ?? FirebaseAuth.instance;
+        auth = auth ?? FirebaseAuth.instance,
+        firestore = firestore ?? FirebaseFirestore.instance,
+        friendService = friendService ??
+            FriendService(firestore: firestore ?? FirebaseFirestore.instance);
 
   @override
   State<UserProfilePage> createState() => UserProfilePageState();
@@ -58,9 +68,9 @@ class UserProfilePageState extends State<UserProfilePage> {
           // Instead, rebuild parent or manage user state differently if needed
           // For now, just rebuild to reflect sign in
           Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => MainPage(),
-              ),
+            MaterialPageRoute(
+              builder: (context) => MainPage(),
+            ),
           );
         });
       } else {
@@ -124,6 +134,56 @@ class UserProfilePageState extends State<UserProfilePage> {
                         Text(
                           user.email,
                           style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 24),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text('Friend Requests',
+                              style: Theme.of(context).textTheme.titleMedium),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 150,
+                          child: widget.auth.currentUser == null
+                              ? const Text('Please sign in')
+                              : FriendRequestWidget(
+                                  service: widget.friendService,
+                                  currentUid: widget.auth.currentUser!.uid,
+                                ),
+                        ),
+                        const SizedBox(height: 24),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text('Friends',
+                              style: Theme.of(context).textTheme.titleMedium),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 150,
+                          child: widget.auth.currentUser == null
+                              ? const SizedBox.shrink()
+                              : StreamBuilder<List<Map<String, dynamic>>>(
+                                  stream: widget.friendService
+                                      .friends(widget.auth.currentUser!.uid),
+                                  builder: (context, snapshot) {
+                                    if (!snapshot.hasData) {
+                                      return const Center(
+                                          child: CircularProgressIndicator());
+                                    }
+                                    final friends = snapshot.data!;
+                                    if (friends.isEmpty) {
+                                      return const Text('No friends yet');
+                                    }
+                                    return ListView(
+                                      children: friends
+                                          .map((f) => ListTile(
+                                                title:
+                                                    Text(f['name'] ?? f['uid']),
+                                              ))
+                                          .toList(),
+                                    );
+                                  },
+                                ),
                         ),
                       ],
                     )),
