@@ -69,7 +69,7 @@ exports.sendLikeNotification = functions.https.onCall(async (data, context) => {
     },
   };
 
-  await admin.messaging().send(message);
+  return admin.messaging().send(message);
 });
 
 // Create and deploy your first functions
