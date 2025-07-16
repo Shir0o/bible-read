@@ -2,6 +2,7 @@ import 'package:bible_read/pages/main_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -12,18 +13,24 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set App Check debug token
-  const appCheckDebugToken = 'DF7AEB4C-2B50-44D2-A5A5-BBD0F7558C06';
+  
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   // Wait for FirebaseAuth to be ready before activating App Check.
   await FirebaseAuth.instance.authStateChanges().first;
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug, // Use playIntegrity in prod
-    appleProvider: AppleProvider.debug, // Use deviceCheck in prod
-  );
+  if (kDebugMode) {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.debug,
+      appleProvider: AppleProvider.debug,
+    );
+  } else {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.playIntegrity,
+      appleProvider: AppleProvider.deviceCheck,
+    );
+  }
   await _setupMessaging();
   runApp(const MyApp());
 }
