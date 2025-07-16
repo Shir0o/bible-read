@@ -10,6 +10,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('ReadLogPage', () {
+    final fixedDate = DateTime(2025, 7, 15);
+
     test('writeReadLogEntry creates Firestore document', () async {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(
@@ -18,11 +20,13 @@ void main() {
         email: 'test@example.com',
       );
 
-      await ReadLogPage.writeReadLogEntry(user, firestore: firestore);
+      await ReadLogPage.writeReadLogEntry(
+        user,
+        firestore: firestore,
+        dateProvider: () => fixedDate,
+      );
 
-      final fixedDate = DateTime(2025, 7, 15);
-      final dateKey =
-          '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
       final snapshot = await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -43,6 +47,7 @@ void main() {
           home: ReadLogPage(
               firestore: firestore,
               auth: auth,
+              dateProvider: () => fixedDate,
               onSendLikeNotification: (
                   {required String ownerUid,
                   required String likerName}) async {})));
@@ -57,9 +62,7 @@ void main() {
     testWidgets('loadLogs populates _logs list', (tester) async {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1');
-      final fixedDate = DateTime(2025, 7, 15);
-      final dateKey =
-          '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -83,6 +86,7 @@ void main() {
           home: ReadLogPage(
               firestore: firestore,
               auth: MockFirebaseAuth(mockUser: user, signedIn: true),
+              dateProvider: () => fixedDate,
               onSendLikeNotification: (
                   {required String ownerUid,
                   required String likerName}) async {})));
@@ -96,9 +100,7 @@ void main() {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1', displayName: 'Tester One');
       final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
-      final fixedDate = DateTime(2025, 7, 15);
-      final dateKey =
-          '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -114,6 +116,7 @@ void main() {
           home: ReadLogPage(
               firestore: firestore,
               auth: auth,
+              dateProvider: () => fixedDate,
               onSendLikeNotification: (
                   {required String ownerUid,
                   required String likerName}) async {})));
@@ -145,9 +148,7 @@ void main() {
       final liker = MockUser(uid: 'liker', displayName: 'Jane Doe');
       final auth = MockFirebaseAuth(mockUser: liker, signedIn: true);
       final ownerUid = 'owner1';
-      final fixedDate = DateTime(2025, 7, 15);
-      final dateKey =
-          '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
 
       await firestore
           .collection('read_logs')
@@ -172,6 +173,7 @@ void main() {
           home: ReadLogPage(
               firestore: firestore,
               auth: auth,
+              dateProvider: () => fixedDate,
               onSendLikeNotification: mockNotification)));
       await tester.pumpAndSettle();
 

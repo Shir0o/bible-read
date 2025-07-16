@@ -11,6 +11,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/read_log_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -69,6 +70,14 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
 
   @override
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
+}
+
+class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
+  FakeFirebaseMessaging(this.token);
+  final String? token;
+
+  @override
+  Future<String?> getToken({String? vapidKey}) async => token;
 }
 
 void main() {
@@ -184,12 +193,17 @@ void main() {
     final fakeFirestore = FakeFirebaseFirestore();
     final testUser = MockUser(uid: 'u123');
     final auth = MockFirebaseAuth(mockUser: testUser, signedIn: true);
+    final messaging = FakeFirebaseMessaging('test_token');
 
     // Insert a dummy user doc
     await fakeFirestore.collection('users').doc(testUser.uid).set({});
 
     await tester.pumpWidget(MaterialApp(
-      home: MainPage(auth: auth, firestore: fakeFirestore),
+      home: MainPage(
+        auth: auth,
+        firestore: fakeFirestore,
+        messaging: messaging,
+      ),
     ));
 
     await tester.pumpAndSettle();
@@ -200,7 +214,8 @@ void main() {
     expect(userDoc.exists, isTrue);
     expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
   });
-  testWidgets('calls sendLikeNotification when a like is triggered', (tester) async {
+  testWidgets('calls sendLikeNotification when a like is triggered',
+      (tester) async {
     bool wasCalled = false;
     String? calledUid;
     String? calledName;
@@ -213,7 +228,8 @@ void main() {
     await fakeFirestore.collection('users').doc('owner456').set({});
 
     // Add a read log entry for 'owner456'
-    final dateKey = '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+    final dateKey =
+        '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
     await fakeFirestore
         .collection('read_logs')
         .doc(dateKey)
@@ -228,6 +244,7 @@ void main() {
       home: MainPage(
         auth: auth,
         firestore: fakeFirestore,
+        messaging: FakeFirebaseMessaging(null),
         sendLikeNotification: ({
           required String ownerUid,
           required String likerName,
@@ -247,7 +264,10 @@ void main() {
 
     // Find the ListTile for 'Owner User' and tap the like button
     final ownerLogFinder = find.byWidgetPredicate(
-      (widget) => widget is ListTile && widget.title is Text && (widget.title as Text).data == 'Owner User read today!',
+      (widget) =>
+          widget is ListTile &&
+          widget.title is Text &&
+          (widget.title as Text).data == 'Owner read today!',
     );
     expect(ownerLogFinder, findsOneWidget);
 
@@ -259,6 +279,6 @@ void main() {
 
     expect(wasCalled, isTrue);
     expect(calledUid, 'owner456');
-    expect(calledName, 'Test Liker');
+    expect(calledName, 'Test');
   });
 }

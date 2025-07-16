@@ -21,15 +21,18 @@ class MainPage extends StatefulWidget {
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
   final SendLikeNotification? sendLikeNotification;
+  final FirebaseMessaging messaging;
 
   MainPage({
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     GoogleSignIn Function()? googleSignInProvider,
+    FirebaseMessaging? messaging,
     this.sendLikeNotification,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
+        messaging = messaging ?? FirebaseMessaging.instance,
         googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new;
 
   @override
@@ -63,6 +66,14 @@ class _MainPageState extends State<MainPage> {
       setState(() {
         _user = account;
       });
+
+      final token = await widget.messaging.getToken();
+      if (token != null) {
+        await widget.firestore
+            .collection('users')
+            .doc(widget.auth.currentUser!.uid)
+            .set({'fcmToken': token}, SetOptions(merge: true));
+      }
     }
   }
 
@@ -86,17 +97,18 @@ class _MainPageState extends State<MainPage> {
         ReadLogPage(
           firestore: widget.firestore,
           auth: widget.auth,
-          onSendLikeNotification: ({
-            required String ownerUid,
-            required String likerName,
-          }) async {
-            final callable =
-                FirebaseFunctions.instance.httpsCallable('sendLikeNotification');
-            await callable.call({
-              'ownerUid': ownerUid,
-              'likerName': likerName,
-            });
-          },
+          onSendLikeNotification: widget.sendLikeNotification ??
+              ({
+                required String ownerUid,
+                required String likerName,
+              }) async {
+                final callable = FirebaseFunctions.instance
+                    .httpsCallable('sendLikeNotification');
+                await callable.call({
+                  'ownerUid': ownerUid,
+                  'likerName': likerName,
+                });
+              },
         ),
         LeaderboardPage(firestore: widget.firestore, auth: widget.auth),
       ],
