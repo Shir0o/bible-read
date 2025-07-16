@@ -10,11 +10,15 @@ class FriendRequestWidget extends StatefulWidget {
   /// Current user id.
   final String currentUid;
 
+  /// Current user's display name used when accepting requests.
+  final String currentName;
+
   /// Creates the widget.
   const FriendRequestWidget({
     super.key,
     required this.service,
     required this.currentUid,
+    required this.currentName,
   });
 
   @override
@@ -24,11 +28,34 @@ class FriendRequestWidget extends StatefulWidget {
 class _FriendRequestWidgetState extends State<FriendRequestWidget> {
   final Set<String> _processing = <String>{};
 
+  Future<void> _handleAction(String uid, Future<void> Function() op) async {
+    setState(() {
+      _processing.add(uid);
+    });
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await op();
+    } catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(content: Text('Failed: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _processing.remove(uid);
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<Map<String, dynamic>>>(
+    return StreamBuilder<List<FriendRequest>>(
       stream: widget.service.pendingRequests(widget.currentUid),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -41,8 +68,8 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
           itemCount: requests.length,
           itemBuilder: (context, index) {
             final req = requests[index];
-            final uid = req['uid'] as String;
-            final name = req['name'] ?? 'Unknown';
+            final uid = req.uid;
+            final name = req.name.isEmpty ? 'Unknown' : req.name;
             final loading = _processing.contains(uid);
             return ListTile(
               title: Text(name),
@@ -57,57 +84,25 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.check),
-                          onPressed: () async {
-                            setState(() {
-                              _processing.add(uid);
-                            });
-                            final messenger = ScaffoldMessenger.of(context);
-                            try {
-                              await widget.service.acceptFriendRequest(
-                                currentUid: widget.currentUid,
-                                fromUid: uid,
-                              );
-                            } catch (e) {
-                              if (mounted) {
-                                messenger.showSnackBar(
-                                  SnackBar(content: Text('Failed: \$e')),
-                                );
-                              }
-                            } finally {
-                              if (mounted) {
-                                setState(() {
-                                  _processing.remove(uid);
-                                });
-                              }
-                            }
-                          },
+                          onPressed: () => _handleAction(
+                            uid,
+                            () => widget.service.acceptFriendRequest(
+                              currentUid: widget.currentUid,
+                              currentName: widget.currentName,
+                              fromUid: uid,
+                              fromName: name,
+                            ),
+                          ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.close),
-                          onPressed: () async {
-                            setState(() {
-                              _processing.add(uid);
-                            });
-                            final messenger = ScaffoldMessenger.of(context);
-                            try {
-                              await widget.service.declineFriendRequest(
-                                currentUid: widget.currentUid,
-                                fromUid: uid,
-                              );
-                            } catch (e) {
-                              if (mounted) {
-                                messenger.showSnackBar(
-                                  SnackBar(content: Text('Failed: \$e')),
-                                );
-                              }
-                            } finally {
-                              if (mounted) {
-                                setState(() {
-                                  _processing.remove(uid);
-                                });
-                              }
-                            }
-                          },
+                          onPressed: () => _handleAction(
+                            uid,
+                            () => widget.service.declineFriendRequest(
+                              currentUid: widget.currentUid,
+                              fromUid: uid,
+                            ),
+                          ),
                         ),
                       ],
                     ),

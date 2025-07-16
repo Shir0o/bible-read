@@ -148,6 +148,9 @@ class UserProfilePageState extends State<UserProfilePage> {
                               : FriendRequestWidget(
                                   service: widget.friendService,
                                   currentUid: widget.auth.currentUser!.uid,
+                                  currentName:
+                                      widget.auth.currentUser!.displayName ??
+                                          'Unknown',
                                 ),
                         ),
                         const SizedBox(height: 24),
@@ -165,6 +168,9 @@ class UserProfilePageState extends State<UserProfilePage> {
                                   stream: widget.friendService
                                       .friends(widget.auth.currentUser!.uid),
                                   builder: (context, snapshot) {
+                                    if (snapshot.hasError) {
+                                      return Text('Error: ${snapshot.error}');
+                                    }
                                     if (!snapshot.hasData) {
                                       return const Center(
                                           child: CircularProgressIndicator());
