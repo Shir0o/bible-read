@@ -7,6 +7,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:io';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'home_page.dart';
 import 'read_log_page.dart';
@@ -66,7 +68,28 @@ class _MainPageState extends State<MainPage> {
       setState(() {
         _user = account;
       });
-
+      // Request notification permissions for iOS and Android
+      if (Platform.isIOS) {
+        final settings = await widget.messaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        if (settings.authorizationStatus != AuthorizationStatus.authorized) {
+          debugPrint('iOS notification permission not granted');
+          return;
+        }
+      }
+      if (Platform.isAndroid) {
+        if (await Permission.notification.isDenied ||
+            await Permission.notification.isPermanentlyDenied) {
+          final status = await Permission.notification.request();
+          if (!status.isGranted) {
+            debugPrint('Android notification permission not granted');
+            return;
+          }
+        }
+      }
       final token = await widget.messaging.getToken();
       if (token != null) {
         await widget.firestore
