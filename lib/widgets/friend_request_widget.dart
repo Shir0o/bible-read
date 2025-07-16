@@ -32,12 +32,12 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
     setState(() {
       _processing.add(uid);
     });
-    final messenger = ScaffoldMessenger.of(context);
     try {
       await op();
     } catch (e) {
       if (mounted) {
-        messenger.showSnackBar(SnackBar(content: Text('Failed: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed: $e')));
       }
     } finally {
       if (mounted) {

@@ -8,16 +8,15 @@ import 'package:bible_read/widgets/friend_request_widget.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('request appears after sending', (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final service = FriendService(firestore: firestore);
+  late FakeFirebaseFirestore firestore;
+  late FriendService service;
 
-    await service.sendFriendRequest(
-      fromUid: 'a',
-      fromName: 'Alice',
-      toUid: 'b',
-    );
+  setUp(() {
+    firestore = FakeFirebaseFirestore();
+    service = FriendService(firestore: firestore);
+  });
 
+  Future<void> pumpRequestWidget(WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -30,53 +29,49 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  testWidgets('request appears after sending', (tester) async {
+    await service.sendFriendRequest(
+      fromUid: 'a',
+      fromName: 'Alice',
+      toUid: 'b',
+    );
+
+    await pumpRequestWidget(tester);
 
     expect(find.text('Alice'), findsOneWidget);
   });
 
   testWidgets('accepting request adds friend and removes request',
       (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final service = FriendService(firestore: firestore);
-
     await service.sendFriendRequest(
       fromUid: 'a',
       fromName: 'Alice',
       toUid: 'b',
     );
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: FriendRequestWidget(
-            service: service,
-            currentUid: 'b',
-            currentName: 'Bob',
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await pumpRequestWidget(tester);
 
     await tester.tap(find.byIcon(Icons.check));
     await tester.pumpAndSettle();
 
     final friendDocA = await firestore
-        .collection('users')
+        .collection(FriendCollections.users)
         .doc('a')
-        .collection('friends')
+        .collection(FriendCollections.friends)
         .doc('b')
         .get();
     final friendDocB = await firestore
-        .collection('users')
+        .collection(FriendCollections.users)
         .doc('b')
-        .collection('friends')
+        .collection(FriendCollections.friends)
         .doc('a')
         .get();
     final requestDoc = await firestore
-        .collection('users')
+        .collection(FriendCollections.users)
         .doc('b')
-        .collection('friendRequestsReceived')
+        .collection(FriendCollections.receivedRequests)
         .doc('a')
         .get();
 
@@ -88,47 +83,33 @@ void main() {
 
   testWidgets('declining request removes it without adding friends',
       (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final service = FriendService(firestore: firestore);
-
     await service.sendFriendRequest(
       fromUid: 'a',
       fromName: 'Alice',
       toUid: 'b',
     );
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: FriendRequestWidget(
-            service: service,
-            currentUid: 'b',
-            currentName: 'Bob',
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await pumpRequestWidget(tester);
 
     await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
 
     final sentDoc = await firestore
-        .collection('users')
+        .collection(FriendCollections.users)
         .doc('a')
-        .collection('friendRequestsSent')
+        .collection(FriendCollections.sentRequests)
         .doc('b')
         .get();
     final receivedDoc = await firestore
-        .collection('users')
+        .collection(FriendCollections.users)
         .doc('b')
-        .collection('friendRequestsReceived')
+        .collection(FriendCollections.receivedRequests)
         .doc('a')
         .get();
     final friendDocA = await firestore
-        .collection('users')
+        .collection(FriendCollections.users)
         .doc('a')
-        .collection('friends')
+        .collection(FriendCollections.friends)
         .doc('b')
         .get();
 
