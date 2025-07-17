@@ -1,5 +1,6 @@
 // lib/widgets/common_styles.dart
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class CommonStyles {
   static const BoxDecoration backgroundGradient = BoxDecoration(
@@ -7,7 +8,7 @@ class CommonStyles {
   );
 
   static const TextStyle appBarTitleText = TextStyle(
-    fontFamily: 'IBMPlexMono',
+    fontFamily: AppTheme.fontFamily,
     fontSize: 20,
     fontWeight: FontWeight.bold,
     color: Colors.white,
@@ -34,4 +35,17 @@ class CommonStyles {
       actions: actions,
     );
   }
+}
+
+class AppTextStyles {
+  static const TextStyle subtitle = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    fontFamily: AppTheme.fontFamily,
+  );
+
+  static const TextStyle body = TextStyle(
+    fontSize: 14,
+    fontFamily: AppTheme.fontFamily,
+  );
 }

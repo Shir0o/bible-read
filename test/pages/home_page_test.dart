@@ -62,7 +62,8 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
 }
 
-class ThrowingDocumentReference extends MockDocumentReference<Map<String, dynamic>> {
+class ThrowingDocumentReference
+    extends MockDocumentReference<Map<String, dynamic>> {
   ThrowingDocumentReference(
     FakeFirebaseFirestore firestore,
     String path,
@@ -75,7 +76,8 @@ class ThrowingDocumentReference extends MockDocumentReference<Map<String, dynami
             snapshotStreamControllerRoot, null);
 
   @override
-  Future<DocumentSnapshot<Map<String, dynamic>>> get([GetOptions? options]) async {
+  Future<DocumentSnapshot<Map<String, dynamic>>> get(
+      [GetOptions? options]) async {
     throw FirebaseException(plugin: 'firestore');
   }
 }
@@ -351,7 +353,8 @@ void main() {
 
   testWidgets('load failure hides progress indicator', (tester) async {
     final firestore = ThrowingFirestore();
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
