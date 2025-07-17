@@ -29,6 +29,44 @@ class _FriendsPageState extends State<FriendsPage> {
   final TextEditingController _emailController = TextEditingController();
   bool _sending = false;
 
+  Future<void> _showAddFriendDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Add Friend'),
+          content: TextField(
+            controller: _emailController,
+            decoration: const InputDecoration(
+              labelText: "Friend's Email",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: _sending
+                  ? null
+                  : () async {
+                      Navigator.of(context).pop();
+                      await _sendRequest();
+                    },
+              child: _sending
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Send'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -91,23 +129,6 @@ class _FriendsPageState extends State<FriendsPage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    TextField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: "Friend's Email",
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: _sending ? null : _sendRequest,
-                      child: _sending
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Send Request'),
-                    ),
                     const SizedBox(height: 16),
                     Expanded(
                       child: StreamBuilder<List<Friend>>(
@@ -136,6 +157,12 @@ class _FriendsPageState extends State<FriendsPage> {
                 ),
               ),
       ),
+      floatingActionButton: user == null
+          ? null
+          : FloatingActionButton(
+              onPressed: _showAddFriendDialog,
+              child: const Icon(Icons.add),
+            ),
     );
   }
 }
