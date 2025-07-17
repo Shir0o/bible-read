@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/common_styles.dart';
+import '../widgets/friend_requests_button.dart';
+import '../services/friend_service.dart';
 
 class HomePage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -347,6 +349,13 @@ class _HomePageState extends State<HomePage>
         title: const Text('Bible Reading Challenge',
             style: CommonStyles.appBarTitleText),
         backgroundColor: Colors.black,
+        actions: [
+          if (widget.auth.currentUser != null)
+            FriendRequestsButton(
+              friendService: FriendService(firestore: widget.firestore),
+              auth: widget.auth,
+            ),
+        ],
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
@@ -367,7 +376,8 @@ class _HomePageState extends State<HomePage>
       return Center(
         child: Text(
           'User not signed in.',
-          style: TextStyle(fontSize: 18, color: Colors.white70, fontFamily: 'IBMPlexMono'),
+          style: TextStyle(
+              fontSize: 18, color: Colors.white70, fontFamily: 'IBMPlexMono'),
         ),
       );
     }

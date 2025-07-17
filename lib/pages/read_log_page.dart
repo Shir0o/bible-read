@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/common_styles.dart';
+import '../widgets/friend_requests_button.dart';
+import '../services/friend_service.dart';
 
 class ReadLogPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -141,7 +143,16 @@ class _ReadLogPageState extends State<ReadLogPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CommonStyles.buildAppBar("Today's Readers"),
+      appBar: CommonStyles.buildAppBar(
+        "Today's Readers",
+        actions: [
+          if (widget.auth.currentUser != null)
+            FriendRequestsButton(
+              friendService: FriendService(firestore: widget.firestore),
+              auth: widget.auth,
+            ),
+        ],
+      ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
         child: _loading
