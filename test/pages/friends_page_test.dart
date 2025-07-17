@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'package:bible_read/pages/add_friend_page.dart';
 import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/services/friend_service.dart';
 
@@ -59,19 +60,14 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('fab opens dialog and sends request', (tester) async {
+  testWidgets('fab navigates to AddFriendPage', (tester) async {
     await pumpPage(tester);
 
     expect(find.byType(FloatingActionButton), findsOneWidget);
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsOneWidget);
-    await tester.enterText(find.byType(TextField), 'friend@example.com');
-    await tester.tap(find.text('Send'));
-    await tester.pumpAndSettle();
-
-    expect(service.lastEmail, 'friend@example.com');
+    expect(find.byType(AddFriendPage), findsOneWidget);
   });
 
   testWidgets('friend list renders entries from service', (tester) async {
@@ -96,14 +92,13 @@ void main() {
 
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'x@example.com');
+    await tester.enterText(
+        find.byKey(const Key('addFriendEmailField')), 'x@example.com');
     await tester.tap(find.text('Send'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
-
-    final button = tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Send'));
+    final button = tester
+        .widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Send'));
     expect(button.onPressed, isNotNull);
   });
 }
