@@ -146,14 +146,16 @@ class _MainPageState extends State<MainPage> {
               }) async {
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null) {
-                  debugPrint('Skipping sendLikeNotification: user is not signed in.');
+                  debugPrint(
+                      'Skipping sendLikeNotification: user is not signed in.');
                   return;
                 }
 
                 await user.getIdToken(true); // Force refresh
 
-                final callable = FirebaseFunctions.instanceFor(region: 'us-central1')
-                    .httpsCallable('sendLikeNotification');
+                final callable =
+                    FirebaseFunctions.instanceFor(region: 'us-central1')
+                        .httpsCallable('sendLikeNotification');
 
                 await callable.call({
                   'ownerUid': ownerUid,
@@ -176,12 +178,12 @@ class _MainPageState extends State<MainPage> {
       pages: pages,
       destinations: [
         if (signedIn) ...const [
-          NavigationDestination(icon: Icon(Icons.home), label: ''),
-          NavigationDestination(icon: Icon(Icons.feed), label: ''),
+          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
           NavigationDestination(
-              icon: Icon(Icons.leaderboard), label: ''),
+              icon: Icon(Icons.leaderboard), label: 'Leaderboard'),
         ],
-        const NavigationDestination(icon: Icon(Icons.person), label: ''),
+        const NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
       ],
     );
   }
