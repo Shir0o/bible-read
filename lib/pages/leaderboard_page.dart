@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/friend_requests_button.dart';
+import '../services/friend_service.dart';
 import '../models/leaderboard_entry.dart';
 
 class LeaderboardPage extends StatefulWidget {
@@ -94,6 +96,13 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       appBar: AppBar(
         title: const Text('Leaderboard', style: CommonStyles.appBarTitleText),
         backgroundColor: Colors.black,
+        actions: [
+          if (widget.auth.currentUser != null)
+            FriendRequestsButton(
+              friendService: FriendService(firestore: widget.firestore),
+              auth: widget.auth,
+            ),
+        ],
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,

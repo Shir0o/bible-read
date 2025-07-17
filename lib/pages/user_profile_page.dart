@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/common_styles.dart';
-import '../widgets/friend_request_widget.dart';
+import '../widgets/friend_requests_button.dart';
 import '../services/friend_service.dart';
 import 'main_page.dart';
 
@@ -113,7 +113,16 @@ class UserProfilePageState extends State<UserProfilePage> {
   Widget build(BuildContext context) {
     final user = widget.user;
     return Scaffold(
-      appBar: CommonStyles.buildAppBar('Profile'),
+      appBar: CommonStyles.buildAppBar(
+        'Profile',
+        actions: [
+          if (widget.auth.currentUser != null)
+            FriendRequestsButton(
+              friendService: widget.friendService,
+              auth: widget.auth,
+            ),
+        ],
+      ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
         child: Center(
@@ -130,7 +139,8 @@ class UserProfilePageState extends State<UserProfilePage> {
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Text('Sign in with Google'),
                       )
@@ -155,23 +165,6 @@ class UserProfilePageState extends State<UserProfilePage> {
                           const SizedBox(height: 24),
                           Align(
                             alignment: Alignment.centerLeft,
-                            child: Text('Friend Requests',
-                                style: Theme.of(context).textTheme.titleMedium),
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 150,
-                            child: currentUser == null
-                                ? const Text('Please sign in')
-                                : FriendRequestWidget(
-                                    service: widget.friendService,
-                                    currentUid: currentUser.uid,
-                                    currentName: currentUser.displayName ?? 'Unknown',
-                                  ),
-                          ),
-                          const SizedBox(height: 24),
-                          Align(
-                            alignment: Alignment.centerLeft,
                             child: Text('Friends',
                                 style: Theme.of(context).textTheme.titleMedium),
                           ),
@@ -184,7 +177,8 @@ class UserProfilePageState extends State<UserProfilePage> {
                                 return const SizedBox.shrink();
                               }
                               return StreamBuilder<List<Friend>>(
-                                stream: widget.friendService.friends(current.uid),
+                                stream:
+                                    widget.friendService.friends(current.uid),
                                 builder: (context, snapshot) {
                                   if (snapshot.hasError) {
                                     return Text('Error: ${snapshot.error}');
@@ -199,7 +193,8 @@ class UserProfilePageState extends State<UserProfilePage> {
                                   }
                                   return ListView(
                                     children: friends
-                                        .map((f) => ListTile(title: Text(f.name)))
+                                        .map((f) =>
+                                            ListTile(title: Text(f.name)))
                                         .toList(),
                                   );
                                 },

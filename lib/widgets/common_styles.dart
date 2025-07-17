@@ -26,10 +26,12 @@ class CommonStyles {
     );
   }
 
-  static PreferredSizeWidget buildAppBar(String title) {
+  static PreferredSizeWidget buildAppBar(String title,
+      {List<Widget>? actions}) {
     return AppBar(
       title: Text(title, style: appBarTitleText),
       backgroundColor: Colors.black, // Enforce black background for app bar
+      actions: actions,
     );
   }
 }
