@@ -105,6 +105,17 @@ class UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
+  Future<void> _handleSignOut() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (_) {
+      // Ignore errors and still navigate to sign-in screen.
+    }
+    if (!mounted) return;
+    Navigator.of(context)
+        .pushReplacement(MaterialPageRoute(builder: (_) => MainPage()));
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = widget.user;
@@ -159,6 +170,10 @@ class UserProfilePageState extends State<UserProfilePage> {
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: () async => _handleSignOut(),
+                            child: const Text('Sign Out'),
+                          ),
                         ],
                       ));
           }(),
