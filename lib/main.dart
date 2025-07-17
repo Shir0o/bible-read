@@ -13,26 +13,29 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   // Wait for FirebaseAuth to be ready before activating App Check.
   await FirebaseAuth.instance.authStateChanges().first;
-  if (kDebugMode) {
-    await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.debug,
-      appleProvider: AppleProvider.debug,
-    );
-  } else {
-    await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.playIntegrity,
-      appleProvider: AppleProvider.deviceCheck,
-    );
+  bool appCheckFailed = false;
+  try {
+    if (kDebugMode) {
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: AndroidProvider.debug,
+        appleProvider: AppleProvider.debug,
+      );
+    } else {
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: AndroidProvider.playIntegrity,
+        appleProvider: AppleProvider.deviceCheck,
+      );
+    }
+  } catch (_) {
+    appCheckFailed = true;
   }
   await _setupMessaging();
-  runApp(const MyApp());
+  runApp(MyApp(appCheckFailed: appCheckFailed));
 }
 
 final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
@@ -79,7 +82,9 @@ Future<void> _setupMessaging() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool appCheckFailed;
+
+  const MyApp({super.key, required this.appCheckFailed});
 
   // This widget is the root of your application.
   @override
@@ -95,7 +100,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'IBMPlexMono',
       ),
-      home: MainPage(),
+      home: MainPage(appCheckFailed: appCheckFailed),
     );
   }
 }
