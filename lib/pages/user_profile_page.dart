@@ -123,45 +123,44 @@ class UserProfilePageState extends State<UserProfilePage> {
         decoration: CommonStyles.backgroundGradient,
         child: Center(
           child: () {
-            final currentUser = widget.auth.currentUser;
             return _loading
                 ? const CircularProgressIndicator()
                 : (user == null
-                      ? ElevatedButton(
-                          onPressed: _isSigningIn
-                              ? null
-                              : () async => await _handleSignIn(),
-                          child: _isSigningIn
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Sign in with Google'),
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (user.photoUrl != null)
-                              CircleAvatar(
-                                backgroundImage: NetworkImage(user.photoUrl!),
-                                radius: 40,
-                              ),
-                            const SizedBox(height: 16),
-                            Text(
-                              user.displayName ?? 'No Name',
-                              style: Theme.of(context).textTheme.headlineSmall,
+                    ? ElevatedButton(
+                        onPressed: _isSigningIn
+                            ? null
+                            : () async => await _handleSignIn(),
+                        child: _isSigningIn
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('Sign in with Google'),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (user.photoUrl != null)
+                            CircleAvatar(
+                              backgroundImage: NetworkImage(user.photoUrl!),
+                              radius: 40,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              user.email,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-                        ));
+                          const SizedBox(height: 16),
+                          Text(
+                            user.displayName ?? 'No Name',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            user.email,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ));
           }(),
         ),
       ),

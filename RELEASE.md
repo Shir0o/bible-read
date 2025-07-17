@@ -1,3 +1,7 @@
+# Release 1.2.3
+
+This version updates the friends feature with a dedicated page and a new **+** button for sending requests.
+
 # Release 1.2.2
 
 This release introduces push notifications when your read log receives a like.
