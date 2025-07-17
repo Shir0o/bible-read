@@ -115,7 +115,7 @@ void main() {
     final auth =
         MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     await tester.pumpWidget(MaterialApp(home: MainPage(auth: auth)));
-    await tester.tap(find.text('Feed'));
+    await tester.tap(find.byIcon(Icons.feed));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(ReadLogPage), findsOneWidget);
@@ -267,7 +267,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Navigate to Feed (ReadLogPage)
-    await tester.tap(find.text('Feed'));
+    await tester.tap(find.byIcon(Icons.feed));
     await tester.pumpAndSettle();
 
     // Find the ListTile for 'Owner User' and tap the like button
