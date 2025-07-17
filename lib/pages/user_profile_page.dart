@@ -93,15 +93,18 @@ class UserProfilePageState extends State<UserProfilePage> {
           context,
         ).showSnackBar(const SnackBar(content: Text('Sign in cancelled')));
       }
-    } catch (error) {
-      if (mounted) {
-        setState(() {
-          _isSigningIn = false;
-        });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Sign in failed: $error')));
-      }
+      } catch (error) {
+        debugPrint('Sign in failed: \$error');
+        if (mounted) {
+          setState(() {
+            _isSigningIn = false;
+          });
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(
+            const SnackBar(content: Text('Something went wrong')),
+          );
+        }
     }
   }
 
