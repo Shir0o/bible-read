@@ -84,7 +84,54 @@ void main() {
             .doc(toUid)
             .get();
         expect(sentRequestDoc.exists, isTrue);
-        expect((sentRequestDoc.data()?['timestamp'] as Timestamp).seconds, isNot(0));
+        expect((sentRequestDoc.data()?['timestamp'] as Timestamp).seconds,
+            isNot(0));
+      });
+    });
+
+    group('sendFriendRequestByEmail', () {
+      test('should look up user by email and create request', () async {
+        const fromUid = 'userA';
+        const fromName = 'User A';
+        const toUid = 'userB';
+        const toEmail = 'b@example.com';
+
+        await firestore.collection(FriendCollections.users).doc(toUid).set({
+          'email': toEmail,
+        });
+
+        await friendService.sendFriendRequestByEmail(
+          fromUid: fromUid,
+          fromName: fromName,
+          toEmail: toEmail,
+        );
+
+        final sentRequestDoc = await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(toUid)
+            .get();
+        final receivedRequestDoc = await firestore
+            .collection(FriendCollections.users)
+            .doc(toUid)
+            .collection(FriendCollections.receivedRequests)
+            .doc(fromUid)
+            .get();
+
+        expect(sentRequestDoc.exists, isTrue);
+        expect(receivedRequestDoc.exists, isTrue);
+      });
+
+      test('should throw error when email not found', () async {
+        expect(
+          () => friendService.sendFriendRequestByEmail(
+            fromUid: 'a',
+            fromName: 'Alice',
+            toEmail: 'unknown@example.com',
+          ),
+          throwsA(isA<ArgumentError>()),
+        );
       });
     });
 
