@@ -1,6 +1,13 @@
 # Release 1.2.3
 
-This version updates the friends feature with a dedicated page and a new **+** button for sending requests.
+This update introduces a complete friends system.
+
+## Features
+
+* Dedicated **Friends** page accessible from the bottom navigation bar.
+* Floating **+** button to send friend requests by email.
+* Notification icon shows the number of pending requests and opens the request list.
+* Accept or decline requests directly from the new Friend Requests page.
 
 # Release 1.2.2
 
@@ -8,7 +15,9 @@ This release introduces push notifications when your read log receives a like.
 
 ## Enhancements
 
-* Added push notifications for read log likes using FCM.
+* Stores the user's FCM token in Firestore after sign‑in.
+* Cloud Function `sendLikeNotification` sends a push when another user likes your log.
+* Incoming messages are shown using local notifications while the app is running.
 
 # Release 1.2.1
 
