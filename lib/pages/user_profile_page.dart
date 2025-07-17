@@ -79,32 +79,30 @@ class UserProfilePageState extends State<UserProfilePage> {
 
         if (!mounted) return;
         setState(() {
-          // Update the user passed from parent by calling widget.user is final, so we can't update it directly
-          // Instead, rebuild parent or manage user state differently if needed
-          // For now, just rebuild to reflect sign in
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => MainPage(),
-            ),
-          );
+          _isSigningIn = false;
         });
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => MainPage(),
+          ),
+        );
       } else {
         if (!mounted) return;
+        setState(() {
+          _isSigningIn = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Sign in cancelled')),
         );
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign in failed: $error')),
-        );
-      }
-    } finally {
-      if (mounted) {
         setState(() {
           _isSigningIn = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign in failed: $error')),
+        );
       }
     }
   }
