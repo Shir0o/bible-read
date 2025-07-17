@@ -178,21 +178,16 @@ class _ReadLogPageState extends State<ReadLogPage> {
                 ? Center(
                     child: Text(
                       'Unable to load feed.',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Colors.white70,
-                        fontFamily: 'IBMPlexMono',
-                      ),
+                      style: AppTextStyles.subtitle
+                          .copyWith(color: Colors.white70),
                     ),
                   )
                 : widget.auth.currentUser == null
                     ? Center(
                         child: Text(
                           'Please sign in to view your read log.',
-                          style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.white70,
-                              fontFamily: 'IBMPlexMono'),
+                          style: AppTextStyles.subtitle
+                              .copyWith(color: Colors.white70),
                         ),
                       )
                     : Padding(
@@ -214,8 +209,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                     color: Colors.green),
                                 title: Text(
                                   '${log['name']} read today!',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w600),
+                                  style: AppTextStyles.subtitle,
                                 ),
                                 subtitle: () {
                                   final likeNames =

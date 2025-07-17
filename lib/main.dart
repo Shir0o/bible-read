@@ -9,6 +9,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'firebase_options.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -91,15 +92,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Bible Reading Challenge',
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        // This is the theme of your application.
-        // It uses Material 3 with a purple seed color.
-        colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.indigo.shade900, brightness: Brightness.dark),
-        useMaterial3: true,
-        fontFamily: 'IBMPlexMono',
-      ),
+      theme: AppTheme.appTheme,
       home: MainPage(appCheckFailed: appCheckFailed),
     );
   }
