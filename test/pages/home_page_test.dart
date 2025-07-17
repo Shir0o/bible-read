@@ -2,8 +2,62 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'package:bible_read/pages/home_page.dart';
+
+class FakeGoogleSignInPlatform extends GoogleSignInPlatform
+    with MockPlatformInterfaceMixin {
+  GoogleSignInUserData? user;
+
+  @override
+  Future<void> init({
+    List<String> scopes = const <String>[],
+    SignInOption signInOption = SignInOption.standard,
+    String? hostedDomain,
+    String? clientId,
+  }) async {}
+
+  @override
+  Future<GoogleSignInUserData?> signInSilently() async => user;
+
+  @override
+  Future<GoogleSignInUserData?> signIn() async => user;
+
+  @override
+  Future<GoogleSignInTokenData> getTokens({
+    required String email,
+    bool? shouldRecoverAuth,
+  }) async {
+    return GoogleSignInTokenData(idToken: 'id', accessToken: 'access');
+  }
+
+  @override
+  Future<void> signOut() async {}
+
+  @override
+  Future<void> disconnect() async {}
+
+  @override
+  Future<bool> isSignedIn() async => user != null;
+
+  @override
+  Future<void> clearAuthCache({required String token}) async {}
+
+  @override
+  Future<bool> requestScopes(List<String> scopes) async => true;
+
+  @override
+  Future<bool> canAccessScopes(
+    List<String> scopes, {
+    String? accessToken,
+  }) async =>
+      true;
+
+  @override
+  Stream<GoogleSignInUserData?>? get userDataEvents => null;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -196,6 +250,8 @@ void main() {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u3');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+    final googlePlatform = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = googlePlatform;
 
     final today = DateTime.now();
     for (int i = 0; i < 3; i++) {
