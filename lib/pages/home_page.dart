@@ -294,12 +294,18 @@ class _HomePageState extends State<HomePage>
         List<String>.from(data['pastWeekReadDates'] ?? []);
     if (!pastWeekReadDates.contains(dateKey)) {
       pastWeekReadDates.add(dateKey);
+      if (pastWeekReadDates.length > 7) {
+        pastWeekReadDates.removeRange(0, pastWeekReadDates.length - 7);
+      }
     }
 
     final pastMonthReadDates =
         List<String>.from(data['pastMonthReadDates'] ?? []);
     if (!pastMonthReadDates.contains(dateKey)) {
       pastMonthReadDates.add(dateKey);
+      if (pastMonthReadDates.length > 30) {
+        pastMonthReadDates.removeRange(0, pastMonthReadDates.length - 30);
+      }
     }
 
     await summaryDocRef.set({
