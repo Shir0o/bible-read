@@ -2,8 +2,43 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:fake_cloud_firestore/src/mock_collection_reference.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bible_read/pages/leaderboard_page.dart';
+
+class ThrowingUsersCollection extends MockCollectionReference<Map<String, dynamic>> {
+  ThrowingUsersCollection(
+    FakeFirebaseFirestore firestore,
+    String path,
+    Map<String, dynamic> root,
+    Map<String, dynamic> docsData,
+    Map<String, dynamic> snapshotStreamControllerRoot,
+  ) : super(firestore, path, root, docsData, snapshotStreamControllerRoot);
+
+  @override
+  Future<QuerySnapshot<Map<String, dynamic>>> get([GetOptions? options]) async {
+    throw FirebaseException(plugin: 'firestore');
+  }
+}
+
+class ThrowingFirestore extends FakeFirebaseFirestore {
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String path) {
+    final base =
+        super.collection(path) as MockCollectionReference<Map<String, dynamic>>;
+    if (path == 'users') {
+      return ThrowingUsersCollection(
+        this,
+        base.path,
+        base.root,
+        base.docsData,
+        base.snapshotStreamControllerRoot,
+      );
+    }
+    return base;
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -70,5 +105,15 @@ void main() {
     expect(tiles.length, 2);
     expect((tiles[0].title as Text).data, 'Bob');
     expect((tiles[1].title as Text).data, 'Alice');
+  });
+
+  testWidgets('failure hides loading indicator', (tester) async {
+    final firestore = ThrowingFirestore();
+    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    await tester.pumpWidget(
+        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 }

@@ -62,9 +62,11 @@ class UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _handleSignIn() async {
-    setState(() {
-      _isSigningIn = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isSigningIn = true;
+      });
+    }
     try {
       final GoogleSignIn googleSignIn = widget.googleSignInProvider();
       final GoogleSignInAccount? account = await googleSignIn.signIn();
@@ -77,34 +79,35 @@ class UserProfilePageState extends State<UserProfilePage> {
 
         await widget.auth.signInWithCredential(credential);
 
-        if (!mounted) return;
-        setState(() {
-          _isSigningIn = false;
-        });
-        Navigator.of(
-          context,
-        ).pushReplacement(MaterialPageRoute(builder: (context) => MainPage()));
-      } else {
-        if (!mounted) return;
-        setState(() {
-          _isSigningIn = false;
-        });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Sign in cancelled')));
-      }
-      } catch (error) {
-        debugPrint('Sign in failed: \$error');
         if (mounted) {
-          setState(() {
-            _isSigningIn = false;
-          });
-          ScaffoldMessenger.of(
+          Navigator.of(
             context,
-          ).showSnackBar(
-            const SnackBar(content: Text('Something went wrong')),
+          ).pushReplacement(
+            MaterialPageRoute(builder: (context) => MainPage()),
           );
         }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Sign in cancelled')));
+        }
+      }
+    } catch (error) {
+      debugPrint('Sign in failed: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          const SnackBar(content: Text('Something went wrong')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSigningIn = false;
+        });
+      }
     }
   }
 
