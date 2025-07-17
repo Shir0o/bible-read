@@ -289,4 +289,22 @@ void main() {
     expect(calledUid, 'owner456');
     expect(calledName, 'Test');
   });
+
+  testWidgets('shows error page when appCheckFailed is true', (tester) async {
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          appCheckFailed: true,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('App verification failed'), findsOneWidget);
+    expect(find.byType(ResponsiveScaffold), findsNothing);
+  });
 }
