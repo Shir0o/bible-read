@@ -21,7 +21,7 @@ void main() {
   });
 
   testWidgets('Main page loads', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const MyApp(appCheckFailed: false));
     await tester.pumpAndSettle();
 
     // Verify that MainPage is shown.
