@@ -184,13 +184,13 @@ class _MainPageState extends State<MainPage> {
       pages: pages,
       destinations: [
         if (signedIn) ...const [
-          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
+          NavigationDestination(icon: Icon(Icons.home), label: ''),
+          NavigationDestination(icon: Icon(Icons.feed), label: ''),
           NavigationDestination(
-              icon: Icon(Icons.leaderboard), label: 'Leaderboard'),
-          NavigationDestination(icon: Icon(Icons.people), label: 'Friends'),
+              icon: Icon(Icons.leaderboard), label: ''),
+          NavigationDestination(icon: Icon(Icons.people), label: ''),
         ],
-        const NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+        const NavigationDestination(icon: Icon(Icons.person), label: ''),
       ],
     );
   }
