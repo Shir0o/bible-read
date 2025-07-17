@@ -11,6 +11,7 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **User Profile:** View your profile information and sign in with your Google account.
 *   **Like Notifications:** Receive a push notification when someone likes your read log.
 *   **Friends Page:** Manage friends on a dedicated page and send new requests using the **+** button.
+*   **Add Friend Page:** The **+** button opens a separate page for sending friend requests.
 
 ## Getting Started
 
