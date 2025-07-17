@@ -128,6 +128,9 @@ void main() {
 
     expect(find.text('Something went wrong'), findsOneWidget);
     expect(auth.signInCalled, isFalse);
+
+    await tester.pumpAndSettle();
+    expect(find.text('Sign in with Google'), findsOneWidget);
   });
 
   testWidgets('shows user info when user provided', (tester) async {
