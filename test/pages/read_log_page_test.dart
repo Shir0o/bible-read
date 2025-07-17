@@ -1,10 +1,89 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:fake_cloud_firestore/src/mock_collection_reference.dart';
+import 'package:fake_cloud_firestore/src/mock_document_reference.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:bible_read/pages/read_log_page.dart';
+
+// ignore: subtype_of_sealed_class
+class ThrowingCollectionReference
+    extends MockCollectionReference<Map<String, dynamic>> {
+  ThrowingCollectionReference(
+    FakeFirebaseFirestore firestore,
+    String path,
+    Map<String, dynamic> root,
+    Map<String, dynamic> docsData,
+    Map<String, dynamic> snapshotStreamControllerRoot,
+  ) : super(firestore, path, root, docsData, snapshotStreamControllerRoot);
+
+  @override
+  Future<QuerySnapshot<Map<String, dynamic>>> get([GetOptions? options]) async {
+    throw FirebaseException(plugin: 'firestore');
+  }
+
+  @override
+  DocumentReference<Map<String, dynamic>> doc([String? path]) {
+    final base =
+        super.doc(path ?? '') as MockDocumentReference<Map<String, dynamic>>;
+    return ThrowingDocumentReference(
+      firestore as FakeFirebaseFirestore,
+      base.path,
+      base.id,
+      base.root,
+      base.docsData,
+      base.rootParent,
+      base.snapshotStreamControllerRoot,
+    );
+  }
+}
+
+// ignore: subtype_of_sealed_class
+class ThrowingDocumentReference
+    extends MockDocumentReference<Map<String, dynamic>> {
+  ThrowingDocumentReference(
+    FakeFirebaseFirestore firestore,
+    String path,
+    String id,
+    Map<String, dynamic> root,
+    Map<String, dynamic> docsData,
+    Map<String, dynamic> rootParent,
+    Map<String, dynamic> snapshotStreamControllerRoot,
+  ) : super(firestore, path, id, root, docsData, rootParent,
+            snapshotStreamControllerRoot, null);
+
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String collectionPath) {
+    final base = super.collection(collectionPath)
+        as MockCollectionReference<Map<String, dynamic>>;
+    return ThrowingCollectionReference(
+      firestore as FakeFirebaseFirestore,
+      base.path,
+      base.root,
+      base.docsData,
+      base.snapshotStreamControllerRoot,
+    );
+  }
+}
+
+class ThrowingFirestore extends FakeFirebaseFirestore {
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String path) {
+    final base =
+        super.collection(path) as MockCollectionReference<Map<String, dynamic>>;
+    if (path == 'read_logs') {
+      return ThrowingCollectionReference(
+        this,
+        base.path,
+        base.root,
+        base.docsData,
+        base.snapshotStreamControllerRoot,
+      );
+    }
+    return base;
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -181,6 +260,25 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(called, 1);
+    });
+
+    testWidgets('shows fallback text when Firestore fails', (tester) async {
+      final firestore = ThrowingFirestore();
+      final auth =
+          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+
+      await tester.pumpWidget(MaterialApp(
+          home: ReadLogPage(
+              firestore: firestore,
+              auth: auth,
+              dateProvider: () => fixedDate,
+              onSendLikeNotification: (
+                  {required String ownerUid,
+                  required String likerName}) async {})));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Unable to load feed.'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
     });
   });
 }

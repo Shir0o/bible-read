@@ -52,6 +52,7 @@ class ReadLogPage extends StatefulWidget {
 class _ReadLogPageState extends State<ReadLogPage> {
   List<Map<String, dynamic>> _logs = [];
   bool _loading = true;
+  bool _loadError = false;
 
   Future<void> _sendLikeNotification(
       {required String ownerUid, required String likerName}) async {
@@ -75,37 +76,46 @@ class _ReadLogPageState extends State<ReadLogPage> {
       });
       return;
     }
+    bool error = false;
+    List<Map<String, dynamic>> logs = [];
+    try {
+      final now = widget.dateProvider();
+      final dateKey = '${now.year}-${now.month}-${now.day}';
+      final snapshot = await widget.firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .orderBy('timestamp', descending: true)
+          .get();
 
-    final now = widget.dateProvider();
-    final dateKey = '${now.year}-${now.month}-${now.day}';
-    final snapshot = await widget.firestore
-        .collection('read_logs')
-        .doc(dateKey)
-        .collection('entries')
-        .orderBy('timestamp', descending: true)
-        .get();
-
-    final logs = await Future.wait(snapshot.docs.map((doc) async {
-      final data = doc.data();
-      final likesSnapshot = await doc.reference.collection('likes').get();
-      final likeDocs = likesSnapshot.docs;
-      final liked = likeDocs.any((d) => d.id == currentUser.uid);
-      final likeNames = likeDocs
-          .map((d) => (d.data()['name'] ?? 'Unknown').toString())
-          .toList();
-      return {
-        'uid': doc.id,
-        'name': (data['name'] ?? doc.id).toString().split(' ').first,
-        'read': true,
-        'liked': liked,
-        'likeNames': likeNames,
-      };
-    }).toList());
-
-    setState(() {
-      _logs = logs;
-      _loading = false;
-    });
+      logs = await Future.wait(snapshot.docs.map((doc) async {
+        final data = doc.data();
+        final likesSnapshot = await doc.reference.collection('likes').get();
+        final likeDocs = likesSnapshot.docs;
+        final liked = likeDocs.any((d) => d.id == currentUser.uid);
+        final likeNames = likeDocs
+            .map((d) => (d.data()['name'] ?? 'Unknown').toString())
+            .toList();
+        return {
+          'uid': doc.id,
+          'name': (data['name'] ?? doc.id).toString().split(' ').first,
+          'read': true,
+          'liked': liked,
+          'likeNames': likeNames,
+        };
+      }).toList());
+    } catch (e) {
+      debugPrint('Load logs failed: $e');
+      error = true;
+    } finally {
+      setState(() {
+        if (!error) {
+          _logs = logs;
+        }
+        _loading = false;
+        _loadError = error;
+      });
+    }
   }
 
   Future<void> _toggleLike(String logUid) async {
@@ -160,68 +170,80 @@ class _ReadLogPageState extends State<ReadLogPage> {
                 alignment: Alignment.center,
                 child: const CircularProgressIndicator(),
               )
-            : widget.auth.currentUser == null
+            : _loadError
                 ? Center(
                     child: Text(
-                      'Please sign in to view your read log.',
-                      style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white70,
-                          fontFamily: 'IBMPlexMono'),
+                      'Unable to load feed.',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.white70,
+                        fontFamily: 'IBMPlexMono',
+                      ),
                     ),
                   )
-                : Padding(
-                    padding: const EdgeInsets.only(
-                        top: 16.0, bottom: 48.0, left: 16, right: 16),
-                    child: ListView.builder(
-                      itemCount: _logs.length,
-                      itemBuilder: (context, index) {
-                        final log = _logs[index];
-                        final isLiked = (log['liked'] as bool? ?? false);
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: ListTile(
-                            leading: const Icon(Icons.check_circle,
-                                color: Colors.green),
-                            title: Text(
-                              '${log['name']} read today!',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                            subtitle: () {
-                              final likeNames =
-                                  (log['likeNames'] as List?) ?? [];
-                              if (likeNames.isEmpty) return null;
-
-                              const maxToShow = 3;
-                              final displayText = likeNames.length > maxToShow
-                                  ? '${likeNames.take(maxToShow).join(", ")} +${likeNames.length - maxToShow} more'
-                                  : likeNames.join(", ");
-
-                              return Text('Liked by $displayText');
-                            }(),
-                            trailing: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4.0),
-                              child: IconButton(
-                                icon: Icon(
-                                  isLiked
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: isLiked ? Colors.red : null,
-                                ),
-                                onPressed: () => _toggleLike(log['uid']),
+                : widget.auth.currentUser == null
+                    ? Center(
+                        child: Text(
+                          'Please sign in to view your read log.',
+                          style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white70,
+                              fontFamily: 'IBMPlexMono'),
+                        ),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.only(
+                            top: 16.0, bottom: 48.0, left: 16, right: 16),
+                        child: ListView.builder(
+                          itemCount: _logs.length,
+                          itemBuilder: (context, index) {
+                            final log = _logs[index];
+                            final isLiked = (log['liked'] as bool? ?? false);
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                              child: ListTile(
+                                leading: const Icon(Icons.check_circle,
+                                    color: Colors.green),
+                                title: Text(
+                                  '${log['name']} read today!',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                subtitle: () {
+                                  final likeNames =
+                                      (log['likeNames'] as List?) ?? [];
+                                  if (likeNames.isEmpty) return null;
+
+                                  const maxToShow = 3;
+                                  final displayText = likeNames.length >
+                                          maxToShow
+                                      ? '${likeNames.take(maxToShow).join(", ")} +${likeNames.length - maxToShow} more'
+                                      : likeNames.join(", ");
+
+                                  return Text('Liked by $displayText');
+                                }(),
+                                trailing: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4.0),
+                                  child: IconButton(
+                                    icon: Icon(
+                                      isLiked
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      color: isLiked ? Colors.red : null,
+                                    ),
+                                    onPressed: () => _toggleLike(log['uid']),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
       ),
     );
   }
