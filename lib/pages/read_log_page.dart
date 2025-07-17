@@ -130,24 +130,28 @@ class _ReadLogPageState extends State<ReadLogPage> {
         .doc(logUid)
         .collection('likes')
         .doc(user.uid);
-
-    final likeDoc = await likeRef.get();
-    if (likeDoc.exists) {
-      await likeRef.delete();
-    } else {
-      final likerName = (user.displayName ?? '').split(' ').first;
-      await likeRef.set({
-        'timestamp': Timestamp.now(),
-        'name': likerName,
-      });
-      if (logUid != user.uid) {
-        await _sendLikeNotification(
-          ownerUid: logUid,
-          likerName: likerName,
-        );
+    try {
+      final likeDoc = await likeRef.get();
+      if (likeDoc.exists) {
+        await likeRef.delete();
+      } else {
+        final likerName = (user.displayName ?? '').split(' ').first;
+        await likeRef.set({
+          'timestamp': Timestamp.now(),
+          'name': likerName,
+        });
+        if (logUid != user.uid) {
+          await _sendLikeNotification(
+            ownerUid: logUid,
+            likerName: likerName,
+          );
+        }
       }
+    } catch (e) {
+      debugPrint('Failed to toggle like: $e');
+    } finally {
+      _loadLogs(); // Refresh the UI
     }
-    _loadLogs(); // Refresh the UI
   }
 
   @override

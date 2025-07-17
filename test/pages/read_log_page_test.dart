@@ -85,6 +85,187 @@ class ThrowingFirestore extends FakeFirebaseFirestore {
   }
 }
 
+// Firestore that throws on like writes
+class ThrowingWriteLikesDocumentReference
+    extends MockDocumentReference<Map<String, dynamic>> {
+  ThrowingWriteLikesDocumentReference(
+    FakeFirebaseFirestore firestore,
+    String path,
+    String id,
+    Map<String, dynamic> root,
+    Map<String, dynamic> docsData,
+    Map<String, dynamic> rootParent,
+    Map<String, dynamic> snapshotStreamControllerRoot,
+  ) : super(firestore, path, id, root, docsData, rootParent,
+            snapshotStreamControllerRoot, null);
+
+  @override
+  Future<void> set(Map<String, dynamic> data, [SetOptions? options]) async {
+    throw FirebaseException(plugin: 'firestore');
+  }
+
+  @override
+  Future<void> delete() async {
+    throw FirebaseException(plugin: 'firestore');
+  }
+}
+
+class ThrowingWriteLikesCollectionReference
+    extends MockCollectionReference<Map<String, dynamic>> {
+  ThrowingWriteLikesCollectionReference(
+    FakeFirebaseFirestore firestore,
+    String path,
+    Map<String, dynamic> root,
+    Map<String, dynamic> docsData,
+    Map<String, dynamic> snapshotStreamControllerRoot,
+  ) : super(firestore, path, root, docsData, snapshotStreamControllerRoot);
+
+  @override
+  DocumentReference<Map<String, dynamic>> doc([String? path]) {
+    final base =
+        super.doc(path ?? '') as MockDocumentReference<Map<String, dynamic>>;
+    return ThrowingWriteLikesDocumentReference(
+      firestore as FakeFirebaseFirestore,
+      base.path,
+      base.id,
+      base.root,
+      base.docsData,
+      base.rootParent,
+      base.snapshotStreamControllerRoot,
+    );
+  }
+}
+
+class ThrowingWriteEntriesDocumentReference
+    extends MockDocumentReference<Map<String, dynamic>> {
+  ThrowingWriteEntriesDocumentReference(
+    FakeFirebaseFirestore firestore,
+    String path,
+    String id,
+    Map<String, dynamic> root,
+    Map<String, dynamic> docsData,
+    Map<String, dynamic> rootParent,
+    Map<String, dynamic> snapshotStreamControllerRoot,
+  ) : super(firestore, path, id, root, docsData, rootParent,
+            snapshotStreamControllerRoot, null);
+
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String collectionPath) {
+    final base = super.collection(collectionPath)
+        as MockCollectionReference<Map<String, dynamic>>;
+    if (collectionPath == 'likes') {
+      return ThrowingWriteLikesCollectionReference(
+        firestore as FakeFirebaseFirestore,
+        base.path,
+        base.root,
+        base.docsData,
+        base.snapshotStreamControllerRoot,
+      );
+    }
+    return base;
+  }
+}
+
+class ThrowingWriteEntriesCollectionReference
+    extends MockCollectionReference<Map<String, dynamic>> {
+  ThrowingWriteEntriesCollectionReference(
+    FakeFirebaseFirestore firestore,
+    String path,
+    Map<String, dynamic> root,
+    Map<String, dynamic> docsData,
+    Map<String, dynamic> snapshotStreamControllerRoot,
+  ) : super(firestore, path, root, docsData, snapshotStreamControllerRoot);
+
+  @override
+  DocumentReference<Map<String, dynamic>> doc([String? path]) {
+    final base =
+        super.doc(path ?? '') as MockDocumentReference<Map<String, dynamic>>;
+    return ThrowingWriteEntriesDocumentReference(
+      firestore as FakeFirebaseFirestore,
+      base.path,
+      base.id,
+      base.root,
+      base.docsData,
+      base.rootParent,
+      base.snapshotStreamControllerRoot,
+    );
+  }
+}
+
+class ThrowingWriteDateDocumentReference
+    extends MockDocumentReference<Map<String, dynamic>> {
+  ThrowingWriteDateDocumentReference(
+    FakeFirebaseFirestore firestore,
+    String path,
+    String id,
+    Map<String, dynamic> root,
+    Map<String, dynamic> docsData,
+    Map<String, dynamic> rootParent,
+    Map<String, dynamic> snapshotStreamControllerRoot,
+  ) : super(firestore, path, id, root, docsData, rootParent,
+            snapshotStreamControllerRoot, null);
+
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String collectionPath) {
+    final base = super.collection(collectionPath)
+        as MockCollectionReference<Map<String, dynamic>>;
+    if (collectionPath == 'entries') {
+      return ThrowingWriteEntriesCollectionReference(
+        firestore as FakeFirebaseFirestore,
+        base.path,
+        base.root,
+        base.docsData,
+        base.snapshotStreamControllerRoot,
+      );
+    }
+    return base;
+  }
+}
+
+class ThrowingWriteDateCollectionReference
+    extends MockCollectionReference<Map<String, dynamic>> {
+  ThrowingWriteDateCollectionReference(
+    FakeFirebaseFirestore firestore,
+    String path,
+    Map<String, dynamic> root,
+    Map<String, dynamic> docsData,
+    Map<String, dynamic> snapshotStreamControllerRoot,
+  ) : super(firestore, path, root, docsData, snapshotStreamControllerRoot);
+
+  @override
+  DocumentReference<Map<String, dynamic>> doc([String? path]) {
+    final base =
+        super.doc(path ?? '') as MockDocumentReference<Map<String, dynamic>>;
+    return ThrowingWriteDateDocumentReference(
+      firestore as FakeFirebaseFirestore,
+      base.path,
+      base.id,
+      base.root,
+      base.docsData,
+      base.rootParent,
+      base.snapshotStreamControllerRoot,
+    );
+  }
+}
+
+class ThrowingWriteFirestore extends FakeFirebaseFirestore {
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String path) {
+    final base =
+        super.collection(path) as MockCollectionReference<Map<String, dynamic>>;
+    if (path == 'read_logs') {
+      return ThrowingWriteDateCollectionReference(
+        this,
+        base.path,
+        base.root,
+        base.docsData,
+        base.snapshotStreamControllerRoot,
+      );
+    }
+    return base;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -279,6 +460,51 @@ void main() {
 
       expect(find.text('Unable to load feed.'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('toggleLike handles write failure', (tester) async {
+      final firestore = ThrowingWriteFirestore();
+      final user = MockUser(uid: 'u1', displayName: 'User One');
+      final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      await firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc('u2')
+          .set({
+        'name': 'User Two',
+        'email': 'u2@test.com',
+        'timestamp': Timestamp.now(),
+      });
+
+      await tester.pumpWidget(MaterialApp(
+          home: ReadLogPage(
+              firestore: firestore,
+              auth: auth,
+              dateProvider: () => fixedDate,
+              onSendLikeNotification:
+                  ({required String ownerUid, required String likerName}) async {})));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+
+      await tester.runAsync(() async {
+        final likeDoc = await firestore
+            .collection('read_logs')
+            .doc(dateKey)
+            .collection('entries')
+            .doc('u2')
+            .collection('likes')
+            .doc(user.uid)
+            .get();
+        expect(likeDoc.exists, isFalse);
+      });
     });
   });
 }
