@@ -126,7 +126,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.textContaining('Sign in failed'), findsOneWidget);
+    expect(find.text('Something went wrong'), findsOneWidget);
     expect(auth.signInCalled, isFalse);
   });
 

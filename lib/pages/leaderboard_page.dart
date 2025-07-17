@@ -74,19 +74,20 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           _isLoading = false;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error loading leaderboard: $e')),
-            );
-          }
-        });
-      }
+      } catch (e) {
+        debugPrint('Error loading leaderboard: \$e');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Something went wrong')),
+              );
+            }
+          });
+        }
     }
   }
 
