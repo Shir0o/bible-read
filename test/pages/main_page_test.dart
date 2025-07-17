@@ -121,8 +121,8 @@ void main() {
     expect(find.byType(ReadLogPage), findsOneWidget);
 
     // Friends navigation
-    expect(find.text('Friends'), findsOneWidget);
-    await tester.tap(find.text('Friends'));
+    expect(find.byIcon(Icons.people), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.people));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(FriendsPage), findsOneWidget);
