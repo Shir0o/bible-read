@@ -14,6 +14,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import 'home_page.dart';
 import 'read_log_page.dart';
+import 'app_check_error_page.dart';
 
 typedef SendLikeNotification = Future<void> Function({
   required String ownerUid,
@@ -26,6 +27,7 @@ class MainPage extends StatefulWidget {
   final GoogleSignIn Function() googleSignInProvider;
   final SendLikeNotification? sendLikeNotification;
   final FirebaseMessaging messaging;
+  final bool appCheckFailed;
 
   MainPage({
     super.key,
@@ -34,6 +36,7 @@ class MainPage extends StatefulWidget {
     GoogleSignIn Function()? googleSignInProvider,
     FirebaseMessaging? messaging,
     this.sendLikeNotification,
+    this.appCheckFailed = false,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         messaging = messaging ?? FirebaseMessaging.instance,
@@ -122,6 +125,9 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _onItemTapped(int index) {
+    if (widget.appCheckFailed) {
+      return;
+    }
     final bool signedIn = widget.auth.currentUser != null;
     final int profileIndex = signedIn ? 4 : 0;
     if (!signedIn && index != profileIndex) {
@@ -134,6 +140,10 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.appCheckFailed) {
+      return const AppCheckErrorPage();
+    }
+
     final bool signedIn = widget.auth.currentUser != null;
     final List<Widget> pages = [
       if (signedIn) ...[
@@ -186,8 +196,7 @@ class _MainPageState extends State<MainPage> {
         if (signedIn) ...const [
           NavigationDestination(icon: Icon(Icons.home), label: ''),
           NavigationDestination(icon: Icon(Icons.feed), label: ''),
-          NavigationDestination(
-              icon: Icon(Icons.leaderboard), label: ''),
+          NavigationDestination(icon: Icon(Icons.leaderboard), label: ''),
           NavigationDestination(icon: Icon(Icons.people), label: ''),
         ],
         const NavigationDestination(icon: Icon(Icons.person), label: ''),
