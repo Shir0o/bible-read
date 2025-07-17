@@ -202,7 +202,7 @@ packages:
     source: hosted
     version: "3.1.0"
   fake_firebase_security_rules:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: fake_firebase_security_rules
       sha256: "7a9011d42d99848ece92784fed5a20167ad76da66de2c1102a2bc053e66b0305"
