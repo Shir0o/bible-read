@@ -80,6 +80,32 @@ class FriendService {
     await batch.commit();
   }
 
+  /// Send a friend request from [fromUid] to the user with [toEmail].
+  ///
+  /// Looks up the UID associated with [toEmail] in the `users` collection and
+  /// forwards to [sendFriendRequest]. Throws an [ArgumentError] if no user is
+  /// found for the provided email address.
+  Future<void> sendFriendRequestByEmail({
+    required String fromUid,
+    required String fromName,
+    required String toEmail,
+  }) async {
+    final query = await firestore
+        .collection(FriendCollections.users)
+        .where('email', isEqualTo: toEmail)
+        .limit(1)
+        .get();
+    if (query.docs.isEmpty) {
+      throw ArgumentError('No user found with email $toEmail');
+    }
+    final toUid = query.docs.first.id;
+    await sendFriendRequest(
+      fromUid: fromUid,
+      fromName: fromName,
+      toUid: toUid,
+    );
+  }
+
   /// Accept a friend request sent by [fromUid] to [currentUid].
   Future<void> acceptFriendRequest({
     required String currentUid,
