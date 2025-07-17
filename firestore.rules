@@ -24,7 +24,8 @@ service cloud.firestore {
       }
 
       match /friendRequestsSent/{toUid} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow write: if request.auth != null && (request.auth.uid == userId || request.auth.uid == toUid);
+        allow read: if request.auth != null && (request.auth.uid == userId || request.auth.uid == toUid);
       }
 
       match /friendRequestsReceived/{fromUid} {
