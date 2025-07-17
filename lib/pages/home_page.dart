@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/common_styles.dart';
 
@@ -31,7 +32,7 @@ class _HomePageState extends State<HomePage>
     _loadReadStatus();
   }
 
-    Future<void> _loadReadStatus() async {
+  Future<void> _loadReadStatus() async {
     if (!_disposed && mounted) {
       setState(() {
         _toggleLoading = true; // Start loading
@@ -40,6 +41,8 @@ class _HomePageState extends State<HomePage>
 
     try {
       final user = widget.auth.currentUser;
+      await widget.auth.currentUser?.reload();
+      final refreshedUser = widget.auth.currentUser;
       if (user == null) {
         // If user is null, stop loading and return
         if (!_disposed && mounted) {
@@ -57,8 +60,8 @@ class _HomePageState extends State<HomePage>
       final userDoc = await userDocRef.get();
       if (!userDoc.exists) {
         await userDocRef.set({
-          'name': user.displayName ?? '',
-          'email': user.email ?? '',
+          'name': refreshedUser?.displayName ?? '',
+          'email': refreshedUser?.email ?? '',
         });
 
         final friendsCollection = userDocRef.collection('friends');
@@ -219,6 +222,10 @@ class _HomePageState extends State<HomePage>
     final user = widget.auth.currentUser;
     if (user == null) return;
 
+    // Reload user before writing to Firestore
+    await user.reload();
+    final refreshedUser = widget.auth.currentUser;
+
     if (!_disposed && mounted) {
       setState(() {
         _readToday = true;
@@ -234,8 +241,8 @@ class _HomePageState extends State<HomePage>
         .collection('entries')
         .doc(user.uid)
         .set({
-      'name': user.displayName ?? '',
-      'email': user.email ?? '',
+      'name': refreshedUser?.displayName ?? '',
+      'email': refreshedUser?.email ?? '',
       'timestamp': Timestamp.now(),
       'read': true,
     });
@@ -368,6 +375,13 @@ class _HomePageState extends State<HomePage>
     return RefreshIndicator(
       onRefresh: () async {
         try {
+          await widget.auth.currentUser?.reload();
+          final googleAccount = await GoogleSignIn().signInSilently();
+          final firebaseUser = widget.auth.currentUser;
+          if (googleAccount != null && firebaseUser != null) {
+            await firebaseUser.updateDisplayName(googleAccount.displayName);
+            await firebaseUser.reload();
+          }
           await _updateSummary();
           await _loadReadStatus();
           if (!mounted) return;
