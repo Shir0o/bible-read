@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/friend_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/friend_requests_button.dart';
+import 'add_friend_page.dart';
 
 /// Page that lists current friends and allows sending friend requests by email.
 class FriendsPage extends StatefulWidget {
@@ -26,88 +27,6 @@ class FriendsPage extends StatefulWidget {
 }
 
 class _FriendsPageState extends State<FriendsPage> {
-  final TextEditingController _emailController = TextEditingController();
-  bool _sending = false;
-
-  Future<void> _showAddFriendDialog() async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add Friend'),
-          content: TextField(
-            controller: _emailController,
-            decoration: const InputDecoration(
-              labelText: "Friend's Email",
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: _sending
-                  ? null
-                  : () async {
-                      Navigator.of(context).pop();
-                      await _sendRequest();
-                    },
-              child: _sending
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Send'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _sendRequest() async {
-    final user = widget.auth.currentUser;
-    if (user == null) return;
-    final email = _emailController.text.trim();
-    if (email.isEmpty) return;
-    setState(() {
-      _sending = true;
-    });
-    try {
-      await widget.friendService.sendFriendRequestByEmail(
-        fromUid: user.uid,
-        fromName: user.displayName ?? '',
-        toEmail: email,
-      );
-      if (mounted) {
-        _emailController.clear();
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Request sent')));
-      }
-      } catch (e) {
-        debugPrint('Failed to send friend request: \$e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Something went wrong')),
-          );
-        }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _sending = false;
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
@@ -161,7 +80,16 @@ class _FriendsPageState extends State<FriendsPage> {
       floatingActionButton: user == null
           ? null
           : FloatingActionButton(
-              onPressed: _showAddFriendDialog,
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AddFriendPage(
+                      friendService: widget.friendService,
+                      auth: widget.auth,
+                    ),
+                  ),
+                );
+              },
               child: const Icon(Icons.add),
             ),
     );
