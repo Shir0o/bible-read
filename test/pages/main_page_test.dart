@@ -10,6 +10,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/read_log_page.dart';
+import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -118,6 +119,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(ReadLogPage), findsOneWidget);
+
+    // Friends navigation
+    expect(find.text('Friends'), findsOneWidget);
+    await tester.tap(find.text('Friends'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(FriendsPage), findsOneWidget);
   });
 
   testWidgets('attemptSilentSignIn runs during initState', (tester) async {
