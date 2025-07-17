@@ -120,10 +120,8 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                 ? Center(
                     child: Text(
                       'Please sign in to view the leaderboard.',
-                      style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white70,
-                          fontFamily: 'IBMPlexMono'),
+                      style: AppTextStyles.subtitle
+                          .copyWith(color: Colors.white70),
                     ),
                   )
                 : _leaderboardData.isEmpty
@@ -146,14 +144,14 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                               ),
                               child: ListTile(
                                 leading: Text('$rank',
-                                    style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold)),
+                                    style: AppTextStyles.body.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16)),
                                 title: Text(entry.name.split(' ').first),
                                 trailing: Text('${entry.streak} days',
-                                    style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold)),
+                                    style: AppTextStyles.body.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16)),
                               ),
                             );
                           },

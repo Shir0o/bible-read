@@ -34,12 +34,12 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
     });
     try {
       await op();
-      } catch (e) {
-        debugPrint('Failed to process friend request: \$e');
-        if (mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('Something went wrong')));
-        }
+    } catch (e) {
+      debugPrint('Failed to process friend request: \$e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Something went wrong')));
+      }
     } finally {
       if (mounted) {
         setState(() {
