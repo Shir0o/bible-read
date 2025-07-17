@@ -1,0 +1,278 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:bible_read/services/friend_service.dart';
+
+void main() {
+  group('FriendService', () {
+    late FakeFirebaseFirestore firestore;
+    late FriendService friendService;
+
+    setUp(() {
+      firestore = FakeFirebaseFirestore();
+      friendService = FriendService(firestore: firestore);
+    });
+
+    group('sendFriendRequest', () {
+      test('should create sent and received requests', () async {
+        const fromUid = 'userA';
+        const fromName = 'User A';
+        const toUid = 'userB';
+
+        await friendService.sendFriendRequest(
+          fromUid: fromUid,
+          fromName: fromName,
+          toUid: toUid,
+        );
+
+        // Verify sent request
+        final sentRequestDoc = await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(toUid)
+            .get();
+        expect(sentRequestDoc.exists, isTrue);
+        expect(sentRequestDoc.data()?.containsKey('timestamp'), isTrue);
+
+        // Verify received request
+        final receivedRequestDoc = await firestore
+            .collection(FriendCollections.users)
+            .doc(toUid)
+            .collection(FriendCollections.receivedRequests)
+            .doc(fromUid)
+            .get();
+        expect(receivedRequestDoc.exists, isTrue);
+        expect(receivedRequestDoc.data()?.containsKey('timestamp'), isTrue);
+        expect(receivedRequestDoc.data()?['name'], fromName);
+      });
+
+      test('should throw error when sending request to self', () async {
+        const uid = 'userA';
+        expect(
+          () => friendService.sendFriendRequest(
+            fromUid: uid,
+            fromName: 'User A',
+            toUid: uid,
+          ),
+          throwsA(isA<ArgumentError>()),
+        );
+      });
+
+      test('should overwrite existing requests on duplicate send', () async {
+        const fromUid = 'userA';
+        const fromName = 'User A';
+        const toUid = 'userB';
+
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(toUid)
+            .set({'timestamp': Timestamp(0, 0)});
+
+        await friendService.sendFriendRequest(
+          fromUid: fromUid,
+          fromName: fromName,
+          toUid: toUid,
+        );
+
+        final sentRequestDoc = await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(toUid)
+            .get();
+        expect(sentRequestDoc.exists, isTrue);
+        expect((sentRequestDoc.data()?['timestamp'] as Timestamp).seconds, isNot(0));
+      });
+    });
+
+    group('acceptFriendRequest', () {
+      test('should delete requests and add friends', () async {
+        const currentUid = 'userB';
+        const currentName = 'User B';
+        const fromUid = 'userA';
+        const fromName = 'User A';
+
+        // Set up initial state: pending friend request
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(currentUid)
+            .set({'timestamp': Timestamp.now()});
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(currentUid)
+            .collection(FriendCollections.receivedRequests)
+            .doc(fromUid)
+            .set({'timestamp': Timestamp.now(), 'name': fromName});
+
+        await friendService.acceptFriendRequest(
+          currentUid: currentUid,
+          currentName: currentName,
+          fromUid: fromUid,
+          fromName: fromName,
+        );
+
+        // Verify requests are deleted
+        final sentRequestDoc = await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(currentUid)
+            .get();
+        expect(sentRequestDoc.exists, isFalse);
+
+        final receivedRequestDoc = await firestore
+            .collection(FriendCollections.users)
+            .doc(currentUid)
+            .collection(FriendCollections.receivedRequests)
+            .doc(fromUid)
+            .get();
+        expect(receivedRequestDoc.exists, isFalse);
+
+        // Verify friends are added
+        final friendDocA = await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.friends)
+            .doc(currentUid)
+            .get();
+        expect(friendDocA.exists, isTrue);
+        expect(friendDocA.data()?.containsKey('timestamp'), isTrue);
+        expect(friendDocA.data()?['name'], currentName);
+
+        final friendDocB = await firestore
+            .collection(FriendCollections.users)
+            .doc(currentUid)
+            .collection(FriendCollections.friends)
+            .doc(fromUid)
+            .get();
+        expect(friendDocB.exists, isTrue);
+        expect(friendDocB.data()?.containsKey('timestamp'), isTrue);
+        expect(friendDocB.data()?['name'], fromName);
+      });
+
+      test('accepting non-existent request should still complete', () async {
+        const currentUid = 'userB';
+        const currentName = 'User B';
+        const fromUid = 'userA';
+        const fromName = 'User A';
+
+        await friendService.acceptFriendRequest(
+          currentUid: currentUid,
+          currentName: currentName,
+          fromUid: fromUid,
+          fromName: fromName,
+        );
+
+        final friendDoc = await firestore
+            .collection(FriendCollections.users)
+            .doc(currentUid)
+            .collection(FriendCollections.friends)
+            .doc(fromUid)
+            .get();
+        expect(friendDoc.exists, isTrue);
+      });
+    });
+
+    group('declineFriendRequest', () {
+      test('should delete sent and received requests', () async {
+        const currentUid = 'userB';
+        const fromUid = 'userA';
+        const fromName = 'User A';
+
+        // Set up initial state: pending friend request
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(currentUid)
+            .set({'timestamp': Timestamp.now()});
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(currentUid)
+            .collection(FriendCollections.receivedRequests)
+            .doc(fromUid)
+            .set({'timestamp': Timestamp.now(), 'name': fromName});
+
+        await friendService.declineFriendRequest(
+          currentUid: currentUid,
+          fromUid: fromUid,
+        );
+
+        // Verify requests are deleted
+        final sentRequestDoc = await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(currentUid)
+            .get();
+        expect(sentRequestDoc.exists, isFalse);
+
+        final receivedRequestDoc = await firestore
+            .collection(FriendCollections.users)
+            .doc(currentUid)
+            .collection(FriendCollections.receivedRequests)
+            .doc(fromUid)
+            .get();
+        expect(receivedRequestDoc.exists, isFalse);
+      });
+
+      test('declining non-existent request should still complete', () async {
+        const currentUid = 'userB';
+        const fromUid = 'userA';
+
+        await friendService.declineFriendRequest(
+          currentUid: currentUid,
+          fromUid: fromUid,
+        );
+
+        // No exception thrown
+        final sentDoc = await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(currentUid)
+            .get();
+        expect(sentDoc.exists, isFalse);
+      });
+    });
+
+    test('pendingRequests handles non-string name gracefully', () async {
+      final uid = 'user123';
+      final fromUid = 'user456';
+
+      await firestore
+          .collection(FriendCollections.users)
+          .doc(uid)
+          .collection(FriendCollections.receivedRequests)
+          .doc(fromUid)
+          .set({'timestamp': Timestamp.now(), 'name': 123}); // Non-string name
+
+      final requests = await friendService.pendingRequests(uid).first;
+      expect(requests.length, 1);
+      expect(requests.first.uid, fromUid);
+      expect(requests.first.name, ''); // Should default to empty string
+    });
+
+    test('friends handles non-string name gracefully', () async {
+      final uid = 'user123';
+      final friendUid = 'user789';
+
+      await firestore
+          .collection(FriendCollections.users)
+          .doc(uid)
+          .collection(FriendCollections.friends)
+          .doc(friendUid)
+          .set({'timestamp': Timestamp.now(), 'name': true}); // Non-string name
+
+      final friends = await friendService.friends(uid).first;
+      expect(friends.length, 1);
+      expect(friends.first.uid, friendUid);
+      expect(friends.first.name, ''); // Should default to empty string
+    });
+  });
+}

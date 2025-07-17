@@ -1,22 +1,47 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/common_styles.dart';
+import '../widgets/friend_request_widget.dart';
+import '../services/friend_service.dart';
 import 'main_page.dart';
 
 class UserProfilePage extends StatefulWidget {
   final GoogleSignInAccount? user;
   final GoogleSignIn Function() googleSignInProvider;
   final FirebaseAuth auth;
+  final FirebaseFirestore firestore;
+  final FriendService friendService;
 
-  UserProfilePage({
-    super.key,
-    this.user,
+  factory UserProfilePage({
+    Key? key,
+    GoogleSignInAccount? user,
     GoogleSignIn Function()? googleSignInProvider,
     FirebaseAuth? auth,
-  })  : googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
-        auth = auth ?? FirebaseAuth.instance;
+    FirebaseFirestore? firestore,
+    FriendService? friendService,
+  }) {
+    final fs = firestore ?? FirebaseFirestore.instance;
+    return UserProfilePage._(
+      key: key,
+      user: user,
+      googleSignInProvider: googleSignInProvider ?? GoogleSignIn.new,
+      auth: auth ?? FirebaseAuth.instance,
+      firestore: fs,
+      friendService: friendService ?? FriendService(firestore: fs),
+    );
+  }
+
+  const UserProfilePage._({
+    super.key,
+    this.user,
+    required this.googleSignInProvider,
+    required this.auth,
+    required this.firestore,
+    required this.friendService,
+  });
 
   @override
   State<UserProfilePage> createState() => UserProfilePageState();
@@ -58,9 +83,9 @@ class UserProfilePageState extends State<UserProfilePage> {
           // Instead, rebuild parent or manage user state differently if needed
           // For now, just rebuild to reflect sign in
           Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => MainPage(),
-              ),
+            MaterialPageRoute(
+              builder: (context) => MainPage(),
+            ),
           );
         });
       } else {
@@ -92,41 +117,98 @@ class UserProfilePageState extends State<UserProfilePage> {
       body: Container(
         decoration: CommonStyles.backgroundGradient,
         child: Center(
-          child: _loading
-              ? const CircularProgressIndicator()
-              : (user == null
-                  ? ElevatedButton(
-                      onPressed: _isSigningIn
-                          ? null
-                          : () async => await _handleSignIn(),
-                      child: _isSigningIn
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Sign in with Google'),
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (user.photoUrl != null)
-                          CircleAvatar(
-                            backgroundImage: NetworkImage(user.photoUrl!),
-                            radius: 40,
+          child: () {
+            final currentUser = widget.auth.currentUser;
+            return _loading
+                ? const CircularProgressIndicator()
+                : (user == null
+                    ? ElevatedButton(
+                        onPressed: _isSigningIn
+                            ? null
+                            : () async => await _handleSignIn(),
+                        child: _isSigningIn
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Sign in with Google'),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (user.photoUrl != null)
+                            CircleAvatar(
+                              backgroundImage: NetworkImage(user.photoUrl!),
+                              radius: 40,
+                            ),
+                          const SizedBox(height: 16),
+                          Text(
+                            user.displayName ?? 'No Name',
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
-                        const SizedBox(height: 16),
-                        Text(
-                          user.displayName ?? 'No Name',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          user.email,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    )),
+                          const SizedBox(height: 8),
+                          Text(
+                            user.email,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 24),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text('Friend Requests',
+                                style: Theme.of(context).textTheme.titleMedium),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 150,
+                            child: currentUser == null
+                                ? const Text('Please sign in')
+                                : FriendRequestWidget(
+                                    service: widget.friendService,
+                                    currentUid: currentUser.uid,
+                                    currentName: currentUser.displayName ?? 'Unknown',
+                                  ),
+                          ),
+                          const SizedBox(height: 24),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text('Friends',
+                                style: Theme.of(context).textTheme.titleMedium),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 150,
+                            child: Builder(builder: (context) {
+                              final current = currentUser;
+                              if (current == null) {
+                                return const SizedBox.shrink();
+                              }
+                              return StreamBuilder<List<Friend>>(
+                                stream: widget.friendService.friends(current.uid),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasError) {
+                                    return Text('Error: ${snapshot.error}');
+                                  }
+                                  if (!snapshot.hasData) {
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  }
+                                  final friends = snapshot.data!;
+                                  if (friends.isEmpty) {
+                                    return const Text('No friends yet');
+                                  }
+                                  return ListView(
+                                    children: friends
+                                        .map((f) => ListTile(title: Text(f.name)))
+                                        .toList(),
+                                  );
+                                },
+                              );
+                            }),
+                          ),
+                        ],
+                      ));
+          }(),
         ),
       ),
     );
