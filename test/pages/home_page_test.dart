@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:fake_cloud_firestore/src/mock_collection_reference.dart';
+import 'package:fake_cloud_firestore/src/mock_document_reference.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -57,6 +60,68 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
 
   @override
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
+}
+
+class ThrowingDocumentReference extends MockDocumentReference<Map<String, dynamic>> {
+  ThrowingDocumentReference(
+    FakeFirebaseFirestore firestore,
+    String path,
+    String id,
+    Map<String, dynamic> root,
+    Map<String, dynamic> docsData,
+    Map<String, dynamic> rootParent,
+    Map<String, dynamic> snapshotStreamControllerRoot,
+  ) : super(firestore, path, id, root, docsData, rootParent,
+            snapshotStreamControllerRoot, null);
+
+  @override
+  Future<DocumentSnapshot<Map<String, dynamic>>> get([GetOptions? options]) async {
+    throw FirebaseException(plugin: 'firestore');
+  }
+}
+
+class ThrowingCollectionReference
+    extends MockCollectionReference<Map<String, dynamic>> {
+  ThrowingCollectionReference(
+    FakeFirebaseFirestore firestore,
+    String path,
+    Map<String, dynamic> root,
+    Map<String, dynamic> docsData,
+    Map<String, dynamic> snapshotStreamControllerRoot,
+  ) : super(firestore, path, root, docsData, snapshotStreamControllerRoot);
+
+  @override
+  DocumentReference<Map<String, dynamic>> doc([String? path]) {
+    final base =
+        super.doc(path ?? '') as MockDocumentReference<Map<String, dynamic>>;
+    return ThrowingDocumentReference(
+      firestore as FakeFirebaseFirestore,
+      base.path,
+      base.id,
+      base.root,
+      base.docsData,
+      base.rootParent,
+      base.snapshotStreamControllerRoot,
+    );
+  }
+}
+
+class ThrowingFirestore extends FakeFirebaseFirestore {
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String path) {
+    final base =
+        super.collection(path) as MockCollectionReference<Map<String, dynamic>>;
+    if (path == 'users') {
+      return ThrowingCollectionReference(
+        this,
+        base.path,
+        base.root,
+        base.docsData,
+        base.snapshotStreamControllerRoot,
+      );
+    }
+    return base;
+  }
 }
 
 void main() {
@@ -282,5 +347,16 @@ void main() {
         .doc('data')
         .get();
     expect(summary.data()?['streak'], 3);
+  });
+
+  testWidgets('load failure hides progress indicator', (tester) async {
+    final firestore = ThrowingFirestore();
+    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+
+    await tester.pumpWidget(
+        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 }

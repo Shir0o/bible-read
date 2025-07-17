@@ -37,9 +37,11 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       final usersSnapshot = await widget.firestore.collection('users').get();
@@ -71,23 +73,25 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       if (mounted) {
         setState(() {
           _leaderboardData = leaderboard;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading leaderboard: $e');
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Something went wrong')),
+            );
+          }
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
           _isLoading = false;
         });
       }
-      } catch (e) {
-        debugPrint('Error loading leaderboard: \$e');
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Something went wrong')),
-              );
-            }
-          });
-        }
     }
   }
 
