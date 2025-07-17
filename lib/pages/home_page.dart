@@ -405,9 +405,12 @@ class _HomePageState extends State<HomePage>
             const SnackBar(content: Text('Refreshed successfully')),
           );
         } catch (e) {
+          debugPrint('Refresh failed: \$e');
           if (!mounted) return;
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('Refresh failed: $e')));
+              .showSnackBar(
+            const SnackBar(content: Text('Something went wrong')),
+          );
         }
       },
       child: SingleChildScrollView(

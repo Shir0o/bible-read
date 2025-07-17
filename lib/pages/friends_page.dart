@@ -92,12 +92,13 @@ class _FriendsPageState extends State<FriendsPage> {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Request sent')));
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send request: $e')),
-        );
-      }
+      } catch (e) {
+        debugPrint('Failed to send friend request: \$e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Something went wrong')),
+          );
+        }
     } finally {
       if (mounted) {
         setState(() {
