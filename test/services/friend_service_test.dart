@@ -9,11 +9,15 @@ void main() {
     late FriendService friendService;
     late Map<String, dynamic>? lastAcceptArgs;
     late bool acceptCalled;
+    late Map<String, dynamic>? lastDeleteArgs;
+    late bool deleteCalled;
 
     setUp(() {
       firestore = FakeFirebaseFirestore();
       acceptCalled = false;
       lastAcceptArgs = null;
+      deleteCalled = false;
+      lastDeleteArgs = null;
       friendService = FriendService(
         firestore: firestore,
         acceptFriendRequestFn: ({
@@ -53,6 +57,28 @@ void main() {
               .collection(FriendCollections.friends)
               .doc(fromUid)
               .set({'timestamp': Timestamp.now(), 'name': fromName});
+        },
+        deleteFriendRequestPairFn: ({
+          required String fromUid,
+          required String toUid,
+        }) async {
+          deleteCalled = true;
+          lastDeleteArgs = {
+            'fromUid': fromUid,
+            'toUid': toUid,
+          };
+          await firestore
+              .collection(FriendCollections.users)
+              .doc(fromUid)
+              .collection(FriendCollections.sentRequests)
+              .doc(toUid)
+              .delete();
+          await firestore
+              .collection(FriendCollections.users)
+              .doc(toUid)
+              .collection(FriendCollections.receivedRequests)
+              .doc(fromUid)
+              .delete();
         },
       );
     });
@@ -320,6 +346,12 @@ void main() {
             .doc(fromUid)
             .get();
         expect(receivedRequestDoc.exists, isFalse);
+
+        expect(deleteCalled, isTrue);
+        expect(lastDeleteArgs, {
+          'fromUid': fromUid,
+          'toUid': currentUid,
+        });
       });
 
       test('declining non-existent request should still complete', () async {
@@ -339,6 +371,8 @@ void main() {
             .doc(currentUid)
             .get();
         expect(sentDoc.exists, isFalse);
+
+        expect(deleteCalled, isTrue);
       });
     });
 
