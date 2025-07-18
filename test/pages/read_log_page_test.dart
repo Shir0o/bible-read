@@ -1,3 +1,5 @@
+// ignore_for_file: subtype_of_sealed_class
+
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:fake_cloud_firestore/src/mock_collection_reference.dart';
 import 'package:fake_cloud_firestore/src/mock_document_reference.dart';
@@ -7,7 +9,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bible_read/pages/read_log_page.dart';
 
-// ignore: subtype_of_sealed_class
 class ThrowingCollectionReference
     extends MockCollectionReference<Map<String, dynamic>> {
   ThrowingCollectionReference(
@@ -38,8 +39,6 @@ class ThrowingCollectionReference
     );
   }
 }
-
-// ignore: subtype_of_sealed_class
 class ThrowingDocumentReference
     extends MockDocumentReference<Map<String, dynamic>> {
   ThrowingDocumentReference(
