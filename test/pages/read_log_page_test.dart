@@ -39,6 +39,7 @@ class ThrowingCollectionReference
     );
   }
 }
+
 class ThrowingDocumentReference
     extends MockDocumentReference<Map<String, dynamic>> {
   ThrowingDocumentReference(
