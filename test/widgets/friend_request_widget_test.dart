@@ -1,6 +1,7 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/widgets/friend_request_widget.dart';
@@ -10,10 +11,46 @@ void main() {
 
   late FakeFirebaseFirestore firestore;
   late FriendService service;
+  late bool acceptCalled;
 
   setUp(() {
     firestore = FakeFirebaseFirestore();
-    service = FriendService(firestore: firestore);
+    acceptCalled = false;
+    service = FriendService(
+      firestore: firestore,
+      acceptFriendRequestFn: ({
+        required String fromUid,
+        required String toUid,
+        required String fromName,
+        required String toName,
+      }) async {
+        acceptCalled = true;
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(toUid)
+            .delete();
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(toUid)
+            .collection(FriendCollections.receivedRequests)
+            .doc(fromUid)
+            .delete();
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.friends)
+            .doc(toUid)
+            .set({'timestamp': Timestamp.now(), 'name': toName});
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(toUid)
+            .collection(FriendCollections.friends)
+            .doc(fromUid)
+            .set({'timestamp': Timestamp.now(), 'name': fromName});
+      },
+    );
   });
 
   Future<void> pumpRequestWidget(WidgetTester tester) async {
@@ -79,6 +116,7 @@ void main() {
     expect(friendDocB.exists, isTrue);
     expect(requestDoc.exists, isFalse);
     expect(find.text('Alice'), findsNothing);
+    expect(acceptCalled, isTrue);
   });
 
   testWidgets('declining request removes it without adding friends',

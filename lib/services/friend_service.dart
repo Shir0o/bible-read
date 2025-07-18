@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 /// Names of Firestore collections used for friend features.
 class FriendCollections {
@@ -41,14 +42,45 @@ class Friend {
   const Friend({required this.uid, required this.name});
 }
 
+/// Signature for calling the `acceptFriendRequest` Cloud Function.
+typedef AcceptFriendRequestFn = Future<void> Function({
+  required String fromUid,
+  required String toUid,
+  required String fromName,
+  required String toName,
+});
+
 /// Provides helper methods for friend request CRUD operations.
 class FriendService {
   /// Firestore instance used for database operations.
   final FirebaseFirestore firestore;
 
+  /// Function used to invoke the accept friend request Cloud Function.
+  final AcceptFriendRequestFn _acceptFn;
+
   /// Creates a [FriendService] using [FirebaseFirestore.instance] by default.
-  FriendService({FirebaseFirestore? firestore})
-      : firestore = firestore ?? FirebaseFirestore.instance;
+  FriendService({
+    FirebaseFirestore? firestore,
+    AcceptFriendRequestFn? acceptFriendRequestFn,
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        _acceptFn = acceptFriendRequestFn ?? _defaultAcceptFriendRequest;
+
+  /// Default implementation that invokes the Cloud Function.
+  static Future<void> _defaultAcceptFriendRequest({
+    required String fromUid,
+    required String toUid,
+    required String fromName,
+    required String toName,
+  }) async {
+    final callable = FirebaseFunctions.instanceFor(region: 'us-central1')
+        .httpsCallable('acceptFriendRequest');
+    await callable.call({
+      'fromUid': fromUid,
+      'toUid': toUid,
+      'fromName': fromName,
+      'toName': toName,
+    });
+  }
 
   /// Send a friend request from [fromUid] to [toUid].
   Future<void> sendFriendRequest({
@@ -113,25 +145,21 @@ class FriendService {
     required String currentName,
     required String fromName,
   }) async {
-    final batch = firestore.batch();
-    final fromRef = firestore.collection(FriendCollections.users).doc(fromUid);
-    final toRef = firestore.collection(FriendCollections.users).doc(currentUid);
-
-    // Delete only the receiver's received request (receiver can’t delete sender's data directly)
-    batch.delete(
-      toRef.collection(FriendCollections.receivedRequests).doc(fromUid),
+    await _acceptFn(
+      fromUid: fromUid,
+      toUid: currentUid,
+      fromName: fromName,
+      toName: currentName,
     );
 
-    batch.set(
-      fromRef.collection(FriendCollections.friends).doc(currentUid),
-      {'timestamp': Timestamp.now(), 'name': currentName},
-    );
-    batch.set(
-      toRef.collection(FriendCollections.friends).doc(fromUid),
-      {'timestamp': Timestamp.now(), 'name': fromName},
-    );
-
-    await batch.commit();
+    // Delete the local received request if it still exists
+    await firestore
+        .collection(FriendCollections.users)
+        .doc(currentUid)
+        .collection(FriendCollections.receivedRequests)
+        .doc(fromUid)
+        .delete()
+        .catchError((_) {});
   }
 
   /// Decline a friend request sent by [fromUid] to [currentUid].
