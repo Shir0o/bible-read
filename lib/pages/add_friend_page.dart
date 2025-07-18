@@ -33,10 +33,12 @@ class _AddFriendPageState extends State<AddFriendPage> {
       body: Container(
         decoration: CommonStyles.backgroundGradient,
         padding: const EdgeInsets.all(16.0),
-        child: AddFriendForm(
-          friendService: widget.friendService,
-          auth: widget.auth,
-          onComplete: () => Navigator.of(context).pop(),
+        child: Center(
+          child: AddFriendForm(
+            friendService: widget.friendService,
+            auth: widget.auth,
+            onComplete: () => Navigator.of(context).pop(),
+          ),
         ),
       ),
     );

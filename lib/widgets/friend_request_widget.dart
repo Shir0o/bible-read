@@ -62,7 +62,7 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
         }
         final requests = snapshot.data!;
         if (requests.isEmpty) {
-          return const Text('No friend requests');
+          return const Center(child: Text('No friend requests'));
         }
         return ListView.builder(
           shrinkWrap: true,

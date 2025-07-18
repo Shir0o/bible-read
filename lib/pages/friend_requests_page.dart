@@ -32,10 +32,12 @@ class FriendRequestsPage extends StatelessWidget {
             ? const Center(child: Text('Please sign in'))
             : Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: FriendRequestWidget(
-                  service: friendService,
-                  currentUid: user.uid,
-                  currentName: user.displayName ?? 'Unknown',
+                child: Center(
+                  child: FriendRequestWidget(
+                    service: friendService,
+                    currentUid: user.uid,
+                    currentName: user.displayName ?? 'Unknown',
+                  ),
                 ),
               ),
       ),
