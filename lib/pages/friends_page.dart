@@ -63,7 +63,7 @@ class _FriendsPageState extends State<FriendsPage> {
                           }
                           final friends = snapshot.data!;
                           if (friends.isEmpty) {
-                            return const Text('No friends yet');
+                            return const Center(child: Text('No friends yet'));
                           }
                           return ListView(
                             children: friends
