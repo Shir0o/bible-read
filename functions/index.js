@@ -109,6 +109,53 @@ exports.deleteFriendRequestPair = onCall({ region: "us-central1" }, async (req) 
   return { success: true };
 });
 
+exports.acceptFriendRequest = onCall({ region: "us-central1" }, async (req) => {
+  if (!req.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "User must be authenticated."
+    );
+  }
+
+  const { fromUid, toUid, fromName, toName } = req.data;
+  if (!fromUid || !toUid || !fromName || !toName) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing parameters"
+    );
+  }
+
+  if (req.auth.uid !== toUid) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Only the receiver can accept this request."
+    );
+  }
+
+  const db = admin.firestore();
+  const fromRef = db.collection("users").doc(fromUid);
+  const toRef = db.collection("users").doc(toUid);
+
+  const batch = db.batch();
+
+  batch.set(fromRef.collection("friends").doc(toUid), {
+    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    name: toName,
+  });
+
+  batch.set(toRef.collection("friends").doc(fromUid), {
+    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    name: fromName,
+  });
+
+  batch.delete(fromRef.collection("friendRequestsSent").doc(toUid));
+  batch.delete(toRef.collection("friendRequestsReceived").doc(fromUid));
+
+  await batch.commit();
+
+  return { success: true };
+});
+
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 

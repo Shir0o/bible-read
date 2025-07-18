@@ -7,10 +7,54 @@ void main() {
   group('FriendService', () {
     late FakeFirebaseFirestore firestore;
     late FriendService friendService;
+    late Map<String, dynamic>? lastAcceptArgs;
+    late bool acceptCalled;
 
     setUp(() {
       firestore = FakeFirebaseFirestore();
-      friendService = FriendService(firestore: firestore);
+      acceptCalled = false;
+      lastAcceptArgs = null;
+      friendService = FriendService(
+        firestore: firestore,
+        acceptFriendRequestFn: ({
+          required String fromUid,
+          required String toUid,
+          required String fromName,
+          required String toName,
+        }) async {
+          acceptCalled = true;
+          lastAcceptArgs = {
+            'fromUid': fromUid,
+            'toUid': toUid,
+            'fromName': fromName,
+            'toName': toName,
+          };
+          await firestore
+              .collection(FriendCollections.users)
+              .doc(fromUid)
+              .collection(FriendCollections.sentRequests)
+              .doc(toUid)
+              .delete();
+          await firestore
+              .collection(FriendCollections.users)
+              .doc(toUid)
+              .collection(FriendCollections.receivedRequests)
+              .doc(fromUid)
+              .delete();
+          await firestore
+              .collection(FriendCollections.users)
+              .doc(fromUid)
+              .collection(FriendCollections.friends)
+              .doc(toUid)
+              .set({'timestamp': Timestamp.now(), 'name': toName});
+          await firestore
+              .collection(FriendCollections.users)
+              .doc(toUid)
+              .collection(FriendCollections.friends)
+              .doc(fromUid)
+              .set({'timestamp': Timestamp.now(), 'name': fromName});
+        },
+      );
     });
 
     group('sendFriendRequest', () {
@@ -200,6 +244,14 @@ void main() {
         expect(friendDocB.exists, isTrue);
         expect(friendDocB.data()?.containsKey('timestamp'), isTrue);
         expect(friendDocB.data()?['name'], fromName);
+
+        expect(acceptCalled, isTrue);
+        expect(lastAcceptArgs, {
+          'fromUid': fromUid,
+          'toUid': currentUid,
+          'fromName': fromName,
+          'toName': currentName,
+        });
       });
 
       test('accepting non-existent request should still complete', () async {
@@ -222,6 +274,8 @@ void main() {
             .doc(fromUid)
             .get();
         expect(friendDoc.exists, isTrue);
+
+        expect(acceptCalled, isTrue);
       });
     });
 
