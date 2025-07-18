@@ -148,6 +148,7 @@ exports.acceptFriendRequest = onCall({ region: "us-central1" }, async (req) => {
     name: fromName,
   });
 
+  // Remove the pending request documents now that the users are friends
   batch.delete(fromRef.collection("friendRequestsSent").doc(toUid));
   batch.delete(toRef.collection("friendRequestsReceived").doc(fromUid));
 
