@@ -83,12 +83,12 @@ class ThrowingDocumentReference extends MockDocumentReference<Map<String, dynami
 class ThrowingCollectionReference
     extends MockCollectionReference<Map<String, dynamic>> {
   ThrowingCollectionReference(
-    FakeFirebaseFirestore firestore,
-    String path,
-    Map<String, dynamic> root,
-    Map<String, dynamic> docsData,
-    Map<String, dynamic> snapshotStreamControllerRoot,
-  ) : super(firestore, path, root, docsData, snapshotStreamControllerRoot);
+    super.firestore,
+    super.path,
+    super.root,
+    super.docsData,
+    super.snapshotStreamControllerRoot,
+  );
 
   @override
   DocumentReference<Map<String, dynamic>> doc([String? path]) {
