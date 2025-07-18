@@ -125,16 +125,23 @@ void main() {
         .collection(FriendCollections.friends)
         .doc('a')
         .get();
-    final requestDoc = await firestore
+    final receivedDoc = await firestore
         .collection(FriendCollections.users)
         .doc('b')
         .collection(FriendCollections.receivedRequests)
         .doc('a')
         .get();
+    final sentDoc = await firestore
+        .collection(FriendCollections.users)
+        .doc('a')
+        .collection(FriendCollections.sentRequests)
+        .doc('b')
+        .get();
 
     expect(friendDocA.exists, isTrue);
     expect(friendDocB.exists, isTrue);
-    expect(requestDoc.exists, isFalse);
+    expect(receivedDoc.exists, isFalse);
+    expect(sentDoc.exists, isFalse);
     expect(find.text('Alice'), findsNothing);
     expect(acceptCalled, isTrue);
   });
