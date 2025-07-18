@@ -116,10 +116,12 @@ class FriendService {
     final batch = firestore.batch();
     final fromRef = firestore.collection(FriendCollections.users).doc(fromUid);
     final toRef = firestore.collection(FriendCollections.users).doc(currentUid);
+
+    // Delete only the receiver's received request (receiver can’t delete sender's data directly)
     batch.delete(
-        fromRef.collection(FriendCollections.sentRequests).doc(currentUid));
-    batch.delete(
-        toRef.collection(FriendCollections.receivedRequests).doc(fromUid));
+      toRef.collection(FriendCollections.receivedRequests).doc(fromUid),
+    );
+
     batch.set(
       fromRef.collection(FriendCollections.friends).doc(currentUid),
       {'timestamp': Timestamp.now(), 'name': currentName},
@@ -128,6 +130,7 @@ class FriendService {
       toRef.collection(FriendCollections.friends).doc(fromUid),
       {'timestamp': Timestamp.now(), 'name': fromName},
     );
+
     await batch.commit();
   }
 

@@ -24,13 +24,23 @@ service cloud.firestore {
       }
 
       match /friendRequestsSent/{toUid} {
-        allow write: if request.auth != null && (request.auth.uid == userId || request.auth.uid == toUid);
-        allow read: if request.auth != null && (request.auth.uid == userId || request.auth.uid == toUid);
+        // Only the sender can add or remove sent requests
+        allow create: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow delete: if request.auth != null && request.auth.uid == userId;
+        // Prevent modifications
+        allow update: if false;
       }
 
       match /friendRequestsReceived/{fromUid} {
-        allow write: if request.auth != null && request.auth.uid == fromUid;
+        // Sender can create an incoming friend request on the receiver’s node
+        allow create: if request.auth != null && request.auth.uid == fromUid;
+        // Receiver can list and get their incoming requests
         allow read: if request.auth != null && request.auth.uid == userId;
+        // Allow sender or receiver to delete (cancel or decline)
+        allow delete: if request.auth != null && (request.auth.uid == fromUid || request.auth.uid == userId);
+        // Prevent updates to existing requests
+        allow update: if false;
       }
 
       match /summary/{docId} {

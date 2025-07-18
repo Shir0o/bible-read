@@ -79,6 +79,36 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
   return admin.messaging().send(message);
 });
 
+exports.deleteFriendRequestPair = onCall({ region: "us-central1" }, async (req) => {
+  if (!req.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
+  }
+
+  const { fromUid, toUid } = req.data;
+  if (!fromUid || !toUid) {
+    throw new functions.https.HttpsError("invalid-argument", "Missing fromUid or toUid");
+  }
+
+  if (req.auth.uid !== toUid) {
+    throw new functions.https.HttpsError("permission-denied", "Only the receiver can delete both friend request documents.");
+  }
+
+  const db = admin.firestore();
+
+  const receivedRef = db.collection("users").doc(toUid)
+    .collection("friendRequestsReceived").doc(fromUid);
+
+  const sentRef = db.collection("users").doc(fromUid)
+    .collection("friendRequestsSent").doc(toUid);
+
+  await Promise.all([
+    receivedRef.delete(),
+    sentRef.delete()
+  ]);
+
+  return { success: true };
+});
+
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 
