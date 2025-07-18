@@ -31,6 +31,7 @@ class _FriendsPageState extends State<FriendsPage> {
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: CommonStyles.buildAppBar(
         'Friends',
         actions: [
