@@ -7,7 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bible_read/pages/leaderboard_page.dart';
 
-class ThrowingUsersCollection extends MockCollectionReference<Map<String, dynamic>> {
+class ThrowingUsersCollection
+    extends MockCollectionReference<Map<String, dynamic>> {
   ThrowingUsersCollection(
     super.firestore,
     super.path,
@@ -109,7 +110,8 @@ void main() {
 
   testWidgets('failure hides loading indicator', (tester) async {
     final firestore = ThrowingFirestore();
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     await tester.pumpWidget(
         MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();

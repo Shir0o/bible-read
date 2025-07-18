@@ -113,7 +113,10 @@ class UserProfilePageState extends State<UserProfilePage> {
 
   Future<void> _handleSignOut() async {
     try {
-      await FirebaseAuth.instance.signOut();
+      final googleSignIn = widget.googleSignInProvider();
+      await googleSignIn.signOut();
+      await googleSignIn.disconnect();
+      await widget.auth.signOut();
     } catch (_) {
       // Ignore errors and still navigate to sign-in screen.
     }
