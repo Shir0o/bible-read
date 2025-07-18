@@ -483,8 +483,9 @@ void main() {
               firestore: firestore,
               auth: auth,
               dateProvider: () => fixedDate,
-              onSendLikeNotification:
-                  ({required String ownerUid, required String likerName}) async {})));
+              onSendLikeNotification: (
+                  {required String ownerUid,
+                  required String likerName}) async {})));
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.favorite_border), findsOneWidget);

@@ -382,8 +382,7 @@ class _HomePageState extends State<HomePage>
       return Center(
         child: Text(
           'User not signed in.',
-          style: TextStyle(
-              fontSize: 18, color: Colors.white70, fontFamily: 'IBMPlexMono'),
+          style: AppTextStyles.subtitle.copyWith(color: Colors.white70),
         ),
       );
     }
@@ -407,8 +406,7 @@ class _HomePageState extends State<HomePage>
         } catch (e) {
           debugPrint('Refresh failed: \$e');
           if (!mounted) return;
-          ScaffoldMessenger.of(context)
-              .showSnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Something went wrong')),
           );
         }
@@ -429,8 +427,7 @@ class _HomePageState extends State<HomePage>
                     const SizedBox(width: 8),
                     Text(
                       "Streak: $_streak day${_streak == 1 ? '' : 's'}",
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                      style: AppTextStyles.subtitle,
                     ),
                   ],
                 ),
@@ -470,8 +467,8 @@ class _HomePageState extends State<HomePage>
                         return Column(
                           children: [
                             Text('Week of $weekOf',
-                                style: const TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold)),
+                                style: AppTextStyles.body
+                                    .copyWith(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -489,7 +486,8 @@ class _HomePageState extends State<HomePage>
                                   child: Column(
                                     children: [
                                       Text(days[i],
-                                          style: const TextStyle(fontSize: 10)),
+                                          style: AppTextStyles.body
+                                              .copyWith(fontSize: 10)),
                                       const SizedBox(height: 4),
                                       Icon(
                                         weekData[i]
@@ -519,8 +517,8 @@ class _HomePageState extends State<HomePage>
                   children: [
                     Text(
                       "${DateTime.now().year} – ${_monthName(DateTime.now().month)}",
-                      style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.bold),
+                      style: AppTextStyles.body
+                          .copyWith(fontWeight: FontWeight.bold),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -535,8 +533,8 @@ class _HomePageState extends State<HomePage>
                                             vertical: 4),
                                         child: Center(
                                             child: Text(d,
-                                                style: const TextStyle(
-                                                    fontSize: 10))),
+                                                style: AppTextStyles.body
+                                                    .copyWith(fontSize: 10))),
                                       ))
                                   .toList(),
                             ),
