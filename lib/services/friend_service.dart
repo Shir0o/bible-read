@@ -50,6 +50,12 @@ typedef AcceptFriendRequestFn = Future<void> Function({
   required String toName,
 });
 
+/// Signature for calling the `deleteFriendRequestPair` Cloud Function.
+typedef DeleteFriendRequestPairFn = Future<void> Function({
+  required String fromUid,
+  required String toUid,
+});
+
 /// Provides helper methods for friend request CRUD operations.
 class FriendService {
   /// Firestore instance used for database operations.
@@ -58,12 +64,18 @@ class FriendService {
   /// Function used to invoke the accept friend request Cloud Function.
   final AcceptFriendRequestFn _acceptFn;
 
+  /// Function used to invoke the delete friend request pair Cloud Function.
+  final DeleteFriendRequestPairFn _deleteFn;
+
   /// Creates a [FriendService] using [FirebaseFirestore.instance] by default.
   FriendService({
     FirebaseFirestore? firestore,
     AcceptFriendRequestFn? acceptFriendRequestFn,
+    DeleteFriendRequestPairFn? deleteFriendRequestPairFn,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
-        _acceptFn = acceptFriendRequestFn ?? _defaultAcceptFriendRequest;
+        _acceptFn = acceptFriendRequestFn ?? _defaultAcceptFriendRequest,
+        _deleteFn =
+            deleteFriendRequestPairFn ?? _defaultDeleteFriendRequestPair;
 
   /// Default implementation that invokes the Cloud Function.
   static Future<void> _defaultAcceptFriendRequest({
@@ -79,6 +91,20 @@ class FriendService {
       'toUid': toUid,
       'fromName': fromName,
       'toName': toName,
+    });
+  }
+
+  /// Default implementation that invokes the Cloud Function to delete both
+  /// friend request documents.
+  static Future<void> _defaultDeleteFriendRequestPair({
+    required String fromUid,
+    required String toUid,
+  }) async {
+    final callable = FirebaseFunctions.instanceFor(region: 'us-central1')
+        .httpsCallable('deleteFriendRequestPair');
+    await callable.call({
+      'fromUid': fromUid,
+      'toUid': toUid,
     });
   }
 
@@ -167,18 +193,16 @@ class FriendService {
     required String currentUid,
     required String fromUid,
   }) async {
-    final batch = firestore.batch();
-    batch.delete(firestore
-        .collection(FriendCollections.users)
-        .doc(fromUid)
-        .collection(FriendCollections.sentRequests)
-        .doc(currentUid));
-    batch.delete(firestore
+    await _deleteFn(fromUid: fromUid, toUid: currentUid);
+
+    // Delete the local received request if it still exists
+    await firestore
         .collection(FriendCollections.users)
         .doc(currentUid)
         .collection(FriendCollections.receivedRequests)
-        .doc(fromUid));
-    await batch.commit();
+        .doc(fromUid)
+        .delete()
+        .catchError((_) {});
   }
 
   /// Stream of pending friend requests for [uid].

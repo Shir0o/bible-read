@@ -12,10 +12,12 @@ void main() {
   late FakeFirebaseFirestore firestore;
   late FriendService service;
   late bool acceptCalled;
+  late bool deleteCalled;
 
   setUp(() {
     firestore = FakeFirebaseFirestore();
     acceptCalled = false;
+    deleteCalled = false;
     service = FriendService(
       firestore: firestore,
       acceptFriendRequestFn: ({
@@ -49,6 +51,24 @@ void main() {
             .collection(FriendCollections.friends)
             .doc(fromUid)
             .set({'timestamp': Timestamp.now(), 'name': fromName});
+      },
+      deleteFriendRequestPairFn: ({
+        required String fromUid,
+        required String toUid,
+      }) async {
+        deleteCalled = true;
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(toUid)
+            .delete();
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(toUid)
+            .collection(FriendCollections.receivedRequests)
+            .doc(fromUid)
+            .delete();
       },
     );
   });
@@ -155,5 +175,6 @@ void main() {
     expect(receivedDoc.exists, isFalse);
     expect(friendDocA.exists, isFalse);
     expect(find.text('Alice'), findsNothing);
+    expect(deleteCalled, isTrue);
   });
 }
