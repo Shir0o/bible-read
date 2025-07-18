@@ -9,12 +9,12 @@ import 'package:bible_read/pages/leaderboard_page.dart';
 
 class ThrowingUsersCollection extends MockCollectionReference<Map<String, dynamic>> {
   ThrowingUsersCollection(
-    FakeFirebaseFirestore firestore,
-    String path,
-    Map<String, dynamic> root,
-    Map<String, dynamic> docsData,
-    Map<String, dynamic> snapshotStreamControllerRoot,
-  ) : super(firestore, path, root, docsData, snapshotStreamControllerRoot);
+    super.firestore,
+    super.path,
+    super.root,
+    super.docsData,
+    super.snapshotStreamControllerRoot,
+  );
 
   @override
   Future<QuerySnapshot<Map<String, dynamic>>> get([GetOptions? options]) async {
