@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   static const String fontFamily = 'IBMPlexMono';
+  static const Color backgroundColor = Colors.black;
 
   static final ColorScheme colorScheme = ColorScheme.fromSeed(
     seedColor: Colors.indigo.shade900,
@@ -21,5 +22,7 @@ class AppTheme {
     useMaterial3: true,
     fontFamily: fontFamily,
     textTheme: textTheme,
+    scaffoldBackgroundColor: backgroundColor,
+    appBarTheme: const AppBarTheme(backgroundColor: backgroundColor),
   );
 }
