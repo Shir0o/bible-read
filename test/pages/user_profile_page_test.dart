@@ -56,6 +56,11 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform {
 }
 
 class TrackingAuth extends MockFirebaseAuth {
+  TrackingAuth()
+      : super(
+          mockUser: MockUser(photoURL: ''),
+        );
+
   bool signInCalled = false;
   bool signOutCalled = false;
   AuthCredential? receivedCredential;
@@ -82,7 +87,7 @@ void main() {
     await Firebase.initializeApp();
   });
 
-  testWidgets('shows loading then sign in button', (tester) async {
+  testWidgets('shows loading then auth options', (tester) async {
     await tester.pumpWidget(MaterialApp(home: UserProfilePage()));
 
     // Initially loading indicator
@@ -91,6 +96,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('Email Sign In'), findsOneWidget);
+    expect(find.text('Email Sign Up'), findsOneWidget);
   });
 
   testWidgets('successful sign in navigates to main page', (tester) async {
@@ -173,6 +180,26 @@ void main() {
 
     expect(find.text('Test User'), findsOneWidget);
     expect(find.text('test@example.com'), findsOneWidget);
+    expect(find.text('Sign in with Google'), findsNothing);
+  });
+
+  testWidgets('shows firebase user info when no google user provided',
+      (tester) async {
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(
+        uid: 'abc',
+        email: 'firebase@example.com',
+        displayName: 'Firebase User',
+        photoURL: '',
+      ),
+      signedIn: true,
+    );
+
+    await tester.pumpWidget(MaterialApp(home: UserProfilePage(auth: auth)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Firebase User'), findsOneWidget);
+    expect(find.text('firebase@example.com'), findsOneWidget);
     expect(find.text('Sign in with Google'), findsNothing);
   });
 
