@@ -1,0 +1,48 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+
+import '../widgets/common_styles.dart';
+import '../widgets/signup_form.dart';
+import 'main_page.dart';
+
+/// Page that hosts the [SignupForm] widget for creating a new account.
+class SignupPage extends StatefulWidget {
+  /// Auth instance used to create the account.
+  final FirebaseAuth auth;
+
+  /// Firestore instance used to store user data.
+  final FirebaseFirestore firestore;
+
+  /// Creates a [SignupPage].
+  SignupPage({super.key, FirebaseAuth? auth, FirebaseFirestore? firestore})
+      : auth = auth ?? FirebaseAuth.instance,
+        firestore = firestore ?? FirebaseFirestore.instance;
+
+  @override
+  State<SignupPage> createState() => _SignupPageState();
+}
+
+class _SignupPageState extends State<SignupPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: CommonStyles.buildAppBar('Sign Up'),
+      body: Container(
+        decoration: CommonStyles.backgroundGradient,
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child: SignupForm(
+            auth: widget.auth,
+            firestore: widget.firestore,
+            onComplete: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => MainPage()),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
