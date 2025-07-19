@@ -112,14 +112,20 @@ class UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _handleSignOut() async {
+    final googleSignIn = widget.googleSignInProvider();
     try {
-      final googleSignIn = widget.googleSignInProvider();
       await googleSignIn.signOut();
       await googleSignIn.disconnect();
+    } catch (_) {
+      // Ignore Google sign-out failures.
+    }
+
+    try {
       await widget.auth.signOut();
     } catch (_) {
-      // Ignore errors and still navigate to sign-in screen.
+      // Ignore Firebase sign-out failures.
     }
+
     if (!mounted) return;
     Navigator.of(context)
         .pushReplacement(MaterialPageRoute(builder: (_) => MainPage()));
