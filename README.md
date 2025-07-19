@@ -72,3 +72,16 @@ flutter pub get
 ```
 
 After installation the Flutter commands such as `flutter test` will be available.
+
+## Releasing on iOS
+
+1.  Build the release IPA with your desired version and build number:
+
+    ```bash
+    flutter build ipa --release --build-name=<version> --build-number=<build>
+    ```
+
+2.  Open the iOS project in Xcode to verify the version and build number on the
+    **General** tab.
+3.  Enable automatic signing in Xcode and update any provisioning profiles if
+    needed.
