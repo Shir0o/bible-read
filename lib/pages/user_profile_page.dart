@@ -7,6 +7,8 @@ import '../widgets/common_styles.dart';
 import '../widgets/friend_requests_button.dart';
 import '../services/friend_service.dart';
 import 'main_page.dart';
+import 'login_page.dart';
+import 'signup_page.dart';
 
 class UserProfilePage extends StatefulWidget {
   final GoogleSignInAccount? user;
@@ -133,7 +135,8 @@ class UserProfilePageState extends State<UserProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.user;
+    final googleUser = widget.user;
+    final firebaseUser = widget.auth.currentUser;
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         'Profile',
@@ -151,46 +154,84 @@ class UserProfilePageState extends State<UserProfilePage> {
           child: () {
             return _loading
                 ? const CircularProgressIndicator()
-                : (user == null
-                    ? ElevatedButton(
-                        onPressed: _isSigningIn
-                            ? null
-                            : () async => await _handleSignIn(),
-                        child: _isSigningIn
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text('Sign in with Google'),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                : ((firebaseUser == null && googleUser == null)
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (user.photoUrl != null)
-                            CircleAvatar(
-                              backgroundImage: NetworkImage(user.photoUrl!),
-                              radius: 40,
-                            ),
-                          const SizedBox(height: 16),
-                          Text(
-                            user.displayName ?? 'No Name',
-                            style: Theme.of(context).textTheme.headlineSmall,
+                          ElevatedButton(
+                            onPressed: _isSigningIn
+                                ? null
+                                : () async => await _handleSignIn(),
+                            child: _isSigningIn
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text('Sign in with Google'),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            user.email,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 24),
                           ElevatedButton(
-                            onPressed: () async => _handleSignOut(),
-                            child: const Text('Sign Out'),
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => LoginPage(auth: widget.auth),
+                                ),
+                              );
+                            },
+                            child: const Text('Email Sign In'),
+                          ),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => SignupPage(
+                                    auth: widget.auth,
+                                    firestore: widget.firestore,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: const Text('Email Sign Up'),
                           ),
                         ],
-                      ));
+                      )
+                    : () {
+                        final displayName = googleUser?.displayName ??
+                            firebaseUser?.displayName ??
+                            'No Name';
+                        final email =
+                            googleUser?.email ?? firebaseUser?.email ?? '';
+                        final photoUrl = googleUser?.photoUrl;
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (photoUrl != null && photoUrl.isNotEmpty)
+                              CircleAvatar(
+                                backgroundImage: NetworkImage(photoUrl),
+                                radius: 40,
+                              ),
+                            const SizedBox(height: 16),
+                            Text(
+                              displayName,
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              email,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton(
+                              onPressed: () async => _handleSignOut(),
+                              child: const Text('Sign Out'),
+                            ),
+                          ],
+                        );
+                      }());
           }(),
         ),
       ),
