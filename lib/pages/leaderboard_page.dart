@@ -5,6 +5,7 @@ import '../widgets/common_styles.dart';
 import '../widgets/friend_requests_button.dart';
 import '../services/friend_service.dart';
 import '../models/leaderboard_entry.dart';
+import '../theme/app_theme.dart';
 
 class LeaderboardPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -100,7 +101,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Leaderboard', style: CommonStyles.appBarTitleText),
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.backgroundColor,
         actions: [
           if (widget.auth.currentUser != null)
             FriendRequestsButton(
