@@ -13,6 +13,13 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **Friends Page:** Manage friends on a dedicated page and send new requests using the **+** button.
 *   **Add Friend Page:** The **+** button opens a separate page for sending friend requests.
 
+## Customizing Colors
+
+The scaffold and app bar backgrounds are defined in
+`lib/theme/app_theme.dart`. Update `AppTheme.backgroundColor` or the
+`scaffoldBackgroundColor` value in `AppTheme.appTheme` to change the colors
+across the app.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
@@ -72,6 +79,16 @@ flutter pub get
 ```
 
 After installation the Flutter commands such as `flutter test` will be available.
+
+## Development
+
+Run the formatter, analyzer, and tests after making changes:
+
+```bash
+flutter format .
+flutter analyze
+flutter test
+```
 
 ## Releasing on iOS
 
