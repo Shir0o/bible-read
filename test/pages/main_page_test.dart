@@ -114,7 +114,16 @@ void main() {
   testWidgets('navigation updates selected index', (tester) async {
     final auth =
         MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-    await tester.pumpWidget(MaterialApp(home: MainPage(auth: auth)));
+    final firestore = FakeFirebaseFirestore();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: firestore,
+          messaging: FakeFirebaseMessaging(null),
+        ),
+      ),
+    );
     await tester.tap(find.byIcon(Icons.feed));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
@@ -306,5 +315,55 @@ void main() {
 
     expect(find.textContaining('App verification failed'), findsOneWidget);
     expect(find.byType(ResponsiveScaffold), findsNothing);
+  });
+
+  testWidgets('signing out returns to profile and restricts navigation',
+      (tester) async {
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    fakePlatform.user = GoogleSignInUserData(
+      email: 'test@example.com',
+      id: '123',
+      displayName: 'Test',
+    );
+    final firestore = FakeFirebaseFirestore();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: firestore,
+          messaging: FakeFirebaseMessaging(null),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Navigate to a different page first
+    await tester.tap(find.byIcon(Icons.feed));
+    await tester.pumpAndSettle();
+    expect(find.byType(ReadLogPage), findsOneWidget);
+
+    // Go to profile and sign out
+    await tester.tap(find.byIcon(Icons.person));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign Out'));
+    await tester.pumpAndSettle();
+
+    // Should now show the unauthenticated profile page
+    expect(find.text('Sign in with Google'), findsOneWidget);
+
+    final scaffold =
+        tester.widget<ResponsiveScaffold>(find.byType(ResponsiveScaffold));
+    expect(scaffold.destinations.length, 1);
+    expect(find.byIcon(Icons.home), findsNothing);
+    expect(find.byIcon(Icons.feed), findsNothing);
+    expect(find.byIcon(Icons.leaderboard), findsNothing);
+    expect(find.byIcon(Icons.people), findsNothing);
+
+    scaffold.onDestinationSelected(1);
+    await tester.pump();
+
+    expect(find.text('Sign in with Google'), findsOneWidget);
   });
 }
