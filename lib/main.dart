@@ -14,6 +14,9 @@ import 'theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Log whether the app is running in debug mode.
+  debugPrint('kDebugMode: $kDebugMode');
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -32,7 +35,8 @@ void main() async {
         appleProvider: AppleProvider.deviceCheck,
       );
     }
-  } catch (_) {
+  } catch (e, st) {
+    debugPrint('AppCheck activation failed: $e\n$st');
     appCheckFailed = true;
   }
   await _setupMessaging();
