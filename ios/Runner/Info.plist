@@ -45,12 +45,26 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.82330382748-kv8cr6ehdtjglo5v2iqa6e8ge038kh0s</string>
+			</array>
+		</dict>
+	</array>
 </dict>
+</plist>
   <key>FirebaseAppDelegateProxyEnabled</key>
   <false/>
   <key>UIBackgroundModes</key>
   <array>
     <string>remote-notification</string>
   </array>
-  
+  <key>GIDClientID</key>
+  <string>82330382748-kv8cr6ehdtjglo5v2iqa6e8ge038kh0s.apps.googleusercontent.com</string>
+</dict>
 </plist>
