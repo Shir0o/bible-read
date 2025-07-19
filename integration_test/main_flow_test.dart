@@ -56,7 +56,9 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Future<bool> requestScopes(List<String> scopes) async => true;
 
   @override
-  Future<bool> canAccessScopes(List<String> scopes, {String? accessToken}) async => true;
+  Future<bool> canAccessScopes(List<String> scopes,
+          {String? accessToken}) async =>
+      true;
 
   @override
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
@@ -72,7 +74,8 @@ void main() {
 
   testWidgets('navigate between pages', (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     final google = FakeGoogleSignInPlatform();
     GoogleSignInPlatform.instance = google;
 

@@ -36,8 +36,10 @@ admin.initializeApp();
 setGlobalOptions({ maxInstances: 10 });
 
 exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => {
-  console.log('👤 req.auth:', req.auth);
-  console.log('🔥 Admin project ID:', admin.app().options.projectId);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('👤 req.auth:', req.auth);
+    console.log('🔥 Admin project ID:', admin.app().options.projectId);
+  }
   if (!req.auth) {
     throw new Error("unauthenticated: The function must be called while authenticated.");
   }
