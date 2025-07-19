@@ -48,6 +48,7 @@ Future<void> _setupMessaging() async {
 
   const initializationSettings = InitializationSettings(
     android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    iOS: DarwinInitializationSettings(),
   );
   await _localNotificationsPlugin.initialize(initializationSettings);
 
