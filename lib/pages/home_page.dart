@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/friend_requests_button.dart';
 import '../services/friend_service.dart';
+import '../theme/app_theme.dart';
 
 class HomePage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -354,7 +355,7 @@ class _HomePageState extends State<HomePage>
       appBar: AppBar(
         title: const Text('Bible Reading Challenge',
             style: CommonStyles.appBarTitleText),
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.backgroundColor,
         actions: [
           if (widget.auth.currentUser != null)
             FriendRequestsButton(

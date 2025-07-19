@@ -4,7 +4,7 @@ import '../theme/app_theme.dart';
 
 class CommonStyles {
   static const BoxDecoration backgroundGradient = BoxDecoration(
-    color: Colors.black,
+    color: AppTheme.backgroundColor,
   );
 
   static const TextStyle appBarTitleText = TextStyle(
@@ -31,7 +31,7 @@ class CommonStyles {
       {List<Widget>? actions}) {
     return AppBar(
       title: Text(title, style: appBarTitleText),
-      backgroundColor: Colors.black, // Enforce black background for app bar
+      backgroundColor: AppTheme.backgroundColor,
       actions: actions,
     );
   }
