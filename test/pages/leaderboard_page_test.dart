@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:fake_cloud_firestore/src/mock_collection_reference.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:bible_read/services/friend_service.dart';
 
 import 'package:bible_read/pages/leaderboard_page.dart';
 
@@ -49,8 +50,12 @@ void main() {
   testWidgets('displays message when no data', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: true);
-    await tester.pumpWidget(
-        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpWidget(MaterialApp(
+        home: LeaderboardPage(
+      firestore: firestore,
+      auth: auth,
+      friendService: FriendService(firestore: firestore),
+    )));
     await tester.pumpAndSettle();
 
     expect(find.text('No one is on the leaderboard yet.'), findsOneWidget);
@@ -60,8 +65,12 @@ void main() {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: false);
 
-    await tester.pumpWidget(
-        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpWidget(MaterialApp(
+        home: LeaderboardPage(
+      firestore: firestore,
+      auth: auth,
+      friendService: FriendService(firestore: firestore),
+    )));
     await tester.pumpAndSettle();
 
     expect(
@@ -73,8 +82,12 @@ void main() {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth();
 
-    await tester.pumpWidget(
-        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpWidget(MaterialApp(
+        home: LeaderboardPage(
+      firestore: firestore,
+      auth: auth,
+      friendService: FriendService(firestore: firestore),
+    )));
     await tester.pumpAndSettle();
 
     expect(
@@ -82,7 +95,22 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
-  testWidgets('shows sorted leaderboard', (tester) async {
+  testWidgets('tabs are present', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(signedIn: true);
+    await tester.pumpWidget(MaterialApp(
+        home: LeaderboardPage(
+      firestore: firestore,
+      auth: auth,
+      friendService: FriendService(firestore: firestore),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Public'), findsOneWidget);
+    expect(find.text('Friends'), findsOneWidget);
+  });
+
+  testWidgets('public tab shows sorted leaderboard', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: true);
     await firestore.collection('users').doc('u1').set({'name': 'Alice'});
@@ -100,8 +128,12 @@ void main() {
         .doc('data')
         .set({'streak': 5});
 
-    await tester.pumpWidget(
-        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpWidget(MaterialApp(
+        home: LeaderboardPage(
+      firestore: firestore,
+      auth: auth,
+      friendService: FriendService(firestore: firestore),
+    )));
     await tester.pumpAndSettle();
 
     final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
@@ -110,12 +142,59 @@ void main() {
     expect((tiles[1].title as Text).data, 'Alice');
   });
 
+  testWidgets('friends tab shows only friend entries', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'me'), signedIn: true);
+    await firestore.collection('users').doc('me').set({'name': 'Me'});
+    await firestore.collection('users').doc('f1').set({'name': 'Friend'});
+    await firestore.collection('users').doc('u2').set({'name': 'Other'});
+
+    await firestore
+        .collection('users')
+        .doc('f1')
+        .collection('summary')
+        .doc('data')
+        .set({'streak': 3});
+    await firestore
+        .collection('users')
+        .doc('u2')
+        .collection('summary')
+        .doc('data')
+        .set({'streak': 5});
+
+    await firestore
+        .collection('users')
+        .doc('me')
+        .collection('friends')
+        .doc('f1')
+        .set({'name': 'Friend'});
+
+    await tester.pumpWidget(MaterialApp(
+        home: LeaderboardPage(
+      firestore: firestore,
+      auth: auth,
+      friendService: FriendService(firestore: firestore),
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Friends'));
+    await tester.pumpAndSettle();
+
+    final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
+    expect(tiles.length, 1);
+    expect((tiles[0].title as Text).data, 'Friend');
+  });
+
   testWidgets('failure hides loading indicator', (tester) async {
     final firestore = ThrowingFirestore();
     final auth =
         MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-    await tester.pumpWidget(
-        MaterialApp(home: LeaderboardPage(firestore: firestore, auth: auth)));
+    await tester.pumpWidget(MaterialApp(
+        home: LeaderboardPage(
+      firestore: firestore,
+      auth: auth,
+      friendService: FriendService(firestore: firestore),
+    )));
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
