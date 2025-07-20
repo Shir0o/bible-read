@@ -231,6 +231,27 @@ void main() {
     expect(switchTile.onChanged, isNull);
   });
 
+  testWidgets('toggling read status does not show progress indicator',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u-ci'), signedIn: true);
+
+    await tester.pumpWidget(
+        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(SwitchListTile));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 500));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
   testWidgets('marking reading done creates Firestore entries', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user =
