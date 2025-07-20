@@ -1,3 +1,21 @@
+# Release 1.3.0
+
+This release introduces email and password authentication, allowing users to sign up and log in without a Google account. It also includes other enhancements and bug fixes.
+
+## Features
+
+*   **Email and Password Authentication:** Users can now create an account and log in using their email and password.
+*   **Permanent Likes:** Likes on the reading feed are now persistent.
+
+## Enhancements
+
+*   **Home Page Optimization:** Improved the performance of the home page by avoiding unnecessary loading indicators when toggling the reading status.
+*   **Refactored App Bar:** The app bar style has been updated to use theme colors for better consistency.
+
+## Bug Fixes
+
+*   **Sign-out:** Improved sign-out functionality and error logging.
+
 # Release 1.2.3
 
 This update introduces a complete friends system.
