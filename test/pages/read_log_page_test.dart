@@ -383,7 +383,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.favorite_border));
-      await tester.pumpAndSettle();
+      await tester.pump();
       expect(find.byIcon(Icons.favorite), findsOneWidget);
 
       await tester.runAsync(() async {
@@ -399,7 +399,7 @@ void main() {
       });
 
       await tester.tap(find.byIcon(Icons.favorite));
-      await tester.pumpAndSettle();
+      await tester.pump();
       expect(find.byIcon(Icons.favorite), findsOneWidget);
 
       await tester.runAsync(() async {
