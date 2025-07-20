@@ -8,7 +8,7 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **Weekly and Monthly Views:** See your reading progress at a glance with weekly and monthly calendar views.
 *   **Leaderboard:** See how your reading streak compares to others.
 *   **Reading Feed:** See who else has read the Bible today and give them a like to encourage them.
-*   **User Profile:** View your profile information and sign in with your Google account.
+*   **User Profile:** View your profile information and sign in with your Google account or with an email and password.
 *   **Like Notifications:** Receive a push notification when someone likes your read log.
 *   **Friends Page:** Manage friends on a dedicated page and send new requests using the **+** button.
 *   **Add Friend Page:** The **+** button opens a separate page for sending friend requests.
@@ -50,6 +50,12 @@ This project is a starting point for a Flutter application.
     ```bash
     flutter run
     ```
+
+### Creating an Account Without Google
+
+After launching the app open the profile tab and choose **Email Sign Up** to
+create a new account using your email address. Use **Email Sign In** on later
+launches to log in with those credentials.
 
 ## Installing Flutter
 
