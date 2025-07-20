@@ -221,9 +221,6 @@ void main() {
 
     await tester.tap(find.byType(SwitchListTile));
     await tester.pump();
-    await tester.runAsync(() async {
-      await Future.delayed(const Duration(milliseconds: 500));
-    });
     await tester.pumpAndSettle();
 
     final switchTile =
@@ -244,9 +241,6 @@ void main() {
 
     await tester.tap(find.byType(SwitchListTile));
     await tester.pump();
-    await tester.runAsync(() async {
-      await Future.delayed(const Duration(milliseconds: 500));
-    });
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -265,9 +259,6 @@ void main() {
 
     await tester.tap(find.byType(SwitchListTile));
     await tester.pump();
-    await tester.runAsync(() async {
-      await Future.delayed(const Duration(milliseconds: 500));
-    });
     await tester.pumpAndSettle();
 
     final dateKey =
