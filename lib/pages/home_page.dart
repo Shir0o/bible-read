@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -229,38 +230,75 @@ class _HomePageState extends State<HomePage>
     await user.reload();
     final refreshedUser = widget.auth.currentUser;
 
+    // Preserve current state in case we need to revert
+    final prevStreak = _streak;
+    final prevWeek = List<bool>.from(_pastWeek);
+    final prevMonth = List<bool>.from(_pastMonth);
+
+    final today = DateTime.now();
+    final weekIndex = today.weekday % 7;
+    final monthIndex = today.day - 1;
+    final daysInMonth = DateTime(today.year, today.month + 1, 0).day;
+
     if (!_disposed && mounted) {
       setState(() {
         _readToday = true;
+        _streak += 1;
+        if (_pastWeek.length < 7) {
+          _pastWeek = List<bool>.generate(
+            7,
+            (i) => i < _pastWeek.length ? _pastWeek[i] : false,
+          );
+        }
+        _pastWeek[weekIndex] = true;
+        if (_pastMonth.length < daysInMonth) {
+          _pastMonth = List<bool>.generate(
+            daysInMonth,
+            (i) => i < _pastMonth.length ? _pastMonth[i] : false,
+          );
+        }
+        _pastMonth[monthIndex] = true;
       });
     }
 
-    final today = DateTime.now();
-    final dateKey = '${today.year}-${today.month}-${today.day}';
+    try {
+      final dateKey = '${today.year}-${today.month}-${today.day}';
+      await widget.firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc(user.uid)
+          .set({
+        'name': refreshedUser?.displayName ?? '',
+        'email': refreshedUser?.email ?? '',
+        'timestamp': Timestamp.now(),
+        'read': true,
+      });
 
-    await widget.firestore
-        .collection('read_logs')
-        .doc(dateKey)
-        .collection('entries')
-        .doc(user.uid)
-        .set({
-      'name': refreshedUser?.displayName ?? '',
-      'email': refreshedUser?.email ?? '',
-      'timestamp': Timestamp.now(),
-      'read': true,
-    });
+      await widget.firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('reading')
+          .doc(dateKey)
+          .set({'read': true}, SetOptions(merge: true));
 
-    await widget.firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('reading')
-        .doc(dateKey)
-        .set({'read': true}, SetOptions(merge: true));
+      // Update summary collection (lightweight update)
+      await _updateSummaryWithToday();
 
-    // Update summary collection (lightweight update)
-    await _updateSummaryWithToday();
-
-    await _loadReadStatus(showLoading: false);
+      unawaited(_loadReadStatus(showLoading: false));
+    } catch (e) {
+      if (!_disposed && mounted) {
+        setState(() {
+          _readToday = false;
+          _streak = prevStreak;
+          _pastWeek = prevWeek;
+          _pastMonth = prevMonth;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to mark reading')),
+        );
+      }
+    }
   }
 
   /// Lightweight summary update for today's read.
