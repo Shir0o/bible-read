@@ -121,6 +121,32 @@ class _ReadLogPageState extends State<ReadLogPage> {
   Future<void> _toggleLike(String logUid) async {
     final user = widget.auth.currentUser;
     if (user == null) return;
+    final index = _logs.indexWhere((log) => log['uid'] == logUid);
+    if (index == -1) return;
+    final original = Map<String, dynamic>.from(_logs[index]);
+
+    if (original['liked'] == true) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Likes cannot be removed.')),
+        );
+      }
+      return;
+    }
+
+    final likerName = (user.displayName ?? '').split(' ').first;
+    final updatedNames = List<String>.from(original['likeNames'] ?? [])
+      ..add(likerName);
+
+    // Optimistically update UI
+    setState(() {
+      _logs[index] = {
+        ...original,
+        'liked': true,
+        'likeNames': updatedNames,
+      };
+    });
+
     final now = widget.dateProvider();
     final dateKey = '${now.year}-${now.month}-${now.day}';
     final likeRef = widget.firestore
@@ -134,28 +160,31 @@ class _ReadLogPageState extends State<ReadLogPage> {
       final likeDoc = await likeRef.get();
       if (likeDoc.exists) {
         if (mounted) {
+          setState(() => _logs[index] = original);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Likes cannot be removed.')),
           );
         }
         return;
-      } else {
-        final likerName = (user.displayName ?? '').split(' ').first;
-        await likeRef.set({
-          'timestamp': Timestamp.now(),
-          'name': likerName,
-        });
-        if (logUid != user.uid) {
-          await _sendLikeNotification(
-            ownerUid: logUid,
-            likerName: likerName,
-          );
-        }
+      }
+      await likeRef.set({
+        'timestamp': Timestamp.now(),
+        'name': likerName,
+      });
+      if (logUid != user.uid) {
+        await _sendLikeNotification(
+          ownerUid: logUid,
+          likerName: likerName,
+        );
       }
     } catch (e) {
       debugPrint('Failed to toggle like: $e');
-    } finally {
-      _loadLogs(); // Refresh the UI
+      if (mounted) {
+        setState(() => _logs[index] = original);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to like. Please try again.')),
+        );
+      }
     }
   }
 
