@@ -175,7 +175,11 @@ class _MainPageState extends State<MainPage> {
                 });
               },
         ),
-        LeaderboardPage(firestore: widget.firestore, auth: widget.auth),
+        LeaderboardPage(
+          firestore: widget.firestore,
+          auth: widget.auth,
+          friendService: FriendService(firestore: widget.firestore),
+        ),
         FriendsPage(
           friendService: FriendService(firestore: widget.firestore),
           auth: widget.auth,
