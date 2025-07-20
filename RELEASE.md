@@ -1,3 +1,17 @@
+# Release 1.4.0
+
+This release focuses on improving the user experience with a new friends leaderboard and optimistic UI updates for key interactions.
+
+## Features
+
+*   **Friends Leaderboard:** A new "Friends" tab has been added to the leaderboard, allowing you to see how you rank among your friends.
+
+## Enhancements
+
+*   **Optimistic UI Updates:**
+    *   Liking a read log now provides immediate visual feedback, updating the UI before the network request completes.
+    *   Toggling the "read" status is now instantaneous, making the interface feel more responsive.
+
 # Release 1.3.0
 
 This release introduces email and password authentication, allowing users to sign up and log in without a Google account. It also includes other enhancements and bug fixes.
