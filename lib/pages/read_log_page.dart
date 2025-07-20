@@ -133,7 +133,12 @@ class _ReadLogPageState extends State<ReadLogPage> {
     try {
       final likeDoc = await likeRef.get();
       if (likeDoc.exists) {
-        await likeRef.delete();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Likes cannot be removed.')),
+          );
+        }
+        return;
       } else {
         final likerName = (user.displayName ?? '').split(' ').first;
         await likeRef.set({
@@ -234,7 +239,20 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                           : Icons.favorite_border,
                                       color: isLiked ? Colors.red : null,
                                     ),
-                                    onPressed: () => _toggleLike(log['uid']),
+                                    onPressed: () {
+                                      if (isLiked) {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content: Text(
+                                                    'Likes cannot be removed.')),
+                                          );
+                                        }
+                                      } else {
+                                        _toggleLike(log['uid']);
+                                      }
+                                    },
                                   ),
                                 ),
                               ),
