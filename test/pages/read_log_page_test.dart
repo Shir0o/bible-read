@@ -356,7 +356,7 @@ void main() {
       expect(find.textContaining('Liked by'), findsOneWidget);
     });
 
-    testWidgets('toggleLike adds and removes like', (tester) async {
+    testWidgets('toggleLike adds and does not remove like', (tester) async {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1', displayName: 'Tester One');
       final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
@@ -400,7 +400,19 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.favorite));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+      expect(find.byIcon(Icons.favorite), findsOneWidget);
+
+      await tester.runAsync(() async {
+        final likeDoc = await firestore
+            .collection('read_logs')
+            .doc(dateKey)
+            .collection('entries')
+            .doc('u2')
+            .collection('likes')
+            .doc(user.uid)
+            .get();
+        expect(likeDoc.exists, isTrue);
+      });
     });
 
     testWidgets('toggleLike triggers push notification', (tester) async {
