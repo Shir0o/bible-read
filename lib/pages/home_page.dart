@@ -35,8 +35,8 @@ class _HomePageState extends State<HomePage>
     _loadReadStatus();
   }
 
-  Future<void> _loadReadStatus() async {
-    if (!_disposed && mounted) {
+  Future<void> _loadReadStatus({bool showLoading = true}) async {
+    if (showLoading && !_disposed && mounted) {
       setState(() {
         _toggleLoading = true; // Start loading
       });
@@ -48,7 +48,7 @@ class _HomePageState extends State<HomePage>
       final refreshedUser = widget.auth.currentUser;
       if (user == null) {
         // If user is null, stop loading and return
-        if (!_disposed && mounted) {
+        if (showLoading && !_disposed && mounted) {
           setState(() {
             _toggleLoading = false;
           });
@@ -140,7 +140,7 @@ class _HomePageState extends State<HomePage>
     } catch (e) {
       debugPrint('Error loading status: $e');
     } finally {
-      if (!_disposed && mounted) {
+      if (showLoading && !_disposed && mounted) {
         setState(() {
           _toggleLoading = false; // Always stop loading
         });
@@ -260,7 +260,7 @@ class _HomePageState extends State<HomePage>
     // Update summary collection (lightweight update)
     await _updateSummaryWithToday();
 
-    await _loadReadStatus();
+    await _loadReadStatus(showLoading: false);
   }
 
   /// Lightweight summary update for today's read.
