@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 
 /// Names of Firestore collections used for friend features.
 class FriendCollections {
@@ -214,7 +215,8 @@ class FriendService {
         .collection(FriendCollections.receivedRequests)
         .doc(fromUid)
         .delete()
-        .catchError((_) {});
+        .catchError((e) =>
+            debugPrint('Failed to remove received request for $fromUid: $e'));
   }
 
   /// Decline a friend request sent by [fromUid] to [currentUid].
@@ -231,7 +233,8 @@ class FriendService {
         .collection(FriendCollections.receivedRequests)
         .doc(fromUid)
         .delete()
-        .catchError((_) {});
+        .catchError((e) =>
+            debugPrint('Failed to remove received request for $fromUid: $e'));
   }
 
   /// Send a nudge notification to [friendUid] from [currentUid].
