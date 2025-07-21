@@ -67,7 +67,41 @@ class _FriendsPageState extends State<FriendsPage> {
                           }
                           return ListView(
                             children: friends
-                                .map((f) => ListTile(title: Text(f.name)))
+                                .map(
+                                  (f) => ListTile(
+                                    title: Text(f.name),
+                                    trailing: IconButton(
+                                      icon: const Icon(
+                                          Icons.notifications_active),
+                                      onPressed: () async {
+                                        final messenger =
+                                            ScaffoldMessenger.of(context);
+                                        try {
+                                          await widget.friendService
+                                              .nudgeFriend(
+                                            currentUid: user.uid,
+                                            friendUid: f.uid,
+                                            currentName:
+                                                user.displayName ?? 'You',
+                                          );
+                                          if (!mounted) return;
+                                          messenger.showSnackBar(
+                                            const SnackBar(
+                                                content: Text('Nudge sent')),
+                                          );
+                                        } catch (e) {
+                                          if (!mounted) return;
+                                          messenger.showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                  'Nudge already sent today'),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                )
                                 .toList(),
                           );
                         },
