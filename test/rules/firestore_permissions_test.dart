@@ -135,4 +135,28 @@ void main() {
           isFalse);
     });
   });
+
+  group('/reading likes', () {
+    const base =
+        'databases/$db/documents/users/alice/reading/2024-01-01/likes/bob';
+
+    test('owner or liker can read', () {
+      expect(
+          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
+      expect(
+          rules.isAllowed(base, Method.read, variables: auth('bob')), isTrue);
+    });
+
+    test('other user cannot read', () {
+      expect(rules.isAllowed(base, Method.read, variables: auth('charlie')),
+          isFalse);
+    });
+
+    test('only liker can write', () {
+      expect(
+          rules.isAllowed(base, Method.write, variables: auth('bob')), isTrue);
+      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
+          isFalse);
+    });
+  });
 }
