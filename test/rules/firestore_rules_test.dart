@@ -10,5 +10,9 @@ void main() {
       expect(rulesText.contains('friendRequestsReceived'), isTrue);
       expect(rulesText.contains('nudges'), isTrue);
     });
+
+    test('does not include deprecated readLog collection', () {
+      expect(rulesText.contains('/readLog'), isFalse);
+    });
   });
 }
