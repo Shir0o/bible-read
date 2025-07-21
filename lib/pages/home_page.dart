@@ -172,52 +172,63 @@ class _HomePageState extends State<HomePage>
   Future<void> _updateSummary() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
-    final userDocRef = widget.firestore.collection('users').doc(user.uid);
-    final readingCollection = userDocRef.collection('reading');
 
-    // Calculate streak, starting from today and counting backward in time
-    int streak = 0;
-    while (true) {
-      final date = DateTime.now().subtract(Duration(days: streak));
-      final key = '${date.year}-${date.month}-${date.day}';
-      final doc = await readingCollection.doc(key).get();
-      if (doc.exists && doc.data()?['read'] == true) {
-        streak++;
-      } else {
-        break;
+    try {
+      final userDocRef = widget.firestore.collection('users').doc(user.uid);
+      final readingCollection = userDocRef.collection('reading');
+
+      // Calculate streak, starting from today and counting backward in time
+      int streak = 0;
+      while (true) {
+        final date = DateTime.now().subtract(Duration(days: streak));
+        final key = '${date.year}-${date.month}-${date.day}';
+        final doc = await readingCollection.doc(key).get();
+        if (doc.exists && doc.data()?['read'] == true) {
+          streak++;
+        } else {
+          break;
+        }
+      }
+
+      // Past 7 days
+      final pastWeekStatus = await _getReadStatusForRange(7);
+      final pastWeekReadDates = <String>[];
+      for (int i = 0; i < pastWeekStatus.length; i++) {
+        if (pastWeekStatus[i]) {
+          final day = DateTime.now()
+              .subtract(Duration(days: pastWeekStatus.length - 1 - i));
+          pastWeekReadDates.add(
+              '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
+        }
+      }
+
+      // Past 30 days
+      final pastMonthStatus = await _getReadStatusForRange(30);
+      final pastMonthReadDates = <String>[];
+      for (int i = 0; i < pastMonthStatus.length; i++) {
+        if (pastMonthStatus[i]) {
+          final day = DateTime.now()
+              .subtract(Duration(days: pastMonthStatus.length - 1 - i));
+          pastMonthReadDates.add(
+              '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
+        }
+      }
+
+      // Write to summary doc (store only cached streak, past week, past month)
+      await userDocRef.collection('summary').doc('data').set({
+        'streak': streak,
+        'pastWeekReadDates': pastWeekReadDates,
+        'pastMonthReadDates': pastMonthReadDates,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('Failed to update summary: \$e');
+      if (!_disposed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update summary')),
+        );
+        unawaited(_loadReadStatus(showLoading: false));
       }
     }
-
-    // Past 7 days
-    final pastWeekStatus = await _getReadStatusForRange(7);
-    final pastWeekReadDates = <String>[];
-    for (int i = 0; i < pastWeekStatus.length; i++) {
-      if (pastWeekStatus[i]) {
-        final day = DateTime.now()
-            .subtract(Duration(days: pastWeekStatus.length - 1 - i));
-        pastWeekReadDates.add(
-            '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
-      }
-    }
-
-    // Past 30 days
-    final pastMonthStatus = await _getReadStatusForRange(30);
-    final pastMonthReadDates = <String>[];
-    for (int i = 0; i < pastMonthStatus.length; i++) {
-      if (pastMonthStatus[i]) {
-        final day = DateTime.now()
-            .subtract(Duration(days: pastMonthStatus.length - 1 - i));
-        pastMonthReadDates.add(
-            '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
-      }
-    }
-
-    // Write to summary doc (store only cached streak, past week, past month)
-    await userDocRef.collection('summary').doc('data').set({
-      'streak': streak,
-      'pastWeekReadDates': pastWeekReadDates,
-      'pastMonthReadDates': pastMonthReadDates,
-    }, SetOptions(merge: true));
   }
 
   Future<void> _toggleReadStatus() async {
@@ -306,52 +317,62 @@ class _HomePageState extends State<HomePage>
     final user = widget.auth.currentUser;
     if (user == null) return;
 
-    final userDocRef = widget.firestore.collection('users').doc(user.uid);
-    final summaryDocRef = userDocRef.collection('summary').doc('data');
-    final doc = await summaryDocRef.get();
-    final data = doc.data() ?? {};
+    try {
+      final userDocRef = widget.firestore.collection('users').doc(user.uid);
+      final summaryDocRef = userDocRef.collection('summary').doc('data');
+      final doc = await summaryDocRef.get();
+      final data = doc.data() ?? {};
 
-    final today = DateTime.now();
-    final yesterday = today.subtract(const Duration(days: 1));
-    final yesterdayDateKey =
-        '${yesterday.year}-${yesterday.month}-${yesterday.day}';
+      final today = DateTime.now();
+      final yesterday = today.subtract(const Duration(days: 1));
+      final yesterdayDateKey =
+          '${yesterday.year}-${yesterday.month}-${yesterday.day}';
 
-    final yesterdayDoc =
-        await userDocRef.collection('reading').doc(yesterdayDateKey).get();
+      final yesterdayDoc =
+          await userDocRef.collection('reading').doc(yesterdayDateKey).get();
 
-    int streak = (data['streak'] is int) ? data['streak'] : 0;
-    if (yesterdayDoc.exists && yesterdayDoc.data()?['read'] == true) {
-      streak += 1;
-    } else {
-      streak = 1; // Reset streak if yesterday was missed
-    }
+      int streak = (data['streak'] is int) ? data['streak'] : 0;
+      if (yesterdayDoc.exists && yesterdayDoc.data()?['read'] == true) {
+        streak += 1;
+      } else {
+        streak = 1; // Reset streak if yesterday was missed
+      }
 
-    final dateKey =
-        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      final dateKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
-    final pastWeekReadDates =
-        List<String>.from(data['pastWeekReadDates'] ?? []);
-    if (!pastWeekReadDates.contains(dateKey)) {
-      pastWeekReadDates.add(dateKey);
-      if (pastWeekReadDates.length > 7) {
-        pastWeekReadDates.removeRange(0, pastWeekReadDates.length - 7);
+      final pastWeekReadDates =
+          List<String>.from(data['pastWeekReadDates'] ?? []);
+      if (!pastWeekReadDates.contains(dateKey)) {
+        pastWeekReadDates.add(dateKey);
+        if (pastWeekReadDates.length > 7) {
+          pastWeekReadDates.removeRange(0, pastWeekReadDates.length - 7);
+        }
+      }
+
+      final pastMonthReadDates =
+          List<String>.from(data['pastMonthReadDates'] ?? []);
+      if (!pastMonthReadDates.contains(dateKey)) {
+        pastMonthReadDates.add(dateKey);
+        if (pastMonthReadDates.length > 30) {
+          pastMonthReadDates.removeRange(0, pastMonthReadDates.length - 30);
+        }
+      }
+
+      await summaryDocRef.set({
+        'streak': streak,
+        'pastWeekReadDates': pastWeekReadDates,
+        'pastMonthReadDates': pastMonthReadDates,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('Failed to update summary with today: \$e');
+      if (!_disposed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update summary')),
+        );
+        unawaited(_loadReadStatus(showLoading: false));
       }
     }
-
-    final pastMonthReadDates =
-        List<String>.from(data['pastMonthReadDates'] ?? []);
-    if (!pastMonthReadDates.contains(dateKey)) {
-      pastMonthReadDates.add(dateKey);
-      if (pastMonthReadDates.length > 30) {
-        pastMonthReadDates.removeRange(0, pastMonthReadDates.length - 30);
-      }
-    }
-
-    await summaryDocRef.set({
-      'streak': streak,
-      'pastWeekReadDates': pastWeekReadDates,
-      'pastMonthReadDates': pastMonthReadDates,
-    }, SetOptions(merge: true));
   }
 
   Future<void> likeReading() async {
