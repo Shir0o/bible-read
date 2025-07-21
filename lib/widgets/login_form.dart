@@ -51,7 +51,8 @@ class _LoginFormState extends State<LoginForm> {
       debugPrint('Failed to sign in: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Something went wrong')),
+          const SnackBar(
+              content: Text('Failed to sign in. Please check credentials.')),
         );
       }
     } finally {
