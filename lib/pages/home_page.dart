@@ -383,12 +383,21 @@ class _HomePageState extends State<HomePage>
     final dateKey = '${today.year}-${today.month}-${today.day}';
     final userDocRef = widget.firestore.collection('users').doc(user.uid);
 
-    await userDocRef
-        .collection('reading')
-        .doc(dateKey)
-        .collection('likes')
-        .doc(user.uid)
-        .set({'timestamp': Timestamp.now()});
+    try {
+      await userDocRef
+          .collection('reading')
+          .doc(dateKey)
+          .collection('likes')
+          .doc(user.uid)
+          .set({'timestamp': Timestamp.now()});
+    } catch (e) {
+      debugPrint('Failed to like reading: $e');
+      if (!_disposed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to like reading')),
+        );
+      }
+    }
   }
 
   Future<void> unlikeReading() async {
@@ -399,12 +408,21 @@ class _HomePageState extends State<HomePage>
     final dateKey = '${today.year}-${today.month}-${today.day}';
     final userDocRef = widget.firestore.collection('users').doc(user.uid);
 
-    await userDocRef
-        .collection('reading')
-        .doc(dateKey)
-        .collection('likes')
-        .doc(user.uid)
-        .delete();
+    try {
+      await userDocRef
+          .collection('reading')
+          .doc(dateKey)
+          .collection('likes')
+          .doc(user.uid)
+          .delete();
+    } catch (e) {
+      debugPrint('Failed to unlike reading: $e');
+      if (!_disposed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to unlike reading')),
+        );
+      }
+    }
   }
 
   @override
