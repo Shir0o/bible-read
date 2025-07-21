@@ -81,6 +81,67 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
   return admin.messaging().send(message);
 });
 
+exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) => {
+  if (!req.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "User must be authenticated."
+    );
+  }
+
+  const { toUid, fromName } = req.data;
+  if (!toUid || !fromName) {
+    throw new functions.https.HttpsError("invalid-argument", "Missing parameters");
+  }
+
+  const fromUid = req.auth.uid;
+  const db = admin.firestore();
+  const logRef = db.collection("users").doc(fromUid)
+    .collection("nudges").doc(toUid);
+
+  const logDoc = await logRef.get();
+  const now = new Date();
+  if (logDoc.exists) {
+    const lastTs = logDoc.data().timestamp?.toDate ? logDoc.data().timestamp.toDate() : null;
+    if (lastTs && lastTs.getFullYear() === now.getFullYear() &&
+        lastTs.getMonth() === now.getMonth() &&
+        lastTs.getDate() === now.getDate()) {
+      return { alreadySent: true };
+    }
+  }
+
+  const userDoc = await db.collection('users').doc(toUid).get();
+  const token = userDoc.data()?.fcmToken;
+  if (token) {
+    const message = {
+      token,
+      notification: {
+        title: "📖 Time to Read!",
+        body: `${fromName} nudged you to read today.`,
+      },
+      android: {
+        priority: "high",
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+          },
+        },
+      },
+    };
+
+    await admin.messaging().send(message);
+  }
+
+  await logRef.set(
+    { timestamp: admin.firestore.FieldValue.serverTimestamp() },
+    { merge: true }
+  );
+
+  return { alreadySent: false };
+});
+
 exports.deleteFriendRequestPair = onCall({ region: "us-central1" }, async (req) => {
   if (!req.auth) {
     throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");

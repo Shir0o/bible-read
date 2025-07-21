@@ -8,6 +8,7 @@ void main() {
     test('includes friend request collections', () {
       expect(rulesText.contains('friendRequestsSent'), isTrue);
       expect(rulesText.contains('friendRequestsReceived'), isTrue);
+      expect(rulesText.contains('nudges'), isTrue);
     });
   });
 }

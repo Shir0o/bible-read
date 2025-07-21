@@ -376,6 +376,45 @@ void main() {
       });
     });
 
+    group('nudgeFriend', () {
+      test('calls Cloud Function with expected arguments', () async {
+        const currentUid = 'userA';
+        const friendUid = 'userB';
+        const currentName = 'Alice';
+        bool called = false;
+        Map<String, String>? lastArgs;
+
+        friendService = FriendService(
+          firestore: firestore,
+          sendNudgeNotificationFn: ({
+            required String fromUid,
+            required String toUid,
+            required String fromName,
+          }) async {
+            called = true;
+            lastArgs = {
+              'fromUid': fromUid,
+              'toUid': toUid,
+              'fromName': fromName,
+            };
+          },
+        );
+
+        await friendService.nudgeFriend(
+          currentUid: currentUid,
+          friendUid: friendUid,
+          currentName: currentName,
+        );
+
+        expect(called, isTrue);
+        expect(lastArgs, {
+          'fromUid': currentUid,
+          'toUid': friendUid,
+          'fromName': currentName,
+        });
+      });
+    });
+
     test('pendingRequests handles non-string name gracefully', () async {
       final uid = 'user123';
       final fromUid = 'user456';
