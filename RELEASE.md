@@ -1,3 +1,11 @@
+# Release 1.4.0
+
+This release adds the ability to nudge friends with a push notification.
+
+## Features
+
+*   **Nudge Notifications:** Send a reminder to your friends when it's time to read.
+
 # Release 1.3.0
 
 This release introduces email and password authentication, allowing users to sign up and log in without a Google account. It also includes other enhancements and bug fixes.

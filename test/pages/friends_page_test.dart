@@ -13,6 +13,7 @@ class RecordingFriendService extends FriendService {
       : super(firestore: firestore);
 
   String? lastEmail;
+  bool nudged = false;
 
   @override
   Future<void> sendFriendRequestByEmail({
@@ -21,6 +22,15 @@ class RecordingFriendService extends FriendService {
     required String toEmail,
   }) async {
     lastEmail = toEmail;
+  }
+
+  @override
+  Future<void> nudgeFriend({
+    required String currentUid,
+    required String friendUid,
+    required String currentName,
+  }) async {
+    nudged = true;
   }
 }
 
@@ -81,6 +91,22 @@ void main() {
     await pumpPage(tester);
 
     expect(find.text('Alice'), findsOneWidget);
+  });
+
+  testWidgets('tapping nudge icon calls service', (tester) async {
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('friends')
+        .doc('f1')
+        .set({'name': 'Alice'});
+
+    await pumpPage(tester);
+
+    await tester.tap(find.byIcon(Icons.notifications_active));
+    await tester.pumpAndSettle();
+
+    expect(service.nudged, isTrue);
   });
 
   testWidgets('failed request leaves send button enabled', (tester) async {
