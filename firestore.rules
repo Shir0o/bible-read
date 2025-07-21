@@ -15,7 +15,9 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
 
         match /likes/{likerId} {
-          allow read, write: if request.auth != null && request.auth.uid == likerId;
+          allow read: if request.auth != null &&
+            (request.auth.uid == userId || request.auth.uid == likerId);
+          allow write: if request.auth != null && request.auth.uid == likerId;
         }
       }
 
