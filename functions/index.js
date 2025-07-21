@@ -78,7 +78,16 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
     },
   };
 
-  return admin.messaging().send(message);
+  try {
+    return await admin.messaging().send(message);
+  } catch (err) {
+    functions.logger.error('Failed to send like notification', err);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to send like notification',
+      err instanceof Error ? err.message : String(err)
+    );
+  }
 });
 
 exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) => {
@@ -131,7 +140,16 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
       },
     };
 
-    await admin.messaging().send(message);
+    try {
+      await admin.messaging().send(message);
+    } catch (err) {
+      functions.logger.error('Failed to send nudge notification', err);
+      throw new functions.https.HttpsError(
+        'internal',
+        'Failed to send nudge notification',
+        err instanceof Error ? err.message : String(err)
+      );
+    }
   }
 
   await logRef.set(
