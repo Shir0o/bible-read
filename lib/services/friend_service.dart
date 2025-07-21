@@ -16,6 +16,9 @@ class FriendCollections {
 
   /// Sub-collection containing a user's friends.
   static const String friends = 'friends';
+
+  /// Sub-collection recording nudge history.
+  static const String nudges = 'nudges';
 }
 
 /// Represents a pending friend request.
@@ -56,6 +59,13 @@ typedef DeleteFriendRequestPairFn = Future<void> Function({
   required String toUid,
 });
 
+/// Signature for calling the `sendNudgeNotification` Cloud Function.
+typedef SendNudgeNotificationFn = Future<void> Function({
+  required String fromUid,
+  required String toUid,
+  required String fromName,
+});
+
 /// Provides helper methods for friend request CRUD operations.
 class FriendService {
   /// Firestore instance used for database operations.
@@ -67,15 +77,20 @@ class FriendService {
   /// Function used to invoke the delete friend request pair Cloud Function.
   final DeleteFriendRequestPairFn _deleteFn;
 
+  /// Function used to invoke the send nudge notification Cloud Function.
+  final SendNudgeNotificationFn _nudgeFn;
+
   /// Creates a [FriendService] using [FirebaseFirestore.instance] by default.
   FriendService({
     FirebaseFirestore? firestore,
     AcceptFriendRequestFn? acceptFriendRequestFn,
     DeleteFriendRequestPairFn? deleteFriendRequestPairFn,
+    SendNudgeNotificationFn? sendNudgeNotificationFn,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         _acceptFn = acceptFriendRequestFn ?? _defaultAcceptFriendRequest,
         _deleteFn =
-            deleteFriendRequestPairFn ?? _defaultDeleteFriendRequestPair;
+            deleteFriendRequestPairFn ?? _defaultDeleteFriendRequestPair,
+        _nudgeFn = sendNudgeNotificationFn ?? _defaultSendNudgeNotification;
 
   /// Default implementation that invokes the Cloud Function.
   static Future<void> _defaultAcceptFriendRequest({
@@ -105,6 +120,20 @@ class FriendService {
     await callable.call({
       'fromUid': fromUid,
       'toUid': toUid,
+    });
+  }
+
+  /// Default implementation that invokes the Cloud Function to send a nudge.
+  static Future<void> _defaultSendNudgeNotification({
+    required String fromUid,
+    required String toUid,
+    required String fromName,
+  }) async {
+    final callable = FirebaseFunctions.instanceFor(region: 'us-central1')
+        .httpsCallable('sendNudgeNotification');
+    await callable.call({
+      'toUid': toUid,
+      'fromName': fromName,
     });
   }
 
@@ -203,6 +232,19 @@ class FriendService {
         .doc(fromUid)
         .delete()
         .catchError((_) {});
+  }
+
+  /// Send a nudge notification to [friendUid] from [currentUid].
+  Future<void> nudgeFriend({
+    required String currentUid,
+    required String friendUid,
+    required String currentName,
+  }) async {
+    await _nudgeFn(
+      fromUid: currentUid,
+      toUid: friendUid,
+      fromName: currentName,
+    );
   }
 
   /// Stream of pending friend requests for [uid].
