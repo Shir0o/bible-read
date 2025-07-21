@@ -118,13 +118,15 @@ class UserProfilePageState extends State<UserProfilePage> {
     try {
       await googleSignIn.signOut();
       await googleSignIn.disconnect();
-    } catch (_) {
+    } catch (error) {
+      debugPrint('Google sign out failed: $error');
       // Ignore Google sign-out failures.
     }
 
     try {
       await widget.auth.signOut();
-    } catch (_) {
+    } catch (error) {
+      debugPrint('Firebase sign out failed: $error');
       // Ignore Firebase sign-out failures.
     }
 
