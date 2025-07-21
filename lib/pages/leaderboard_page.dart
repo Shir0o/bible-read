@@ -19,8 +19,8 @@ class LeaderboardPage extends StatefulWidget {
     FriendService? friendService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
-        friendService =
-            friendService ?? FriendService(firestore: firestore ?? FirebaseFirestore.instance);
+        friendService = friendService ??
+            FriendService(firestore: firestore ?? FirebaseFirestore.instance);
 
   @override
   State<LeaderboardPage> createState() => _LeaderboardPageState();
@@ -93,7 +93,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Something went wrong')),
+              const SnackBar(content: Text('Failed to load leaderboard.')),
             );
           }
         });
@@ -137,7 +137,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
             .get();
 
         final data = userDoc.data()!;
-        final streak = summaryDoc.exists ? (summaryDoc.data()?['streak'] ?? 0) : 0;
+        final streak =
+            summaryDoc.exists ? (summaryDoc.data()?['streak'] ?? 0) : 0;
         entries.add(
           LeaderboardEntry(
             uid: friend.uid,
@@ -161,7 +162,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Something went wrong')),
+              const SnackBar(content: Text('Failed to load leaderboard.')),
             );
           }
         });
@@ -191,7 +192,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 auth: widget.auth,
               ),
           ],
-          bottom: const TabBar(tabs: [Tab(text: 'Public'), Tab(text: 'Friends')]),
+          bottom:
+              const TabBar(tabs: [Tab(text: 'Public'), Tab(text: 'Friends')]),
         ),
         body: Container(
           decoration: CommonStyles.backgroundGradient,
@@ -234,7 +236,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       return Center(child: Text(emptyMessage));
     }
     return Padding(
-      padding: const EdgeInsets.only(top: 16.0, bottom: 48.0, left: 16, right: 16),
+      padding:
+          const EdgeInsets.only(top: 16.0, bottom: 48.0, left: 16, right: 16),
       child: ListView.builder(
         itemCount: data.length,
         itemBuilder: (context, index) {
