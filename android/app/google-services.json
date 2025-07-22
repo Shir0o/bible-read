@@ -47,10 +47,10 @@
               "client_type": 3
             },
             {
-              "client_id": "82330382748-tg72c9bav50r8ieirp8681utmd57r4td.apps.googleusercontent.com",
+              "client_id": "82330382748-kv8cr6ehdtjglo5v2iqa6e8ge038kh0s.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.bibleRead"
+                "bundle_id": "com.bibleread.challenge"
               }
             }
           ]
