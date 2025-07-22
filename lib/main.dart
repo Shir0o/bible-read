@@ -36,7 +36,22 @@ void main() async {
       );
     }
   } catch (e, st) {
-    debugPrint('AppCheck activation failed: $e\n$st');
+    if (kDebugMode) {
+      debugPrint('AppCheck activation failed: $e\n$st');
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection('app_check_errors').add({
+        'timestamp': Timestamp.now(),
+        'error': e.toString(),
+        'stack': st.toString(),
+        'platform': defaultTargetPlatform.toString(),
+      });
+    } catch (firestoreError) {
+      if (kDebugMode) {
+        debugPrint('Failed to log AppCheck error to Firestore: $firestoreError');
+      }
+    }
     appCheckFailed = true;
   }
   await _setupMessaging();

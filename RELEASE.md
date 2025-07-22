@@ -1,3 +1,7 @@
+# Release 1.5.1
+
+This release includes bug fixes and improvements.
+
 # Release 1.5.0
 
 This release introduces a nudge feature and includes several important security and stability improvements.
