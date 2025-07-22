@@ -11,6 +11,7 @@ import 'package:google_sign_in_platform_interface/google_sign_in_platform_interf
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'package:bible_read/pages/home_page.dart';
+import 'package:bible_read/widgets/read_switch_tile.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -219,12 +220,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(SwitchListTile));
+    await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
     await tester.pumpAndSettle();
 
     final switchTile =
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile));
+        tester.widget<ReadSwitchTile>(find.byType(ReadSwitchTile));
     expect(switchTile.onChanged, isNull);
   });
 
@@ -239,7 +240,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(SwitchListTile));
+    await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -257,7 +258,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(SwitchListTile));
+    await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
     await tester.pumpAndSettle();
 
