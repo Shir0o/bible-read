@@ -18,7 +18,7 @@
 
 const { onCall } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
-const functions = require("firebase-functions");
+const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
@@ -236,6 +236,38 @@ exports.acceptFriendRequest = onCall({ region: "us-central1" }, async (req) => {
   await batch.commit();
 
   return { success: true };
+});
+
+exports.sendSignupNotification = functions.auth.user().onCreate(async (user) => {
+  const adminUid = process.env.ADMIN_UID;
+  if (!adminUid) {
+    functions.logger.warn('ADMIN_UID not set');
+    return;
+  }
+
+  const adminDoc = await admin.firestore().collection('users').doc(adminUid).get();
+  const token = adminDoc.data()?.fcmToken;
+  if (!token) {
+    functions.logger.warn(`No FCM token for admin user ${adminUid}`);
+    return;
+  }
+
+  const name = user.displayName || user.email || 'New user';
+  const message = {
+    token,
+    notification: {
+      title: 'New Signup',
+      body: `${name} just signed up.`,
+    },
+    android: { priority: 'high' },
+    apns: { payload: { aps: { sound: 'default' } } },
+  };
+
+  try {
+    await admin.messaging().send(message);
+  } catch (err) {
+    functions.logger.error('Failed to send signup notification', err);
+  }
 });
 
 // Create and deploy your first functions
