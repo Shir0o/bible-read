@@ -384,6 +384,14 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.favorite_border));
       await tester.pump();
+      expect(find.byType(AnimatedSwitcher), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AnimatedSwitcher),
+          matching: find.byType(ScaleTransition),
+        ),
+        findsWidgets,
+      );
       expect(find.byIcon(Icons.favorite), findsOneWidget);
 
       await tester.runAsync(() async {
