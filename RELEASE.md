@@ -1,3 +1,16 @@
+# Release 1.5.0
+
+This release introduces a nudge feature and includes several important security and stability improvements.
+
+## Features
+
+*   **Nudge Notifications:** You can now send a "nudge" notification to a friend to remind them to read.
+
+## Enhancements
+
+*   **Improved Error Handling:** Added more robust error handling for various features, including Firestore writes, FCM messaging, and sign-out.
+*   **Security Rules:** Updated and improved Firestore security rules for better data protection.
+
 # Release 1.4.0
 
 This release focuses on improving the user experience with a new friends leaderboard and optimistic UI updates for key interactions.
