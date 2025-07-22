@@ -262,11 +262,17 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 4.0),
                                   child: IconButton(
-                                    icon: Icon(
-                                      isLiked
-                                          ? Icons.favorite
-                                          : Icons.favorite_border,
-                                      color: isLiked ? Colors.red : null,
+                                    icon: AnimatedSwitcher(
+                                      duration: const Duration(milliseconds: 300),
+                                      transitionBuilder: (child, animation) =>
+                                          ScaleTransition(scale: animation, child: child),
+                                      child: Icon(
+                                        isLiked
+                                            ? Icons.favorite
+                                            : Icons.favorite_border,
+                                        key: ValueKey<bool>(isLiked),
+                                        color: isLiked ? Colors.red : null,
+                                      ),
                                     ),
                                     onPressed: () {
                                       if (isLiked) {
