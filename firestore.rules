@@ -31,7 +31,9 @@ service cloud.firestore {
 
       match /friendRequestsSent/{toUid} {
         // Only the sender can add or remove sent requests
-        allow create: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null &&
+          request.auth.uid == userId &&
+          request.resource.data.keys().hasOnly(['timestamp']);
         allow read: if request.auth != null && request.auth.uid == userId;
         allow delete: if request.auth != null && request.auth.uid == userId;
         // Prevent modifications
@@ -40,11 +42,14 @@ service cloud.firestore {
 
       match /friendRequestsReceived/{fromUid} {
         // Sender can create an incoming friend request on the receiver’s node
-        allow create: if request.auth != null && request.auth.uid == fromUid;
+        allow create: if request.auth != null &&
+          request.auth.uid == fromUid &&
+          request.resource.data.keys().hasOnly(['timestamp', 'name']);
         // Receiver can list and get their incoming requests
         allow read: if request.auth != null && request.auth.uid == userId;
         // Allow sender or receiver to delete (cancel or decline)
-        allow delete: if request.auth != null && (request.auth.uid == fromUid || request.auth.uid == userId);
+        allow delete: if request.auth != null &&
+          (request.auth.uid == fromUid || request.auth.uid == userId);
         // Prevent updates to existing requests
         allow update: if false;
       }
