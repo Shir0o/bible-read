@@ -14,9 +14,31 @@ class ResponsiveScaffold extends StatelessWidget {
     required this.destinations,
   });
 
+  Widget _animatedIcon(Widget icon, bool selected) {
+    return AnimatedScale(
+      scale: selected ? 1.2 : 1.0,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      child: icon,
+    );
+  }
+
+  List<NavigationDestination> _buildAnimatedDestinations() {
+    return List<NavigationDestination>.generate(destinations.length, (index) {
+      final d = destinations[index];
+      final selected = index == selectedIndex;
+      return NavigationDestination(
+        icon: _animatedIcon(d.icon, selected),
+        selectedIcon: _animatedIcon(d.selectedIcon ?? d.icon, selected),
+        label: d.label,
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isWide = MediaQuery.of(context).size.width >= 600;
+    final animatedDestinations = _buildAnimatedDestinations();
     return Scaffold(
       body: Row(
         children: [
@@ -25,7 +47,7 @@ class ResponsiveScaffold extends StatelessWidget {
               selectedIndex: selectedIndex,
               onDestinationSelected: onDestinationSelected,
               labelType: NavigationRailLabelType.all,
-              destinations: destinations
+              destinations: animatedDestinations
                   .map(
                     (d) => NavigationRailDestination(
                       icon: d.icon,
@@ -53,7 +75,7 @@ class ResponsiveScaffold extends StatelessWidget {
           : NavigationBar(
               selectedIndex: selectedIndex,
               onDestinationSelected: onDestinationSelected,
-              destinations: destinations,
+              destinations: animatedDestinations,
             ),
     );
   }
