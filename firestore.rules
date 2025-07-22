@@ -2,6 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // 🔐 App Check error logs — allow authenticated writes only
+    match /app_check_errors/{docId} {
+      allow write: if request.auth != null;
+      allow read: if false; // no public reads
+    }
+
     // 🔓 User profiles (publicly readable, user-owned writable)
     match /users/{userId} {
       // Any signed-in user can read all user profiles (for leaderboard, etc.)
