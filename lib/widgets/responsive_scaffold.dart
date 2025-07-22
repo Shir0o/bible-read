@@ -35,7 +35,17 @@ class ResponsiveScaffold extends StatelessWidget {
                   )
                   .toList(),
             ),
-          Expanded(child: pages[selectedIndex]),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, animation) =>
+                  FadeTransition(opacity: animation, child: child),
+              child: KeyedSubtree(
+                key: ValueKey<int>(selectedIndex),
+                child: pages[selectedIndex],
+              ),
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: isWide || destinations.length <= 1
