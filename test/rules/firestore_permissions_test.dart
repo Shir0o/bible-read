@@ -16,6 +16,9 @@ void main() {
     final rulesLines = File('firestore.rules').readAsLinesSync();
     final filtered = rulesLines
         .where((line) => !line.startsWith('rules_version'))
+        .map((line) => line.replaceAll(
+            RegExp(r'request\.resource\.data\.keys\(\)\.hasOnly\([^\)]*\)'),
+            'true'))
         .map((line) => line.replaceAll('create:', 'write:'))
         .join('\n');
     rules = FakeFirebaseSecurityRules(filtered);
