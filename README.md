@@ -11,9 +11,20 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **User Profile:** View your profile information and sign in with your Google account or with an email and password.
 *   **Like Notifications:** Receive a push notification when someone likes your read log.
 *   **Nudge Friends:** Remind friends to read by sending a nudge notification.
+*   **Signup Notification:** The admin user receives a push notification whenever someone creates an account.
 *   **Permanent Likes:** Likes cannot be removed once given.
 *   **Friends Page:** Manage friends on a dedicated page and send new requests using the **+** button.
 *   **Add Friend Page:** The **+** button opens a separate page for sending friend requests.
+
+### Signup Notification Setup
+
+The Cloud Function `sendSignupNotification` sends a push notification to the user specified by `ADMIN_UID` whenever a new account is created. Set `ADMIN_UID` using Firebase Functions config before deploying:
+
+```bash
+firebase functions:config:set admin_uid="<your-admin-uid>"
+```
+
+Deploy the functions after setting the value so the admin receives signup alerts.
 
 ## Customizing Colors
 
