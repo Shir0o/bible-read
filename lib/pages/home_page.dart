@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/common_styles.dart';
 import '../widgets/friend_requests_button.dart';
+import '../widgets/read_switch_tile.dart';
 import '../services/friend_service.dart';
 import '../theme/app_theme.dart';
 
@@ -521,12 +522,11 @@ class _HomePageState extends State<HomePage>
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       )
-                    : SwitchListTile(
+                    : ReadSwitchTile(
                         value: _readToday,
                         onChanged:
                             _readToday ? null : (value) => _toggleReadStatus(),
-                        title: const Text("Bible Read Today"),
-                        activeColor: Colors.green,
+                        label: 'Bible Read Today',
                       ),
               ),
               const SizedBox(height: 16),
