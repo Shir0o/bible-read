@@ -11,6 +11,12 @@ void main() {
       expect(rulesText.contains('nudges'), isTrue);
     });
 
+    test('friend request rules restrict fields', () {
+      expect(rulesText.contains("friendRequestsSent/{toUid} {"), isTrue);
+      expect(rulesText.contains("hasOnly(['timestamp'])"), isTrue);
+      expect(rulesText.contains("hasOnly(['timestamp', 'name'])"), isTrue);
+    });
+
     test('does not include deprecated readLog collection', () {
       expect(rulesText.contains('/readLog'), isFalse);
     });
