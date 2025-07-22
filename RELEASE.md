@@ -1,3 +1,11 @@
+# Release 1.5.2
+
+This release includes minor updates and fixes.
+
+## Updates
+
+*   Updated `google-services.json` file.
+
 # Release 1.5.1
 
 This release includes bug fixes and improvements.
