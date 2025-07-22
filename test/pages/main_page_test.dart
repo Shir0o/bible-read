@@ -124,8 +124,16 @@ void main() {
         ),
       ),
     );
+    expect(find.byType(AnimatedSwitcher), findsOneWidget);
     await tester.tap(find.byIcon(Icons.feed));
     await tester.pump();
+    expect(
+      find.descendant(
+        of: find.byType(AnimatedSwitcher),
+        matching: find.byType(FadeTransition),
+      ),
+      findsWidgets,
+    );
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(ReadLogPage), findsOneWidget);
 
@@ -133,6 +141,13 @@ void main() {
     expect(find.byIcon(Icons.people), findsOneWidget);
     await tester.tap(find.byIcon(Icons.people));
     await tester.pump();
+    expect(
+      find.descendant(
+        of: find.byType(AnimatedSwitcher),
+        matching: find.byType(FadeTransition),
+      ),
+      findsWidgets,
+    );
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(FriendsPage), findsOneWidget);
   });
