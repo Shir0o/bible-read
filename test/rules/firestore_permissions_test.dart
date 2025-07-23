@@ -106,6 +106,22 @@ void main() {
     });
   });
 
+  group('/notificationPrefs', () {
+    const base = 'databases/$db/documents/users/alice/notificationPrefs/like';
+
+    test('owner can read preference', () {
+      expect(rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
+    });
+
+    test('owner can write preference', () {
+      expect(rules.isAllowed(base, Method.write, variables: auth('alice')), isTrue);
+    });
+
+    test('other user cannot read', () {
+      expect(rules.isAllowed(base, Method.read, variables: auth('bob')), isFalse);
+    });
+  });
+
   group('/read_logs', () {
     const base = 'databases/$db/documents/read_logs/2024-01-01/entries';
 
