@@ -8,6 +8,8 @@ import '../widgets/common_styles.dart';
 import '../widgets/friend_requests_button.dart';
 import '../widgets/read_switch_tile.dart';
 import '../services/friend_service.dart';
+import '../services/achievement_service.dart';
+import '../models/achievement.dart';
 import '../theme/app_theme.dart';
 
 class HomePage extends StatefulWidget {
@@ -360,11 +362,18 @@ class _HomePageState extends State<HomePage>
         }
       }
 
+      int totalReadDays =
+          (data['totalReadDays'] is int) ? data['totalReadDays'] : 0;
+      totalReadDays += 1;
+
       await summaryDocRef.set({
         'streak': streak,
         'pastWeekReadDates': pastWeekReadDates,
         'pastMonthReadDates': pastMonthReadDates,
+        'totalReadDays': totalReadDays,
       }, SetOptions(merge: true));
+
+      await _checkAchievements(user.uid, streak, totalReadDays);
     } catch (e) {
       debugPrint('Failed to update summary with today: \$e');
       if (!_disposed && mounted) {
@@ -373,6 +382,37 @@ class _HomePageState extends State<HomePage>
         );
         unawaited(_loadReadStatus(showLoading: false));
       }
+    }
+  }
+
+  Future<void> _checkAchievements(
+      String uid, int streak, int totalReadDays) async {
+    try {
+      final service = AchievementService(firestore: widget.firestore);
+      if (streak >= 7) {
+        await service.unlockAchievement(
+          uid,
+          Achievement(
+            id: 'streak7',
+            title: '7-Day Streak',
+            type: 'streak',
+            dateUnlocked: DateTime.now(),
+          ),
+        );
+      }
+      if (totalReadDays >= 30) {
+        await service.unlockAchievement(
+          uid,
+          Achievement(
+            id: 'days30',
+            title: '30 Days Read',
+            type: 'days',
+            dateUnlocked: DateTime.now(),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed to unlock achievements: $e');
     }
   }
 
