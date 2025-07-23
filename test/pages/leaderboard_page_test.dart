@@ -144,7 +144,8 @@ void main() {
 
   testWidgets('friends tab shows only friend entries', (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'me'), signedIn: true);
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'me'), signedIn: true);
     await firestore.collection('users').doc('me').set({'name': 'Me'});
     await firestore.collection('users').doc('f1').set({'name': 'Friend'});
     await firestore.collection('users').doc('u2').set({'name': 'Other'});
@@ -181,8 +182,54 @@ void main() {
     await tester.pumpAndSettle();
 
     final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
-    expect(tiles.length, 1);
+    expect(tiles.length, 2);
     expect((tiles[0].title as Text).data, 'Friend');
+    expect((tiles[1].title as Text).data, 'Me');
+  });
+
+  testWidgets('friends tab includes user entry sorted by streak',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'me'), signedIn: true);
+    await firestore.collection('users').doc('me').set({'name': 'Me'});
+    await firestore.collection('users').doc('f1').set({'name': 'Friend'});
+
+    await firestore
+        .collection('users')
+        .doc('me')
+        .collection('summary')
+        .doc('data')
+        .set({'streak': 4});
+    await firestore
+        .collection('users')
+        .doc('f1')
+        .collection('summary')
+        .doc('data')
+        .set({'streak': 6});
+
+    await firestore
+        .collection('users')
+        .doc('me')
+        .collection('friends')
+        .doc('f1')
+        .set({'name': 'Friend'});
+
+    await tester.pumpWidget(MaterialApp(
+        home: LeaderboardPage(
+      firestore: firestore,
+      auth: auth,
+      friendService: FriendService(firestore: firestore),
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Friends'));
+    await tester.pumpAndSettle();
+
+    final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
+    expect(tiles.length, 2);
+    expect((tiles[0].title as Text).data, 'Friend');
+    expect((tiles[1].title as Text).data, 'Me');
   });
 
   testWidgets('failure hides loading indicator', (tester) async {
