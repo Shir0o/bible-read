@@ -61,7 +61,7 @@ typedef DeleteFriendRequestPairFn = Future<void> Function({
 });
 
 /// Signature for calling the `sendNudgeNotification` Cloud Function.
-typedef SendNudgeNotificationFn = Future<void> Function({
+typedef SendNudgeNotificationFn = Future<bool> Function({
   required String fromUid,
   required String toUid,
   required String fromName,
@@ -125,17 +125,19 @@ class FriendService {
   }
 
   /// Default implementation that invokes the Cloud Function to send a nudge.
-  static Future<void> _defaultSendNudgeNotification({
+  static Future<bool> _defaultSendNudgeNotification({
     required String fromUid,
     required String toUid,
     required String fromName,
   }) async {
     final callable = FirebaseFunctions.instanceFor(region: 'us-central1')
         .httpsCallable('sendNudgeNotification');
-    await callable.call({
+    final result = await callable.call<Map<String, dynamic>>({
       'toUid': toUid,
       'fromName': fromName,
     });
+    final data = result.data;
+    return data['alreadySent'] is bool ? data['alreadySent'] as bool : false;
   }
 
   /// Send a friend request from [fromUid] to [toUid].
@@ -238,12 +240,12 @@ class FriendService {
   }
 
   /// Send a nudge notification to [friendUid] from [currentUid].
-  Future<void> nudgeFriend({
+  Future<bool> nudgeFriend({
     required String currentUid,
     required String friendUid,
     required String currentName,
   }) async {
-    await _nudgeFn(
+    return _nudgeFn(
       fromUid: currentUid,
       toUid: friendUid,
       fromName: currentName,
