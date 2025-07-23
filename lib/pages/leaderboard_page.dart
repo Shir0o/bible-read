@@ -149,6 +149,29 @@ class _LeaderboardPageState extends State<LeaderboardPage>
         );
       }
 
+      // Include the signed-in user's own data
+      final userDoc =
+          await widget.firestore.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        final summaryDoc = await widget.firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('summary')
+            .doc('data')
+            .get();
+        final data = userDoc.data()!;
+        final streak =
+            summaryDoc.exists ? (summaryDoc.data()?['streak'] ?? 0) : 0;
+        entries.add(
+          LeaderboardEntry(
+            uid: user.uid,
+            name: data['name'] ?? 'No Name',
+            email: data['email'] ?? 'No Email',
+            streak: streak,
+          ),
+        );
+      }
+
       entries.sort((a, b) => b.streak.compareTo(a.streak));
 
       if (mounted) {
