@@ -288,6 +288,81 @@ void main() {
         .doc('data')
         .get();
     expect(summaryDoc.data()?['streak'], 1);
+    expect(summaryDoc.data()?['totalReadDays'], 1);
+  });
+
+  testWidgets('unlock achievement when reaching streak threshold',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(
+        uid: 'u-streak', displayName: 'Tester', email: 't@example.com');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final yesterdayKey =
+        '${yesterday.year}-${yesterday.month}-${yesterday.day}';
+
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('summary')
+        .doc('data')
+        .set({'streak': 6, 'totalReadDays': 6});
+
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading')
+        .doc(yesterdayKey)
+        .set({'read': true});
+
+    await tester.pumpWidget(
+        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(ReadSwitchTile));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    final achievementDoc = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('achievements')
+        .doc('streak7')
+        .get();
+    expect(achievementDoc.exists, isTrue);
+  });
+
+  testWidgets('unlock achievement when reaching total days threshold',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(uid: 'u-days');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('summary')
+        .doc('data')
+        .set({'streak': 1, 'totalReadDays': 29});
+
+    await tester.pumpWidget(
+        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+    await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(ReadSwitchTile));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    final achievementDoc = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('achievements')
+        .doc('days30')
+        .get();
+    expect(achievementDoc.exists, isTrue);
   });
 
   testWidgets('like and unlike reading update Firestore', (tester) async {
