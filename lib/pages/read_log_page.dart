@@ -143,11 +143,6 @@ class _ReadLogPageState extends State<ReadLogPage> {
     final original = Map<String, dynamic>.from(_logs[index]);
 
     if (original['liked'] == true) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Likes cannot be removed.')),
-        );
-      }
       return;
     }
 
@@ -178,9 +173,6 @@ class _ReadLogPageState extends State<ReadLogPage> {
       if (likeDoc.exists) {
         if (mounted) {
           setState(() => _logs[index] = original);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Likes cannot be removed.')),
-          );
         }
         return;
       }
@@ -305,20 +297,11 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                             color: isLiked ? Colors.red : null,
                                           ),
                                         ),
-                                        onPressed: () {
-                                          if (isLiked) {
-                                            if (mounted) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                    content: Text(
-                                                        'Likes cannot be removed.')),
-                                              );
-                                            }
-                                          } else {
-                                            _toggleLike(log['uid']);
-                                          }
-                                        },
+                                        onPressed: isLiked
+                                            ? null
+                                            : () {
+                                                _toggleLike(log['uid']);
+                                              },
                                       ),
                                     ),
                                   ],
