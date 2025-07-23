@@ -1,10 +1,29 @@
 # Release 1.5.3
 
-This release updates the leaderboard to show your own ranking.
+This release introduces several new features, enhancements, and bug fixes to improve the user experience.
+
+## Features
+
+*   **First Reader of the Day:** The first person to read each day will now be specially marked.
+*   **Signup Notifications:** New users will receive a notification upon signing up.
+*   **Nudge Tracking:** The app now tracks sent nudges, disabling the button for the rest of the day to avoid spamming.
 
 ## Enhancements
 
-*   The friends leaderboard now shows your own ranking.
+*   **UI Animations:**
+    *   Page transitions are now animated for a smoother experience.
+    *   Navigation icons, the like icon, and the friend request badge are now animated.
+    *   A new animated switch tile has been added.
+*   **Friend Requests Button:** The friend requests button icon has been updated.
+*   **Nudge Notification Status:** The app now returns a status from nudge notifications.
+*   **Race Condition Prevention:** A transaction is now used when writing a read log to prevent race conditions.
+*   **Leaderboard:** The signed-in user is now included in the friends leaderboard.
+
+## Fixes
+
+*   **Like Removal:** Users can no longer remove a like.
+*   **Leaderboard Test:** The leaderboard friends tab test has been fixed.
+*   **App Check:** The app now uses `appAttest` for the Apple provider in App Check.
 
 # Release 1.5.2
 
