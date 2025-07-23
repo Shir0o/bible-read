@@ -1,3 +1,11 @@
+# Release 1.5.3
+
+This release updates the leaderboard to show your own ranking.
+
+## Enhancements
+
+*   The friends leaderboard now shows your own ranking.
+
 # Release 1.5.2
 
 This release includes minor updates and fixes.

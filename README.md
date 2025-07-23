@@ -6,7 +6,7 @@ A Flutter application designed to help individuals and groups track their daily 
 
 *   **Daily Reading Tracker:** Mark each day that you read the Bible to build your streak.
 *   **Weekly and Monthly Views:** See your reading progress at a glance with weekly and monthly calendar views.
-*   **Leaderboard:** Compare streaks with the public and with your friends on a new tabbed leaderboard.
+*   **Leaderboard:** Compare streaks with the public and with your friends on a new tabbed leaderboard, which now shows your own ranking.
 *   **Reading Feed:** See who else has read the Bible today and give them a like to encourage them.
 *   **User Profile:** View your profile information and sign in with your Google account or with an email and password.
 *   **Like Notifications:** Receive a push notification when someone likes your read log.
