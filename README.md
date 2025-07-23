@@ -12,6 +12,7 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **Like Notifications:** Receive a push notification when someone likes your read log.
 *   **Nudge Friends:** Remind friends to read by sending a nudge notification.
 *   **Signup Notification:** The admin user receives a push notification whenever someone creates an account.
+*   **Customizable Notifications:** Choose which notifications you receive from the settings page.
 *   **Permanent Likes:** Likes cannot be removed once given.
 *   **Friends Page:** Manage friends on a dedicated page and send new requests using the **+** button.
 *   **Add Friend Page:** The **+** button opens a separate page for sending friend requests.
@@ -32,6 +33,12 @@ The scaffold and app bar backgrounds are defined in
 `lib/theme/app_theme.dart`. Update `AppTheme.backgroundColor` or the
 `scaffoldBackgroundColor` value in `AppTheme.appTheme` to change the colors
 across the app.
+
+## Adding Notification Types
+
+Define a new value in `NotificationType` and store a boolean under the
+`notificationPrefs` subcollection for each user. Missing entries default to
+`true`, so existing users automatically opt into new notifications.
 
 ## Getting Started
 

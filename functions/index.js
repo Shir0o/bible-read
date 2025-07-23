@@ -50,7 +50,18 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
     throw new Error("invalid-argument: Missing data");
   }
 
-  const userDoc = await admin.firestore().collection('users').doc(ownerUid).get();
+  const db = admin.firestore();
+  const likePref = await db
+    .collection('users')
+    .doc(ownerUid)
+    .collection('notificationPrefs')
+    .doc('like')
+    .get();
+  if (likePref.exists && likePref.data()?.enabled === false) {
+    return;
+  }
+
+  const userDoc = await db.collection('users').doc(ownerUid).get();
   const token = userDoc.data()?.fcmToken;
 
   if (!token) {
@@ -105,6 +116,22 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
 
   const fromUid = req.auth.uid;
   const db = admin.firestore();
+
+  const nudgePref = await db
+    .collection('users')
+    .doc(toUid)
+    .collection('notificationPrefs')
+    .doc('nudge')
+    .get();
+  if (nudgePref.exists && nudgePref.data()?.enabled === false) {
+    await db
+      .collection('users')
+      .doc(fromUid)
+      .collection('nudges')
+      .doc(toUid)
+      .set({ timestamp: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    return { alreadySent: false };
+  }
   const logRef = db.collection("users").doc(fromUid)
     .collection("nudges").doc(toUid);
 

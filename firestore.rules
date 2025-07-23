@@ -35,6 +35,10 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
+      match /notificationPrefs/{type} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
       match /friendRequestsSent/{toUid} {
         // Only the sender can add or remove sent requests
         allow create: if request.auth != null &&
