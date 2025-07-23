@@ -445,6 +445,10 @@ void main() {
       );
       expect(find.byIcon(Icons.favorite), findsOneWidget);
 
+      final iconButton = tester
+          .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.favorite));
+      expect(iconButton.onPressed, isNull);
+
       await tester.runAsync(() async {
         final likeDoc = await firestore
             .collection('read_logs')
