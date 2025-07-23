@@ -7,6 +7,7 @@ This release introduces several new features, enhancements, and bug fixes to imp
 *   **First Reader of the Day:** The first person to read each day will now be specially marked.
 *   **Signup Notifications:** New users will receive a notification upon signing up.
 *   **Nudge Tracking:** The app now tracks sent nudges, disabling the button for the rest of the day to avoid spamming.
+*   **Customizable Notifications:** Users can toggle which notifications they receive.
 
 ## Enhancements
 
