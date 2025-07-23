@@ -299,6 +299,28 @@ void main() {
       expect(snapshot.data()?['email'], 'test@example.com');
     });
 
+    test('writeReadLogEntry triggers markFirstReader callback', () async {
+      final firestore = FakeFirebaseFirestore();
+      final user = MockUser(uid: 'u1');
+      bool called = false;
+
+      await ReadLogPage.writeReadLogEntry(
+        user,
+        firestore: firestore,
+        dateProvider: () => fixedDate,
+        markFirstReader: (
+            {required String dateKey, required String uid}) async {
+          called = true;
+          expect(uid, 'u1');
+          final expectedKey =
+              '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+          expect(dateKey, expectedKey);
+        },
+      );
+
+      expect(called, isTrue);
+    });
+
     testWidgets('shows sign in prompt when not authenticated', (tester) async {
       final firestore = FakeFirebaseFirestore();
       final auth = MockFirebaseAuth();
@@ -354,6 +376,35 @@ void main() {
 
       expect(find.text('User read today!'), findsOneWidget);
       expect(find.textContaining('Liked by'), findsOneWidget);
+    });
+
+    testWidgets('shows first reader badge when flagged', (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final user = MockUser(uid: 'u1');
+      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      await firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc('u1')
+          .set({
+        'name': 'User One',
+        'email': 'u1@test.com',
+        'firstReader': true,
+        'timestamp': Timestamp.now(),
+      });
+
+      await tester.pumpWidget(MaterialApp(
+          home: ReadLogPage(
+              firestore: firestore,
+              auth: MockFirebaseAuth(mockUser: user, signedIn: true),
+              dateProvider: () => fixedDate,
+              onSendLikeNotification: (
+                  {required String ownerUid,
+                  required String likerName}) async {})));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.star), findsOneWidget);
     });
 
     testWidgets('toggleLike adds and does not remove like', (tester) async {
