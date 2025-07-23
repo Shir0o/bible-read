@@ -25,12 +25,13 @@ class RecordingFriendService extends FriendService {
   }
 
   @override
-  Future<void> nudgeFriend({
+  Future<bool> nudgeFriend({
     required String currentUid,
     required String friendUid,
     required String currentName,
   }) async {
     nudged = true;
+    return false;
   }
 }
 
