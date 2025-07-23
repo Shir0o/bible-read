@@ -110,6 +110,26 @@ void main() {
     expect(service.nudged, isTrue);
   });
 
+  testWidgets('nudge button disabled after send', (tester) async {
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('friends')
+        .doc('f1')
+        .set({'name': 'Alice'});
+
+    await pumpPage(tester);
+
+    await tester.tap(find.byIcon(Icons.notifications_active));
+    await tester.pumpAndSettle();
+
+    final button = tester.widget<IconButton>(find.ancestor(
+      of: find.byIcon(Icons.notifications_off),
+      matching: find.byType(IconButton),
+    ));
+    expect(button.onPressed, isNull);
+  });
+
   testWidgets('failed request leaves send button enabled', (tester) async {
     final failing = FailingFriendService(firestore: firestore);
     await tester.pumpWidget(
