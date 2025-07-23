@@ -142,7 +142,7 @@ void main() {
     expect((tiles[1].title as Text).data, 'Alice');
   });
 
-  testWidgets('friends tab shows only friend entries', (tester) async {
+  testWidgets('friends tab shows friend and user entries', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth =
         MockFirebaseAuth(mockUser: MockUser(uid: 'me'), signedIn: true);
