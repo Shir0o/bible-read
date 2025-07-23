@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import '../widgets/common_styles.dart';
 import '../widgets/friend_requests_button.dart';
@@ -31,6 +32,9 @@ class ReadLogPage extends StatefulWidget {
   static Future<void> writeReadLogEntry(
     User user, {
     FirebaseFirestore? firestore,
+    FirebaseFunctions? functions,
+    Future<void> Function({required String dateKey, required String uid})?
+        markFirstReader,
     DateTime Function()? dateProvider,
   }) async {
     final db = firestore ?? FirebaseFirestore.instance;
@@ -46,6 +50,18 @@ class ReadLogPage extends StatefulWidget {
       'email': user.email ?? '',
       'timestamp': Timestamp.now(),
     });
+    final handler = markFirstReader;
+    if (handler != null) {
+      await handler(dateKey: dateKey, uid: user.uid);
+    } else if (functions != null) {
+      try {
+        await functions
+            .httpsCallable('markFirstReader')
+            .call({'dateKey': dateKey});
+      } catch (e) {
+        debugPrint('markFirstReader failed: $e');
+      }
+    }
   }
 }
 
@@ -102,6 +118,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
           'read': true,
           'liked': liked,
           'likeNames': likeNames,
+          'firstReader': data['firstReader'] == true,
         };
       }).toList());
     } catch (e) {
@@ -232,6 +249,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
                           itemBuilder: (context, index) {
                             final log = _logs[index];
                             final isLiked = (log['liked'] as bool? ?? false);
+                            final isFirst =
+                                (log['firstReader'] as bool? ?? false);
                             return Card(
                               margin: const EdgeInsets.symmetric(vertical: 8),
                               elevation: 4,
@@ -239,8 +258,10 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: ListTile(
-                                leading: const Icon(Icons.check_circle,
-                                    color: Colors.green),
+                                leading: const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                ),
                                 title: Text(
                                   '${log['name']} read today!',
                                   style: AppTextStyles.subtitle,
@@ -258,37 +279,49 @@ class _ReadLogPageState extends State<ReadLogPage> {
 
                                   return Text('Liked by $displayText');
                                 }(),
-                                trailing: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 4.0),
-                                  child: IconButton(
-                                    icon: AnimatedSwitcher(
-                                      duration: const Duration(milliseconds: 300),
-                                      transitionBuilder: (child, animation) =>
-                                          ScaleTransition(scale: animation, child: child),
-                                      child: Icon(
-                                        isLiked
-                                            ? Icons.favorite
-                                            : Icons.favorite_border,
-                                        key: ValueKey<bool>(isLiked),
-                                        color: isLiked ? Colors.red : null,
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isFirst)
+                                      const Icon(Icons.star,
+                                          color: Colors.amber),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4.0),
+                                      child: IconButton(
+                                        icon: AnimatedSwitcher(
+                                          duration:
+                                              const Duration(milliseconds: 300),
+                                          transitionBuilder:
+                                              (child, animation) =>
+                                                  ScaleTransition(
+                                                      scale: animation,
+                                                      child: child),
+                                          child: Icon(
+                                            isLiked
+                                                ? Icons.favorite
+                                                : Icons.favorite_border,
+                                            key: ValueKey<bool>(isLiked),
+                                            color: isLiked ? Colors.red : null,
+                                          ),
+                                        ),
+                                        onPressed: () {
+                                          if (isLiked) {
+                                            if (mounted) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content: Text(
+                                                        'Likes cannot be removed.')),
+                                              );
+                                            }
+                                          } else {
+                                            _toggleLike(log['uid']);
+                                          }
+                                        },
                                       ),
                                     ),
-                                    onPressed: () {
-                                      if (isLiked) {
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                                content: Text(
-                                                    'Likes cannot be removed.')),
-                                          );
-                                        }
-                                      } else {
-                                        _toggleLike(log['uid']);
-                                      }
-                                    },
-                                  ),
+                                  ],
                                 ),
                               ),
                             );

@@ -270,6 +270,51 @@ exports.sendSignupNotification = functions.auth.user().onCreate(async (user) => 
   }
 });
 
+exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
+  if (!req.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated.'
+    );
+  }
+
+  const { dateKey } = req.data;
+  if (!dateKey) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing dateKey');
+  }
+
+  const uid = req.auth.uid;
+  const db = admin.firestore();
+  const rewardRef = db.collection('daily_rewards').doc(dateKey);
+  const logRef = db.collection('read_logs').doc(dateKey).collection('entries').doc(uid);
+
+  try {
+    const result = await db.runTransaction(async (t) => {
+      const rewardSnap = await t.get(rewardRef);
+      if (rewardSnap.exists) {
+        return { first: false };
+      }
+
+      t.create(rewardRef, {
+        uid,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      t.set(logRef, { firstReader: true }, { merge: true });
+
+      return { first: true };
+    });
+
+    return result;
+  } catch (err) {
+    functions.logger.error('Failed to mark first reader', err);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to mark first reader',
+      err instanceof Error ? err.message : String(err)
+    );
+  }
+});
+
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 
