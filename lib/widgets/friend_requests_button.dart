@@ -33,10 +33,11 @@ class FriendRequestsButton extends StatelessWidget {
       builder: (context, snapshot) {
         final count = snapshot.data?.length ?? 0;
         return IconButton(
+          tooltip: 'Friend Requests',
           icon: Stack(
             clipBehavior: Clip.none,
             children: [
-              const Icon(Icons.notifications),
+              const Icon(Icons.person_add_alt_1),
               if (count > 0)
                 Positioned(
                   right: -2,
