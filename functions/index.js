@@ -286,23 +286,26 @@ exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
   const uid = req.auth.uid;
   const db = admin.firestore();
   const rewardRef = db.collection('daily_rewards').doc(dateKey);
+  const logRef = db.collection('read_logs').doc(dateKey).collection('entries').doc(uid);
 
   try {
-    await rewardRef.create({
-      uid,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    const result = await db.runTransaction(async (t) => {
+      const rewardSnap = await t.get(rewardRef);
+      if (rewardSnap.exists) {
+        return { first: false };
+      }
+
+      t.create(rewardRef, {
+        uid,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      t.set(logRef, { firstReader: true }, { merge: true });
+
+      return { first: true };
     });
-    await db
-      .collection('read_logs')
-      .doc(dateKey)
-      .collection('entries')
-      .doc(uid)
-      .set({ firstReader: true }, { merge: true });
-    return { first: true };
+
+    return result;
   } catch (err) {
-    if (err.code === 6 || /already exists/.test(err.message)) {
-      return { first: false };
-    }
     functions.logger.error('Failed to mark first reader', err);
     throw new functions.https.HttpsError(
       'internal',
