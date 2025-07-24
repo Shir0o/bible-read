@@ -2,9 +2,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import "package:firebase_auth/firebase_auth.dart";
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -228,5 +230,29 @@ void main() {
 
     expect(googlePlatform.signOutCalled, isTrue);
     expect(auth.signOutCalled, isTrue);
+  });
+
+  testWidgets('shows achievements summary for signed in user', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(uid: 'u1');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('achievements')
+        .doc('a1')
+        .set({
+      'title': 'Test',
+      'type': 't',
+      'dateUnlocked': Timestamp.fromDate(DateTime(2025)),
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(home: UserProfilePage(auth: auth, firestore: firestore)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.star), findsOneWidget);
   });
 }
