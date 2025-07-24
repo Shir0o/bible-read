@@ -11,6 +11,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/read_log_page.dart';
 import 'package:bible_read/pages/friends_page.dart';
+import 'package:bible_read/pages/achievements_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -150,6 +151,20 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(FriendsPage), findsOneWidget);
+
+    // Achievements navigation
+    expect(find.byIcon(Icons.emoji_events), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.emoji_events));
+    await tester.pump();
+    expect(
+      find.descendant(
+        of: find.byType(AnimatedSwitcher),
+        matching: find.byType(FadeTransition),
+      ),
+      findsWidgets,
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(AchievementsPage), findsOneWidget);
   });
 
   testWidgets('attemptSilentSignIn runs during initState', (tester) async {
