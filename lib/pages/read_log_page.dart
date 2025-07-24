@@ -3,6 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
+import '../services/achievement_service.dart';
+import '../models/achievement.dart';
+
 import '../widgets/common_styles.dart';
 import '../widgets/friend_requests_button.dart';
 import '../services/friend_service.dart';
@@ -33,8 +36,10 @@ class ReadLogPage extends StatefulWidget {
     User user, {
     FirebaseFirestore? firestore,
     FirebaseFunctions? functions,
-    Future<void> Function({required String dateKey, required String uid})?
-        markFirstReader,
+    Future<Map<String, dynamic>?> Function({
+      required String dateKey,
+      required String uid,
+    })? markFirstReader,
     DateTime Function()? dateProvider,
   }) async {
     final db = firestore ?? FirebaseFirestore.instance;
@@ -51,16 +56,32 @@ class ReadLogPage extends StatefulWidget {
       'timestamp': Timestamp.now(),
     });
     final handler = markFirstReader;
+    Map<String, dynamic>? result;
     if (handler != null) {
-      await handler(dateKey: dateKey, uid: user.uid);
+      result = await handler(dateKey: dateKey, uid: user.uid);
     } else if (functions != null) {
       try {
-        await functions
+        final res = await functions
             .httpsCallable('markFirstReader')
             .call({'dateKey': dateKey});
+        if (res.data is Map) {
+          result = Map<String, dynamic>.from(res.data as Map);
+        }
       } catch (e) {
         debugPrint('markFirstReader failed: $e');
       }
+    }
+
+    if (result?['first'] == true) {
+      await AchievementService(firestore: db).unlockAchievement(
+        user.uid,
+        Achievement(
+          id: 'firstReader',
+          title: 'First Reader',
+          type: 'first',
+          dateUnlocked: DateTime.now(),
+        ),
+      );
     }
   }
 }
