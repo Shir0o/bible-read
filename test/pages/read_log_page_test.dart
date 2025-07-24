@@ -315,10 +315,35 @@ void main() {
           final expectedKey =
               '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
           expect(dateKey, expectedKey);
+          return {'first': true};
         },
       );
 
       expect(called, isTrue);
+    });
+
+    test('writeReadLogEntry unlocks achievement when first reader', () async {
+      final firestore = FakeFirebaseFirestore();
+      final user = MockUser(uid: 'u1', displayName: 'Tester');
+
+      await ReadLogPage.writeReadLogEntry(
+        user,
+        firestore: firestore,
+        dateProvider: () => fixedDate,
+        markFirstReader: (
+            {required String dateKey, required String uid}) async {
+          return {'first': true};
+        },
+      );
+
+      final achievementDoc = await firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('achievements')
+          .doc('firstReader')
+          .get();
+
+      expect(achievementDoc.exists, isTrue);
     });
 
     testWidgets('shows sign in prompt when not authenticated', (tester) async {
