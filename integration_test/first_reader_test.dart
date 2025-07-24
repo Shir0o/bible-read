@@ -12,7 +12,7 @@ void main() {
   testWidgets('only one first reader per day', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final date = DateTime(2030, 1, 1);
-    Future<void> markFirstReader(
+    Future<Map<String, dynamic>> markFirstReader(
         {required String dateKey, required String uid}) async {
       final rewardRef = firestore.collection('daily_rewards').doc(dateKey);
       final rewardDoc = await rewardRef.get();
@@ -24,7 +24,9 @@ void main() {
             .collection('entries')
             .doc(uid)
             .set({'firstReader': true}, SetOptions(merge: true));
+        return {'first': true};
       }
+      return {'first': false};
     }
 
     final user1 = MockUser(uid: 'u1', displayName: 'First');
