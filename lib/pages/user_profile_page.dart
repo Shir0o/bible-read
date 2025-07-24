@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/friend_requests_button.dart';
 import '../services/friend_service.dart';
+import '../widgets/achievement_summary.dart';
 import 'achievements_page.dart';
 import 'notification_settings_page.dart';
 import 'main_page.dart';
@@ -227,6 +228,11 @@ class UserProfilePageState extends State<UserProfilePage> {
                             Text(
                               email,
                               style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 16),
+                            AchievementSummary(
+                              firestore: widget.firestore,
+                              auth: widget.auth,
                             ),
                             const SizedBox(height: 24),
                             ElevatedButton(
