@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/friend_requests_button.dart';
 import '../services/friend_service.dart';
+import 'achievements_page.dart';
 import 'notification_settings_page.dart';
 import 'main_page.dart';
 import 'login_page.dart';
@@ -231,6 +232,20 @@ class UserProfilePageState extends State<UserProfilePage> {
                             ElevatedButton(
                               onPressed: () async => _handleSignOut(),
                               child: const Text('Sign Out'),
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => AchievementsPage(
+                                      firestore: widget.firestore,
+                                      auth: widget.auth,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: const Text('Achievements'),
                             ),
                             const SizedBox(height: 8),
                             ElevatedButton(
