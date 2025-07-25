@@ -110,15 +110,39 @@ void main() {
     const base = 'databases/$db/documents/users/alice/notificationPrefs/like';
 
     test('owner can read preference', () {
-      expect(rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
+      expect(
+          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
     });
 
     test('owner can write preference', () {
-      expect(rules.isAllowed(base, Method.write, variables: auth('alice')), isTrue);
+      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
+          isTrue);
     });
 
     test('other user cannot read', () {
-      expect(rules.isAllowed(base, Method.read, variables: auth('bob')), isFalse);
+      expect(
+          rules.isAllowed(base, Method.read, variables: auth('bob')), isFalse);
+    });
+  });
+
+  group('/notifications', () {
+    const base = 'databases/$db/documents/users/alice/notifications/n1';
+
+    test('owner can read notification', () {
+      expect(
+          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
+    });
+
+    test('owner can write notification', () {
+      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
+          isTrue);
+    });
+
+    test('other user cannot access', () {
+      expect(
+          rules.isAllowed(base, Method.read, variables: auth('bob')), isFalse);
+      expect(
+          rules.isAllowed(base, Method.write, variables: auth('bob')), isFalse);
     });
   });
 
