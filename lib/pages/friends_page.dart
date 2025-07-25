@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../services/friend_service.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/friend_requests_button.dart';
+import '../widgets/notification_button.dart';
+import '../services/notification_service.dart';
 import 'add_friend_page.dart';
 
 /// Page that lists current friends and allows sending friend requests by email.
@@ -37,8 +38,9 @@ class _FriendsPageState extends State<FriendsPage> {
         'Friends',
         actions: [
           if (user != null)
-            FriendRequestsButton(
-              friendService: widget.friendService,
+            NotificationButton(
+              service: NotificationService(
+                  firestore: widget.friendService.firestore),
               auth: widget.auth,
             ),
         ],

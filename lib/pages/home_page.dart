@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/common_styles.dart';
-import '../widgets/friend_requests_button.dart';
+import '../widgets/notification_button.dart';
 import '../widgets/read_switch_tile.dart';
-import '../services/friend_service.dart';
 import '../services/achievement_service.dart';
+import '../services/notification_service.dart';
 import '../models/achievement.dart';
 import '../theme/app_theme.dart';
 
@@ -476,8 +476,8 @@ class _HomePageState extends State<HomePage>
         backgroundColor: AppTheme.backgroundColor,
         actions: [
           if (widget.auth.currentUser != null)
-            FriendRequestsButton(
-              friendService: FriendService(firestore: widget.firestore),
+            NotificationButton(
+              service: NotificationService(firestore: widget.firestore),
               auth: widget.auth,
             ),
         ],
