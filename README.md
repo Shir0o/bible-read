@@ -39,7 +39,9 @@ across the app.
 
 Define a new value in `NotificationType` and store a boolean under the
 `notificationPrefs` subcollection for each user. Missing entries default to
-`true`, so existing users automatically opt into new notifications.
+`true`, so existing users automatically opt into new notifications. When you
+send a push message you can also save it in a `notifications` subcollection
+using the `AppNotification` model so the app can display a history of alerts.
 
 ## Getting Started
 
