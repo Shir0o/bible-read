@@ -1,3 +1,12 @@
+# Release 1.6.0
+
+This release introduces achievements and notification preferences.
+
+## Features
+
+*   **Achievements:** Users can now earn achievements for reading streaks and being the first to read for the day.
+*   **Notification Preferences:** Users can now customize which notifications they receive.
+
 # Release 1.5.3
 
 This release introduces several new features, enhancements, and bug fixes to improve the user experience.
