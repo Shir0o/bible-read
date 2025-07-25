@@ -401,6 +401,7 @@ void main() {
 
       expect(find.text('User read today!'), findsOneWidget);
       expect(find.textContaining('Liked by'), findsOneWidget);
+      expect(find.byIcon(Icons.emoji_events), findsNothing);
     });
 
     testWidgets('shows first reader badge when flagged', (tester) async {
@@ -429,7 +430,7 @@ void main() {
                   required String likerName}) async {})));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(Icons.emoji_events), findsOneWidget);
     });
 
     testWidgets('toggleLike adds and does not remove like', (tester) async {
