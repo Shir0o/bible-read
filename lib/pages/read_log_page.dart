@@ -296,8 +296,10 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     if (isFirst)
-                                      const Icon(Icons.star,
-                                          color: Colors.amber),
+                                      const Icon(
+                                        Icons.emoji_events,
+                                        color: Colors.amber,
+                                      ),
                                     Padding(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 4.0),
