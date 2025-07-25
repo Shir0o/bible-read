@@ -7,10 +7,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bible_read/pages/add_friend_page.dart';
 import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/services/friend_service.dart';
+import 'package:bible_read/services/notification_service.dart';
 
 class RecordingFriendService extends FriendService {
   RecordingFriendService({required FakeFirebaseFirestore firestore})
-      : super(firestore: firestore);
+      : super(
+          firestore: firestore,
+          notificationService: NotificationService(firestore: firestore),
+        );
 
   String? lastEmail;
   bool nudged = false;
@@ -37,7 +41,10 @@ class RecordingFriendService extends FriendService {
 
 class FailingFriendService extends FriendService {
   FailingFriendService({required FakeFirebaseFirestore firestore})
-      : super(firestore: firestore);
+      : super(
+          firestore: firestore,
+          notificationService: NotificationService(firestore: firestore),
+        );
 
   @override
   Future<void> sendFriendRequestByEmail({
