@@ -1,24 +1,25 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../services/friend_service.dart';
-import '../pages/friend_requests_page.dart';
+import '../models/app_notification.dart';
+import '../services/notification_service.dart';
+import '../pages/notification_center_page.dart';
 
-/// Icon button that navigates to [FriendRequestsPage] and shows the
-/// number of pending friend requests as a badge.
-class FriendRequestsButton extends StatelessWidget {
-  /// Service used to check pending requests.
-  final FriendService friendService;
+/// Icon button that navigates to [NotificationCenterPage] and shows the
+/// number of unread notifications as a badge.
+class NotificationButton extends StatelessWidget {
+  /// Service used to read notifications.
+  final NotificationService service;
 
   /// Firebase auth instance.
   final FirebaseAuth auth;
 
-  /// Creates a [FriendRequestsButton].
-  FriendRequestsButton({
+  /// Creates a [NotificationButton].
+  NotificationButton({
     super.key,
-    FriendService? friendService,
+    NotificationService? service,
     FirebaseAuth? auth,
-  })  : friendService = friendService ?? FriendService(),
+  })  : service = service ?? NotificationService(),
         auth = auth ?? FirebaseAuth.instance;
 
   @override
@@ -28,16 +29,17 @@ class FriendRequestsButton extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return StreamBuilder<List<FriendRequest>>(
-      stream: friendService.pendingRequests(user.uid),
+    return StreamBuilder<List<AppNotification>>(
+      stream: service.notifications(user.uid),
       builder: (context, snapshot) {
-        final count = snapshot.data?.length ?? 0;
+        final notifications = snapshot.data ?? [];
+        final count = notifications.where((n) => !n.read).length;
         return IconButton(
-          tooltip: 'Friend Requests',
+          tooltip: 'Notifications',
           icon: Stack(
             clipBehavior: Clip.none,
             children: [
-              const Icon(Icons.person_add_alt_1),
+              const Icon(Icons.notifications),
               if (count > 0)
                 Positioned(
                   right: -2,
@@ -74,8 +76,8 @@ class FriendRequestsButton extends StatelessWidget {
           onPressed: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => FriendRequestsPage(
-                  friendService: friendService,
+                builder: (context) => NotificationCenterPage(
+                  service: service,
                   auth: auth,
                 ),
               ),
