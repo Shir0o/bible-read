@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/common_styles.dart';
-import '../widgets/friend_requests_button.dart';
+import '../widgets/notification_button.dart';
+import '../services/notification_service.dart';
 import '../services/friend_service.dart';
 import '../widgets/achievement_summary.dart';
 import 'notification_settings_page.dart';
@@ -146,8 +147,8 @@ class UserProfilePageState extends State<UserProfilePage> {
         'Profile',
         actions: [
           if (widget.auth.currentUser != null)
-            FriendRequestsButton(
-              friendService: widget.friendService,
+            NotificationButton(
+              service: NotificationService(firestore: widget.firestore),
               auth: widget.auth,
             ),
         ],
