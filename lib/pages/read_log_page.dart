@@ -7,8 +7,8 @@ import '../services/achievement_service.dart';
 import '../models/achievement.dart';
 
 import '../widgets/common_styles.dart';
-import '../widgets/friend_requests_button.dart';
-import '../services/friend_service.dart';
+import '../widgets/notification_button.dart';
+import '../services/notification_service.dart';
 
 class ReadLogPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -225,8 +225,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
         "Today's Readers",
         actions: [
           if (widget.auth.currentUser != null)
-            FriendRequestsButton(
-              friendService: FriendService(firestore: widget.firestore),
+            NotificationButton(
+              service: NotificationService(firestore: widget.firestore),
               auth: widget.auth,
             ),
         ],

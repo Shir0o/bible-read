@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/friend_requests_button.dart';
+import '../widgets/notification_button.dart';
+import '../services/notification_service.dart';
 import '../services/friend_service.dart';
 import '../models/leaderboard_entry.dart';
 import '../theme/app_theme.dart';
@@ -210,8 +211,9 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           backgroundColor: AppTheme.backgroundColor,
           actions: [
             if (user != null)
-              FriendRequestsButton(
-                friendService: widget.friendService,
+              NotificationButton(
+                service: NotificationService(
+                    firestore: widget.friendService.firestore),
                 auth: widget.auth,
               ),
           ],
