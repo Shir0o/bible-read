@@ -244,20 +244,6 @@ class UserProfilePageState extends State<UserProfilePage> {
                               onPressed: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => AchievementsPage(
-                                      firestore: widget.firestore,
-                                      auth: widget.auth,
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: const Text('Achievements'),
-                            ),
-                            const SizedBox(height: 8),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
                                     builder: (_) => NotificationSettingsPage(),
                                   ),
                                 );

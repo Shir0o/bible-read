@@ -16,7 +16,7 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **Permanent Likes:** Likes cannot be removed once given.
 *   **Friends Page:** Manage friends on a dedicated page and send new requests using the **+** button.
 *   **Add Friend Page:** The **+** button opens a separate page for sending friend requests.
-*   **Achievements:** Unlock achievements like being the first reader of the day and view them from the profile page.
+*   **Achievements:** Unlock achievements like being the first reader of the day and view them from the Achievements page.
 
 ### Signup Notification Setup
 
