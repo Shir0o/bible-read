@@ -79,6 +79,8 @@ class NotificationCenterPage extends StatelessWidget {
         return Icon(Icons.person_add, color: color);
       case NotificationType.achievement:
         return Icon(Icons.emoji_events, color: color);
+      case NotificationType.friendRequest:
+        return Icon(Icons.person_add_alt, color: color);
     }
   }
 
@@ -92,6 +94,8 @@ class NotificationCenterPage extends StatelessWidget {
         return 'New signup';
       case NotificationType.achievement:
         return 'Achievement unlocked';
+      case NotificationType.friendRequest:
+        return 'You received a friend request';
     }
   }
 
@@ -100,13 +104,15 @@ class NotificationCenterPage extends StatelessWidget {
       case NotificationType.achievement:
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => AchievementsPage(auth: auth, firestore: service.firestore),
+            builder: (_) =>
+                AchievementsPage(auth: auth, firestore: service.firestore),
           ),
         );
         break;
       case NotificationType.like:
       case NotificationType.nudge:
       case NotificationType.signup:
+      case NotificationType.friendRequest:
         break;
     }
   }

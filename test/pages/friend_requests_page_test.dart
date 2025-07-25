@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bible_read/pages/friend_requests_page.dart';
 import 'package:bible_read/services/friend_service.dart';
+import 'package:bible_read/services/notification_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,7 @@ void main() {
     deleteCalled = false;
     service = FriendService(
       firestore: firestore,
+      notificationService: NotificationService(firestore: firestore),
       acceptFriendRequestFn: ({
         required String fromUid,
         required String toUid,
