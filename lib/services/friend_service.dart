@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import '../models/app_notification.dart';
+import '../models/notification_preferences.dart';
+import 'notification_service.dart';
 
 /// Names of Firestore collections used for friend features.
 class FriendCollections {
@@ -72,6 +75,9 @@ class FriendService {
   /// Firestore instance used for database operations.
   final FirebaseFirestore firestore;
 
+  /// Service for writing notification documents.
+  final NotificationService notificationService;
+
   /// Function used to invoke the accept friend request Cloud Function.
   final AcceptFriendRequestFn _acceptFn;
 
@@ -84,10 +90,12 @@ class FriendService {
   /// Creates a [FriendService] using [FirebaseFirestore.instance] by default.
   FriendService({
     FirebaseFirestore? firestore,
+    NotificationService? notificationService,
     AcceptFriendRequestFn? acceptFriendRequestFn,
     DeleteFriendRequestPairFn? deleteFriendRequestPairFn,
     SendNudgeNotificationFn? sendNudgeNotificationFn,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
+        notificationService = notificationService ?? NotificationService(),
         _acceptFn = acceptFriendRequestFn ?? _defaultAcceptFriendRequest,
         _deleteFn =
             deleteFriendRequestPairFn ?? _defaultDeleteFriendRequestPair,
@@ -168,6 +176,21 @@ class FriendService {
       {'timestamp': now, 'name': fromName},
     );
     await batch.commit();
+
+    final notificationId = firestore
+        .collection(NotificationCollections.users)
+        .doc(toUid)
+        .collection(NotificationCollections.notifications)
+        .doc()
+        .id;
+    final notification = AppNotification(
+      id: notificationId,
+      type: NotificationType.friendRequest,
+      fromUid: fromUid,
+      timestamp: DateTime.now(),
+      read: false,
+    );
+    await notificationService.addNotification(toUid, notification);
   }
 
   /// Send a friend request from [fromUid] to the user with [toEmail].
@@ -219,6 +242,23 @@ class FriendService {
         .delete()
         .catchError((e) =>
             debugPrint('Failed to remove received request for $fromUid: $e'));
+
+    try {
+      final snap = await firestore
+          .collection(NotificationCollections.users)
+          .doc(currentUid)
+          .collection(NotificationCollections.notifications)
+          .where('type', isEqualTo: NotificationType.friendRequest.name)
+          .where('fromUid', isEqualTo: fromUid)
+          .limit(1)
+          .get();
+      if (snap.docs.isNotEmpty) {
+        await snap.docs.first.reference
+            .set({'read': true}, SetOptions(merge: true));
+      }
+    } catch (e) {
+      debugPrint('Failed to mark friend request notification as read: $e');
+    }
   }
 
   /// Decline a friend request sent by [fromUid] to [currentUid].
@@ -237,6 +277,22 @@ class FriendService {
         .delete()
         .catchError((e) =>
             debugPrint('Failed to remove received request for $fromUid: $e'));
+
+    try {
+      final snap = await firestore
+          .collection(NotificationCollections.users)
+          .doc(currentUid)
+          .collection(NotificationCollections.notifications)
+          .where('type', isEqualTo: NotificationType.friendRequest.name)
+          .where('fromUid', isEqualTo: fromUid)
+          .limit(1)
+          .get();
+      if (snap.docs.isNotEmpty) {
+        await snap.docs.first.reference.delete();
+      }
+    } catch (e) {
+      debugPrint('Failed to remove friend request notification: $e');
+    }
   }
 
   /// Send a nudge notification to [friendUid] from [currentUid].

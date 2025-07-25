@@ -22,7 +22,8 @@ class NotificationSettingsPage extends StatefulWidget {
         auth = auth ?? FirebaseAuth.instance;
 
   @override
-  State<NotificationSettingsPage> createState() => _NotificationSettingsPageState();
+  State<NotificationSettingsPage> createState() =>
+      _NotificationSettingsPageState();
 }
 
 class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
@@ -94,6 +95,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         return 'Signup Alerts';
       case NotificationType.achievement:
         return 'Achievement Notifications';
+      case NotificationType.friendRequest:
+        return 'Friend Request Notifications';
     }
   }
 }

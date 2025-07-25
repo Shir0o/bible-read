@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/services/friend_service.dart';
+import 'package:bible_read/services/notification_service.dart'
+    show NotificationService, NotificationCollections;
+import 'package:bible_read/models/notification_preferences.dart';
 
 void main() {
   group('FriendService', () {
@@ -20,6 +23,7 @@ void main() {
       lastDeleteArgs = null;
       friendService = FriendService(
         firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
         acceptFriendRequestFn: ({
           required String fromUid,
           required String toUid,
@@ -115,6 +119,28 @@ void main() {
         expect(receivedRequestDoc.exists, isTrue);
         expect(receivedRequestDoc.data()?.containsKey('timestamp'), isTrue);
         expect(receivedRequestDoc.data()?['name'], fromName);
+      });
+
+      test('creates notification document for recipient', () async {
+        const fromUid = 'userA';
+        const fromName = 'User A';
+        const toUid = 'userB';
+
+        await friendService.sendFriendRequest(
+          fromUid: fromUid,
+          fromName: fromName,
+          toUid: toUid,
+        );
+
+        final notifSnap = await firestore
+            .collection(NotificationCollections.users)
+            .doc(toUid)
+            .collection(NotificationCollections.notifications)
+            .get();
+        expect(notifSnap.docs.length, 1);
+        final data = notifSnap.docs.first.data();
+        expect(data['type'], NotificationType.friendRequest.name);
+        expect(data['fromUid'], fromUid);
       });
 
       test('should throw error when sending request to self', () async {
@@ -386,6 +412,7 @@ void main() {
 
         friendService = FriendService(
           firestore: firestore,
+          notificationService: NotificationService(firestore: firestore),
           sendNudgeNotificationFn: ({
             required String fromUid,
             required String toUid,
