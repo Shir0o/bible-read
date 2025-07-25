@@ -5,10 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/pages/add_friend_page.dart';
 import 'package:bible_read/services/friend_service.dart';
+import 'package:bible_read/services/notification_service.dart';
 
 class RecordingFriendService extends FriendService {
   RecordingFriendService({required FakeFirebaseFirestore firestore})
-      : super(firestore: firestore);
+      : super(
+          firestore: firestore,
+          notificationService: NotificationService(firestore: firestore),
+        );
 
   String? lastEmail;
 

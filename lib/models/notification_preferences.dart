@@ -1,4 +1,4 @@
-enum NotificationType { like, nudge, signup, achievement }
+enum NotificationType { like, nudge, signup, achievement, friendRequest }
 
 /// Stores whether each notification type is enabled for a user.
 class NotificationPreferences {

@@ -7,6 +7,7 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:fake_cloud_firestore/src/mock_collection_reference.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bible_read/services/friend_service.dart';
+import 'package:bible_read/services/notification_service.dart';
 
 import 'package:bible_read/pages/leaderboard_page.dart';
 
@@ -54,7 +55,10 @@ void main() {
         home: LeaderboardPage(
       firestore: firestore,
       auth: auth,
-      friendService: FriendService(firestore: firestore),
+      friendService: FriendService(
+        firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
+      ),
     )));
     await tester.pumpAndSettle();
 
@@ -69,7 +73,10 @@ void main() {
         home: LeaderboardPage(
       firestore: firestore,
       auth: auth,
-      friendService: FriendService(firestore: firestore),
+      friendService: FriendService(
+        firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
+      ),
     )));
     await tester.pumpAndSettle();
 
@@ -86,7 +93,10 @@ void main() {
         home: LeaderboardPage(
       firestore: firestore,
       auth: auth,
-      friendService: FriendService(firestore: firestore),
+      friendService: FriendService(
+        firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
+      ),
     )));
     await tester.pumpAndSettle();
 
@@ -102,7 +112,10 @@ void main() {
         home: LeaderboardPage(
       firestore: firestore,
       auth: auth,
-      friendService: FriendService(firestore: firestore),
+      friendService: FriendService(
+        firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
+      ),
     )));
     await tester.pumpAndSettle();
 
@@ -132,7 +145,10 @@ void main() {
         home: LeaderboardPage(
       firestore: firestore,
       auth: auth,
-      friendService: FriendService(firestore: firestore),
+      friendService: FriendService(
+        firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
+      ),
     )));
     await tester.pumpAndSettle();
 
@@ -174,7 +190,10 @@ void main() {
         home: LeaderboardPage(
       firestore: firestore,
       auth: auth,
-      friendService: FriendService(firestore: firestore),
+      friendService: FriendService(
+        firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
+      ),
     )));
     await tester.pumpAndSettle();
 
@@ -219,7 +238,10 @@ void main() {
         home: LeaderboardPage(
       firestore: firestore,
       auth: auth,
-      friendService: FriendService(firestore: firestore),
+      friendService: FriendService(
+        firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
+      ),
     )));
     await tester.pumpAndSettle();
 
@@ -240,7 +262,10 @@ void main() {
         home: LeaderboardPage(
       firestore: firestore,
       auth: auth,
-      friendService: FriendService(firestore: firestore),
+      friendService: FriendService(
+        firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
+      ),
     )));
     await tester.pumpAndSettle();
 
