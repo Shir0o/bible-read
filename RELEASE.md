@@ -1,3 +1,26 @@
+# Release 1.7.0
+
+This release introduces a Notification Center, enhances the user experience with visual cues for first readers, and includes several under-the-hood improvements.
+
+## Features
+
+*   **Notification Center:** A new page to view and manage notifications.
+*   **First Reader Recognition:** A trophy icon is now displayed for the first reader of the day.
+
+## Enhancements
+
+*   The friend requests button has been updated to a more general notification button.
+*   Improved data handling with a new `AppNotification` model and `NotificationService`.
+
+## Fixes
+
+*   Resolved an issue with tests by properly injecting the `NotificationService`.
+*   Removed unused code related to achievements.
+
+## Security
+
+*   Updated Firestore rules to support the new notification system.
+
 # Release 1.6.0
 
 This release introduces achievements and notification preferences.
