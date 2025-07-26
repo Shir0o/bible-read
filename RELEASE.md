@@ -1,3 +1,11 @@
+# Release 1.7.0
+
+This update introduces a Notification Center for viewing past alerts.
+
+## Features
+
+*   **Notification Center:** Saved notifications are displayed in-app while preferences still control push alerts.
+
 # Release 1.6.0
 
 This release introduces achievements and notification preferences.
