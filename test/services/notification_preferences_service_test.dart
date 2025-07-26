@@ -20,19 +20,27 @@ void main() {
       }
     });
 
+    test(
+        'fetchPreferences returns true for dailyReminder when no document exists',
+        () async {
+      final prefs = await service.fetchPreferences('u1');
+      expect(prefs[NotificationType.dailyReminder], isTrue);
+    });
+
     test('updatePreference writes document and updates cache', () async {
-      await service.updatePreference('u1', NotificationType.like, false);
+      await service.updatePreference(
+          'u1', NotificationType.dailyReminder, false);
       final doc = await firestore
           .collection('users')
           .doc('u1')
           .collection('notificationPrefs')
-          .doc('like')
+          .doc('dailyReminder')
           .get();
       expect(doc.exists, isTrue);
       expect(doc.data()?['enabled'], false);
 
       final prefs = await service.fetchPreferences('u1');
-      expect(prefs[NotificationType.like], isFalse);
+      expect(prefs[NotificationType.dailyReminder], isFalse);
     });
   });
 }
