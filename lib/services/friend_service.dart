@@ -205,7 +205,7 @@ class FriendService {
   }) async {
     final query = await firestore
         .collection(FriendCollections.users)
-        .where('email', isEqualTo: toEmail)
+        .where('email', isEqualTo: toEmail.toLowerCase())
         .limit(1)
         .get();
     if (query.docs.isEmpty) {
