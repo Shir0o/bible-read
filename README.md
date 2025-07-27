@@ -20,6 +20,17 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **Notification Center:** Recent alerts are stored in-app and can be viewed from the bell icon while your notification preferences still control which ones trigger push messages.
 *   **Achievements:** Unlock achievements like being the first reader of the day and view them from the Achievements page.
 
+## Achievements
+
+The app currently offers the following achievements. Each badge image is stored under `assets/achievements/`.
+
+| Badge | ID | Description |
+| ----- | -- | ----------- |
+| ![First Reader](assets/achievements/first_reader.png) | `firstReader` | Be the first person to log reading for the day. |
+| ![7-Day Streak](assets/achievements/streak7.png) | `streak7` | Read the Bible seven days in a row. |
+| ![30 Days Read](assets/achievements/days30.png) | `days30` | Log 30 days of reading. |
+| ![30-Day Streak](assets/achievements/streak30.png) | `streak30` | Read every day for a full month. |
+
 ### Signup Notification Setup
 
 The Cloud Function `sendSignupNotification` sends a push notification to the user specified by `ADMIN_UID` whenever a new account is created. Set `ADMIN_UID` using Firebase Functions config before deploying:

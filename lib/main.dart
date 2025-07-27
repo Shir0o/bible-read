@@ -49,7 +49,8 @@ void main() async {
       });
     } catch (firestoreError) {
       if (kDebugMode) {
-        debugPrint('Failed to log AppCheck error to Firestore: $firestoreError');
+        debugPrint(
+            'Failed to log AppCheck error to Firestore: $firestoreError');
       }
     }
     appCheckFailed = true;
