@@ -68,7 +68,7 @@ class _HomePageState extends State<HomePage>
       if (!userDoc.exists) {
         await userDocRef.set({
           'name': refreshedUser?.displayName ?? '',
-          'email': refreshedUser?.email ?? '',
+          'email': refreshedUser?.email?.toLowerCase() ?? '',
         });
 
         final friendsCollection = userDocRef.collection('friends');
@@ -284,7 +284,7 @@ class _HomePageState extends State<HomePage>
           .doc(user.uid)
           .set({
         'name': refreshedUser?.displayName ?? '',
-        'email': refreshedUser?.email ?? '',
+        'email': refreshedUser?.email?.toLowerCase() ?? '',
         'timestamp': Timestamp.now(),
         'read': true,
       });
