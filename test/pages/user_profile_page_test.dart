@@ -12,6 +12,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
+import 'package:bible_read/widgets/badge_icon.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform {
   FakeGoogleSignInPlatform({this.userData, this.signInError});
@@ -253,6 +254,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.star), findsOneWidget);
+    expect(find.byType(BadgeIcon), findsOneWidget);
   });
 }

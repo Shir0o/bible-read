@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../services/achievement_service.dart';
 import '../models/achievement_definition.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/badge_icon.dart';
 
 class AchievementsPage extends StatelessWidget {
   final FirebaseFirestore firestore;
@@ -49,20 +50,10 @@ class AchievementsPage extends StatelessWidget {
                       final isUnlocked = unlocked.contains(def.id);
                       return Column(
                         children: [
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Opacity(
-                                opacity: isUnlocked ? 1.0 : 0.3,
-                                child: Image.asset(
-                                  def.assetPath,
-                                  width: 64,
-                                  height: 64,
-                                ),
-                              ),
-                              if (!isUnlocked)
-                                const Icon(Icons.lock, color: Colors.white70),
-                            ],
+                          BadgeIcon(
+                            assetPath: def.assetPath,
+                            locked: !isUnlocked,
+                            size: 64,
                           ),
                           const SizedBox(height: 8),
                           Text(def.title, textAlign: TextAlign.center),
