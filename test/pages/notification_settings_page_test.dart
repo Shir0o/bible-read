@@ -18,7 +18,8 @@ void main() {
         .doc('like')
         .set({'enabled': false});
 
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     final service = NotificationPreferencesService(firestore: firestore);
 
     await tester.pumpWidget(
@@ -28,8 +29,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(SwitchListTile), findsNWidgets(NotificationType.values.length));
-    final likeSwitch = tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Like Notifications'));
+    expect(find.byType(SwitchListTile),
+        findsNWidgets(NotificationType.values.length));
+    final likeSwitch = tester.widget<SwitchListTile>(
+        find.widgetWithText(SwitchListTile, 'Like Notifications'));
     expect(likeSwitch.value, isFalse);
 
     await tester.tap(find.widgetWithText(SwitchListTile, 'Like Notifications'));
@@ -42,5 +45,23 @@ void main() {
         .doc('like')
         .get();
     expect(doc.data()?['enabled'], true);
+
+    // Daily reminder switch defaults to true. Toggle it off and verify
+    // Firestore updates accordingly.
+    final dailySwitch = tester.widget<SwitchListTile>(
+        find.widgetWithText(SwitchListTile, 'Daily Reading Reminder'));
+    expect(dailySwitch.value, isTrue);
+
+    await tester
+        .tap(find.widgetWithText(SwitchListTile, 'Daily Reading Reminder'));
+    await tester.pumpAndSettle();
+
+    final dailyDoc = await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('notificationPrefs')
+        .doc('dailyReminder')
+        .get();
+    expect(dailyDoc.data()?['enabled'], false);
   });
 }
