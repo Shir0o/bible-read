@@ -468,6 +468,33 @@ void main() {
       });
     });
 
+    group('nudgedToday', () {
+      test('emits set of friend UIDs nudged today', () async {
+        const uid = 'userA';
+        const todayUid = 'friend1';
+        const yesterdayUid = 'friend2';
+        final now = DateTime.now();
+        final start = DateTime(now.year, now.month, now.day);
+
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(uid)
+            .collection(FriendCollections.nudges)
+            .doc(todayUid)
+            .set({'timestamp': Timestamp.fromDate(start.add(const Duration(hours: 1)))});
+
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(uid)
+            .collection(FriendCollections.nudges)
+            .doc(yesterdayUid)
+            .set({'timestamp': Timestamp.fromDate(start.subtract(const Duration(days: 1)))});
+
+        final result = await friendService.nudgedToday(uid).first;
+        expect(result, {todayUid});
+      });
+    });
+
     test('pendingRequests handles non-string name gracefully', () async {
       final uid = 'user123';
       final fromUid = 'user456';
