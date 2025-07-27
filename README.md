@@ -11,7 +11,7 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **User Profile:** View your profile information and sign in with your Google account or with an email and password.
 *   **Like Notifications:** Receive a push notification when someone likes your read log.
 *   **Nudge Friends:** Remind friends to read by sending a nudge notification.
-*   **Daily Reminder:** Receive a push notification each day you haven't logged a reading yet.
+*   **Daily Reading Reminder:** Receive a push notification each day you haven't logged a reading yet. You can enable or disable this reminder from the Settings page.
 *   **Signup Notification:** The admin user receives a push notification whenever someone creates an account.
 *   **Customizable Notifications:** Choose which notifications you receive from the settings page.
 *   **Permanent Likes:** Likes cannot be removed once given.
