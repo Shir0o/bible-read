@@ -98,7 +98,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       case NotificationType.friendRequest:
         return 'Friend Request Notifications';
       case NotificationType.dailyReminder:
-        return 'Daily Reminder Notifications';
+        return 'Daily Reading Reminder';
     }
   }
 }
