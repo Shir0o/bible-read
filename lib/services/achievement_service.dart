@@ -46,4 +46,14 @@ class AchievementService {
               );
             }).toList());
   }
+
+  /// Stream of ids for achievements unlocked by [uid].
+  Stream<Set<String>> unlockedAchievementIds(String uid) {
+    return firestore
+        .collection('users')
+        .doc(uid)
+        .collection(achievementsCollection)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((d) => d.id).toSet());
+  }
 }

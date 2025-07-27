@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/achievement_service.dart';
-import '../models/achievement.dart';
+import '../models/achievement_definition.dart';
 import '../widgets/common_styles.dart';
 
 class AchievementsPage extends StatelessWidget {
@@ -26,27 +26,47 @@ class AchievementsPage extends StatelessWidget {
             ? const Center(
                 child: Text('Please sign in to view your achievements.'),
               )
-            : StreamBuilder<List<Achievement>>(
+            : StreamBuilder<Set<String>>(
                 stream: AchievementService(firestore: firestore)
-                    .achievements(user.uid),
+                    .unlockedAchievementIds(user.uid),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  final data = snapshot.data ?? [];
-                  if (data.isEmpty) {
-                    return const Center(child: Text('No achievements yet.'));
-                  }
-                  return ListView.builder(
-                    itemCount: data.length,
+                  final unlocked = snapshot.data!;
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.9,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                    ),
+                    itemCount: allAchievements.length,
                     itemBuilder: (context, index) {
-                      final a = data[index];
-                      return ListTile(
-                        leading: const Icon(Icons.star, color: Colors.amber),
-                        title: Text(a.title),
-                        subtitle: Text(
-                          '${a.dateUnlocked.year}-${a.dateUnlocked.month}-${a.dateUnlocked.day}',
-                        ),
+                      final def = allAchievements[index];
+                      final isUnlocked = unlocked.contains(def.id);
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Opacity(
+                                opacity: isUnlocked ? 1.0 : 0.3,
+                                child: Image.asset(
+                                  def.assetPath,
+                                  width: 64,
+                                  height: 64,
+                                ),
+                              ),
+                              if (!isUnlocked)
+                                const Icon(Icons.lock, color: Colors.white70),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(def.title, textAlign: TextAlign.center),
+                        ],
                       );
                     },
                   );
