@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bible_read/pages/read_log_page.dart';
+import 'package:bible_read/widgets/badge_icon.dart';
 
 class ThrowingCollectionReference
     extends MockCollectionReference<Map<String, dynamic>> {
@@ -401,7 +402,7 @@ void main() {
 
       expect(find.text('User read today!'), findsOneWidget);
       expect(find.textContaining('Liked by'), findsOneWidget);
-      expect(find.byIcon(Icons.emoji_events), findsNothing);
+      expect(find.byType(BadgeIcon), findsNothing);
     });
 
     testWidgets('shows first reader badge when flagged', (tester) async {
@@ -430,7 +431,7 @@ void main() {
                   required String likerName}) async {})));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.emoji_events), findsOneWidget);
+      expect(find.byType(BadgeIcon), findsOneWidget);
     });
 
     testWidgets('toggleLike adds and does not remove like', (tester) async {
