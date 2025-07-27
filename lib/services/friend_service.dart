@@ -308,6 +308,20 @@ class FriendService {
     );
   }
 
+  /// Stream of friend UIDs nudged today by [uid].
+  Stream<Set<String>> nudgedToday(String uid) {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    return firestore
+        .collection(FriendCollections.users)
+        .doc(uid)
+        .collection(FriendCollections.nudges)
+        .where('timestamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .snapshots()
+        .map((s) => s.docs.map((d) => d.id).toSet());
+  }
+
   /// Stream of pending friend requests for [uid].
   Stream<List<FriendRequest>> pendingRequests(String uid) {
     return firestore
