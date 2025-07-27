@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/achievement.dart';
 import '../services/achievement_service.dart';
+import 'badge_icon.dart';
 
 /// Displays a count of unlocked achievements for the current user.
 class AchievementSummary extends StatelessWidget {
@@ -47,7 +48,10 @@ class AchievementSummary extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.star, color: Colors.amber),
+                const BadgeIcon(
+                  assetPath: 'assets/achievements/streak7.png',
+                  size: 24,
+                ),
                 const SizedBox(width: 4),
                 Text('$count'),
               ],
