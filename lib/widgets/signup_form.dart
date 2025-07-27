@@ -62,7 +62,7 @@ class _SignupFormState extends State<SignupForm> {
       if (user != null) {
         await widget.firestore.collection('users').doc(user.uid).set({
           'name': user.displayName ?? '',
-          'email': user.email,
+          'email': user.email?.toLowerCase(),
         });
       }
       if (mounted) {

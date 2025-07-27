@@ -39,7 +39,7 @@ class _AddFriendFormState extends State<AddFriendForm> {
   Future<void> _sendRequest() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
-    final email = _controller.text.trim();
+    final email = _controller.text.trim().toLowerCase();
     if (email.isEmpty) return;
     setState(() {
       _sending = true;

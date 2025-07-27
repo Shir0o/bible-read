@@ -53,7 +53,7 @@ class ReadLogPage extends StatefulWidget {
         .doc(user.uid)
         .set({
       'name': (user.displayName ?? '').split(' ').first,
-      'email': user.email ?? '',
+      'email': user.email?.toLowerCase() ?? '',
       'timestamp': Timestamp.now(),
     });
     final handler = markFirstReader;
