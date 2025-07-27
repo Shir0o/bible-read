@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
 import '../services/notification_service.dart';
+import '../services/daily_notification_service.dart';
 import '../services/friend_service.dart';
 import '../widgets/achievement_summary.dart';
 import 'notification_settings_page.dart';
@@ -85,9 +86,7 @@ class UserProfilePageState extends State<UserProfilePage> {
         await widget.auth.signInWithCredential(credential);
 
         if (mounted) {
-          Navigator.of(
-            context,
-          ).pushReplacement(
+          Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => MainPage()),
           );
         }
@@ -103,9 +102,7 @@ class UserProfilePageState extends State<UserProfilePage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(
-          const SnackBar(content: Text('Something went wrong')),
-        );
+        ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
       }
     } finally {
       if (mounted) {
@@ -117,6 +114,11 @@ class UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _handleSignOut() async {
+    try {
+      await DailyNotificationService().cancelDailyReminder();
+    } catch (e) {
+      debugPrint('Cancel daily reminder failed: $e');
+    }
     final googleSignIn = widget.googleSignInProvider();
     try {
       await googleSignIn.signOut();
@@ -134,8 +136,9 @@ class UserProfilePageState extends State<UserProfilePage> {
     }
 
     if (!mounted) return;
-    Navigator.of(context)
-        .pushReplacement(MaterialPageRoute(builder: (_) => MainPage()));
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => MainPage()));
   }
 
   @override
@@ -222,7 +225,9 @@ class UserProfilePageState extends State<UserProfilePage> {
                             const SizedBox(height: 16),
                             Text(
                               displayName,
-                              style: Theme.of(context).textTheme.headlineSmall,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.headlineSmall,
                             ),
                             const SizedBox(height: 8),
                             Text(
