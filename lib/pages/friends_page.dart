@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 import '../services/friend_service.dart';
 import '../widgets/common_styles.dart';
@@ -30,6 +31,33 @@ class FriendsPage extends StatefulWidget {
 class _FriendsPageState extends State<FriendsPage> {
   /// Tracks friends nudged today so the button can be disabled.
   final Set<String> _nudgedToday = <String>{};
+
+  /// Subscription to the nudged today stream.
+  StreamSubscription<Set<String>>? _nudgeSub;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = widget.auth.currentUser;
+    if (user != null) {
+      _nudgeSub = widget.friendService.nudgedToday(user.uid).listen((ids) {
+        if (mounted) {
+          setState(() {
+            _nudgedToday
+              ..clear()
+              ..addAll(ids);
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _nudgeSub?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
