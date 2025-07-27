@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-class FakeNotificationsPlugin implements FlutterLocalNotificationsPlugin {
+class MockNotificationsPlugin implements FlutterLocalNotificationsPlugin {
   int? scheduledId;
   int? cancelId;
   DateTimeComponents? components;
@@ -46,14 +46,14 @@ void main() {
   group('DailyNotificationService', () {
     late FakeFirebaseFirestore firestore;
     late NotificationPreferencesService prefsService;
-    late FakeNotificationsPlugin plugin;
+    late MockNotificationsPlugin plugin;
     late MockFirebaseAuth auth;
     late DailyNotificationService service;
 
     setUp(() {
       firestore = FakeFirebaseFirestore();
       prefsService = NotificationPreferencesService(firestore: firestore);
-      plugin = FakeNotificationsPlugin();
+      plugin = MockNotificationsPlugin();
       auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
       service = DailyNotificationService(
         plugin: plugin,
@@ -62,16 +62,17 @@ void main() {
       );
     });
 
-    test('schedules when preference enabled', () async {
+    test('scheduleDailyReminder calls plugin with correct values', () async {
       await prefsService.updatePreference(
         'u1',
         NotificationType.dailyReminder,
         true,
       );
       await service.scheduleDailyReminder(const Time(8, 0));
-      expect(plugin.scheduledId, isNotNull);
+      expect(plugin.scheduledId, 1000);
       expect(plugin.components, DateTimeComponents.time);
       expect(plugin.scheduledDate?.hour, 8);
+      expect(plugin.scheduledDate?.minute, 0);
     });
 
     test('does nothing when preference disabled', () async {
@@ -84,7 +85,7 @@ void main() {
       expect(plugin.scheduledId, isNull);
     });
 
-    test('cancel cancels notification', () async {
+    test('cancelDailyReminder cancels notification', () async {
       await service.cancelDailyReminder();
       expect(plugin.cancelId, 1000);
     });
