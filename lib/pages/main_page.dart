@@ -107,7 +107,7 @@ class _MainPageState extends State<MainPage> {
           await widget.firestore.collection('users').doc(user.uid).set({
             'fcmToken': token,
             'name': user.displayName,
-            'email': user.email,
+            'email': user.email?.toLowerCase(),
           }, SetOptions(merge: true));
         } catch (e) {
           debugPrint('Initial Firestore write failed: $e. Retrying...');
@@ -116,7 +116,7 @@ class _MainPageState extends State<MainPage> {
             await widget.firestore.collection('users').doc(user.uid).set({
               'fcmToken': token,
               'name': user.displayName,
-              'email': user.email,
+              'email': user.email?.toLowerCase(),
             }, SetOptions(merge: true));
           } catch (e2) {
             debugPrint('Second Firestore write failed: $e2');

@@ -229,6 +229,30 @@ void main() {
           throwsA(isA<ArgumentError>()),
         );
       });
+
+      test('looks up email case-insensitively', () async {
+        const fromUid = 'userA';
+        const fromName = 'User A';
+        const toUid = 'userB';
+
+        await firestore.collection(FriendCollections.users).doc(toUid).set({
+          'email': 'b@example.com',
+        });
+
+        await friendService.sendFriendRequestByEmail(
+          fromUid: fromUid,
+          fromName: fromName,
+          toEmail: 'B@Example.Com',
+        );
+
+        final sent = await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(toUid)
+            .get();
+        expect(sent.exists, isTrue);
+      });
     });
 
     group('acceptFriendRequest', () {
