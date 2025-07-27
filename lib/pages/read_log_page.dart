@@ -9,6 +9,7 @@ import '../models/achievement.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
 import '../services/notification_service.dart';
+import '../widgets/badge_icon.dart';
 
 class ReadLogPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -296,9 +297,10 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     if (isFirst)
-                                      const Icon(
-                                        Icons.emoji_events,
-                                        color: Colors.amber,
+                                      const BadgeIcon(
+                                        assetPath:
+                                            'assets/achievements/first_reader.png',
+                                        size: 24,
                                       ),
                                     Padding(
                                       padding: const EdgeInsets.symmetric(
