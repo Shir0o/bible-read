@@ -12,6 +12,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
+import '../services/daily_notification_service.dart';
+import '../services/notification_preferences_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'home_page.dart';
 import 'read_log_page.dart';
@@ -119,6 +122,13 @@ class _MainPageState extends State<MainPage> {
             debugPrint('Second Firestore write failed: $e2');
           }
         }
+
+        // Schedule daily reminder after preferences load
+        await DailyNotificationService(
+          plugin: FlutterLocalNotificationsPlugin(),
+          prefsService: NotificationPreferencesService(),
+          auth: widget.auth,
+        ).scheduleDailyReminder(const Time(8, 0));
       } else {
         debugPrint('Skipping Firestore write: user or token is null');
       }
@@ -153,22 +163,20 @@ class _MainPageState extends State<MainPage> {
           firestore: widget.firestore,
           auth: widget.auth,
           onSendLikeNotification: widget.sendLikeNotification ??
-              ({
-                required String ownerUid,
-                required String likerName,
-              }) async {
+              ({required String ownerUid, required String likerName}) async {
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null) {
                   debugPrint(
-                      'Skipping sendLikeNotification: user is not signed in.');
+                    'Skipping sendLikeNotification: user is not signed in.',
+                  );
                   return;
                 }
 
                 await user.getIdToken(true); // Force refresh
 
-                final callable =
-                    FirebaseFunctions.instanceFor(region: 'us-central1')
-                        .httpsCallable('sendLikeNotification');
+                final callable = FirebaseFunctions.instanceFor(
+                  region: 'us-central1',
+                ).httpsCallable('sendLikeNotification');
 
                 await callable.call({
                   'ownerUid': ownerUid,
@@ -185,10 +193,7 @@ class _MainPageState extends State<MainPage> {
           friendService: FriendService(firestore: widget.firestore),
           auth: widget.auth,
         ),
-        AchievementsPage(
-          firestore: widget.firestore,
-          auth: widget.auth,
-        ),
+        AchievementsPage(firestore: widget.firestore, auth: widget.auth),
       ],
       UserProfilePage(
         user: _user,
