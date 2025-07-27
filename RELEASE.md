@@ -1,3 +1,11 @@
+# Release 1.8.0
+
+This release introduces daily reminder notifications to help you stay consistent with your reading.
+
+## Features
+
+*   **Daily Reading Reminder:** Enable a daily notification from the Settings page to be reminded when you haven't logged a reading.
+
 # Release 1.7.0
 
 This release introduces a Notification Center, enhances the user experience with visual cues for first readers, and includes several under-the-hood improvements.
