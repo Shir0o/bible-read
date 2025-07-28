@@ -26,11 +26,12 @@ class Comment {
     required this.timestamp,
   });
 
-  /// Reads a [Comment] from Firestore data.
-  factory Comment.fromFirestore(String id, Map<String, dynamic> data) {
+  /// Reads a [Comment] from a Firestore document.
+  factory Comment.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? <String, dynamic>{};
     final ts = data['timestamp'];
     return Comment(
-      id: id,
+      id: doc.id,
       uid: data['uid'] as String? ?? '',
       authorName: data['authorName'] as String? ?? '',
       message: data['message'] as String? ?? '',
