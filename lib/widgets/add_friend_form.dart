@@ -58,9 +58,10 @@ class _AddFriendFormState extends State<AddFriendForm> {
       }
     } catch (e) {
       debugPrint('Failed to send friend request: $e');
+      final message = e is Exception ? e.toString() : 'Unknown error';
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to send request.')),
+          SnackBar(content: Text(message)),
         );
       }
     } finally {
