@@ -193,4 +193,32 @@ void main() {
     ));
     expect(button.onPressed, isNull);
   });
+
+  testWidgets('existing nudge log disables nudge button', (tester) async {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('friends')
+        .doc('f1')
+        .set({'name': 'Alice'});
+
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('nudges')
+        .doc('f1')
+        .set({
+      'timestamp': Timestamp.fromDate(start.add(const Duration(hours: 1)))
+    });
+
+    await pumpPage(tester);
+
+    final button = tester.widget<IconButton>(find.ancestor(
+      of: find.byIcon(Icons.notifications_off),
+      matching: find.byType(IconButton),
+    ));
+    expect(button.onPressed, isNull);
+  });
 }
