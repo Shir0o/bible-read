@@ -481,14 +481,19 @@ void main() {
             .doc(uid)
             .collection(FriendCollections.nudges)
             .doc(todayUid)
-            .set({'timestamp': Timestamp.fromDate(start.add(const Duration(hours: 1)))});
+            .set({
+          'timestamp': Timestamp.fromDate(start.add(const Duration(hours: 1)))
+        });
 
         await firestore
             .collection(FriendCollections.users)
             .doc(uid)
             .collection(FriendCollections.nudges)
             .doc(yesterdayUid)
-            .set({'timestamp': Timestamp.fromDate(start.subtract(const Duration(days: 1)))});
+            .set({
+          'timestamp':
+              Timestamp.fromDate(start.subtract(const Duration(days: 1)))
+        });
 
         final result = await friendService.nudgedToday(uid).first;
         expect(result, {todayUid});
