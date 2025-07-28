@@ -213,7 +213,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
       if (mounted) {
         setState(() => _logs[index] = original);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to like. Please try again.')),
+          SnackBar(content: Text('Failed to like: \$e')),
         );
       }
     }

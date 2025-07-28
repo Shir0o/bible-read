@@ -316,8 +316,7 @@ class FriendService {
         .collection(FriendCollections.users)
         .doc(uid)
         .collection(FriendCollections.nudges)
-        .where('timestamp',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
         .snapshots()
         .map((s) => s.docs.map((d) => d.id).toSet());
   }
