@@ -38,7 +38,8 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
       debugPrint('Failed to process friend request: \$e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to update request.')));
+          SnackBar(content: Text('Failed to update request: \$e')),
+        );
       }
     } finally {
       if (mounted) {
