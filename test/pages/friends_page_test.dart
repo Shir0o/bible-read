@@ -56,6 +56,20 @@ class FailingFriendService extends FriendService {
   }
 }
 
+class AlreadySentFriendService extends RecordingFriendService {
+  AlreadySentFriendService({required super.firestore});
+
+  @override
+  Future<bool> nudgeFriend({
+    required String currentUid,
+    required String friendUid,
+    required String currentName,
+  }) async {
+    nudged = true;
+    return true;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late FakeFirebaseFirestore firestore;
@@ -154,5 +168,29 @@ void main() {
     final button = tester
         .widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Send'));
     expect(button.onPressed, isNotNull);
+  });
+
+  testWidgets('already sent nudge disables button', (tester) async {
+    final already = AlreadySentFriendService(firestore: firestore);
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('friends')
+        .doc('f1')
+        .set({'name': 'Alice'});
+
+    await tester.pumpWidget(
+      MaterialApp(home: FriendsPage(friendService: already, auth: auth)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.notifications_active));
+    await tester.pumpAndSettle();
+
+    final button = tester.widget<IconButton>(find.ancestor(
+      of: find.byIcon(Icons.notifications_off),
+      matching: find.byType(IconButton),
+    ));
+    expect(button.onPressed, isNull);
   });
 }
