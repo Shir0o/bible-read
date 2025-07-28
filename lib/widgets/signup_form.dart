@@ -72,7 +72,7 @@ class _SignupFormState extends State<SignupForm> {
       debugPrint('Failed to sign up: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to sign up. Please try again.')),
+          SnackBar(content: Text('Failed to sign up: \$e')),
         );
       }
     } finally {
