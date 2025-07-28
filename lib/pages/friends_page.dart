@@ -132,6 +132,9 @@ class _FriendsPageState extends State<FriendsPage> {
                                                     );
                                                     if (!mounted) return;
                                                     if (alreadySent) {
+                                                      setState(() {
+                                                        _nudgedToday.add(f.uid);
+                                                      });
                                                       messenger.showSnackBar(
                                                         const SnackBar(
                                                           content: Text(
