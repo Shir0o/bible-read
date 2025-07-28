@@ -83,6 +83,8 @@ class NotificationCenterPage extends StatelessWidget {
         return Icon(Icons.person_add_alt, color: color);
       case NotificationType.dailyReminder:
         return Icon(Icons.calendar_today, color: color);
+      case NotificationType.comment:
+        return Icon(Icons.comment, color: color);
     }
   }
 
@@ -100,6 +102,8 @@ class NotificationCenterPage extends StatelessWidget {
         return 'You received a friend request';
       case NotificationType.dailyReminder:
         return 'Daily reading reminder';
+      case NotificationType.comment:
+        return 'New comment on your reading';
     }
   }
 
@@ -118,6 +122,7 @@ class NotificationCenterPage extends StatelessWidget {
       case NotificationType.signup:
       case NotificationType.friendRequest:
       case NotificationType.dailyReminder:
+      case NotificationType.comment:
         break;
     }
   }

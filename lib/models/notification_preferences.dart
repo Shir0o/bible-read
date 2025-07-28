@@ -5,6 +5,7 @@ enum NotificationType {
   achievement,
   friendRequest,
   dailyReminder,
+  comment,
 }
 
 /// Stores whether each notification type is enabled for a user.

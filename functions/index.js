@@ -101,6 +101,59 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
   }
 });
 
+exports.sendCommentNotification = onCall({ region: 'us-central1' }, async (req) => {
+  if (!req.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated.'
+    );
+  }
+
+  const { ownerUid, commenterName } = req.data;
+  if (!ownerUid || !commenterName) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing data');
+  }
+
+  const db = admin.firestore();
+  const commentPref = await db
+    .collection('users')
+    .doc(ownerUid)
+    .collection('notificationPrefs')
+    .doc('comment')
+    .get();
+  if (commentPref.exists && commentPref.data()?.enabled === false) {
+    return;
+  }
+
+  const userDoc = await db.collection('users').doc(ownerUid).get();
+  const token = userDoc.data()?.fcmToken;
+  if (!token) {
+    functions.logger.info(`No FCM token for user ${ownerUid}`);
+    return;
+  }
+
+  const message = {
+    token,
+    notification: {
+      title: '📖 New Comment',
+      body: `${commenterName} commented on your reading.`,
+    },
+    android: { priority: 'high' },
+    apns: { payload: { aps: { sound: 'default' } } },
+  };
+
+  try {
+    return await admin.messaging().send(message);
+  } catch (err) {
+    functions.logger.error('Failed to send comment notification', err);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to send comment notification',
+      err instanceof Error ? err.message : String(err)
+    );
+  }
+});
+
 exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) => {
   if (!req.auth) {
     throw new functions.https.HttpsError(
