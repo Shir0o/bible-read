@@ -227,7 +227,7 @@ class _HomePageState extends State<HomePage>
       debugPrint('Failed to update summary: \$e');
       if (!_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update summary')),
+          SnackBar(content: Text('Failed to update summary: \$e')),
         );
         unawaited(_loadReadStatus(showLoading: false));
       }
@@ -309,7 +309,7 @@ class _HomePageState extends State<HomePage>
           _pastMonth = prevMonth;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to mark reading')),
+          SnackBar(content: Text('Failed to mark reading: \$e')),
         );
       }
     }
@@ -378,7 +378,7 @@ class _HomePageState extends State<HomePage>
       debugPrint('Failed to update summary with today: \$e');
       if (!_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update summary')),
+          SnackBar(content: Text('Failed to update summary: \$e')),
         );
         unawaited(_loadReadStatus(showLoading: false));
       }
@@ -435,7 +435,7 @@ class _HomePageState extends State<HomePage>
       debugPrint('Failed to like reading: $e');
       if (!_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to like reading')),
+          SnackBar(content: Text('Failed to like reading: \$e')),
         );
       }
     }
@@ -460,7 +460,7 @@ class _HomePageState extends State<HomePage>
       debugPrint('Failed to unlike reading: $e');
       if (!_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to unlike reading')),
+          SnackBar(content: Text('Failed to unlike reading: \$e')),
         );
       }
     }
@@ -526,7 +526,7 @@ class _HomePageState extends State<HomePage>
           debugPrint('Refresh failed: \$e');
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to refresh data.')),
+            SnackBar(content: Text('Failed to refresh data: \$e')),
           );
         }
       },
