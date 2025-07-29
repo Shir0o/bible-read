@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../services/error_logger.dart';
 
 import '../services/friend_service.dart';
 
@@ -34,8 +36,11 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
     });
     try {
       await op();
-    } catch (e) {
-      debugPrint('Failed to process friend request: \$e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to process friend request: \$e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

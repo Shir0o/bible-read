@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import 'error_logger.dart';
 import '../models/app_notification.dart';
 import '../models/notification_preferences.dart';
 import 'notification_service.dart';
@@ -240,8 +241,12 @@ class FriendService {
         .collection(FriendCollections.receivedRequests)
         .doc(fromUid)
         .delete()
-        .catchError((e) =>
-            debugPrint('Failed to remove received request for $fromUid: $e'));
+        .catchError((e, st) {
+          if (kDebugMode) {
+            debugPrint('Failed to remove received request for $fromUid: $e');
+          }
+          ErrorLogger.log(e, st);
+        });
 
     try {
       final snap = await firestore
@@ -256,8 +261,11 @@ class FriendService {
         await snap.docs.first.reference
             .set({'read': true}, SetOptions(merge: true));
       }
-    } catch (e) {
-      debugPrint('Failed to mark friend request notification as read: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to mark friend request notification as read: $e');
+      }
+      ErrorLogger.log(e, st);
     }
   }
 
@@ -275,8 +283,12 @@ class FriendService {
         .collection(FriendCollections.receivedRequests)
         .doc(fromUid)
         .delete()
-        .catchError((e) =>
-            debugPrint('Failed to remove received request for $fromUid: $e'));
+        .catchError((e, st) {
+          if (kDebugMode) {
+            debugPrint('Failed to remove received request for $fromUid: $e');
+          }
+          ErrorLogger.log(e, st);
+        });
 
     try {
       final snap = await firestore
@@ -290,8 +302,11 @@ class FriendService {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.delete();
       }
-    } catch (e) {
-      debugPrint('Failed to remove friend request notification: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to remove friend request notification: $e');
+      }
+      ErrorLogger.log(e, st);
     }
   }
 

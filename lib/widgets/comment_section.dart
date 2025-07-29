@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../services/error_logger.dart';
 
 import '../models/comment.dart';
 
@@ -44,8 +46,11 @@ class _CommentSectionState extends State<CommentSection> {
       if (mounted) {
         _controller.clear();
       }
-    } catch (e) {
-      debugPrint('Failed to add comment: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to add comment: $e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
+import '../services/error_logger.dart';
 
 import '../services/achievement_service.dart';
 import '../models/achievement.dart';
@@ -76,8 +78,11 @@ class ReadLogPage extends StatefulWidget {
         if (res.data is Map) {
           result = Map<String, dynamic>.from(res.data as Map);
         }
-      } catch (e) {
-        debugPrint('markFirstReader failed: $e');
+      } catch (e, st) {
+        if (kDebugMode) {
+          debugPrint('markFirstReader failed: $e');
+        }
+        ErrorLogger.log(e, st);
       }
     }
 
@@ -166,8 +171,11 @@ class _ReadLogPageState extends State<ReadLogPage> {
           'comments': comments,
         };
       }).toList());
-    } catch (e) {
-      debugPrint('Load logs failed: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Load logs failed: $e');
+      }
+      ErrorLogger.log(e, st);
       error = true;
     } finally {
       setState(() {
@@ -231,8 +239,11 @@ class _ReadLogPageState extends State<ReadLogPage> {
           likerName: likerName,
         );
       }
-    } catch (e) {
-      debugPrint('Failed to toggle like: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to toggle like: $e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
         setState(() => _logs[index] = original);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -298,8 +309,11 @@ class _ReadLogPageState extends State<ReadLogPage> {
           commenterName: author,
         );
       }
-    } catch (e) {
-      debugPrint('Failed to add comment: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to add comment: $e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
         setState(() {
           _logs[index] = {
