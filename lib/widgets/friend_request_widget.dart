@@ -57,7 +57,7 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
       stream: widget.service.pendingRequests(widget.currentUid),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
+          return const Text('Failed to load data');
         }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());

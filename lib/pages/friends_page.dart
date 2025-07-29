@@ -87,7 +87,7 @@ class _FriendsPageState extends State<FriendsPage> {
                         stream: widget.friendService.friends(user.uid),
                         builder: (context, snapshot) {
                           if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
+                            return const Text('Failed to load data');
                           }
                           if (!snapshot.hasData) {
                             return const Center(
