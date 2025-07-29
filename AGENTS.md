@@ -64,7 +64,11 @@ or tests. After performing the environment setup above run:
 flutter format .
 flutter analyze
 flutter test
+flutter test --coverage
 ```
+
+After running the tests with coverage, review the generated `coverage/lcov.info`
+file and ensure overall coverage stays above **80%**.
 
 ## Agent workflow
 
