@@ -1,3 +1,12 @@
+# Release 1.9.0
+
+This release adds commenting to the reading feed and notifications for new comments.
+
+## Features
+
+*   **Comments:** Users can now leave comments on reading log entries.
+*   **Comment Notifications:** The new `sendCommentNotification` Cloud Function notifies you when someone comments on your reading.
+
 # Release 1.8.0
 
 This release introduces daily reminder notifications to help you stay consistent with your reading.

@@ -24,12 +24,17 @@ typedef SendLikeNotification = Future<void> Function({
   required String ownerUid,
   required String likerName,
 });
+typedef SendCommentNotification = Future<void> Function({
+  required String ownerUid,
+  required String commenterName,
+});
 
 class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
   final SendLikeNotification? sendLikeNotification;
+  final SendCommentNotification? sendCommentNotification;
   final FirebaseMessaging messaging;
   final bool appCheckFailed;
 
@@ -40,6 +45,7 @@ class MainPage extends StatefulWidget {
     GoogleSignIn Function()? googleSignInProvider,
     FirebaseMessaging? messaging,
     this.sendLikeNotification,
+    this.sendCommentNotification,
     this.appCheckFailed = false,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
@@ -181,6 +187,29 @@ class _MainPageState extends State<MainPage> {
                 await callable.call({
                   'ownerUid': ownerUid,
                   'likerName': likerName,
+                });
+              },
+          onSendCommentNotification: widget.sendCommentNotification ??
+              (
+                  {required String ownerUid,
+                  required String commenterName}) async {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user == null) {
+                  debugPrint(
+                    'Skipping sendCommentNotification: user is not signed in.',
+                  );
+                  return;
+                }
+
+                await user.getIdToken(true);
+
+                final callable = FirebaseFunctions.instanceFor(
+                  region: 'us-central1',
+                ).httpsCallable('sendCommentNotification');
+
+                await callable.call({
+                  'ownerUid': ownerUid,
+                  'commenterName': commenterName,
                 });
               },
         ),
