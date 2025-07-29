@@ -1,11 +1,19 @@
 # Release 1.9.0
 
-This release adds commenting to the reading feed and notifications for new comments.
+This release adds commenting to the reading feed, notifications for new comments, and an achievements page.
 
 ## Features
 
 *   **Comments:** Users can now leave comments on reading log entries.
 *   **Comment Notifications:** The new `sendCommentNotification` Cloud Function notifies you when someone comments on your reading.
+*   **Achievements Page:** A new page to display earned badges.
+*   **BadgeIcon Widget:** A new widget to display badges.
+
+## Fixes & Enhancements
+
+*   Improved error handling and messaging for friend requests.
+*   The nudge button is now disabled if a nudge has already been sent to that friend today.
+*   Emails are now stored in lowercase to prevent duplicate accounts.
 
 # Release 1.8.0
 
