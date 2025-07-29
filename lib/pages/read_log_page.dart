@@ -236,7 +236,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
       if (mounted) {
         setState(() => _logs[index] = original);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to like: \$e')),
+          const SnackBar(content: Text('Failed to like. Please try again.')),
         );
       }
     }
@@ -307,8 +307,10 @@ class _ReadLogPageState extends State<ReadLogPage> {
             'comments': originalComments,
           };
         });
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to comment: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Failed to add comment. Please try again.')),
+        );
       }
     }
   }

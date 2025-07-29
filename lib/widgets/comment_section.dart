@@ -47,8 +47,10 @@ class _CommentSectionState extends State<CommentSection> {
     } catch (e) {
       debugPrint('Failed to add comment: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Failed to add comment. Please try again.')),
+        );
       }
     } finally {
       if (mounted) {
