@@ -40,6 +40,11 @@ yes | flutter doctor --android-licenses || true
 flutter pub get
 ```
 
+## Cloud Functions
+
+Install Node 20 and run `npm ci` inside the `functions/` directory to set up the
+dependencies. Run the Cloud Functions tests with `npm test`.
+
 ## Contribution and style guidelines
 
 - Format Dart code with `flutter format .` before committing.
