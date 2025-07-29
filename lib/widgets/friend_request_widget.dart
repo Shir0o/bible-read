@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../services/error_logger.dart';
 
 import '../services/friend_service.dart';
 
@@ -34,11 +36,15 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
     });
     try {
       await op();
-    } catch (e) {
-      debugPrint('Failed to process friend request: \$e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to process friend request: \$e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update request: \$e')),
+          const SnackBar(
+              content: Text('Failed to update request. Please try again.')),
         );
       }
     } finally {
@@ -56,7 +62,7 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
       stream: widget.service.pendingRequests(widget.currentUid),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
+          return const Text('Failed to load data');
         }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());

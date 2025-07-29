@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../services/error_logger.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/common_styles.dart';
@@ -141,8 +143,11 @@ class _HomePageState extends State<HomePage>
           _pastMonth = savedMonth;
         });
       }
-    } catch (e) {
-      debugPrint('Error loading status: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Error loading status: $e');
+      }
+      ErrorLogger.log(e, st);
     } finally {
       if (showLoading && !_disposed && mounted) {
         setState(() {
@@ -223,11 +228,15 @@ class _HomePageState extends State<HomePage>
         'pastWeekReadDates': pastWeekReadDates,
         'pastMonthReadDates': pastMonthReadDates,
       }, SetOptions(merge: true));
-    } catch (e) {
-      debugPrint('Failed to update summary: \$e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to update summary: \$e');
+      }
+      ErrorLogger.log(e, st);
       if (!_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update summary: \$e')),
+          const SnackBar(
+              content: Text('Failed to update summary. Please try again.')),
         );
         unawaited(_loadReadStatus(showLoading: false));
       }
@@ -309,7 +318,8 @@ class _HomePageState extends State<HomePage>
           _pastMonth = prevMonth;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to mark reading: \$e')),
+          const SnackBar(
+              content: Text('Failed to mark reading. Please try again.')),
         );
       }
     }
@@ -374,11 +384,15 @@ class _HomePageState extends State<HomePage>
       }, SetOptions(merge: true));
 
       await _checkAchievements(user.uid, streak, totalReadDays);
-    } catch (e) {
-      debugPrint('Failed to update summary with today: \$e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to update summary with today: \$e');
+      }
+      ErrorLogger.log(e, st);
       if (!_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update summary: \$e')),
+          const SnackBar(
+              content: Text('Failed to update summary. Please try again.')),
         );
         unawaited(_loadReadStatus(showLoading: false));
       }
@@ -411,8 +425,11 @@ class _HomePageState extends State<HomePage>
           ),
         );
       }
-    } catch (e) {
-      debugPrint('Failed to unlock achievements: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to unlock achievements: $e');
+      }
+      ErrorLogger.log(e, st);
     }
   }
 
@@ -431,11 +448,15 @@ class _HomePageState extends State<HomePage>
           .collection('likes')
           .doc(user.uid)
           .set({'timestamp': Timestamp.now()});
-    } catch (e) {
-      debugPrint('Failed to like reading: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to like reading: $e');
+      }
+      ErrorLogger.log(e, st);
       if (!_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to like reading: \$e')),
+          const SnackBar(
+              content: Text('Failed to like reading. Please try again.')),
         );
       }
     }
@@ -456,11 +477,15 @@ class _HomePageState extends State<HomePage>
           .collection('likes')
           .doc(user.uid)
           .delete();
-    } catch (e) {
-      debugPrint('Failed to unlike reading: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to unlike reading: $e');
+      }
+      ErrorLogger.log(e, st);
       if (!_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to unlike reading: \$e')),
+          const SnackBar(
+              content: Text('Failed to unlike reading. Please try again.')),
         );
       }
     }
@@ -522,11 +547,15 @@ class _HomePageState extends State<HomePage>
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Refreshed successfully')),
           );
-        } catch (e) {
-          debugPrint('Refresh failed: \$e');
+        } catch (e, st) {
+          if (kDebugMode) {
+            debugPrint('Refresh failed: \$e');
+          }
+          ErrorLogger.log(e, st);
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to refresh data: \$e')),
+            const SnackBar(
+                content: Text('Failed to refresh data. Please try again.')),
           );
         }
       },

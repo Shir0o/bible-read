@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
+import '../services/error_logger.dart';
 
 import '../services/achievement_service.dart';
 import '../models/achievement.dart';
@@ -11,6 +13,7 @@ import '../widgets/notification_button.dart';
 import '../services/notification_service.dart';
 import '../widgets/badge_icon.dart';
 import '../widgets/comment_section.dart';
+import '../widgets/comment_drawer.dart';
 import '../models/comment.dart';
 
 class ReadLogPage extends StatefulWidget {
@@ -75,8 +78,11 @@ class ReadLogPage extends StatefulWidget {
         if (res.data is Map) {
           result = Map<String, dynamic>.from(res.data as Map);
         }
-      } catch (e) {
-        debugPrint('markFirstReader failed: $e');
+      } catch (e, st) {
+        if (kDebugMode) {
+          debugPrint('markFirstReader failed: $e');
+        }
+        ErrorLogger.log(e, st);
       }
     }
 
@@ -165,8 +171,11 @@ class _ReadLogPageState extends State<ReadLogPage> {
           'comments': comments,
         };
       }).toList());
-    } catch (e) {
-      debugPrint('Load logs failed: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Load logs failed: $e');
+      }
+      ErrorLogger.log(e, st);
       error = true;
     } finally {
       setState(() {
@@ -230,12 +239,15 @@ class _ReadLogPageState extends State<ReadLogPage> {
           likerName: likerName,
         );
       }
-    } catch (e) {
-      debugPrint('Failed to toggle like: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to toggle like: $e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
         setState(() => _logs[index] = original);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to like: \$e')),
+          const SnackBar(content: Text('Failed to like. Please try again.')),
         );
       }
     }
@@ -297,8 +309,11 @@ class _ReadLogPageState extends State<ReadLogPage> {
           commenterName: author,
         );
       }
-    } catch (e) {
-      debugPrint('Failed to add comment: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to add comment: $e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
         setState(() {
           _logs[index] = {
@@ -306,8 +321,10 @@ class _ReadLogPageState extends State<ReadLogPage> {
             'comments': originalComments,
           };
         });
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to comment: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Failed to add comment. Please try again.')),
+        );
       }
     }
   }
@@ -429,14 +446,31 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                                     },
                                             ),
                                           ),
+                                          IconButton(
+                                            icon: const Icon(
+                                                Icons.mode_comment_outlined),
+                                            onPressed: () {
+                                              CommentDrawer.show(
+                                                context,
+                                                comments: List<Comment>.from(
+                                                    log['comments']
+                                                        as List<Comment>),
+                                                onAdd: (msg) => _addComment(
+                                                    log['uid'], msg),
+                                              );
+                                            },
+                                          ),
                                         ],
                                       ),
                                     ),
                                     CommentSection(
                                       comments: List<Comment>.from(
-                                          log['comments'] as List<Comment>),
+                                              log['comments'] as List<Comment>)
+                                          .take(2)
+                                          .toList(),
                                       onAdd: (msg) =>
                                           _addComment(log['uid'], msg),
+                                      showInput: false,
                                     ),
                                   ],
                                 ),
