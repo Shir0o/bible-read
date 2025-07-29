@@ -358,7 +358,10 @@ void main() {
               dateProvider: () => fixedDate,
               onSendLikeNotification: (
                   {required String ownerUid,
-                  required String likerName}) async {})));
+                  required String likerName}) async {},
+              onSendCommentNotification: (
+                  {required String ownerUid,
+                  required String commenterName}) async {})));
       await tester.pumpAndSettle();
 
       expect(
@@ -397,7 +400,10 @@ void main() {
               dateProvider: () => fixedDate,
               onSendLikeNotification: (
                   {required String ownerUid,
-                  required String likerName}) async {})));
+                  required String likerName}) async {},
+              onSendCommentNotification: (
+                  {required String ownerUid,
+                  required String commenterName}) async {})));
       await tester.pumpAndSettle();
 
       expect(find.text('User read today!'), findsOneWidget);
@@ -428,7 +434,10 @@ void main() {
               dateProvider: () => fixedDate,
               onSendLikeNotification: (
                   {required String ownerUid,
-                  required String likerName}) async {})));
+                  required String likerName}) async {},
+              onSendCommentNotification: (
+                  {required String ownerUid,
+                  required String commenterName}) async {})));
       await tester.pumpAndSettle();
 
       expect(find.byType(BadgeIcon), findsOneWidget);
@@ -457,7 +466,10 @@ void main() {
               dateProvider: () => fixedDate,
               onSendLikeNotification: (
                   {required String ownerUid,
-                  required String likerName}) async {})));
+                  required String likerName}) async {},
+              onSendCommentNotification: (
+                  {required String ownerUid,
+                  required String commenterName}) async {})));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.favorite_border));
@@ -536,7 +548,10 @@ void main() {
               firestore: firestore,
               auth: auth,
               dateProvider: () => fixedDate,
-              onSendLikeNotification: mockNotification)));
+              onSendLikeNotification: mockNotification,
+              onSendCommentNotification: (
+                  {required String ownerUid,
+                  required String commenterName}) async {})));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.favorite_border));
@@ -557,7 +572,10 @@ void main() {
               dateProvider: () => fixedDate,
               onSendLikeNotification: (
                   {required String ownerUid,
-                  required String likerName}) async {})));
+                  required String likerName}) async {},
+              onSendCommentNotification: (
+                  {required String ownerUid,
+                  required String commenterName}) async {})));
       await tester.pumpAndSettle();
 
       expect(find.text('Unable to load feed.'), findsOneWidget);
@@ -587,7 +605,10 @@ void main() {
               dateProvider: () => fixedDate,
               onSendLikeNotification: (
                   {required String ownerUid,
-                  required String likerName}) async {})));
+                  required String likerName}) async {},
+              onSendCommentNotification: (
+                  {required String ownerUid,
+                  required String commenterName}) async {})));
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.favorite_border), findsOneWidget);

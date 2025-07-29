@@ -10,6 +10,8 @@ import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
 import '../services/notification_service.dart';
 import '../widgets/badge_icon.dart';
+import '../widgets/comment_section.dart';
+import '../models/comment.dart';
 
 class ReadLogPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -18,6 +20,10 @@ class ReadLogPage extends StatefulWidget {
     required String ownerUid,
     required String likerName,
   }) onSendLikeNotification;
+  final Future<void> Function({
+    required String ownerUid,
+    required String commenterName,
+  }) onSendCommentNotification;
   final DateTime Function() dateProvider;
 
   ReadLogPage({
@@ -25,6 +31,7 @@ class ReadLogPage extends StatefulWidget {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     required this.onSendLikeNotification,
+    required this.onSendCommentNotification,
     DateTime Function()? dateProvider,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
@@ -100,6 +107,14 @@ class _ReadLogPageState extends State<ReadLogPage> {
     );
   }
 
+  Future<void> _sendCommentNotification(
+      {required String ownerUid, required String commenterName}) async {
+    await widget.onSendCommentNotification(
+      ownerUid: ownerUid,
+      commenterName: commenterName,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -134,6 +149,12 @@ class _ReadLogPageState extends State<ReadLogPage> {
         final likeNames = likeDocs
             .map((d) => (d.data()['name'] ?? 'Unknown').toString())
             .toList();
+        final commentsSnap = await doc.reference
+            .collection('comments')
+            .orderBy('timestamp')
+            .get();
+        final comments =
+            commentsSnap.docs.map((d) => Comment.fromFirestore(d)).toList();
         return {
           'uid': doc.id,
           'name': (data['name'] ?? doc.id).toString().split(' ').first,
@@ -141,6 +162,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
           'liked': liked,
           'likeNames': likeNames,
           'firstReader': data['firstReader'] == true,
+          'comments': comments,
         };
       }).toList());
     } catch (e) {
@@ -219,6 +241,77 @@ class _ReadLogPageState extends State<ReadLogPage> {
     }
   }
 
+  Future<void> _addComment(String logUid, String message) async {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+    final index = _logs.indexWhere((log) => log['uid'] == logUid);
+    if (index == -1) return;
+
+    final author = (user.displayName ?? '').split(' ').first;
+    final comment = Comment(
+      id: '',
+      uid: user.uid,
+      authorName: author,
+      message: message,
+      timestamp: DateTime.now(),
+    );
+
+    final originalComments =
+        List<Comment>.from(_logs[index]['comments'] as List<Comment>? ?? []);
+    setState(() {
+      _logs[index] = {
+        ..._logs[index],
+        'comments': [...originalComments, comment],
+      };
+    });
+
+    final now = widget.dateProvider();
+    final dateKey = '${now.year}-${now.month}-${now.day}';
+    final commentsRef = widget.firestore
+        .collection('read_logs')
+        .doc(dateKey)
+        .collection('entries')
+        .doc(logUid)
+        .collection('comments');
+    try {
+      final docRef = await commentsRef.add(comment.toFirestore());
+      if (mounted) {
+        final updated = List<Comment>.from(originalComments)
+          ..add(Comment(
+            id: docRef.id,
+            uid: comment.uid,
+            authorName: comment.authorName,
+            message: comment.message,
+            timestamp: comment.timestamp,
+          ));
+        setState(() {
+          _logs[index] = {
+            ..._logs[index],
+            'comments': updated,
+          };
+        });
+      }
+      if (logUid != user.uid) {
+        await _sendCommentNotification(
+          ownerUid: logUid,
+          commenterName: author,
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed to add comment: $e');
+      if (mounted) {
+        setState(() {
+          _logs[index] = {
+            ..._logs[index],
+            'comments': originalComments,
+          };
+        });
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to comment: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -271,63 +364,79 @@ class _ReadLogPageState extends State<ReadLogPage> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: ListTile(
-                                leading: const Icon(
-                                  Icons.check_circle,
-                                  color: Colors.green,
-                                ),
-                                title: Text(
-                                  '${log['name']} read today!',
-                                  style: AppTextStyles.subtitle,
-                                ),
-                                subtitle: () {
-                                  final likeNames =
-                                      (log['likeNames'] as List?) ?? [];
-                                  if (likeNames.isEmpty) return null;
-
-                                  const maxToShow = 3;
-                                  final displayText = likeNames.length >
-                                          maxToShow
-                                      ? '${likeNames.take(maxToShow).join(", ")} +${likeNames.length - maxToShow} more'
-                                      : likeNames.join(", ");
-
-                                  return Text('Liked by $displayText');
-                                }(),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    if (isFirst)
-                                      const BadgeIcon(
-                                        assetPath:
-                                            'assets/achievements/first_reader.png',
-                                        size: 24,
+                                    ListTile(
+                                      leading: const Icon(
+                                        Icons.check_circle,
+                                        color: Colors.green,
                                       ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4.0),
-                                      child: IconButton(
-                                        icon: AnimatedSwitcher(
-                                          duration:
-                                              const Duration(milliseconds: 300),
-                                          transitionBuilder:
-                                              (child, animation) =>
-                                                  ScaleTransition(
-                                                      scale: animation,
-                                                      child: child),
-                                          child: Icon(
-                                            isLiked
-                                                ? Icons.favorite
-                                                : Icons.favorite_border,
-                                            key: ValueKey<bool>(isLiked),
-                                            color: isLiked ? Colors.red : null,
+                                      title: Text(
+                                        '${log['name']} read today!',
+                                        style: AppTextStyles.subtitle,
+                                      ),
+                                      subtitle: () {
+                                        final likeNames =
+                                            (log['likeNames'] as List?) ?? [];
+                                        if (likeNames.isEmpty) return null;
+
+                                        const maxToShow = 3;
+                                        final displayText = likeNames.length >
+                                                maxToShow
+                                            ? '${likeNames.take(maxToShow).join(", ")} +${likeNames.length - maxToShow} more'
+                                            : likeNames.join(", ");
+
+                                        return Text('Liked by $displayText');
+                                      }(),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (isFirst)
+                                            const BadgeIcon(
+                                              assetPath:
+                                                  'assets/achievements/first_reader.png',
+                                              size: 24,
+                                            ),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 4.0),
+                                            child: IconButton(
+                                              icon: AnimatedSwitcher(
+                                                duration: const Duration(
+                                                    milliseconds: 300),
+                                                transitionBuilder:
+                                                    (child, animation) =>
+                                                        ScaleTransition(
+                                                            scale: animation,
+                                                            child: child),
+                                                child: Icon(
+                                                  isLiked
+                                                      ? Icons.favorite
+                                                      : Icons.favorite_border,
+                                                  key: ValueKey<bool>(isLiked),
+                                                  color: isLiked
+                                                      ? Colors.red
+                                                      : null,
+                                                ),
+                                              ),
+                                              onPressed: isLiked
+                                                  ? null
+                                                  : () {
+                                                      _toggleLike(log['uid']);
+                                                    },
+                                            ),
                                           ),
-                                        ),
-                                        onPressed: isLiked
-                                            ? null
-                                            : () {
-                                                _toggleLike(log['uid']);
-                                              },
+                                        ],
                                       ),
+                                    ),
+                                    CommentSection(
+                                      comments: List<Comment>.from(
+                                          log['comments'] as List<Comment>),
+                                      onAdd: (msg) =>
+                                          _addComment(log['uid'], msg),
                                     ),
                                   ],
                                 ),
