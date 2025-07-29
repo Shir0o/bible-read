@@ -8,12 +8,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/daily_notification_service.dart';
 import '../services/notification_preferences_service.dart';
+import '../services/error_logger.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'home_page.dart';
@@ -115,8 +117,11 @@ class _MainPageState extends State<MainPage> {
             'name': user.displayName,
             'email': user.email?.toLowerCase(),
           }, SetOptions(merge: true));
-        } catch (e) {
-          debugPrint('Initial Firestore write failed: $e. Retrying...');
+        } catch (e, st) {
+          if (kDebugMode) {
+            debugPrint('Initial Firestore write failed: $e. Retrying...');
+          }
+          ErrorLogger.log(e, st);
           await Future.delayed(Duration(seconds: 1));
           try {
             await widget.firestore.collection('users').doc(user.uid).set({
@@ -124,8 +129,11 @@ class _MainPageState extends State<MainPage> {
               'name': user.displayName,
               'email': user.email?.toLowerCase(),
             }, SetOptions(merge: true));
-          } catch (e2) {
-            debugPrint('Second Firestore write failed: $e2');
+          } catch (e2, st2) {
+            if (kDebugMode) {
+              debugPrint('Second Firestore write failed: $e2');
+            }
+            ErrorLogger.log(e2, st2);
           }
         }
 
