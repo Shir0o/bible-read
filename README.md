@@ -21,6 +21,15 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **Add Friend Page:** The **+** button opens a separate page for sending friend requests.
 *   **Notification Center:** Recent alerts are stored in-app and can be viewed from the bell icon while your notification preferences still control which ones trigger push messages.
 *   **Achievements:** Unlock achievements like being the first reader of the day and view them from the Achievements page.
+### Posting Comments
+
+Each entry in the reading feed includes a comment field labeled "Add a comment..." with a **Post** button so you can reply to others. Comments appear above the field after posting.
+Commenting was introduced in version 1.9.0.
+
+When someone comments on your reading, the `sendCommentNotification` function sends a push notification using the new `NotificationType.comment` setting.
+
+Firestore permissions allow any signed-in user to read comments, authors to create them with their UID, and either the author or entry owner to delete them.
+
 
 ## Achievements
 
