@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import '../services/error_logger.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
 import '../services/notification_service.dart';
@@ -88,8 +90,11 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           _publicData = leaderboard;
         });
       }
-    } catch (e) {
-      debugPrint('Error loading leaderboard: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Error loading leaderboard: $e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -182,8 +187,11 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           _friendsData = entries;
         });
       }
-    } catch (e) {
-      debugPrint('Error loading friends leaderboard: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Error loading friends leaderboard: $e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {

@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../services/error_logger.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/common_styles.dart';
@@ -97,8 +99,11 @@ class UserProfilePageState extends State<UserProfilePage> {
           ).showSnackBar(const SnackBar(content: Text('Sign in cancelled')));
         }
       }
-    } catch (error) {
-      debugPrint('Sign in failed: $error');
+    } catch (error, st) {
+      if (kDebugMode) {
+        debugPrint('Sign in failed: $error');
+      }
+      ErrorLogger.log(error, st);
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -116,22 +121,31 @@ class UserProfilePageState extends State<UserProfilePage> {
   Future<void> _handleSignOut() async {
     try {
       await DailyNotificationService().cancelDailyReminder();
-    } catch (e) {
-      debugPrint('Cancel daily reminder failed: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Cancel daily reminder failed: $e');
+      }
+      ErrorLogger.log(e, st);
     }
     final googleSignIn = widget.googleSignInProvider();
     try {
       await googleSignIn.signOut();
       await googleSignIn.disconnect();
-    } catch (error) {
-      debugPrint('Google sign out failed: $error');
+    } catch (error, st) {
+      if (kDebugMode) {
+        debugPrint('Google sign out failed: $error');
+      }
+      ErrorLogger.log(error, st);
       // Ignore Google sign-out failures.
     }
 
     try {
       await widget.auth.signOut();
-    } catch (error) {
-      debugPrint('Firebase sign out failed: $error');
+    } catch (error, st) {
+      if (kDebugMode) {
+        debugPrint('Firebase sign out failed: $error');
+      }
+      ErrorLogger.log(error, st);
       // Ignore Firebase sign-out failures.
     }
 
