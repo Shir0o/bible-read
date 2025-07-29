@@ -7,7 +7,8 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "test": "node --test"
+    "test": "mocha",
+    "coverage": "nyc --reporter=html --reporter=text mocha"
   },
   "engines": {
     "node": "20"
@@ -19,7 +20,8 @@
   },
   "devDependencies": {
     "firebase-functions-test": "^3.1.0",
-    "mocha": "^11.7.1"
+    "mocha": "^11.7.1",
+    "nyc": "^17.1.0"
   },
   "private": true
 }
