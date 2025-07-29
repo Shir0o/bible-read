@@ -78,3 +78,35 @@ file and ensure overall coverage stays above **80%**.
 - Include a "Testing" section in the PR with the results of running the checks
   above.
 
+## Running tests with coverage in Codex
+
+To run fast, essentials-only tests with coverage in Codex:
+
+1. **Install `lcov`** (only needed once):
+   ```bash
+   sudo apt-get update && sudo apt-get install -y lcov
+   ```
+
+2. **Set up Flutter SDK and dependencies** (first time only):
+   ```bash
+   git clone https://github.com/flutter/flutter.git -b stable flutter
+   export PATH="$PWD/flutter/bin:$PATH"
+
+   yes | flutter doctor --android-licenses || true
+   flutter doctor
+
+   flutter pub get
+   ```
+
+3. **Run tests with coverage**:
+   ```bash
+   flutter test --no-pub --coverage --coverage-path=coverage/lcov.info
+   ```
+
+   This generates a `coverage/lcov.info` file. You can use this with coverage tools (e.g. Codecov, Coveralls).
+
+### Tips for faster runs
+
+- Use `--no-pub` to skip dependency checks when re-running.
+- Only unit/widget tests are run—no emulator/device needed.
+- Cache `.pub-cache/` and `flutter/bin/cache` to avoid re-downloading.
