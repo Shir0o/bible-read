@@ -94,7 +94,9 @@ class _LeaderboardPageState extends State<LeaderboardPage>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to load leaderboard: \$e')),
+              const SnackBar(
+                  content:
+                      Text('Failed to load leaderboard. Please try again.')),
             );
           }
         });
@@ -186,7 +188,9 @@ class _LeaderboardPageState extends State<LeaderboardPage>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to load leaderboard: \$e')),
+              const SnackBar(
+                  content:
+                      Text('Failed to load leaderboard. Please try again.')),
             );
           }
         });
