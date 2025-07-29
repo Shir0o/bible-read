@@ -143,6 +143,11 @@ flutter analyze
 flutter test
 ```
 
+### Coverage
+
+Instructions for generating test coverage reports are available in
+[docs/coverage.md](docs/coverage.md).
+
 ## Releasing on iOS
 
 1.  Build the release IPA with your desired version and build number:
