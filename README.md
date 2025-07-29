@@ -160,3 +160,25 @@ Instructions for generating test coverage reports are available in
     **General** tab.
 3.  Enable automatic signing in Xcode and update any provisioning profiles if
     needed.
+
+## Monitoring
+
+Firebase projects can send alerts when Cloud Functions log errors. Create a
+logs-based metric and an alerting policy:
+
+1.  Open the [Google Cloud Console](https://console.cloud.google.com/) and select
+    your Firebase project.
+2.  Navigate to **Logging → Logs-based metrics** and choose **Create Metric**.
+3.  Enter the following filter to match error entries from Cloud Functions:
+
+    ```
+    resource.type="cloud_function"
+    severity>=ERROR
+    ```
+
+    Name the metric `function_error_count` and save it as a counter.
+4.  Go to **Monitoring → Alerting** and create a new policy.
+5.  Add a condition that triggers when `function_error_count` is greater than
+    zero over one minute and configure your preferred notification channel.
+6.  Save the policy to begin receiving alerts whenever a function logs an
+    error.
