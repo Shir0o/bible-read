@@ -1,0 +1,6 @@
+{
+  "include": ["**/*.js"],
+  "exclude": ["test/**", "node_modules/**"],
+  "reporter": ["html", "text-summary"],
+  "all": true
+}
