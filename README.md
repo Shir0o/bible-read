@@ -10,7 +10,7 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **Reading Feed:** See who else has read the Bible today and give them a like to encourage them.
 *   **User Profile:** View your profile information and sign in with your Google account or with an email and password.
 *   **Like Notifications:** Receive a push notification when someone likes your read log.
-*   **Comments:** Reply to others in the feed by leaving comments on their logs.
+*   **Comments:** Reply to others in the feed by leaving comments on their logs. Tap the comment icon to open a drawer showing all replies and a field to add your own.
 *   **Comment Notifications:** Get notified when someone comments on your reading.
 *   **Nudge Friends:** Remind friends to read by sending a nudge notification.
 *   **Daily Reading Reminder:** Receive a push notification each day you haven't logged a reading yet. You can enable or disable this reminder from the Settings page.
