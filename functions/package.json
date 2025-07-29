@@ -8,7 +8,7 @@
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "test": "mocha",
-    "coverage": "nyc --reporter=html --reporter=text mocha"
+    "coverage": "nyc npm test"
   },
   "engines": {
     "node": "20"
