@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../services/error_logger.dart';
 
 /// Simple email/password sign-in form.
 class LoginForm extends StatefulWidget {
@@ -47,8 +49,11 @@ class _LoginFormState extends State<LoginForm> {
       if (mounted) {
         widget.onComplete?.call();
       }
-    } catch (e) {
-      debugPrint('Failed to sign in: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to sign in: $e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../services/error_logger.dart';
 
 /// Form widget used to sign up a new user with email and password.
 class SignupForm extends StatefulWidget {
@@ -68,11 +70,14 @@ class _SignupFormState extends State<SignupForm> {
       if (mounted) {
         widget.onComplete?.call();
       }
-    } catch (e) {
-      debugPrint('Failed to sign up: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to sign up: $e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to sign up: \$e')),
+          const SnackBar(content: Text('Failed to sign up. Please try again.')),
         );
       }
     } finally {

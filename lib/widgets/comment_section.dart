@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../services/error_logger.dart';
 
 import '../models/comment.dart';
 
@@ -10,11 +12,15 @@ class CommentSection extends StatefulWidget {
   /// Callback when a new comment should be added.
   final Future<void> Function(String message) onAdd;
 
+  /// Whether to show the input field for adding comments.
+  final bool showInput;
+
   /// Creates a [CommentSection].
   const CommentSection({
     super.key,
     required this.comments,
     required this.onAdd,
+    this.showInput = true,
   });
 
   @override
@@ -40,11 +46,16 @@ class _CommentSectionState extends State<CommentSection> {
       if (mounted) {
         _controller.clear();
       }
-    } catch (e) {
-      debugPrint('Failed to add comment: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to add comment: $e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Failed to add comment. Please try again.')),
+        );
       }
     } finally {
       if (mounted) {
@@ -63,27 +74,29 @@ class _CommentSectionState extends State<CommentSection> {
             padding: const EdgeInsets.symmetric(vertical: 2),
             child: Text('${c.authorName}: ${c.message}'),
           ),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                decoration: const InputDecoration(hintText: 'Add a comment...'),
+        if (widget.showInput)
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  decoration:
+                      const InputDecoration(hintText: 'Add a comment...'),
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: _sending ? null : _submit,
-              child: _sending
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Post'),
-            ),
-          ],
-        ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _sending ? null : _submit,
+                child: _sending
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Post'),
+              ),
+            ],
+          ),
       ],
     );
   }

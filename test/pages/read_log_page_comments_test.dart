@@ -3,6 +3,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:bible_read/widgets/comment_drawer.dart';
 
 import 'package:bible_read/pages/read_log_page.dart';
 
@@ -48,16 +49,28 @@ void main() {
         'email': 'u@test.com',
         'timestamp': Timestamp.now()
       });
-      await firestore
+      final commentsRef = firestore
           .collection('read_logs')
           .doc(dateKey)
           .collection('entries')
           .doc('u1')
-          .collection('comments')
-          .add({
+          .collection('comments');
+      await commentsRef.add({
         'uid': 'u2',
         'authorName': 'Alice',
-        'message': 'Hello',
+        'message': 'First',
+        'timestamp': Timestamp.now(),
+      });
+      await commentsRef.add({
+        'uid': 'u3',
+        'authorName': 'Bob',
+        'message': 'Second',
+        'timestamp': Timestamp.now(),
+      });
+      await commentsRef.add({
+        'uid': 'u4',
+        'authorName': 'Cat',
+        'message': 'Third',
         'timestamp': Timestamp.now(),
       });
 
@@ -66,7 +79,9 @@ void main() {
           auth: auth,
           onSend: ({required ownerUid, required commenterName}) async {});
 
-      expect(find.text('Alice: Hello'), findsOneWidget);
+      expect(find.text('Alice: First'), findsOneWidget);
+      expect(find.text('Bob: Second'), findsOneWidget);
+      expect(find.text('Cat: Third'), findsNothing);
     });
 
     testWidgets('posting comment writes to Firestore', (tester) async {
@@ -90,6 +105,11 @@ void main() {
           firestore: firestore,
           auth: auth,
           onSend: ({required ownerUid, required commenterName}) async {});
+
+      await tester.tap(find.byIcon(Icons.mode_comment_outlined));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CommentDrawer), findsOneWidget);
 
       await tester.enterText(find.byType(TextField), 'Nice');
       await tester.tap(find.widgetWithText(ElevatedButton, 'Post'));
@@ -133,6 +153,11 @@ void main() {
       }
 
       await pumpPage(tester, firestore: firestore, auth: auth, onSend: notify);
+
+      await tester.tap(find.byIcon(Icons.mode_comment_outlined));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CommentDrawer), findsOneWidget);
 
       await tester.enterText(find.byType(TextField), 'Hi');
       await tester.tap(find.widgetWithText(ElevatedButton, 'Post'));

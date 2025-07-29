@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../services/error_logger.dart';
 
 import '../services/friend_service.dart';
 
@@ -56,12 +58,15 @@ class _AddFriendFormState extends State<AddFriendForm> {
             .showSnackBar(const SnackBar(content: Text('Request sent')));
         widget.onComplete?.call();
       }
-    } catch (e) {
-      debugPrint('Failed to send friend request: $e');
-      final message = e is Exception ? e.toString() : 'Unknown error';
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to send friend request: $e');
+      }
+      ErrorLogger.log(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
+          const SnackBar(
+              content: Text('Failed to send request. Please try again.')),
         );
       }
     } finally {
