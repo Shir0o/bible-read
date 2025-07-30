@@ -309,7 +309,11 @@ class _HomePageState extends State<HomePage>
       await _updateSummaryWithToday();
 
       unawaited(_loadReadStatus(showLoading: false));
-    } catch (e) {
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to mark reading: $e');
+      }
+      ErrorLogger.log(e, st);
       if (!_disposed && mounted) {
         setState(() {
           _readToday = false;
