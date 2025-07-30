@@ -65,6 +65,7 @@ void main() {
         id: 'n1',
         type: NotificationType.signup,
         fromUid: 'u2',
+        senderUid: 'u2',
         message: 'hello',
         timestamp: DateTime.now(),
         read: false,

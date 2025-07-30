@@ -13,6 +13,9 @@ class AppNotification {
   /// UID of the user that triggered the notification, if any.
   final String? fromUid;
 
+  /// UID of the sender of the notification.
+  final String senderUid;
+
   /// Optional message content.
   final String? message;
 
@@ -27,6 +30,7 @@ class AppNotification {
     required this.id,
     required this.type,
     this.fromUid,
+    required this.senderUid,
     this.message,
     required this.timestamp,
     required this.read,
@@ -44,6 +48,7 @@ class AppNotification {
       id: id,
       type: type,
       fromUid: data['fromUid'] as String?,
+      senderUid: data['senderUid'] as String,
       message: data['message'] as String?,
       timestamp: ts is Timestamp ? ts.toDate() : DateTime.now(),
       read: data['read'] is bool ? data['read'] as bool : false,
@@ -54,6 +59,7 @@ class AppNotification {
   Map<String, dynamic> toFirestore() => {
         'type': type.name,
         if (fromUid != null) 'fromUid': fromUid,
+        'senderUid': senderUid,
         if (message != null) 'message': message,
         'timestamp': Timestamp.fromDate(timestamp),
         'read': read,
