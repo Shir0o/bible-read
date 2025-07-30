@@ -31,7 +31,18 @@ class CommentDrawer extends StatelessWidget {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(ctx).viewInsets.bottom,
         ),
-        child: CommentDrawer(comments: comments, onAdd: onAdd),
+        child: DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.33,
+          minChildSize: 0.33,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              child: CommentDrawer(comments: comments, onAdd: onAdd),
+            );
+          },
+        ),
       ),
     );
   }
