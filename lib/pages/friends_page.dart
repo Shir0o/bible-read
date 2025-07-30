@@ -6,6 +6,7 @@ import '../services/friend_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
 import '../services/notification_service.dart';
+import '../services/error_logger.dart';
 import 'add_friend_page.dart';
 
 /// Page that lists current friends and allows sending friend requests by email.
@@ -153,9 +154,10 @@ class _FriendsPageState extends State<FriendsPage> {
                                                                 'Nudge sent')),
                                                       );
                                                     }
-                                                  } catch (e) {
+                                                  } catch (e, st) {
                                                     debugPrint(
                                                         'Failed to send nudge: $e');
+                                                    ErrorLogger.log(e, st);
                                                     if (!mounted) return;
                                                     messenger.showSnackBar(
                                                       const SnackBar(
