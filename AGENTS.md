@@ -72,17 +72,17 @@ folder and composing pages from those widgets.
 ## Programmatic checks
 
 Make sure the Flutter SDK is installed and on your `PATH` before running lints
-or tests. After performing the environment setup above run:
+or tests. After performing the environment setup above run the following command
+to format the code, analyze it, and execute all tests with coverage:
 
 ```bash
 flutter format .
 flutter analyze
-flutter test
-flutter test --coverage
+flutter test --no-pub --coverage --coverage-path=coverage/lcov.info
 ```
 
-After running the tests with coverage, review the generated `coverage/lcov.info`
-file and ensure overall coverage stays above **80%**.
+After running the command, review the generated `coverage/lcov.info` file and
+ensure overall coverage stays above **80%**.
 
 ## Agent workflow
 
