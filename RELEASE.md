@@ -1,3 +1,10 @@
+# Release 1.9.1
+
+## Fixes
+
+*   Silent sign-in now schedules notifications when a Firebase user is already
+    authenticated, ensuring reminders run even if Google sign-in returns null.
+
 # Release 1.9.0
 
 This release adds commenting to the reading feed, notifications for new comments, and an achievements page.
