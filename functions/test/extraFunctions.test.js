@@ -42,6 +42,39 @@ describe('other cloud functions', () => {
     Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
   });
 
+  it('sendCommentNotification handles messaging error', async () => {
+    const originalFirestore = admin.firestore;
+    const originalMessaging = admin.messaging;
+    const fakeDb = {
+      collection: () => ({
+        doc: () => ({
+          collection: () => ({ doc: () => ({ get: async () => ({ exists: false }) }) }),
+          get: async () => ({ data: () => ({ fcmToken: 'tokErr' }) })
+        })
+      })
+    };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    Object.defineProperty(admin, 'messaging', {
+      value: () => ({ send: async () => { throw new Error('boom'); } }),
+      configurable: true,
+      writable: true
+    });
+
+    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
+    try {
+      await wrapped({ data: { ownerUid: 'u1', commenterName: 'Bob' }, auth: { uid: 'u2' } });
+      assert.fail('expected error');
+    } catch (err) {
+      assert.equal(err.code, 'internal');
+      assert.match(err.message, /Failed to send comment notification/);
+    }
+
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  });
+
   it('sendNudgeNotification logs and sends', async () => {
     const originalFirestore = admin.firestore;
     const originalMessaging = admin.messaging;
@@ -71,6 +104,47 @@ describe('other cloud functions', () => {
     assert.equal(res.alreadySent, false);
     assert.equal(captured.token, 'tokN');
     assert.ok(logSet);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  });
+
+  it('sendNudgeNotification handles messaging error', async () => {
+    const originalFirestore = admin.firestore;
+    const originalMessaging = admin.messaging;
+    let logSet = false;
+    const fakeDb = {
+      collection: (name) => ({
+        doc: () => ({
+          collection: () => ({
+            doc: () => ({
+              get: async () => ({ exists: false }),
+              set: async () => { logSet = true; }
+            })
+          }),
+          get: async () => ({ data: () => ({ fcmToken: 'tokN' }) })
+        })
+      }),
+      runTransaction: async (fn) => fn({})
+    };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    Object.defineProperty(admin, 'messaging', {
+      value: () => ({ send: async () => { throw new Error('fail'); } }),
+      configurable: true,
+      writable: true
+    });
+
+    const wrapped = functionsTest.wrap(myFunctions.sendNudgeNotification);
+    try {
+      await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
+      assert.fail('expected error');
+    } catch (err) {
+      assert.equal(err.code, 'internal');
+      assert.match(err.message, /Failed to send nudge notification/);
+    }
+
+    assert.ok(!logSet); // should fail before log set
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
     Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
   });
