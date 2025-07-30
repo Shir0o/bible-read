@@ -188,6 +188,7 @@ class FriendService {
       id: notificationId,
       type: NotificationType.friendRequest,
       fromUid: fromUid,
+      senderUid: fromUid,
       timestamp: DateTime.now(),
       read: false,
     );

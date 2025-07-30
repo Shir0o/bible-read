@@ -40,7 +40,9 @@ service cloud.firestore {
       }
 
       match /notifications/{noteId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null && request.resource.data.senderUid == request.auth.uid;
+        allow update, delete: if request.auth != null && request.auth.uid == userId;
       }
 
       match /achievements/{achievementId} {

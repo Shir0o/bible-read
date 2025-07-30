@@ -63,6 +63,7 @@ android {
             }
             firebaseCrashlytics {
                 nativeSymbolUploadEnabled true
+                unstrippedNativeLibsDir "build/intermediates/merged_native_libs/release/out/lib"
             }
         }
     }
