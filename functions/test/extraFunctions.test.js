@@ -301,6 +301,35 @@ describe('other cloud functions', () => {
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   });
 
+  it('markFirstReader handles transaction error', async () => {
+    const originalFirestore = admin.firestore;
+    const rewardRef = { id: 'reward' };
+    const logRef = { id: 'log' };
+    const fakeDb = {
+      collection: (name) => {
+        if (name === 'daily_rewards') return { doc: () => rewardRef };
+        if (name === 'read_logs') return { doc: () => ({ collection: () => ({ doc: () => logRef }) }) };
+        return { doc: () => ({}) };
+      },
+      runTransaction: async () => { throw new Error('boom'); }
+    };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+
+    const wrapped = functionsTest.wrap(myFunctions.markFirstReader);
+    let message;
+    try {
+      await wrapped({ data: { dateKey: 'd2' }, auth: { uid: 'u1' } });
+      assert.fail('expected error');
+    } catch (err) {
+      message = err.message;
+      assert.equal(err.code, 'internal');
+    }
+    assert.match(message, /Failed to mark first reader/);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+  });
+
   it('sendLikeNotification invalid data', async () => {
     const wrapped = functionsTest.wrap(myFunctions.sendLikeNotification);
     try {
