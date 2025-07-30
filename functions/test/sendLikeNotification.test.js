@@ -1,4 +1,4 @@
-const {test, after} = require('node:test');
+const {after, describe, it} = require('mocha');
 const assert = require('node:assert');
 const admin = require('firebase-admin');
 
@@ -12,7 +12,9 @@ const myFunctions = require('../index');
 
 process.env.NODE_ENV = 'test';
 
-test('sendLikeNotification sends payload when enabled', async () => {
+describe('sendLikeNotification', () => {
+
+  it('sends payload when enabled', async () => {
   const originalFirestore = admin.firestore;
   Object.defineProperty(admin, 'firestore', {
     value: () => ({
@@ -47,10 +49,10 @@ test('sendLikeNotification sends payload when enabled', async () => {
 
   Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
-});
+  });
 
 
-test('sendLikeNotification exits when no token', async () => {
+  it('exits when no token', async () => {
   const originalFirestore = admin.firestore;
   Object.defineProperty(admin, 'firestore', {
     value: () => ({
@@ -78,10 +80,12 @@ test('sendLikeNotification exits when no token', async () => {
   const wrapped = functionsTest.wrap(myFunctions.sendLikeNotification);
   await wrapped({ data: { ownerUid: 'u2', likerName: 'Alice' }, auth: { uid: 'u1' } });
 
-  assert.equal(sent, false);
+    assert.equal(sent, false);
 
-  Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  });
+
 });
 
 after(() => {
