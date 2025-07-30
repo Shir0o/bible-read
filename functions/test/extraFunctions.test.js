@@ -372,6 +372,39 @@ describe('other cloud functions', () => {
     Object.defineProperty(admin, 'messaging', { value: () => ({ send: async () => {} }), writable: true });
   });
 
+  it('sendNudgeNotification timestamp object without toDate', async () => {
+    const originalFirestore = admin.firestore;
+    const originalMessaging = admin.messaging;
+    let logSet = false;
+    const fakeDb = {
+      collection: (name) => ({
+        doc: () => ({
+          collection: (sub) => ({
+            doc: () => ({
+              get: async () => (sub === 'nudges' ? { exists: true, data: () => ({ timestamp: {} }) } : { exists: false }),
+              set: async () => { logSet = true; }
+            })
+          }),
+          get: async () => ({ data: () => ({ fcmToken: 'tokNA' }) })
+        })
+      }),
+      runTransaction: async (fn) => fn({})
+    };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    let captured;
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    Object.defineProperty(admin, 'messaging', { value: () => ({ send: async (m) => { captured = m; } }), configurable: true, writable: true });
+
+    const wrapped = functionsTest.wrap(myFunctions.sendNudgeNotification);
+    const res = await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
+    assert.equal(res.alreadySent, false);
+    assert.equal(captured.token, 'tokNA');
+    assert.ok(logSet);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  });
+
   it('sendLikeNotification missing data', async () => {
     const wrapped = functionsTest.wrap(myFunctions.sendLikeNotification);
     try {
