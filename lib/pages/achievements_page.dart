@@ -31,6 +31,10 @@ class AchievementsPage extends StatelessWidget {
                 stream: AchievementService(firestore: firestore)
                     .unlockedAchievementIds(user.uid),
                 builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Center(
+                        child: Text('Failed to load achievements'));
+                  }
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
