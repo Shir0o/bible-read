@@ -332,6 +332,7 @@ exports.sendSignupNotification = functions.auth.user().onCreate(async (user) => 
     return;
   }
 
+  // Prefer displayName, then email, otherwise use a generic label
   const name = user.displayName || user.email || 'New user';
   const message = {
     token,
