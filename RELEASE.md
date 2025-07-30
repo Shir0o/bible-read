@@ -1,3 +1,9 @@
+# Upcoming Release
+
+## Enhancements
+
+*   **Comment Drawer Improvements:** The comment drawer now opens from the bottom at about one-third of the screen and can be dragged higher to reveal more content.
+
 # Release 1.9.1
 
 This release introduces comprehensive error reporting with Crashlytics, a major overhaul of the testing infrastructure, and several new features and improvements.
