@@ -82,8 +82,8 @@ This project is a starting point for a Flutter application.
 1.  Clone the repository:
 
     ```bash
-    git clone https://github.com/your-repo/bible_read.git
-    cd bible_read
+    git clone https://github.com/<your-org>/bible-read.git
+    cd bible-read
     ```
 
 2.  Fetch dependencies:
