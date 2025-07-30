@@ -14,6 +14,8 @@ import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/pages/achievements_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:bible_read/services/daily_notification_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -80,6 +82,18 @@ class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
 
   @override
   Future<String?> getToken({String? vapidKey}) async => token;
+}
+
+class RecordingNotificationService extends DailyNotificationService {
+  bool scheduled = false;
+
+  RecordingNotificationService({required FirebaseAuth auth})
+      : super(auth: auth);
+
+  @override
+  Future<void> scheduleDailyReminder(Time time) async {
+    scheduled = true;
+  }
 }
 
 void main() {
@@ -260,6 +274,31 @@ void main() {
 
     expect(userDoc.exists, isTrue);
     expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
+  });
+
+  testWidgets('schedules reminder when user already signed in', (tester) async {
+    fakePlatform.user = null;
+    final fakeFirestore = FakeFirebaseFirestore();
+    final testUser = MockUser(uid: 'u-signin');
+    final auth = MockFirebaseAuth(mockUser: testUser, signedIn: true);
+    final messaging = FakeFirebaseMessaging('tok');
+    final service = RecordingNotificationService(auth: auth);
+
+    await fakeFirestore.collection('users').doc(testUser.uid).set({});
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: fakeFirestore,
+          messaging: messaging,
+          dailyNotificationServiceProvider: () => service,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(service.scheduled, isTrue);
   });
   testWidgets('calls sendLikeNotification when a like is triggered',
       (tester) async {
