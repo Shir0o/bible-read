@@ -86,6 +86,43 @@ describe('sendLikeNotification', () => {
     Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
   });
 
+  it('throws when messaging fails', async () => {
+    const originalFirestore = admin.firestore;
+    Object.defineProperty(admin, 'firestore', {
+      value: () => ({
+        collection: () => ({
+          doc: () => ({
+            get: async () => ({ data: () => ({ fcmToken: 'tokenX' }) }),
+            collection: () => ({ doc: () => ({ get: async () => ({ exists: false }) }) }),
+          }),
+        }),
+      }),
+      configurable: true,
+      writable: true,
+    });
+
+    const originalMessaging = admin.messaging;
+    Object.defineProperty(admin, 'messaging', {
+      value: () => ({
+        send: async () => { throw new Error('boom'); },
+      }),
+      configurable: true,
+      writable: true,
+    });
+
+    const wrapped = functionsTest.wrap(myFunctions.sendLikeNotification);
+    try {
+      await wrapped({ data: { ownerUid: 'u2', likerName: 'Alice' }, auth: { uid: 'u1' } });
+      assert.fail('expected error');
+    } catch (err) {
+      assert.equal(err.code, 'internal');
+      assert.match(err.message, /Failed to send like notification/);
+    }
+
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  });
+
 });
 
 after(() => {
