@@ -14,9 +14,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/daily_notification_service.dart';
-import '../services/notification_preferences_service.dart';
 import '../services/error_logger.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'home_page.dart';
 import 'read_log_page.dart';
@@ -35,6 +33,7 @@ class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
+  final DailyNotificationService Function() dailyNotificationServiceProvider;
   final SendLikeNotification? sendLikeNotification;
   final SendCommentNotification? sendCommentNotification;
   final FirebaseMessaging messaging;
@@ -46,13 +45,16 @@ class MainPage extends StatefulWidget {
     FirebaseAuth? auth,
     GoogleSignIn Function()? googleSignInProvider,
     FirebaseMessaging? messaging,
+    DailyNotificationService Function()? dailyNotificationServiceProvider,
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         messaging = messaging ?? FirebaseMessaging.instance,
-        googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new;
+        googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
+        dailyNotificationServiceProvider =
+            dailyNotificationServiceProvider ?? DailyNotificationService.new;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -85,6 +87,9 @@ class _MainPageState extends State<MainPage> {
       setState(() {
         _user = account;
       });
+    }
+    final user = widget.auth.currentUser;
+    if (user != null) {
       // Request notification permissions for iOS and Android
       if (Platform.isIOS) {
         final settings = await widget.messaging.requestPermission(
@@ -108,8 +113,7 @@ class _MainPageState extends State<MainPage> {
         }
       }
       final token = await widget.messaging.getToken();
-      final user = widget.auth.currentUser;
-      if (token != null && user != null) {
+      if (token != null) {
         try {
           await user.getIdToken(true); // Force-refresh ID token
           await widget.firestore.collection('users').doc(user.uid).set({
@@ -122,7 +126,7 @@ class _MainPageState extends State<MainPage> {
             debugPrint('Initial Firestore write failed: $e. Retrying...');
           }
           ErrorLogger.log(e, st);
-          await Future.delayed(Duration(seconds: 1));
+          await Future.delayed(const Duration(seconds: 1));
           try {
             await widget.firestore.collection('users').doc(user.uid).set({
               'fcmToken': token,
@@ -138,11 +142,9 @@ class _MainPageState extends State<MainPage> {
         }
 
         // Schedule daily reminder after preferences load
-        await DailyNotificationService(
-          plugin: FlutterLocalNotificationsPlugin(),
-          prefsService: NotificationPreferencesService(),
-          auth: widget.auth,
-        ).scheduleDailyReminder(const Time(8, 0));
+        await widget
+            .dailyNotificationServiceProvider()
+            .scheduleDailyReminder(const Time(8, 0));
       } else {
         debugPrint('Skipping Firestore write: user or token is null');
       }

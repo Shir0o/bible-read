@@ -1,3 +1,24 @@
+# Release 1.9.1
+
+This release introduces comprehensive error reporting with Crashlytics, a major overhaul of the testing infrastructure, and several new features and improvements.
+
+## Features
+
+*   **Crashlytics Integration:** Integrated Firebase Crashlytics for advanced error reporting and monitoring to help identify and resolve issues faster.
+*   **Comment Drawer:** The reading feed now includes a drawer to display comments, improving the user interface for discussions.
+*   **Test Coverage Reporting:** Implemented code coverage reporting for both the main application and Cloud Functions to ensure better test quality.
+
+## Enhancements
+
+*   **User-Friendly Error Messages:** Replaced technical error messages with clearer, more helpful notifications.
+*   **Improved Testing:** Migrated Cloud Functions tests to the Mocha framework and added a significant number of new unit and widget tests across the app.
+
+## Fixes
+
+*   **Silent Sign-In Notifications:** Ensured that notifications are scheduled correctly during silent sign-in, even if the Google sign-in process doesn't return a new user object.
+*   **Friend Request Permissions:** Updated Firestore rules to allow users to manage their own friend requests.
+*   **Cloud Function Tests:** Resolved several issues to improve the reliability of tests for Cloud Functions.
+
 # Release 1.9.0
 
 This release adds commenting to the reading feed, notifications for new comments, and an achievements page.
