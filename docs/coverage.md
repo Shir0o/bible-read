@@ -3,7 +3,7 @@
 To generate coverage data for the Dart tests run:
 
 ```bash
-flutter test --coverage
+flutter test --no-pub --coverage --coverage-path=coverage/lcov.info
 ```
 
 This produces `coverage/lcov.info`.
@@ -26,7 +26,7 @@ The Firebase Cloud Functions under `functions/` have their own tests and
 coverage task. From the `functions` directory run:
 
 ```bash
-npm install
+npm ci
 npm run coverage
 ```
 
