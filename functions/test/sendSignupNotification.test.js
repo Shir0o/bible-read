@@ -1,4 +1,4 @@
-const {test} = require('node:test');
+const {describe, it} = require('mocha');
 const assert = require('node:assert');
 const admin = require('firebase-admin');
 
@@ -14,7 +14,9 @@ const myFunctions = require('../index');
 
 process.env.ADMIN_UID = 'admin1';
 
-test('sendSignupNotification builds payload', async () => {
+describe('sendSignupNotification', () => {
+
+  it('builds payload', async () => {
   const originalFirestore = admin.firestore;
   Object.defineProperty(admin, 'firestore', {
     value: () => ({
@@ -49,4 +51,6 @@ test('sendSignupNotification builds payload', async () => {
   admin.initializeApp = originalInit;
   admin.app = originalApp;
   functionsTest.cleanup();
+  });
+
 });
