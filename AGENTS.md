@@ -57,6 +57,10 @@ should be present locally when running the tests.
 - Wrap asynchronous work in `try`/`catch` blocks and return `Future<void>`.
 - Document public functions with brief comments.
 
+### Exception logging
+
+Caught exceptions should be recorded using `ErrorLogger.log`. Always pass the stack trace when available so Crashlytics receives full context. After adding or updating logging, run the commands in the [Programmatic checks](#programmatic-checks) section to verify formatting, lints, and tests.
+
 ### Parts being migrated
 
 The pages in `lib/pages` are gradually being broken into smaller widgets found
