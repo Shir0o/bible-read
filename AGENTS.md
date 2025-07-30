@@ -43,7 +43,9 @@ flutter pub get
 ## Cloud Functions
 
 Install Node 20 and run `npm ci` inside the `functions/` directory to set up the
-dependencies. Run the Cloud Functions tests with `npm test`.
+dependencies. Run the Cloud Functions tests with `npm run coverage` (which
+invokes `nyc npm test`) to ensure coverage remains above the configured
+thresholds.
 Local tests also require a `functions/serviceAccount.json` file containing a
 service account key. This file must remain private and is ignored by Git, but
 should be present locally when running the tests.
