@@ -50,6 +50,16 @@ Local tests also require a `functions/serviceAccount.json` file containing a
 service account key. This file must remain private and is ignored by Git, but
 should be present locally when running the tests.
 
+## Working in `functions/` vs Flutter
+
+The `functions/` directory is a standalone Node project. When modifying files
+there, run `npm ci` followed by `npm run coverage` from inside that folder to
+install dependencies and execute the Cloud Functions tests. Keep
+`node_modules/` out of version control. Everything outside of `functions/` is
+part of the Flutter application. Edit Dart files from the repository root and
+use Flutter commands—`flutter format`, `flutter analyze`, and `flutter test`
+as outlined below. Avoid mixing Node and Flutter tooling across directories.
+
 ## Contribution and style guidelines
 
 - Format Dart code with `flutter format .` before committing.
