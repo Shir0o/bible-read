@@ -146,6 +146,27 @@ void main() {
     });
   });
 
+  group('/achievements', () {
+    const base = 'databases/\$db/documents/users/alice/achievements/a1';
+
+    test('owner can read achievement', () {
+      expect(
+          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
+    });
+
+    test('owner can write achievement', () {
+      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
+          isTrue);
+    });
+
+    test('other user cannot access', () {
+      expect(
+          rules.isAllowed(base, Method.read, variables: auth('bob')), isFalse);
+      expect(
+          rules.isAllowed(base, Method.write, variables: auth('bob')), isFalse);
+    });
+  });
+
   group('/read_logs', () {
     const base = 'databases/$db/documents/read_logs/2024-01-01/entries';
 
