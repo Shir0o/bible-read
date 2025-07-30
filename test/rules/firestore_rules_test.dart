@@ -11,6 +11,7 @@ void main() {
       expect(rulesText.contains('nudges'), isTrue);
       expect(rulesText.contains('notificationPrefs'), isTrue);
       expect(rulesText.contains('notifications'), isTrue);
+      expect(rulesText.contains('achievements'), isTrue);
     });
 
     test('friend request rules restrict fields', () {
