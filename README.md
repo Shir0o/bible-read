@@ -148,6 +148,24 @@ flutter test
 Instructions for generating test coverage reports are available in
 [docs/coverage.md](docs/coverage.md).
 
+## Crashlytics
+
+The app integrates Firebase Crashlytics through the
+`firebase_crashlytics` dependency listed in `pubspec.yaml`. Crashlytics is
+initialized in [`main.dart`](lib/main.dart) where lines 20–37 enable collection
+only when `kDebugMode` is `false` and register global error handlers that call
+the [`ErrorLogger` service](lib/services/error_logger.dart).
+
+To start receiving crash reports:
+
+1.  Open your project in the Firebase console.
+2.  Navigate to **Build** → **Crashlytics** and click **Enable**.
+3.  Run the app in release mode to send the first crash.
+
+Crash reports and logs are viewable on the Crashlytics dashboard under
+**Build** → **Crashlytics**. Because `setCrashlyticsCollectionEnabled` is passed
+`!kDebugMode`, logs are collected only from non-debug builds.
+
 ## Releasing on iOS
 
 1.  Build the release IPA with your desired version and build number:
