@@ -11,11 +11,16 @@ class CommentDrawer extends StatelessWidget {
   /// Callback when a new comment is posted.
   final Future<void> Function(String message) onAdd;
 
+  /// Scroll controller for wrapping [CommentSection] when displayed in a
+  /// [DraggableScrollableSheet].
+  final ScrollController? controller;
+
   /// Creates a [CommentDrawer].
   const CommentDrawer({
     super.key,
     required this.comments,
     required this.onAdd,
+    this.controller,
   });
 
   /// Opens the drawer as a bottom sheet.
@@ -37,9 +42,10 @@ class CommentDrawer extends StatelessWidget {
           minChildSize: 0.33,
           maxChildSize: 0.9,
           builder: (context, scrollController) {
-            return SingleChildScrollView(
+            return CommentDrawer(
+              comments: comments,
+              onAdd: onAdd,
               controller: scrollController,
-              child: CommentDrawer(comments: comments, onAdd: onAdd),
             );
           },
         ),
@@ -49,14 +55,21 @@ class CommentDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: CommentSection(
-          comments: comments,
-          onAdd: onAdd,
-        ),
+    final content = Padding(
+      padding: const EdgeInsets.all(16),
+      child: CommentSection(
+        comments: comments,
+        onAdd: onAdd,
       ),
+    );
+
+    return SafeArea(
+      child: controller == null
+          ? content
+          : SingleChildScrollView(
+              controller: controller,
+              child: content,
+            ),
     );
   }
 }
