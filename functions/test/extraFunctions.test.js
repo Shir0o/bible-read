@@ -596,6 +596,38 @@ describe('other cloud functions', () => {
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   });
 
+  it('sendSignupNotification falls back to email', async () => {
+    const originalFirestore = admin.firestore;
+    const fakeDb = { collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ fcmToken: 'tokEmail' }) }) }) }) };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    let captured;
+    const originalMessaging = admin.messaging;
+    Object.defineProperty(admin, 'messaging', { value: () => ({ send: async (msg) => { captured = msg; } }), configurable: true, writable: true });
+    const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
+    await wrapped({ email: 'a@b.c', uid: 'u1' });
+    assert.match(captured.notification.body, /a@b.c/);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  });
+
+  it('sendSignupNotification uses default name', async () => {
+    const originalFirestore = admin.firestore;
+    const fakeDb = { collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ fcmToken: 'tokDef' }) }) }) }) };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    let captured;
+    const originalMessaging = admin.messaging;
+    Object.defineProperty(admin, 'messaging', { value: () => ({ send: async (msg) => { captured = msg; } }), configurable: true, writable: true });
+    const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
+    await wrapped({ uid: 'u3' });
+    assert.match(captured.notification.body, /New user/);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  });
+
   it('sendLikeNotification in production', async () => {
     const env = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
