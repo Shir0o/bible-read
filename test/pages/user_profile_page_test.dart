@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
@@ -80,6 +81,18 @@ class TrackingAuth extends MockFirebaseAuth {
     signOutCalled = true;
     return super.signOut();
   }
+}
+
+class FakeNotificationsPlatform extends FlutterLocalNotificationsPlatform {
+  int? canceledId;
+
+  @override
+  Future<void> cancel(int id) async {
+    canceledId = id;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
@@ -215,6 +228,8 @@ void main() {
       ),
     );
     GoogleSignInPlatform.instance = googlePlatform;
+    final fakePlatform = FakeNotificationsPlatform();
+    FlutterLocalNotificationsPlatform.instance = fakePlatform;
     final auth = TrackingAuth();
 
     final account = await GoogleSignIn().signIn();
