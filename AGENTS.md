@@ -33,6 +33,9 @@ export PATH="$PWD/flutter/bin:$PATH"
 # Run Flutter doctor to download artifacts and check the tool chain
 flutter doctor
 
+# Disable analytics to avoid prompts during tests
+flutter config --no-analytics
+
 # Accept Android licenses without interactive prompts
 yes | flutter doctor --android-licenses || true
 
