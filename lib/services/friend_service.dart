@@ -243,11 +243,11 @@ class FriendService {
         .doc(fromUid)
         .delete()
         .catchError((e, st) {
-          if (kDebugMode) {
-            debugPrint('Failed to remove received request for $fromUid: $e');
-          }
-          ErrorLogger.log(e, st);
-        });
+      if (kDebugMode) {
+        debugPrint('Failed to remove received request for $fromUid: $e');
+      }
+      ErrorLogger.log(e, st);
+    });
 
     try {
       final snap = await firestore
@@ -285,11 +285,11 @@ class FriendService {
         .doc(fromUid)
         .delete()
         .catchError((e, st) {
-          if (kDebugMode) {
-            debugPrint('Failed to remove received request for $fromUid: $e');
-          }
-          ErrorLogger.log(e, st);
-        });
+      if (kDebugMode) {
+        debugPrint('Failed to remove received request for $fromUid: $e');
+      }
+      ErrorLogger.log(e, st);
+    });
 
     try {
       final snap = await firestore

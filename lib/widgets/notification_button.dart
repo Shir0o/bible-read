@@ -30,7 +30,7 @@ class NotificationButton extends StatelessWidget {
     }
 
     return StreamBuilder<List<AppNotification>>(
-      stream: service.notifications(user.uid),
+      stream: service.notifications(user.uid).asBroadcastStream(),
       builder: (context, snapshot) {
         final notifications = snapshot.data ?? [];
         final count = notifications.where((n) => !n.read).length;
