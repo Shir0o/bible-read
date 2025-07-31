@@ -6,6 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/widgets/add_friend_form.dart';
 import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/notification_service.dart';
+import 'package:bible_read/services/error_logger.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
 
 class RecordingFriendService extends FriendService {
   RecordingFriendService({required FakeFirebaseFirestore firestore})
@@ -42,6 +47,7 @@ void main() {
       mockUser: MockUser(uid: 'u1', displayName: 'Tester'),
       signedIn: true,
     );
+    ErrorLogger.crashlytics = MockCrashlytics();
   });
 
   Future<void> pumpForm(WidgetTester tester) async {
@@ -58,6 +64,10 @@ void main() {
   testWidgets('sends lowercase email and clears field on success',
       (tester) async {
     await pumpForm(tester);
+    addTearDown(() async {
+      await tester.pumpWidget(Container());
+      await tester.pumpAndSettle();
+    });
 
     await tester.enterText(
         find.byKey(const Key('addFriendEmailField')), 'Friend@Example.COM');
@@ -75,12 +85,17 @@ void main() {
       (tester) async {
     service.throwError = true;
     await pumpForm(tester);
+    addTearDown(() async {
+      await tester.pumpWidget(Container());
+      await tester.pumpAndSettle();
+    });
 
     await tester.enterText(
         find.byKey(const Key('addFriendEmailField')), 'friend@example.com');
     final buttonFinder = find.widgetWithText(ElevatedButton, 'Send');
     await tester.tap(buttonFinder);
     await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
 
     expect(service.lastEmail, 'friend@example.com');
     expect(

@@ -19,6 +19,9 @@ void main() {
         .map((line) => line.replaceAll(
             RegExp(r'request\.resource\.data\.keys\(\)\.hasOnly\([^\)]*\)'),
             'true'))
+        .map((line) => line.replaceAll(
+            RegExp(r'request\.resource\.data\.senderUid == request\.auth\.uid'),
+            'request.auth.uid == userId'))
         .map((line) => line.replaceAll('create:', 'write:'))
         .join('\n');
     rules = FakeFirebaseSecurityRules(filtered);
