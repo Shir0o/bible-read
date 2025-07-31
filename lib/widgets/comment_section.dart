@@ -15,12 +15,16 @@ class CommentSection extends StatefulWidget {
   /// Whether to show the input field for adding comments.
   final bool showInput;
 
+  /// Optional scroll controller for the comments list.
+  final ScrollController? scrollController;
+
   /// Creates a [CommentSection].
   const CommentSection({
     super.key,
     required this.comments,
     required this.onAdd,
     this.showInput = true,
+    this.scrollController,
   });
 
   @override
@@ -69,11 +73,19 @@ class _CommentSectionState extends State<CommentSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final c in widget.comments)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Text('${c.authorName}: ${c.message}'),
+        Expanded(
+          child: ListView.builder(
+            controller: widget.scrollController,
+            itemCount: widget.comments.length,
+            itemBuilder: (context, index) {
+              final c = widget.comments[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text('${c.authorName}: ${c.message}'),
+              );
+            },
           ),
+        ),
         if (widget.showInput)
           Row(
             children: [
