@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../services/achievement_service.dart';
 import '../models/achievement_definition.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/badge_icon.dart';
+import '../widgets/achievement_list_item.dart';
 
 class AchievementsPage extends StatelessWidget {
   final FirebaseFirestore firestore;
@@ -39,29 +39,16 @@ class AchievementsPage extends StatelessWidget {
                     return const Center(child: CircularProgressIndicator());
                   }
                   final unlocked = snapshot.data!;
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.9,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                    ),
+                  return ListView.separated(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     itemCount: allAchievements.length,
+                    separatorBuilder: (_, __) => const Divider(height: 0),
                     itemBuilder: (context, index) {
                       final def = allAchievements[index];
                       final isUnlocked = unlocked.contains(def.id);
-                      return Column(
-                        children: [
-                          BadgeIcon(
-                            assetPath: def.assetPath,
-                            locked: !isUnlocked,
-                            size: 64,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(def.title, textAlign: TextAlign.center),
-                        ],
+                      return AchievementListItem(
+                        definition: def,
+                        unlocked: isUnlocked,
                       );
                     },
                   );
