@@ -54,9 +54,8 @@ cd functions && npm ci
 Run the Cloud Functions tests with `npm run coverage` (which
 invokes `nyc npm test`) to ensure coverage remains above the configured
 thresholds.
-Local tests also require a `functions/serviceAccount.json` file containing a
-service account key. This file must remain private and is ignored by Git, but
-should be present locally when running the tests.
+- Local tests require `functions/serviceAccount.json`; without it the functions tests will fail.
+  This file contains a service account key and must be kept private (ignored by Git).
 
 ## Working in `functions/` vs Flutter
 
