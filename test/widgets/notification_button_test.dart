@@ -10,9 +10,12 @@ import 'package:bible_read/models/notification_preferences.dart';
 import 'package:bible_read/pages/notification_center_page.dart';
 
 class FakeNotificationService extends NotificationService {
-  FakeNotificationService({required this.stream})
-      : super(firestore: FakeFirebaseFirestore());
+  FakeNotificationService({required Stream<List<AppNotification>> stream})
+      : stream = stream.asBroadcastStream(),
+        super(firestore: FakeFirebaseFirestore());
+
   final Stream<List<AppNotification>> stream;
+
   @override
   Stream<List<AppNotification>> notifications(String uid) => stream;
 }
