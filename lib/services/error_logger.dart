@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 /// Logs errors to Firebase Crashlytics.
@@ -16,6 +17,7 @@ class ErrorLogger {
     if (kDebugMode) {
       debugPrint('$error\n$stack');
     }
+    if (Firebase.apps.isEmpty) return;
     try {
       await crashlytics.recordError(error, stack, fatal: false);
     } catch (_) {

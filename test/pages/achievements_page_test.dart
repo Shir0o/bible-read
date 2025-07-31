@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bible_read/pages/achievements_page.dart';
 import 'package:bible_read/models/achievement_definition.dart';
+import 'package:bible_read/widgets/achievement_list_item.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,8 @@ void main() {
 
     // All achievements should display a lock icon
     expect(find.byIcon(Icons.lock), findsNWidgets(allAchievements.length));
+    expect(find.byType(AchievementListItem),
+        findsNWidgets(allAchievements.length));
   });
 
   testWidgets('unlocked achievements omit lock icon', (tester) async {
@@ -46,6 +49,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.lock), findsNWidgets(allAchievements.length - 1));
+    expect(find.byType(AchievementListItem),
+        findsNWidgets(allAchievements.length));
     expect(find.text('First Reader'), findsOneWidget);
   });
 }
