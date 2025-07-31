@@ -50,7 +50,7 @@ class _CommentSectionState extends State<CommentSection> {
       if (kDebugMode) {
         debugPrint('Failed to add comment: $e');
       }
-      ErrorLogger.log(e, st);
+        await ErrorLogger.log(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
