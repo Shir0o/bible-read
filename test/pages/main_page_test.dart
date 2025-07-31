@@ -1,3 +1,4 @@
+// ignore_for_file: depend_on_referenced_packages
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:bible_read/services/daily_notification_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -94,6 +96,18 @@ class RecordingNotificationService extends DailyNotificationService {
   Future<void> scheduleDailyReminder(Time time) async {
     scheduled = true;
   }
+}
+
+class FakeNotificationsPlatform extends FlutterLocalNotificationsPlatform {
+  int? canceledId;
+
+  @override
+  Future<void> cancel(int id) async {
+    canceledId = id;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
@@ -395,6 +409,8 @@ void main() {
       id: '123',
       displayName: 'Test',
     );
+    final fakeNotifications = FakeNotificationsPlatform();
+    FlutterLocalNotificationsPlatform.instance = fakeNotifications;
     final firestore = FakeFirebaseFirestore();
     await tester.pumpWidget(
       MaterialApp(

@@ -26,6 +26,7 @@ void main() {
       'type': NotificationType.like.name,
       'timestamp': Timestamp.now(),
       'read': false,
+      'senderUid': 'u2',
       'message': 'Test like',
     });
     await firestore
@@ -37,6 +38,7 @@ void main() {
       'type': NotificationType.nudge.name,
       'timestamp': Timestamp.now(),
       'read': true,
+      'senderUid': 'u3',
       'message': 'Test nudge',
     });
 
