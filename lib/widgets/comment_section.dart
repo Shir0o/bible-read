@@ -97,15 +97,23 @@ class _CommentSectionState extends State<CommentSection> {
                 ),
               ),
               const SizedBox(width: 8),
-              ElevatedButton(
+              FilledButton.icon(
                 onPressed: _sending ? null : _submit,
-                child: _sending
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Post'),
+                icon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: _sending
+                      ? const SizedBox(
+                          key: ValueKey('progress'),
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(
+                          Icons.send,
+                          key: ValueKey('send'),
+                        ),
+                ),
+                label: const Text('Post'),
               ),
             ],
           ),
