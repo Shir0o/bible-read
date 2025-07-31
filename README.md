@@ -42,6 +42,10 @@ The app currently offers the following achievements. Each badge image is stored 
 | ![30 Days Read](assets/achievements/days30.png) | `days30` | Log 30 days of reading. |
 | ![30-Day Streak](assets/achievements/streak30.png) | `streak30` | Read every day for a full month. |
 
+Achievements are displayed in a scrollable list where each row shows the badge,
+title and description. Locked items are overlaid with a lock icon until they are
+earned.
+
 ### Signup Notification Setup
 
 The Cloud Function `sendSignupNotification` sends a push notification to the user specified by `ADMIN_UID` whenever a new account is created. Set `ADMIN_UID` using Firebase Functions config before deploying:
