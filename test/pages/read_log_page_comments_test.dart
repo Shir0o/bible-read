@@ -165,5 +165,35 @@ void main() {
 
       expect(called, 1);
     });
+
+    testWidgets('comment drawer opens at one third height', (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final user = MockUser(uid: 'u1');
+      final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      await firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc('u1')
+          .set({
+        'name': 'User',
+        'email': 'u@test.com',
+        'timestamp': Timestamp.now(),
+      });
+
+      await pumpPage(tester,
+          firestore: firestore,
+          auth: auth,
+          onSend: ({required ownerUid, required commenterName}) async {});
+
+      await tester.tap(find.byIcon(Icons.mode_comment_outlined));
+      await tester.pumpAndSettle();
+
+      final sheet = tester.widget<DraggableScrollableSheet>(
+        find.byType(DraggableScrollableSheet),
+      );
+      expect(sheet.initialChildSize, closeTo(0.33, 0.01));
+    });
   });
 }

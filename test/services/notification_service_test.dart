@@ -27,11 +27,13 @@ void main() {
         'type': NotificationType.like.name,
         'timestamp': Timestamp.fromMillisecondsSinceEpoch(1),
         'read': false,
+        'senderUid': 'a',
       });
       await collection.doc('n2').set({
         'type': NotificationType.nudge.name,
         'timestamp': Timestamp.fromMillisecondsSinceEpoch(2),
         'read': true,
+        'senderUid': 'b',
       });
 
       final list = await service.notifications(uid).first;
