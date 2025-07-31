@@ -67,7 +67,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), 'Nice');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Post'));
+    await tester.tap(find.byIcon(Icons.send));
     await tester.pumpAndSettle();
 
     expect(recorder.message, 'Nice');
@@ -91,7 +91,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), 'Oops');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Post'));
+    await tester.tap(find.byIcon(Icons.send));
     await tester.pumpAndSettle();
 
     expect(

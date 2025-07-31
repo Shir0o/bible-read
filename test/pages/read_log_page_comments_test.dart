@@ -112,7 +112,7 @@ void main() {
       expect(find.byType(CommentDrawer), findsOneWidget);
 
       await tester.enterText(find.byType(TextField), 'Nice');
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Post'));
+      await tester.tap(find.byIcon(Icons.send));
       await tester.pumpAndSettle();
 
       final snap = await firestore
@@ -160,7 +160,7 @@ void main() {
       expect(find.byType(CommentDrawer), findsOneWidget);
 
       await tester.enterText(find.byType(TextField), 'Hi');
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Post'));
+      await tester.tap(find.byIcon(Icons.send));
       await tester.pumpAndSettle();
 
       expect(called, 1);
