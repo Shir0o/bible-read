@@ -60,16 +60,12 @@ class CommentDrawer extends StatelessWidget {
       child: CommentSection(
         comments: comments,
         onAdd: onAdd,
+        scrollController: controller,
       ),
     );
 
     return SafeArea(
-      child: controller == null
-          ? content
-          : SingleChildScrollView(
-              controller: controller,
-              child: content,
-            ),
+      child: content,
     );
   }
 }
