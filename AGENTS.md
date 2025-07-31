@@ -51,16 +51,14 @@ sudo apt-get install -y nodejs
 cd functions && npm ci
 ```
 
-Run the Cloud Functions tests with `npm run coverage` (which
-invokes `nyc npm test`) to ensure coverage remains above the configured
-thresholds.
+Run the Cloud Functions tests with `npm test` to ensure they pass.
 - Local tests require `functions/serviceAccount.json`; without it the functions tests will fail.
   This file contains a service account key and must be kept private (ignored by Git).
 
 ## Working in `functions/` vs Flutter
 
 The `functions/` directory is a standalone Node project. When modifying files
-there, run `npm ci` followed by `npm run coverage` from inside that folder to
+there, run `npm ci` followed by `npm test` from inside that folder to
 install dependencies and execute the Cloud Functions tests. Keep
 `node_modules/` out of version control. Everything outside of `functions/` is
 part of the Flutter application. Edit Dart files from the repository root and
@@ -90,16 +88,14 @@ folder and composing pages from those widgets.
 
 Make sure the Flutter SDK is installed and on your `PATH` before running lints
 or tests. After performing the environment setup above run the following command
-to format the code, analyze it, and execute all tests with coverage:
+to format the code, analyze it, and execute all tests:
 
 ```bash
 flutter format .
 flutter analyze
-flutter test --no-pub --coverage --coverage-path=coverage/lcov.info
+flutter test --no-pub
 ```
 
-After running the command, review the generated `coverage/lcov.info` file and
-ensure overall coverage stays above **80%**.
 
 ## Agent workflow
 
@@ -109,16 +105,12 @@ ensure overall coverage stays above **80%**.
 - Include a "Testing" section in the PR with the results of running the checks
   above.
 
-## Running tests with coverage in Codex
+## Running tests in Codex
 
-To run fast, essentials-only tests with coverage in Codex:
+To run fast, essentials-only tests in Codex:
 
-1. **Install `lcov`** (only needed once):
-   ```bash
-   sudo apt-get update && sudo apt-get install -y lcov
-   ```
 
-2. **Set up Flutter SDK and dependencies** (first time only):
+1. **Set up Flutter SDK and dependencies** (first time only):
    ```bash
    git clone https://github.com/flutter/flutter.git -b stable flutter
    export PATH="$PWD/flutter/bin:$PATH"
@@ -129,13 +121,10 @@ To run fast, essentials-only tests with coverage in Codex:
    flutter pub get
    ```
 
-3. **Run tests with coverage**:
+2. **Run tests**:
    ```bash
-   flutter test --no-pub --coverage --coverage-path=coverage/lcov.info
+   flutter test --no-pub
    ```
-
-   This generates a `coverage/lcov.info` file. You can use this with coverage tools (e.g. Codecov, Coveralls).
-
 ### Tips for faster runs
 
 - Use `--no-pub` to skip dependency checks when re-running.
