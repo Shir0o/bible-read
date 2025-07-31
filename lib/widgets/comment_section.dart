@@ -54,7 +54,7 @@ class _CommentSectionState extends State<CommentSection> {
       if (kDebugMode) {
         debugPrint('Failed to add comment: $e');
       }
-        await ErrorLogger.log(e, st);
+      await ErrorLogger.log(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -71,11 +71,14 @@ class _CommentSectionState extends State<CommentSection> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
+        Flexible(
+          fit: FlexFit.loose,
           child: ListView.builder(
             controller: widget.scrollController,
+            shrinkWrap: true,
             itemCount: widget.comments.length,
             itemBuilder: (context, index) {
               final c = widget.comments[index];

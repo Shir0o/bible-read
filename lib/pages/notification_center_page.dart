@@ -33,7 +33,7 @@ class NotificationCenterPage extends StatelessWidget {
         child: user == null
             ? const Center(child: Text('Please sign in'))
             : StreamBuilder<List<AppNotification>>(
-                stream: service.notifications(user.uid),
+                stream: service.notifications(user.uid).asBroadcastStream(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
