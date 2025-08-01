@@ -18,6 +18,7 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **Customizable Notifications:** Choose which notifications you receive from the settings page.
 *   **Permanent Likes:** Likes cannot be removed once given.
 *   **Friends Page:** Manage friends on a dedicated page and send new requests using the **+** button.
+*   **Groups Page:** View your reading groups and open each one to see the schedule.
 *   **Add Friend Page:** The **+** button opens a separate page for sending friend requests.
 *   **Notification Center:** Recent alerts are stored in-app and can be viewed from the bell icon while your notification preferences still control which ones trigger push messages.
 *   **Achievements:** Unlock achievements like being the first reader of the day and view them from the Achievements page.

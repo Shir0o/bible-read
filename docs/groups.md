@@ -11,3 +11,9 @@ Reading groups allow multiple users to follow a shared Bible plan. The data is s
 - `groups/{groupId}/schedule/{date}` – daily schedule entries storing a list of chapter references for the given date
 
 Each schedule document stores its date (usually in `YYYY-MM-DD` format) and an array of chapter strings.
+
+## UI
+
+The app includes a Groups page listing all groups the current user has joined.
+Selecting a group opens a detail page showing the member list and reading
+schedule. Group owners can add or edit schedule entries from this page.
