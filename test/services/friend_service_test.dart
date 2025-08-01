@@ -143,7 +143,7 @@ void main() {
         expect(data['fromUid'], fromUid);
       });
 
-      test('should throw error when sending request to self', () async {
+      test('throws ArgumentError when fromUid equals toUid', () async {
         const uid = 'userA';
         expect(
           () => friendService.sendFriendRequest(
@@ -151,7 +151,7 @@ void main() {
             fromName: 'User A',
             toUid: uid,
           ),
-          throwsA(isA<ArgumentError>()),
+          throwsArgumentError,
         );
       });
 
