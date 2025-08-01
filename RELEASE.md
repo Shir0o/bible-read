@@ -1,3 +1,11 @@
+# Release 1.9.0
+
+This release introduces group reading challenge functionality so you can read with others and track progress together.
+
+## Features
+
+* **Group Reading Challenge:** Create or join a group challenge to follow the same reading plan and see collective progress.
+
 # Release 1.9.1
 
 This release introduces comprehensive error reporting with Crashlytics, a major overhaul of the testing infrastructure, and several new features and improvements.
