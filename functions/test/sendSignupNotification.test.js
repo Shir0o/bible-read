@@ -84,6 +84,68 @@ describe('sendSignupNotification', () => {
     Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
   });
 
+  it('warns when ADMIN_UID is not set', async () => {
+    const origEnv = process.env.ADMIN_UID;
+    delete process.env.ADMIN_UID;
+
+    let warned;
+    const originalWarn = functions.logger.warn;
+    functions.logger.warn = (msg) => { warned = msg; };
+
+    let sent = false;
+    const originalMessaging = admin.messaging;
+    Object.defineProperty(admin, 'messaging', {
+      value: () => ({ send: async () => { sent = true; } }),
+      configurable: true,
+      writable: true,
+    });
+
+    const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
+    await wrapped({ displayName: 'Test User', uid: 'u1' });
+
+    assert.equal(warned, 'ADMIN_UID not set');
+    assert.equal(sent, false);
+
+    functions.logger.warn = originalWarn;
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    process.env.ADMIN_UID = origEnv;
+  });
+
+  it('warns when admin user lacks fcmToken', async () => {
+    const originalFirestore = admin.firestore;
+    Object.defineProperty(admin, 'firestore', {
+      value: () => ({
+        collection: () => ({
+          doc: () => ({ get: async () => ({ data: () => ({}) }) }),
+        }),
+      }),
+      configurable: true,
+      writable: true,
+    });
+
+    let warned;
+    const originalWarn = functions.logger.warn;
+    functions.logger.warn = (msg) => { warned = msg; };
+
+    let sent = false;
+    const originalMessaging = admin.messaging;
+    Object.defineProperty(admin, 'messaging', {
+      value: () => ({ send: async () => { sent = true; } }),
+      configurable: true,
+      writable: true,
+    });
+
+    const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
+    await wrapped({ displayName: 'Test User', uid: 'u1' });
+
+    assert.equal(warned, 'No FCM token for admin user admin1');
+    assert.equal(sent, false);
+
+    functions.logger.warn = originalWarn;
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+  });
+
 });
 
 after(() => {
