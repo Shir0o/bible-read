@@ -533,5 +533,55 @@ void main() {
       expect(friends.first.uid, friendUid);
       expect(friends.first.name, ''); // Should default to empty string
     });
+
+    test('pendingRequests skips document with ID "init"', () async {
+      final uid = 'userABC';
+      const fromUid = 'userDEF';
+
+      // Document that should be ignored
+      await firestore
+          .collection(FriendCollections.users)
+          .doc(uid)
+          .collection(FriendCollections.receivedRequests)
+          .doc('init')
+          .set({'timestamp': Timestamp.now(), 'name': 'Init'});
+
+      // Valid friend request
+      await firestore
+          .collection(FriendCollections.users)
+          .doc(uid)
+          .collection(FriendCollections.receivedRequests)
+          .doc(fromUid)
+          .set({'timestamp': Timestamp.now(), 'name': 'Bob'});
+
+      final requests = await friendService.pendingRequests(uid).first;
+      expect(requests.length, 1);
+      expect(requests.first.uid, fromUid);
+    });
+
+    test('friends skips document with ID "init"', () async {
+      final uid = 'userABC';
+      const friendUid = 'userXYZ';
+
+      // Document that should be ignored
+      await firestore
+          .collection(FriendCollections.users)
+          .doc(uid)
+          .collection(FriendCollections.friends)
+          .doc('init')
+          .set({'timestamp': Timestamp.now(), 'name': 'Init'});
+
+      // Valid friend
+      await firestore
+          .collection(FriendCollections.users)
+          .doc(uid)
+          .collection(FriendCollections.friends)
+          .doc(friendUid)
+          .set({'timestamp': Timestamp.now(), 'name': 'Alice'});
+
+      final friends = await friendService.friends(uid).first;
+      expect(friends.length, 1);
+      expect(friends.first.uid, friendUid);
+    });
   });
 }
