@@ -81,4 +81,23 @@ void main() {
 
     expect(find.byType(NotificationCenterPage), findsOneWidget);
   });
+
+  testWidgets('renders nothing when not signed in', (tester) async {
+    final auth = MockFirebaseAuth(signedIn: false);
+    final service = FakeNotificationService(stream: Stream.value([]));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          appBar: AppBar(actions: [
+            if (auth.currentUser != null)
+              NotificationButton(service: service, auth: auth),
+          ]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NotificationButton), findsNothing);
+  });
 }
