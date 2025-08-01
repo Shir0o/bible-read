@@ -98,5 +98,42 @@ void main() {
       final empty = await service.fetchTodaysChapters('missing');
       expect(empty, isEmpty);
     });
+
+    test('groupsForUser streams groups where user is member', () async {
+      final g1 = firestore.collection(GroupCollections.groups).doc('g1');
+      await g1.set({'name': 'One', 'ownerUid': 'u1'});
+      await g1.collection(GroupCollections.members).doc('u1').set({});
+      final g2 = firestore.collection(GroupCollections.groups).doc('g2');
+      await g2.set({'name': 'Two', 'ownerUid': 'u2'});
+      await g2.collection(GroupCollections.members).doc('u1').set({});
+
+      final groups = await service.groupsForUser('u1').first;
+      final ids = groups.map((g) => g.id).toSet();
+      expect(ids, {'g1', 'g2'});
+    });
+
+    test('memberNames streams display names', () async {
+      await firestore.collection('users').doc('u1').set({'name': 'Alice'});
+      await firestore.collection('users').doc('u2').set({'name': 'Bob'});
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      await groupRef.collection(GroupCollections.members).doc('u1').set({});
+      await groupRef.collection(GroupCollections.members).doc('u2').set({});
+
+      final names = await service.memberNames('g1').first;
+      expect(names.toSet(), {'Alice', 'Bob'});
+    });
+
+    test('schedule streams list of entries', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      await groupRef.collection(GroupCollections.schedule).doc('2024-01-01').set({
+        'date': Timestamp.fromDate(DateTime(2024, 1, 1)),
+        'chapters': ['Gen 1']
+      });
+      final entries = await service.schedule('g1').first;
+      expect(entries, hasLength(1));
+      expect(entries.first.chapters, ['Gen 1']);
+    });
   });
 }
