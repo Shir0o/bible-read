@@ -1,10 +1,24 @@
-# Release 1.9.0
+# Release 1.10.0
 
 This release introduces group reading challenge functionality so you can read with others and track progress together.
 
 ## Features
 
 * **Group Reading Challenge:** Create or join a group challenge to follow the same reading plan and see collective progress.
+* **Group Pages and Widgets:** New pages and widgets to display group information and reading schedules.
+* **Group Service:** A new service to manage group data and interactions.
+* **Group Models:** New data models for groups and schedules.
+
+## Enhancements
+
+* **Improved Testing:** Added a significant number of new tests for group functionality, friend requests, notifications, and UI components.
+* **UI Improvements:** Refactored the comment section with scrolling and a new button style.
+
+## Documentation
+
+* **Updated AGENTS.md:** Added new instructions for Flutter analytics and Cloud Functions testing.
+
+
 
 # Release 1.9.1
 
