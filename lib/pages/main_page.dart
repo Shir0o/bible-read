@@ -2,8 +2,10 @@ import 'package:bible_read/pages/leaderboard_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/pages/achievements_page.dart';
+import 'package:bible_read/pages/groups_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import '../services/friend_service.dart';
+import '../services/group_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -156,7 +158,7 @@ class _MainPageState extends State<MainPage> {
       return;
     }
     final bool signedIn = widget.auth.currentUser != null;
-    final int profileIndex = signedIn ? 5 : 0;
+    final int profileIndex = signedIn ? 6 : 0;
     if (!signedIn && index != profileIndex) {
       return;
     }
@@ -232,6 +234,10 @@ class _MainPageState extends State<MainPage> {
           friendService: FriendService(firestore: widget.firestore),
           auth: widget.auth,
         ),
+        GroupsPage(
+          groupService: GroupService(firestore: widget.firestore),
+          auth: widget.auth,
+        ),
         AchievementsPage(firestore: widget.firestore, auth: widget.auth),
       ],
       UserProfilePage(
@@ -251,6 +257,7 @@ class _MainPageState extends State<MainPage> {
           NavigationDestination(icon: Icon(Icons.feed), label: ''),
           NavigationDestination(icon: Icon(Icons.leaderboard), label: ''),
           NavigationDestination(icon: Icon(Icons.people), label: ''),
+          NavigationDestination(icon: Icon(Icons.group), label: ''),
           NavigationDestination(icon: Icon(Icons.emoji_events), label: ''),
         ],
         const NavigationDestination(icon: Icon(Icons.person), label: ''),

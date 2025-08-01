@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/group_schedule.dart';
+import '../models/group.dart';
 import 'error_logger.dart';
 
 /// Names of Firestore collections used for group features.
@@ -96,5 +97,57 @@ class GroupService {
     final m = date.month.toString().padLeft(2, '0');
     final d = date.day.toString().padLeft(2, '0');
     return '$y-$m-$d';
+  }
+
+  /// Stream of groups the user with [uid] belongs to.
+  Stream<List<Group>> groupsForUser(String uid) {
+    return firestore
+        .collectionGroup(GroupCollections.members)
+        .where(FieldPath.documentId, isEqualTo: uid)
+        .snapshots()
+        .asyncMap((snap) async {
+      final groups = <Group>[];
+      for (final doc in snap.docs) {
+        final parent = doc.reference.parent.parent;
+        if (parent != null) {
+          final groupDoc = await parent.get();
+          if (groupDoc.exists) {
+            groups.add(Group.fromFirestore(groupDoc));
+          }
+        }
+      }
+      return groups;
+    });
+  }
+
+  /// Stream of member display names for [groupId].
+  Stream<List<String>> memberNames(String groupId) {
+    return firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.members)
+        .snapshots()
+        .asyncMap((snap) async {
+      final names = <String>[];
+      for (final doc in snap.docs) {
+        final userDoc = await firestore.collection('users').doc(doc.id).get();
+        if (userDoc.exists) {
+          names.add(userDoc.data()?['name'] as String? ?? '');
+        }
+      }
+      return names;
+    });
+  }
+
+  /// Stream of schedule entries for [groupId] ordered by date.
+  Stream<List<GroupSchedule>> schedule(String groupId) {
+    return firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.schedule)
+        .orderBy('date')
+        .snapshots()
+        .map((snap) =>
+            snap.docs.map(GroupSchedule.fromFirestore).toList());
   }
 }
