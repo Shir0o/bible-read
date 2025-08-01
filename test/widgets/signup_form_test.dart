@@ -26,6 +26,16 @@ class RecordingAuth extends MockFirebaseAuth {
   }
 }
 
+class FailingAuth extends MockFirebaseAuth {
+  @override
+  Future<UserCredential> createUserWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) {
+    throw Exception('fail');
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -64,5 +74,60 @@ void main() {
     expect(doc.data()?['name'], displayName);
     expect(doc.data()?['email'], 'user@example.com');
     expect(completed, isTrue);
+  });
+
+  testWidgets('shows snackbar when passwords do not match', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = RecordingAuth();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SignupForm(
+            auth: auth,
+            firestore: firestore,
+          ),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+        find.byKey(const Key('signupEmailField')), 'user@example.com');
+    await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw1');
+    await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw2');
+    await tester.tap(find.text('Sign Up'));
+    await tester.pumpAndSettle();
+
+    expect(auth.createCalled, isFalse);
+    expect(find.text('Passwords do not match'), findsOneWidget);
+  });
+
+  testWidgets('shows error snackbar when sign up fails', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = FailingAuth();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SignupForm(
+            auth: auth,
+            firestore: firestore,
+          ),
+        ),
+      ),
+    );
+    addTearDown(() async {
+      await tester.pumpWidget(Container());
+      await tester.pumpAndSettle();
+    });
+
+    await tester.enterText(
+        find.byKey(const Key('signupEmailField')), 'user@example.com');
+    await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
+    await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
+    await tester.tap(find.text('Sign Up'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Failed to sign up. Please try again.'), findsOneWidget);
   });
 }
