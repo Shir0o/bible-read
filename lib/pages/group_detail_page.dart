@@ -36,40 +36,45 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final controller = TextEditingController(
       text: schedule?.chapters.join(', ') ?? '',
     );
-    DateTime selected = schedule?.date ?? DateTime.now();
-
     final result = await showDialog<GroupSchedule>(
       context: context,
       builder: (context) {
+        DateTime selected = schedule?.date ?? DateTime.now();
         return AlertDialog(
           title: Text(schedule == null ? 'Add Schedule' : 'Edit Schedule'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: controller,
-                decoration: const InputDecoration(
-                  labelText: 'Chapters (comma separated)',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: selected,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2100),
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      selected = picked;
-                    });
-                  }
-                },
-                child: Text(selected.toIso8601String().split('T').first),
-              ),
-            ],
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      labelText: 'Chapters (comma separated)',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: selected,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          selected = picked;
+                        });
+                      }
+                    },
+                    child: Text(
+                      selected.toIso8601String().split('T').first,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           actions: [
             TextButton(
@@ -106,8 +111,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final isOwner = user != null && user.uid == widget.group.ownerUid;
     return Scaffold(
       appBar: CommonStyles.buildAppBar(widget.group.name),
-      floatingActionButton:
-          isOwner ? FloatingActionButton(onPressed: _editSchedule, child: const Icon(Icons.add)) : null,
+      floatingActionButton: isOwner
+          ? FloatingActionButton(
+              onPressed: _editSchedule, child: const Icon(Icons.add))
+          : null,
       body: Container(
         decoration: CommonStyles.backgroundGradient,
         padding: const EdgeInsets.all(16),
@@ -129,8 +136,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   return const Text('No members');
                 }
                 return Column(
-                  children:
-                      names.map((n) => ListTile(title: Text(n))).toList(),
+                  children: names.map((n) => ListTile(title: Text(n))).toList(),
                 );
               },
             ),
