@@ -1,8 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/group.dart';
 import '../models/group_schedule.dart';
+import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/schedule_item_tile.dart';
@@ -100,8 +102,20 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
 
     if (result != null) {
-      await widget.groupService
-          .updateSchedule(groupId: widget.group.id, schedule: result);
+      try {
+        await widget.groupService
+            .updateSchedule(groupId: widget.group.id, schedule: result);
+      } catch (e, st) {
+        if (kDebugMode) {
+          debugPrint('Failed to update schedule: $e');
+        }
+        ErrorLogger.log(e, st);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to update schedule')),
+          );
+        }
+      }
     }
   }
 
