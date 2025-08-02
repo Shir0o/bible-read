@@ -23,5 +23,13 @@ void main() {
     test('does not include deprecated readLog collection', () {
       expect(rulesText.contains('/readLog'), isFalse);
     });
+
+    test('includes group rules with members and schedule', () {
+      expect(rulesText.contains('match /groups/{groupId}'), isTrue);
+      expect(rulesText.contains('match /members/{uid}'), isTrue);
+      expect(rulesText.contains('match /schedule/{date}'), isTrue);
+      expect(rulesText.contains('allow read: if isMember();'), isTrue);
+      expect(rulesText.contains('allow write: if isOwner();'), isTrue);
+    });
   });
 }
