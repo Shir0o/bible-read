@@ -19,28 +19,12 @@ and **must not be committed**.
 ## Environment setup
 
 To run Flutter commands in this repository, the Codex environment must set up
-the local Flutter SDK. The setup script should clone the Flutter repository, add
-the SDK to the `PATH`, and fetch dependencies.
+the local Flutter SDK. Run the provided script to clone the repository, add the
+SDK to `PATH`, disable analytics, accept Android licenses, and fetch
+dependencies:
 
-```
-# 1. Install Flutter SDK (locally in the project)
-#    This clones the stable branch to a subdirectory named `flutter`.
-git clone https://github.com/flutter/flutter.git -b stable flutter
-
-# 2. Add Flutter to PATH
-export PATH="$PWD/flutter/bin:$PATH"
-
-# Run Flutter doctor to download artifacts and check the tool chain
-flutter doctor
-
-# Disable analytics to avoid prompts during tests
-flutter config --no-analytics
-
-# Accept Android licenses without interactive prompts
-yes | flutter doctor --android-licenses || true
-
-# 3. Get project dependencies
-flutter pub get
+```bash
+./scripts/setup_flutter.sh
 ```
 
 ## Cloud Functions
@@ -89,9 +73,9 @@ folder and composing pages from those widgets.
 
 ## Programmatic checks
 
-Make sure the Flutter SDK is installed and on your `PATH` before running lints
-or tests. After performing the environment setup above run the following command
-to format the code, analyze it, and execute all tests:
+Run `./scripts/setup_flutter.sh` once so the Flutter SDK is on your `PATH`
+before running lints or tests. After the setup completes, run the following
+commands to format the code, analyze it, and execute all tests:
 
 ```bash
 flutter format .
@@ -115,13 +99,7 @@ To run fast, essentials-only tests in Codex:
 
 1. **Set up Flutter SDK and dependencies** (first time only):
    ```bash
-   git clone https://github.com/flutter/flutter.git -b stable flutter
-   export PATH="$PWD/flutter/bin:$PATH"
-
-   yes | flutter doctor --android-licenses || true
-   flutter doctor
-
-   flutter pub get
+   ./scripts/setup_flutter.sh
    ```
 
 2. **Run tests**:
