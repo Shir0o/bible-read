@@ -1,11 +1,32 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/models/group_schedule.dart';
+import 'package:bible_read/services/error_logger.dart';
+import 'package:bible_read/services/group_service.dart';
+
+class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
+
+class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
+
+class MockCollectionReference<T> extends Mock
+    implements CollectionReference<T> {}
+
+class MockDocumentReference<T> extends Mock implements DocumentReference<T> {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setupFirebaseCoreMocks();
+
+  setUpAll(() async {
+    await Firebase.initializeApp();
+  });
+
   group('GroupService', () {
     late FakeFirebaseFirestore firestore;
     late GroupService service;
@@ -127,13 +148,83 @@ void main() {
     test('schedule streams list of entries', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
-      await groupRef.collection(GroupCollections.schedule).doc('2024-01-01').set({
+      await groupRef
+          .collection(GroupCollections.schedule)
+          .doc('2024-01-01')
+          .set({
         'date': Timestamp.fromDate(DateTime(2024, 1, 1)),
         'chapters': ['Gen 1']
       });
       final entries = await service.schedule('g1').first;
       expect(entries, hasLength(1));
       expect(entries.first.chapters, ['Gen 1']);
+    });
+
+    test('fetchTodaysChapters logs and returns empty list on error', () async {
+      final mockFs = MockFirebaseFirestore();
+      final groups = MockCollectionReference<Map<String, dynamic>>();
+      final groupDoc = MockDocumentReference<Map<String, dynamic>>();
+      final schedule = MockCollectionReference<Map<String, dynamic>>();
+      final scheduleDoc = MockDocumentReference<Map<String, dynamic>>();
+
+      when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
+      when(() => groups.doc('g1')).thenReturn(groupDoc);
+      when(() => groupDoc.collection(GroupCollections.schedule))
+          .thenReturn(schedule);
+      when(() => schedule.doc(any())).thenReturn(scheduleDoc);
+      when(() => scheduleDoc.get()).thenThrow(Exception('boom'));
+
+      final crash = MockCrashlytics();
+      ErrorLogger.crashlytics = crash;
+      when(() => crash.recordError(any(), any(),
+          reason: any(named: 'reason'),
+          information: any(named: 'information'),
+          printDetails: any(named: 'printDetails'),
+          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+
+      final svc = GroupService(firestore: mockFs);
+      final chapters = await svc.fetchTodaysChapters('g1');
+      expect(chapters, isEmpty);
+
+      verify(() => crash.recordError(any(), any(),
+          reason: null,
+          information: any(named: 'information'),
+          printDetails: any(named: 'printDetails'),
+          fatal: false)).called(1);
+    });
+
+    test('leaveGroup rethrows and logs on error', () async {
+      final mockFs = MockFirebaseFirestore();
+      final groups = MockCollectionReference<Map<String, dynamic>>();
+      final groupDoc = MockDocumentReference<Map<String, dynamic>>();
+      final members = MockCollectionReference<Map<String, dynamic>>();
+      final memberDoc = MockDocumentReference<Map<String, dynamic>>();
+
+      when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
+      when(() => groups.doc('g1')).thenReturn(groupDoc);
+      when(() => groupDoc.collection(GroupCollections.members))
+          .thenReturn(members);
+      when(() => members.doc('u1')).thenReturn(memberDoc);
+      when(() => memberDoc.delete()).thenThrow(Exception('fail'));
+
+      final crash = MockCrashlytics();
+      ErrorLogger.crashlytics = crash;
+      when(() => crash.recordError(any(), any(),
+          reason: any(named: 'reason'),
+          information: any(named: 'information'),
+          printDetails: any(named: 'printDetails'),
+          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+
+      final svc = GroupService(firestore: mockFs);
+
+      await expectLater(
+          svc.leaveGroup(groupId: 'g1', uid: 'u1'), throwsException);
+
+      verify(() => crash.recordError(any(), any(),
+          reason: null,
+          information: any(named: 'information'),
+          printDetails: any(named: 'printDetails'),
+          fatal: false)).called(1);
     });
   });
 }
