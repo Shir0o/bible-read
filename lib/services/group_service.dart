@@ -34,35 +34,49 @@ class GroupService {
     required String ownerUid,
     required String name,
   }) async {
-    final doc = firestore.collection(GroupCollections.groups).doc();
-    await doc.set({'name': name, 'ownerUid': ownerUid});
-    await doc
-        .collection(GroupCollections.members)
-        .doc(ownerUid)
-        .set({'owner': true});
-    return doc.id;
+    try {
+      final doc = firestore.collection(GroupCollections.groups).doc();
+      await doc.set({'name': name, 'ownerUid': ownerUid});
+      await doc
+          .collection(GroupCollections.members)
+          .doc(ownerUid)
+          .set({'owner': true});
+      return doc.id;
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
   }
 
   /// Join the group with [groupId] as [uid].
   Future<void> joinGroup({required String groupId, required String uid}) async {
-    await firestore
-        .collection(GroupCollections.groups)
-        .doc(groupId)
-        .collection(GroupCollections.members)
-        .doc(uid)
-        .set({});
+    try {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.members)
+          .doc(uid)
+          .set({});
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
   }
 
   /// Leave the group with [groupId] as [uid].
   Future<void> leaveGroup(
       {required String groupId, required String uid}) async {
-    await firestore
-        .collection(GroupCollections.groups)
-        .doc(groupId)
-        .collection(GroupCollections.members)
-        .doc(uid)
-        .delete()
-        .catchError((e, st) => ErrorLogger.log(e, st));
+    try {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.members)
+          .doc(uid)
+          .delete();
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
   }
 
   /// Update or create a [schedule] entry for [groupId].
@@ -70,26 +84,36 @@ class GroupService {
     required String groupId,
     required GroupSchedule schedule,
   }) async {
-    final docId = _dateId(schedule.date);
-    await firestore
-        .collection(GroupCollections.groups)
-        .doc(groupId)
-        .collection(GroupCollections.schedule)
-        .doc(docId)
-        .set(schedule.toFirestore());
+    try {
+      final docId = _dateId(schedule.date);
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.schedule)
+          .doc(docId)
+          .set(schedule.toFirestore());
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
   }
 
   /// Fetch the chapters scheduled for today for [groupId].
   Future<List<String>> fetchTodaysChapters(String groupId) async {
-    final docId = _dateId(DateTime.now());
-    final doc = await firestore
-        .collection(GroupCollections.groups)
-        .doc(groupId)
-        .collection(GroupCollections.schedule)
-        .doc(docId)
-        .get();
-    if (!doc.exists) return <String>[];
-    return GroupSchedule.fromFirestore(doc).chapters;
+    try {
+      final docId = _dateId(DateTime.now());
+      final doc = await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.schedule)
+          .doc(docId)
+          .get();
+      if (!doc.exists) return <String>[];
+      return GroupSchedule.fromFirestore(doc).chapters;
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      return <String>[];
+    }
   }
 
   static String _dateId(DateTime date) {
@@ -101,53 +125,72 @@ class GroupService {
 
   /// Stream of groups the user with [uid] belongs to.
   Stream<List<Group>> groupsForUser(String uid) {
-    return firestore
+    final snaps = firestore
         .collectionGroup(GroupCollections.members)
         .where(FieldPath.documentId, isEqualTo: uid)
         .snapshots()
-        .asyncMap((snap) async {
-      final groups = <Group>[];
-      for (final doc in snap.docs) {
-        final parent = doc.reference.parent.parent;
-        if (parent != null) {
-          final groupDoc = await parent.get();
-          if (groupDoc.exists) {
-            groups.add(Group.fromFirestore(groupDoc));
+        .handleError((e, st) => ErrorLogger.log(e, st));
+    return snaps.asyncMap((snap) async {
+      try {
+        final groups = <Group>[];
+        for (final doc in snap.docs) {
+          final parent = doc.reference.parent.parent;
+          if (parent != null) {
+            final groupDoc = await parent.get();
+            if (groupDoc.exists) {
+              groups.add(Group.fromFirestore(groupDoc));
+            }
           }
         }
+        return groups;
+      } catch (e, st) {
+        await ErrorLogger.log(e, st);
+        return <Group>[];
       }
-      return groups;
     });
   }
 
   /// Stream of member display names for [groupId].
   Stream<List<String>> memberNames(String groupId) {
-    return firestore
+    final snaps = firestore
         .collection(GroupCollections.groups)
         .doc(groupId)
         .collection(GroupCollections.members)
         .snapshots()
-        .asyncMap((snap) async {
-      final names = <String>[];
-      for (final doc in snap.docs) {
-        final userDoc = await firestore.collection('users').doc(doc.id).get();
-        if (userDoc.exists) {
-          names.add(userDoc.data()?['name'] as String? ?? '');
+        .handleError((e, st) => ErrorLogger.log(e, st));
+    return snaps.asyncMap((snap) async {
+      try {
+        final names = <String>[];
+        for (final doc in snap.docs) {
+          final userDoc = await firestore.collection('users').doc(doc.id).get();
+          if (userDoc.exists) {
+            names.add(userDoc.data()?['name'] as String? ?? '');
+          }
         }
+        return names;
+      } catch (e, st) {
+        await ErrorLogger.log(e, st);
+        return <String>[];
       }
-      return names;
     });
   }
 
   /// Stream of schedule entries for [groupId] ordered by date.
   Stream<List<GroupSchedule>> schedule(String groupId) {
-    return firestore
+    final snaps = firestore
         .collection(GroupCollections.groups)
         .doc(groupId)
         .collection(GroupCollections.schedule)
         .orderBy('date')
         .snapshots()
-        .map((snap) =>
-            snap.docs.map(GroupSchedule.fromFirestore).toList());
+        .handleError((e, st) => ErrorLogger.log(e, st));
+    return snaps.asyncMap((snap) async {
+      try {
+        return snap.docs.map(GroupSchedule.fromFirestore).toList();
+      } catch (e, st) {
+        await ErrorLogger.log(e, st);
+        return <GroupSchedule>[];
+      }
+    });
   }
 }
