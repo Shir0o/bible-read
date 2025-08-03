@@ -37,10 +37,9 @@ class GroupService {
     try {
       final doc = firestore.collection(GroupCollections.groups).doc();
       await doc.set({'name': name, 'ownerUid': ownerUid});
-      await doc
-          .collection(GroupCollections.members)
-          .doc(ownerUid)
-          .set({'owner': true});
+      await doc.collection(GroupCollections.members).doc(ownerUid).set({
+        'owner': true,
+      });
       return doc.id;
     } catch (e, st) {
       await ErrorLogger.log(e, st);
@@ -64,8 +63,10 @@ class GroupService {
   }
 
   /// Leave the group with [groupId] as [uid].
-  Future<void> leaveGroup(
-      {required String groupId, required String uid}) async {
+  Future<void> leaveGroup({
+    required String groupId,
+    required String uid,
+  }) async {
     try {
       await firestore
           .collection(GroupCollections.groups)
@@ -160,14 +161,13 @@ class GroupService {
         .handleError((e, st) => ErrorLogger.log(e, st));
     return snaps.asyncMap((snap) async {
       try {
-        final names = <String>[];
-        for (final doc in snap.docs) {
+        final futures = snap.docs.map((doc) async {
           final userDoc = await firestore.collection('users').doc(doc.id).get();
-          if (userDoc.exists) {
-            names.add(userDoc.data()?['name'] as String? ?? '');
-          }
-        }
-        return names;
+          if (!userDoc.exists) return null;
+          return userDoc.data()?['name'] as String? ?? '';
+        }).toList();
+        final names = await Future.wait<String?>(futures);
+        return names.whereType<String>().toList();
       } catch (e, st) {
         await ErrorLogger.log(e, st);
         return <String>[];
