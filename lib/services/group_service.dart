@@ -133,17 +133,16 @@ class GroupService {
         .handleError((e, st) => ErrorLogger.log(e, st));
     return snaps.asyncMap((snap) async {
       try {
-        final groups = <Group>[];
-        for (final doc in snap.docs) {
-          final parent = doc.reference.parent.parent;
-          if (parent != null) {
-            final groupDoc = await parent.get();
-            if (groupDoc.exists) {
-              groups.add(Group.fromFirestore(groupDoc));
-            }
-          }
-        }
-        return groups;
+        final futures = snap.docs
+            .map((doc) => doc.reference.parent.parent)
+            .whereType<DocumentReference<Map<String, dynamic>>>()
+            .map((parent) => parent.get())
+            .toList();
+        final docs = await Future.wait(futures);
+        return docs
+            .where((doc) => doc.exists)
+            .map(Group.fromFirestore)
+            .toList();
       } catch (e, st) {
         await ErrorLogger.log(e, st);
         return <Group>[];
