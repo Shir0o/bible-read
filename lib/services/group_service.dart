@@ -86,13 +86,15 @@ class GroupService {
     required GroupSchedule schedule,
   }) async {
     try {
-      final docId = _dateId(schedule.date);
+      final utcSchedule = GroupSchedule(
+          date: schedule.date.toUtc(), chapters: schedule.chapters);
+      final docId = _dateId(utcSchedule.date);
       await firestore
           .collection(GroupCollections.groups)
           .doc(groupId)
           .collection(GroupCollections.schedule)
           .doc(docId)
-          .set(schedule.toFirestore());
+          .set(utcSchedule.toFirestore());
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;
@@ -102,7 +104,7 @@ class GroupService {
   /// Fetch the chapters scheduled for today for [groupId].
   Future<List<String>> fetchTodaysChapters(String groupId) async {
     try {
-      final docId = _dateId(DateTime.now());
+      final docId = _dateId(DateTime.now().toUtc());
       final doc = await firestore
           .collection(GroupCollections.groups)
           .doc(groupId)
@@ -118,9 +120,10 @@ class GroupService {
   }
 
   static String _dateId(DateTime date) {
-    final y = date.year.toString().padLeft(4, '0');
-    final m = date.month.toString().padLeft(2, '0');
-    final d = date.day.toString().padLeft(2, '0');
+    final utc = date.toUtc();
+    final y = utc.year.toString().padLeft(4, '0');
+    final m = utc.month.toString().padLeft(2, '0');
+    final d = utc.day.toString().padLeft(2, '0');
     return '$y-$m-$d';
   }
 
