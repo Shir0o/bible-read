@@ -100,12 +100,13 @@ void main() {
       expect(doc.exists, isTrue);
       final stored = GroupSchedule.fromFirestore(doc);
       expect(stored.chapters, schedule.chapters);
+      expect(stored.date.toUtc(), schedule.date.toUtc());
     });
 
     test('fetchTodaysChapters returns schedule for today', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
-      final now = DateTime.now();
+      final now = DateTime.now().toUtc();
       final id =
           '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
       await groupRef.collection(GroupCollections.schedule).doc(id).set({
@@ -152,7 +153,7 @@ void main() {
           .collection(GroupCollections.schedule)
           .doc('2024-01-01')
           .set({
-        'date': Timestamp.fromDate(DateTime(2024, 1, 1)),
+        'date': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
         'chapters': ['Gen 1']
       });
       final entries = await service.schedule('g1').first;
