@@ -83,6 +83,9 @@ flutter analyze
 flutter test --no-pub
 ```
 
+Whenever Node code under `functions/` is modified, run `npm test` inside that
+directory.
+
 
 ## Agent workflow
 
