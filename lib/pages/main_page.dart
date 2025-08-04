@@ -176,7 +176,11 @@ class _MainPageState extends State<MainPage> {
     final bool signedIn = widget.auth.currentUser != null;
     final List<Widget> pages = [
       if (signedIn) ...[
-        HomePage(firestore: widget.firestore, auth: widget.auth),
+        HomePage(
+          firestore: widget.firestore,
+          auth: widget.auth,
+          functions: FirebaseFunctions.instance,
+        ),
         ReadLogPage(
           firestore: widget.firestore,
           auth: widget.auth,
