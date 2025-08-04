@@ -57,6 +57,8 @@ as outlined below. Avoid mixing Node and Flutter tooling across directories.
 - Format Dart code with `flutter format .` before committing.
 - Follow the lints defined in `analysis_options.yaml`; run `flutter analyze` to
   verify there are no warnings.
+- Ensure all relevant tests pass before committing; run `flutter test --no-pub`
+  for Flutter code and `npm test` in `functions/` for Cloud Functions changes.
 - Use `const` constructors when possible and prefer camelCase names.
 - Wrap asynchronous work in `try`/`catch` blocks and return `Future<void>`.
 - Document public functions with brief comments.
@@ -83,8 +85,8 @@ flutter analyze
 flutter test --no-pub
 ```
 
-Whenever Node code under `functions/` is modified, run `npm test` inside that
-directory.
+If you modify Cloud Functions code in `functions/`, run `npm test` in that
+directory to verify those tests as well.
 
 
 ## Agent workflow
