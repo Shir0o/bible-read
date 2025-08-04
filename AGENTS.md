@@ -38,15 +38,15 @@ sudo apt-get install -y nodejs
 cd functions && npm ci
 ```
 
-Run the Cloud Functions tests with `npm test` to ensure they pass.
+Run `npm run lint` and `npm test` to ensure the Cloud Functions pass linting and unit tests.
 - Local tests require `functions/serviceAccount.json`; without it the functions tests will fail.
   This file contains a service account key and must be kept private (ignored by Git).
 
 ## Working in `functions/` vs Flutter
 
 The `functions/` directory is a standalone Node project. When modifying files
-there, run `npm ci` followed by `npm test` from inside that folder to
-install dependencies and execute the Cloud Functions tests. Keep
+there, run `npm ci`, `npm run lint`, and `npm test` from inside that folder to
+install dependencies, check code style, and execute the Cloud Functions tests. Keep
 `node_modules/` out of version control. Everything outside of `functions/` is
 part of the Flutter application. Edit Dart files from the repository root and
 use `dart format`, `flutter analyze`, and `flutter test`
@@ -58,7 +58,7 @@ as outlined below. Avoid mixing Node and Flutter tooling across directories.
 - Follow the lints defined in `analysis_options.yaml`; run `flutter analyze` to
   verify there are no warnings.
 - Ensure all relevant tests pass before committing; run `flutter test --no-pub`
-  for Flutter code and `npm test` in `functions/` for Cloud Functions changes.
+  for Flutter code and `npm run lint` then `npm test` in `functions/` for Cloud Functions changes.
 - Use `const` constructors when possible and prefer camelCase names.
 - Wrap asynchronous work in `try`/`catch` blocks and return `Future<void>`.
 - Document public functions with brief comments.
@@ -85,8 +85,8 @@ flutter analyze
 flutter test --no-pub
 ```
 
-If you modify Cloud Functions code in `functions/`, run `npm test` in that
-directory to verify those tests as well.
+If you modify Cloud Functions code in `functions/`, run `npm run lint` and
+`npm test` in that directory to verify linting and tests as well.
 
 
 ## Agent workflow
