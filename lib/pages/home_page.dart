@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import '../services/error_logger.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -13,13 +14,28 @@ import '../services/achievement_service.dart';
 import '../services/notification_service.dart';
 import '../models/achievement.dart';
 import '../theme/app_theme.dart';
+import 'read_log_page.dart';
 
 class HomePage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
 
-  HomePage({super.key, FirebaseFirestore? firestore, FirebaseAuth? auth})
-      : firestore = firestore ?? FirebaseFirestore.instance,
+  /// Cloud Functions instance used for first reader checks.
+  final FirebaseFunctions? functions;
+
+  /// Optional handler to mark the first reader for testing.
+  final Future<Map<String, dynamic>?> Function({
+    required String dateKey,
+    required String uid,
+  })? markFirstReader;
+
+  HomePage({
+    super.key,
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+    this.functions,
+    this.markFirstReader,
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance;
 
   @override
@@ -286,17 +302,13 @@ class _HomePageState extends State<HomePage>
 
     try {
       final dateKey = '${today.year}-${today.month}-${today.day}';
-      await widget.firestore
-          .collection('read_logs')
-          .doc(dateKey)
-          .collection('entries')
-          .doc(user.uid)
-          .set({
-        'name': refreshedUser?.displayName ?? '',
-        'email': refreshedUser?.email?.toLowerCase() ?? '',
-        'timestamp': Timestamp.now(),
-        'read': true,
-      });
+      await ReadLogPage.writeReadLogEntry(
+        refreshedUser ?? user,
+        firestore: widget.firestore,
+        functions: widget.functions,
+        markFirstReader: widget.markFirstReader,
+        dateProvider: () => today,
+      );
 
       await widget.firestore
           .collection('users')

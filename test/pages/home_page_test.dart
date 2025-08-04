@@ -291,6 +291,39 @@ void main() {
     expect(summaryDoc.data()?['totalReadDays'], 1);
   });
 
+  testWidgets('markRead unlocks firstReader when first of day', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(
+        uid: 'u-first', displayName: 'First User', email: 'f@example.com');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+    bool called = false;
+
+    await tester.pumpWidget(MaterialApp(
+        home: HomePage(
+      firestore: firestore,
+      auth: auth,
+      markFirstReader: ({required String dateKey, required String uid}) async {
+        called = true;
+        return {'first': true};
+      },
+    )));
+    await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(ReadSwitchTile));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(called, isTrue);
+    final achievementDoc = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('achievements')
+        .doc('firstReader')
+        .get();
+    expect(achievementDoc.exists, isTrue);
+  });
+
   testWidgets('unlock achievement when reaching streak threshold',
       (tester) async {
     final firestore = FakeFirebaseFirestore();
