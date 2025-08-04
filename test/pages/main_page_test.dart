@@ -126,7 +126,13 @@ void main() {
   });
 
   testWidgets('MainPage navigation to profile', (WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(home: MainPage()));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Profile should be shown by default when not authenticated
@@ -150,6 +156,7 @@ void main() {
           auth: auth,
           firestore: firestore,
           messaging: FakeFirebaseMessaging(null),
+          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );
@@ -201,7 +208,13 @@ void main() {
       id: '123',
       displayName: 'Test',
     );
-    await tester.pumpWidget(MaterialApp(home: MainPage()));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(fakePlatform.silentSignInCount, 1);
   });
@@ -213,7 +226,10 @@ void main() {
       MaterialApp(
         home: MediaQuery(
           data: MediaQueryData(size: Size(800, 600)),
-          child: MainPage(auth: auth),
+          child: MainPage(
+            auth: auth,
+            dailyNotificationServiceProvider: DailyNotificationService.new,
+          ),
         ),
       ),
     );
@@ -224,7 +240,10 @@ void main() {
       MaterialApp(
         home: MediaQuery(
           data: MediaQueryData(size: Size(400, 600)),
-          child: MainPage(auth: auth),
+          child: MainPage(
+            auth: auth,
+            dailyNotificationServiceProvider: DailyNotificationService.new,
+          ),
         ),
       ),
     );
@@ -239,7 +258,10 @@ void main() {
       MaterialApp(
         home: MediaQuery(
           data: const MediaQueryData(size: Size(400, 600)),
-          child: MainPage(auth: auth),
+          child: MainPage(
+            auth: auth,
+            dailyNotificationServiceProvider: DailyNotificationService.new,
+          ),
         ),
       ),
     );
@@ -278,6 +300,7 @@ void main() {
         auth: auth,
         firestore: fakeFirestore,
         messaging: messaging,
+        dailyNotificationServiceProvider: DailyNotificationService.new,
       ),
     ));
 
@@ -345,6 +368,7 @@ void main() {
         auth: auth,
         firestore: fakeFirestore,
         messaging: FakeFirebaseMessaging(null),
+        dailyNotificationServiceProvider: DailyNotificationService.new,
         sendLikeNotification: ({
           required String ownerUid,
           required String likerName,
@@ -390,6 +414,7 @@ void main() {
         home: MainPage(
           auth: auth,
           appCheckFailed: true,
+          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );
@@ -418,6 +443,7 @@ void main() {
           auth: auth,
           firestore: firestore,
           messaging: FakeFirebaseMessaging(null),
+          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );

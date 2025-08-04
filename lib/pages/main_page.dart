@@ -248,6 +248,8 @@ class _MainPageState extends State<MainPage> {
         user: _user,
         googleSignInProvider: widget.googleSignInProvider,
         auth: widget.auth,
+        dailyNotificationServiceProvider:
+            widget.dailyNotificationServiceProvider,
       ),
     ];
 
