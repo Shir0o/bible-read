@@ -122,13 +122,13 @@ After installation the Flutter commands such as `flutter test` will be available
 
 ## Development
 
-Run the setup script once to install Flutter, then use the formatter,
-analyzer, and tests after making changes:
+Run the setup script once to install Flutter. After making changes, run the
+following programmatic checks to format, analyze, and test your code:
 
 ```bash
-flutter format .
+dart format lib test
 flutter analyze
-flutter test
+flutter test --no-pub
 ```
 
 ### Coverage
