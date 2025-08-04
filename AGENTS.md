@@ -49,12 +49,12 @@ there, run `npm ci` followed by `npm test` from inside that folder to
 install dependencies and execute the Cloud Functions tests. Keep
 `node_modules/` out of version control. Everything outside of `functions/` is
 part of the Flutter application. Edit Dart files from the repository root and
-use Flutter commands—`flutter format`, `flutter analyze`, and `flutter test`
+use `dart format`, `flutter analyze`, and `flutter test`
 as outlined below. Avoid mixing Node and Flutter tooling across directories.
 
 ## Contribution and style guidelines
 
-- Format Dart code with `flutter format .` before committing.
+- Format Dart code with `dart format lib test` before committing.
 - Follow the lints defined in `analysis_options.yaml`; run `flutter analyze` to
   verify there are no warnings.
 - Ensure all relevant tests pass before committing; run `flutter test --no-pub`
@@ -80,7 +80,7 @@ before running lints or tests. After the setup completes, run the following
 commands to format the code, analyze it, and execute all tests:
 
 ```bash
-flutter format .
+dart format lib test
 flutter analyze
 flutter test --no-pub
 ```
