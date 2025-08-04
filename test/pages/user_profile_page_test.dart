@@ -14,6 +14,7 @@ import 'package:flutter_local_notifications_platform_interface/flutter_local_not
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/badge_icon.dart';
+import 'package:bible_read/services/daily_notification_service.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform {
   FakeGoogleSignInPlatform({this.userData, this.signInError});
@@ -104,7 +105,13 @@ void main() {
   });
 
   testWidgets('shows loading then auth options', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: UserProfilePage()));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UserProfilePage(
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
 
     // Initially loading indicator
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -124,7 +131,12 @@ void main() {
     final auth = TrackingAuth();
 
     await tester.pumpWidget(
-      MaterialApp(home: UserProfilePage(auth: auth)),
+      MaterialApp(
+        home: UserProfilePage(
+          auth: auth,
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -141,7 +153,14 @@ void main() {
     GoogleSignInPlatform.instance = googlePlatform;
     final auth = TrackingAuth();
 
-    await tester.pumpWidget(MaterialApp(home: UserProfilePage(auth: auth)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UserProfilePage(
+          auth: auth,
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Sign in with Google'));
@@ -158,7 +177,14 @@ void main() {
     GoogleSignInPlatform.instance = googlePlatform;
     final auth = TrackingAuth();
 
-    await tester.pumpWidget(MaterialApp(home: UserProfilePage(auth: auth)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UserProfilePage(
+          auth: auth,
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Sign in with Google'));
@@ -185,7 +211,10 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: UserProfilePage(user: account),
+        home: UserProfilePage(
+          user: account,
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
       ),
     );
 
@@ -211,7 +240,14 @@ void main() {
       signedIn: true,
     );
 
-    await tester.pumpWidget(MaterialApp(home: UserProfilePage(auth: auth)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UserProfilePage(
+          auth: auth,
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Firebase User'), findsOneWidget);
@@ -236,7 +272,11 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: UserProfilePage(user: account, auth: auth),
+        home: UserProfilePage(
+          user: account,
+          auth: auth,
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -265,7 +305,13 @@ void main() {
     });
 
     await tester.pumpWidget(
-      MaterialApp(home: UserProfilePage(auth: auth, firestore: firestore)),
+      MaterialApp(
+        home: UserProfilePage(
+          auth: auth,
+          firestore: firestore,
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 

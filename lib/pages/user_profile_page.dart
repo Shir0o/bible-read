@@ -22,6 +22,7 @@ class UserProfilePage extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final FriendService friendService;
+  final DailyNotificationService Function() dailyNotificationServiceProvider;
 
   factory UserProfilePage({
     Key? key,
@@ -30,6 +31,7 @@ class UserProfilePage extends StatefulWidget {
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     FriendService? friendService,
+    DailyNotificationService Function()? dailyNotificationServiceProvider,
   }) {
     final fs = firestore ?? FirebaseFirestore.instance;
     return UserProfilePage._(
@@ -39,6 +41,8 @@ class UserProfilePage extends StatefulWidget {
       auth: auth ?? FirebaseAuth.instance,
       firestore: fs,
       friendService: friendService ?? FriendService(firestore: fs),
+      dailyNotificationServiceProvider:
+          dailyNotificationServiceProvider ?? DailyNotificationService.new,
     );
   }
 
@@ -49,6 +53,7 @@ class UserProfilePage extends StatefulWidget {
     required this.auth,
     required this.firestore,
     required this.friendService,
+    required this.dailyNotificationServiceProvider,
   });
 
   @override
@@ -120,7 +125,7 @@ class UserProfilePageState extends State<UserProfilePage> {
 
   Future<void> _handleSignOut() async {
     try {
-      await DailyNotificationService().cancelDailyReminder();
+      await widget.dailyNotificationServiceProvider().cancelDailyReminder();
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Cancel daily reminder failed: $e');
