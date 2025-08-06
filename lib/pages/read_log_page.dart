@@ -253,11 +253,15 @@ class _ReadLogPageState extends State<ReadLogPage> {
     }
   }
 
-  Future<void> _addComment(String logUid, String message) async {
+  Future<Comment> _addComment(String logUid, String message) async {
     final user = widget.auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      throw StateError('User not signed in');
+    }
     final index = _logs.indexWhere((log) => log['uid'] == logUid);
-    if (index == -1) return;
+    if (index == -1) {
+      throw StateError('Log not found');
+    }
 
     final author = (user.displayName ?? '').split(' ').first;
     final comment = Comment(
@@ -287,15 +291,15 @@ class _ReadLogPageState extends State<ReadLogPage> {
         .collection('comments');
     try {
       final docRef = await commentsRef.add(comment.toFirestore());
+      Comment persisted = Comment(
+        id: docRef.id,
+        uid: comment.uid,
+        authorName: comment.authorName,
+        message: comment.message,
+        timestamp: comment.timestamp,
+      );
       if (mounted) {
-        final updated = List<Comment>.from(originalComments)
-          ..add(Comment(
-            id: docRef.id,
-            uid: comment.uid,
-            authorName: comment.authorName,
-            message: comment.message,
-            timestamp: comment.timestamp,
-          ));
+        final updated = List<Comment>.from(originalComments)..add(persisted);
         setState(() {
           _logs[index] = {
             ..._logs[index],
@@ -309,6 +313,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
           commenterName: author,
         );
       }
+      return persisted;
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to add comment: $e');
@@ -326,6 +331,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
               content: Text('Failed to add comment. Please try again.')),
         );
       }
+      rethrow;
     }
   }
 

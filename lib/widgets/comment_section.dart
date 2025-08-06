@@ -10,7 +10,7 @@ class CommentSection extends StatefulWidget {
   final List<Comment> comments;
 
   /// Callback when a new comment should be added.
-  final Future<void> Function(String message) onAdd;
+  final Future<Comment> Function(String message) onAdd;
 
   /// Whether to show the input field for adding comments.
   final bool showInput;

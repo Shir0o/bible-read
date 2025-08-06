@@ -4,12 +4,13 @@ import '../models/comment.dart';
 import 'comment_section.dart';
 
 /// Displays comments in a modal bottom sheet.
-class CommentDrawer extends StatelessWidget {
-  /// Comments to display.
+class CommentDrawer extends StatefulWidget {
+  /// Comments to display initially.
   final List<Comment> comments;
 
   /// Callback when a new comment is posted.
-  final Future<void> Function(String message) onAdd;
+  /// Should return the persisted [Comment] with its Firestore id.
+  final Future<Comment> Function(String message) onAdd;
 
   /// Scroll controller for wrapping [CommentSection] when displayed in a
   /// [DraggableScrollableSheet].
@@ -23,11 +24,14 @@ class CommentDrawer extends StatelessWidget {
     this.controller,
   });
 
+  @override
+  State<CommentDrawer> createState() => _CommentDrawerState();
+
   /// Opens the drawer as a bottom sheet.
   static Future<T?> show<T>(
     BuildContext context, {
     required List<Comment> comments,
-    required Future<void> Function(String message) onAdd,
+    required Future<Comment> Function(String message) onAdd,
   }) {
     return showModalBottomSheet<T>(
       context: context,
@@ -52,15 +56,52 @@ class CommentDrawer extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CommentDrawerState extends State<CommentDrawer> {
+  late List<Comment> _comments;
+
+  @override
+  void initState() {
+    super.initState();
+    _comments = List<Comment>.from(widget.comments);
+  }
+
+  Future<Comment> _handleAdd(String message) async {
+    final temp = Comment(
+      id: '',
+      uid: '',
+      authorName: '',
+      message: message,
+      timestamp: DateTime.now(),
+    );
+    setState(() => _comments.add(temp));
+    try {
+      final saved = await widget.onAdd(message);
+      if (!mounted) return saved;
+      setState(() {
+        final index = _comments.indexOf(temp);
+        if (index != -1) {
+          _comments[index] = saved;
+        }
+      });
+      return saved;
+    } catch (e) {
+      if (mounted) {
+        setState(() => _comments.remove(temp));
+      }
+      rethrow;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final content = Padding(
       padding: const EdgeInsets.all(16),
       child: CommentSection(
-        comments: comments,
-        onAdd: onAdd,
-        scrollController: controller,
+        comments: _comments,
+        onAdd: _handleAdd,
+        scrollController: widget.controller,
       ),
     );
 

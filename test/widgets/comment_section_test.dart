@@ -8,9 +8,16 @@ class RecordingOnAdd {
   String? message;
   bool throwError = false;
 
-  Future<void> call(String text) async {
+  Future<Comment> call(String text) async {
     message = text;
     if (throwError) throw Exception('fail');
+    return Comment(
+      id: 'id',
+      uid: 'u',
+      authorName: 'A',
+      message: text,
+      timestamp: DateTime.now(),
+    );
   }
 }
 
@@ -40,7 +47,13 @@ void main() {
         home: Scaffold(
           body: CommentSection(
             comments: comments,
-            onAdd: (_) async {},
+            onAdd: (_) async => Comment(
+              id: 'id',
+              uid: 'u',
+              authorName: 'A',
+              message: '',
+              timestamp: DateTime.now(),
+            ),
           ),
         ),
       ),
