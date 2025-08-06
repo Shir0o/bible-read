@@ -100,6 +100,9 @@ void main() {
     expect(service.lastEmail, 'friend@example.com');
     expect(
         find.text('Failed to send request. Please try again.'), findsOneWidget);
+    final textField =
+        tester.widget<TextField>(find.byKey(const Key('addFriendEmailField')));
+    expect(textField.controller!.text, 'friend@example.com');
     expect(tester.widget<ElevatedButton>(buttonFinder).onPressed, isNotNull);
   });
 }

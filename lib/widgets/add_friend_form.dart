@@ -1,6 +1,8 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../services/error_logger.dart';
 
 import '../services/friend_service.dart';
@@ -38,44 +40,50 @@ class _AddFriendFormState extends State<AddFriendForm> {
     super.dispose();
   }
 
-  Future<void> _sendRequest() async {
+  void _sendRequest() {
     final user = widget.auth.currentUser;
     if (user == null) return;
-    final email = _controller.text.trim().toLowerCase();
+    final previous = _controller.text;
+    final email = previous.trim().toLowerCase();
     if (email.isEmpty) return;
-    setState(() {
-      _sending = true;
-    });
-    try {
-      await widget.friendService.sendFriendRequestByEmail(
+
+    _controller.clear();
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Request sent')));
+
+    unawaited(
+      widget.friendService
+          .sendFriendRequestByEmail(
         fromUid: user.uid,
         fromName: user.displayName ?? '',
         toEmail: email,
-      );
-      if (mounted) {
-        _controller.clear();
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Request sent')));
-        widget.onComplete?.call();
-      }
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to send friend request: $e');
-      }
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Failed to send request. Please try again.')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _sending = false;
-        });
-      }
-    }
+      )
+          .catchError((Object e, StackTrace st) async {
+        if (kDebugMode) {
+          debugPrint('Failed to send friend request: $e');
+        }
+        await ErrorLogger.log(e, st);
+        if (mounted) {
+          _controller
+            ..text = previous
+            ..selection = TextSelection.fromPosition(
+              TextPosition(offset: previous.length),
+            );
+          setState(() {
+            _sending = false;
+          });
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text('Failed to send request. Please try again.'),
+              ),
+            );
+        }
+      }),
+    );
+
+    widget.onComplete?.call();
   }
 
   @override
