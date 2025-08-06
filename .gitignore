@@ -45,3 +45,4 @@ app.*.map.json
 
 coverage/
 functions/serviceAccount.json
+ios/GoogleService-Info.plist
