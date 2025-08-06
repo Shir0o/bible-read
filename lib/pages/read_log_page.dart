@@ -471,11 +471,9 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                     ),
                                     CommentSection(
                                       comments: List<Comment>.from(
-                                              log['comments'] as List<Comment>)
-                                          .take(2)
-                                          .toList(),
-                                      onAdd: (msg) =>
-                                          _addComment(log['uid'], msg),
+                                          log['comments'] as List<Comment>),
+                                      onAdd:
+                                          (msg) => _addComment(log['uid'], msg),
                                       showInput: false,
                                     ),
                                   ],

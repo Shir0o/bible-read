@@ -83,7 +83,7 @@ void main() {
 
       expect(find.text('Alice: First'), findsOneWidget);
       expect(find.text('Bob: Second'), findsOneWidget);
-      expect(find.text('Cat: Third'), findsNothing);
+      expect(find.text('Cat: Third'), findsOneWidget);
     });
 
     testWidgets('posting comment writes to Firestore', (tester) async {
