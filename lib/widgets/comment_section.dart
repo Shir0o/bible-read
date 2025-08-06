@@ -41,31 +41,35 @@ class _CommentSectionState extends State<CommentSection> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  void _submit() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+
+    _controller.clear();
     setState(() => _sending = true);
-    try {
-      await widget.onAdd(text);
-      if (mounted) {
-        _controller.clear();
-      }
-    } catch (e, st) {
+
+    widget.onAdd(text).then((_) {}).catchError((Object e, StackTrace st) async {
       if (kDebugMode) {
         debugPrint('Failed to add comment: $e');
       }
       await ErrorLogger.log(e, st);
       if (mounted) {
+        _controller
+          ..text = text
+          ..selection = TextSelection.fromPosition(
+            TextPosition(offset: text.length),
+          );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Failed to add comment. Please try again.')),
+            content: Text('Failed to add comment. Please try again.'),
+          ),
         );
       }
-    } finally {
+    }).whenComplete(() {
       if (mounted) {
         setState(() => _sending = false);
       }
-    }
+    });
   }
 
   @override
