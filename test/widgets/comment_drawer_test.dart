@@ -7,8 +7,15 @@ import 'package:bible_read/models/comment.dart';
 class RecordingOnAdd {
   String? message;
 
-  Future<void> call(String text) async {
+  Future<Comment> call(String text) async {
     message = text;
+    return Comment(
+      id: 'id',
+      uid: 'u',
+      authorName: 'Recorder',
+      message: text,
+      timestamp: DateTime.now(),
+    );
   }
 }
 
