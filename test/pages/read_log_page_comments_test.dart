@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bible_read/widgets/comment_drawer.dart';
+import 'package:bible_read/models/comment.dart';
 
 import 'package:bible_read/pages/read_log_page.dart';
 
@@ -164,6 +166,31 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(called, 1);
+    });
+
+    testWidgets('shows comment and progress indicator while posting',
+        (tester) async {
+      final completer = Completer<Comment>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CommentDrawer(
+              comments: const [],
+              onAdd: (_) => completer.future,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'Quick');
+      await tester.tap(find.byIcon(Icons.send));
+      await tester.pump();
+
+      expect(find.text(': Quick'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(completer.isCompleted, isFalse);
     });
 
     testWidgets('comment drawer opens at one third height', (tester) async {
