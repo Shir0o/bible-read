@@ -111,6 +111,11 @@ To run fast, essentials-only tests in Codex:
    ```bash
    flutter test --no-pub
    ```
+   A full run of `flutter test --no-pub` typically exceeds Codex's 1-minute
+   session limit. In such restricted environments, run only a minimal subset
+   of tests (for example, `flutter test --no-pub test/widget_test.dart`) or
+   skip tests here and execute the full suite locally instead.
+
 ### Tips for faster runs
 
 - Use `--no-pub` to skip dependency checks when re-running.
