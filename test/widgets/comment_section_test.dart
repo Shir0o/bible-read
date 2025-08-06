@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -86,6 +87,44 @@ void main() {
     expect(recorder.message, 'Nice');
     final textField = tester.widget<TextField>(find.byType(TextField));
     expect(textField.controller!.text, isEmpty);
+  });
+
+  testWidgets('displays comment before onAdd completes', (tester) async {
+    final comments = <Comment>[];
+    final completer = Completer<Comment>();
+
+    Future<Comment> onAdd(String text) {
+      final comment = Comment(
+        id: 't',
+        uid: 'u',
+        authorName: 'A',
+        message: text,
+        timestamp: DateTime.now(),
+      );
+      comments.add(comment);
+      return completer.future;
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CommentSection(
+            comments: comments,
+            onAdd: onAdd,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Hey');
+    await tester.tap(find.byIcon(Icons.send));
+    await tester.pump();
+
+    expect(find.text('A: Hey'), findsOneWidget);
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, isEmpty);
+    expect(completer.isCompleted, isFalse);
   });
 
   testWidgets('shows snackbar when onAdd throws', (tester) async {
