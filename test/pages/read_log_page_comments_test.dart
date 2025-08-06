@@ -126,7 +126,9 @@ void main() {
           .get();
       expect(snap.docs.length, 1);
       expect(snap.docs.first.data()['message'], 'Nice');
-      expect(find.text('Bob: Nice'), findsOneWidget);
+      // The comment is shown both in the page preview and in the comment
+      // drawer, so there should be two instances of the text.
+      expect(find.text('Bob: Nice'), findsNWidgets(2));
     });
 
     testWidgets('adding comment notifies owner', (tester) async {
