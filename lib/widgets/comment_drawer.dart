@@ -12,6 +12,9 @@ class CommentDrawer extends StatefulWidget {
   /// Should return the persisted [Comment] with its Firestore id.
   final Future<Comment> Function(String message) onAdd;
 
+  /// Name of the current user posting comments.
+  final String commenterName;
+
   /// Scroll controller for wrapping [CommentSection] when displayed in a
   /// [DraggableScrollableSheet].
   final ScrollController? controller;
@@ -21,6 +24,7 @@ class CommentDrawer extends StatefulWidget {
     super.key,
     required this.comments,
     required this.onAdd,
+    required this.commenterName,
     this.controller,
   });
 
@@ -32,6 +36,7 @@ class CommentDrawer extends StatefulWidget {
     BuildContext context, {
     required List<Comment> comments,
     required Future<Comment> Function(String message) onAdd,
+    required String commenterName,
   }) {
     return showModalBottomSheet<T>(
       context: context,
@@ -49,6 +54,7 @@ class CommentDrawer extends StatefulWidget {
             return CommentDrawer(
               comments: comments,
               onAdd: onAdd,
+              commenterName: commenterName,
               controller: scrollController,
             );
           },
@@ -71,7 +77,7 @@ class _CommentDrawerState extends State<CommentDrawer> {
     final temp = Comment(
       id: '',
       uid: '',
-      authorName: '',
+      authorName: widget.commenterName,
       message: message,
       timestamp: DateTime.now(),
     );
