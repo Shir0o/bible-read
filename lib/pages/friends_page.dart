@@ -18,11 +18,8 @@ class FriendsPage extends StatefulWidget {
   final FirebaseAuth auth;
 
   /// Creates a [FriendsPage].
-  FriendsPage({
-    super.key,
-    FriendService? friendService,
-    FirebaseAuth? auth,
-  })  : friendService = friendService ?? FriendService(),
+  FriendsPage({super.key, FriendService? friendService, FirebaseAuth? auth})
+      : friendService = friendService ?? FriendService(),
         auth = auth ?? FirebaseAuth.instance;
 
   @override
@@ -69,7 +66,8 @@ class _FriendsPageState extends State<FriendsPage> {
           if (user != null)
             NotificationButton(
               service: NotificationService(
-                  firestore: widget.friendService.firestore),
+                firestore: widget.friendService.firestore,
+              ),
               auth: widget.auth,
             ),
         ],
@@ -92,7 +90,8 @@ class _FriendsPageState extends State<FriendsPage> {
                           }
                           if (!snapshot.hasData) {
                             return const Center(
-                                child: CircularProgressIndicator());
+                              child: CircularProgressIndicator(),
+                            );
                           }
                           final friends = snapshot.data!;
                           if (friends.isEmpty) {
@@ -105,8 +104,9 @@ class _FriendsPageState extends State<FriendsPage> {
                                     title: Text(f.name),
                                     trailing: Builder(
                                       builder: (context) {
-                                        final nudged =
-                                            _nudgedToday.contains(f.uid);
+                                        final nudged = _nudgedToday.contains(
+                                          f.uid,
+                                        );
                                         return IconButton(
                                           icon: Icon(
                                             nudged
@@ -116,56 +116,51 @@ class _FriendsPageState extends State<FriendsPage> {
                                           ),
                                           onPressed: nudged
                                               ? null
-                                              : () async {
+                                              : () {
                                                   final messenger =
                                                       ScaffoldMessenger.of(
-                                                          context);
-                                                  try {
-                                                    final alreadySent =
-                                                        await widget
-                                                            .friendService
-                                                            .nudgeFriend(
-                                                      currentUid: user.uid,
-                                                      friendUid: f.uid,
-                                                      currentName:
-                                                          user.displayName ??
-                                                              'You',
-                                                    );
-                                                    if (!mounted) return;
-                                                    if (alreadySent) {
-                                                      setState(() {
-                                                        _nudgedToday.add(f.uid);
-                                                      });
-                                                      messenger.showSnackBar(
-                                                        const SnackBar(
-                                                          content: Text(
-                                                              'Nudge already sent today'),
-                                                        ),
-                                                      );
-                                                    } else {
-                                                      setState(() {
-                                                        _nudgedToday.add(
-                                                          f.uid,
-                                                        );
-                                                      });
-                                                      messenger.showSnackBar(
-                                                        const SnackBar(
-                                                            content: Text(
-                                                                'Nudge sent')),
-                                                      );
-                                                    }
-                                                  } catch (e, st) {
+                                                    context,
+                                                  );
+                                                  setState(() {
+                                                    _nudgedToday.add(f.uid);
+                                                  });
+                                                  messenger.showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                        'Nudge sent',
+                                                      ),
+                                                    ),
+                                                  );
+                                                  widget.friendService
+                                                      .nudgeFriend(
+                                                    currentUid: user.uid,
+                                                    friendUid: f.uid,
+                                                    currentName:
+                                                        user.displayName ??
+                                                            'You',
+                                                  )
+                                                      .catchError((e, st) {
                                                     debugPrint(
-                                                        'Failed to send nudge: $e');
+                                                      'Failed to send nudge: $e',
+                                                    );
                                                     ErrorLogger.log(e, st);
-                                                    if (!mounted) return;
+                                                    if (!mounted) {
+                                                      return false;
+                                                    }
+                                                    setState(() {
+                                                      _nudgedToday.remove(
+                                                        f.uid,
+                                                      );
+                                                    });
                                                     messenger.showSnackBar(
                                                       const SnackBar(
                                                         content: Text(
-                                                            'Failed to send nudge'),
+                                                          'Failed to send nudge',
+                                                        ),
                                                       ),
                                                     );
-                                                  }
+                                                    return false;
+                                                  });
                                                 },
                                         );
                                       },

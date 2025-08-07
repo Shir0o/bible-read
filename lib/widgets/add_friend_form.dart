@@ -32,7 +32,6 @@ class AddFriendForm extends StatefulWidget {
 
 class _AddFriendFormState extends State<AddFriendForm> {
   final TextEditingController _controller = TextEditingController();
-  bool _sending = false;
 
   @override
   void dispose() {
@@ -58,7 +57,11 @@ class _AddFriendFormState extends State<AddFriendForm> {
         fromName: user.displayName ?? '',
         toEmail: email,
       )
-          .catchError((Object e, StackTrace st) async {
+          .then((_) {
+        if (mounted) {
+          widget.onComplete?.call();
+        }
+      }).catchError((Object e, StackTrace st) async {
         if (kDebugMode) {
           debugPrint('Failed to send friend request: $e');
         }
@@ -69,9 +72,6 @@ class _AddFriendFormState extends State<AddFriendForm> {
             ..selection = TextSelection.fromPosition(
               TextPosition(offset: previous.length),
             );
-          setState(() {
-            _sending = false;
-          });
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(
@@ -82,8 +82,6 @@ class _AddFriendFormState extends State<AddFriendForm> {
         }
       }),
     );
-
-    widget.onComplete?.call();
   }
 
   @override
@@ -98,14 +96,8 @@ class _AddFriendFormState extends State<AddFriendForm> {
         ),
         const SizedBox(height: 16),
         ElevatedButton(
-          onPressed: _sending ? null : _sendRequest,
-          child: _sending
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Send'),
+          onPressed: _sendRequest,
+          child: const Text('Send'),
         ),
       ],
     );
