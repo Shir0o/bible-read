@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,16 +8,11 @@ import 'package:bible_read/models/comment.dart';
 
 class RecordingOnAdd {
   String? message;
+  final completer = Completer<Comment>();
 
-  Future<Comment> call(String text) async {
+  Future<Comment> call(String text) {
     message = text;
-    return Comment(
-      id: 'id',
-      uid: 'u',
-      authorName: 'Recorder',
-      message: text,
-      timestamp: DateTime.now(),
-    );
+    return completer.future;
   }
 }
 
@@ -51,6 +48,7 @@ void main() {
                 context,
                 comments: comments,
                 onAdd: recorder.call,
+                commenterName: 'Tester',
               ),
               child: const Text('open'),
             ),
@@ -68,6 +66,20 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'Nice');
     await tester.tap(find.byIcon(Icons.send));
+    await tester.pump();
+
+    expect(find.text('Tester: Nice'), findsOneWidget);
+
+    recorder.completer.complete(
+      Comment(
+        id: 'id',
+        uid: 'u',
+        authorName: 'Recorder',
+        message: 'Nice',
+        timestamp: DateTime.now(),
+      ),
+    );
+
     await tester.pumpAndSettle();
 
     expect(recorder.message, 'Nice');

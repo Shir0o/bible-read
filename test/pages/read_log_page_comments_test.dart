@@ -180,6 +180,7 @@ void main() {
             body: CommentDrawer(
               comments: const [],
               onAdd: (_) => completer.future,
+              commenterName: 'Temp',
             ),
           ),
         ),
@@ -190,7 +191,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.send));
       await tester.pump();
 
-      expect(find.text(': Quick'), findsOneWidget);
+      expect(find.text('Temp: Quick'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(completer.isCompleted, isFalse);
     });
