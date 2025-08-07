@@ -456,6 +456,13 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                             icon: const Icon(
                                                 Icons.mode_comment_outlined),
                                             onPressed: () {
+                                              final commenter = (widget
+                                                          .auth
+                                                          .currentUser
+                                                          ?.displayName ??
+                                                      '')
+                                                  .split(' ')
+                                                  .first;
                                               CommentDrawer.show(
                                                 context,
                                                 comments: List<Comment>.from(
@@ -463,6 +470,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                                         as List<Comment>),
                                                 onAdd: (msg) => _addComment(
                                                     log['uid'], msg),
+                                                commenterName: commenter,
                                               );
                                             },
                                           ),
@@ -472,8 +480,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                     CommentSection(
                                       comments: List<Comment>.from(
                                           log['comments'] as List<Comment>),
-                                      onAdd:
-                                          (msg) => _addComment(log['uid'], msg),
+                                      onAdd: (msg) =>
+                                          _addComment(log['uid'], msg),
                                       showInput: false,
                                     ),
                                   ],
