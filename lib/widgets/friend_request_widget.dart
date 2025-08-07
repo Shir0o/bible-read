@@ -29,31 +29,33 @@ class FriendRequestWidget extends StatefulWidget {
 
 class _FriendRequestWidgetState extends State<FriendRequestWidget> {
   final Set<String> _processing = <String>{};
+  final Map<String, Future<void>> _pending = <String, Future<void>>{};
 
-  Future<void> _handleAction(String uid, Future<void> Function() op) async {
+  void _handleAction(String uid, Future<void> Function() op) {
     setState(() {
       _processing.add(uid);
     });
-    try {
-      await op();
-    } catch (e, st) {
+    final future = op().then((_) {}).catchError((e, st) {
       if (kDebugMode) {
-        debugPrint('Failed to process friend request: \$e');
+        debugPrint('Failed to process friend request: $e');
       }
       ErrorLogger.log(e, st);
       if (mounted) {
+        setState(() {
+          _processing.remove(uid);
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content: Text('Failed to update request. Please try again.')),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _processing.remove(uid);
-        });
+    }).whenComplete(() {
+      _pending.remove(uid);
+      if (mounted && _processing.remove(uid)) {
+        setState(() {});
       }
-    }
+    });
+    _pending[uid] = future;
   }
 
   @override
@@ -67,7 +69,8 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
-        final requests = snapshot.data!;
+        final requests =
+            snapshot.data!.where((r) => !_processing.contains(r.uid)).toList();
         if (requests.isEmpty) {
           return const Center(child: Text('No friend requests'));
         }
@@ -78,42 +81,35 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
             final req = requests[index];
             final uid = req.uid;
             final name = req.name.isEmpty ? 'Unknown' : req.name;
-            final loading = _processing.contains(uid);
             return ListTile(
               title: Text(name),
-              trailing: loading
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.check),
-                          onPressed: () => _handleAction(
-                            uid,
-                            () => widget.service.acceptFriendRequest(
-                              currentUid: widget.currentUid,
-                              currentName: widget.currentName,
-                              fromUid: uid,
-                              fromName: name,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => _handleAction(
-                            uid,
-                            () => widget.service.declineFriendRequest(
-                              currentUid: widget.currentUid,
-                              fromUid: uid,
-                            ),
-                          ),
-                        ),
-                      ],
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.check),
+                    onPressed: () => _handleAction(
+                      uid,
+                      () => widget.service.acceptFriendRequest(
+                        currentUid: widget.currentUid,
+                        currentName: widget.currentName,
+                        fromUid: uid,
+                        fromName: name,
+                      ),
                     ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => _handleAction(
+                      uid,
+                      () => widget.service.declineFriendRequest(
+                        currentUid: widget.currentUid,
+                        fromUid: uid,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         );
