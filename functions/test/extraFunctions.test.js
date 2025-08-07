@@ -1,6 +1,7 @@
 const {after, describe, it} = require('mocha');
 const assert = require('node:assert');
 const admin = require('firebase-admin');
+const functions = require('firebase-functions/v1');
 
 const originalInit = admin.initializeApp;
 const originalApp = admin.app;
@@ -174,6 +175,39 @@ describe('other cloud functions', () => {
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   });
 
+  it('deleteFriendRequestPair handles deletion error', async () => {
+    const originalFirestore = admin.firestore;
+    const originalLogger = functions.logger.error;
+    let logged = false;
+    const fakeDb = {
+      collection: () => ({
+        doc: () => ({
+          collection: () => ({
+            doc: () => ({
+              delete: async () => { throw new Error('nope'); }
+            })
+          })
+        })
+      })
+    };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    functions.logger.error = () => { logged = true; };
+
+    const wrapped = functionsTest.wrap(myFunctions.deleteFriendRequestPair);
+    try {
+      await wrapped({ data: { fromUid: 'u1', toUid: 'u2' }, auth: { uid: 'u2' } });
+      assert.fail('expected error');
+    } catch (err) {
+      assert.equal(err.code, 'internal');
+    }
+    assert.ok(logged);
+
+    functions.logger.error = originalLogger;
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+  });
+
   it('acceptFriendRequest commits batch', async () => {
     const originalFirestore = admin.firestore;
     let commit = false;
@@ -194,6 +228,37 @@ describe('other cloud functions', () => {
     const res = await wrapped({ data: { fromUid: 'a', toUid: 'b', fromName: 'A', toName: 'B' }, auth: { uid: 'b' } });
     assert.equal(res.success, true);
     assert.ok(commit);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+  });
+
+  it('acceptFriendRequest handles commit error', async () => {
+    const originalFirestore = admin.firestore;
+    const originalLogger = functions.logger.error;
+    let logged = false;
+    const fakeBatch = {
+      set: () => {},
+      delete: () => {},
+      commit: async () => { throw new Error('boom'); }
+    };
+    const fakeDb = {
+      collection: () => ({ doc: () => ({ collection: () => ({ doc: () => ({}) }) }) }),
+      batch: () => fakeBatch
+    };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    functions.logger.error = () => { logged = true; };
+
+    const wrapped = functionsTest.wrap(myFunctions.acceptFriendRequest);
+    try {
+      await wrapped({ data: { fromUid: 'a', toUid: 'b', fromName: 'A', toName: 'B' }, auth: { uid: 'b' } });
+      assert.fail('expected error');
+    } catch (err) {
+      assert.equal(err.code, 'internal');
+    }
+    assert.ok(logged);
+
+    functions.logger.error = originalLogger;
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   });
 
