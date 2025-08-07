@@ -252,11 +252,19 @@ exports.deleteFriendRequestPair = onCall({ region: "us-central1" }, async (req) 
 
   const sentRef = db.collection("users").doc(fromUid)
     .collection("friendRequestsSent").doc(toUid);
-
-  await Promise.all([
-    receivedRef.delete(),
-    sentRef.delete()
-  ]);
+  try {
+    await Promise.all([
+      receivedRef.delete(),
+      sentRef.delete()
+    ]);
+  } catch (err) {
+    functions.logger.error('Failed to delete friend request pair', err);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to delete friend request pair',
+      err instanceof Error ? err.message : String(err)
+    );
+  }
 
   return { success: true };
 });
@@ -303,8 +311,16 @@ exports.acceptFriendRequest = onCall({ region: "us-central1" }, async (req) => {
   // Remove the pending request documents now that the users are friends
   batch.delete(fromRef.collection("friendRequestsSent").doc(toUid));
   batch.delete(toRef.collection("friendRequestsReceived").doc(fromUid));
-
-  await batch.commit();
+  try {
+    await batch.commit();
+  } catch (err) {
+    functions.logger.error('Failed to accept friend request', err);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to accept friend request',
+      err instanceof Error ? err.message : String(err)
+    );
+  }
 
   return { success: true };
 });
