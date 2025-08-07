@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +36,9 @@ class GroupDetailPage extends StatefulWidget {
 }
 
 class _GroupDetailPageState extends State<GroupDetailPage> {
+  List<GroupSchedule>? _scheduleOverride;
+  List<GroupSchedule>? _latestSchedule;
+
   Future<void> _editSchedule([GroupSchedule? schedule]) async {
     final controller = TextEditingController(
       text: schedule?.chapters.join(', ') ?? '',
@@ -102,20 +107,48 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
 
     if (result != null) {
-      try {
-        await widget.groupService
-            .updateSchedule(groupId: widget.group.id, schedule: result);
-      } catch (e, st) {
-        if (kDebugMode) {
-          debugPrint('Failed to update schedule: $e');
-        }
-        ErrorLogger.log(e, st);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to update schedule')),
-          );
+      final previous = _scheduleOverride ?? _latestSchedule;
+      final updated = List<GroupSchedule>.from(previous ?? <GroupSchedule>[]);
+      if (schedule == null) {
+        updated.add(result);
+      } else {
+        final index = updated.indexWhere((s) => s.date == schedule.date);
+        if (index != -1) {
+          updated[index] = result;
+        } else {
+          updated.add(result);
         }
       }
+      if (mounted) {
+        setState(() {
+          _scheduleOverride = updated;
+        });
+      }
+
+      unawaited(() async {
+        try {
+          await widget.groupService
+              .updateSchedule(groupId: widget.group.id, schedule: result);
+          if (mounted) {
+            setState(() {
+              _scheduleOverride = null;
+            });
+          }
+        } catch (e, st) {
+          if (kDebugMode) {
+            debugPrint('Failed to update schedule: $e');
+          }
+          ErrorLogger.log(e, st);
+          if (mounted) {
+            setState(() {
+              _scheduleOverride = previous;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Failed to update schedule')),
+            );
+          }
+        }
+      }());
     }
   }
 
@@ -166,7 +199,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                final schedule = snapshot.data!;
+                _latestSchedule = snapshot.data!;
+                final schedule = _scheduleOverride ?? _latestSchedule!;
                 if (schedule.isEmpty) {
                   return const Text('No schedule');
                 }
