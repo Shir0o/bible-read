@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/notification_preferences.dart';
+import '../services/error_logger.dart';
 import '../services/notification_preferences_service.dart';
 import '../widgets/common_styles.dart';
 
@@ -48,16 +49,29 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     }
   }
 
-  Future<void> _toggle(NotificationType type, bool value) async {
+  void _toggle(NotificationType type, bool value) {
     final user = widget.auth.currentUser;
     if (user == null) return;
+    final previous = _prefs?[type] ?? false;
     setState(() {
       _prefs = NotificationPreferences(values: {
         ...?_prefs?.values,
         type: value,
       });
     });
-    await widget.service.updatePreference(user.uid, type, value);
+    widget.service.updatePreference(user.uid, type, value).catchError((e, st) {
+      ErrorLogger.log(e, st);
+      if (!mounted) return;
+      setState(() {
+        _prefs = NotificationPreferences(values: {
+          ...?_prefs?.values,
+          type: previous,
+        });
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update preferences')),
+      );
+    });
   }
 
   @override
