@@ -1,14 +1,17 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/app_notification.dart';
 import '../models/notification_preferences.dart';
+import '../services/error_logger.dart';
 import '../services/notification_service.dart';
 import 'achievements_page.dart';
 import '../widgets/common_styles.dart';
 
 /// Page showing a list of notifications for the current user.
-class NotificationCenterPage extends StatelessWidget {
+class NotificationCenterPage extends StatefulWidget {
   /// Service used to fetch and update notifications.
   final NotificationService service;
 
@@ -24,8 +27,15 @@ class NotificationCenterPage extends StatelessWidget {
         auth = auth ?? FirebaseAuth.instance;
 
   @override
+  State<NotificationCenterPage> createState() => _NotificationCenterPageState();
+}
+
+class _NotificationCenterPageState extends State<NotificationCenterPage> {
+  final _readLocally = <String>{};
+
+  @override
   Widget build(BuildContext context) {
-    final user = auth.currentUser;
+    final user = widget.auth.currentUser;
     return Scaffold(
       appBar: CommonStyles.buildAppBar('Notifications'),
       body: Container(
@@ -33,7 +43,8 @@ class NotificationCenterPage extends StatelessWidget {
         child: user == null
             ? const Center(child: Text('Please sign in'))
             : StreamBuilder<List<AppNotification>>(
-                stream: service.notifications(user.uid).asBroadcastStream(),
+                stream:
+                    widget.service.notifications(user.uid).asBroadcastStream(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -46,14 +57,31 @@ class NotificationCenterPage extends StatelessWidget {
                     itemCount: data.length,
                     itemBuilder: (context, index) {
                       final n = data[index];
+                      final read = n.read || _readLocally.contains(n.id);
                       return ListTile(
-                        leading: _icon(n.type, n.read),
+                        leading: _icon(n.type, read),
                         title: Text(_text(n)),
                         subtitle: n.message != null ? Text(n.message!) : null,
-                        onTap: () async {
-                          final uid = auth.currentUser?.uid;
+                        onTap: () {
+                          final uid = widget.auth.currentUser?.uid;
                           if (uid != null) {
-                            await service.markRead(uid, n.id);
+                            final messenger = ScaffoldMessenger.of(context);
+                            setState(() => _readLocally.add(n.id));
+                            unawaited(widget.service
+                                .markRead(uid, n.id)
+                                .catchError((e, st) {
+                              ErrorLogger.log(e, st);
+                              if (mounted) {
+                                setState(() => _readLocally.remove(n.id));
+                                messenger.showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Failed to mark notification as read.',
+                                    ),
+                                  ),
+                                );
+                              }
+                            }));
                           }
                           if (context.mounted) {
                             _navigate(context, n);
@@ -112,8 +140,8 @@ class NotificationCenterPage extends StatelessWidget {
       case NotificationType.achievement:
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) =>
-                AchievementsPage(auth: auth, firestore: service.firestore),
+            builder: (_) => AchievementsPage(
+                auth: widget.auth, firestore: widget.service.firestore),
           ),
         );
         break;
