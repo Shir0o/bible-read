@@ -12,7 +12,6 @@ class SuccessAnimation extends StatelessWidget {
   /// context.
   static void show(BuildContext context) {
     final overlay = Overlay.of(context);
-    if (overlay == null) return;
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (_) => Positioned.fill(
@@ -40,4 +39,3 @@ class SuccessAnimation extends StatelessWidget {
     );
   }
 }
-
