@@ -37,15 +37,19 @@ class _AchievementSummaryState extends State<AchievementSummary> {
       return const SizedBox.shrink();
     }
     return StreamBuilder<List<Achievement>>(
-      stream:
-          AchievementService(firestore: widget.firestore).achievements(user.uid),
+      stream: AchievementService(firestore: widget.firestore)
+          .achievements(user.uid),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox.shrink();
         }
         final count = snapshot.data!.length;
         if (_lastCount != null && count > _lastCount!) {
-          SuccessAnimation.show(context);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              SuccessAnimation.show(context);
+            }
+          });
         }
         _lastCount = count;
         if (count == 0) {
