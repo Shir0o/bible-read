@@ -159,12 +159,72 @@ class _MainPageState extends State<MainPage> {
     }
     final bool signedIn = widget.auth.currentUser != null;
     final int profileIndex = signedIn ? 6 : 0;
+
+    // When signed in, the bottom nav has: Home(0), Feed(1), More(2)
+    if (signedIn && index == 2) {
+      _openMoreSheet();
+      return; // keep current tab selected
+    }
+
     if (!signedIn && index != profileIndex) {
       return;
     }
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  void _navigateFromMenu(int index) {
+    final bool signedIn = widget.auth.currentUser != null;
+    final int profileIndex = signedIn ? 6 : 0;
+    if (!signedIn && index != profileIndex) {
+      // Block navigation to signed-in pages if not signed in
+      return;
+    }
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  void _openMoreSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.leaderboard),
+                title: const Text('Leaderboard'),
+                onTap: () { Navigator.pop(ctx); _navigateFromMenu(2); },
+              ),
+              ListTile(
+                leading: const Icon(Icons.people),
+                title: const Text('Friends'),
+                onTap: () { Navigator.pop(ctx); _navigateFromMenu(3); },
+              ),
+              ListTile(
+                leading: const Icon(Icons.group),
+                title: const Text('Groups'),
+                onTap: () { Navigator.pop(ctx); _navigateFromMenu(4); },
+              ),
+              ListTile(
+                leading: const Icon(Icons.emoji_events),
+                title: const Text('Achievements'),
+                onTap: () { Navigator.pop(ctx); _navigateFromMenu(5); },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text('Profile'),
+                onTap: () { Navigator.pop(ctx); _navigateFromMenu(6); },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -253,23 +313,26 @@ class _MainPageState extends State<MainPage> {
       ),
     ];
 
+    final int navIndex = signedIn
+        ? (_selectedIndex <= 1 ? _selectedIndex : 2) // Home(0), Feed(1), More(2)
+        : 0; // Only Profile when signed out
+
     return ResponsiveScaffold(
-      selectedIndex: _selectedIndex,
+      selectedIndex: navIndex,
+      contentIndex: _selectedIndex,
       onDestinationSelected: _onItemTapped,
       pages: pages,
       destinations: [
         if (signedIn) ...const [
-          NavigationDestination(icon: Icon(Icons.home), label: ''),
-          NavigationDestination(icon: Icon(Icons.feed), label: ''),
-          NavigationDestination(icon: Icon(Icons.leaderboard), label: ''),
-          NavigationDestination(icon: Icon(Icons.people), label: ''),
-          NavigationDestination(icon: Icon(Icons.group), label: ''),
-          NavigationDestination(icon: Icon(Icons.emoji_events), label: ''),
+          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
+          NavigationDestination(icon: Icon(Icons.more_horiz), label: 'More'),
+        ] else ...[
+          NavigationDestination(
+            icon: Hero(tag: 'profile-avatar', child: const Icon(Icons.person)),
+            label: 'Profile',
+          ),
         ],
-        NavigationDestination(
-          icon: Hero(tag: 'profile-avatar', child: const Icon(Icons.person)),
-          label: '',
-        ),
       ],
     );
   }

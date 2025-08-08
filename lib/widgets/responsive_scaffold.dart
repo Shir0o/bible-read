@@ -7,6 +7,9 @@ class ResponsiveScaffold extends StatelessWidget {
   final ValueChanged<int> onDestinationSelected;
   final List<Widget> pages;
   final List<NavigationDestination> destinations;
+  final PreferredSizeWidget? appBar;
+  final Widget? drawer;
+  final int? contentIndex;
 
   const ResponsiveScaffold({
     super.key,
@@ -14,6 +17,9 @@ class ResponsiveScaffold extends StatelessWidget {
     required this.onDestinationSelected,
     required this.pages,
     required this.destinations,
+    this.appBar,
+    this.drawer,
+    this.contentIndex,
   });
 
   Widget _animatedIcon(Widget icon, bool selected) {
@@ -25,10 +31,10 @@ class ResponsiveScaffold extends StatelessWidget {
     );
   }
 
-  List<NavigationDestination> _buildAnimatedDestinations() {
+  List<NavigationDestination> _buildAnimatedDestinations(int currentSelected) {
     return List<NavigationDestination>.generate(destinations.length, (index) {
       final d = destinations[index];
-      final selected = index == selectedIndex;
+      final selected = index == currentSelected;
       return NavigationDestination(
         icon: _animatedIcon(d.icon, selected),
         selectedIcon: _animatedIcon(d.selectedIcon ?? d.icon, selected),
@@ -40,20 +46,29 @@ class ResponsiveScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isWide = MediaQuery.of(context).size.width >= 600;
-    final animatedDestinations = _buildAnimatedDestinations();
+    final int displayIndex = contentIndex ?? selectedIndex;
+    final int safeDisplay = pages.isEmpty
+        ? 0
+        : displayIndex.clamp(0, pages.length - 1);
+    final int safeSelected = destinations.isEmpty
+        ? 0
+        : selectedIndex.clamp(0, destinations.length - 1);
+    final animatedDestinations = _buildAnimatedDestinations(safeSelected);
     return Scaffold(
+      appBar: appBar,
+      drawer: drawer,
       body: Row(
         children: [
           if (isWide && destinations.length > 1)
             NavigationRail(
-              selectedIndex: selectedIndex,
+              selectedIndex: safeSelected,
               onDestinationSelected: onDestinationSelected,
               labelType: NavigationRailLabelType.all,
               destinations: animatedDestinations
                   .map(
                     (d) => NavigationRailDestination(
                       icon: d.icon,
-                      selectedIcon: d.selectedIcon ?? d.icon,
+                      selectedIcon: d.selectedIcon!,
                       label: Text(d.label),
                     ),
                   )
@@ -65,8 +80,8 @@ class ResponsiveScaffold extends StatelessWidget {
               transitionBuilder: (child, animation) =>
                   scaleFadeTransition(child, animation),
               child: KeyedSubtree(
-                key: ValueKey<int>(selectedIndex),
-                child: pages[selectedIndex],
+                key: ValueKey<int>(safeDisplay),
+                child: pages[safeDisplay],
               ),
             ),
           ),
@@ -75,7 +90,7 @@ class ResponsiveScaffold extends StatelessWidget {
       bottomNavigationBar: isWide || destinations.length <= 1
           ? null
           : NavigationBar(
-              selectedIndex: selectedIndex,
+              selectedIndex: safeSelected,
               onDestinationSelected: onDestinationSelected,
               destinations: animatedDestinations,
             ),
