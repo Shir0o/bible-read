@@ -10,6 +10,7 @@ class ResponsiveScaffold extends StatelessWidget {
   final PreferredSizeWidget? appBar;
   final Widget? drawer;
   final int? contentIndex;
+  final GlobalKey<ScaffoldState>? scaffoldKey;
 
   const ResponsiveScaffold({
     super.key,
@@ -20,6 +21,7 @@ class ResponsiveScaffold extends StatelessWidget {
     this.appBar,
     this.drawer,
     this.contentIndex,
+    this.scaffoldKey,
   });
 
   Widget _animatedIcon(Widget icon, bool selected) {
@@ -55,6 +57,7 @@ class ResponsiveScaffold extends StatelessWidget {
         : selectedIndex.clamp(0, destinations.length - 1);
     final animatedDestinations = _buildAnimatedDestinations(safeSelected);
     return Scaffold(
+      key: scaffoldKey,
       appBar: appBar,
       drawer: drawer,
       body: Row(

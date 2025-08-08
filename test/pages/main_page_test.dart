@@ -71,8 +71,7 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Future<bool> canAccessScopes(
     List<String> scopes, {
     String? accessToken,
-  }) async =>
-      true;
+  }) async => true;
 
   @override
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
@@ -90,7 +89,7 @@ class RecordingNotificationService extends DailyNotificationService {
   bool scheduled = false;
 
   RecordingNotificationService({required FirebaseAuth auth})
-      : super(auth: auth);
+    : super(auth: auth);
 
   @override
   Future<void> scheduleDailyReminder(Time time) async {
@@ -147,8 +146,10 @@ void main() {
   });
 
   testWidgets('navigation updates selected index', (tester) async {
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
     final firestore = FakeFirebaseFirestore();
     await tester.pumpWidget(
       MaterialApp(
@@ -173,8 +174,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(ReadLogPage), findsOneWidget);
 
-    // Friends navigation
-    expect(find.byIcon(Icons.people), findsOneWidget);
+    // Friends navigation via drawer
+    final responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
+    responsive.scaffoldKey!.currentState!.openDrawer();
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.people));
     await tester.pump();
     expect(
@@ -187,8 +192,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(FriendsPage), findsOneWidget);
 
-    // Achievements navigation
-    expect(find.byIcon(Icons.emoji_events), findsOneWidget);
+    // Achievements navigation via drawer
+    responsive.scaffoldKey!.currentState!.openDrawer();
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.emoji_events));
     await tester.pump();
     expect(
@@ -220,8 +226,10 @@ void main() {
   });
 
   testWidgets('responsive scaffold switches layout', (tester) async {
-    final auth =
-        MockFirebaseAuth(signedIn: true, mockUser: MockUser(uid: 'u1'));
+    final auth = MockFirebaseAuth(
+      signedIn: true,
+      mockUser: MockUser(uid: 'u1'),
+    );
     await tester.pumpWidget(
       MaterialApp(
         home: MediaQuery(
@@ -295,19 +303,23 @@ void main() {
     // Insert a dummy user doc
     await fakeFirestore.collection('users').doc(testUser.uid).set({});
 
-    await tester.pumpWidget(MaterialApp(
-      home: MainPage(
-        auth: auth,
-        firestore: fakeFirestore,
-        messaging: messaging,
-        dailyNotificationServiceProvider: DailyNotificationService.new,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: fakeFirestore,
+          messaging: messaging,
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
       ),
-    ));
+    );
 
     await tester.pumpAndSettle();
 
-    final userDoc =
-        await fakeFirestore.collection('users').doc(testUser.uid).get();
+    final userDoc = await fakeFirestore
+        .collection('users')
+        .doc(testUser.uid)
+        .get();
 
     expect(userDoc.exists, isTrue);
     expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
@@ -337,8 +349,9 @@ void main() {
 
     expect(service.scheduled, isTrue);
   });
-  testWidgets('calls sendLikeNotification when a like is triggered',
-      (tester) async {
+  testWidgets('calls sendLikeNotification when a like is triggered', (
+    tester,
+  ) async {
     bool wasCalled = false;
     String? calledUid;
     String? calledName;
@@ -358,27 +371,24 @@ void main() {
         .doc(dateKey)
         .collection('entries')
         .doc('owner456')
-        .set({
-      'name': 'Owner User',
-      'timestamp': Timestamp.now(),
-    });
+        .set({'name': 'Owner User', 'timestamp': Timestamp.now()});
 
-    await tester.pumpWidget(MaterialApp(
-      home: MainPage(
-        auth: auth,
-        firestore: fakeFirestore,
-        messaging: FakeFirebaseMessaging(null),
-        dailyNotificationServiceProvider: DailyNotificationService.new,
-        sendLikeNotification: ({
-          required String ownerUid,
-          required String likerName,
-        }) async {
-          wasCalled = true;
-          calledUid = ownerUid;
-          calledName = likerName;
-        },
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: fakeFirestore,
+          messaging: FakeFirebaseMessaging(null),
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+          sendLikeNotification:
+              ({required String ownerUid, required String likerName}) async {
+                wasCalled = true;
+                calledUid = ownerUid;
+                calledName = likerName;
+              },
+        ),
       ),
-    ));
+    );
 
     await tester.pumpAndSettle();
 
@@ -395,10 +405,12 @@ void main() {
     );
     expect(ownerLogFinder, findsOneWidget);
 
-    await tester.tap(find.descendant(
-      of: ownerLogFinder,
-      matching: find.byIcon(Icons.favorite_border),
-    ));
+    await tester.tap(
+      find.descendant(
+        of: ownerLogFinder,
+        matching: find.byIcon(Icons.favorite_border),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(wasCalled, isTrue);
@@ -407,8 +419,10 @@ void main() {
   });
 
   testWidgets('shows error page when appCheckFailed is true', (tester) async {
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
     await tester.pumpWidget(
       MaterialApp(
         home: MainPage(
@@ -425,10 +439,13 @@ void main() {
     expect(find.byType(ResponsiveScaffold), findsNothing);
   });
 
-  testWidgets('signing out returns to profile and restricts navigation',
-      (tester) async {
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+  testWidgets('signing out returns to profile and restricts navigation', (
+    tester,
+  ) async {
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
     fakePlatform.user = GoogleSignInUserData(
       email: 'test@example.com',
       id: '123',
@@ -464,8 +481,9 @@ void main() {
     // Should now show the unauthenticated profile page
     expect(find.text('Sign in with Google'), findsOneWidget);
 
-    final scaffold =
-        tester.widget<ResponsiveScaffold>(find.byType(ResponsiveScaffold));
+    final scaffold = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
     expect(scaffold.destinations.length, 1);
     expect(find.byIcon(Icons.home), findsNothing);
     expect(find.byIcon(Icons.feed), findsNothing);
