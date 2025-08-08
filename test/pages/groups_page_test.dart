@@ -18,8 +18,10 @@ class RecordingGroupService extends GroupService {
   bool failJoin = false;
 
   @override
-  Future<String> createGroup(
-      {required String ownerUid, required String name}) async {
+  Future<String> createGroup({
+    required String ownerUid,
+    required String name,
+  }) async {
     if (failCreate) {
       throw FirebaseException(plugin: 'firestore');
     }
@@ -50,7 +52,9 @@ void main() {
 
   Future<void> pumpPage(WidgetTester tester, GroupService service) async {
     await tester.pumpWidget(
-      MaterialApp(home: GroupsPage(groupService: service, auth: auth)),
+      MaterialApp(
+        home: GroupsPage(groupService: service, auth: auth),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -99,6 +103,44 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-        find.text('Failed to create group. Please try again.'), findsOneWidget);
+      find.text('Failed to create group. Please try again.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('join group success shows snackbar', (tester) async {
+    final service = RecordingGroupService(firestore: firestore);
+    await pumpPage(tester, service);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Join group'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'g1');
+    await tester.tap(find.text('Join'));
+    await tester.pumpAndSettle();
+
+    expect(service.joinGroupId, 'g1');
+    expect(service.joinUid, 'u1');
+    expect(find.text('Joined group'), findsOneWidget);
+  });
+
+  testWidgets('join group failure shows error', (tester) async {
+    final service = RecordingGroupService(firestore: firestore)
+      ..failJoin = true;
+    await pumpPage(tester, service);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Join group'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'g1');
+    await tester.tap(find.text('Join'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Failed to join group. Please try again.'),
+      findsOneWidget,
+    );
   });
 }
