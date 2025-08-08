@@ -4,6 +4,7 @@ import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/pages/achievements_page.dart';
 import 'package:bible_read/pages/groups_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
+import 'package:bible_read/widgets/app_drawer.dart';
 import '../services/friend_service.dart';
 import '../services/group_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,14 +23,16 @@ import 'home_page.dart';
 import 'read_log_page.dart';
 import 'app_check_error_page.dart';
 
-typedef SendLikeNotification = Future<void> Function({
-  required String ownerUid,
-  required String likerName,
-});
-typedef SendCommentNotification = Future<void> Function({
-  required String ownerUid,
-  required String commenterName,
-});
+typedef SendLikeNotification =
+    Future<void> Function({
+      required String ownerUid,
+      required String likerName,
+    });
+typedef SendCommentNotification =
+    Future<void> Function({
+      required String ownerUid,
+      required String commenterName,
+    });
 
 class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -51,12 +54,12 @@ class MainPage extends StatefulWidget {
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        messaging = messaging ?? FirebaseMessaging.instance,
-        googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
-        dailyNotificationServiceProvider =
-            dailyNotificationServiceProvider ?? DailyNotificationService.new;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       messaging = messaging ?? FirebaseMessaging.instance,
+       googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
+       dailyNotificationServiceProvider =
+           dailyNotificationServiceProvider ?? DailyNotificationService.new;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -65,6 +68,7 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
   GoogleSignInAccount? _user;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -144,9 +148,9 @@ class _MainPageState extends State<MainPage> {
         }
 
         // Schedule daily reminder after preferences load
-        await widget
-            .dailyNotificationServiceProvider()
-            .scheduleDailyReminder(const Time(8, 0));
+        await widget.dailyNotificationServiceProvider().scheduleDailyReminder(
+          const Time(8, 0),
+        );
       } else {
         debugPrint('Skipping Firestore write: user or token is null');
       }
@@ -159,13 +163,6 @@ class _MainPageState extends State<MainPage> {
     }
     final bool signedIn = widget.auth.currentUser != null;
     final int profileIndex = signedIn ? 6 : 0;
-
-    // When signed in, the bottom nav has: Home(0), Feed(1), More(2)
-    if (signedIn && index == 2) {
-      _openMoreSheet();
-      return; // keep current tab selected
-    }
-
     if (!signedIn && index != profileIndex) {
       return;
     }
@@ -186,47 +183,6 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  void _openMoreSheet() {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) {
-        return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.leaderboard),
-                title: const Text('Leaderboard'),
-                onTap: () { Navigator.pop(ctx); _navigateFromMenu(2); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.people),
-                title: const Text('Friends'),
-                onTap: () { Navigator.pop(ctx); _navigateFromMenu(3); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.group),
-                title: const Text('Groups'),
-                onTap: () { Navigator.pop(ctx); _navigateFromMenu(4); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.emoji_events),
-                title: const Text('Achievements'),
-                onTap: () { Navigator.pop(ctx); _navigateFromMenu(5); },
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text('Profile'),
-                onTap: () { Navigator.pop(ctx); _navigateFromMenu(6); },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (widget.appCheckFailed) {
@@ -244,7 +200,8 @@ class _MainPageState extends State<MainPage> {
         ReadLogPage(
           firestore: widget.firestore,
           auth: widget.auth,
-          onSendLikeNotification: widget.sendLikeNotification ??
+          onSendLikeNotification:
+              widget.sendLikeNotification ??
               ({required String ownerUid, required String likerName}) async {
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null) {
@@ -265,10 +222,12 @@ class _MainPageState extends State<MainPage> {
                   'likerName': likerName,
                 });
               },
-          onSendCommentNotification: widget.sendCommentNotification ??
-              (
-                  {required String ownerUid,
-                  required String commenterName}) async {
+          onSendCommentNotification:
+              widget.sendCommentNotification ??
+              ({
+                required String ownerUid,
+                required String commenterName,
+              }) async {
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null) {
                   debugPrint(
@@ -314,10 +273,12 @@ class _MainPageState extends State<MainPage> {
     ];
 
     final int navIndex = signedIn
-        ? (_selectedIndex <= 1 ? _selectedIndex : 2) // Home(0), Feed(1), More(2)
+        ? (_selectedIndex <= 1 ? _selectedIndex : 0) // Home(0), Feed(1)
         : 0; // Only Profile when signed out
 
     return ResponsiveScaffold(
+      scaffoldKey: _scaffoldKey,
+      drawer: AppDrawer(onNavigate: _navigateFromMenu),
       selectedIndex: navIndex,
       contentIndex: _selectedIndex,
       onDestinationSelected: _onItemTapped,
@@ -326,7 +287,6 @@ class _MainPageState extends State<MainPage> {
         if (signedIn) ...const [
           NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
-          NavigationDestination(icon: Icon(Icons.more_horiz), label: 'More'),
         ] else ...[
           NavigationDestination(
             icon: Hero(tag: 'profile-avatar', child: const Icon(Icons.person)),
