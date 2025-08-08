@@ -84,8 +84,10 @@ void main() {
     });
 
     await tester.pump();
+    await tester.pump();
 
     expect(find.byType(SuccessAnimation), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
     addTearDown(() async {
       await tester.pumpWidget(Container());
       await tester.pumpAndSettle();
