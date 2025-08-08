@@ -17,6 +17,7 @@ import 'login_page.dart';
 import 'signup_page.dart';
 import '../widgets/animated_action_button.dart';
 import '../widgets/animated_page_route.dart';
+import '../widgets/menu_button.dart';
 
 class UserProfilePage extends StatefulWidget {
   final GoogleSignInAccount? user;
@@ -165,6 +166,8 @@ class UserProfilePageState extends State<UserProfilePage> {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         'Profile',
+        leading: const MenuButton(),
+        automaticallyImplyLeading: false,
         actions: [
           if (widget.auth.currentUser != null)
             NotificationButton(
