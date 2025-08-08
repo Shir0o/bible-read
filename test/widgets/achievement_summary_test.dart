@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bible_read/widgets/achievement_summary.dart';
+import 'package:bible_read/widgets/success_animation.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -58,5 +59,36 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No achievements yet'), findsOneWidget);
+  });
+
+  testWidgets('shows success animation when achievement unlocked',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(uid: 'u3');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AchievementSummary(firestore: firestore, auth: auth)),
+    );
+    await tester.pump();
+
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('achievements')
+        .doc('a1')
+        .set({
+      'title': 'First',
+      'type': 'test',
+      'dateUnlocked': Timestamp.fromDate(DateTime(2023)),
+    });
+
+    await tester.pump();
+
+    expect(find.byType(SuccessAnimation), findsOneWidget);
+    addTearDown(() async {
+      await tester.pumpWidget(Container());
+      await tester.pumpAndSettle();
+    });
   });
 }
