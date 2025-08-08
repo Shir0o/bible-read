@@ -163,6 +163,71 @@ void main() {
       expect(entries.first.chapters, ['Gen 1']);
     });
 
+    test('createGroup rethrows and logs on error', () async {
+      final mockFs = MockFirebaseFirestore();
+      final groups = MockCollectionReference<Map<String, dynamic>>();
+      final groupDoc = MockDocumentReference<Map<String, dynamic>>();
+      final err = Exception('fail');
+
+      when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
+      when(() => groups.doc()).thenReturn(groupDoc);
+      when(() => groupDoc.set(any())).thenThrow(err);
+
+      final crash = MockCrashlytics();
+      ErrorLogger.crashlytics = crash;
+      when(() => crash.recordError(any(), any(),
+          reason: any(named: 'reason'),
+          information: any(named: 'information'),
+          printDetails: any(named: 'printDetails'),
+          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+
+      final svc = GroupService(firestore: mockFs);
+
+      await expectLater(
+          svc.createGroup(ownerUid: 'u1', name: 'G'), throwsA(same(err)));
+
+      verify(() => crash.recordError(err, any(),
+          reason: null,
+          information: any(named: 'information'),
+          printDetails: any(named: 'printDetails'),
+          fatal: false)).called(1);
+    });
+
+    test('joinGroup rethrows and logs on error', () async {
+      final mockFs = MockFirebaseFirestore();
+      final groups = MockCollectionReference<Map<String, dynamic>>();
+      final groupDoc = MockDocumentReference<Map<String, dynamic>>();
+      final members = MockCollectionReference<Map<String, dynamic>>();
+      final memberDoc = MockDocumentReference<Map<String, dynamic>>();
+      final err = Exception('fail');
+
+      when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
+      when(() => groups.doc('g1')).thenReturn(groupDoc);
+      when(() => groupDoc.collection(GroupCollections.members))
+          .thenReturn(members);
+      when(() => members.doc('u1')).thenReturn(memberDoc);
+      when(() => memberDoc.set(any())).thenThrow(err);
+
+      final crash = MockCrashlytics();
+      ErrorLogger.crashlytics = crash;
+      when(() => crash.recordError(any(), any(),
+          reason: any(named: 'reason'),
+          information: any(named: 'information'),
+          printDetails: any(named: 'printDetails'),
+          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+
+      final svc = GroupService(firestore: mockFs);
+
+      await expectLater(
+          svc.joinGroup(groupId: 'g1', uid: 'u1'), throwsA(same(err)));
+
+      verify(() => crash.recordError(err, any(),
+          reason: null,
+          information: any(named: 'information'),
+          printDetails: any(named: 'printDetails'),
+          fatal: false)).called(1);
+    });
+
     test('fetchTodaysChapters logs and returns empty list on error', () async {
       final mockFs = MockFirebaseFirestore();
       final groups = MockCollectionReference<Map<String, dynamic>>();
