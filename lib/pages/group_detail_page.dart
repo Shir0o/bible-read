@@ -10,6 +10,7 @@ import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/schedule_item_tile.dart';
+import '../widgets/animated_page_route.dart';
 
 /// Page showing the members and schedule for a group.
 class GroupDetailPage extends StatefulWidget {
@@ -40,70 +41,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   List<GroupSchedule>? _latestSchedule;
 
   Future<void> _editSchedule([GroupSchedule? schedule]) async {
-    final controller = TextEditingController(
-      text: schedule?.chapters.join(', ') ?? '',
-    );
-    final result = await showDialog<GroupSchedule>(
-      context: context,
-      builder: (context) {
-        DateTime selected = schedule?.date ?? DateTime.now();
-        return AlertDialog(
-          title: Text(schedule == null ? 'Add Schedule' : 'Edit Schedule'),
-          content: StatefulBuilder(
-            builder: (context, setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: controller,
-                    decoration: const InputDecoration(
-                      labelText: 'Chapters (comma separated)',
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: selected,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100),
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          selected = picked;
-                        });
-                      }
-                    },
-                    child: Text(
-                      selected.toIso8601String().split('T').first,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final chapters = controller.text
-                    .split(',')
-                    .map((c) => c.trim())
-                    .where((c) => c.isNotEmpty)
-                    .toList();
-                Navigator.of(context).pop(
-                  GroupSchedule(date: selected, chapters: chapters),
-                );
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
+    final result = await Navigator.of(context).push<GroupSchedule>(
+      animatedPageRoute(
+        _EditScheduleDialog(schedule: schedule),
+      ),
     );
 
     if (result != null) {
@@ -219,6 +160,91 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EditScheduleDialog extends StatefulWidget {
+  final GroupSchedule? schedule;
+  const _EditScheduleDialog({this.schedule});
+
+  @override
+  State<_EditScheduleDialog> createState() => _EditScheduleDialogState();
+}
+
+class _EditScheduleDialogState extends State<_EditScheduleDialog> {
+  late DateTime _selected;
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.schedule?.date ?? DateTime.now();
+    _controller = TextEditingController(
+      text: widget.schedule?.chapters.join(', ') ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selected,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _selected = picked;
+      });
+    }
+  }
+
+  void _save() {
+    final chapters = _controller.text
+        .split(',')
+        .map((c) => c.trim())
+        .where((c) => c.isNotEmpty)
+        .toList();
+    Navigator.of(context)
+        .pop(GroupSchedule(date: _selected, chapters: chapters));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.schedule == null ? 'Add Schedule' : 'Edit Schedule'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _controller,
+            decoration: const InputDecoration(
+              labelText: 'Chapters (comma separated)',
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: _pickDate,
+            child: Text(_selected.toIso8601String().split('T').first),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _save,
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }
