@@ -266,7 +266,10 @@ class _MainPageState extends State<MainPage> {
           NavigationDestination(icon: Icon(Icons.group), label: ''),
           NavigationDestination(icon: Icon(Icons.emoji_events), label: ''),
         ],
-        const NavigationDestination(icon: Icon(Icons.person), label: ''),
+        NavigationDestination(
+          icon: Hero(tag: 'profile-avatar', child: const Icon(Icons.person)),
+          label: '',
+        ),
       ],
     );
   }
