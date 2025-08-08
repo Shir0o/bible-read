@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../services/error_logger.dart';
+import 'animated_action_button.dart';
 
 /// Simple email/password sign-in form.
 class LoginForm extends StatefulWidget {
@@ -87,15 +88,10 @@ class _LoginFormState extends State<LoginForm> {
           obscureText: true,
         ),
         const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: _loading ? null : _submit,
-          child: _loading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Sign In'),
+        AnimatedActionButton(
+          onPressed: _submit,
+          isLoading: _loading,
+          child: const Text('Sign In'),
         ),
       ],
     );

@@ -9,6 +9,7 @@ import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:bible_read/widgets/animated_action_button.dart';
 
 class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
 
@@ -92,7 +93,7 @@ void main() {
 
     await tester.enterText(
         find.byKey(const Key('addFriendEmailField')), 'friend@example.com');
-    final buttonFinder = find.widgetWithText(ElevatedButton, 'Send');
+    final buttonFinder = find.byType(AnimatedActionButton);
     await tester.tap(buttonFinder);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
@@ -103,6 +104,7 @@ void main() {
     final textField =
         tester.widget<TextField>(find.byKey(const Key('addFriendEmailField')));
     expect(textField.controller!.text, 'friend@example.com');
-    expect(tester.widget<ElevatedButton>(buttonFinder).onPressed, isNotNull);
+    expect(
+        tester.widget<AnimatedActionButton>(buttonFinder).onPressed, isNotNull);
   });
 }
