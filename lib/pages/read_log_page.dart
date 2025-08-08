@@ -14,6 +14,7 @@ import '../services/notification_service.dart';
 import '../widgets/badge_icon.dart';
 import '../widgets/comment_section.dart';
 import '../widgets/comment_drawer.dart';
+import '../widgets/menu_button.dart';
 import '../models/comment.dart';
 
 class ReadLogPage extends StatefulWidget {
@@ -340,6 +341,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         "Today's Readers",
+        leading: const MenuButton(),
+        automaticallyImplyLeading: false,
         actions: [
           if (widget.auth.currentUser != null)
             NotificationButton(
