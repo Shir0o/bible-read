@@ -20,7 +20,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final card = tester.widget<Card>(find.byType(Card));
-    expect(card.margin, const EdgeInsets.symmetric(horizontal: 16, vertical: 8));
+    expect(
+        card.margin, const EdgeInsets.symmetric(horizontal: 16, vertical: 8));
 
     final paddings = tester.widgetList<Padding>(
       find.descendant(of: find.byType(Card), matching: find.byType(Padding)),
