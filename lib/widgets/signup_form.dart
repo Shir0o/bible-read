@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../services/error_logger.dart';
 import 'animated_action_button.dart';
+import 'success_animation.dart';
 
 /// Form widget used to sign up a new user with email and password.
 class SignupForm extends StatefulWidget {
@@ -69,6 +70,7 @@ class _SignupFormState extends State<SignupForm> {
         });
       }
       if (mounted) {
+        SuccessAnimation.show(context);
         widget.onComplete?.call();
       }
     } catch (e, st) {

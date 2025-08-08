@@ -10,6 +10,7 @@ import 'package:bible_read/services/error_logger.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:bible_read/widgets/animated_action_button.dart';
+import 'package:bible_read/widgets/success_animation.dart';
 
 class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
 
@@ -73,10 +74,11 @@ void main() {
     await tester.enterText(
         find.byKey(const Key('addFriendEmailField')), 'Friend@Example.COM');
     await tester.tap(find.text('Send'));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(service.lastEmail, 'friend@example.com');
     expect(find.text('Request sent'), findsOneWidget);
+    expect(find.byType(SuccessAnimation), findsOneWidget);
     final textField =
         tester.widget<TextField>(find.byKey(const Key('addFriendEmailField')));
     expect(textField.controller!.text, isEmpty);

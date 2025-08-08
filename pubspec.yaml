@@ -40,6 +40,7 @@ dependencies:
   permission_handler: ^12.0.1
   firebase_crashlytics: ^4.3.9
   timezone: ^0.10.0
+  lottie: ^3.1.0
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -151,3 +152,4 @@ flutter:
 
   assets:
     - assets/achievements/
+    - assets/animations/

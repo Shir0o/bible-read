@@ -5,9 +5,10 @@ import 'package:flutter/material.dart';
 import '../models/achievement.dart';
 import '../services/achievement_service.dart';
 import 'badge_icon.dart';
+import 'success_animation.dart';
 
 /// Displays a count of unlocked achievements for the current user.
-class AchievementSummary extends StatelessWidget {
+class AchievementSummary extends StatefulWidget {
   /// Firestore instance for reading achievements.
   final FirebaseFirestore firestore;
 
@@ -23,18 +24,30 @@ class AchievementSummary extends StatelessWidget {
         auth = auth ?? FirebaseAuth.instance;
 
   @override
+  State<AchievementSummary> createState() => _AchievementSummaryState();
+}
+
+class _AchievementSummaryState extends State<AchievementSummary> {
+  int? _lastCount;
+
+  @override
   Widget build(BuildContext context) {
-    final user = auth.currentUser;
+    final user = widget.auth.currentUser;
     if (user == null) {
       return const SizedBox.shrink();
     }
     return StreamBuilder<List<Achievement>>(
-      stream: AchievementService(firestore: firestore).achievements(user.uid),
+      stream:
+          AchievementService(firestore: widget.firestore).achievements(user.uid),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox.shrink();
         }
         final count = snapshot.data!.length;
+        if (_lastCount != null && count > _lastCount!) {
+          SuccessAnimation.show(context);
+        }
+        _lastCount = count;
         if (count == 0) {
           return const Text('No achievements yet');
         }
