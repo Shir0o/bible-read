@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../services/error_logger.dart';
+import 'animated_action_button.dart';
 
 /// Form widget used to sign up a new user with email and password.
 class SignupForm extends StatefulWidget {
@@ -114,15 +115,10 @@ class _SignupFormState extends State<SignupForm> {
           obscureText: true,
         ),
         const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: _loading ? null : _submit,
-          child: _loading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Sign Up'),
+        AnimatedActionButton(
+          onPressed: _submit,
+          isLoading: _loading,
+          child: const Text('Sign Up'),
         ),
       ],
     );

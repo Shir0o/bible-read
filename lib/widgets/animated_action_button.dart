@@ -74,20 +74,21 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
         scale: _controller,
         child: ElevatedButton(
           onPressed: widget.isLoading ? null : widget.onPressed,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Opacity(
-                opacity: widget.isLoading ? 0 : 1,
-                child: widget.child,
-              ),
-              if (widget.isLoading)
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-            ],
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder: (child, animation) =>
+                FadeTransition(opacity: animation, child: child),
+            child: widget.isLoading
+                ? const SizedBox(
+                    key: ValueKey('spinner'),
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : KeyedSubtree(
+                    key: const ValueKey('label'),
+                    child: widget.child,
+                  ),
           ),
         ),
       ),

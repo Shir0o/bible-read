@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../services/error_logger.dart';
 
 import '../services/friend_service.dart';
+import 'animated_action_button.dart';
 
 /// Form widget used to send a friend request by email.
 class AddFriendForm extends StatefulWidget {
@@ -95,7 +96,7 @@ class _AddFriendFormState extends State<AddFriendForm> {
           decoration: const InputDecoration(labelText: "Friend's Email"),
         ),
         const SizedBox(height: 16),
-        ElevatedButton(
+        AnimatedActionButton(
           onPressed: _sendRequest,
           child: const Text('Send'),
         ),
