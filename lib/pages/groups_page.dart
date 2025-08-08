@@ -57,29 +57,39 @@ class _GroupsPageState extends State<GroupsPage> {
         );
       },
     );
-    controller.dispose();
-    if (user == null || name == null || name.isEmpty || !mounted) return;
+    if (user == null || name == null || name.isEmpty || !mounted) {
+      controller.dispose();
+      return;
+    }
     setState(() => _inProgress = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Group created')),
-    );
-    widget.groupService.createGroup(ownerUid: user.uid, name: name).then((_) {
+    try {
+      await widget.groupService.createGroup(
+        ownerUid: user.uid,
+        name: name,
+      );
       if (mounted) {
-        setState(() => _inProgress = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Group created')),
+        );
       }
-    }).catchError((e, st) {
+    } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to create group: $e');
       }
       ErrorLogger.log(e, st);
       if (mounted) {
-        setState(() => _inProgress = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Failed to create group. Please try again.')),
+            content: Text('Failed to create group. Please try again.'),
+          ),
         );
       }
-    });
+    } finally {
+      if (mounted) {
+        setState(() => _inProgress = false);
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
+    }
   }
 
   Future<void> _joinGroup() async {

@@ -71,4 +71,34 @@ void main() {
 
     expect(find.text('Study'), findsOneWidget);
   });
+
+  testWidgets('create group success shows snackbar', (tester) async {
+    final service = RecordingGroupService(firestore: firestore);
+    await pumpPage(tester, service);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'New');
+    await tester.tap(find.text('Create'));
+    await tester.pumpAndSettle();
+
+    expect(service.createdName, 'New');
+    expect(service.createdOwner, 'u1');
+    expect(find.text('Group created'), findsOneWidget);
+  });
+
+  testWidgets('create group failure shows error', (tester) async {
+    final service = RecordingGroupService(firestore: firestore)
+      ..failCreate = true;
+    await pumpPage(tester, service);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'New');
+    await tester.tap(find.text('Create'));
+    await tester.pumpAndSettle();
+
+    expect(
+        find.text('Failed to create group. Please try again.'), findsOneWidget);
+  });
 }
