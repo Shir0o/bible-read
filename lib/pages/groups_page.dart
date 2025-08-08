@@ -17,12 +17,9 @@ class GroupsPage extends StatefulWidget {
   final FirebaseAuth auth;
 
   /// Creates a [GroupsPage].
-  GroupsPage({
-    super.key,
-    GroupService? groupService,
-    FirebaseAuth? auth,
-  })  : groupService = groupService ?? GroupService(),
-        auth = auth ?? FirebaseAuth.instance;
+  GroupsPage({super.key, GroupService? groupService, FirebaseAuth? auth})
+    : groupService = groupService ?? GroupService(),
+      auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<GroupsPage> createState() => _GroupsPageState();
@@ -63,14 +60,11 @@ class _GroupsPageState extends State<GroupsPage> {
     }
     setState(() => _inProgress = true);
     try {
-      await widget.groupService.createGroup(
-        ownerUid: user.uid,
-        name: name,
-      );
+      await widget.groupService.createGroup(ownerUid: user.uid, name: name);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Group created')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Group created')));
       }
     } catch (e, st) {
       if (kDebugMode) {
@@ -118,29 +112,36 @@ class _GroupsPageState extends State<GroupsPage> {
         );
       },
     );
-    controller.dispose();
-    if (user == null || id == null || id.isEmpty || !mounted) return;
+    if (user == null || id == null || id.isEmpty || !mounted) {
+      controller.dispose();
+      return;
+    }
     setState(() => _inProgress = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Joined group')),
-    );
-    widget.groupService.joinGroup(groupId: id, uid: user.uid).then((_) {
+    try {
+      await widget.groupService.joinGroup(groupId: id, uid: user.uid);
       if (mounted) {
-        setState(() => _inProgress = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Joined group')));
       }
-    }).catchError((e, st) {
+    } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to join group: $e');
       }
       ErrorLogger.log(e, st);
       if (mounted) {
-        setState(() => _inProgress = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Failed to join group. Please try again.')),
+            content: Text('Failed to join group. Please try again.'),
+          ),
         );
       }
-    });
+    } finally {
+      if (mounted) {
+        setState(() => _inProgress = false);
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
+    }
   }
 
   @override
@@ -157,10 +158,7 @@ class _GroupsPageState extends State<GroupsPage> {
               }
             },
             itemBuilder: (context) => const [
-              PopupMenuItem<int>(
-                value: 0,
-                child: Text('Join group'),
-              ),
+              PopupMenuItem<int>(value: 0, child: Text('Join group')),
             ],
           ),
         ],
