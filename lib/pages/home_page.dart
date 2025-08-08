@@ -10,6 +10,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
 import '../widgets/read_switch_tile.dart';
+import '../widgets/menu_button.dart';
 import '../services/achievement_service.dart';
 import '../services/notification_service.dart';
 import '../models/achievement.dart';
@@ -512,9 +513,13 @@ class _HomePageState extends State<HomePage>
     super.build(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bible Reading Challenge',
-            style: CommonStyles.appBarTitleText),
+        title: const Text(
+          'Bible Reading Challenge',
+          style: CommonStyles.appBarTitleText,
+        ),
         backgroundColor: AppTheme.backgroundColor,
+        leading: const MenuButton(),
+        automaticallyImplyLeading: false,
         actions: [
           if (widget.auth.currentUser != null)
             NotificationButton(

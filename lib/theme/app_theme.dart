@@ -27,7 +27,7 @@ class AppTheme {
     overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
       if (states.contains(WidgetState.pressed) ||
           states.contains(WidgetState.hovered)) {
-        return colorScheme.primary.withOpacity(0.1);
+        return colorScheme.primary.withValues(alpha: 0.1);
       }
       return null;
     }),

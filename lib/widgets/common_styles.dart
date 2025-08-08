@@ -27,12 +27,18 @@ class CommonStyles {
     );
   }
 
-  static PreferredSizeWidget buildAppBar(String title,
-      {List<Widget>? actions}) {
+  static PreferredSizeWidget buildAppBar(
+    String title, {
+    List<Widget>? actions,
+    Widget? leading,
+    bool automaticallyImplyLeading = true,
+  }) {
     return AppBar(
       title: Text(title, style: appBarTitleText),
       backgroundColor: AppTheme.backgroundColor,
       actions: actions,
+      leading: leading,
+      automaticallyImplyLeading: automaticallyImplyLeading,
     );
   }
 }

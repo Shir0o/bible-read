@@ -7,6 +7,7 @@ import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../widgets/common_styles.dart';
 import 'group_detail_page.dart';
+import '../widgets/menu_button.dart';
 
 /// Page that lists the groups the current user belongs to.
 class GroupsPage extends StatefulWidget {
@@ -150,6 +151,8 @@ class _GroupsPageState extends State<GroupsPage> {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         'Groups',
+        leading: const MenuButton(),
+        automaticallyImplyLeading: false,
         actions: [
           PopupMenuButton<int>(
             onSelected: (value) {
