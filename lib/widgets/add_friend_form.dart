@@ -7,6 +7,7 @@ import '../services/error_logger.dart';
 
 import '../services/friend_service.dart';
 import 'animated_action_button.dart';
+import 'success_animation.dart';
 
 /// Form widget used to send a friend request by email.
 class AddFriendForm extends StatefulWidget {
@@ -60,6 +61,7 @@ class _AddFriendFormState extends State<AddFriendForm> {
       )
           .then((_) {
         if (mounted) {
+          SuccessAnimation.show(context);
           widget.onComplete?.call();
         }
       }).catchError((Object e, StackTrace st) async {

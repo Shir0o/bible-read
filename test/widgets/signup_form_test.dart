@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/widgets/signup_form.dart';
+import 'package:bible_read/widgets/success_animation.dart';
 
 class RecordingAuth extends MockFirebaseAuth {
   bool createCalled = false;
@@ -62,7 +63,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
     await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
     await tester.tap(find.text('Sign Up'));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(auth.createCalled, isTrue);
     expect(auth.email, 'user@example.com');
@@ -74,6 +75,11 @@ void main() {
     expect(doc.data()?['name'], displayName);
     expect(doc.data()?['email'], 'user@example.com');
     expect(completed, isTrue);
+    expect(find.byType(SuccessAnimation), findsOneWidget);
+    addTearDown(() async {
+      await tester.pumpWidget(Container());
+      await tester.pumpAndSettle();
+    });
   });
 
   testWidgets('shows snackbar when passwords do not match', (tester) async {
