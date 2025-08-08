@@ -16,6 +16,7 @@ import 'main_page.dart';
 import 'login_page.dart';
 import 'signup_page.dart';
 import '../widgets/animated_action_button.dart';
+import '../widgets/animated_page_route.dart';
 
 class UserProfilePage extends StatefulWidget {
   final GoogleSignInAccount? user;
@@ -94,9 +95,7 @@ class UserProfilePageState extends State<UserProfilePage> {
         await widget.auth.signInWithCredential(credential);
 
         if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => MainPage()),
-          );
+          Navigator.of(context).pushReplacement(animatedPageRoute(MainPage()));
         }
       } else {
         if (mounted) {
@@ -156,9 +155,7 @@ class UserProfilePageState extends State<UserProfilePage> {
     }
 
     if (!mounted) return;
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => MainPage()));
+    Navigator.of(context).pushReplacement(animatedPageRoute(MainPage()));
   }
 
   @override
@@ -195,8 +192,8 @@ class UserProfilePageState extends State<UserProfilePage> {
                           ElevatedButton(
                             onPressed: () {
                               Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => LoginPage(auth: widget.auth),
+                                animatedPageRoute(
+                                  LoginPage(auth: widget.auth),
                                 ),
                               );
                             },
@@ -206,8 +203,8 @@ class UserProfilePageState extends State<UserProfilePage> {
                           ElevatedButton(
                             onPressed: () {
                               Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => SignupPage(
+                                animatedPageRoute(
+                                  SignupPage(
                                     auth: widget.auth,
                                     firestore: widget.firestore,
                                   ),
@@ -229,9 +226,12 @@ class UserProfilePageState extends State<UserProfilePage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (photoUrl != null && photoUrl.isNotEmpty)
-                              CircleAvatar(
-                                backgroundImage: NetworkImage(photoUrl),
-                                radius: 40,
+                              Hero(
+                                tag: 'profile-avatar',
+                                child: CircleAvatar(
+                                  backgroundImage: NetworkImage(photoUrl),
+                                  radius: 40,
+                                ),
                               ),
                             const SizedBox(height: 16),
                             Text(
@@ -259,8 +259,8 @@ class UserProfilePageState extends State<UserProfilePage> {
                             ElevatedButton(
                               onPressed: () {
                                 Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => NotificationSettingsPage(),
+                                  animatedPageRoute(
+                                    NotificationSettingsPage(),
                                   ),
                                 );
                               },

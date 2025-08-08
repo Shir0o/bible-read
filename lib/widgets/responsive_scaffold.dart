@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'animated_page_route.dart';
+
 class ResponsiveScaffold extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
@@ -61,7 +63,7 @@ class ResponsiveScaffold extends StatelessWidget {
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               transitionBuilder: (child, animation) =>
-                  FadeTransition(opacity: animation, child: child),
+                  scaleFadeTransition(child, animation),
               child: KeyedSubtree(
                 key: ValueKey<int>(selectedIndex),
                 child: pages[selectedIndex],
