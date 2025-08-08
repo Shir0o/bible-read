@@ -18,8 +18,8 @@ class GroupsPage extends StatefulWidget {
 
   /// Creates a [GroupsPage].
   GroupsPage({super.key, GroupService? groupService, FirebaseAuth? auth})
-    : groupService = groupService ?? GroupService(),
-      auth = auth ?? FirebaseAuth.instance;
+      : groupService = groupService ?? GroupService(),
+        auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<GroupsPage> createState() => _GroupsPageState();

@@ -23,7 +23,8 @@ void main() {
     expect(find.text('Genesis 1, Genesis 2'), findsOneWidget);
   });
 
-  testWidgets('Edit button appears only when onEdit is provided and triggers the callback',
+  testWidgets(
+      'Edit button appears only when onEdit is provided and triggers the callback',
       (tester) async {
     final schedule = GroupSchedule(
       date: DateTime(2023, 1, 1),
@@ -54,4 +55,3 @@ void main() {
     expect(tapped, isTrue);
   });
 }
-
