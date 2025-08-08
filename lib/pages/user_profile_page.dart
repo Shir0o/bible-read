@@ -15,6 +15,7 @@ import 'notification_settings_page.dart';
 import 'main_page.dart';
 import 'login_page.dart';
 import 'signup_page.dart';
+import '../widgets/animated_action_button.dart';
 
 class UserProfilePage extends StatefulWidget {
   final GoogleSignInAccount? user;
@@ -185,19 +186,10 @@ class UserProfilePageState extends State<UserProfilePage> {
                     ? Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          ElevatedButton(
-                            onPressed: _isSigningIn
-                                ? null
-                                : () async => await _handleSignIn(),
-                            child: _isSigningIn
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text('Sign in with Google'),
+                          AnimatedActionButton(
+                            onPressed: _handleSignIn,
+                            isLoading: _isSigningIn,
+                            child: const Text('Sign in with Google'),
                           ),
                           const SizedBox(height: 8),
                           ElevatedButton(
@@ -259,8 +251,8 @@ class UserProfilePageState extends State<UserProfilePage> {
                               auth: widget.auth,
                             ),
                             const SizedBox(height: 24),
-                            ElevatedButton(
-                              onPressed: () async => _handleSignOut(),
+                            AnimatedActionButton(
+                              onPressed: _handleSignOut,
                               child: const Text('Sign Out'),
                             ),
                             const SizedBox(height: 8),

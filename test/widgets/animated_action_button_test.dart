@@ -58,4 +58,37 @@ void main() {
 
     expect(pressed, isFalse);
   });
+
+  testWidgets('cross-fades between label and spinner', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AnimatedActionButton(
+          onPressed: () {},
+          isLoading: false,
+          child: const Text('Go'),
+        ),
+      ),
+    );
+
+    // Start loading
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AnimatedActionButton(
+          onPressed: () {},
+          isLoading: true,
+          child: const Text('Go'),
+        ),
+      ),
+    );
+
+    // During the transition both widgets are present.
+    await tester.pump();
+    expect(find.text('Go'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    // After the animation only the spinner remains.
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Go'), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
 }
