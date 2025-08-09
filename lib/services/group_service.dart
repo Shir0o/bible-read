@@ -58,11 +58,12 @@ class GroupService {
           .collection(GroupCollections.members)
           .doc(uid);
       final snap = await memberRef.get();
-      final data = <String, dynamic>{
-        'uid': uid,
-        'role': 'member',
-      };
-      if (!snap.exists) {
+      final data = <String, dynamic>{'uid': uid};
+      if (snap.exists) {
+        final role = snap.data()?['role'];
+        if (role != null) data['role'] = role;
+      } else {
+        data['role'] = 'member';
         data['joinedAt'] = FieldValue.serverTimestamp();
       }
       await memberRef.set(data, SetOptions(merge: true));
