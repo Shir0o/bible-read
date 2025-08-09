@@ -68,7 +68,7 @@ void main() {
         .collection('groups')
         .doc('g1')
         .collection('members')
-        .doc('u1')
+        .doc('m1')
         .set({
       'uid': 'u1',
       'role': 'owner',

@@ -149,17 +149,24 @@ void main() {
     test('groupsForUser streams groups where user is member', () async {
       final g1 = firestore.collection(GroupCollections.groups).doc('g1');
       await g1.set({'name': 'One', 'ownerUid': 'u1'});
-      await g1.collection(GroupCollections.members).doc('u1').set({
+      await g1.collection(GroupCollections.members).doc('m1').set({
         'uid': 'u1',
         'role': 'member',
         'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
       });
       final g2 = firestore.collection(GroupCollections.groups).doc('g2');
       await g2.set({'name': 'Two', 'ownerUid': 'u2'});
-      await g2.collection(GroupCollections.members).doc('u1').set({
+      await g2.collection(GroupCollections.members).doc('m2').set({
         'uid': 'u1',
         'role': 'member',
         'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+      });
+      final g3 = firestore.collection(GroupCollections.groups).doc('g3');
+      await g3.set({'name': 'Three', 'ownerUid': 'u3'});
+      await g3.collection(GroupCollections.members).doc('m3').set({
+        'uid': 'u3',
+        'role': 'member',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 3)),
       });
 
       final groups = await service.groupsForUser('u1').first;
