@@ -60,19 +60,29 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           updated.add(result);
         }
       }
+      updated.sort((a, b) => a.date.compareTo(b.date));
       if (mounted) {
         setState(() {
           _scheduleOverride = updated;
         });
       }
+      final dateChanged = schedule != null && schedule.date != result.date;
+      final newSchedule = List<GroupSchedule>.from(updated);
 
       unawaited(() async {
         try {
+          if (dateChanged) {
+            await widget.groupService.deleteSchedule(
+              groupId: widget.group.id,
+              date: schedule.date,
+            );
+          }
           await widget.groupService
               .updateSchedule(groupId: widget.group.id, schedule: result);
           if (mounted) {
             setState(() {
               _scheduleOverride = null;
+              _latestSchedule = newSchedule;
             });
           }
         } catch (e, st) {
@@ -140,7 +150,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                _latestSchedule = snapshot.data!;
+                final fetched = List<GroupSchedule>.from(snapshot.data!)
+                  ..sort((a, b) => a.date.compareTo(b.date));
+                _latestSchedule = fetched;
                 final schedule = _scheduleOverride ?? _latestSchedule!;
                 if (schedule.isEmpty) {
                   return const Text('No schedule');
