@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/group_schedule.dart';
@@ -165,7 +167,10 @@ class GroupService {
         .collectionGroup(GroupCollections.members)
         .where('uid', isEqualTo: uid)
         .snapshots()
-        .handleError((e, st) => ErrorLogger.log(e, st));
+        .handleError((e, st) {
+      unawaited(ErrorLogger.log(e, st));
+      throw e;
+    });
     return snaps.asyncMap((snap) async {
       try {
         final futures = snap.docs
@@ -192,7 +197,10 @@ class GroupService {
         .doc(groupId)
         .collection(GroupCollections.members)
         .snapshots()
-        .handleError((e, st) => ErrorLogger.log(e, st));
+        .handleError((e, st) {
+      unawaited(ErrorLogger.log(e, st));
+      throw e;
+    });
     return snaps.asyncMap((snap) async {
       try {
         final futures = snap.docs.map((doc) async {
@@ -217,7 +225,10 @@ class GroupService {
         .collection(GroupCollections.schedule)
         .orderBy('date')
         .snapshots()
-        .handleError((e, st) => ErrorLogger.log(e, st));
+        .handleError((e, st) {
+      unawaited(ErrorLogger.log(e, st));
+      throw e;
+    });
     return snaps.asyncMap((snap) async {
       try {
         return snap.docs.map(GroupSchedule.fromFirestore).toList();
