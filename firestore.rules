@@ -98,19 +98,27 @@ service cloud.firestore {
         );
       }
 
+      function isOwnerOrAdmin() {
+        return isOwner() || (
+          request.auth != null &&
+          exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role == 'admin'
+        );
+      }
+
       allow read: if isMember();
-      allow write: if isOwner();
+      allow write: if isOwnerOrAdmin();
 
       match /members/{uid} {
-        allow read: if isMember();
-        allow create: if request.auth.uid == uid || isOwner();
-        allow delete: if request.auth.uid == uid || isOwner();
-        allow update: if isOwner();
+        allow read: if request.auth.uid == uid || isOwnerOrAdmin();
+        allow create: if isOwnerOrAdmin();
+        allow delete: if isOwnerOrAdmin();
+        allow update: if request.auth.uid == uid || isOwnerOrAdmin();
       }
 
       match /schedule/{date} {
         allow read: if isMember();
-        allow write: if isOwner();
+        allow write: if isOwnerOrAdmin();
       }
     }
 
