@@ -38,7 +38,9 @@ class GroupService {
       final doc = firestore.collection(GroupCollections.groups).doc();
       await doc.set({'name': name, 'ownerUid': ownerUid});
       await doc.collection(GroupCollections.members).doc(ownerUid).set({
-        'owner': true,
+        'uid': ownerUid,
+        'role': 'owner',
+        'joinedAt': FieldValue.serverTimestamp(),
       });
       return doc.id;
     } catch (e, st) {
@@ -50,12 +52,20 @@ class GroupService {
   /// Join the group with [groupId] as [uid].
   Future<void> joinGroup({required String groupId, required String uid}) async {
     try {
-      await firestore
+      final memberRef = firestore
           .collection(GroupCollections.groups)
           .doc(groupId)
           .collection(GroupCollections.members)
-          .doc(uid)
-          .set({});
+          .doc(uid);
+      final snap = await memberRef.get();
+      final data = <String, dynamic>{
+        'uid': uid,
+        'role': 'member',
+      };
+      if (!snap.exists) {
+        data['joinedAt'] = FieldValue.serverTimestamp();
+      }
+      await memberRef.set(data, SetOptions(merge: true));
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;
@@ -131,7 +141,7 @@ class GroupService {
   Stream<List<Group>> groupsForUser(String uid) {
     final snaps = firestore
         .collectionGroup(GroupCollections.members)
-        .where(FieldPath.documentId, isEqualTo: uid)
+        .where('uid', isEqualTo: uid)
         .snapshots()
         .handleError((e, st) => ErrorLogger.log(e, st));
     return snaps.asyncMap((snap) async {

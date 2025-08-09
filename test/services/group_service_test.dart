@@ -21,6 +21,8 @@ class MockCollectionReference<T> extends Mock
 
 class MockDocumentReference<T> extends Mock implements DocumentReference<T> {}
 
+class MockDocumentSnapshot<T> extends Mock implements DocumentSnapshot<T> {}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
@@ -54,6 +56,9 @@ void main() {
           .doc('u1')
           .get();
       expect(member.exists, isTrue);
+      expect(member.data()?['uid'], 'u1');
+      expect(member.data()?['role'], 'owner');
+      expect(member.data()?['joinedAt'], isA<Timestamp>());
     });
 
     test('joinGroup adds membership document', () async {
@@ -71,12 +76,30 @@ void main() {
           .doc('u2')
           .get();
       expect(member.exists, isTrue);
+      final joinedAt = member.data()?['joinedAt'];
+      expect(member.data()?['uid'], 'u2');
+      expect(member.data()?['role'], 'member');
+      expect(joinedAt, isA<Timestamp>());
+
+      // Re-join should not update joinedAt
+      await service.joinGroup(groupId: 'g1', uid: 'u2');
+      final member2 = await firestore
+          .collection(GroupCollections.groups)
+          .doc('g1')
+          .collection(GroupCollections.members)
+          .doc('u2')
+          .get();
+      expect(member2.data()?['joinedAt'], joinedAt);
     });
 
     test('leaveGroup removes membership document', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
-      await groupRef.collection(GroupCollections.members).doc('u2').set({});
+      await groupRef.collection(GroupCollections.members).doc('u2').set({
+        'uid': 'u2',
+        'role': 'member',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024)),
+      });
 
       await service.leaveGroup(groupId: 'g1', uid: 'u2');
 
@@ -126,10 +149,18 @@ void main() {
     test('groupsForUser streams groups where user is member', () async {
       final g1 = firestore.collection(GroupCollections.groups).doc('g1');
       await g1.set({'name': 'One', 'ownerUid': 'u1'});
-      await g1.collection(GroupCollections.members).doc('u1').set({});
+      await g1.collection(GroupCollections.members).doc('u1').set({
+        'uid': 'u1',
+        'role': 'member',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+      });
       final g2 = firestore.collection(GroupCollections.groups).doc('g2');
       await g2.set({'name': 'Two', 'ownerUid': 'u2'});
-      await g2.collection(GroupCollections.members).doc('u1').set({});
+      await g2.collection(GroupCollections.members).doc('u1').set({
+        'uid': 'u1',
+        'role': 'member',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+      });
 
       final groups = await service.groupsForUser('u1').first;
       final ids = groups.map((g) => g.id).toSet();
@@ -141,8 +172,16 @@ void main() {
       await firestore.collection('users').doc('u2').set({'name': 'Bob'});
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
-      await groupRef.collection(GroupCollections.members).doc('u1').set({});
-      await groupRef.collection(GroupCollections.members).doc('u2').set({});
+      await groupRef.collection(GroupCollections.members).doc('u1').set({
+        'uid': 'u1',
+        'role': 'owner',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+      });
+      await groupRef.collection(GroupCollections.members).doc('u2').set({
+        'uid': 'u2',
+        'role': 'member',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+      });
 
       final names = await service.memberNames('g1').first;
       expect(names.toSet(), {'Alice', 'Bob'});
@@ -199,6 +238,7 @@ void main() {
       final groupDoc = MockDocumentReference<Map<String, dynamic>>();
       final members = MockCollectionReference<Map<String, dynamic>>();
       final memberDoc = MockDocumentReference<Map<String, dynamic>>();
+      final memberSnap = MockDocumentSnapshot<Map<String, dynamic>>();
       final err = Exception('fail');
 
       when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
@@ -206,7 +246,9 @@ void main() {
       when(() => groupDoc.collection(GroupCollections.members))
           .thenReturn(members);
       when(() => members.doc('u1')).thenReturn(memberDoc);
-      when(() => memberDoc.set(any())).thenThrow(err);
+      when(() => memberDoc.get()).thenAnswer((_) async => memberSnap);
+      when(() => memberSnap.exists).thenReturn(false);
+      when(() => memberDoc.set(any(), any())).thenThrow(err);
 
       final crash = MockCrashlytics();
       ErrorLogger.crashlytics = crash;
