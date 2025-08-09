@@ -69,7 +69,11 @@ void main() {
         .doc('g1')
         .collection('members')
         .doc('u1')
-        .set({'owner': true});
+        .set({
+      'uid': 'u1',
+      'role': 'owner',
+      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+    });
 
     await pumpPage(tester, GroupService(firestore: firestore));
 
