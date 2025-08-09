@@ -111,6 +111,25 @@ class GroupService {
     }
   }
 
+  /// Delete the schedule entry on [date] for [groupId].
+  Future<void> deleteSchedule({
+    required String groupId,
+    required DateTime date,
+  }) async {
+    try {
+      final docId = _dateId(date);
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.schedule)
+          .doc(docId)
+          .delete();
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
+  }
+
   /// Fetch the chapters scheduled for today for [groupId].
   Future<List<String>> fetchTodaysChapters(String groupId) async {
     try {
