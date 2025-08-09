@@ -149,4 +149,49 @@ void main() {
         service: GroupService(firestore: firestore), auth: auth);
     expect(find.byType(FloatingActionButton), findsNothing);
   });
+
+  testWidgets('changing schedule date deletes old document', (tester) async {
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('schedule')
+        .doc('2020-01-01')
+        .set({
+      'date': Timestamp.fromDate(DateTime(2020, 1, 1)),
+      'chapters': ['Gen 1'],
+    });
+    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+
+    await pumpPage(tester,
+        service: GroupService(firestore: firestore), auth: auth);
+
+    await tester.tap(find.byIcon(Icons.edit));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('2020-01-01'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('2'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    final oldDoc = await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('schedule')
+        .doc('2020-01-01')
+        .get();
+    final newDoc = await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('schedule')
+        .doc('2020-01-02')
+        .get();
+    expect(oldDoc.exists, isFalse);
+    expect(newDoc.exists, isTrue);
+  });
 }
