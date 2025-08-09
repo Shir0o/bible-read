@@ -125,17 +125,19 @@ void main() {
       expect(doc.exists, isTrue);
       final stored = GroupSchedule.fromFirestore(doc);
       expect(stored.chapters, schedule.chapters);
-      expect(stored.date.toUtc(), schedule.date.toUtc());
+      expect(stored.date, schedule.date);
+      expect((doc.data()?['date'] as Timestamp).toDate(),
+          DateTime.utc(2024, 1, 1).toLocal());
     });
 
     test('fetchTodaysChapters returns schedule for today', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
-      final now = DateTime.now().toUtc();
+      final now = DateTime.now();
       final id =
           '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
       await groupRef.collection(GroupCollections.schedule).doc(id).set({
-        'date': Timestamp.fromDate(now),
+        'date': Timestamp.fromDate(DateTime.utc(now.year, now.month, now.day)),
         'chapters': ['John 1'],
       });
 
@@ -144,6 +146,24 @@ void main() {
 
       final empty = await service.fetchTodaysChapters('missing');
       expect(empty, isEmpty);
+    });
+
+    test('fetchTodaysChapters handles positive UTC offset', () async {
+      final offset = DateTime.now().timeZoneOffset;
+      if (offset <= Duration.zero) {
+        return;
+      }
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      final now = DateTime.now();
+      final id =
+          '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      await groupRef.collection(GroupCollections.schedule).doc(id).set({
+        'date': Timestamp.fromDate(DateTime.utc(now.year, now.month, now.day)),
+        'chapters': ['John 1'],
+      });
+      final chapters = await service.fetchTodaysChapters('g1');
+      expect(chapters, ['John 1']);
     });
 
     test('groupsForUser streams groups where user is member', () async {
