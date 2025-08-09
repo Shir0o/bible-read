@@ -18,10 +18,10 @@ class GroupSchedule {
   factory GroupSchedule.fromFirestore(
       DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
-    final ts = data['date'];
-    final parsedDate = ts is Timestamp
-        ? ts.toDate()
-        : DateTime.tryParse(doc.id) ?? DateTime.now();
+    final parsedDate = DateTime.tryParse(doc.id) ??
+        (data['date'] is Timestamp
+            ? (data['date'] as Timestamp).toDate().toLocal()
+            : DateTime.now());
     return GroupSchedule(
       date: parsedDate,
       chapters: (data['chapters'] as List?)?.whereType<String>().toList() ??
@@ -31,7 +31,8 @@ class GroupSchedule {
 
   /// Serializes this schedule for Firestore.
   Map<String, dynamic> toFirestore() => {
-        'date': Timestamp.fromDate(date),
+        'date':
+            Timestamp.fromDate(DateTime.utc(date.year, date.month, date.day)),
         'chapters': chapters,
       };
 }
