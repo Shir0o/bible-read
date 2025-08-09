@@ -58,22 +58,14 @@ void main() {
 
   testWidgets('displays members and schedule', (tester) async {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
-    await firestore
-        .collection('groups')
-        .doc('g1')
-        .collection('members')
-        .doc('u1')
-        .set({
+    final members =
+        firestore.collection('groups').doc('g1').collection('members');
+    await members.doc('u1').set({
       'uid': 'u1',
       'role': 'owner',
       'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
     });
-    await firestore
-        .collection('groups')
-        .doc('g1')
-        .collection('members')
-        .doc('u2')
-        .set({
+    await members.doc('u2').set({
       'uid': 'u2',
       'role': 'member',
       'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
