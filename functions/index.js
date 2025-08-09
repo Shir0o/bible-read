@@ -403,6 +403,59 @@ exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
   }
 });
 
+// Backfill missing uid or role in group member documents.
+exports.backfillGroupMembers = onCall({ region: 'us-central1' }, async (req) => {
+  const adminUid = process.env.ADMIN_UID;
+  if (!req.auth || req.auth.uid !== adminUid) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Only admin can run this function'
+    );
+  }
+
+  const db = admin.firestore();
+  const batchLimit = 500;
+  let batch = db.batch();
+  let writes = 0;
+  let updated = 0;
+
+  try {
+    const groupsSnap = await db.collection('groups').get();
+    for (const groupDoc of groupsSnap.docs) {
+      const membersSnap = await groupDoc.ref.collection('members').get();
+      for (const member of membersSnap.docs) {
+        const data = member.data();
+        if (!data.uid || !data.role) {
+          const update = {
+            uid: data.uid || member.id,
+            role: data.role || 'member',
+            joinedAt: data.joinedAt || admin.firestore.FieldValue.serverTimestamp(),
+          };
+          batch.set(member.ref, update, { merge: true });
+          writes++;
+          updated++;
+          if (writes >= batchLimit) {
+            await batch.commit();
+            batch = db.batch();
+            writes = 0;
+          }
+        }
+      }
+    }
+    if (writes > 0) {
+      await batch.commit();
+    }
+    return { updated };
+  } catch (err) {
+    functions.logger.error('Failed to backfill group members', err);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to backfill group members',
+      err instanceof Error ? err.message : String(err)
+    );
+  }
+});
+
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 
