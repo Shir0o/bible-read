@@ -92,6 +92,22 @@ void main() {
       expect(member2.data()?['joinedAt'], joinedAt);
     });
 
+    test('joinGroup preserves existing role', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      await groupRef.collection(GroupCollections.members).doc('u1').set({
+        'uid': 'u1',
+        'role': 'owner',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024)),
+      });
+
+      await service.joinGroup(groupId: 'g1', uid: 'u1');
+
+      final member =
+          await groupRef.collection(GroupCollections.members).doc('u1').get();
+      expect(member.data()?['role'], 'owner');
+    });
+
     test('leaveGroup removes membership document', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
