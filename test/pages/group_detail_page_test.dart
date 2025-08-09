@@ -63,13 +63,21 @@ void main() {
         .doc('g1')
         .collection('members')
         .doc('u1')
-        .set({'owner': true});
+        .set({
+      'uid': 'u1',
+      'role': 'owner',
+      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+    });
     await firestore
         .collection('groups')
         .doc('g1')
         .collection('members')
         .doc('u2')
-        .set({});
+        .set({
+      'uid': 'u2',
+      'role': 'member',
+      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+    });
     await firestore.collection('users').doc('u1').set({'name': 'Owner'});
     await firestore.collection('users').doc('u2').set({'name': 'Alice'});
     await firestore
