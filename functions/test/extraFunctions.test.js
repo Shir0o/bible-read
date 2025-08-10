@@ -400,6 +400,77 @@ describe('other cloud functions', () => {
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   });
 
+  it('markFirstReader chooses earliest timestamp regardless of call order', async () => {
+    const originalFirestore = admin.firestore;
+    const rewardRef = {};
+    const entriesQuery = {};
+    const entriesRef = {
+      orderBy: () => ({ limit: () => entriesQuery }),
+      doc: (uid) => ({ id: uid }),
+    };
+    let rewardUid;
+    const firstFlags = {};
+    const fakeDb = {
+      collection: (name) => {
+        if (name === 'daily_rewards') return { doc: () => rewardRef };
+        if (name === 'read_logs')
+          return { doc: () => ({ collection: () => entriesRef }) };
+        return { doc: () => ({}) };
+      },
+      runTransaction: async (fn) => {
+        const t = {
+          get: async (ref) => {
+            if (ref === rewardRef) {
+              return rewardUid
+                ? { exists: true, data: () => ({ uid: rewardUid }) }
+                : { exists: false };
+            }
+            if (ref === entriesQuery) {
+              return {
+                empty: false,
+                docs: [
+                  { id: 'u1', data: () => ({ timestamp: 1 }) },
+                  { id: 'u2', data: () => ({ timestamp: 2 }) },
+                ],
+              };
+            }
+            return {};
+          },
+          create: (ref, data) => {
+            if (ref === rewardRef) {
+              rewardUid = data.uid;
+            }
+          },
+          set: (ref, data) => {
+            firstFlags[ref.id] = data.firstReader;
+          },
+        };
+        return fn(t);
+      },
+    };
+    function fakeFirestore() {
+      return fakeDb;
+    }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    Object.defineProperty(admin, 'firestore', {
+      value: fakeFirestore,
+      configurable: true,
+      writable: true,
+    });
+
+    const wrapped = functionsTest.wrap(myFunctions.markFirstReader);
+    const res2 = await wrapped({ data: { dateKey: 'd1' }, auth: { uid: 'u2' } });
+    const res1 = await wrapped({ data: { dateKey: 'd1' }, auth: { uid: 'u1' } });
+    assert.equal(res2.first, false);
+    assert.equal(res1.first, true);
+    assert.deepEqual(firstFlags, { u1: true });
+    assert.equal(rewardUid, 'u1');
+    Object.defineProperty(admin, 'firestore', {
+      value: originalFirestore,
+      writable: true,
+    });
+  });
+
   it('sendLikeNotification invalid data', async () => {
     const wrapped = functionsTest.wrap(myFunctions.sendLikeNotification);
     try {
