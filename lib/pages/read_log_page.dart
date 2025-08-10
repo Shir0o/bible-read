@@ -148,6 +148,10 @@ class _ReadLogPageState extends State<ReadLogPage> {
           .orderBy('timestamp', descending: true)
           .get();
 
+      final rewardDoc =
+          await widget.firestore.collection('daily_rewards').doc(dateKey).get();
+      final firstReaderUid = rewardDoc.data()?['uid'] as String?;
+
       logs = await Future.wait(snapshot.docs.map((doc) async {
         final data = doc.data();
         final likesSnapshot = await doc.reference.collection('likes').get();
@@ -168,7 +172,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
           'read': true,
           'liked': liked,
           'likeNames': likeNames,
-          'firstReader': data['firstReader'] == true,
+          'firstReader': firstReaderUid != null && doc.id == firstReaderUid,
           'comments': comments,
         };
       }).toList());
