@@ -8,6 +8,7 @@ import '../widgets/notification_button.dart';
 import '../services/notification_service.dart';
 import '../services/error_logger.dart';
 import 'add_friend_page.dart';
+import 'friend_requests_page.dart';
 import '../widgets/menu_button.dart';
 
 /// Page that lists current friends and allows sending friend requests by email.
@@ -66,13 +67,27 @@ class _FriendsPageState extends State<FriendsPage> {
         leading: const MenuButton(),
         automaticallyImplyLeading: false,
         actions: [
-          if (user != null)
+          if (user != null) ...[
+            IconButton(
+              icon: const Icon(Icons.person_add),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => FriendRequestsPage(
+                      friendService: widget.friendService,
+                      auth: widget.auth,
+                    ),
+                  ),
+                );
+              },
+            ),
             NotificationButton(
               service: NotificationService(
                 firestore: widget.friendService.firestore,
               ),
               auth: widget.auth,
             ),
+          ],
         ],
       ),
       body: Container(
