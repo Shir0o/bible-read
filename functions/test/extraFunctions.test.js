@@ -265,25 +265,31 @@ describe('other cloud functions', () => {
   it('markFirstReader first-time', async () => {
     const originalFirestore = admin.firestore;
     let created = false, setFlag = false;
-    const rewardRef = { id: 'reward' };
-    const logRef = { id: 'log' };
+    const rewardRef = {};
+    const entryDocRef = {};
+    const entriesQuery = {};
+    const entriesRef = {
+      orderBy: () => ({ limit: () => entriesQuery }),
+      doc: () => entryDocRef,
+    };
     const fakeDb = {
-      collection: (name) => ({
-        doc: () => ({ collection: () => ({ doc: () => logRef }) })
-      }),
+      collection: (name) => {
+        if (name === 'daily_rewards') return { doc: () => rewardRef };
+        if (name === 'read_logs') return { doc: () => ({ collection: () => entriesRef }) };
+        return { doc: () => ({}) };
+      },
       runTransaction: async (fn) => {
         const t = {
-          get: async () => ({ exists: false }),
+          get: async (ref) => {
+            if (ref === rewardRef) return { exists: false };
+            if (ref === entriesQuery) return { empty: false, docs: [{ id: 'u1' }] };
+            return {};
+          },
           create: () => { created = true; },
-          set: () => { setFlag = true; }
+          set: () => { setFlag = true; },
         };
         return fn(t);
-      }
-    };
-    fakeDb.collection = (name) => {
-      if (name === 'daily_rewards') return { doc: () => rewardRef };
-      if (name === 'read_logs') return { doc: () => ({ collection: () => ({ doc: () => logRef }) }) };
-      return { doc: () => ({}) };
+      },
     };
     function fakeFirestore() { return fakeDb; }
     fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
@@ -342,20 +348,19 @@ describe('other cloud functions', () => {
 
   it('markFirstReader already taken', async () => {
     const originalFirestore = admin.firestore;
-    const rewardRef = { id: 'r' };
-    const logRef = { id: 'l' };
+    const rewardRef = {};
     const fakeDb = {
       collection: (name) => {
         if (name === 'daily_rewards') return { doc: () => rewardRef };
-        if (name === 'read_logs') return { doc: () => ({ collection: () => ({ doc: () => logRef }) }) };
+        if (name === 'read_logs') return { doc: () => ({ collection: () => ({}) }) };
         return { doc: () => ({}) };
       },
       runTransaction: async (fn) => {
         const t = {
-          get: async () => ({ exists: true })
+          get: async () => ({ exists: true, data: () => ({ uid: 'u0' }) })
         };
         return fn(t);
-      }
+      },
     };
     function fakeFirestore() { return fakeDb; }
     fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
