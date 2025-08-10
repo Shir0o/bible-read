@@ -217,15 +217,18 @@ void main() {
       await firestore.collection('users').doc('u2').set({'name': 'Bob'});
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
-      await groupRef.collection(GroupCollections.members).doc('u1').set({
+      await groupRef.collection(GroupCollections.members).doc('m1').set({
         'uid': 'u1',
         'role': 'owner',
         'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
       });
-      await groupRef.collection(GroupCollections.members).doc('u2').set({
+      await groupRef.collection(GroupCollections.members).doc('m2').set({
         'uid': 'u2',
         'role': 'member',
         'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+      });
+      await groupRef.collection(GroupCollections.members).doc('m3').set({
+        'role': 'member',
       });
 
       final names = await service.memberNames('g1').first;

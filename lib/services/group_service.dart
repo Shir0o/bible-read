@@ -204,7 +204,9 @@ class GroupService {
     return snaps.asyncMap((snap) async {
       try {
         final futures = snap.docs.map((doc) async {
-          final userDoc = await firestore.collection('users').doc(doc.id).get();
+          final uid = doc.data()['uid'] as String?;
+          if (uid == null || uid.isEmpty) return null;
+          final userDoc = await firestore.collection('users').doc(uid).get();
           if (!userDoc.exists) return null;
           return userDoc.data()?['name'] as String? ?? '';
         }).toList();
