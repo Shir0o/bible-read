@@ -8,6 +8,7 @@ import '../models/notification_preferences.dart';
 import '../services/error_logger.dart';
 import '../services/notification_service.dart';
 import 'achievements_page.dart';
+import 'friend_requests_page.dart';
 import '../widgets/common_styles.dart';
 
 /// Page showing a list of notifications for the current user.
@@ -145,10 +146,18 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
           ),
         );
         break;
+      case NotificationType.friendRequest:
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => FriendRequestsPage(
+              auth: widget.auth,
+            ),
+          ),
+        );
+        break;
       case NotificationType.like:
       case NotificationType.nudge:
       case NotificationType.signup:
-      case NotificationType.friendRequest:
       case NotificationType.dailyReminder:
       case NotificationType.comment:
         break;
