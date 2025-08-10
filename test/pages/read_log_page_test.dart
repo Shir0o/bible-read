@@ -426,6 +426,10 @@ void main() {
         'firstReader': true,
         'timestamp': Timestamp.now(),
       });
+      await firestore
+          .collection('daily_rewards')
+          .doc(dateKey)
+          .set({'uid': 'u1'});
 
       await tester.pumpWidget(MaterialApp(
           home: ReadLogPage(
