@@ -384,11 +384,12 @@ exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
       const rewardSnap = await t.get(rewardRef);
       if (rewardSnap.exists) {
         const storedUid = rewardSnap.data()?.uid;
-        return { first: storedUid === uid };
+        const storedTs = rewardSnap.data()?.timestamp;
+        return { first: storedUid === uid, existingUid: storedUid, existingTs: storedTs };
       }
 
       const entriesSnap = await t.get(
-        entriesRef.orderBy('timestamp').limit(1)
+        entriesRef.orderBy('timestamp').limit(2)
       );
 
       if (entriesSnap.empty) {
@@ -400,6 +401,20 @@ exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
 
       const firstDoc = entriesSnap.docs[0];
       const firstUid = firstDoc.id;
+      const firstData = typeof firstDoc.data === 'function' ? firstDoc.data() : firstDoc.data;
+      const firstTs = firstData?.timestamp;
+
+      let conflict = false;
+      const conflictUids = [];
+      if (entriesSnap.docs.length > 1) {
+        const secondDoc = entriesSnap.docs[1];
+        const secondData = typeof secondDoc.data === 'function' ? secondDoc.data() : secondDoc.data;
+        const secondTs = secondData?.timestamp;
+        if (secondTs && firstTs && secondTs.isEqual && secondTs.isEqual(firstTs)) {
+          conflict = true;
+          conflictUids.push(firstUid, secondDoc.id);
+        }
+      }
 
       t.create(rewardRef, {
         uid: firstUid,
@@ -407,10 +422,36 @@ exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
       });
       t.set(entriesRef.doc(firstUid), { firstReader: true }, { merge: true });
 
-      return { first: firstUid === uid };
+      return { first: firstUid === uid, firstUid, firstTs, conflict, conflictUids };
     });
 
-    return result;
+    const logTs = new Date().toISOString();
+    if (result.existingUid) {
+      functions.logger.info('First reader already recorded', {
+        dateKey,
+        storedUid: result.existingUid,
+        storedTimestamp: result.existingTs?.toDate ? result.existingTs.toDate().toISOString() : result.existingTs,
+        requestedUid: uid,
+        logTs,
+      });
+    } else {
+      functions.logger.info('First reader set', {
+        dateKey,
+        chosenUid: result.firstUid,
+        entryTimestamp: result.firstTs?.toDate ? result.firstTs.toDate().toISOString() : result.firstTs,
+        logTs,
+      });
+      if (result.conflict) {
+        functions.logger.warn('First reader conflict detected', {
+          dateKey,
+          timestamp: result.firstTs?.toDate ? result.firstTs.toDate().toISOString() : result.firstTs,
+          uids: result.conflictUids,
+          logTs,
+        });
+      }
+    }
+
+    return { first: result.first };
   } catch (err) {
     functions.logger.error('Failed to mark first reader', err);
     throw new functions.https.HttpsError(
