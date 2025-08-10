@@ -374,22 +374,40 @@ exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
   const uid = req.auth.uid;
   const db = admin.firestore();
   const rewardRef = db.collection('daily_rewards').doc(dateKey);
-  const logRef = db.collection('read_logs').doc(dateKey).collection('entries').doc(uid);
+  const entriesRef = db
+    .collection('read_logs')
+    .doc(dateKey)
+    .collection('entries');
 
   try {
     const result = await db.runTransaction(async (t) => {
       const rewardSnap = await t.get(rewardRef);
       if (rewardSnap.exists) {
-        return { first: false };
+        const storedUid = rewardSnap.data()?.uid;
+        return { first: storedUid === uid };
       }
 
+      const entriesSnap = await t.get(
+        entriesRef.orderBy('timestamp').limit(1)
+      );
+
+      if (entriesSnap.empty) {
+        throw new functions.https.HttpsError(
+          'failed-precondition',
+          'No log entries found for the day'
+        );
+      }
+
+      const firstDoc = entriesSnap.docs[0];
+      const firstUid = firstDoc.id;
+
       t.create(rewardRef, {
-        uid,
+        uid: firstUid,
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
-      t.set(logRef, { firstReader: true }, { merge: true });
+      t.set(entriesRef.doc(firstUid), { firstReader: true }, { merge: true });
 
-      return { first: true };
+      return { first: firstUid === uid };
     });
 
     return result;
