@@ -4,6 +4,7 @@ import 'package:bible_read/models/notification_preferences.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -42,6 +43,8 @@ class MockNotificationsPlugin implements FlutterLocalNotificationsPlugin {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   tz.initializeTimeZones();
+  const MethodChannel timezoneChannel =
+      MethodChannel('flutter_native_timezone');
 
   group('DailyNotificationService', () {
     late FakeFirebaseFirestore firestore;
@@ -60,6 +63,17 @@ void main() {
         prefsService: prefsService,
         auth: auth,
       );
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        timezoneChannel,
+        (MethodCall call) async => 'America/Detroit',
+      );
+      tz.setLocalLocation(tz.getLocation('UTC'));
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(timezoneChannel, null);
     });
 
     test('scheduleDailyReminder calls plugin with correct values', () async {
@@ -73,6 +87,16 @@ void main() {
       expect(plugin.components, DateTimeComponents.time);
       expect(plugin.scheduledDate?.hour, 8);
       expect(plugin.scheduledDate?.minute, 0);
+    });
+
+    test('scheduleDailyReminder respects device timezone', () async {
+      await prefsService.updatePreference(
+        'u1',
+        NotificationType.dailyReminder,
+        true,
+      );
+      await service.scheduleDailyReminder(const Time(8, 0));
+      expect(plugin.scheduledDate?.location.name, 'America/Detroit');
     });
 
     test('does nothing when preference disabled', () async {
