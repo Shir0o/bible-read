@@ -48,7 +48,7 @@ class _CommentSectionState extends State<CommentSection> {
     _controller.clear();
     setState(() => _sending = true);
 
-    widget.onAdd(text).then((_) {}).catchError((Object e, StackTrace st) async {
+    widget.onAdd(text).catchError((Object e, StackTrace st) async {
       if (kDebugMode) {
         debugPrint('Failed to add comment: $e');
       }
@@ -65,11 +65,12 @@ class _CommentSectionState extends State<CommentSection> {
           ),
         );
       }
-    }).whenComplete(() {
-      if (mounted) {
-        setState(() => _sending = false);
-      }
+      return Future<Comment>.error(e, st);
     });
+
+    if (mounted) {
+      setState(() => _sending = false);
+    }
   }
 
   @override
