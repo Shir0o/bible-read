@@ -147,10 +147,20 @@ class _ReadLogPageState extends State<ReadLogPage> {
           .collection('entries')
           .orderBy('timestamp', descending: true)
           .get();
-
-      final rewardDoc =
-          await widget.firestore.collection('daily_rewards').doc(dateKey).get();
-      final firstReaderUid = rewardDoc.data()?['uid'] as String?;
+      String? firstReaderUid;
+      try {
+        final rewardDoc = await widget.firestore
+            .collection('daily_rewards')
+            .doc(dateKey)
+            .get();
+        firstReaderUid = rewardDoc.data()?['uid'] as String?;
+      } catch (e, st) {
+        if (kDebugMode) {
+          debugPrint('Load daily reward failed: $e');
+        }
+        ErrorLogger.log(e, st);
+        firstReaderUid = null;
+      }
 
       logs = await Future.wait(snapshot.docs.map((doc) async {
         final data = doc.data();
