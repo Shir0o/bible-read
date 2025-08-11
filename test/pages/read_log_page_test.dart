@@ -86,6 +86,71 @@ class ThrowingFirestore extends FakeFirebaseFirestore {
   }
 }
 
+class ThrowingRewardsDocumentReference
+    extends MockDocumentReference<Map<String, dynamic>> {
+  ThrowingRewardsDocumentReference(
+    FakeFirebaseFirestore firestore,
+    String path,
+    String id,
+    Map<String, dynamic> root,
+    Map<String, dynamic> docsData,
+    Map<String, dynamic> rootParent,
+    Map<String, dynamic> snapshotStreamControllerRoot,
+  ) : super(firestore, path, id, root, docsData, rootParent,
+            snapshotStreamControllerRoot, null);
+
+  @override
+  Future<DocumentSnapshot<Map<String, dynamic>>> get([
+    GetOptions? options,
+  ]) async {
+    throw FirebaseException(plugin: 'firestore');
+  }
+}
+
+class ThrowingRewardsCollectionReference
+    extends MockCollectionReference<Map<String, dynamic>> {
+  ThrowingRewardsCollectionReference(
+    super.firestore,
+    super.path,
+    super.root,
+    super.docsData,
+    super.snapshotStreamControllerRoot,
+  );
+
+  @override
+  DocumentReference<Map<String, dynamic>> doc([String? path]) {
+    final base =
+        super.doc(path ?? '') as MockDocumentReference<Map<String, dynamic>>;
+    return ThrowingRewardsDocumentReference(
+      firestore as FakeFirebaseFirestore,
+      base.path,
+      base.id,
+      base.root,
+      base.docsData,
+      base.rootParent,
+      base.snapshotStreamControllerRoot,
+    );
+  }
+}
+
+class ThrowingRewardsFirestore extends FakeFirebaseFirestore {
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String path) {
+    final base =
+        super.collection(path) as MockCollectionReference<Map<String, dynamic>>;
+    if (path == 'daily_rewards') {
+      return ThrowingRewardsCollectionReference(
+        this,
+        base.path,
+        base.root,
+        base.docsData,
+        base.snapshotStreamControllerRoot,
+      );
+    }
+    return base;
+  }
+}
+
 // Firestore that throws on like writes
 class ThrowingWriteLikesDocumentReference
     extends MockDocumentReference<Map<String, dynamic>> {
@@ -445,6 +510,40 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(BadgeIcon), findsOneWidget);
+    });
+
+    testWidgets('renders feed when daily reward is inaccessible',
+        (tester) async {
+      final firestore = ThrowingRewardsFirestore();
+      final user = MockUser(uid: 'u1');
+      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      await firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc('u1')
+          .set({
+        'name': 'User One',
+        'email': 'u1@test.com',
+        'timestamp': Timestamp.now(),
+      });
+
+      await tester.pumpWidget(MaterialApp(
+          home: ReadLogPage(
+              firestore: firestore,
+              auth: MockFirebaseAuth(mockUser: user, signedIn: true),
+              dateProvider: () => fixedDate,
+              onSendLikeNotification: (
+                  {required String ownerUid,
+                  required String likerName}) async {},
+              onSendCommentNotification: (
+                  {required String ownerUid,
+                  required String commenterName}) async {})));
+      await tester.pumpAndSettle();
+
+      expect(find.text('User read today!'), findsOneWidget);
+      expect(find.text('Unable to load feed.'), findsNothing);
+      expect(find.byType(BadgeIcon), findsNothing);
     });
 
     testWidgets('toggleLike adds and does not remove like', (tester) async {
