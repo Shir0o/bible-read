@@ -44,7 +44,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   tz.initializeTimeZones();
   const MethodChannel timezoneChannel =
-      MethodChannel('flutter_native_timezone');
+      MethodChannel('flutter_timezone');
 
   group('DailyNotificationService', () {
     late FakeFirebaseFirestore firestore;
