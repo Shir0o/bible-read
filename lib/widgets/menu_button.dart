@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Icon button that opens the application drawer.
+/// Icon button that opens the nearest ancestor application's drawer.
 class MenuButton extends StatelessWidget {
   /// Optional key for the surrounding [Scaffold].
   final GlobalKey<ScaffoldState>? scaffoldKey;
@@ -14,9 +14,15 @@ class MenuButton extends StatelessWidget {
       tooltip: 'Menu',
       icon: const Icon(Icons.menu),
       onPressed: () {
-        final state = scaffoldKey?.currentState ??
-            Scaffold.maybeOf(context) ??
-            context.findRootAncestorStateOfType<ScaffoldState>();
+        ScaffoldState? state =
+            scaffoldKey?.currentState ?? Scaffold.maybeOf(context);
+        BuildContext? ctx = state?.context ?? context;
+
+        while (state != null && !state.hasDrawer) {
+          ctx = state.context;
+          state = ctx.findAncestorStateOfType<ScaffoldState>();
+        }
+
         state?.openDrawer();
       },
     );
