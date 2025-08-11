@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../services/error_logger.dart';
 
 import '../models/comment.dart';
@@ -48,11 +50,11 @@ class _CommentSectionState extends State<CommentSection> {
     _controller.clear();
     setState(() => _sending = true);
 
-    widget.onAdd(text).then((_) {}).catchError((Object e, StackTrace st) async {
+    void handleError(Object e, StackTrace st) {
       if (kDebugMode) {
         debugPrint('Failed to add comment: $e');
       }
-      await ErrorLogger.log(e, st);
+      unawaited(ErrorLogger.log(e, st));
       if (mounted) {
         _controller
           ..text = text
@@ -65,11 +67,22 @@ class _CommentSectionState extends State<CommentSection> {
           ),
         );
       }
-    }).whenComplete(() {
-      if (mounted) {
-        setState(() => _sending = false);
-      }
-    });
+    }
+
+    try {
+      unawaited(
+        widget.onAdd(text).then<void>((_) {},
+            onError: (Object e, StackTrace st) {
+          handleError(e, st);
+        }),
+      );
+    } catch (e, st) {
+      handleError(e, st);
+    }
+
+    if (mounted) {
+      setState(() => _sending = false);
+    }
   }
 
   @override

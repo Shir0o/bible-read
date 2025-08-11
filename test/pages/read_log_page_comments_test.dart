@@ -170,7 +170,7 @@ void main() {
       expect(called, 1);
     });
 
-    testWidgets('shows comment and progress indicator while posting',
+    testWidgets('shows comment without progress indicator while posting',
         (tester) async {
       final completer = Completer<Comment>();
 
@@ -192,7 +192,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Temp: Quick'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(completer.isCompleted, isFalse);
     });
 
