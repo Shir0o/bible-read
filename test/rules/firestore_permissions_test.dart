@@ -229,4 +229,18 @@ void main() {
           isFalse);
     });
   });
+
+  group('/daily_rewards', () {
+    const base = 'databases/$db/documents/daily_rewards/2024-01-01';
+
+    test('signed-in user can read reward', () {
+      expect(
+          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
+    });
+
+    test('writes are denied', () {
+      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
+          isFalse);
+    });
+  });
 }
