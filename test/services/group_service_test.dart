@@ -25,6 +25,8 @@ class MockDocumentSnapshot<T> extends Mock implements DocumentSnapshot<T> {}
 
 class MockQuery<T> extends Mock implements Query<T> {}
 
+class MockQuerySnapshot<T> extends Mock implements QuerySnapshot<T> {}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
@@ -207,9 +209,35 @@ void main() {
         'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 3)),
       });
 
-      final groups = await service.groupsForUser('u1').first;
+      final groups =
+          await service.groupsForUser('u1').firstWhere((g) => g.length == 2);
       final ids = groups.map((g) => g.id).toSet();
       expect(ids, {'g1', 'g2'});
+    });
+
+    test('groupsForUser includes owned groups without membership doc',
+        () async {
+      final owned = firestore.collection(GroupCollections.groups).doc('g1');
+      await owned.set({'name': 'G', 'ownerUid': 'u1'});
+
+      final groups =
+          await service.groupsForUser('u1').firstWhere((g) => g.isNotEmpty);
+      expect(groups.map((g) => g.id), ['g1']);
+    });
+
+    test('groupsForUser deduplicates owned membership groups', () async {
+      final owned = firestore.collection(GroupCollections.groups).doc('g1');
+      await owned.set({'name': 'G', 'ownerUid': 'u1'});
+      await owned.collection(GroupCollections.members).doc('m1').set({
+        'uid': 'u1',
+        'role': 'owner',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+      });
+
+      final groups =
+          await service.groupsForUser('u1').firstWhere((g) => g.isNotEmpty);
+      expect(groups, hasLength(1));
+      expect(groups.first.id, 'g1');
     });
 
     test('memberNames streams display names', () async {
@@ -250,16 +278,27 @@ void main() {
       expect(entries.first.chapters, ['Gen 1']);
     });
 
-    test('groupsForUser surfaces stream errors', () async {
+    test('groupsForUser logs and returns empty list on stream error', () async {
       final mockFs = MockFirebaseFirestore();
-      final query = MockQuery<Map<String, dynamic>>();
+      final memberQuery = MockQuery<Map<String, dynamic>>();
+      final groups = MockCollectionReference<Map<String, dynamic>>();
+      final ownerQuery = MockQuery<Map<String, dynamic>>();
+      final ownerSnap = MockQuerySnapshot<Map<String, dynamic>>();
       final err = Exception('fail');
 
       when(() => mockFs.collectionGroup(GroupCollections.members))
-          .thenReturn(query);
-      when(() => query.where('uid', isEqualTo: 'u1')).thenReturn(query);
-      when(() => query.snapshots()).thenAnswer(
+          .thenReturn(memberQuery);
+      when(() => memberQuery.where('uid', isEqualTo: 'u1'))
+          .thenReturn(memberQuery);
+      when(() => memberQuery.snapshots()).thenAnswer(
           (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err));
+
+      when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
+      when(() => groups.where('ownerUid', isEqualTo: 'u1'))
+          .thenReturn(ownerQuery);
+      when(() => ownerQuery.snapshots())
+          .thenAnswer((_) => Stream.value(ownerSnap));
+      when(() => ownerSnap.docs).thenReturn([]);
 
       final crash = MockCrashlytics();
       ErrorLogger.crashlytics = crash;
@@ -270,7 +309,13 @@ void main() {
           fatal: any(named: 'fatal'))).thenAnswer((_) async {});
 
       final svc = GroupService(firestore: mockFs);
-      await expectLater(svc.groupsForUser('u1'), emitsError(same(err)));
+      await expectLater(svc.groupsForUser('u1'), emits(isEmpty));
+
+      verify(() => crash.recordError(err, any(),
+          reason: null,
+          information: any(named: 'information'),
+          printDetails: any(named: 'printDetails'),
+          fatal: false)).called(1);
     });
 
     test('memberNames surfaces stream errors', () async {
@@ -440,7 +485,8 @@ void main() {
       when(() => groupDoc.collection(GroupCollections.members))
           .thenReturn(members);
       when(() => members.doc('u1')).thenReturn(memberDoc);
-      when(() => memberDoc.delete()).thenThrow(Exception('fail'));
+      when(() => memberDoc.delete())
+          .thenAnswer((_) => Future<void>.error(Exception('fail')));
 
       final crash = MockCrashlytics();
       ErrorLogger.crashlytics = crash;

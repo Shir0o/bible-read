@@ -161,32 +161,82 @@ class GroupService {
     return '$y-$m-$d';
   }
 
-  /// Stream of groups the user with [uid] belongs to.
+  /// Stream of groups the user with [uid] belongs to or owns.
   Stream<List<Group>> groupsForUser(String uid) {
-    final snaps = firestore
+    final memberSnaps = firestore
         .collectionGroup(GroupCollections.members)
         .where('uid', isEqualTo: uid)
-        .snapshots()
-        .handleError((e, st) {
-      unawaited(ErrorLogger.log(e, st));
-      throw e;
-    });
-    return snaps.asyncMap((snap) async {
-      try {
-        final futures = snap.docs
-            .map((doc) => doc.reference.parent.parent)
-            .whereType<DocumentReference<Map<String, dynamic>>>()
-            .map((parent) => parent.get())
-            .toList();
-        final docs = await Future.wait(futures);
-        return docs
-            .where((doc) => doc.exists)
-            .map(Group.fromFirestore)
-            .toList();
-      } catch (e, st) {
-        await ErrorLogger.log(e, st);
-        return <Group>[];
+        .snapshots();
+
+    final ownerSnaps = firestore
+        .collection(GroupCollections.groups)
+        .where('ownerUid', isEqualTo: uid)
+        .snapshots();
+
+    return Stream<List<Group>>.multi((controller) {
+      var memberGroups = <Group>[];
+      var ownerGroups = <Group>[];
+
+      Future<void> emit() async {
+        final merged = <String, Group>{};
+        for (final g in memberGroups) {
+          merged[g.id] = g;
+        }
+        for (final g in ownerGroups) {
+          merged[g.id] = g;
+        }
+        controller.add(merged.values.toList());
       }
+
+      Future<void> handleMember(
+          QuerySnapshot<Map<String, dynamic>> snap) async {
+        try {
+          final futures = snap.docs
+              .map((doc) => doc.reference.parent.parent)
+              .whereType<DocumentReference<Map<String, dynamic>>>()
+              .map((parent) => parent.get())
+              .toList();
+          final docs = await Future.wait(futures);
+          memberGroups =
+              docs.where((doc) => doc.exists).map(Group.fromFirestore).toList();
+        } catch (e, st) {
+          await ErrorLogger.log(e, st);
+          memberGroups = <Group>[];
+        }
+        await emit();
+      }
+
+      Future<void> handleOwner(QuerySnapshot<Map<String, dynamic>> snap) async {
+        try {
+          ownerGroups = snap.docs.map(Group.fromFirestore).toList();
+        } catch (e, st) {
+          await ErrorLogger.log(e, st);
+          ownerGroups = <Group>[];
+        }
+        await emit();
+      }
+
+      final sub1 = memberSnaps.listen(
+        (snap) => unawaited(handleMember(snap)),
+        onError: (e, st) async {
+          await ErrorLogger.log(e, st);
+          memberGroups = <Group>[];
+          await emit();
+        },
+      );
+      final sub2 = ownerSnaps.listen(
+        (snap) => unawaited(handleOwner(snap)),
+        onError: (e, st) async {
+          await ErrorLogger.log(e, st);
+          ownerGroups = <Group>[];
+          await emit();
+        },
+      );
+
+      controller.onCancel = () {
+        sub1.cancel();
+        sub2.cancel();
+      };
     });
   }
 
