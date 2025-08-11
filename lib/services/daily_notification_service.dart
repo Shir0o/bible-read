@@ -6,6 +6,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../models/notification_preferences.dart';
 import 'notification_preferences_service.dart';
+import 'error_logger.dart';
 
 /// Simple representation of a time of day.
 class Time {
@@ -56,12 +57,14 @@ class DailyNotificationService {
   }
 
   /// Schedule a daily reminder notification at the given [time].
-  Future<void> scheduleDailyReminder(Time time) async {
+  ///
+  /// Returns `true` if the notification was scheduled successfully.
+  Future<bool> scheduleDailyReminder(Time time) async {
     await _ensureTzInitialized();
     final user = auth.currentUser;
-    if (user == null) return;
+    if (user == null) return false;
     final prefs = await prefsService.fetchPreferences(user.uid);
-    if (!prefs[NotificationType.dailyReminder]) return;
+    if (!prefs[NotificationType.dailyReminder]) return false;
 
     final now = tz.TZDateTime.now(tz.local);
     var scheduled = tz.TZDateTime(
@@ -86,15 +89,21 @@ class DailyNotificationService {
       iOS: DarwinNotificationDetails(),
     );
 
-    await plugin.zonedSchedule(
-      _id,
-      'Bible Reading Reminder',
-      "Don't forget to log your reading today!",
-      scheduled,
-      details,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+    try {
+      await plugin.zonedSchedule(
+        _id,
+        'Bible Reading Reminder',
+        "Don't forget to log your reading today!",
+        scheduled,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+      return true;
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      return false;
+    }
   }
 
   /// Cancel any pending daily reminder notification.
