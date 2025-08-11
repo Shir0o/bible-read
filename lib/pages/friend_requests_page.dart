@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/friend_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/friend_request_widget.dart';
+import '../widgets/menu_button.dart';
 
 /// Page that lists all pending friend requests for the current user.
 class FriendRequestsPage extends StatelessWidget {
@@ -25,7 +26,11 @@ class FriendRequestsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = auth.currentUser;
     return Scaffold(
-      appBar: CommonStyles.buildAppBar('Friend Requests'),
+      appBar: CommonStyles.buildAppBar(
+        'Friend Requests',
+        leading: const MenuButton(),
+        automaticallyImplyLeading: false,
+      ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
         child: user == null
