@@ -243,4 +243,30 @@ void main() {
           isFalse);
     });
   });
+
+  group('/groups', () {
+    const base = 'databases/$db/documents/groups';
+
+    test('owner can read group without member doc', () {
+      expect(
+          rules.isAllowed('$base/g1', Method.read, variables: {
+            ...auth('alice'),
+            'resource': {
+              'data': {'ownerUid': 'alice'}
+            }
+          }),
+          isTrue);
+    });
+
+    test('non-member non-owner cannot read group', () {
+      expect(
+          rules.isAllowed('$base/g1', Method.read, variables: {
+            ...auth('charlie'),
+            'resource': {
+              'data': {'ownerUid': 'alice'}
+            }
+          }),
+          isFalse);
+    });
+  });
 }
