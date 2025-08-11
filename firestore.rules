@@ -106,7 +106,7 @@ service cloud.firestore {
         );
       }
 
-      allow read: if isMember();
+      allow read: if isMember() || isOwner();
       allow write: if isOwnerOrAdmin();
 
       match /members/{uid} {
