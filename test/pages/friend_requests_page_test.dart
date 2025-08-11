@@ -90,6 +90,12 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('shows menu button in app bar', (tester) async {
+    await pumpPage(tester);
+
+    expect(find.byIcon(Icons.menu), findsOneWidget);
+  });
+
   testWidgets('shows pending requests for signed in user', (tester) async {
     await service.sendFriendRequest(
       fromUid: 'a',
