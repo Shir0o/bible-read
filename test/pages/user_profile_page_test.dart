@@ -8,6 +8,7 @@ import "package:firebase_auth/firebase_auth.dart";
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 
@@ -16,7 +17,8 @@ import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/badge_icon.dart';
 import 'package:bible_read/services/daily_notification_service.dart';
 
-class FakeGoogleSignInPlatform extends GoogleSignInPlatform {
+class FakeGoogleSignInPlatform extends GoogleSignInPlatform
+    with MockPlatformInterfaceMixin {
   FakeGoogleSignInPlatform({this.userData, this.signInError});
 
   GoogleSignInUserData? userData;
