@@ -43,7 +43,9 @@ void main() {
 
   Future<void> pumpPage(WidgetTester tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: AddFriendPage(friendService: service, auth: auth)),
+      MaterialApp(
+        home: AddFriendPage(friendService: service, auth: auth),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -52,10 +54,13 @@ void main() {
     await pumpPage(tester);
 
     await tester.enterText(
-        find.byKey(const Key('addFriendEmailField')), 'friend@example.com');
+      find.byKey(const Key('addFriendEmailField')),
+      'friend@example.com',
+    );
     await tester.tap(find.text('Send'));
     await tester.pumpAndSettle();
 
     expect(service.lastEmail, 'friend@example.com');
+    await tester.pump(const Duration(seconds: 2));
   });
 }

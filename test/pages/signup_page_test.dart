@@ -24,8 +24,10 @@ class RecordingAuth extends MockFirebaseAuth {
     createCalled = true;
     this.email = email;
     this.password = password;
-    return super
-        .createUserWithEmailAndPassword(email: email, password: password);
+    return super.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
   }
 }
 
@@ -37,17 +39,22 @@ void main() {
     await Firebase.initializeApp();
   });
 
-  testWidgets('SignupPage creates account, writes user doc and navigates',
-      (tester) async {
+  testWidgets('SignupPage creates account, writes user doc and navigates', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final auth = RecordingAuth();
 
     await tester.pumpWidget(
-      MaterialApp(home: SignupPage(auth: auth, firestore: firestore)),
+      MaterialApp(
+        home: SignupPage(auth: auth, firestore: firestore),
+      ),
     );
 
     await tester.enterText(
-        find.byKey(const Key('signupEmailField')), 'user@example.com');
+      find.byKey(const Key('signupEmailField')),
+      'user@example.com',
+    );
     await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
     await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Sign Up'));
@@ -60,5 +67,6 @@ void main() {
     final doc = await firestore.collection('users').doc(uid).get();
     expect(doc.exists, isTrue);
     expect(find.byType(MainPage), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
   });
 }

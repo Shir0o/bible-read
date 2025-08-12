@@ -10,18 +10,16 @@ class SuccessAnimation extends StatelessWidget {
 
   /// Displays the success animation using an [Overlay] above the current
   /// context.
-  static void show(BuildContext context) {
+  static Future<void> show(BuildContext context) {
     final overlay = Overlay.of(context);
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (_) => Positioned.fill(
-        child: SuccessAnimation(
-          onDismiss: () => entry.remove(),
-        ),
+        child: SuccessAnimation(onDismiss: () => entry.remove()),
       ),
     );
     overlay.insert(entry);
-    Future<void>.delayed(const Duration(seconds: 2), () {
+    return Future<void>.delayed(const Duration(seconds: 2), () {
       if (entry.mounted) entry.remove();
     });
   }
@@ -31,10 +29,7 @@ class SuccessAnimation extends StatelessWidget {
     return Center(
       child: GestureDetector(
         onTap: onDismiss,
-        child: Lottie.asset(
-          'assets/animations/success.json',
-          repeat: false,
-        ),
+        child: Lottie.asset('assets/animations/success.json', repeat: false),
       ),
     );
   }
