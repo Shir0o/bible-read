@@ -225,6 +225,21 @@ void main() {
       expect(groups.map((g) => g.id), ['g1']);
     });
 
+    test('groupsForUser returns owned group without owner membership doc',
+        () async {
+      final owned = firestore.collection(GroupCollections.groups).doc('g1');
+      await owned.set({'name': 'G', 'ownerUid': 'u1'});
+      await owned.collection(GroupCollections.members).doc('m2').set({
+        'uid': 'u2',
+        'role': 'member',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+      });
+
+      final groups =
+          await service.groupsForUser('u1').firstWhere((g) => g.isNotEmpty);
+      expect(groups.map((g) => g.id), ['g1']);
+    });
+
     test('groupsForUser deduplicates owned membership groups', () async {
       final owned = firestore.collection(GroupCollections.groups).doc('g1');
       await owned.set({'name': 'G', 'ownerUid': 'u1'});
