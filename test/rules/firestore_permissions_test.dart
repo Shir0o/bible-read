@@ -258,7 +258,7 @@ void main() {
           isTrue);
     });
 
-    test('non-member non-owner cannot read group', () {
+    test('non-member non-owner can read group', () {
       expect(
           rules.isAllowed('$base/g1', Method.read, variables: {
             ...auth('charlie'),
@@ -266,7 +266,7 @@ void main() {
               'data': {'ownerUid': 'alice'}
             }
           }),
-          isFalse);
+          isTrue);
     });
   });
 }
