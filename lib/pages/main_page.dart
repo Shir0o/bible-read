@@ -23,6 +23,7 @@ import '../services/error_logger.dart';
 import 'home_page.dart';
 import 'read_log_page.dart';
 import 'app_check_error_page.dart';
+import 'historical_streaks_page.dart';
 
 typedef SendLikeNotification = Future<void> Function({
   required String ownerUid,
@@ -271,6 +272,11 @@ class _MainPageState extends State<MainPage> {
         dailyNotificationServiceProvider:
             widget.dailyNotificationServiceProvider,
       ),
+      if (signedIn)
+        HistoricalStreaksPage(
+          firestore: widget.firestore,
+          auth: widget.auth,
+        ),
     ];
 
     final int navIndex = signedIn

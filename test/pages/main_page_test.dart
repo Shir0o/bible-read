@@ -473,6 +473,11 @@ void main() {
     expect(find.byType(ReadLogPage), findsOneWidget);
 
     // Go to profile and sign out
+    final responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
+    responsive.scaffoldKey!.currentState!.openDrawer();
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.person));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sign Out'));

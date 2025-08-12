@@ -43,8 +43,7 @@ class MockNotificationsPlugin implements FlutterLocalNotificationsPlugin {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   tz.initializeTimeZones();
-  const MethodChannel timezoneChannel =
-      MethodChannel('flutter_timezone');
+  const MethodChannel timezoneChannel = MethodChannel('flutter_timezone');
 
   group('DailyNotificationService', () {
     late FakeFirebaseFirestore firestore;
