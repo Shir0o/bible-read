@@ -12,6 +12,17 @@ class AppDrawer extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xFF0D47A1)),
+              child: Text(
+                'Bible Read',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
             ListTile(
               leading: const Icon(Icons.leaderboard),
               title: const Text('Leaderboard'),
@@ -42,14 +53,6 @@ class AppDrawer extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 onNavigate(5);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_add),
-              title: const Text('Friend Requests'),
-              onTap: () {
-                Navigator.pop(context);
-                onNavigate(6);
               },
             ),
             const Divider(),

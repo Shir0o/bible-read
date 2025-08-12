@@ -116,8 +116,59 @@ To run fast, essentials-only tests in Codex:
    of tests (for example, `flutter test --no-pub test/widget_test.dart`) or
    skip tests here and execute the full suite locally instead.
 
+
 ### Tips for faster runs
 
 - Use `--no-pub` to skip dependency checks when re-running.
 - Only unit/widget tests are run—no emulator/device needed.
 - Cache `.pub-cache/` and `flutter/bin/cache` to avoid re-downloading.
+
+### Quick-fix & 1‑minute safe command
+
+When Codex enforces a ~1 minute execution window, use the command below to
+**format**, **auto-fix lints**, **scope analysis**, and **run only a very small
+set of tests** so it consistently finishes in time:
+
+```bash
+# Linux or CI environments that have GNU `timeout` available
+timeout 55s bash -lc '
+  # 1) Format and apply safe automated fixes
+  dart format lib test
+  dart fix --apply || true
+
+  # 2) Analyze only Dart sources and tests (skip platform dirs) and skip pub
+  flutter analyze lib test --no-pub
+
+  # 3) Run a tiny, fast test slice to stay under 1 minute
+  # Prefer running only changed tests if any were modified in the last commit;
+  # otherwise fall back to a known-fast file.
+  CHANGED_TESTS=$(git diff --name-only --diff-filter=AM HEAD~1 -- test | tr "\n" " ")
+  if [ -n "$CHANGED_TESTS" ]; then
+    flutter test --no-pub $CHANGED_TESTS
+  else
+    flutter test --no-pub test/widget_test.dart
+  fi
+'
+```
+
+**Notes**
+- On macOS local shells without GNU coreutils, install `gtimeout` via Homebrew and
+  replace `timeout` with `gtimeout`.
+- `dart fix --apply` only performs **safe** automatic fixes. If `flutter analyze`
+  still reports issues, follow the hints it prints and commit the manual fixes.
+- Keep slow/integration tests tagged (e.g., `@Tags(['slow'])`) and **exclude**
+  them in fast paths with `-x slow` when needed:
+
+  ```bash
+  flutter test --no-pub -x slow test/widget_test.dart
+  ```
+
+- For PRs, prefer running the **full** suite locally or in CI without the
+  1-minute cap:
+
+  ```bash
+  dart format lib test
+  dart fix --apply
+  flutter analyze
+  flutter test --no-pub
+  ```
