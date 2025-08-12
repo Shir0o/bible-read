@@ -71,8 +71,7 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Future<bool> canAccessScopes(
     List<String> scopes, {
     String? accessToken,
-  }) async =>
-      true;
+  }) async => true;
 
   @override
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
@@ -90,7 +89,7 @@ class RecordingNotificationService extends DailyNotificationService {
   bool scheduled = false;
 
   RecordingNotificationService({required FirebaseAuth auth})
-      : super(auth: auth);
+    : super(auth: auth);
 
   @override
   Future<bool> scheduleDailyReminder(Time time) async {
@@ -318,8 +317,10 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    final userDoc =
-        await fakeFirestore.collection('users').doc(testUser.uid).get();
+    final userDoc = await fakeFirestore
+        .collection('users')
+        .doc(testUser.uid)
+        .get();
 
     expect(userDoc.exists, isTrue);
     expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
@@ -380,12 +381,12 @@ void main() {
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
           dailyNotificationServiceProvider: DailyNotificationService.new,
-          sendLikeNotification: (
-              {required String ownerUid, required String likerName}) async {
-            wasCalled = true;
-            calledUid = ownerUid;
-            calledName = likerName;
-          },
+          sendLikeNotification:
+              ({required String ownerUid, required String likerName}) async {
+                wasCalled = true;
+                calledUid = ownerUid;
+                calledName = likerName;
+              },
         ),
       ),
     );
@@ -473,7 +474,12 @@ void main() {
     expect(find.byType(ReadLogPage), findsOneWidget);
 
     // Go to profile and sign out
-    await tester.tap(find.byIcon(Icons.person));
+    final responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
+    responsive.scaffoldKey!.currentState!.openDrawer();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sign Out'));
     await tester.pumpAndSettle();
