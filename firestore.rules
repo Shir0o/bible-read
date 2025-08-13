@@ -106,18 +106,18 @@ service cloud.firestore {
         );
       }
 
-      allow read: if isMember() || isOwner();
+      allow read: if request.auth != null;
       allow write: if isOwnerOrAdmin();
 
       match /members/{uid} {
-        allow read: if request.auth.uid == uid || isOwnerOrAdmin();
+        allow read: if request.auth != null;
         allow create: if isOwnerOrAdmin();
         allow delete: if isOwnerOrAdmin();
         allow update: if request.auth.uid == uid || isOwnerOrAdmin();
       }
 
       match /schedule/{date} {
-        allow read: if isMember();
+        allow read: if request.auth != null;
         allow write: if isOwnerOrAdmin();
       }
     }
