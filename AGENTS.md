@@ -116,6 +116,14 @@ To run fast, essentials-only tests in Codex:
    of tests (for example, `flutter test --no-pub test/widget_test.dart`) or
    skip tests here and execute the full suite locally instead.
 
+### Handling environment limit errors
+
+If `flutter test` reports "Flutter tests were not run because the Flutter tool build process exceeded the environment's limits", do the following:
+
+- Run `./scripts/setup_flutter.sh` to pre-cache the SDK.
+- Execute a minimal test subset, e.g. `flutter test --no-pub test/widget_test.dart`.
+- Run the full suite locally or in CI environments with sufficient resources.
+
 
 ### Tips for faster runs
 
