@@ -59,7 +59,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('lists groups from service', (tester) async {
+  testWidgets('lists all groups from service', (tester) async {
     await firestore.collection('groups').doc('g1').set({
       'name': 'Study',
       'ownerUid': 'u1',
@@ -74,10 +74,15 @@ void main() {
       'role': 'owner',
       'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
     });
+    await firestore.collection('groups').doc('g2').set({
+      'name': 'Other',
+      'ownerUid': 'u2',
+    });
 
     await pumpPage(tester, GroupService(firestore: firestore));
 
     expect(find.text('Study'), findsOneWidget);
+    expect(find.text('Other'), findsOneWidget);
   });
 
   testWidgets('create group success shows snackbar', (tester) async {
