@@ -11,6 +11,9 @@ import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
 import '../widgets/read_switch_tile.dart';
 import '../widgets/menu_button.dart';
+import '../widgets/streak_stats_box.dart';
+import '../widgets/week_streak_calendar.dart';
+import '../widgets/month_streak_calendar.dart';
 import '../services/achievement_service.dart';
 import '../services/notification_service.dart';
 import '../models/achievement.dart';
@@ -30,7 +33,8 @@ class HomePage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })? markFirstReader;
+  })?
+  markFirstReader;
 
   HomePage({
     super.key,
@@ -38,8 +42,8 @@ class HomePage extends StatefulWidget {
     FirebaseAuth? auth,
     this.functions,
     this.markFirstReader,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -55,6 +59,8 @@ class _HomePageState extends State<HomePage>
   int _streak = 0;
   List<bool> _pastWeek = [];
   List<bool> _pastMonth = [];
+  int _longestStreak = 0;
+  int _totalReadDays = 0;
 
   @override
   void initState() {
@@ -127,10 +133,14 @@ class _HomePageState extends State<HomePage>
       }
 
       // Always load streak from summary doc (no fallback to recalc).
-      final summaryDoc =
-          await userDocRef.collection('summary').doc('data').get();
+      final summaryDoc = await userDocRef
+          .collection('summary')
+          .doc('data')
+          .get();
       final data = summaryDoc.data() ?? {};
       int streak = data['streak'] ?? 0;
+      int longestStreak = data['longestStreak'] ?? streak;
+      int totalReadDays = data['totalReadDays'] ?? 0;
 
       final weekDates = List<String>.from(data['pastWeekReadDates'] ?? []);
       final savedWeek = List<bool>.filled(7, false, growable: true);
@@ -175,6 +185,8 @@ class _HomePageState extends State<HomePage>
           _streak = streak;
           _pastWeek = savedWeek;
           _pastMonth = savedMonth;
+          _longestStreak = longestStreak;
+          _totalReadDays = totalReadDays;
         });
       }
     } catch (e, st) {
@@ -345,8 +357,8 @@ class _HomePageState extends State<HomePage>
           .collection('reading')
           .doc(dateKey)
           .set({
-        'read': true,
-      }, SetOptions(merge: true)); // Mark read in Firestore.
+            'read': true,
+          }, SetOptions(merge: true)); // Mark read in Firestore.
 
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
@@ -392,8 +404,10 @@ class _HomePageState extends State<HomePage>
       final yesterdayDateKey =
           '${yesterday.year}-${yesterday.month}-${yesterday.day}';
 
-      final yesterdayDoc =
-          await userDocRef.collection('reading').doc(yesterdayDateKey).get();
+      final yesterdayDoc = await userDocRef
+          .collection('reading')
+          .doc(yesterdayDateKey)
+          .get();
 
       int streak = (data['streak'] is int) ? data['streak'] : 0;
       if (yesterdayDoc.exists && yesterdayDoc.data()?['read'] == true) {
@@ -425,8 +439,9 @@ class _HomePageState extends State<HomePage>
         }
       }
 
-      int totalReadDays =
-          (data['totalReadDays'] is int) ? data['totalReadDays'] : 0;
+      int totalReadDays = (data['totalReadDays'] is int)
+          ? data['totalReadDays']
+          : 0;
       totalReadDays += 1;
 
       await summaryDocRef.set({
@@ -637,21 +652,12 @@ class _HomePageState extends State<HomePage>
           ),
           child: Column(
             children: [
-              CommonStyles.buildCard(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.local_fire_department,
-                      color: Colors.orange,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Streak: $_streak day${_streak == 1 ? '' : 's'}",
-                      style: AppTextStyles.subtitle,
-                    ),
-                  ],
-                ),
+              StreakStatsBox(
+                currentStreak: _streak,
+                longestStreak: _longestStreak,
+                totalReadDays: _totalReadDays,
+                periodCount: _pastWeek.where((b) => b).length,
+                periodLabel: 'This week',
               ),
               const SizedBox(height: 16),
               CommonStyles.buildCard(
@@ -666,123 +672,16 @@ class _HomePageState extends State<HomePage>
                       )
                     : ReadSwitchTile(
                         value: _readToday,
-                        onChanged:
-                            _readToday ? null : (value) => _toggleReadStatus(),
+                        onChanged: _readToday
+                            ? null
+                            : (value) => _toggleReadStatus(),
                         label: 'Bible Read Today',
                       ),
               ),
               const SizedBox(height: 16),
-              CommonStyles.buildCard(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Builder(
-                      builder: (context) {
-                        final now = DateTime.now();
-                        final sunday = now.subtract(
-                          Duration(days: now.weekday % 7),
-                        );
-                        final weekOf = '${sunday.month}/${sunday.day}';
-                        const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-
-                        return Column(
-                          children: [
-                            Text(
-                              'Week of $weekOf',
-                              style: AppTextStyles.body.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(7, (i) {
-                                final weekData = _pastWeek.length == 7
-                                    ? _pastWeek
-                                    : List<bool>.generate(
-                                        7,
-                                        (i) => i < _pastWeek.length
-                                            ? _pastWeek[i]
-                                            : false,
-                                      );
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        days[i],
-                                        style: AppTextStyles.body.copyWith(
-                                          fontSize: 10,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Icon(
-                                        weekData[i]
-                                            ? Icons.check_circle
-                                            : Icons.radio_button_unchecked,
-                                        color: weekData[i]
-                                            ? Colors.green
-                                            : Colors.grey,
-                                        size: 20,
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
+              WeekStreakCalendar(readDates: _weekReadDates()),
               const SizedBox(height: 16),
-              CommonStyles.buildCard(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "${DateTime.now().year} – ${_monthName(DateTime.now().month)}",
-                      style: AppTextStyles.body.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Table(
-                          defaultColumnWidth: const FixedColumnWidth(32),
-                          children: [
-                            TableRow(
-                              children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-                                  .map(
-                                    (d) => Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 4,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          d,
-                                          style: AppTextStyles.body.copyWith(
-                                            fontSize: 10,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                            ..._buildMonthCalendar(),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              MonthStreakCalendar(readDates: _monthReadDates()),
             ],
           ),
         ),
@@ -790,62 +689,28 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  /// Builds calendar rows for the current month based on `_pastMonth` data.
-  List<TableRow> _buildMonthCalendar() {
+  Set<DateTime> _weekReadDates() {
     final now = DateTime.now();
-    final firstDay = DateTime(now.year, now.month, 1);
-    final totalDays = DateTime(now.year, now.month + 1, 0).day;
-    final weekdayOffset = firstDay.weekday % 7;
-
-    final rows = <TableRow>[];
-    List<Widget> currentRow = List.filled(7, const SizedBox.shrink());
-
-    for (int i = 0; i < weekdayOffset; i++) {
-      currentRow[i] = const SizedBox.shrink();
-    }
-
-    for (int day = 1; day <= totalDays; day++) {
-      int index = weekdayOffset + day - 1;
-      int weekRow = index ~/ 7;
-      int weekdayIndex = index % 7;
-
-      if (rows.length <= weekRow) {
-        rows.add(TableRow(children: List.filled(7, const SizedBox.shrink())));
+    final sunday = now.subtract(Duration(days: now.weekday % 7));
+    final dates = <DateTime>{};
+    for (int i = 0; i < _pastWeek.length; i++) {
+      if (_pastWeek[i]) {
+        final date = sunday.add(Duration(days: i));
+        dates.add(DateTime(date.year, date.month, date.day));
       }
-
-      final filled = _pastMonth.length >= day && _pastMonth[day - 1];
-      rows[weekRow].children[weekdayIndex] = Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Icon(
-            filled ? Icons.circle : Icons.circle_outlined,
-            size: 12,
-            color: filled ? Colors.green : Colors.grey,
-          ),
-        ),
-      );
     }
-
-    return rows;
+    return dates;
   }
 
-  /// Returns a month name for the given [month] number.
-  String _monthName(int month) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return months[month - 1];
+  Set<DateTime> _monthReadDates() {
+    final now = DateTime.now();
+    final dates = <DateTime>{};
+    for (int i = 0; i < _pastMonth.length; i++) {
+      if (_pastMonth[i]) {
+        dates.add(DateTime(now.year, now.month, i + 1));
+      }
+    }
+    return dates;
   }
 
   @override
