@@ -17,6 +17,8 @@ import '../models/achievement.dart';
 import '../theme/app_theme.dart';
 import 'read_log_page.dart';
 
+/// Landing page that displays reading progress and loads user data from
+/// Firestore when the app starts.
 class HomePage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
@@ -47,6 +49,8 @@ class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin {
   bool _disposed = false;
   bool _readToday = false;
+
+  /// Whether the page is currently fetching or toggling the read status.
   bool _toggleLoading = false;
   int _streak = 0;
   List<bool> _pastWeek = [];
@@ -58,10 +62,13 @@ class _HomePageState extends State<HomePage>
     _loadReadStatus();
   }
 
+  /// Fetches today's read flag, streak, and calendar history from Firestore.
+  /// Creates a user document if necessary and updates local state. When
+  /// [showLoading] is true, a spinner is shown while the request is in flight.
   Future<void> _loadReadStatus({bool showLoading = true}) async {
     if (showLoading && !_disposed && mounted) {
       setState(() {
-        _toggleLoading = true; // Start loading
+        _toggleLoading = true; // Start loading indicator.
       });
     }
 
@@ -85,22 +92,28 @@ class _HomePageState extends State<HomePage>
       final userDocRef = widget.firestore.collection('users').doc(user.uid);
       final userDoc = await userDocRef.get();
       if (!userDoc.exists) {
+        // Create the user document with basic profile fields.
         await userDocRef.set({
           'name': refreshedUser?.displayName ?? '',
           'email': refreshedUser?.email?.toLowerCase() ?? '',
         });
 
+        // Initialize subcollections so later queries succeed.
         final friendsCollection = userDocRef.collection('friends');
-        final friendRequestsSentCollection =
-            userDocRef.collection('friendRequestsSent');
-        await friendsCollection.doc('init').set(
-            {'status': 'placeholder', 'timestamp': Timestamp.now()},
-            SetOptions(merge: true));
-        await friendRequestsSentCollection.doc('init').set(
-            {'status': 'placeholder', 'timestamp': Timestamp.now()},
-            SetOptions(merge: true));
+        final friendRequestsSentCollection = userDocRef.collection(
+          'friendRequestsSent',
+        );
+        await friendsCollection.doc('init').set({
+          'status': 'placeholder',
+          'timestamp': Timestamp.now(),
+        }, SetOptions(merge: true));
+        await friendRequestsSentCollection.doc('init').set({
+          'status': 'placeholder',
+          'timestamp': Timestamp.now(),
+        }, SetOptions(merge: true));
       }
 
+      // Read today's status from the reading subcollection.
       final doc = await userDocRef.collection('reading').doc(dateKey).get();
 
       if (doc.exists && doc.data() != null) {
@@ -113,7 +126,7 @@ class _HomePageState extends State<HomePage>
         }
       }
 
-      // Always load streak from summary doc (no fallback to recalc)
+      // Always load streak from summary doc (no fallback to recalc).
       final summaryDoc =
           await userDocRef.collection('summary').doc('data').get();
       final data = summaryDoc.data() ?? {};
@@ -124,7 +137,8 @@ class _HomePageState extends State<HomePage>
       // Compute this week's Sunday (calendar week: Sunday to Saturday)
       final currentWeekday = today.weekday; // 1 = Mon, ..., 7 = Sun
       final sunday = today.subtract(
-          Duration(days: currentWeekday % 7)); // get this week's Sunday
+        Duration(days: currentWeekday % 7),
+      ); // get this week's Sunday
       for (int i = 0; i < 7; i++) {
         final date = sunday.add(Duration(days: i)); // Sunday to Saturday
         final key =
@@ -143,17 +157,20 @@ class _HomePageState extends State<HomePage>
       }
 
       if (weekDates.isEmpty) {
+        // Backfill the past week by querying reading documents directly.
         final weekStatus = await _getReadStatusForRange(7);
         savedWeek.clear();
         savedWeek.addAll(weekStatus);
       }
       if (monthDates.isEmpty) {
+        // Backfill the past month similarly.
         final monthStatus = await _getReadStatusForRange(30);
         savedMonth.clear();
         savedMonth.addAll(monthStatus);
       }
 
       if (!_disposed && mounted) {
+        // Update state with fetched data.
         setState(() {
           _streak = streak;
           _pastWeek = savedWeek;
@@ -168,12 +185,14 @@ class _HomePageState extends State<HomePage>
     } finally {
       if (showLoading && !_disposed && mounted) {
         setState(() {
-          _toggleLoading = false; // Always stop loading
+          _toggleLoading = false; // Always stop loading.
         });
       }
     }
   }
 
+  /// Returns a list indicating whether the user has read on each of the past
+  /// [daysBack] days. Queries the `reading` subcollection one document per day.
   Future<List<bool>> _getReadStatusForRange(int daysBack) async {
     final user = widget.auth.currentUser;
     if (user == null) return [];
@@ -187,6 +206,7 @@ class _HomePageState extends State<HomePage>
       final date = DateTime.now().subtract(Duration(days: i));
       final key = '${date.year}-${date.month}-${date.day}';
       final doc = await readingCollection.doc(key).get();
+      // Each document has a `read` flag; default to false if missing.
       statuses.add(doc.exists && doc.data()?['read'] == true);
     }
 
@@ -220,10 +240,12 @@ class _HomePageState extends State<HomePage>
       final pastWeekReadDates = <String>[];
       for (int i = 0; i < pastWeekStatus.length; i++) {
         if (pastWeekStatus[i]) {
-          final day = DateTime.now()
-              .subtract(Duration(days: pastWeekStatus.length - 1 - i));
+          final day = DateTime.now().subtract(
+            Duration(days: pastWeekStatus.length - 1 - i),
+          );
           pastWeekReadDates.add(
-              '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
+            '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}',
+          );
         }
       }
 
@@ -232,10 +254,12 @@ class _HomePageState extends State<HomePage>
       final pastMonthReadDates = <String>[];
       for (int i = 0; i < pastMonthStatus.length; i++) {
         if (pastMonthStatus[i]) {
-          final day = DateTime.now()
-              .subtract(Duration(days: pastMonthStatus.length - 1 - i));
+          final day = DateTime.now().subtract(
+            Duration(days: pastMonthStatus.length - 1 - i),
+          );
           pastMonthReadDates.add(
-              '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
+            '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}',
+          );
         }
       }
 
@@ -253,24 +277,27 @@ class _HomePageState extends State<HomePage>
       if (!_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Failed to update summary. Please try again.')),
+            content: Text('Failed to update summary. Please try again.'),
+          ),
         );
         unawaited(_loadReadStatus(showLoading: false));
       }
     }
   }
 
+  /// Marks the current day as read. Optimistically updates local state and
+  /// writes the change to Firestore, rolling back on failure.
   Future<void> _toggleReadStatus() async {
     if (_readToday) return;
 
     final user = widget.auth.currentUser;
     if (user == null) return;
 
-    // Reload user before writing to Firestore
+    // Reload user before writing to Firestore.
     await user.reload();
     final refreshedUser = widget.auth.currentUser;
 
-    // Preserve current state in case we need to revert
+    // Preserve current state in case we need to revert on error.
     final prevStreak = _streak;
     final prevWeek = List<bool>.from(_pastWeek);
     final prevMonth = List<bool>.from(_pastMonth);
@@ -282,6 +309,7 @@ class _HomePageState extends State<HomePage>
 
     if (!_disposed && mounted) {
       setState(() {
+        // Optimistically mark today as read in local state.
         _readToday = true;
         _streak += 1;
         if (_pastWeek.length < 7) {
@@ -316,7 +344,9 @@ class _HomePageState extends State<HomePage>
           .doc(user.uid)
           .collection('reading')
           .doc(dateKey)
-          .set({'read': true}, SetOptions(merge: true));
+          .set({
+        'read': true,
+      }, SetOptions(merge: true)); // Mark read in Firestore.
 
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
@@ -328,6 +358,7 @@ class _HomePageState extends State<HomePage>
       }
       ErrorLogger.log(e, st);
       if (!_disposed && mounted) {
+        // Revert to previous state and notify the user.
         setState(() {
           _readToday = false;
           _streak = prevStreak;
@@ -336,13 +367,15 @@ class _HomePageState extends State<HomePage>
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Failed to mark reading. Please try again.')),
+            content: Text('Failed to mark reading. Please try again.'),
+          ),
         );
       }
     }
   }
 
-  /// Lightweight summary update for today's read.
+  /// Lightweight summary update for today's read. Updates streak and cached
+  /// read-date arrays without recomputing historical data.
   Future<void> _updateSummaryWithToday() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
@@ -350,6 +383,7 @@ class _HomePageState extends State<HomePage>
     try {
       final userDocRef = widget.firestore.collection('users').doc(user.uid);
       final summaryDocRef = userDocRef.collection('summary').doc('data');
+      // Load existing summary values to increment cached fields.
       final doc = await summaryDocRef.get();
       final data = doc.data() ?? {};
 
@@ -371,8 +405,9 @@ class _HomePageState extends State<HomePage>
       final dateKey =
           '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
-      final pastWeekReadDates =
-          List<String>.from(data['pastWeekReadDates'] ?? []);
+      final pastWeekReadDates = List<String>.from(
+        data['pastWeekReadDates'] ?? [],
+      );
       if (!pastWeekReadDates.contains(dateKey)) {
         pastWeekReadDates.add(dateKey);
         if (pastWeekReadDates.length > 7) {
@@ -380,8 +415,9 @@ class _HomePageState extends State<HomePage>
         }
       }
 
-      final pastMonthReadDates =
-          List<String>.from(data['pastMonthReadDates'] ?? []);
+      final pastMonthReadDates = List<String>.from(
+        data['pastMonthReadDates'] ?? [],
+      );
       if (!pastMonthReadDates.contains(dateKey)) {
         pastMonthReadDates.add(dateKey);
         if (pastMonthReadDates.length > 30) {
@@ -398,7 +434,7 @@ class _HomePageState extends State<HomePage>
         'pastWeekReadDates': pastWeekReadDates,
         'pastMonthReadDates': pastMonthReadDates,
         'totalReadDays': totalReadDays,
-      }, SetOptions(merge: true));
+      }, SetOptions(merge: true)); // Persist updated summary.
 
       await _checkAchievements(user.uid, streak, totalReadDays);
     } catch (e, st) {
@@ -409,15 +445,20 @@ class _HomePageState extends State<HomePage>
       if (!_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Failed to update summary. Please try again.')),
+            content: Text('Failed to update summary. Please try again.'),
+          ),
         );
         unawaited(_loadReadStatus(showLoading: false));
       }
     }
   }
 
+  /// Unlocks achievements based on the user's streak and total read days.
   Future<void> _checkAchievements(
-      String uid, int streak, int totalReadDays) async {
+    String uid,
+    int streak,
+    int totalReadDays,
+  ) async {
     try {
       final service = AchievementService(firestore: widget.firestore);
       if (streak >= 7) {
@@ -450,6 +491,7 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  /// Adds a like entry for today's reading document.
   Future<void> likeReading() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
@@ -464,7 +506,7 @@ class _HomePageState extends State<HomePage>
           .doc(dateKey)
           .collection('likes')
           .doc(user.uid)
-          .set({'timestamp': Timestamp.now()});
+          .set({'timestamp': Timestamp.now()}); // Record like with timestamp.
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to like reading: $e');
@@ -473,12 +515,14 @@ class _HomePageState extends State<HomePage>
       if (!_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Failed to like reading. Please try again.')),
+            content: Text('Failed to like reading. Please try again.'),
+          ),
         );
       }
     }
   }
 
+  /// Removes the current user's like from today's reading document.
   Future<void> unlikeReading() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
@@ -502,7 +546,8 @@ class _HomePageState extends State<HomePage>
       if (!_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Failed to unlike reading. Please try again.')),
+            content: Text('Failed to unlike reading. Please try again.'),
+          ),
         );
       }
     }
@@ -576,23 +621,30 @@ class _HomePageState extends State<HomePage>
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Failed to refresh data. Please try again.')),
+              content: Text('Failed to refresh data. Please try again.'),
+            ),
           );
         }
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
-          padding:
-              const EdgeInsets.only(top: 16.0, bottom: 48, left: 16, right: 16),
+          padding: const EdgeInsets.only(
+            top: 16.0,
+            bottom: 48,
+            left: 16,
+            right: 16,
+          ),
           child: Column(
             children: [
               CommonStyles.buildCard(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.local_fire_department,
-                        color: Colors.orange),
+                    const Icon(
+                      Icons.local_fire_department,
+                      color: Colors.orange,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       "Streak: $_streak day${_streak == 1 ? '' : 's'}",
@@ -627,16 +679,20 @@ class _HomePageState extends State<HomePage>
                     Builder(
                       builder: (context) {
                         final now = DateTime.now();
-                        final sunday =
-                            now.subtract(Duration(days: now.weekday % 7));
+                        final sunday = now.subtract(
+                          Duration(days: now.weekday % 7),
+                        );
                         final weekOf = '${sunday.month}/${sunday.day}';
                         const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
                         return Column(
                           children: [
-                            Text('Week of $weekOf',
-                                style: AppTextStyles.body
-                                    .copyWith(fontWeight: FontWeight.bold)),
+                            Text(
+                              'Week of $weekOf',
+                              style: AppTextStyles.body.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -647,15 +703,20 @@ class _HomePageState extends State<HomePage>
                                         7,
                                         (i) => i < _pastWeek.length
                                             ? _pastWeek[i]
-                                            : false);
+                                            : false,
+                                      );
                                 return Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
                                   child: Column(
                                     children: [
-                                      Text(days[i],
-                                          style: AppTextStyles.body
-                                              .copyWith(fontSize: 10)),
+                                      Text(
+                                        days[i],
+                                        style: AppTextStyles.body.copyWith(
+                                          fontSize: 10,
+                                        ),
+                                      ),
                                       const SizedBox(height: 4),
                                       Icon(
                                         weekData[i]
@@ -685,8 +746,9 @@ class _HomePageState extends State<HomePage>
                   children: [
                     Text(
                       "${DateTime.now().year} – ${_monthName(DateTime.now().month)}",
-                      style: AppTextStyles.body
-                          .copyWith(fontWeight: FontWeight.bold),
+                      style: AppTextStyles.body.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -696,14 +758,21 @@ class _HomePageState extends State<HomePage>
                           children: [
                             TableRow(
                               children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-                                  .map((d) => Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 4),
-                                        child: Center(
-                                            child: Text(d,
-                                                style: AppTextStyles.body
-                                                    .copyWith(fontSize: 10))),
-                                      ))
+                                  .map(
+                                    (d) => Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 4,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          d,
+                                          style: AppTextStyles.body.copyWith(
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  )
                                   .toList(),
                             ),
                             ..._buildMonthCalendar(),
@@ -721,6 +790,7 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  /// Builds calendar rows for the current month based on `_pastMonth` data.
   List<TableRow> _buildMonthCalendar() {
     final now = DateTime.now();
     final firstDay = DateTime(now.year, now.month, 1);
@@ -759,6 +829,7 @@ class _HomePageState extends State<HomePage>
     return rows;
   }
 
+  /// Returns a month name for the given [month] number.
   String _monthName(int month) {
     const months = [
       'January',
@@ -772,7 +843,7 @@ class _HomePageState extends State<HomePage>
       'September',
       'October',
       'November',
-      'December'
+      'December',
     ];
     return months[month - 1];
   }
