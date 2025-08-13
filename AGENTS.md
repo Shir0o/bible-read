@@ -88,6 +88,8 @@ flutter test --no-pub
 If you modify Cloud Functions code in `functions/`, run `npm run lint` and
 `npm test` in that directory to verify linting and tests as well.
 
+If your change does not modify any code (e.g., documentation updates), you may skip running tests.
+
 
 ## Agent workflow
 
