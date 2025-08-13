@@ -163,20 +163,26 @@ class GroupService {
 
   /// Stream of all groups in the database.
   Stream<List<Group>> allGroups() {
-    final snaps = firestore
-        .collection(GroupCollections.groups)
-        .snapshots()
-        .handleError((e, st) {
-      unawaited(ErrorLogger.log(e, st));
-      throw e;
-    });
-    return snaps.asyncMap((snap) async {
-      try {
-        return snap.docs.map(Group.fromFirestore).toList();
-      } catch (e, st) {
-        await ErrorLogger.log(e, st);
-        return <Group>[];
-      }
+    return Stream<List<Group>>.multi((controller) {
+      final sub =
+          firestore.collection(GroupCollections.groups).snapshots().listen(
+        (snap) async {
+          try {
+            controller.add(
+              snap.docs.map(Group.fromFirestore).toList(),
+            );
+          } catch (e, st) {
+            await ErrorLogger.log(e, st);
+            controller.add(<Group>[]);
+          }
+        },
+        onError: (e, st) async {
+          await ErrorLogger.log(e, st);
+          controller.add(<Group>[]);
+        },
+      );
+
+      controller.onCancel = () => sub.cancel();
     });
   }
 
