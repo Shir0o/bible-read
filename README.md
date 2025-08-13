@@ -132,7 +132,8 @@ flutter test --no-pub
 ```
 
 Developers working on backend features can find Cloud Function details in
-[docs/functions.md](docs/functions.md).
+[docs/functions.md](docs/functions.md). Notification services and preferences
+are outlined in [docs/notifications.md](docs/notifications.md).
 
 ### Coverage
 
