@@ -237,4 +237,4 @@ This is the initial release of the Bible Reading Challenge app. This app is desi
 *   **Weekly and Monthly Views:** See your reading progress at a glance with weekly and monthly calendar views.
 *   **Leaderboard:** See how your reading streak compares to others.
 *   **Reading Feed:** See who else has read the Bible today and give them a like to encourage them.
-*   **User Profile:** View your profile information and sign in with your Google account.
+*   **User Profile:** Manage your profile information and sign in with your Google account.
