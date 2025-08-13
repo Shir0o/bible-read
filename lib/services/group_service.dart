@@ -161,6 +161,25 @@ class GroupService {
     return '$y-$m-$d';
   }
 
+  /// Stream of all groups in the database.
+  Stream<List<Group>> allGroups() {
+    final snaps = firestore
+        .collection(GroupCollections.groups)
+        .snapshots()
+        .handleError((e, st) {
+      unawaited(ErrorLogger.log(e, st));
+      throw e;
+    });
+    return snaps.asyncMap((snap) async {
+      try {
+        return snap.docs.map(Group.fromFirestore).toList();
+      } catch (e, st) {
+        await ErrorLogger.log(e, st);
+        return <Group>[];
+      }
+    });
+  }
+
   /// Stream of groups the user with [uid] belongs to or owns.
   Stream<List<Group>> groupsForUser(String uid) {
     final memberSnaps = firestore

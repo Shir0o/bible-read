@@ -9,7 +9,7 @@ import '../widgets/common_styles.dart';
 import 'group_detail_page.dart';
 import '../widgets/menu_button.dart';
 
-/// Page that lists the groups the current user belongs to.
+/// Page that lists all groups.
 class GroupsPage extends StatefulWidget {
   /// Service used to load and manage groups.
   final GroupService groupService;
@@ -171,7 +171,7 @@ class _GroupsPageState extends State<GroupsPage> {
         child: user == null
             ? const Center(child: Text('Please sign in'))
             : StreamBuilder<List<Group>>(
-                stream: widget.groupService.groupsForUser(user.uid),
+                stream: widget.groupService.allGroups(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return const Center(child: Text('Failed to load groups'));
@@ -183,22 +183,32 @@ class _GroupsPageState extends State<GroupsPage> {
                   if (groups.isEmpty) {
                     return const Center(child: Text('No groups'));
                   }
-                  return ListView.separated(
-                    itemCount: groups.length,
-                    separatorBuilder: (_, __) => const Divider(height: 0),
-                    itemBuilder: (context, index) {
-                      final g = groups[index];
-                      return ListTile(
-                        title: Text(g.name),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => GroupDetailPage(
-                                group: g,
-                                groupService: widget.groupService,
-                                auth: widget.auth,
-                              ),
-                            ),
+                  return StreamBuilder<List<Group>>(
+                    stream: widget.groupService.groupsForUser(user.uid),
+                    builder: (context, mySnap) {
+                      final joined =
+                          mySnap.data?.map((g) => g.id).toSet() ?? <String>{};
+                      return ListView.separated(
+                        itemCount: groups.length,
+                        separatorBuilder: (_, __) => const Divider(height: 0),
+                        itemBuilder: (context, index) {
+                          final g = groups[index];
+                          return ListTile(
+                            title: Text(g.name),
+                            trailing: joined.contains(g.id)
+                                ? const Icon(Icons.check)
+                                : null,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => GroupDetailPage(
+                                    group: g,
+                                    groupService: widget.groupService,
+                                    auth: widget.auth,
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
                       );

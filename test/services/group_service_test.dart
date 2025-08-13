@@ -186,6 +186,19 @@ void main() {
       expect(chapters, ['John 1']);
     });
 
+    test('allGroups streams every group', () async {
+      final g1 = firestore.collection(GroupCollections.groups).doc('g1');
+      await g1.set({'name': 'One', 'ownerUid': 'u1'});
+      final g2 = firestore.collection(GroupCollections.groups).doc('g2');
+      await g2.set({'name': 'Two', 'ownerUid': 'u2'});
+      final g3 = firestore.collection(GroupCollections.groups).doc('g3');
+      await g3.set({'name': 'Three', 'ownerUid': 'u3'});
+
+      final groups = await service.allGroups().firstWhere((g) => g.length == 3);
+      final ids = groups.map((g) => g.id).toSet();
+      expect(ids, {'g1', 'g2', 'g3'});
+    });
+
     test('groupsForUser streams groups where user is member', () async {
       final g1 = firestore.collection(GroupCollections.groups).doc('g1');
       await g1.set({'name': 'One', 'ownerUid': 'u1'});
@@ -325,6 +338,33 @@ void main() {
 
       final svc = GroupService(firestore: mockFs);
       await expectLater(svc.groupsForUser('u1'), emits(isEmpty));
+
+      verify(() => crash.recordError(err, any(),
+          reason: null,
+          information: any(named: 'information'),
+          printDetails: any(named: 'printDetails'),
+          fatal: false)).called(1);
+    });
+
+    test('allGroups logs and returns empty list on stream error', () async {
+      final mockFs = MockFirebaseFirestore();
+      final groups = MockCollectionReference<Map<String, dynamic>>();
+      final err = Exception('fail');
+
+      when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
+      when(() => groups.snapshots()).thenAnswer(
+          (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err));
+
+      final crash = MockCrashlytics();
+      ErrorLogger.crashlytics = crash;
+      when(() => crash.recordError(any(), any(),
+          reason: any(named: 'reason'),
+          information: any(named: 'information'),
+          printDetails: any(named: 'printDetails'),
+          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+
+      final svc = GroupService(firestore: mockFs);
+      await expectLater(svc.allGroups(), emits(isEmpty));
 
       verify(() => crash.recordError(err, any(),
           reason: null,
