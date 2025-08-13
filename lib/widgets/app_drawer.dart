@@ -55,13 +55,21 @@ class AppDrawer extends StatelessWidget {
                 onNavigate(5);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('History'),
+              onTap: () {
+                Navigator.pop(context);
+                onNavigate(6);
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.person),
               title: const Text('Profile'),
               onTap: () {
                 Navigator.pop(context);
-                onNavigate(7);
+                onNavigate(8);
               },
             ),
           ],
