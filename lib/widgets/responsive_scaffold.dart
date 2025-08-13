@@ -1,7 +1,14 @@
+// Displays a NavigationRail on wide layouts and a NavigationBar on narrow ones
+// by switching based on the current width.
 import 'package:flutter/material.dart';
 
 import 'animated_page_route.dart';
 
+/// A scaffold that adapts its navigation UI to the screen width.
+///
+/// Required parameters are [selectedIndex], [onDestinationSelected], [pages],
+/// and [destinations]. The [pages] and [destinations] lists should have the
+/// same length so each destination maps to a page.
 class ResponsiveScaffold extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
@@ -24,6 +31,8 @@ class ResponsiveScaffold extends StatelessWidget {
     this.scaffoldKey,
   });
 
+  /// Adds a subtle scale animation to [icon] when it is the selected
+  /// destination.
   Widget _animatedIcon(Widget icon, bool selected) {
     return AnimatedScale(
       scale: selected ? 1.2 : 1.0,
@@ -33,6 +42,8 @@ class ResponsiveScaffold extends StatelessWidget {
     );
   }
 
+  /// Wraps destination icons with [_animatedIcon] so navigation changes are
+  /// animated as the selected index updates.
   List<NavigationDestination> _buildAnimatedDestinations(int currentSelected) {
     return List<NavigationDestination>.generate(destinations.length, (index) {
       final d = destinations[index];
