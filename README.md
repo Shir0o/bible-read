@@ -131,6 +131,9 @@ flutter analyze
 flutter test --no-pub
 ```
 
+Developers working on backend features can find Cloud Function details in
+[docs/functions.md](docs/functions.md).
+
 ### Coverage
 
 Instructions for generating test coverage reports are available in
