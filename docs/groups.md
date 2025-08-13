@@ -14,6 +14,7 @@ Each schedule document stores its date (usually in `YYYY-MM-DD` format) and an a
 
 ## UI
 
-The app includes a Groups page listing all groups the current user has joined.
-Selecting a group opens a detail page showing the member list and reading
-schedule. Group owners can add or edit schedule entries from this page.
+The app includes a Groups page listing all available groups. Selecting a group
+opens a detail page showing the member list and reading schedule. Any user can
+view a group's details, while group owners can add or edit schedule entries
+from this page.
