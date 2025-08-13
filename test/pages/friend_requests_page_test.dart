@@ -90,10 +90,10 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('shows menu button in app bar', (tester) async {
+  testWidgets('shows back button in app bar', (tester) async {
     await pumpPage(tester);
 
-    expect(find.byIcon(Icons.menu), findsOneWidget);
+    expect(find.byType(BackButton), findsOneWidget);
   });
 
   testWidgets('shows pending requests for signed in user', (tester) async {
