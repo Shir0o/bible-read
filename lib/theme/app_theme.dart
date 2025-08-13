@@ -1,5 +1,10 @@
+// Defines the global color scheme, fonts, and button styles.
 import 'package:flutter/material.dart';
 
+/// Provides the application's theme configuration.
+///
+/// Update [colorScheme] to change primary colors and adjust [fontFamily] or
+/// [textTheme] to modify typography.
 class AppTheme {
   static const String fontFamily = 'IBMPlexMono';
   static const Color backgroundColor = Colors.black;
@@ -22,6 +27,9 @@ class AppTheme {
         fontSize: 18, fontFamily: fontFamily, fontWeight: FontWeight.bold),
   );
 
+  /// Base configuration for text and elevated buttons.
+  ///
+  /// Modify shape, padding, or overlay color to customize button appearance.
   static final ButtonStyle _baseButtonStyle = ButtonStyle(
     animationDuration: const Duration(milliseconds: 200),
     overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
@@ -35,6 +43,9 @@ class AppTheme {
     padding: WidgetStateProperty.all<EdgeInsetsGeometry>(_buttonPadding),
   );
 
+  /// Elevated button variant of [_baseButtonStyle].
+  ///
+  /// Tweak the elevation values to alter the raised effect.
   static final ButtonStyle _elevatedButtonStyle = _baseButtonStyle.copyWith(
     elevation: WidgetStateProperty.resolveWith<double?>((states) {
       if (states.contains(WidgetState.pressed)) {
@@ -44,6 +55,10 @@ class AppTheme {
     }),
   );
 
+  /// Complete [ThemeData] for the application.
+  ///
+  /// Adjust [colorScheme], [textTheme], or button themes to change the overall
+  /// look and feel.
   static final ThemeData appTheme = ThemeData(
     brightness: Brightness.dark,
     colorScheme: colorScheme,
