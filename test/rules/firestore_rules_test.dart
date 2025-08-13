@@ -28,8 +28,8 @@ void main() {
       expect(rulesText.contains('match /groups/{groupId}'), isTrue);
       expect(rulesText.contains('match /members/{uid}'), isTrue);
       expect(rulesText.contains('match /schedule/{date}'), isTrue);
-      expect(rulesText.contains('allow read: if isMember() || isOwner();'),
-          isTrue);
+      expect(
+          rulesText.contains('allow read: if request.auth != null;'), isTrue);
       expect(rulesText.contains('allow write: if isOwnerOrAdmin();'), isTrue);
     });
   });
