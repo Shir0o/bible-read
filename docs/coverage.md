@@ -32,3 +32,22 @@ npm run coverage
 
 The `coverage` script uses `nyc` to generate reports in
 `functions/coverage/`, including an `lcov.info` file and HTML output.
+
+## Combined Flutter and Functions Coverage
+
+To view overall coverage, merge the Flutter and Cloud Functions reports.
+Use `lcov` to add the two `lcov.info` files together and write the
+combined output:
+
+```bash
+lcov -a coverage/lcov.info -a functions/coverage/lcov.info -o coverage/merged.lcov.info
+```
+
+Generate an HTML report from the merged data:
+
+```bash
+genhtml coverage/merged.lcov.info --output-directory coverage/html
+```
+
+Open `coverage/html/index.html` in a browser to explore the combined
+coverage report.
