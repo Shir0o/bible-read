@@ -18,7 +18,7 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **Customizable Notifications:** Choose which notifications you receive from the settings page.
 *   **Permanent Likes:** Likes cannot be removed once given.
 *   **Friends Page:** Manage friends on a dedicated page and send new requests using the **+** button.
-*   **Groups Page:** Browse all reading groups, create or join them, and open any group to view its members and daily chapter assignments.
+*   **Groups Page:** Browse all reading groups, create or join them, and open any group to view its members and daily chapter assignments. See [docs/groups.md](docs/groups.md) for details on group reading.
 *   **Add Friend Page:** The **+** button opens a separate page for sending friend requests.
 *   **Notification Center:** Recent alerts are stored in-app and can be viewed from the bell icon while your notification preferences still control which ones trigger push messages.
 *   **Achievements:** Unlock achievements like being the first reader of the day and view them from the Achievements page.
@@ -170,3 +170,13 @@ Crash reports and logs are viewable on the Crashlytics dashboard under
     **General** tab.
 3.  Enable automatic signing in Xcode and update any provisioning profiles if
     needed.
+
+## Releasing on Android
+
+1.  Build the release app bundle with your desired version and build number:
+
+    ```bash
+    flutter build appbundle --release --build-name=<version> --build-number=<build>
+    ```
+
+2.  Upload the generated `.aab` file to the Google Play Console for distribution.
