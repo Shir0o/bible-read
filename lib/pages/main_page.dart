@@ -4,6 +4,7 @@ import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/pages/achievements_page.dart';
 import 'package:bible_read/pages/groups_page.dart';
 import 'package:bible_read/pages/friend_requests_page.dart';
+import 'package:bible_read/pages/streak_history_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:bible_read/widgets/app_drawer.dart';
 import '../services/friend_service.dart';
@@ -161,7 +162,7 @@ class _MainPageState extends State<MainPage> {
       return;
     }
     final bool signedIn = widget.auth.currentUser != null;
-    final int profileIndex = signedIn ? 7 : 0;
+    final int profileIndex = signedIn ? 8 : 0;
     if (!signedIn && index != profileIndex) {
       return;
     }
@@ -172,7 +173,7 @@ class _MainPageState extends State<MainPage> {
 
   void _navigateFromMenu(int index) {
     final bool signedIn = widget.auth.currentUser != null;
-    final int profileIndex = signedIn ? 7 : 0;
+    final int profileIndex = signedIn ? 8 : 0;
     if (!signedIn && index != profileIndex) {
       // Block navigation to signed-in pages if not signed in
       return;
@@ -259,6 +260,7 @@ class _MainPageState extends State<MainPage> {
           auth: widget.auth,
         ),
         AchievementsPage(firestore: widget.firestore, auth: widget.auth),
+        const StreakHistoryPage(),
         FriendRequestsPage(
           friendService: FriendService(firestore: widget.firestore),
           auth: widget.auth,
