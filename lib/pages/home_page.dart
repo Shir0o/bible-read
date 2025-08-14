@@ -168,13 +168,22 @@ class _HomePageState extends State<HomePage>
         // Backfill the past week by querying reading documents directly.
         final weekStatus = await _getReadStatusForRange(7);
         savedWeek.clear();
-        savedWeek.addAll(weekStatus);
+        for (int i = 0; i < 7; i++) {
+          final date = sunday.add(Duration(days: i));
+          final key =
+              '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+          savedWeek.add(weekStatus[key] ?? false);
+        }
       }
       if (monthDates.isEmpty) {
         // Backfill the past month similarly.
         final monthStatus = await _getReadStatusForRange(30);
         savedMonth.clear();
-        savedMonth.addAll(monthStatus);
+        for (int i = 1; i <= daysInMonth; i++) {
+          final key =
+              '${now.year}-${now.month.toString().padLeft(2, '0')}-${i.toString().padLeft(2, '0')}';
+          savedMonth.add(monthStatus[key] ?? false);
+        }
       }
 
       final readDates = <DateTime>{};
@@ -215,26 +224,32 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Returns a list indicating whether the user has read on each of the past
-  /// [daysBack] days. Queries the `reading` subcollection one document per day.
-  Future<List<bool>> _getReadStatusForRange(int daysBack) async {
+  /// Returns a map indicating whether the user has read on each of the past
+  /// [daysBack] days. The keys are formatted as `yyyy-MM-dd`.
+  Future<Map<String, bool>> _getReadStatusForRange(int daysBack) async {
     final user = widget.auth.currentUser;
-    if (user == null) return [];
+    if (user == null) return {};
 
     final userDocRef = widget.firestore.collection('users').doc(user.uid);
     final readingCollection = userDocRef.collection('reading');
 
-    List<bool> statuses = [];
+    final now = DateTime.now();
+    final futures = <Future<MapEntry<String, bool>>>[];
 
     for (int i = 0; i < daysBack; i++) {
-      final date = DateTime.now().subtract(Duration(days: i));
-      final key = '${date.year}-${date.month}-${date.day}';
-      final doc = await readingCollection.doc(key).get();
-      // Each document has a `read` flag; default to false if missing.
-      statuses.add(doc.exists && doc.data()?['read'] == true);
+      final date = now.subtract(Duration(days: i));
+      final docId = '${date.year}-${date.month}-${date.day}';
+      final key =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+      futures.add(readingCollection.doc(docId).get().then((doc) {
+        final read = doc.exists && doc.data()?['read'] == true;
+        return MapEntry(key, read);
+      }));
     }
 
-    return statuses.reversed.toList();
+    final results = await Future.wait(futures);
+    return Map.fromEntries(results);
   }
 
   /// Recalculates streak statistics and writes them to the summary collection.
