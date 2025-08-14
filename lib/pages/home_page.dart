@@ -11,7 +11,6 @@ import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
 import '../widgets/read_switch_tile.dart';
 import '../widgets/menu_button.dart';
-import '../widgets/streak_stats_box.dart';
 import '../widgets/week_streak_calendar.dart';
 import '../widgets/month_streak_calendar.dart';
 import '../services/achievement_service.dart';
@@ -55,11 +54,8 @@ class _HomePageState extends State<HomePage>
 
   /// Whether the page is currently fetching or toggling the read status.
   bool _toggleLoading = false;
-  int _streak = 0;
   List<bool> _pastWeek = [];
   List<bool> _pastMonth = [];
-  int _longestStreak = 0;
-  int _totalReadDays = 0;
   Set<DateTime> _readDates = {};
 
   @override
@@ -68,7 +64,7 @@ class _HomePageState extends State<HomePage>
     _loadReadStatus();
   }
 
-  /// Fetches today's read flag, streak, and calendar history from Firestore.
+  /// Fetches today's read flag and calendar history from Firestore.
   /// Creates a user document if necessary and updates local state. When
   /// [showLoading] is true, a spinner is shown while the request is in flight.
   Future<void> _loadReadStatus({bool showLoading = true}) async {
@@ -147,12 +143,8 @@ class _HomePageState extends State<HomePage>
         }
       }
 
-      // Always load streak from summary doc (no fallback to recalc).
+      // Load calendar data from summary doc.
       final data = summaryDoc.data() ?? {};
-      int streak = data['streak'] ?? 0;
-      int longestStreak = data['longestStreak'] ?? streak;
-      int totalReadDays = data['totalReadDays'] ?? 0;
-
       final weekDates = List<String>.from(data['pastWeekReadDates'] ?? []);
       final savedWeek = List<bool>.filled(7, false, growable: true);
       // Compute this week's Sunday (calendar week: Sunday to Saturday)
@@ -215,11 +207,8 @@ class _HomePageState extends State<HomePage>
       if (!_disposed && mounted) {
         // Update state with fetched data.
         setState(() {
-          _streak = streak;
           _pastWeek = savedWeek;
           _pastMonth = savedMonth;
-          _longestStreak = longestStreak;
-          _totalReadDays = totalReadDays;
           _readDates = readDates;
         });
       }
@@ -376,7 +365,6 @@ class _HomePageState extends State<HomePage>
     final refreshedUser = widget.auth.currentUser;
 
     // Preserve current state in case we need to revert on error.
-    final prevStreak = _streak;
     final prevWeek = List<bool>.from(_pastWeek);
     final prevMonth = List<bool>.from(_pastMonth);
     final prevReadDates = Set<DateTime>.from(_readDates);
@@ -390,7 +378,6 @@ class _HomePageState extends State<HomePage>
       setState(() {
         // Optimistically mark today as read in local state.
         _readToday = true;
-        _streak += 1;
         if (_pastWeek.length < 7) {
           _pastWeek = List<bool>.generate(
             7,
@@ -441,7 +428,6 @@ class _HomePageState extends State<HomePage>
         // Revert to previous state and notify the user.
         setState(() {
           _readToday = false;
-          _streak = prevStreak;
           _pastWeek = prevWeek;
           _pastMonth = prevMonth;
           _readDates = prevReadDates;
@@ -725,14 +711,6 @@ class _HomePageState extends State<HomePage>
           ),
           child: Column(
             children: [
-              StreakStatsBox(
-                currentStreak: _streak,
-                longestStreak: _longestStreak,
-                totalReadDays: _totalReadDays,
-                periodCount: _pastWeek.where((b) => b).length,
-                periodLabel: 'This week',
-              ),
-              const SizedBox(height: 16),
               CommonStyles.buildCard(
                 child: _toggleLoading
                     ? const Padding(
@@ -751,13 +729,17 @@ class _HomePageState extends State<HomePage>
                       ),
               ),
               const SizedBox(height: 16),
-              WeekStreakCalendar(
-                readDates: _readDates,
-                sunday: DateTime.now()
-                    .subtract(Duration(days: DateTime.now().weekday % 7)),
+              IgnorePointer(
+                child: WeekStreakCalendar(
+                  readDates: _readDates,
+                  sunday: DateTime.now()
+                      .subtract(Duration(days: DateTime.now().weekday % 7)),
+                ),
               ),
               const SizedBox(height: 16),
-              MonthStreakCalendar(readDates: _readDates),
+              IgnorePointer(
+                child: MonthStreakCalendar(readDates: _readDates),
+              ),
             ],
           ),
         ),
