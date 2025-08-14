@@ -723,7 +723,11 @@ class _HomePageState extends State<HomePage>
                       ),
               ),
               const SizedBox(height: 16),
-              WeekStreakCalendar(readDates: _readDates),
+              WeekStreakCalendar(
+                readDates: _readDates,
+                sunday: DateTime.now()
+                    .subtract(Duration(days: DateTime.now().weekday % 7)),
+              ),
               const SizedBox(height: 16),
               MonthStreakCalendar(readDates: _readDates),
             ],

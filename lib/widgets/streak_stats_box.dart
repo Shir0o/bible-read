@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'common_styles.dart';
-import '../theme/app_theme.dart';
 
 /// Displays streak statistics in a card.
 class StreakStatsBox extends StatelessWidget {

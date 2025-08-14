@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
 import 'common_styles.dart';
 
 /// Displays a month streak calendar with arrow navigation.
@@ -65,7 +64,8 @@ class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
 
   List<TableRow> _buildRows() {
     final firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
-    final totalDays = DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
+    final totalDays =
+        DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
     final weekdayOffset = firstDay.weekday % 7;
 
     final rows = <TableRow>[];
@@ -112,8 +112,7 @@ class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
               ),
               Text(
                 monthLabel,
-                style:
-                    AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
+                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
               ),
               IconButton(
                 icon: const Icon(Icons.arrow_forward),

@@ -13,7 +13,8 @@ String _fmt(DateTime d) =>
 void main() {
   testWidgets('week and month views render correct day cells', (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'));
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 
     await firestore
         .collection('users')
@@ -69,7 +70,8 @@ void main() {
 
   testWidgets('period navigation updates calendar and stats', (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'));
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 
     final now = DateTime.now();
     final currentWeekStart = now.subtract(Duration(days: now.weekday % 7));
