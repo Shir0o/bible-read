@@ -25,14 +25,16 @@ import 'home_page.dart';
 import 'read_log_page.dart';
 import 'app_check_error_page.dart';
 
-typedef SendLikeNotification = Future<void> Function({
-  required String ownerUid,
-  required String likerName,
-});
-typedef SendCommentNotification = Future<void> Function({
-  required String ownerUid,
-  required String commenterName,
-});
+typedef SendLikeNotification =
+    Future<void> Function({
+      required String ownerUid,
+      required String likerName,
+    });
+typedef SendCommentNotification =
+    Future<void> Function({
+      required String ownerUid,
+      required String commenterName,
+    });
 
 class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -54,12 +56,12 @@ class MainPage extends StatefulWidget {
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        messaging = messaging ?? FirebaseMessaging.instance,
-        googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
-        dailyNotificationServiceProvider =
-            dailyNotificationServiceProvider ?? DailyNotificationService.new;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       messaging = messaging ?? FirebaseMessaging.instance,
+       googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
+       dailyNotificationServiceProvider =
+           dailyNotificationServiceProvider ?? DailyNotificationService.new;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -67,12 +69,89 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
-  GoogleSignInAccount? _user;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late final FriendService _friendService;
+  late final GroupService _groupService;
+  late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    _friendService = FriendService(firestore: widget.firestore);
+    _groupService = GroupService(firestore: widget.firestore);
+    _pages = [
+      HomePage(
+        firestore: widget.firestore,
+        auth: widget.auth,
+        functions: FirebaseFunctions.instance,
+      ),
+      ReadLogPage(
+        firestore: widget.firestore,
+        auth: widget.auth,
+        onSendLikeNotification:
+            widget.sendLikeNotification ??
+            ({required String ownerUid, required String likerName}) async {
+              final user = FirebaseAuth.instance.currentUser;
+              if (user == null) {
+                debugPrint(
+                  'Skipping sendLikeNotification: user is not signed in.',
+                );
+                return;
+              }
+
+              await user.getIdToken(true); // Force refresh
+
+              final callable = FirebaseFunctions.instanceFor(
+                region: 'us-central1',
+              ).httpsCallable('sendLikeNotification');
+
+              await callable.call({
+                'ownerUid': ownerUid,
+                'likerName': likerName,
+              });
+            },
+        onSendCommentNotification:
+            widget.sendCommentNotification ??
+            ({required String ownerUid, required String commenterName}) async {
+              final user = FirebaseAuth.instance.currentUser;
+              if (user == null) {
+                debugPrint(
+                  'Skipping sendCommentNotification: user is not signed in.',
+                );
+                return;
+              }
+
+              await user.getIdToken(true);
+
+              final callable = FirebaseFunctions.instanceFor(
+                region: 'us-central1',
+              ).httpsCallable('sendCommentNotification');
+
+              await callable.call({
+                'ownerUid': ownerUid,
+                'commenterName': commenterName,
+              });
+            },
+      ),
+      LeaderboardPage(
+        firestore: widget.firestore,
+        auth: widget.auth,
+        friendService: _friendService,
+      ),
+      FriendsPage(friendService: _friendService, auth: widget.auth),
+      GroupsPage(groupService: _groupService, auth: widget.auth),
+      AchievementsPage(firestore: widget.firestore, auth: widget.auth),
+      const StreakHistoryPage(),
+      FriendRequestsPage(friendService: _friendService, auth: widget.auth),
+      UserProfilePage(
+        googleSignInProvider: widget.googleSignInProvider,
+        auth: widget.auth,
+        firestore: widget.firestore,
+        friendService: _friendService,
+        dailyNotificationServiceProvider:
+            widget.dailyNotificationServiceProvider,
+      ),
+    ];
     _attemptSilentSignIn();
   }
 
@@ -90,9 +169,7 @@ class _MainPageState extends State<MainPage> {
         await widget.auth.signInWithCredential(credential);
       }
 
-      setState(() {
-        _user = account;
-      });
+      setState(() {});
     }
     final user = widget.auth.currentUser;
     if (user != null) {
@@ -149,8 +226,8 @@ class _MainPageState extends State<MainPage> {
 
         // Schedule daily reminder after preferences load
         await widget.dailyNotificationServiceProvider().scheduleDailyReminder(
-              const Time(8, 0),
-            );
+          const Time(8, 0),
+        );
       } else {
         debugPrint('Skipping Firestore write: user or token is null');
       }
@@ -190,94 +267,11 @@ class _MainPageState extends State<MainPage> {
     }
 
     final bool signedIn = widget.auth.currentUser != null;
-    final List<Widget> pages = [
-      if (signedIn) ...[
-        HomePage(
-          firestore: widget.firestore,
-          auth: widget.auth,
-          functions: FirebaseFunctions.instance,
-        ),
-        ReadLogPage(
-          firestore: widget.firestore,
-          auth: widget.auth,
-          onSendLikeNotification: widget.sendLikeNotification ??
-              ({required String ownerUid, required String likerName}) async {
-                final user = FirebaseAuth.instance.currentUser;
-                if (user == null) {
-                  debugPrint(
-                    'Skipping sendLikeNotification: user is not signed in.',
-                  );
-                  return;
-                }
-
-                await user.getIdToken(true); // Force refresh
-
-                final callable = FirebaseFunctions.instanceFor(
-                  region: 'us-central1',
-                ).httpsCallable('sendLikeNotification');
-
-                await callable.call({
-                  'ownerUid': ownerUid,
-                  'likerName': likerName,
-                });
-              },
-          onSendCommentNotification: widget.sendCommentNotification ??
-              ({
-                required String ownerUid,
-                required String commenterName,
-              }) async {
-                final user = FirebaseAuth.instance.currentUser;
-                if (user == null) {
-                  debugPrint(
-                    'Skipping sendCommentNotification: user is not signed in.',
-                  );
-                  return;
-                }
-
-                await user.getIdToken(true);
-
-                final callable = FirebaseFunctions.instanceFor(
-                  region: 'us-central1',
-                ).httpsCallable('sendCommentNotification');
-
-                await callable.call({
-                  'ownerUid': ownerUid,
-                  'commenterName': commenterName,
-                });
-              },
-        ),
-        LeaderboardPage(
-          firestore: widget.firestore,
-          auth: widget.auth,
-          friendService: FriendService(firestore: widget.firestore),
-        ),
-        FriendsPage(
-          friendService: FriendService(firestore: widget.firestore),
-          auth: widget.auth,
-        ),
-        GroupsPage(
-          groupService: GroupService(firestore: widget.firestore),
-          auth: widget.auth,
-        ),
-        AchievementsPage(firestore: widget.firestore, auth: widget.auth),
-        StreakHistoryPage(),
-        FriendRequestsPage(
-          friendService: FriendService(firestore: widget.firestore),
-          auth: widget.auth,
-        ),
-      ],
-      UserProfilePage(
-        user: _user,
-        googleSignInProvider: widget.googleSignInProvider,
-        auth: widget.auth,
-        dailyNotificationServiceProvider:
-            widget.dailyNotificationServiceProvider,
-      ),
-    ];
+    final List<Widget> pages = signedIn ? _pages : [_pages.last];
 
     final int navIndex = signedIn
-        ? (_selectedIndex <= 1 ? _selectedIndex : 0) // Home(0), Feed(1)
-        : 0; // Only Profile when signed out
+        ? (_selectedIndex <= 1 ? _selectedIndex : 0)
+        : 0;
 
     return ResponsiveScaffold(
       scaffoldKey: _scaffoldKey,
@@ -292,7 +286,7 @@ class _MainPageState extends State<MainPage> {
           NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
         ] else ...[
           NavigationDestination(
-            icon: Hero(tag: 'profile-avatar', child: const Icon(Icons.person)),
+            icon: Hero(tag: 'profile-avatar', child: Icon(Icons.person)),
             label: 'Profile',
           ),
         ],
