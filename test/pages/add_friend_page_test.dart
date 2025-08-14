@@ -61,6 +61,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(service.lastEmail, 'friend@example.com');
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
   });
 }

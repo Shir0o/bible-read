@@ -82,7 +82,10 @@ void main() {
     final textField =
         tester.widget<TextField>(find.byKey(const Key('addFriendEmailField')));
     expect(textField.controller!.text, isEmpty);
-    await tester.pump(const Duration(seconds: 3));
+    ScaffoldMessenger.of(tester.element(find.byType(SnackBar)))
+        .hideCurrentSnackBar();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('shows error snackbar and re-enables button on failure',
