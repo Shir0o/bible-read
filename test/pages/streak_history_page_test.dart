@@ -11,6 +11,8 @@ void main() {
     final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'));
 
     final now = DateTime.now();
+    final week = <String>[];
+    final month = <String>[];
     for (int i = 0; i < 3; i++) {
       final d = now.subtract(Duration(days: i));
       await firestore
@@ -19,7 +21,24 @@ void main() {
           .collection('reading')
           .doc('${d.year}-${d.month}-${d.day}')
           .set({'read': true});
+      final key =
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      week.add(key);
+      month.add(key);
     }
+
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('summary')
+        .doc('data')
+        .set({
+      'streak': 3,
+      'pastWeekReadDates': week,
+      'pastMonthReadDates': month,
+      'totalReadDays': 3,
+      'longestStreak': 3,
+    });
 
     await tester.pumpWidget(
       MaterialApp(

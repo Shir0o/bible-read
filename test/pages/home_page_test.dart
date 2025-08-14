@@ -289,6 +289,7 @@ void main() {
         .get();
     expect(summaryDoc.data()?['streak'], 1);
     expect(summaryDoc.data()?['totalReadDays'], 1);
+    expect(summaryDoc.data()?['longestStreak'], 1);
   });
 
   testWidgets('markRead unlocks firstReader when first of day', (tester) async {
@@ -340,7 +341,7 @@ void main() {
         .doc(user.uid)
         .collection('summary')
         .doc('data')
-        .set({'streak': 6, 'totalReadDays': 6});
+        .set({'streak': 6, 'totalReadDays': 6, 'longestStreak': 6});
 
     await firestore
         .collection('users')
@@ -378,7 +379,7 @@ void main() {
         .doc(user.uid)
         .collection('summary')
         .doc('data')
-        .set({'streak': 1, 'totalReadDays': 29});
+        .set({'streak': 1, 'totalReadDays': 29, 'longestStreak': 1});
 
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
@@ -472,6 +473,8 @@ void main() {
         .doc('data')
         .get();
     expect(summary.data()?['streak'], 3);
+    expect(summary.data()?['totalReadDays'], 3);
+    expect(summary.data()?['longestStreak'], 3);
   });
 
   testWidgets('load failure hides progress indicator', (tester) async {
