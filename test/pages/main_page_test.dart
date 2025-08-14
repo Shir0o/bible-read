@@ -13,6 +13,7 @@ import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/read_log_page.dart';
 import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/pages/achievements_page.dart';
+import 'package:bible_read/pages/streak_history_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:bible_read/services/daily_notification_service.dart';
@@ -71,7 +72,8 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Future<bool> canAccessScopes(
     List<String> scopes, {
     String? accessToken,
-  }) async => true;
+  }) async =>
+      true;
 
   @override
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
@@ -89,7 +91,7 @@ class RecordingNotificationService extends DailyNotificationService {
   bool scheduled = false;
 
   RecordingNotificationService({required FirebaseAuth auth})
-    : super(auth: auth);
+      : super(auth: auth);
 
   @override
   Future<bool> scheduleDailyReminder(Time time) async {
@@ -163,6 +165,11 @@ void main() {
       ),
     );
     expect(find.byType(AnimatedSwitcher), findsOneWidget);
+    var responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
+    expect(responsive.contentIndex, 0);
+
     await tester.tap(find.byIcon(Icons.feed));
     await tester.pump();
     expect(
@@ -174,11 +181,11 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(ReadLogPage), findsOneWidget);
+    responsive =
+        tester.widget<ResponsiveScaffold>(find.byType(ResponsiveScaffold));
+    expect(responsive.contentIndex, 1);
 
     // Friends navigation via drawer
-    final responsive = tester.widget<ResponsiveScaffold>(
-      find.byType(ResponsiveScaffold),
-    );
     responsive.scaffoldKey!.currentState!.openDrawer();
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.people));
@@ -192,6 +199,9 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(FriendsPage), findsOneWidget);
+    responsive =
+        tester.widget<ResponsiveScaffold>(find.byType(ResponsiveScaffold));
+    expect(responsive.contentIndex, 3);
 
     // Achievements navigation via drawer
     responsive.scaffoldKey!.currentState!.openDrawer();
@@ -207,6 +217,27 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(AchievementsPage), findsOneWidget);
+    responsive =
+        tester.widget<ResponsiveScaffold>(find.byType(ResponsiveScaffold));
+    expect(responsive.contentIndex, 5);
+
+    // History navigation via drawer
+    responsive.scaffoldKey!.currentState!.openDrawer();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.calendar_today));
+    await tester.pump();
+    expect(
+      find.descendant(
+        of: find.byType(AnimatedSwitcher),
+        matching: find.byType(FadeTransition),
+      ),
+      findsWidgets,
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(StreakHistoryPage), findsOneWidget);
+    responsive =
+        tester.widget<ResponsiveScaffold>(find.byType(ResponsiveScaffold));
+    expect(responsive.contentIndex, 6);
   });
 
   testWidgets('attemptSilentSignIn runs during initState', (tester) async {
@@ -317,10 +348,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    final userDoc = await fakeFirestore
-        .collection('users')
-        .doc(testUser.uid)
-        .get();
+    final userDoc =
+        await fakeFirestore.collection('users').doc(testUser.uid).get();
 
     expect(userDoc.exists, isTrue);
     expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
@@ -381,12 +410,12 @@ void main() {
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
           dailyNotificationServiceProvider: DailyNotificationService.new,
-          sendLikeNotification:
-              ({required String ownerUid, required String likerName}) async {
-                wasCalled = true;
-                calledUid = ownerUid;
-                calledName = likerName;
-              },
+          sendLikeNotification: (
+              {required String ownerUid, required String likerName}) async {
+            wasCalled = true;
+            calledUid = ownerUid;
+            calledName = likerName;
+          },
         ),
       ),
     );
