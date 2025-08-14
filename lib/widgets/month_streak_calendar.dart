@@ -7,7 +7,14 @@ class MonthStreakCalendar extends StatefulWidget {
   /// Set of dates the user has read.
   final Set<DateTime> readDates;
 
-  const MonthStreakCalendar({super.key, required this.readDates});
+  /// Whether navigation arrows are shown.
+  final bool showNavigation;
+
+  const MonthStreakCalendar({
+    super.key,
+    required this.readDates,
+    this.showNavigation = true,
+  });
 
   @override
   State<MonthStreakCalendar> createState() => _MonthStreakCalendarState();
@@ -32,13 +39,14 @@ class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
   }
 
   void _prevMonth() {
+    if (!widget.showNavigation) return;
     setState(() {
       _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
     });
   }
 
   void _nextMonth() {
-    if (_isCurrentMonth()) return;
+    if (!widget.showNavigation || _isCurrentMonth()) return;
     setState(() {
       _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
     });
@@ -106,18 +114,20 @@ class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: _prevMonth,
-              ),
+              if (widget.showNavigation)
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: _prevMonth,
+                ),
               Text(
                 monthLabel,
                 style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
               ),
-              IconButton(
-                icon: const Icon(Icons.arrow_forward),
-                onPressed: _isCurrentMonth() ? null : _nextMonth,
-              ),
+              if (widget.showNavigation)
+                IconButton(
+                  icon: const Icon(Icons.arrow_forward),
+                  onPressed: _isCurrentMonth() ? null : _nextMonth,
+                ),
             ],
           ),
           Row(
