@@ -76,7 +76,8 @@ void main() {
     expect(doc.data()?['email'], 'user@example.com');
     expect(completed, isTrue);
     expect(find.byType(SuccessAnimation), findsOneWidget);
-    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
     addTearDown(() async {
       await tester.pumpWidget(Container());
       await tester.pumpAndSettle();
@@ -134,7 +135,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
     await tester.tap(find.text('Sign Up'));
     await tester.pumpAndSettle();
-
+    expect(tester.takeException(), isNull);
     expect(find.text('Failed to sign up. Please try again.'), findsOneWidget);
   });
 }
