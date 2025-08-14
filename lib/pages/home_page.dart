@@ -80,10 +80,7 @@ class _HomePageState extends State<HomePage>
 
     try {
       final user = widget.auth.currentUser;
-      await widget.auth.currentUser?.reload();
-      final refreshedUser = widget.auth.currentUser;
       if (user == null) {
-        // If user is null, stop loading and return
         if (showLoading && !_disposed && mounted) {
           setState(() {
             _toggleLoading = false;
@@ -96,9 +93,27 @@ class _HomePageState extends State<HomePage>
       final dateKey = '${today.year}-${today.month}-${today.day}';
 
       final userDocRef = widget.firestore.collection('users').doc(user.uid);
-      final userDoc = await userDocRef.get();
+
+      // Kick off all Firestore reads in parallel.
+      final snapshots =
+          await Future.wait<DocumentSnapshot<Map<String, dynamic>>>(
+        [
+          userDocRef.get(),
+          userDocRef.collection('reading').doc(dateKey).get(),
+          userDocRef.collection('summary').doc('data').get(),
+        ],
+        eagerError: true,
+      );
+
+      final userDoc = snapshots[0];
+      final todayDoc = snapshots[1];
+      final summaryDoc = snapshots[2];
+
       if (!userDoc.exists) {
-        // Create the user document with basic profile fields.
+        // Reload only when user data is needed to create the document.
+        await user.reload();
+        final refreshedUser = widget.auth.currentUser;
+
         await userDocRef.set({
           'name': refreshedUser?.displayName ?? '',
           'email': refreshedUser?.email?.toLowerCase() ?? '',
@@ -106,24 +121,24 @@ class _HomePageState extends State<HomePage>
 
         // Initialize subcollections so later queries succeed.
         final friendsCollection = userDocRef.collection('friends');
-        final friendRequestsSentCollection = userDocRef.collection(
-          'friendRequestsSent',
-        );
-        await friendsCollection.doc('init').set({
-          'status': 'placeholder',
-          'timestamp': Timestamp.now(),
-        }, SetOptions(merge: true));
-        await friendRequestsSentCollection.doc('init').set({
-          'status': 'placeholder',
-          'timestamp': Timestamp.now(),
-        }, SetOptions(merge: true));
+        final friendRequestsSentCollection =
+            userDocRef.collection('friendRequestsSent');
+
+        await Future.wait([
+          friendsCollection.doc('init').set({
+            'status': 'placeholder',
+            'timestamp': Timestamp.now(),
+          }, SetOptions(merge: true)),
+          friendRequestsSentCollection.doc('init').set({
+            'status': 'placeholder',
+            'timestamp': Timestamp.now(),
+          }, SetOptions(merge: true)),
+        ]);
       }
 
-      // Read today's status from the reading subcollection.
-      final doc = await userDocRef.collection('reading').doc(dateKey).get();
-
-      if (doc.exists && doc.data() != null) {
-        final data = doc.data()!;
+      // Read today's status from the reading subcollection result.
+      if (todayDoc.exists && todayDoc.data() != null) {
+        final data = todayDoc.data()!;
         final hasRead = data.containsKey('read') ? data['read'] : false;
         if (!_disposed && mounted) {
           setState(() {
@@ -133,8 +148,6 @@ class _HomePageState extends State<HomePage>
       }
 
       // Always load streak from summary doc (no fallback to recalc).
-      final summaryDoc =
-          await userDocRef.collection('summary').doc('data').get();
       final data = summaryDoc.data() ?? {};
       int streak = data['streak'] ?? 0;
       int longestStreak = data['longestStreak'] ?? streak;
