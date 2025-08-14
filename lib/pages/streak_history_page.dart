@@ -229,7 +229,10 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
             ),
             const SizedBox(height: 16),
             if (_period == _Period.week)
-              WeekStreakCalendar(readDates: _readDates)
+              WeekStreakCalendar(
+                readDates: _readDates,
+                sunday: _periodStart,
+              )
             else
               MonthStreakCalendar(readDates: _readDates),
           ],

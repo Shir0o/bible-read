@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
 import 'common_styles.dart';
 
 /// Displays a week streak calendar with arrow navigation.
@@ -8,7 +7,14 @@ class WeekStreakCalendar extends StatefulWidget {
   /// Set of dates the user has read.
   final Set<DateTime> readDates;
 
-  const WeekStreakCalendar({super.key, required this.readDates});
+  /// The Sunday that starts the displayed week.
+  final DateTime sunday;
+
+  const WeekStreakCalendar({
+    super.key,
+    required this.readDates,
+    required this.sunday,
+  });
 
   @override
   State<WeekStreakCalendar> createState() => _WeekStreakCalendarState();
@@ -23,8 +29,15 @@ class _WeekStreakCalendarState extends State<WeekStreakCalendar> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _sunday = now.subtract(Duration(days: now.weekday % 7));
+    _sunday = widget.sunday;
+  }
+
+  @override
+  void didUpdateWidget(covariant WeekStreakCalendar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_isSameDay(oldWidget.sunday, widget.sunday)) {
+      _sunday = widget.sunday;
+    }
   }
 
   bool _isCurrentWeek() {
@@ -64,8 +77,7 @@ class _WeekStreakCalendarState extends State<WeekStreakCalendar> {
               ),
               Text(
                 'Week of $weekOf',
-                style:
-                    AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
+                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
               ),
               IconButton(
                 icon: const Icon(Icons.arrow_forward),
@@ -78,8 +90,7 @@ class _WeekStreakCalendarState extends State<WeekStreakCalendar> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(7, (i) {
               final date = _sunday.add(Duration(days: i));
-              final filled =
-                  widget.readDates.any((d) => _isSameDay(d, date));
+              final filled = widget.readDates.any((d) => _isSameDay(d, date));
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Column(
