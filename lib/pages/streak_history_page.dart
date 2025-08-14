@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/menu_button.dart';
 import '../widgets/streak_stats_box.dart';
+import '../widgets/week_streak_calendar.dart';
+import '../widgets/month_streak_calendar.dart';
 import '../services/error_logger.dart';
 
 /// Displays the user's reading streak history.
@@ -13,7 +15,7 @@ class StreakHistoryPage extends StatefulWidget {
   final FirebaseAuth auth;
 
   /// Creates a [StreakHistoryPage].
-  const StreakHistoryPage({
+  StreakHistoryPage({
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
@@ -34,6 +36,7 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
   int _longestStreak = 0;
   int _totalReadDays = 0;
   int _periodCount = 0;
+  Set<DateTime> _readDates = {};
 
   @override
   void initState() {
@@ -95,6 +98,7 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
       int longestStreak = data['longestStreak'] ?? currentStreak;
       int totalReadDays = data['totalReadDays'] ?? 0;
       int periodCount = 0;
+      Set<DateTime> readDates = {};
 
       if (isCurrentWeek) {
         final dates = List<String>.from(data['pastWeekReadDates'] ?? []);
@@ -104,11 +108,15 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
             final day = _periodStart.add(Duration(days: i));
             final key =
                 '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-            if (set.contains(key)) periodCount++;
+            if (set.contains(key)) {
+              periodCount++;
+              readDates.add(day);
+            }
           }
         } else {
-          periodCount = await _queryRange(userDocRef, _periodStart,
+          readDates = await _queryRange(userDocRef, _periodStart,
               _periodStart.add(const Duration(days: 6)));
+          periodCount = readDates.length;
         }
       } else if (isCurrentMonth) {
         final dates = List<String>.from(data['pastMonthReadDates'] ?? []);
@@ -120,17 +128,22 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
             final day = _periodStart.add(Duration(days: i));
             final key =
                 '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-            if (set.contains(key)) periodCount++;
+            if (set.contains(key)) {
+              periodCount++;
+              readDates.add(day);
+            }
           }
         } else {
           final end = DateTime(_periodStart.year, _periodStart.month + 1, 0);
-          periodCount = await _queryRange(userDocRef, _periodStart, end);
+          readDates = await _queryRange(userDocRef, _periodStart, end);
+          periodCount = readDates.length;
         }
       } else {
         final end = _period == _Period.week
             ? _periodStart.add(const Duration(days: 6))
             : DateTime(_periodStart.year, _periodStart.month + 1, 0);
-        periodCount = await _queryRange(userDocRef, _periodStart, end);
+        readDates = await _queryRange(userDocRef, _periodStart, end);
+        periodCount = readDates.length;
       }
 
       if (!mounted) return;
@@ -139,27 +152,36 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
         _longestStreak = longestStreak;
         _totalReadDays = totalReadDays;
         _periodCount = periodCount;
+        _readDates = readDates;
       });
     } catch (e, st) {
       ErrorLogger.log(e, st);
     }
   }
 
-  Future<int> _queryRange(
+  Future<Set<DateTime>> _queryRange(
     DocumentReference<Map<String, dynamic>> userDocRef,
     DateTime start,
     DateTime end,
   ) async {
     final readingCollection = userDocRef.collection('reading');
     final futures = <Future<DocumentSnapshot<Map<String, dynamic>>>>[];
+    final dates = <DateTime>[];
     for (DateTime day = start;
         !day.isAfter(end);
         day = day.add(const Duration(days: 1))) {
       final key = '${day.year}-${day.month}-${day.day}';
       futures.add(readingCollection.doc(key).get());
+      dates.add(day);
     }
     final snaps = await Future.wait(futures);
-    return snaps.where((doc) => doc.data()?['read'] == true).length;
+    final result = <DateTime>{};
+    for (int i = 0; i < snaps.length; i++) {
+      if (snaps[i].data()?['read'] == true) {
+        result.add(dates[i]);
+      }
+    }
+    return result;
   }
 
   @override
@@ -205,6 +227,11 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
               periodCount: _periodCount,
               periodLabel: periodLabel,
             ),
+            const SizedBox(height: 16),
+            if (_period == _Period.week)
+              WeekStreakCalendar(readDates: _readDates)
+            else
+              MonthStreakCalendar(readDates: _readDates),
           ],
         ),
       ),
