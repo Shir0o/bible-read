@@ -70,7 +70,8 @@ class UserProfilePageState extends State<UserProfilePage> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration.zero, () {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       setState(() {
         _loading = false;
       });
