@@ -24,6 +24,22 @@ void main() {
     );
   });
 
+  testWidgets('WeekStreakCalendar hides navigation when disabled',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WeekStreakCalendar(
+          readDates: <DateTime>{},
+          sunday: DateTime.now()
+              .subtract(Duration(days: DateTime.now().weekday % 7)),
+          showNavigation: false,
+        ),
+      ),
+    );
+    expect(find.byIcon(Icons.arrow_back), findsNothing);
+    expect(find.byIcon(Icons.arrow_forward), findsNothing);
+  });
+
   testWidgets('MonthStreakCalendar renders without interactive day cells',
       (tester) async {
     await tester.pumpWidget(
