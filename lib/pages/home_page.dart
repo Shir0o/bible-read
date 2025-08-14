@@ -60,6 +60,7 @@ class _HomePageState extends State<HomePage>
   List<bool> _pastMonth = [];
   int _longestStreak = 0;
   int _totalReadDays = 0;
+  Set<DateTime> _readDates = {};
 
   @override
   void initState() {
@@ -176,6 +177,19 @@ class _HomePageState extends State<HomePage>
         savedMonth.addAll(monthStatus);
       }
 
+      final readDates = <DateTime>{};
+      for (int i = 0; i < savedWeek.length; i++) {
+        if (savedWeek[i]) {
+          final date = sunday.add(Duration(days: i));
+          readDates.add(DateTime(date.year, date.month, date.day));
+        }
+      }
+      for (int i = 0; i < savedMonth.length; i++) {
+        if (savedMonth[i]) {
+          readDates.add(DateTime(now.year, now.month, i + 1));
+        }
+      }
+
       if (!_disposed && mounted) {
         // Update state with fetched data.
         setState(() {
@@ -184,6 +198,7 @@ class _HomePageState extends State<HomePage>
           _pastMonth = savedMonth;
           _longestStreak = longestStreak;
           _totalReadDays = totalReadDays;
+          _readDates = readDates;
         });
       }
     } catch (e, st) {
@@ -336,6 +351,7 @@ class _HomePageState extends State<HomePage>
     final prevStreak = _streak;
     final prevWeek = List<bool>.from(_pastWeek);
     final prevMonth = List<bool>.from(_pastMonth);
+    final prevReadDates = Set<DateTime>.from(_readDates);
 
     final today = DateTime.now();
     final weekIndex = today.weekday % 7;
@@ -361,6 +377,7 @@ class _HomePageState extends State<HomePage>
           );
         }
         _pastMonth[monthIndex] = true;
+        _readDates.add(DateTime(today.year, today.month, today.day));
       });
     }
 
@@ -399,6 +416,7 @@ class _HomePageState extends State<HomePage>
           _streak = prevStreak;
           _pastWeek = prevWeek;
           _pastMonth = prevMonth;
+          _readDates = prevReadDates;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -705,38 +723,14 @@ class _HomePageState extends State<HomePage>
                       ),
               ),
               const SizedBox(height: 16),
-              WeekStreakCalendar(readDates: _weekReadDates()),
+              WeekStreakCalendar(readDates: _readDates),
               const SizedBox(height: 16),
-              MonthStreakCalendar(readDates: _monthReadDates()),
+              MonthStreakCalendar(readDates: _readDates),
             ],
           ),
         ),
       ),
     );
-  }
-
-  Set<DateTime> _weekReadDates() {
-    final now = DateTime.now();
-    final sunday = now.subtract(Duration(days: now.weekday % 7));
-    final dates = <DateTime>{};
-    for (int i = 0; i < _pastWeek.length; i++) {
-      if (_pastWeek[i]) {
-        final date = sunday.add(Duration(days: i));
-        dates.add(DateTime(date.year, date.month, date.day));
-      }
-    }
-    return dates;
-  }
-
-  Set<DateTime> _monthReadDates() {
-    final now = DateTime.now();
-    final dates = <DateTime>{};
-    for (int i = 0; i < _pastMonth.length; i++) {
-      if (_pastMonth[i]) {
-        dates.add(DateTime(now.year, now.month, i + 1));
-      }
-    }
-    return dates;
   }
 
   @override
