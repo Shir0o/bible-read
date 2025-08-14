@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/menu_button.dart';
 import '../widgets/streak_stats_box.dart';
+import '../services/error_logger.dart';
 
 /// Displays the user's reading streak history.
 class StreakHistoryPage extends StatefulWidget {
@@ -16,8 +17,8 @@ class StreakHistoryPage extends StatefulWidget {
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<StreakHistoryPage> createState() => _StreakHistoryPageState();
@@ -77,70 +78,88 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
 
-    final snapshot = await widget.firestore
-        .collection('users')
-        .doc(uid)
-        .collection('reading')
-        .get();
+    try {
+      final userDocRef = widget.firestore.collection('users').doc(uid);
+      final summaryDoc =
+          await userDocRef.collection('summary').doc('data').get();
+      final data = summaryDoc.data() ?? {};
 
-    final readDates = <DateTime>[];
-    for (final doc in snapshot.docs) {
-      final data = doc.data();
-      if (data['read'] == true) {
-        final parts = doc.id.split('-');
-        if (parts.length == 3) {
-          final dt = DateTime(
-            int.parse(parts[0]),
-            int.parse(parts[1]),
-            int.parse(parts[2]),
-          );
-          readDates.add(dt);
+      final now = DateTime.now();
+      final bool isCurrentWeek =
+          _period == _Period.week && _periodStart == _startOfWeek(now);
+      final bool isCurrentMonth = _period == _Period.month &&
+          _periodStart.year == now.year &&
+          _periodStart.month == now.month;
+
+      int currentStreak = data['streak'] ?? 0;
+      int longestStreak = data['longestStreak'] ?? currentStreak;
+      int totalReadDays = data['totalReadDays'] ?? 0;
+      int periodCount = 0;
+
+      if (isCurrentWeek) {
+        final dates = List<String>.from(data['pastWeekReadDates'] ?? []);
+        if (dates.isNotEmpty) {
+          final set = dates.toSet();
+          for (int i = 0; i < 7; i++) {
+            final day = _periodStart.add(Duration(days: i));
+            final key =
+                '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+            if (set.contains(key)) periodCount++;
+          }
+        } else {
+          periodCount = await _queryRange(userDocRef, _periodStart,
+              _periodStart.add(const Duration(days: 6)));
         }
-      }
-    }
-
-    readDates.sort();
-    final readSet = readDates.toSet();
-    final total = readDates.length;
-
-    // Current streak
-    int streak = 0;
-    DateTime current = DateTime.now();
-    current = DateTime(current.year, current.month, current.day);
-    while (readSet.contains(current)) {
-      streak++;
-      current = current.subtract(const Duration(days: 1));
-    }
-
-    // Longest streak
-    int longest = 0;
-    int temp = 0;
-    DateTime? prev;
-    for (final date in readDates) {
-      if (prev != null && date.difference(prev).inDays == 1) {
-        temp++;
+      } else if (isCurrentMonth) {
+        final dates = List<String>.from(data['pastMonthReadDates'] ?? []);
+        if (dates.isNotEmpty) {
+          final set = dates.toSet();
+          final daysInMonth =
+              DateTime(_periodStart.year, _periodStart.month + 1, 0).day;
+          for (int i = 0; i < daysInMonth; i++) {
+            final day = _periodStart.add(Duration(days: i));
+            final key =
+                '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+            if (set.contains(key)) periodCount++;
+          }
+        } else {
+          final end = DateTime(_periodStart.year, _periodStart.month + 1, 0);
+          periodCount = await _queryRange(userDocRef, _periodStart, end);
+        }
       } else {
-        temp = 1;
+        final end = _period == _Period.week
+            ? _periodStart.add(const Duration(days: 6))
+            : DateTime(_periodStart.year, _periodStart.month + 1, 0);
+        periodCount = await _queryRange(userDocRef, _periodStart, end);
       }
-      if (temp > longest) longest = temp;
-      prev = date;
+
+      if (!mounted) return;
+      setState(() {
+        _currentStreak = currentStreak;
+        _longestStreak = longestStreak;
+        _totalReadDays = totalReadDays;
+        _periodCount = periodCount;
+      });
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
     }
+  }
 
-    final periodEnd = _period == _Period.week
-        ? _periodStart.add(const Duration(days: 6))
-        : DateTime(_periodStart.year, _periodStart.month + 1, 0);
-
-    final periodCount = readDates
-        .where((d) => !d.isBefore(_periodStart) && !d.isAfter(periodEnd))
-        .length;
-
-    if (!mounted) return;
-    setState(() {
-      _currentStreak = streak;
-      _longestStreak = longest;
-      _totalReadDays = total;
-      _periodCount = periodCount;
-    });
+  Future<int> _queryRange(
+    DocumentReference<Map<String, dynamic>> userDocRef,
+    DateTime start,
+    DateTime end,
+  ) async {
+    final readingCollection = userDocRef.collection('reading');
+    final futures = <Future<DocumentSnapshot<Map<String, dynamic>>>>[];
+    for (DateTime day = start;
+        !day.isAfter(end);
+        day = day.add(const Duration(days: 1))) {
+      final key = '${day.year}-${day.month}-${day.day}';
+      futures.add(readingCollection.doc(key).get());
+    }
+    final snaps = await Future.wait(futures);
+    return snaps.where((doc) => doc.data()?['read'] == true).length;
   }
 
   @override
