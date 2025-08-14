@@ -72,8 +72,7 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Future<bool> canAccessScopes(
     List<String> scopes, {
     String? accessToken,
-  }) async =>
-      true;
+  }) async => true;
 
   @override
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
@@ -91,7 +90,7 @@ class RecordingNotificationService extends DailyNotificationService {
   bool scheduled = false;
 
   RecordingNotificationService({required FirebaseAuth auth})
-      : super(auth: auth);
+    : super(auth: auth);
 
   @override
   Future<bool> scheduleDailyReminder(Time time) async {
@@ -164,7 +163,7 @@ void main() {
         ),
       ),
     );
-    expect(find.byType(AnimatedSwitcher), findsOneWidget);
+    expect(find.byType(IndexedStack), findsOneWidget);
     var responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
@@ -172,17 +171,11 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.feed));
     await tester.pump();
-    expect(
-      find.descendant(
-        of: find.byType(AnimatedSwitcher),
-        matching: find.byType(FadeTransition),
-      ),
-      findsWidgets,
-    );
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(ReadLogPage), findsOneWidget);
-    responsive =
-        tester.widget<ResponsiveScaffold>(find.byType(ResponsiveScaffold));
+    responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
     expect(responsive.contentIndex, 1);
 
     // Friends navigation via drawer
@@ -190,17 +183,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.people));
     await tester.pump();
-    expect(
-      find.descendant(
-        of: find.byType(AnimatedSwitcher),
-        matching: find.byType(FadeTransition),
-      ),
-      findsWidgets,
-    );
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(FriendsPage), findsOneWidget);
-    responsive =
-        tester.widget<ResponsiveScaffold>(find.byType(ResponsiveScaffold));
+    responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
     expect(responsive.contentIndex, 3);
 
     // Achievements navigation via drawer
@@ -208,17 +195,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.emoji_events));
     await tester.pump();
-    expect(
-      find.descendant(
-        of: find.byType(AnimatedSwitcher),
-        matching: find.byType(FadeTransition),
-      ),
-      findsWidgets,
-    );
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(AchievementsPage), findsOneWidget);
-    responsive =
-        tester.widget<ResponsiveScaffold>(find.byType(ResponsiveScaffold));
+    responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
     expect(responsive.contentIndex, 5);
 
     // History navigation via drawer
@@ -226,17 +207,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.calendar_today));
     await tester.pump();
-    expect(
-      find.descendant(
-        of: find.byType(AnimatedSwitcher),
-        matching: find.byType(FadeTransition),
-      ),
-      findsWidgets,
-    );
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(StreakHistoryPage), findsOneWidget);
-    responsive =
-        tester.widget<ResponsiveScaffold>(find.byType(ResponsiveScaffold));
+    responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
     expect(responsive.contentIndex, 6);
   });
 
@@ -348,8 +323,10 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    final userDoc =
-        await fakeFirestore.collection('users').doc(testUser.uid).get();
+    final userDoc = await fakeFirestore
+        .collection('users')
+        .doc(testUser.uid)
+        .get();
 
     expect(userDoc.exists, isTrue);
     expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
@@ -410,12 +387,12 @@ void main() {
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
           dailyNotificationServiceProvider: DailyNotificationService.new,
-          sendLikeNotification: (
-              {required String ownerUid, required String likerName}) async {
-            wasCalled = true;
-            calledUid = ownerUid;
-            calledName = likerName;
-          },
+          sendLikeNotification:
+              ({required String ownerUid, required String likerName}) async {
+                wasCalled = true;
+                calledUid = ownerUid;
+                calledName = likerName;
+              },
         ),
       ),
     );
