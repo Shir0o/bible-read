@@ -270,7 +270,6 @@ void main() {
 
     test('memberNames streams display names', () async {
       await firestore.collection('users').doc('u1').set({'name': 'Alice'});
-      await firestore.collection('users').doc('u2').set({'name': 'Bob'});
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
       await groupRef.collection(GroupCollections.members).doc('m1').set({
@@ -280,6 +279,7 @@ void main() {
       });
       await groupRef.collection(GroupCollections.members).doc('m2').set({
         'uid': 'u2',
+        'name': 'Bob',
         'role': 'member',
         'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
       });
@@ -289,6 +289,26 @@ void main() {
 
       final names = await service.memberNames('g1').first;
       expect(names.toSet(), {'Alice', 'Bob'});
+    });
+
+    test('memberNames batches user lookups', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      final expected = <String>{};
+      for (var i = 0; i < 12; i++) {
+        final uid = 'u\$i';
+        final name = 'User \$i';
+        await firestore.collection('users').doc(uid).set({'name': name});
+        await groupRef.collection(GroupCollections.members).doc('m\$i').set({
+          'uid': uid,
+          'role': 'member',
+          'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, i + 1)),
+        });
+        expected.add(name);
+      }
+
+      final names = await service.memberNames('g1').first;
+      expect(names.toSet(), expected);
     });
 
     test('schedule streams list of entries', () async {
