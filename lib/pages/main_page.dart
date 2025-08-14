@@ -16,10 +16,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/daily_notification_service.dart';
 import '../services/error_logger.dart';
+import 'dart:async';
 
 import 'home_page.dart';
 import 'read_log_page.dart';
@@ -192,40 +194,46 @@ class _MainPageState extends State<MainPage> {
         }
       }
       final token = await widget.messaging.getToken();
-      if (token != null) {
-        try {
-          await user.getIdToken(true); // Force-refresh ID token
-          await widget.firestore.collection('users').doc(user.uid).set({
-            'fcmToken': token,
-            'name': user.displayName,
-            'email': user.email?.toLowerCase(),
-          }, SetOptions(merge: true));
-        } catch (e, st) {
-          if (kDebugMode) {
-            debugPrint('Initial Firestore write failed: $e. Retrying...');
-          }
-          ErrorLogger.log(e, st);
-          await Future.delayed(const Duration(seconds: 1));
+      final prefs = await SharedPreferences.getInstance();
+      final cachedToken = prefs.getString('fcmToken');
+      if (token != null && token != cachedToken) {
+        await prefs.setString('fcmToken', token);
+        unawaited(() async {
           try {
+            await user.getIdToken(true); // Force-refresh ID token
             await widget.firestore.collection('users').doc(user.uid).set({
               'fcmToken': token,
               'name': user.displayName,
               'email': user.email?.toLowerCase(),
             }, SetOptions(merge: true));
-          } catch (e2, st2) {
+          } catch (e, st) {
             if (kDebugMode) {
-              debugPrint('Second Firestore write failed: $e2');
+              debugPrint('Initial Firestore write failed: $e. Retrying...');
             }
-            ErrorLogger.log(e2, st2);
+            await ErrorLogger.log(e, st);
+            await Future.delayed(const Duration(seconds: 1));
+            try {
+              await widget.firestore.collection('users').doc(user.uid).set({
+                'fcmToken': token,
+                'name': user.displayName,
+                'email': user.email?.toLowerCase(),
+              }, SetOptions(merge: true));
+            } catch (e2, st2) {
+              if (kDebugMode) {
+                debugPrint('Second Firestore write failed: $e2');
+              }
+              await ErrorLogger.log(e2, st2);
+            }
           }
-        }
+        }());
 
-        // Schedule daily reminder after preferences load
         await widget.dailyNotificationServiceProvider().scheduleDailyReminder(
               const Time(8, 0),
             );
       } else {
-        debugPrint('Skipping Firestore write: user or token is null');
+        debugPrint(
+          'Skipping Firestore write and reminder: token unchanged or null',
+        );
       }
     }
   }

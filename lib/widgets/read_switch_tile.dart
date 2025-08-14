@@ -34,7 +34,6 @@ class ReadSwitchTile extends StatelessWidget {
               value: value,
               onChanged: onChanged,
               activeTrackColor: Colors.green,
-              activeThumbColor: Colors.green,
             ),
           ),
           const SizedBox(width: 8),

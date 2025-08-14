@@ -11,6 +11,7 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 
 import 'package:bible_read/main.dart';
 import 'package:bible_read/pages/main_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,10 @@ void main() {
 
   setUpAll(() async {
     await Firebase.initializeApp();
+  });
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
   });
 
   testWidgets('Main page loads', (WidgetTester tester) async {
