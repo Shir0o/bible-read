@@ -260,7 +260,7 @@ class _MainPageState extends State<MainPage> {
           auth: widget.auth,
         ),
         AchievementsPage(firestore: widget.firestore, auth: widget.auth),
-        const StreakHistoryPage(),
+        StreakHistoryPage(),
         FriendRequestsPage(
           friendService: FriendService(firestore: widget.firestore),
           auth: widget.auth,

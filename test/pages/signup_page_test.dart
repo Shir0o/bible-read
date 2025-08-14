@@ -67,6 +67,7 @@ void main() {
     final doc = await firestore.collection('users').doc(uid).get();
     expect(doc.exists, isTrue);
     expect(find.byType(MainPage), findsOneWidget);
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
   });
 }
