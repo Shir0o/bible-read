@@ -56,6 +56,20 @@ void main() {
     );
   });
 
+  testWidgets('MonthStreakCalendar hides navigation when disabled',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MonthStreakCalendar(
+          readDates: <DateTime>{},
+          showNavigation: false,
+        ),
+      ),
+    );
+    expect(find.byIcon(Icons.arrow_back), findsNothing);
+    expect(find.byIcon(Icons.arrow_forward), findsNothing);
+  });
+
   testWidgets('WeekStreakCalendar highlights provided read dates',
       (tester) async {
     final now = DateTime.now();
