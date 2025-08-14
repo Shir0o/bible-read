@@ -2,8 +2,6 @@
 // by switching based on the current width.
 import 'package:flutter/material.dart';
 
-import 'animated_page_route.dart';
-
 /// A scaffold that adapts its navigation UI to the screen width.
 ///
 /// Required parameters are [selectedIndex], [onDestinationSelected], [pages],
@@ -60,8 +58,9 @@ class ResponsiveScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isWide = MediaQuery.of(context).size.width >= 600;
     final int displayIndex = contentIndex ?? selectedIndex;
-    final int safeDisplay =
-        pages.isEmpty ? 0 : displayIndex.clamp(0, pages.length - 1);
+    final int safeDisplay = pages.isEmpty
+        ? 0
+        : displayIndex.clamp(0, pages.length - 1);
     final int safeSelected = destinations.isEmpty
         ? 0
         : selectedIndex.clamp(0, destinations.length - 1);
@@ -89,15 +88,7 @@ class ResponsiveScaffold extends StatelessWidget {
                   .toList(),
             ),
           Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, animation) =>
-                  scaleFadeTransition(child, animation),
-              child: KeyedSubtree(
-                key: ValueKey<int>(safeDisplay),
-                child: pages[safeDisplay],
-              ),
-            ),
+            child: IndexedStack(index: safeDisplay, children: pages),
           ),
         ],
       ),
