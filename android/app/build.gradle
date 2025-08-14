@@ -29,7 +29,7 @@ android {
         }
     }
     namespace = "com.bibleread.challenge"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
