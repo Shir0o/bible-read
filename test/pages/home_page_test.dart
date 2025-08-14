@@ -463,7 +463,7 @@ void main() {
 
     await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
     await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.pumpAndSettle();
 
     final summary = await firestore
