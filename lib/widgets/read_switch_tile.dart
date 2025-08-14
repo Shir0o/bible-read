@@ -33,7 +33,7 @@ class ReadSwitchTile extends StatelessWidget {
               key: ValueKey<bool>(value),
               value: value,
               onChanged: onChanged,
-              activeThumbColor: Colors.green,
+              activeTrackColor: Colors.green,
             ),
           ),
           const SizedBox(width: 8),
