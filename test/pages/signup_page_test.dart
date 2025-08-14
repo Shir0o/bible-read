@@ -8,6 +8,7 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 
 import 'package:bible_read/pages/signup_page.dart';
 import 'package:bible_read/pages/main_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordingAuth extends MockFirebaseAuth {
   bool createCalled = false;
@@ -44,6 +45,7 @@ void main() {
   ) async {
     final firestore = FakeFirebaseFirestore();
     final auth = RecordingAuth();
+    SharedPreferences.setMockInitialValues({});
 
     await tester.pumpWidget(
       MaterialApp(

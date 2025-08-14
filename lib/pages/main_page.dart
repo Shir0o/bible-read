@@ -16,25 +16,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/daily_notification_service.dart';
 import '../services/error_logger.dart';
+import 'dart:async';
 
 import 'home_page.dart';
 import 'read_log_page.dart';
 import 'app_check_error_page.dart';
 
-typedef SendLikeNotification =
-    Future<void> Function({
-      required String ownerUid,
-      required String likerName,
-    });
-typedef SendCommentNotification =
-    Future<void> Function({
-      required String ownerUid,
-      required String commenterName,
-    });
+typedef SendLikeNotification = Future<void> Function({
+  required String ownerUid,
+  required String likerName,
+});
+typedef SendCommentNotification = Future<void> Function({
+  required String ownerUid,
+  required String commenterName,
+});
 
 class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -56,12 +56,12 @@ class MainPage extends StatefulWidget {
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       messaging = messaging ?? FirebaseMessaging.instance,
-       googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
-       dailyNotificationServiceProvider =
-           dailyNotificationServiceProvider ?? DailyNotificationService.new;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        messaging = messaging ?? FirebaseMessaging.instance,
+        googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
+        dailyNotificationServiceProvider =
+            dailyNotificationServiceProvider ?? DailyNotificationService.new;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -88,8 +88,7 @@ class _MainPageState extends State<MainPage> {
       ReadLogPage(
         firestore: widget.firestore,
         auth: widget.auth,
-        onSendLikeNotification:
-            widget.sendLikeNotification ??
+        onSendLikeNotification: widget.sendLikeNotification ??
             ({required String ownerUid, required String likerName}) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) {
@@ -110,8 +109,7 @@ class _MainPageState extends State<MainPage> {
                 'likerName': likerName,
               });
             },
-        onSendCommentNotification:
-            widget.sendCommentNotification ??
+        onSendCommentNotification: widget.sendCommentNotification ??
             ({required String ownerUid, required String commenterName}) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) {
@@ -141,7 +139,7 @@ class _MainPageState extends State<MainPage> {
       FriendsPage(friendService: _friendService, auth: widget.auth),
       GroupsPage(groupService: _groupService, auth: widget.auth),
       AchievementsPage(firestore: widget.firestore, auth: widget.auth),
-      const StreakHistoryPage(),
+      StreakHistoryPage(),
       FriendRequestsPage(friendService: _friendService, auth: widget.auth),
       UserProfilePage(
         googleSignInProvider: widget.googleSignInProvider,
@@ -196,40 +194,46 @@ class _MainPageState extends State<MainPage> {
         }
       }
       final token = await widget.messaging.getToken();
-      if (token != null) {
-        try {
-          await user.getIdToken(true); // Force-refresh ID token
-          await widget.firestore.collection('users').doc(user.uid).set({
-            'fcmToken': token,
-            'name': user.displayName,
-            'email': user.email?.toLowerCase(),
-          }, SetOptions(merge: true));
-        } catch (e, st) {
-          if (kDebugMode) {
-            debugPrint('Initial Firestore write failed: $e. Retrying...');
-          }
-          ErrorLogger.log(e, st);
-          await Future.delayed(const Duration(seconds: 1));
+      final prefs = await SharedPreferences.getInstance();
+      final cachedToken = prefs.getString('fcmToken');
+      if (token != null && token != cachedToken) {
+        await prefs.setString('fcmToken', token);
+        unawaited(() async {
           try {
+            await user.getIdToken(true); // Force-refresh ID token
             await widget.firestore.collection('users').doc(user.uid).set({
               'fcmToken': token,
               'name': user.displayName,
               'email': user.email?.toLowerCase(),
             }, SetOptions(merge: true));
-          } catch (e2, st2) {
+          } catch (e, st) {
             if (kDebugMode) {
-              debugPrint('Second Firestore write failed: $e2');
+              debugPrint('Initial Firestore write failed: $e. Retrying...');
             }
-            ErrorLogger.log(e2, st2);
+            await ErrorLogger.log(e, st);
+            await Future.delayed(const Duration(seconds: 1));
+            try {
+              await widget.firestore.collection('users').doc(user.uid).set({
+                'fcmToken': token,
+                'name': user.displayName,
+                'email': user.email?.toLowerCase(),
+              }, SetOptions(merge: true));
+            } catch (e2, st2) {
+              if (kDebugMode) {
+                debugPrint('Second Firestore write failed: $e2');
+              }
+              await ErrorLogger.log(e2, st2);
+            }
           }
-        }
+        }());
 
-        // Schedule daily reminder after preferences load
         await widget.dailyNotificationServiceProvider().scheduleDailyReminder(
-          const Time(8, 0),
-        );
+              const Time(8, 0),
+            );
       } else {
-        debugPrint('Skipping Firestore write: user or token is null');
+        debugPrint(
+          'Skipping Firestore write and reminder: token unchanged or null',
+        );
       }
     }
   }
@@ -269,9 +273,8 @@ class _MainPageState extends State<MainPage> {
     final bool signedIn = widget.auth.currentUser != null;
     final List<Widget> pages = signedIn ? _pages : [_pages.last];
 
-    final int navIndex = signedIn
-        ? (_selectedIndex <= 1 ? _selectedIndex : 0)
-        : 0;
+    final int navIndex =
+        signedIn ? (_selectedIndex <= 1 ? _selectedIndex : 0) : 0;
 
     return ResponsiveScaffold(
       scaffoldKey: _scaffoldKey,

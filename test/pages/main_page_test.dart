@@ -19,6 +19,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:bible_read/services/daily_notification_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -72,7 +73,8 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Future<bool> canAccessScopes(
     List<String> scopes, {
     String? accessToken,
-  }) async => true;
+  }) async =>
+      true;
 
   @override
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
@@ -90,7 +92,7 @@ class RecordingNotificationService extends DailyNotificationService {
   bool scheduled = false;
 
   RecordingNotificationService({required FirebaseAuth auth})
-    : super(auth: auth);
+      : super(auth: auth);
 
   @override
   Future<bool> scheduleDailyReminder(Time time) async {
@@ -124,6 +126,7 @@ void main() {
   setUp(() {
     fakePlatform = FakeGoogleSignInPlatform();
     GoogleSignInPlatform.instance = fakePlatform;
+    SharedPreferences.setMockInitialValues({});
   });
 
   testWidgets('MainPage navigation to profile', (WidgetTester tester) async {
@@ -323,10 +326,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    final userDoc = await fakeFirestore
-        .collection('users')
-        .doc(testUser.uid)
-        .get();
+    final userDoc =
+        await fakeFirestore.collection('users').doc(testUser.uid).get();
 
     expect(userDoc.exists, isTrue);
     expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
@@ -355,6 +356,33 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(service.scheduled, isTrue);
+  });
+
+  testWidgets('skips Firestore write and reminder when token unchanged',
+      (tester) async {
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u-skip'),
+      signedIn: true,
+    );
+    final firestore = FakeFirebaseFirestore();
+    final messaging = FakeFirebaseMessaging('tok');
+    final service = RecordingNotificationService(auth: auth);
+
+    SharedPreferences.setMockInitialValues({'fcmToken': 'tok'});
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: firestore,
+          messaging: messaging,
+          dailyNotificationServiceProvider: () => service,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(service.scheduled, isFalse);
   });
   testWidgets('calls sendLikeNotification when a like is triggered', (
     tester,
@@ -387,12 +415,12 @@ void main() {
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
           dailyNotificationServiceProvider: DailyNotificationService.new,
-          sendLikeNotification:
-              ({required String ownerUid, required String likerName}) async {
-                wasCalled = true;
-                calledUid = ownerUid;
-                calledName = likerName;
-              },
+          sendLikeNotification: (
+              {required String ownerUid, required String likerName}) async {
+            wasCalled = true;
+            calledUid = ownerUid;
+            calledName = likerName;
+          },
         ),
       ),
     );

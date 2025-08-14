@@ -16,6 +16,7 @@ import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/badge_icon.dart';
 import 'package:bible_read/services/daily_notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -104,6 +105,10 @@ void main() {
 
   setUpAll(() async {
     await Firebase.initializeApp();
+  });
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
   });
 
   testWidgets('shows loading then auth options', (tester) async {
