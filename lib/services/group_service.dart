@@ -278,15 +278,41 @@ class GroupService {
     });
     return snaps.asyncMap((snap) async {
       try {
-        final futures = snap.docs.map((doc) async {
-          final uid = doc.data()['uid'] as String?;
-          if (uid == null || uid.isEmpty) return null;
-          final userDoc = await firestore.collection('users').doc(uid).get();
-          if (!userDoc.exists) return null;
-          return userDoc.data()?['name'] as String? ?? '';
-        }).toList();
-        final names = await Future.wait<String?>(futures);
-        return names.whereType<String>().toList();
+        final names = <String>[];
+        final missingUids = <String>[];
+
+        for (final doc in snap.docs) {
+          final data = doc.data();
+          final name = data['name'] as String?;
+          if (name != null && name.isNotEmpty) {
+            names.add(name);
+            continue;
+          }
+
+          final uid = data['uid'] as String?;
+          if (uid != null && uid.isNotEmpty) {
+            missingUids.add(uid);
+          }
+        }
+
+        for (var i = 0; i < missingUids.length; i += 10) {
+          final batch = missingUids.sublist(
+            i,
+            i + 10 > missingUids.length ? missingUids.length : i + 10,
+          );
+          final query = await firestore
+              .collection('users')
+              .where(FieldPath.documentId, whereIn: batch)
+              .get();
+          for (final user in query.docs) {
+            final userName = user.data()['name'] as String?;
+            if (userName != null && userName.isNotEmpty) {
+              names.add(userName);
+            }
+          }
+        }
+
+        return names;
       } catch (e, st) {
         await ErrorLogger.log(e, st);
         return <String>[];
