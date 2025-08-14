@@ -218,7 +218,6 @@ void main() {
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
-    await tester.pumpAndSettle();
 
     await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
@@ -238,7 +237,6 @@ void main() {
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
-    await tester.pumpAndSettle();
 
     await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
@@ -255,7 +253,6 @@ void main() {
 
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
-    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(ReadSwitchTile));
@@ -353,7 +350,6 @@ void main() {
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
-    await tester.pumpAndSettle();
 
     await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
@@ -384,7 +380,6 @@ void main() {
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
     await tester.pumpAndSettle();
-    await tester.pumpAndSettle();
 
     await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
@@ -406,7 +401,6 @@ void main() {
 
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
-    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 
     final state = tester.state(find.byType(HomePage)) as dynamic;
@@ -458,7 +452,6 @@ void main() {
 
     await tester.pumpWidget(
         MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
-    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 
     await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
