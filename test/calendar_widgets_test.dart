@@ -7,11 +7,21 @@ void main() {
   testWidgets('WeekStreakCalendar renders without interactive day cells',
       (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: WeekStreakCalendar(readDates: <DateTime>{}),
+      MaterialApp(
+        home: WeekStreakCalendar(
+          readDates: <DateTime>{},
+          sunday: DateTime.now()
+              .subtract(Duration(days: DateTime.now().weekday % 7)),
+        ),
       ),
     );
-    expect(find.byType(InkWell), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(WeekStreakCalendar),
+        matching: find.byType(InkWell),
+      ),
+      findsNWidgets(2),
+    );
   });
 
   testWidgets('MonthStreakCalendar renders without interactive day cells',
@@ -21,7 +31,13 @@ void main() {
         home: MonthStreakCalendar(readDates: <DateTime>{}),
       ),
     );
-    expect(find.byType(InkWell), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(MonthStreakCalendar),
+        matching: find.byType(InkWell),
+      ),
+      findsNWidgets(2),
+    );
   });
 
   testWidgets('WeekStreakCalendar highlights provided read dates',
@@ -33,7 +49,11 @@ void main() {
     };
     await tester.pumpWidget(
       MaterialApp(
-        home: WeekStreakCalendar(readDates: readDates),
+        home: WeekStreakCalendar(
+          readDates: readDates,
+          sunday: DateTime.now()
+              .subtract(Duration(days: DateTime.now().weekday % 7)),
+        ),
       ),
     );
     expect(find.byIcon(Icons.check_circle), findsNWidgets(2));
