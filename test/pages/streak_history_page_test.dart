@@ -4,28 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/pages/streak_history_page.dart';
+import 'package:bible_read/widgets/week_streak_calendar.dart';
+import 'package:bible_read/widgets/month_streak_calendar.dart';
+
+String _fmt(DateTime d) =>
+    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
 void main() {
-  testWidgets('displays streak stats', (tester) async {
+  testWidgets('week and month views render correct day cells', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'));
-
-    final now = DateTime.now();
-    final week = <String>[];
-    final month = <String>[];
-    for (int i = 0; i < 3; i++) {
-      final d = now.subtract(Duration(days: i));
-      await firestore
-          .collection('users')
-          .doc('u1')
-          .collection('reading')
-          .doc('${d.year}-${d.month}-${d.day}')
-          .set({'read': true});
-      final key =
-          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-      week.add(key);
-      month.add(key);
-    }
 
     await firestore
         .collection('users')
@@ -33,11 +21,11 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 3,
-      'pastWeekReadDates': week,
-      'pastMonthReadDates': month,
-      'totalReadDays': 3,
-      'longestStreak': 3,
+      'streak': 0,
+      'longestStreak': 0,
+      'totalReadDays': 0,
+      'pastWeekReadDates': <String>[],
+      'pastMonthReadDates': <String>[],
     });
 
     await tester.pumpWidget(
@@ -47,8 +35,98 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Current streak: 3'), findsOneWidget);
-    expect(find.text('Week'), findsOneWidget);
-    expect(find.text('Month'), findsOneWidget);
+    final weekCal = find.byType(WeekStreakCalendar);
+    expect(weekCal, findsOneWidget);
+    final weekCells = find.descendant(
+      of: weekCal,
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Icon &&
+            (widget.icon == Icons.check_circle ||
+                widget.icon == Icons.radio_button_unchecked),
+      ),
+    );
+    expect(weekCells, findsNWidgets(7));
+
+    await tester.tap(find.text('Month'));
+    await tester.pumpAndSettle();
+
+    final monthCal = find.byType(MonthStreakCalendar);
+    expect(monthCal, findsOneWidget);
+    final now = DateTime.now();
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final monthCells = find.descendant(
+      of: monthCal,
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Icon &&
+            (widget.icon == Icons.circle ||
+                widget.icon == Icons.circle_outlined),
+      ),
+    );
+    expect(monthCells, findsNWidgets(daysInMonth));
+  });
+
+  testWidgets('period navigation updates calendar and stats', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'));
+
+    final now = DateTime.now();
+    final currentWeekStart = now.subtract(Duration(days: now.weekday % 7));
+    final prevWeekStart = currentWeekStart.subtract(const Duration(days: 7));
+
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('summary')
+        .doc('data')
+        .set({
+      'streak': 0,
+      'longestStreak': 0,
+      'totalReadDays': 0,
+      'pastWeekReadDates': [
+        _fmt(currentWeekStart),
+        _fmt(currentWeekStart.add(const Duration(days: 1))),
+      ],
+      'pastMonthReadDates': <String>[],
+    });
+
+    for (int i = 0; i < 3; i++) {
+      final day = prevWeekStart.add(Duration(days: i));
+      await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('reading')
+          .doc('${day.year}-${day.month}-${day.day}')
+          .set({'read': true});
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StreakHistoryPage(firestore: firestore, auth: auth),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Week reads: 2'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(WeekStreakCalendar),
+        matching: find.byIcon(Icons.check_circle),
+      ),
+      findsNWidgets(2),
+    );
+
+    await tester.tap(find.byIcon(Icons.arrow_back).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Week reads: 3'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(WeekStreakCalendar),
+        matching: find.byIcon(Icons.check_circle),
+      ),
+      findsNWidgets(3),
+    );
   });
 }
