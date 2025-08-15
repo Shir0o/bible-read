@@ -1,25 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 /// Displays a badge image or icon with an optional locked overlay.
 ///
-/// **Migration guide**
-///
 /// ```dart
-/// // Previously:
-/// const BadgeIcon(assetPath: 'assets/badges/gold.png');
+/// // Display a network image
+/// const BadgeIcon(imageUrl: 'https://example.com/badge.png');
 ///
-/// // Now:
-/// const BadgeIcon(assetPath: 'assets/badges/gold.png'); // PNG
-/// const BadgeIcon(svgAsset: 'assets/badges/gold.svg'); // SVG
-/// const BadgeIcon(iconData: Icons.star); // IconData
+/// // Display an icon
+/// const BadgeIcon(iconData: Icons.star);
 /// ```
 class BadgeIcon extends StatelessWidget {
-  /// Path to the badge PNG asset.
-  final String? assetPath;
-
-  /// Path to the badge SVG asset.
-  final String? svgAsset;
+  /// URL of the badge image.
+  final String? imageUrl;
 
   /// Icon to display for the badge.
   final IconData? iconData;
@@ -30,35 +22,24 @@ class BadgeIcon extends StatelessWidget {
   /// Size of the badge icon.
   final double size;
 
-  /// Creates a [BadgeIcon]. Provide exactly one of [assetPath], [svgAsset],
-  /// or [iconData].
+  /// Creates a [BadgeIcon]. Provide exactly one of [imageUrl] or [iconData].
   const BadgeIcon({
     super.key,
-    this.assetPath,
-    this.svgAsset,
+    this.imageUrl,
     this.iconData,
     this.locked = false,
     this.size = 24,
   }) : assert(
-          (assetPath != null ? 1 : 0) +
-                  (svgAsset != null ? 1 : 0) +
-                  (iconData != null ? 1 : 0) ==
-              1,
+          (imageUrl != null ? 1 : 0) + (iconData != null ? 1 : 0) == 1,
           'Provide exactly one badge source.',
         );
 
   @override
   Widget build(BuildContext context) {
     final Widget image;
-    if (assetPath != null) {
-      image = Image.asset(
-        assetPath!,
-        width: size,
-        height: size,
-      );
-    } else if (svgAsset != null) {
-      image = SvgPicture.asset(
-        svgAsset!,
+    if (imageUrl != null) {
+      image = Image.network(
+        imageUrl!,
         width: size,
         height: size,
       );
