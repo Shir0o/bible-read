@@ -11,7 +11,7 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: BadgeIcon(
-            assetPath: 'assets/achievements/streak7.png',
+            iconData: Icons.star,
             locked: true,
           ),
         ),
@@ -27,7 +27,7 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: BadgeIcon(
-            assetPath: 'assets/achievements/streak7.png',
+            iconData: Icons.star,
             locked: false,
           ),
         ),
