@@ -155,7 +155,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Bible Reading Challenge'), findsOneWidget);
-    expect(find.text('Bible Read Today'), findsOneWidget);
+    expect(find.byType(ReadSwitchTile), findsOneWidget);
   });
 
   testWidgets('shows "User not signed in" when not authenticated', (
