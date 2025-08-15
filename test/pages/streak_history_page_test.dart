@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/pages/streak_history_page.dart';
 import 'package:bible_read/widgets/week_streak_calendar.dart';
 import 'package:bible_read/widgets/month_streak_calendar.dart';
+import 'package:bible_read/widgets/streak_stats_box.dart';
 
 String _fmt(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -35,6 +36,17 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+
+    final navRow = find.byType(Row).first;
+    expect(
+      find.descendant(of: navRow, matching: find.byIcon(Icons.arrow_back)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: navRow, matching: find.byIcon(Icons.arrow_forward)),
+      findsOneWidget,
+    );
+    expect(find.byType(StreakStatsBox), findsOneWidget);
 
     final weekCal = find.byType(WeekStreakCalendar);
     expect(weekCal, findsOneWidget);
@@ -109,6 +121,17 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+
+    final navRow = find.byType(Row).first;
+    expect(
+      find.descendant(of: navRow, matching: find.byIcon(Icons.arrow_back)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: navRow, matching: find.byIcon(Icons.arrow_forward)),
+      findsOneWidget,
+    );
+    expect(find.byType(StreakStatsBox), findsOneWidget);
 
     expect(find.text('Week reads: 2'), findsOneWidget);
     expect(

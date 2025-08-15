@@ -141,10 +141,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Bible Reading Challenge'), findsOneWidget);
-    expect(find.textContaining('Streak:'), findsOneWidget);
     expect(find.text('Bible Read Today'), findsOneWidget);
-    expect(find.textContaining('Week of'), findsOneWidget);
-    expect(find.textContaining('${DateTime.now().year} –'), findsOneWidget);
   });
 
   testWidgets('shows "User not signed in" when not authenticated',
