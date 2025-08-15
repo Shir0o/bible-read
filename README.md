@@ -34,14 +34,14 @@ Firestore permissions allow any signed-in user to read comments, authors to crea
 
 ## Achievements
 
-The app currently offers the following achievements. Each badge image is stored under `assets/achievements/`.
+The app currently offers the following achievements. Badge icons are provided by the [Font Awesome](https://fontawesome.com) library via [`font_awesome_flutter`](https://pub.dev/packages/font_awesome_flutter).
 
-| Badge | ID | Description |
-| ----- | -- | ----------- |
-| ![First Reader](assets/achievements/first_reader.png) | `firstReader` | Be the first person to log reading for the day. |
-| ![7-Day Streak](assets/achievements/streak7.png) | `streak7` | Read the Bible seven days in a row. |
-| ![30 Days Read](assets/achievements/days30.png) | `days30` | Log 30 days of reading. |
-| ![30-Day Streak](assets/achievements/streak30.png) | `streak30` | Read every day for a full month. |
+| Icon | ID | Description |
+| ---- | -- | ----------- |
+| `book-open-reader` | `firstReader` | Be the first person to log reading for the day. |
+| `fire` | `streak7` | Read the Bible seven days in a row. |
+| `calendar-check` | `days30` | Log 30 days of reading. |
+| `fire-flame-curved` | `streak30` | Read every day for a full month. |
 
 Achievements are displayed in a scrollable list where each row shows the badge,
 title and description. Locked items are overlaid with a lock icon until they are
