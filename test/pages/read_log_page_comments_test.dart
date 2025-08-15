@@ -40,7 +40,8 @@ void main() {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1');
       final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
-      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey =
+          '${fixedDate.year}-${fixedDate.month.toString().padLeft(2, '0')}-${fixedDate.day.toString().padLeft(2, '0')}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -91,7 +92,8 @@ void main() {
       final ownerUid = 'u1';
       final user = MockUser(uid: 'u2', displayName: 'Bob Jones');
       final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
-      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey =
+          '${fixedDate.year}-${fixedDate.month.toString().padLeft(2, '0')}-${fixedDate.day.toString().padLeft(2, '0')}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -136,7 +138,8 @@ void main() {
       final ownerUid = 'u1';
       final commenter = MockUser(uid: 'u2', displayName: 'Jane Doe');
       final auth = MockFirebaseAuth(mockUser: commenter, signedIn: true);
-      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey =
+          '${fixedDate.year}-${fixedDate.month.toString().padLeft(2, '0')}-${fixedDate.day.toString().padLeft(2, '0')}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -200,7 +203,8 @@ void main() {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1');
       final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
-      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey =
+          '${fixedDate.year}-${fixedDate.month.toString().padLeft(2, '0')}-${fixedDate.day.toString().padLeft(2, '0')}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
