@@ -12,6 +12,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/widgets/read_switch_tile.dart';
+import 'package:bible_read/widgets/success_animation.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -253,6 +254,9 @@ void main() {
 
     await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
+    await tester.pump();
+    expect(find.byType(SuccessAnimation), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     final switchTile = tester.widget<ReadSwitchTile>(
@@ -279,6 +283,9 @@ void main() {
 
     await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
+    await tester.pump();
+    expect(find.byType(SuccessAnimation), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -302,6 +309,9 @@ void main() {
 
     await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
+    await tester.pump();
+    expect(find.byType(SuccessAnimation), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     final now = DateTime.now();
@@ -363,6 +373,9 @@ void main() {
 
     await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
+    await tester.pump();
+    expect(find.byType(SuccessAnimation), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     expect(called, isTrue);
@@ -413,6 +426,9 @@ void main() {
 
     await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
+    await tester.pump();
+    expect(find.byType(SuccessAnimation), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     final achievementDoc = await firestore
@@ -447,6 +463,9 @@ void main() {
 
     await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
+    await tester.pump();
+    expect(find.byType(SuccessAnimation), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     final achievementDoc = await firestore

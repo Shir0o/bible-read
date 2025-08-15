@@ -7,20 +7,21 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('noAnimation constructor builds', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(
-        body: ReadSwitchTile.noAnimation(
-          value: false,
-          onChanged: null,
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ReadSwitchTile.noAnimation(value: false, onChanged: null),
         ),
       ),
-    ));
+    );
 
     expect(find.byType(Switch), findsOneWidget);
+    expect(find.byType(SwitchListTile), findsNothing);
   });
 
-  testWidgets('Tapping the tile toggles the switch and calls onChanged',
-      (tester) async {
+  testWidgets('Tapping the tile toggles the switch and calls onChanged', (
+    tester,
+  ) async {
     var value = false;
     bool? callbackValue;
 
@@ -40,8 +41,19 @@ void main() {
       ),
     );
     expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+    final scaleFinder = find.descendant(
+      of: find.byType(ReadSwitchTile),
+      matching: find.byType(ScaleTransition),
+    );
+    final scaleBefore = tester.widget<ScaleTransition>(scaleFinder);
+    expect(scaleBefore.scale.value, 1.0);
 
     await tester.tap(find.byType(ReadSwitchTile));
+    await tester.pump();
+
+    final scaleDuring = tester.widget<ScaleTransition>(scaleFinder);
+    expect(scaleDuring.scale.value, lessThan(1.0));
+
     await tester.pumpAndSettle();
 
     expect(callbackValue, isTrue);
@@ -49,23 +61,17 @@ void main() {
   });
 
   testWidgets('Animations render without throwing', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(
-        body: ReadSwitchTile(
-          value: false,
-          onChanged: null,
-        ),
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: ReadSwitchTile(value: false, onChanged: null)),
       ),
-    ));
+    );
 
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(
-        body: ReadSwitchTile(
-          value: true,
-          onChanged: null,
-        ),
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: ReadSwitchTile(value: true, onChanged: null)),
       ),
-    ));
+    );
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(tester.takeException(), isNull);
