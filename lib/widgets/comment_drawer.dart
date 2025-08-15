@@ -108,6 +108,7 @@ class _CommentDrawerState extends State<CommentDrawer> {
         comments: _comments,
         onAdd: _handleAdd,
         scrollController: widget.controller,
+        showSendProgress: false,
       ),
     );
 
