@@ -158,6 +158,34 @@ void main() {
     expect((tiles[1].title as Text).data, 'Alice');
   });
 
+  testWidgets('shows placeholder when name is missing', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(signedIn: true);
+    // Create a user without a name field but with a streak so it appears
+    await firestore.collection('users').doc('u1').set({'email': 'u1@example.com'});
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('summary')
+        .doc('data')
+        .set({'streak': 1});
+
+    await tester.pumpWidget(MaterialApp(
+        home: LeaderboardPage(
+      firestore: firestore,
+      auth: auth,
+      friendService: FriendService(
+        firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
+      ),
+    )));
+    await tester.pumpAndSettle();
+
+    final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
+    expect(tiles.length, 1);
+    expect((tiles[0].title as Text).data, 'Unknown');
+  });
+
   testWidgets('friends tab shows friend and user entries', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth =
