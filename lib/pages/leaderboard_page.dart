@@ -77,7 +77,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
         leaderboard.add(
           LeaderboardEntry(
             uid: doc.id,
-            name: data['name'] ?? 'No Name',
+            name: data['name'] as String? ?? '',
             email: data['email'] ?? 'No Email',
             streak: streak,
           ),
@@ -151,7 +151,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
         entries.add(
           LeaderboardEntry(
             uid: friend.uid,
-            name: data['name'] ?? 'No Name',
+            name: data['name'] as String? ?? '',
             email: data['email'] ?? 'No Email',
             streak: streak,
           ),
@@ -174,7 +174,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
         entries.add(
           LeaderboardEntry(
             uid: user.uid,
-            name: data['name'] ?? 'No Name',
+            name: data['name'] as String? ?? '',
             email: data['email'] ?? 'No Email',
             streak: streak,
           ),
@@ -293,7 +293,11 @@ class _LeaderboardPageState extends State<LeaderboardPage>
               leading: Text('$rank',
                   style: AppTextStyles.body
                       .copyWith(fontWeight: FontWeight.bold, fontSize: 16)),
-              title: Text(entry.name.split(' ').first),
+              title: Text(
+                entry.name.isEmpty || entry.name == 'No Name'
+                    ? 'Unknown'
+                    : entry.name.split(' ').first,
+              ),
               trailing: Text('${entry.streak} days',
                   style: AppTextStyles.body
                       .copyWith(fontWeight: FontWeight.bold, fontSize: 16)),
