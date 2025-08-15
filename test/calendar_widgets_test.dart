@@ -44,8 +44,11 @@ void main() {
   testWidgets('MonthStreakCalendar renders without interactive day cells',
       (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: MonthStreakCalendar(readDates: <DateTime>{}),
+      MaterialApp(
+        home: MonthStreakCalendar(
+          readDates: <DateTime>{},
+          currentMonth: DateTime(DateTime.now().year, DateTime.now().month),
+        ),
       ),
     );
     expect(
@@ -60,9 +63,10 @@ void main() {
   testWidgets('MonthStreakCalendar hides navigation when disabled',
       (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: MonthStreakCalendar(
           readDates: <DateTime>{},
+          currentMonth: DateTime(DateTime.now().year, DateTime.now().month),
           showNavigation: false,
         ),
       ),
@@ -100,7 +104,10 @@ void main() {
     };
     await tester.pumpWidget(
       MaterialApp(
-        home: MonthStreakCalendar(readDates: readDates),
+        home: MonthStreakCalendar(
+          readDates: readDates,
+          currentMonth: DateTime(now.year, now.month),
+        ),
       ),
     );
     expect(find.byIcon(Icons.circle), findsNWidgets(2));
