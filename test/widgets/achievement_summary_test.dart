@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bible_read/widgets/achievement_summary.dart';
+import 'package:bible_read/widgets/badge_icon.dart';
 import 'package:bible_read/widgets/success_animation.dart';
 
 void main() {
@@ -44,7 +45,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Achievements'), findsOneWidget);
-    expect(find.byType(Image), findsOneWidget);
+    expect(find.byType(BadgeIcon), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
   });
 
