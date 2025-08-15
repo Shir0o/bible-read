@@ -441,6 +441,10 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                         children: [
                                           if (isFirst)
                                             BadgeIcon(
+                                              imageUrl: allAchievements
+                                                  .firstWhere((a) =>
+                                                      a.id == 'firstReader')
+                                                  .imageUrl,
                                               iconData: allAchievements
                                                   .firstWhere((a) =>
                                                       a.id == 'firstReader')
