@@ -236,7 +236,7 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
               WeekStreakCalendar(
                 readDates: _readDates,
                 sunday: _periodStart,
-                onPrev: () => _changePeriod(-1),
+                onPrevious: () => _changePeriod(-1),
                 onNext: () => _changePeriod(1),
               )
             else

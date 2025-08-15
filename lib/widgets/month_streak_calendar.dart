@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'common_styles.dart';
 
 /// Displays a month streak calendar with arrow navigation.
-class MonthStreakCalendar extends StatefulWidget {
+class MonthStreakCalendar extends StatelessWidget {
   /// Set of dates the user has read.
   final Set<DateTime> readDates;
 
@@ -28,17 +28,12 @@ class MonthStreakCalendar extends StatefulWidget {
     this.onNext,
   });
 
-  @override
-  State<MonthStreakCalendar> createState() => _MonthStreakCalendarState();
-}
-
-class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   bool _isCurrentMonth() {
     final now = DateTime.now();
-    return now.year == widget.month.year && now.month == widget.month.month;
+    return now.year == month.year && now.month == month.month;
   }
 
   String _monthName(int month) {
@@ -60,12 +55,8 @@ class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
   }
 
   List<TableRow> _buildRows() {
-    final firstDay = DateTime(widget.month.year, widget.month.month, 1);
-    final totalDays = DateTime(
-      widget.month.year,
-      widget.month.month + 1,
-      0,
-    ).day;
+    final firstDay = DateTime(month.year, month.month, 1);
+    final totalDays = DateTime(month.year, month.month + 1, 0).day;
     final weekdayOffset = firstDay.weekday % 7;
 
     final rows = <TableRow>[];
@@ -74,8 +65,8 @@ class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
     }
 
     for (int day = 1; day <= totalDays; day++) {
-      final date = DateTime(widget.month.year, widget.month.month, day);
-      final filled = widget.readDates.any((d) => _isSameDay(d, date));
+      final date = DateTime(month.year, month.month, day);
+      final filled = readDates.any((d) => _isSameDay(d, date));
       final index = weekdayOffset + day - 1;
       final weekRow = index ~/ 7;
       final weekdayIndex = index % 7;
@@ -94,8 +85,7 @@ class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
     return rows;
   }
 
-  String get _monthLabel =>
-      '${widget.month.year} – ${_monthName(widget.month.month)}';
+  String get _monthLabel => '${month.year} – ${_monthName(month.month)}';
 
   @override
   Widget build(BuildContext context) {
@@ -106,19 +96,19 @@ class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (widget.showNavigation)
+              if (showNavigation)
                 IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: widget.onPrevious,
+                  onPressed: onPrevious,
                 ),
               Text(
                 _monthLabel,
                 style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
               ),
-              if (widget.showNavigation)
+              if (showNavigation)
                 IconButton(
                   icon: const Icon(Icons.arrow_forward),
-                  onPressed: _isCurrentMonth() ? null : widget.onNext,
+                  onPressed: _isCurrentMonth() ? null : onNext,
                 ),
             ],
           ),

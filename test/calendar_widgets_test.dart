@@ -4,14 +4,16 @@ import 'package:bible_read/widgets/week_streak_calendar.dart';
 import 'package:bible_read/widgets/month_streak_calendar.dart';
 
 void main() {
-  testWidgets('WeekStreakCalendar renders without interactive day cells',
-      (tester) async {
+  testWidgets('WeekStreakCalendar renders without interactive day cells', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: WeekStreakCalendar(
           readDates: <DateTime>{},
-          sunday: DateTime.now()
-              .subtract(Duration(days: DateTime.now().weekday % 7)),
+          sunday: DateTime.now().subtract(
+            Duration(days: DateTime.now().weekday % 7),
+          ),
         ),
       ),
     );
@@ -24,14 +26,16 @@ void main() {
     );
   });
 
-  testWidgets('WeekStreakCalendar hides navigation when disabled',
-      (tester) async {
+  testWidgets('WeekStreakCalendar hides navigation when disabled', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: WeekStreakCalendar(
           readDates: <DateTime>{},
-          sunday: DateTime.now()
-              .subtract(Duration(days: DateTime.now().weekday % 7)),
+          sunday: DateTime.now().subtract(
+            Duration(days: DateTime.now().weekday % 7),
+          ),
           showNavigation: false,
         ),
       ),
@@ -41,13 +45,14 @@ void main() {
     expect(find.byType(IconButton), findsNothing);
   });
 
-  testWidgets('MonthStreakCalendar renders without interactive day cells',
-      (tester) async {
+  testWidgets('MonthStreakCalendar renders without interactive day cells', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: MonthStreakCalendar(
           readDates: <DateTime>{},
-          currentMonth: DateTime(DateTime.now().year, DateTime.now().month),
+          month: DateTime(DateTime.now().year, DateTime.now().month),
         ),
       ),
     );
@@ -60,13 +65,14 @@ void main() {
     );
   });
 
-  testWidgets('MonthStreakCalendar hides navigation when disabled',
-      (tester) async {
+  testWidgets('MonthStreakCalendar hides navigation when disabled', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: MonthStreakCalendar(
           readDates: <DateTime>{},
-          currentMonth: DateTime(DateTime.now().year, DateTime.now().month),
+          month: DateTime(DateTime.now().year, DateTime.now().month),
           showNavigation: false,
         ),
       ),
@@ -76,8 +82,9 @@ void main() {
     expect(find.byType(IconButton), findsNothing);
   });
 
-  testWidgets('WeekStreakCalendar highlights provided read dates',
-      (tester) async {
+  testWidgets('WeekStreakCalendar highlights provided read dates', (
+    tester,
+  ) async {
     final now = DateTime.now();
     final readDates = {
       DateTime(now.year, now.month, now.day),
@@ -87,16 +94,18 @@ void main() {
       MaterialApp(
         home: WeekStreakCalendar(
           readDates: readDates,
-          sunday: DateTime.now()
-              .subtract(Duration(days: DateTime.now().weekday % 7)),
+          sunday: DateTime.now().subtract(
+            Duration(days: DateTime.now().weekday % 7),
+          ),
         ),
       ),
     );
     expect(find.byIcon(Icons.check_circle), findsNWidgets(2));
   });
 
-  testWidgets('MonthStreakCalendar highlights provided read dates',
-      (tester) async {
+  testWidgets('MonthStreakCalendar highlights provided read dates', (
+    tester,
+  ) async {
     final now = DateTime.now();
     final readDates = {
       DateTime(now.year, now.month, 1),
@@ -106,7 +115,7 @@ void main() {
       MaterialApp(
         home: MonthStreakCalendar(
           readDates: readDates,
-          currentMonth: DateTime(now.year, now.month),
+          month: DateTime(now.year, now.month),
         ),
       ),
     );
