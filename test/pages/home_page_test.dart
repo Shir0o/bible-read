@@ -75,12 +75,21 @@ class ThrowingDocumentReference
     Map<String, dynamic> docsData,
     Map<String, dynamic> rootParent,
     Map<String, dynamic> snapshotStreamControllerRoot,
-  ) : super(firestore, path, id, root, docsData, rootParent,
-            snapshotStreamControllerRoot, null);
+  ) : super(
+          firestore,
+          path,
+          id,
+          root,
+          docsData,
+          rootParent,
+          snapshotStreamControllerRoot,
+          null,
+        );
 
   @override
-  Future<DocumentSnapshot<Map<String, dynamic>>> get(
-      [GetOptions? options]) async {
+  Future<DocumentSnapshot<Map<String, dynamic>>> get([
+    GetOptions? options,
+  ]) async {
     throw FirebaseException(plugin: 'firestore');
   }
 }
@@ -134,23 +143,32 @@ void main() {
 
   testWidgets('HomePage shows static UI elements', (WidgetTester tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
     await tester.pumpWidget(
-        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Bible Reading Challenge'), findsOneWidget);
     expect(find.text('Bible Read Today'), findsOneWidget);
   });
 
-  testWidgets('shows "User not signed in" when not authenticated',
-      (tester) async {
+  testWidgets('shows "User not signed in" when not authenticated', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: false);
 
     await tester.pumpWidget(
-        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('User not signed in.'), findsOneWidget);
@@ -159,10 +177,15 @@ void main() {
 
   testWidgets('HomePage week row has seven icons', (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
     await tester.pumpWidget(
-        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // There should be exactly seven icons for the week status row. All are
@@ -173,10 +196,15 @@ void main() {
 
   testWidgets('HomePage month calendar matches current month', (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
     await tester.pumpWidget(
-        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Verify the month header text
@@ -193,7 +221,7 @@ void main() {
       'September',
       'October',
       'November',
-      'December'
+      'December',
     ];
     final header = '${now.year} – ${months[now.month - 1]}';
     expect(find.text(header), findsOneWidget);
@@ -205,34 +233,48 @@ void main() {
     expect(filled.length + empty.length, daysInMonth);
   });
 
-  testWidgets('toggling read status writes reading doc and summary',
-      (tester) async {
+  testWidgets('toggling read status writes reading doc and summary', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(
-        uid: 'u1', displayName: 'Test User', email: 'test@example.com');
+      uid: 'u1',
+      displayName: 'Test User',
+      email: 'test@example.com',
+    );
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
     await tester.pumpWidget(
-        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
     await tester.pumpAndSettle();
 
-    final switchTile =
-        tester.widget<ReadSwitchTile>(find.byType(ReadSwitchTile));
+    final switchTile = tester.widget<ReadSwitchTile>(
+      find.byType(ReadSwitchTile),
+    );
     expect(switchTile.onChanged, isNull);
   });
 
-  testWidgets('toggling read status does not show progress indicator',
-      (tester) async {
+  testWidgets('toggling read status does not show progress indicator', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u-ci'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u-ci'),
+      signedIn: true,
+    );
 
     await tester.pumpWidget(
-        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(ReadSwitchTile));
@@ -244,12 +286,18 @@ void main() {
 
   testWidgets('marking reading done creates Firestore entries', (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final user =
-        MockUser(uid: 'u-read', displayName: 'Tester', email: 't@example.com');
+    final user = MockUser(
+      uid: 'u-read',
+      displayName: 'Tester',
+      email: 't@example.com',
+    );
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
     await tester.pumpWidget(
-        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(ReadSwitchTile));
@@ -289,19 +337,26 @@ void main() {
   testWidgets('markRead unlocks firstReader when first of day', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(
-        uid: 'u-first', displayName: 'First User', email: 'f@example.com');
+      uid: 'u-first',
+      displayName: 'First User',
+      email: 'f@example.com',
+    );
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
     bool called = false;
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(
+      MaterialApp(
         home: HomePage(
-      firestore: firestore,
-      auth: auth,
-      markFirstReader: ({required String dateKey, required String uid}) async {
-        called = true;
-        return {'first': true};
-      },
-    )));
+          firestore: firestore,
+          auth: auth,
+          markFirstReader: (
+              {required String dateKey, required String uid}) async {
+            called = true;
+            return {'first': true};
+          },
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 
@@ -319,11 +374,15 @@ void main() {
     expect(achievementDoc.exists, isTrue);
   });
 
-  testWidgets('unlock achievement when reaching streak threshold',
-      (tester) async {
+  testWidgets('unlock achievement when reaching streak threshold', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(
-        uid: 'u-streak', displayName: 'Tester', email: 't@example.com');
+      uid: 'u-streak',
+      displayName: 'Tester',
+      email: 't@example.com',
+    );
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
     final yesterday = DateTime.now().subtract(const Duration(days: 1));
@@ -345,7 +404,10 @@ void main() {
         .set({'read': true});
 
     await tester.pumpWidget(
-        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(ReadSwitchTile));
@@ -361,8 +423,9 @@ void main() {
     expect(achievementDoc.exists, isTrue);
   });
 
-  testWidgets('unlock achievement when reaching total days threshold',
-      (tester) async {
+  testWidgets('unlock achievement when reaching total days threshold', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u-days');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
@@ -375,7 +438,10 @@ void main() {
         .set({'streak': 1, 'totalReadDays': 29, 'longestStreak': 1});
 
     await tester.pumpWidget(
-        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(ReadSwitchTile));
@@ -397,7 +463,10 @@ void main() {
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
     await tester.pumpWidget(
-        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
     await tester.pumpAndSettle();
 
     final state = tester.state(find.byType(HomePage)) as dynamic;
@@ -428,27 +497,34 @@ void main() {
     expect(likeDoc.exists, isFalse);
   });
 
-  testWidgets('refresh recalculates summary from reading data', (tester) async {
+  testWidgets('refresh trims outdated summary data', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u3');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
     final googlePlatform = FakeGoogleSignInPlatform();
     GoogleSignInPlatform.instance = googlePlatform;
 
-    final today = DateTime.now();
-    for (int i = 0; i < 3; i++) {
-      final date = today.subtract(Duration(days: i));
-      final key = '${date.year}-${date.month}-${date.day}';
-      await firestore
-          .collection('users')
-          .doc('u3')
-          .collection('reading')
-          .doc(key)
-          .set({'read': true});
-    }
+    final oldDate = DateTime.now().subtract(const Duration(days: 10));
+    final oldKey =
+        '${oldDate.year}-${oldDate.month.toString().padLeft(2, '0')}-${oldDate.day.toString().padLeft(2, '0')}';
+    await firestore
+        .collection('users')
+        .doc('u3')
+        .collection('summary')
+        .doc('data')
+        .set({
+      'streak': 5,
+      'pastWeekReadDates': [oldKey],
+      'pastMonthReadDates': [oldKey],
+      'totalReadDays': 5,
+      'longestStreak': 5,
+    });
 
     await tester.pumpWidget(
-        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
@@ -462,18 +538,22 @@ void main() {
         .collection('summary')
         .doc('data')
         .get();
-    expect(summary.data()?['streak'], 3);
-    expect(summary.data()?['totalReadDays'], 3);
-    expect(summary.data()?['longestStreak'], 3);
+    expect(summary.data()?['pastWeekReadDates'], isEmpty);
+    expect(summary.data()?['streak'], 0);
   });
 
   testWidgets('load failure hides progress indicator', (tester) async {
     final firestore = ThrowingFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
 
     await tester.pumpWidget(
-        MaterialApp(home: HomePage(firestore: firestore, auth: auth)));
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);

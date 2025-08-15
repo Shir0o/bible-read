@@ -92,14 +92,11 @@ class _HomePageState extends State<HomePage>
 
       // Kick off all Firestore reads in parallel.
       final snapshots =
-          await Future.wait<DocumentSnapshot<Map<String, dynamic>>>(
-        [
-          userDocRef.get(),
-          userDocRef.collection('reading').doc(dateKey).get(),
-          userDocRef.collection('summary').doc('data').get(),
-        ],
-        eagerError: true,
-      );
+          await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
+        userDocRef.get(),
+        userDocRef.collection('reading').doc(dateKey).get(),
+        userDocRef.collection('summary').doc('data').get(),
+      ], eagerError: true);
 
       final userDoc = snapshots[0];
       final todayDoc = snapshots[1];
@@ -117,8 +114,9 @@ class _HomePageState extends State<HomePage>
 
         // Initialize subcollections so later queries succeed.
         final friendsCollection = userDocRef.collection('friends');
-        final friendRequestsSentCollection =
-            userDocRef.collection('friendRequestsSent');
+        final friendRequestsSentCollection = userDocRef.collection(
+          'friendRequestsSent',
+        );
 
         await Future.wait([
           friendsCollection.doc('init').set({
@@ -244,97 +242,76 @@ class _HomePageState extends State<HomePage>
       final key =
           '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-      futures.add(readingCollection.doc(docId).get().then((doc) {
-        final read = doc.exists && doc.data()?['read'] == true;
-        return MapEntry(key, read);
-      }));
+      futures.add(
+        readingCollection.doc(docId).get().then((doc) {
+          final read = doc.exists && doc.data()?['read'] == true;
+          return MapEntry(key, read);
+        }),
+      );
     }
 
     final results = await Future.wait(futures);
     return Map.fromEntries(results);
   }
 
-  /// Recalculates streak statistics and writes them to the summary collection.
+  /// Cleans and updates the cached summary document without scanning the entire
+  /// reading collection. Removes outdated entries, ensures the summary document
+  /// exists and resets the streak if a day was missed.
   Future<void> _updateSummary() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
     try {
       final userDocRef = widget.firestore.collection('users').doc(user.uid);
-      final readingCollection = userDocRef.collection('reading');
+      final summaryDocRef = userDocRef.collection('summary').doc('data');
+      final doc = await summaryDocRef.get();
+      final data = doc.data() ?? {};
 
-      final snapshot = await readingCollection.get();
-      final readDates = <DateTime>[];
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        if (data['read'] == true) {
-          final parts = doc.id.split('-');
-          if (parts.length == 3) {
-            readDates.add(
-              DateTime(
-                int.parse(parts[0]),
-                int.parse(parts[1]),
-                int.parse(parts[2]),
-              ),
-            );
-          }
-        }
+      final today = DateTime.now();
+      String formatDate(DateTime d) =>
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+      DateTime? parseDate(String s) {
+        final parts = s.split('-');
+        if (parts.length != 3) return null;
+        final year = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        final day = int.tryParse(parts[2]);
+        if (year == null || month == null || day == null) return null;
+        return DateTime(year, month, day);
       }
 
-      readDates.sort();
-      final readSet = readDates.toSet();
+      // Trim cached dates outside the past week and month windows.
+      final pastWeekReadDates =
+          List<String>.from(data['pastWeekReadDates'] ?? []).where((s) {
+        final date = parseDate(s);
+        if (date == null) return false;
+        return today.difference(date).inDays < 7;
+      }).toList();
 
-      // Current streak
-      int streak = 0;
-      DateTime current = DateTime.now();
-      current = DateTime(current.year, current.month, current.day);
-      while (readSet.contains(current)) {
-        streak++;
-        current = current.subtract(const Duration(days: 1));
+      final pastMonthReadDates =
+          List<String>.from(data['pastMonthReadDates'] ?? []).where((s) {
+        final date = parseDate(s);
+        if (date == null) return false;
+        return today.difference(date).inDays < 30;
+      }).toList();
+
+      final readSet = {...pastWeekReadDates, ...pastMonthReadDates};
+      int streak = (data['streak'] is int) ? data['streak'] : 0;
+      final yesterdayKey = formatDate(today.subtract(const Duration(days: 1)));
+      final todayKey = formatDate(today);
+      if (!readSet.contains(todayKey) && !readSet.contains(yesterdayKey)) {
+        streak = 0;
       }
 
-      // Longest streak
-      int longest = 0;
-      int temp = 0;
-      DateTime? prev;
-      for (final date in readDates) {
-        if (prev != null && date.difference(prev).inDays == 1) {
-          temp++;
-        } else {
-          temp = 1;
-        }
-        if (temp > longest) longest = temp;
-        prev = date;
-      }
-
-      // Past week and month read dates
-      final now = DateTime.now();
-      final pastWeekReadDates = <String>[];
-      for (int i = 6; i >= 0; i--) {
-        final day = now.subtract(Duration(days: i));
-        if (readSet.contains(day)) {
-          pastWeekReadDates.add(
-            '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}',
-          );
-        }
-      }
-
-      final pastMonthReadDates = <String>[];
-      for (int i = 29; i >= 0; i--) {
-        final day = now.subtract(Duration(days: i));
-        if (readSet.contains(day)) {
-          pastMonthReadDates.add(
-            '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}',
-          );
-        }
-      }
-
-      await userDocRef.collection('summary').doc('data').set({
+      await summaryDocRef.set({
         'streak': streak,
         'pastWeekReadDates': pastWeekReadDates,
         'pastMonthReadDates': pastMonthReadDates,
-        'totalReadDays': readDates.length,
-        'longestStreak': longest,
+        'totalReadDays':
+            (data['totalReadDays'] is int) ? data['totalReadDays'] : 0,
+        'longestStreak':
+            (data['longestStreak'] is int) ? data['longestStreak'] : streak,
       }, SetOptions(merge: true));
     } catch (e, st) {
       if (kDebugMode) {
@@ -732,14 +709,13 @@ class _HomePageState extends State<HomePage>
               IgnorePointer(
                 child: WeekStreakCalendar(
                   readDates: _readDates,
-                  sunday: DateTime.now()
-                      .subtract(Duration(days: DateTime.now().weekday % 7)),
+                  sunday: DateTime.now().subtract(
+                    Duration(days: DateTime.now().weekday % 7),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
-              IgnorePointer(
-                child: MonthStreakCalendar(readDates: _readDates),
-              ),
+              IgnorePointer(child: MonthStreakCalendar(readDates: _readDates)),
             ],
           ),
         ),
