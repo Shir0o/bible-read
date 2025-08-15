@@ -164,6 +164,23 @@ void main() {
       ),
       findsNWidgets(3),
     );
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(WeekStreakCalendar),
+        matching: find.byIcon(Icons.arrow_forward),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(currentLabel), findsOneWidget);
+    expect(find.text('Week reads: 2'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(WeekStreakCalendar),
+        matching: find.byIcon(Icons.check_circle),
+      ),
+      findsNWidgets(2),
+    );
   });
 
   testWidgets('month navigation updates calendar and stats', (tester) async {
@@ -231,6 +248,23 @@ void main() {
         matching: find.byIcon(Icons.circle),
       ),
       findsNWidgets(2),
+    );
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(MonthStreakCalendar),
+        matching: find.byIcon(Icons.arrow_forward),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(currentLabel), findsOneWidget);
+    expect(find.text('Month reads: 0'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(MonthStreakCalendar),
+        matching: find.byIcon(Icons.circle),
+      ),
+      findsNothing,
     );
   });
 }
