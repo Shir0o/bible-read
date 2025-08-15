@@ -67,6 +67,9 @@ class _AchievementSummaryState extends State<AchievementSummary> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 BadgeIcon(
+                  imageUrl: allAchievements
+                      .firstWhere((a) => a.id == 'streak7')
+                      .imageUrl,
                   iconData:
                       allAchievements.firstWhere((a) => a.id == 'streak7').icon,
                   size: 24,
