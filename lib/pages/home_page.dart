@@ -10,6 +10,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
 import '../widgets/read_switch_tile.dart';
+import '../widgets/success_animation.dart';
 import '../widgets/menu_button.dart';
 import '../widgets/week_streak_calendar.dart';
 import '../widgets/month_streak_calendar.dart';
@@ -397,6 +398,10 @@ class _HomePageState extends State<HomePage>
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
 
+      if (!_disposed && mounted) {
+        SuccessAnimation.show(context);
+      }
+
       unawaited(_loadReadStatus(showLoading: false));
     } catch (e, st) {
       if (kDebugMode) {
@@ -706,7 +711,6 @@ class _HomePageState extends State<HomePage>
                         value: _readToday,
                         onChanged:
                             _readToday ? null : (value) => _toggleReadStatus(),
-                        label: 'Bible Read Today',
                       ),
               ),
               const SizedBox(height: 16),
@@ -719,20 +723,20 @@ class _HomePageState extends State<HomePage>
                 ),
               ),
               const SizedBox(height: 16),
-              IgnorePointer(
-                child: MonthStreakCalendar(
-                  readDates: _readDates,
-                  currentMonth: DateTime(
-                    DateTime.now().year,
-                    DateTime.now().month,
+                IgnorePointer(
+                  child: MonthStreakCalendar(
+                    readDates: _readDates,
+                    month: DateTime(
+                      DateTime.now().year,
+                      DateTime.now().month,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   @override

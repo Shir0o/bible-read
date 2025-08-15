@@ -6,18 +6,17 @@ import 'package:bible_read/widgets/read_switch_tile.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('Label text is displayed', (tester) async {
+  testWidgets('noAnimation constructor builds', (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: Scaffold(
-        body: ReadSwitchTile(
+        body: ReadSwitchTile.noAnimation(
           value: false,
           onChanged: null,
-          label: 'Read today',
         ),
       ),
     ));
 
-    expect(find.text('Read today'), findsOneWidget);
+    expect(find.byType(Switch), findsOneWidget);
   });
 
   testWidgets('Tapping the tile toggles the switch and calls onChanged',
@@ -31,7 +30,6 @@ void main() {
           body: StatefulBuilder(
             builder: (context, setState) => ReadSwitchTile(
               value: value,
-              label: 'Read',
               onChanged: (newValue) {
                 callbackValue = newValue;
                 setState(() => value = newValue);
@@ -56,7 +54,6 @@ void main() {
         body: ReadSwitchTile(
           value: false,
           onChanged: null,
-          label: 'Read',
         ),
       ),
     ));
@@ -66,7 +63,6 @@ void main() {
         body: ReadSwitchTile(
           value: true,
           onChanged: null,
-          label: 'Read',
         ),
       ),
     ));
