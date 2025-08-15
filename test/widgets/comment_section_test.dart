@@ -120,8 +120,11 @@ void main() {
     await tester.enterText(find.byType(TextField), 'Hey');
     await tester.tap(find.byIcon(Icons.send));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump();
 
     expect(find.text('A: Hey'), findsOneWidget);
+    expect(find.byKey(const ValueKey('progress')), findsOneWidget);
     final field = tester.widget<TextField>(find.byType(TextField));
     expect(field.controller!.text, isEmpty);
     expect(completer.isCompleted, isFalse);
