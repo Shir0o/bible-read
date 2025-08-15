@@ -14,7 +14,7 @@ class WeekStreakCalendar extends StatelessWidget {
   final bool showNavigation;
 
   /// Callback when the previous week arrow is pressed.
-  final VoidCallback? onPrev;
+  final VoidCallback? onPrevious;
 
   /// Callback when the next week arrow is pressed.
   final VoidCallback? onNext;
@@ -24,7 +24,7 @@ class WeekStreakCalendar extends StatelessWidget {
     required this.readDates,
     required this.sunday,
     this.showNavigation = true,
-    this.onPrev,
+    this.onPrevious,
     this.onNext,
   });
 
@@ -53,7 +53,7 @@ class WeekStreakCalendar extends StatelessWidget {
               if (showNavigation)
                 IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: onPrev,
+                  onPressed: onPrevious,
                 ),
               Text(
                 'Week of $_weekLabel',
