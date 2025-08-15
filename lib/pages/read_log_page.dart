@@ -56,7 +56,8 @@ class ReadLogPage extends StatefulWidget {
   }) async {
     final db = firestore ?? FirebaseFirestore.instance;
     final now = (dateProvider ?? DateTime.now)();
-    final dateKey = '${now.year}-${now.month}-${now.day}';
+    final dateKey =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     await db
         .collection('read_logs')
         .doc(dateKey)
@@ -140,7 +141,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
     List<Map<String, dynamic>> logs = [];
     try {
       final now = widget.dateProvider();
-      final dateKey = '${now.year}-${now.month}-${now.day}';
+      final dateKey =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
       final snapshot = await widget.firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -228,7 +230,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
     });
 
     final now = widget.dateProvider();
-    final dateKey = '${now.year}-${now.month}-${now.day}';
+    final dateKey =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final likeRef = widget.firestore
         .collection('read_logs')
         .doc(dateKey)
@@ -297,7 +300,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
     });
 
     final now = widget.dateProvider();
-    final dateKey = '${now.year}-${now.month}-${now.day}';
+    final dateKey =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final commentsRef = widget.firestore
         .collection('read_logs')
         .doc(dateKey)

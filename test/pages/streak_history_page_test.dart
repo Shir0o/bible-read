@@ -102,7 +102,9 @@ void main() {
           .collection('users')
           .doc('u1')
           .collection('reading')
-          .doc('${day.year}-${day.month}-${day.day}')
+          .doc(
+            '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}',
+          )
           .set({'read': true});
     }
 

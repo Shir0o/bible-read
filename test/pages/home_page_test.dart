@@ -304,8 +304,9 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
+    final now = DateTime.now();
     final dateKey =
-        '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
     final logDoc = await firestore
         .collection('read_logs')
@@ -387,7 +388,7 @@ void main() {
 
     final yesterday = DateTime.now().subtract(const Duration(days: 1));
     final yesterdayKey =
-        '${yesterday.year}-${yesterday.month}-${yesterday.day}';
+        '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
 
     await firestore
         .collection('users')
@@ -472,8 +473,9 @@ void main() {
     final state = tester.state(find.byType(HomePage)) as dynamic;
     await state.likeReading();
     await tester.pumpAndSettle();
+    final now = DateTime.now();
     final dateKey =
-        '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     var likeDoc = await firestore
         .collection('users')
         .doc('u2')
