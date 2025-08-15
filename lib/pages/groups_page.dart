@@ -218,6 +218,7 @@ class _GroupsPageState extends State<GroupsPage> {
               ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'groups-fab',
         onPressed: _inProgress ? null : _createGroup,
         child: const Icon(Icons.add),
       ),

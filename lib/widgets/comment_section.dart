@@ -20,6 +20,10 @@ class CommentSection extends StatefulWidget {
   /// Optional scroll controller for the comments list.
   final ScrollController? scrollController;
 
+  /// Whether to display a progress indicator in the send button while
+  /// a comment is being posted.
+  final bool showSendProgress;
+
   /// Creates a [CommentSection].
   const CommentSection({
     super.key,
@@ -27,6 +31,7 @@ class CommentSection extends StatefulWidget {
     required this.onAdd,
     this.showInput = true,
     this.scrollController,
+    this.showSendProgress = true,
   });
 
   @override
@@ -123,7 +128,7 @@ class _CommentSectionState extends State<CommentSection> {
                       },
                 icon: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
-                  child: _sending
+                  child: _sending && widget.showSendProgress
                       ? const SizedBox(
                           key: ValueKey('progress'),
                           width: 20,

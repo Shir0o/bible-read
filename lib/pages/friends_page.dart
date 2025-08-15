@@ -197,6 +197,7 @@ class _FriendsPageState extends State<FriendsPage> {
       floatingActionButton: user == null
           ? null
           : FloatingActionButton(
+              heroTag: 'friends-fab',
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
