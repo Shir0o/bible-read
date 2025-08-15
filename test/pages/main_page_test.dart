@@ -399,8 +399,9 @@ void main() {
     await fakeFirestore.collection('users').doc('owner456').set({});
 
     // Add a read log entry for 'owner456'
+    final now = DateTime.now();
     final dateKey =
-        '${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}';
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     await fakeFirestore
         .collection('read_logs')
         .doc(dateKey)
