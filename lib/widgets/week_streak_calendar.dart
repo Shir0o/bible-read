@@ -37,9 +37,10 @@ class WeekStreakCalendar extends StatelessWidget {
     return _isSameDay(sunday, currentSunday);
   }
 
+  String get _weekLabel => '${sunday.month}/${sunday.day}';
+
   @override
   Widget build(BuildContext context) {
-    final weekOf = '${sunday.month}/${sunday.day}';
     const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
     return CommonStyles.buildCard(
@@ -55,7 +56,7 @@ class WeekStreakCalendar extends StatelessWidget {
                   onPressed: onPrev,
                 ),
               Text(
-                'Week of $weekOf',
+                'Week of $_weekLabel',
                 style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
               ),
               if (showNavigation)

@@ -56,8 +56,11 @@ class MonthStreakCalendar extends StatelessWidget {
 
   List<TableRow> _buildRows() {
     final firstDay = DateTime(currentMonth.year, currentMonth.month, 1);
-    final totalDays =
-        DateTime(currentMonth.year, currentMonth.month + 1, 0).day;
+    final totalDays = DateTime(
+      currentMonth.year,
+      currentMonth.month + 1,
+      0,
+    ).day;
     final weekdayOffset = firstDay.weekday % 7;
 
     final rows = <TableRow>[];
@@ -86,11 +89,11 @@ class MonthStreakCalendar extends StatelessWidget {
     return rows;
   }
 
+  String get _monthLabel =>
+      '${currentMonth.year} – ${_monthName(currentMonth.month)}';
+
   @override
   Widget build(BuildContext context) {
-    final monthLabel =
-        '${currentMonth.year} – ${_monthName(currentMonth.month)}';
-
     return CommonStyles.buildCard(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -104,7 +107,7 @@ class MonthStreakCalendar extends StatelessWidget {
                   onPressed: onPrev,
                 ),
               Text(
-                monthLabel,
+                _monthLabel,
                 style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
               ),
               if (showNavigation)
