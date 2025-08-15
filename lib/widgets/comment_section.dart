@@ -43,7 +43,7 @@ class _CommentSectionState extends State<CommentSection> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
@@ -69,19 +69,17 @@ class _CommentSectionState extends State<CommentSection> {
       }
     }
 
+    Future<Comment> future;
     try {
-      unawaited(
-        widget.onAdd(text).then<void>((_) {},
-            onError: (Object e, StackTrace st) {
-          handleError(e, st);
-        }),
-      );
+      future = widget.onAdd(text);
+      setState(() {});
+      await future;
     } catch (e, st) {
       handleError(e, st);
-    }
-
-    if (mounted) {
-      setState(() => _sending = false);
+    } finally {
+      if (mounted) {
+        setState(() => _sending = false);
+      }
     }
   }
 
@@ -118,7 +116,11 @@ class _CommentSectionState extends State<CommentSection> {
               ),
               const SizedBox(width: 8),
               FilledButton.icon(
-                onPressed: _sending ? null : _submit,
+                onPressed: _sending
+                    ? null
+                    : () {
+                        _submit();
+                      },
                 icon: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   child: _sending
