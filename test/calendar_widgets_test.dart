@@ -38,6 +38,7 @@ void main() {
     );
     expect(find.byIcon(Icons.arrow_back), findsNothing);
     expect(find.byIcon(Icons.arrow_forward), findsNothing);
+    expect(find.byType(IconButton), findsNothing);
   });
 
   testWidgets('MonthStreakCalendar renders without interactive day cells',
@@ -68,6 +69,7 @@ void main() {
     );
     expect(find.byIcon(Icons.arrow_back), findsNothing);
     expect(find.byIcon(Icons.arrow_forward), findsNothing);
+    expect(find.byType(IconButton), findsNothing);
   });
 
   testWidgets('WeekStreakCalendar highlights provided read dates',
