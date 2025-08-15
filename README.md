@@ -38,10 +38,10 @@ The app currently offers the following achievements. Badge icons are provided by
 
 | Icon | ID | Description |
 | ---- | -- | ----------- |
-| `book-open-reader` | `firstReader` | Be the first person to log reading for the day. |
-| `fire` | `streak7` | Read the Bible seven days in a row. |
-| `calendar-check` | `days30` | Log 30 days of reading. |
-| `fire-flame-curved` | `streak30` | Read every day for a full month. |
+| ![book-open-reader](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/book-open-reader.svg) | `firstReader` | Be the first person to log reading for the day. |
+| ![fire](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/fire.svg) | `streak7` | Read the Bible seven days in a row. |
+| ![calendar-check](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/calendar-check.svg) | `days30` | Log 30 days of reading. |
+| ![fire-flame-curved](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/fire-flame-curved.svg) | `streak30` | Read every day for a full month. |
 
 Achievements are displayed in a scrollable list where each row shows the badge,
 title and description. Locked items are overlaid with a lock icon until they are
