@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:bible_read/widgets/badge_icon.dart';
 
@@ -11,7 +12,7 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: BadgeIcon(
-            iconData: Icons.star,
+            iconData: FontAwesomeIcons.star,
             locked: true,
           ),
         ),
@@ -27,7 +28,7 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: BadgeIcon(
-            iconData: Icons.star,
+            iconData: FontAwesomeIcons.star,
             locked: false,
           ),
         ),
