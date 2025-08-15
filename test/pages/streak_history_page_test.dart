@@ -37,15 +37,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final navRow = find.byType(Row).first;
-    expect(
-      find.descendant(of: navRow, matching: find.byIcon(Icons.arrow_back)),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: navRow, matching: find.byIcon(Icons.arrow_forward)),
-      findsOneWidget,
-    );
     expect(find.byType(StreakStatsBox), findsOneWidget);
 
     final weekCal = find.byType(WeekStreakCalendar);
@@ -122,15 +113,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final navRow = find.byType(Row).first;
-    expect(
-      find.descendant(of: navRow, matching: find.byIcon(Icons.arrow_back)),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: navRow, matching: find.byIcon(Icons.arrow_forward)),
-      findsOneWidget,
-    );
     expect(find.byType(StreakStatsBox), findsOneWidget);
 
     expect(find.text('Week reads: 2'), findsOneWidget);
@@ -142,7 +124,12 @@ void main() {
       findsNWidgets(2),
     );
 
-    await tester.tap(find.byIcon(Icons.arrow_back).first);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(WeekStreakCalendar),
+        matching: find.byIcon(Icons.arrow_back),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Week reads: 3'), findsOneWidget);

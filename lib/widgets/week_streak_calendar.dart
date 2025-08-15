@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'common_styles.dart';
 
 /// Displays a week streak calendar with arrow navigation.
-class WeekStreakCalendar extends StatefulWidget {
+class WeekStreakCalendar extends StatelessWidget {
   /// Set of dates the user has read.
   final Set<DateTime> readDates;
 
@@ -13,61 +13,33 @@ class WeekStreakCalendar extends StatefulWidget {
   /// Whether to show navigation arrows and allow week changes.
   final bool showNavigation;
 
+  /// Callback when the previous week arrow is pressed.
+  final VoidCallback? onPrev;
+
+  /// Callback when the next week arrow is pressed.
+  final VoidCallback? onNext;
+
   const WeekStreakCalendar({
     super.key,
     required this.readDates,
     required this.sunday,
     this.showNavigation = true,
+    this.onPrev,
+    this.onNext,
   });
-
-  @override
-  State<WeekStreakCalendar> createState() => _WeekStreakCalendarState();
-}
-
-class _WeekStreakCalendarState extends State<WeekStreakCalendar> {
-  late DateTime _sunday;
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  @override
-  void initState() {
-    super.initState();
-    _sunday = widget.sunday;
-  }
-
-  @override
-  void didUpdateWidget(covariant WeekStreakCalendar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!_isSameDay(oldWidget.sunday, widget.sunday)) {
-      _sunday = widget.sunday;
-    }
-  }
-
   bool _isCurrentWeek() {
     final now = DateTime.now();
     final currentSunday = now.subtract(Duration(days: now.weekday % 7));
-    return _isSameDay(_sunday, currentSunday);
-  }
-
-  void _prevWeek() {
-    if (!widget.showNavigation) return;
-    setState(() {
-      _sunday = _sunday.subtract(const Duration(days: 7));
-    });
-  }
-
-  void _nextWeek() {
-    if (!widget.showNavigation || _isCurrentWeek()) return;
-    setState(() {
-      _sunday = _sunday.add(const Duration(days: 7));
-    });
+    return _isSameDay(sunday, currentSunday);
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentSunday = widget.showNavigation ? _sunday : widget.sunday;
-    final weekOf = '${currentSunday.month}/${currentSunday.day}';
+    final weekOf = '${sunday.month}/${sunday.day}';
     const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
     return CommonStyles.buildCard(
@@ -77,19 +49,19 @@ class _WeekStreakCalendarState extends State<WeekStreakCalendar> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (widget.showNavigation)
+              if (showNavigation)
                 IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: _prevWeek,
+                  onPressed: onPrev,
                 ),
               Text(
                 'Week of $weekOf',
                 style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
               ),
-              if (widget.showNavigation)
+              if (showNavigation)
                 IconButton(
                   icon: const Icon(Icons.arrow_forward),
-                  onPressed: _isCurrentWeek() ? null : _nextWeek,
+                  onPressed: _isCurrentWeek() ? null : onNext,
                 ),
             ],
           ),
@@ -97,8 +69,8 @@ class _WeekStreakCalendarState extends State<WeekStreakCalendar> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(7, (i) {
-              final date = currentSunday.add(Duration(days: i));
-              final filled = widget.readDates.any((d) => _isSameDay(d, date));
+              final date = sunday.add(Duration(days: i));
+              final filled = readDates.any((d) => _isSameDay(d, date));
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Column(

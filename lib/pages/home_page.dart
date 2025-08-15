@@ -715,7 +715,15 @@ class _HomePageState extends State<HomePage>
                 ),
               ),
               const SizedBox(height: 16),
-              IgnorePointer(child: MonthStreakCalendar(readDates: _readDates)),
+              IgnorePointer(
+                child: MonthStreakCalendar(
+                  readDates: _readDates,
+                  currentMonth: DateTime(
+                    DateTime.now().year,
+                    DateTime.now().month,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
