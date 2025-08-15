@@ -3,53 +3,37 @@ import 'package:flutter/material.dart';
 import 'common_styles.dart';
 
 /// Displays a month streak calendar with arrow navigation.
-class MonthStreakCalendar extends StatefulWidget {
+class MonthStreakCalendar extends StatelessWidget {
   /// Set of dates the user has read.
   final Set<DateTime> readDates;
+
+  /// The month being displayed.
+  final DateTime currentMonth;
 
   /// Whether navigation arrows are shown.
   final bool showNavigation;
 
+  /// Callback when the previous month arrow is pressed.
+  final VoidCallback? onPrev;
+
+  /// Callback when the next month arrow is pressed.
+  final VoidCallback? onNext;
+
   const MonthStreakCalendar({
     super.key,
     required this.readDates,
+    required this.currentMonth,
     this.showNavigation = true,
+    this.onPrev,
+    this.onNext,
   });
-
-  @override
-  State<MonthStreakCalendar> createState() => _MonthStreakCalendarState();
-}
-
-class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
-  late DateTime _currentMonth;
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  @override
-  void initState() {
-    super.initState();
-    final now = DateTime.now();
-    _currentMonth = DateTime(now.year, now.month);
-  }
-
   bool _isCurrentMonth() {
     final now = DateTime.now();
-    return now.year == _currentMonth.year && now.month == _currentMonth.month;
-  }
-
-  void _prevMonth() {
-    if (!widget.showNavigation) return;
-    setState(() {
-      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
-    });
-  }
-
-  void _nextMonth() {
-    if (!widget.showNavigation || _isCurrentMonth()) return;
-    setState(() {
-      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
-    });
+    return now.year == currentMonth.year && now.month == currentMonth.month;
   }
 
   String _monthName(int month) {
@@ -71,9 +55,9 @@ class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
   }
 
   List<TableRow> _buildRows() {
-    final firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
+    final firstDay = DateTime(currentMonth.year, currentMonth.month, 1);
     final totalDays =
-        DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
+        DateTime(currentMonth.year, currentMonth.month + 1, 0).day;
     final weekdayOffset = firstDay.weekday % 7;
 
     final rows = <TableRow>[];
@@ -82,8 +66,8 @@ class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
     }
 
     for (int day = 1; day <= totalDays; day++) {
-      final date = DateTime(_currentMonth.year, _currentMonth.month, day);
-      final filled = widget.readDates.any((d) => _isSameDay(d, date));
+      final date = DateTime(currentMonth.year, currentMonth.month, day);
+      final filled = readDates.any((d) => _isSameDay(d, date));
       final index = weekdayOffset + day - 1;
       final weekRow = index ~/ 7;
       final weekdayIndex = index % 7;
@@ -105,7 +89,7 @@ class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
   @override
   Widget build(BuildContext context) {
     final monthLabel =
-        '${_currentMonth.year} – ${_monthName(_currentMonth.month)}';
+        '${currentMonth.year} – ${_monthName(currentMonth.month)}';
 
     return CommonStyles.buildCard(
       child: Column(
@@ -114,19 +98,19 @@ class _MonthStreakCalendarState extends State<MonthStreakCalendar> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (widget.showNavigation)
+              if (showNavigation)
                 IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: _prevMonth,
+                  onPressed: onPrev,
                 ),
               Text(
                 monthLabel,
                 style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
               ),
-              if (widget.showNavigation)
+              if (showNavigation)
                 IconButton(
                   icon: const Icon(Icons.arrow_forward),
-                  onPressed: _isCurrentMonth() ? null : _nextMonth,
+                  onPressed: _isCurrentMonth() ? null : onNext,
                 ),
             ],
           ),

@@ -202,10 +202,6 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => _changePeriod(-1),
-                ),
                 SegmentedButton<_Period>(
                   segments: const [
                     ButtonSegment(value: _Period.week, label: Text('Week')),
@@ -213,10 +209,6 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
                   ],
                   selected: {_period},
                   onSelectionChanged: _onPeriodChanged,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.arrow_forward),
-                  onPressed: () => _changePeriod(1),
                 ),
               ],
             ),
@@ -232,9 +224,16 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
               WeekStreakCalendar(
                 readDates: _readDates,
                 sunday: _periodStart,
+                onPrev: () => _changePeriod(-1),
+                onNext: () => _changePeriod(1),
               )
             else
-              MonthStreakCalendar(readDates: _readDates),
+              MonthStreakCalendar(
+                readDates: _readDates,
+                currentMonth: _periodStart,
+                onPrev: () => _changePeriod(-1),
+                onNext: () => _changePeriod(1),
+              ),
           ],
         ),
       ),
