@@ -16,6 +16,7 @@ import '../widgets/comment_section.dart';
 import '../widgets/comment_drawer.dart';
 import '../widgets/menu_button.dart';
 import '../models/comment.dart';
+import '../models/achievement_definition.dart';
 
 class ReadLogPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -439,9 +440,11 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           if (isFirst)
-                                            const BadgeIcon(
-                                              assetPath:
-                                                  'assets/achievements/first_reader.png',
+                                            BadgeIcon(
+                                              iconData: allAchievements
+                                                  .firstWhere((a) =>
+                                                      a.id == 'firstReader')
+                                                  .icon,
                                               size: 24,
                                             ),
                                           Padding(

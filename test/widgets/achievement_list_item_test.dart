@@ -11,7 +11,7 @@ void main() {
     id: 'test',
     title: 'Testing',
     description: 'Earned by testing.',
-    assetPath: 'assets/achievements/streak7.png',
+    icon: Icons.star,
   );
 
   testWidgets('shows lock icon and text when locked', (tester) async {

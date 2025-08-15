@@ -44,6 +44,7 @@ dependencies:
   lottie: ^3.1.0
   shared_preferences: ^2.3.2
   flutter_svg: ^2.2.0
+  font_awesome_flutter: ^10.9.0
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -154,5 +155,4 @@ flutter:
   # see https://flutter.dev/to/font-from-package
 
   assets:
-    - assets/achievements/
     - assets/animations/

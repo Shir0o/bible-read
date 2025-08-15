@@ -22,7 +22,7 @@ class AchievementListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: BadgeIcon(
-        assetPath: definition.assetPath,
+        iconData: definition.icon,
         locked: !unlocked,
         size: 48,
       ),
