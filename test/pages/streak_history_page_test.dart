@@ -12,19 +12,19 @@ String _fmt(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
 String _monthName(int month) => const [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ][month - 1];
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+][month - 1];
 
 void main() {
   testWidgets('week and month views render correct day cells', (tester) async {
@@ -40,12 +40,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 0,
-      'longestStreak': 0,
-      'totalReadDays': 0,
-      'pastWeekReadDates': <String>[],
-      'pastMonthReadDates': <String>[],
-    });
+          'streak': 0,
+          'longestStreak': 0,
+          'totalReadDays': 0,
+          'pastWeekReadDates': <String>[],
+          'pastMonthReadDates': <String>[],
+        });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -105,15 +105,15 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 0,
-      'longestStreak': 0,
-      'totalReadDays': 0,
-      'pastWeekReadDates': [
-        _fmt(currentWeekStart),
-        _fmt(currentWeekStart.add(const Duration(days: 1))),
-      ],
-      'pastMonthReadDates': <String>[],
-    });
+          'streak': 0,
+          'longestStreak': 0,
+          'totalReadDays': 0,
+          'pastWeekReadDates': [
+            _fmt(currentWeekStart),
+            _fmt(currentWeekStart.add(const Duration(days: 1))),
+          ],
+          'pastMonthReadDates': <String>[],
+        });
 
     for (int i = 0; i < 3; i++) {
       final day = prevWeekStart.add(Duration(days: i));
@@ -166,12 +166,15 @@ void main() {
     );
   });
 
-  testWidgets('month navigation updates label', (tester) async {
+  testWidgets('month navigation updates calendar and stats', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
       signedIn: true,
     );
+
+    final now = DateTime.now();
+    final prevMonthStart = DateTime(now.year, now.month - 1, 1);
 
     await firestore
         .collection('users')
@@ -179,12 +182,22 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 0,
-      'longestStreak': 0,
-      'totalReadDays': 0,
-      'pastWeekReadDates': <String>[],
-      'pastMonthReadDates': <String>[],
-    });
+          'streak': 0,
+          'longestStreak': 0,
+          'totalReadDays': 0,
+          'pastWeekReadDates': <String>[],
+          'pastMonthReadDates': <String>[],
+        });
+
+    for (int i = 0; i < 2; i++) {
+      final day = prevMonthStart.add(Duration(days: i));
+      await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('reading')
+          .doc(_fmt(day))
+          .set({'read': true});
+    }
 
     await tester.pumpWidget(
       MaterialApp(
@@ -196,9 +209,9 @@ void main() {
     await tester.tap(find.text('Month'));
     await tester.pumpAndSettle();
 
-    final now = DateTime.now();
     final currentLabel = '${now.year} – ${_monthName(now.month)}';
     expect(find.text(currentLabel), findsOneWidget);
+    expect(find.text('Month reads: 0'), findsOneWidget);
 
     await tester.tap(
       find.descendant(
@@ -208,8 +221,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final prev = DateTime(now.year, now.month - 1);
-    final prevLabel = '${prev.year} – ${_monthName(prev.month)}';
+    final prevLabel =
+        '${prevMonthStart.year} – ${_monthName(prevMonthStart.month)}';
     expect(find.text(prevLabel), findsOneWidget);
+    expect(find.text('Month reads: 2'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(MonthStreakCalendar),
+        matching: find.byIcon(Icons.circle),
+      ),
+      findsNWidgets(2),
+    );
   });
 }
