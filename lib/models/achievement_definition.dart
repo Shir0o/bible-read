@@ -11,16 +11,33 @@ class AchievementDefinition {
   /// Description of how to earn the achievement.
   final String description;
 
-  /// Icon representing the badge.
-  final IconData icon;
+  /// URL to an image representing the badge.
+  final String? imageUrl;
 
-  /// Creates an [AchievementDefinition].
+  /// Icon representing the badge.
+  final IconData? icon;
+
+  /// Local asset for the badge image. Deprecated in favor of [imageUrl] or
+  /// [icon].
+  @Deprecated('Use imageUrl or icon instead.')
+  final String? assetPath;
+
+  /// Creates an [AchievementDefinition]. Provide exactly one of [imageUrl],
+  /// [icon], or [assetPath].
   const AchievementDefinition({
     required this.id,
     required this.title,
     required this.description,
-    required this.icon,
-  });
+    this.imageUrl,
+    this.icon,
+    @Deprecated('Use imageUrl or icon instead.') this.assetPath,
+  }) : assert(
+          (imageUrl != null ? 1 : 0) +
+                  (icon != null ? 1 : 0) +
+                  (assetPath != null ? 1 : 0) ==
+              1,
+          'Provide exactly one badge source.',
+        );
 }
 
 /// All achievements that can be unlocked in the app.
