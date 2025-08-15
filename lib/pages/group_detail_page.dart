@@ -111,7 +111,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       appBar: CommonStyles.buildAppBar(widget.group.name),
       floatingActionButton: isOwner
           ? FloatingActionButton(
-              onPressed: _editSchedule, child: const Icon(Icons.add))
+              heroTag: 'group-detail-fab',
+              onPressed: _editSchedule,
+              child: const Icon(Icons.add),
+            )
           : null,
       body: Container(
         decoration: CommonStyles.backgroundGradient,
