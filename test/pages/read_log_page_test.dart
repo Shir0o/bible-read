@@ -352,7 +352,8 @@ void main() {
         dateProvider: () => fixedDate,
       );
 
-      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey =
+          '${fixedDate.year}-${fixedDate.month.toString().padLeft(2, '0')}-${fixedDate.day.toString().padLeft(2, '0')}';
       final snapshot = await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -379,7 +380,7 @@ void main() {
           called = true;
           expect(uid, 'u1');
           final expectedKey =
-              '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+              '${fixedDate.year}-${fixedDate.month.toString().padLeft(2, '0')}-${fixedDate.day.toString().padLeft(2, '0')}';
           expect(dateKey, expectedKey);
           return {'first': true};
         },
@@ -438,7 +439,8 @@ void main() {
     testWidgets('loadLogs populates _logs list', (tester) async {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1');
-      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey =
+          '${fixedDate.year}-${fixedDate.month.toString().padLeft(2, '0')}-${fixedDate.day.toString().padLeft(2, '0')}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -479,7 +481,8 @@ void main() {
     testWidgets('shows first reader badge when flagged', (tester) async {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1');
-      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey =
+          '${fixedDate.year}-${fixedDate.month.toString().padLeft(2, '0')}-${fixedDate.day.toString().padLeft(2, '0')}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -516,7 +519,8 @@ void main() {
         (tester) async {
       final firestore = ThrowingRewardsFirestore();
       final user = MockUser(uid: 'u1');
-      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey =
+          '${fixedDate.year}-${fixedDate.month.toString().padLeft(2, '0')}-${fixedDate.day.toString().padLeft(2, '0')}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -550,7 +554,8 @@ void main() {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1', displayName: 'Tester One');
       final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
-      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey =
+          '${fixedDate.year}-${fixedDate.month.toString().padLeft(2, '0')}-${fixedDate.day.toString().padLeft(2, '0')}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -625,7 +630,8 @@ void main() {
       final liker = MockUser(uid: 'liker', displayName: 'Jane Doe');
       final auth = MockFirebaseAuth(mockUser: liker, signedIn: true);
       final ownerUid = 'owner1';
-      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey =
+          '${fixedDate.year}-${fixedDate.month.toString().padLeft(2, '0')}-${fixedDate.day.toString().padLeft(2, '0')}';
 
       await firestore
           .collection('read_logs')
@@ -689,7 +695,8 @@ void main() {
       final firestore = ThrowingWriteFirestore();
       final user = MockUser(uid: 'u1', displayName: 'User One');
       final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
-      final dateKey = '${fixedDate.year}-${fixedDate.month}-${fixedDate.day}';
+      final dateKey =
+          '${fixedDate.year}-${fixedDate.month.toString().padLeft(2, '0')}-${fixedDate.day.toString().padLeft(2, '0')}';
       await firestore
           .collection('read_logs')
           .doc(dateKey)

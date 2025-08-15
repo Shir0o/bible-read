@@ -86,7 +86,8 @@ class _HomePageState extends State<HomePage>
       }
 
       final today = DateTime.now();
-      final dateKey = '${today.year}-${today.month}-${today.day}';
+      final dateKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
       final userDocRef = widget.firestore.collection('users').doc(user.uid);
 
@@ -238,9 +239,9 @@ class _HomePageState extends State<HomePage>
 
     for (int i = 0; i < daysBack; i++) {
       final date = now.subtract(Duration(days: i));
-      final docId = '${date.year}-${date.month}-${date.day}';
-      final key =
+      final docId =
           '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final key = docId;
 
       futures.add(
         readingCollection.doc(docId).get().then((doc) {
@@ -374,7 +375,8 @@ class _HomePageState extends State<HomePage>
     }
 
     try {
-      final dateKey = '${today.year}-${today.month}-${today.day}';
+      final dateKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
       await ReadLogPage.writeReadLogEntry(
         refreshedUser ?? user,
         firestore: widget.firestore,
@@ -434,7 +436,7 @@ class _HomePageState extends State<HomePage>
       final today = DateTime.now();
       final yesterday = today.subtract(const Duration(days: 1));
       final yesterdayDateKey =
-          '${yesterday.year}-${yesterday.month}-${yesterday.day}';
+          '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
 
       final yesterdayDoc =
           await userDocRef.collection('reading').doc(yesterdayDateKey).get();
@@ -548,7 +550,8 @@ class _HomePageState extends State<HomePage>
     if (user == null) return;
 
     final today = DateTime.now();
-    final dateKey = '${today.year}-${today.month}-${today.day}';
+    final dateKey =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
     final userDocRef = widget.firestore.collection('users').doc(user.uid);
 
     try {
@@ -579,7 +582,8 @@ class _HomePageState extends State<HomePage>
     if (user == null) return;
 
     final today = DateTime.now();
-    final dateKey = '${today.year}-${today.month}-${today.day}';
+    final dateKey =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
     final userDocRef = widget.firestore.collection('users').doc(user.uid);
 
     try {

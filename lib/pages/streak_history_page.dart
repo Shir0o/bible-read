@@ -170,7 +170,8 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
     for (DateTime day = start;
         !day.isAfter(end);
         day = day.add(const Duration(days: 1))) {
-      final key = '${day.year}-${day.month}-${day.day}';
+      final key =
+          '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
       futures.add(readingCollection.doc(key).get());
       dates.add(day);
     }

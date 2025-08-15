@@ -45,7 +45,8 @@ void main() {
       markFirstReader: markFirstReader,
     );
 
-    final dateKey = '${date.year}-${date.month}-${date.day}';
+    final dateKey =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     final firstDoc = await firestore
         .collection('read_logs')
         .doc(dateKey)
