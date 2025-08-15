@@ -38,7 +38,7 @@ void main() {
     });
 
     test('toFirestore outputs expected map', () {
-      final date = DateTime(2024, 1, 1);
+      final date = DateTime.utc(2024, 1, 1);
       final schedule = GroupSchedule(date: date, chapters: const ['Gen 1']);
       final map = schedule.toFirestore();
       expect(map['date'], Timestamp.fromDate(date));
