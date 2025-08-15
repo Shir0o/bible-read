@@ -33,7 +33,7 @@ void main() {
           await firestore.collection('schedule').doc('2024-01-02').get();
 
       final schedule = GroupSchedule.fromFirestore(doc);
-      expect(schedule.date, DateTime(2024, 1, 2));
+      expect(schedule.date.toUtc(), DateTime(2024, 1, 2).toUtc());
       expect(schedule.chapters, ['Gen 1']);
     });
 
