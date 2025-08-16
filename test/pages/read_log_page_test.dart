@@ -512,7 +512,13 @@ void main() {
                   required String commenterName}) async {})));
       await tester.pumpAndSettle();
 
-      expect(find.byType(BadgeIcon), findsOneWidget);
+      final badgeFinder = find.byType(BadgeIcon);
+      expect(badgeFinder, findsOneWidget);
+
+      await tester.longPress(badgeFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.text('First reader of the day'), findsOneWidget);
     });
 
     testWidgets('renders feed when daily reward is inaccessible',
