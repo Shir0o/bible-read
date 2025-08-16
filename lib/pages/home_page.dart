@@ -33,7 +33,8 @@ class HomePage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })? markFirstReader;
+  })?
+  markFirstReader;
 
   HomePage({
     super.key,
@@ -41,8 +42,8 @@ class HomePage extends StatefulWidget {
     FirebaseAuth? auth,
     this.functions,
     this.markFirstReader,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -95,10 +96,10 @@ class _HomePageState extends State<HomePage>
       // Kick off all Firestore reads in parallel.
       final snapshots =
           await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-        userDocRef.get(),
-        userDocRef.collection('reading').doc(dateKey).get(),
-        userDocRef.collection('summary').doc('data').get(),
-      ], eagerError: true);
+            userDocRef.get(),
+            userDocRef.collection('reading').doc(dateKey).get(),
+            userDocRef.collection('summary').doc('data').get(),
+          ], eagerError: true);
 
       final userDoc = snapshots[0];
       final todayDoc = snapshots[1];
@@ -286,17 +287,17 @@ class _HomePageState extends State<HomePage>
       // Trim cached dates outside the past week and month windows.
       final pastWeekReadDates =
           List<String>.from(data['pastWeekReadDates'] ?? []).where((s) {
-        final date = parseDate(s);
-        if (date == null) return false;
-        return today.difference(date).inDays < 7;
-      }).toList();
+            final date = parseDate(s);
+            if (date == null) return false;
+            return today.difference(date).inDays < 7;
+          }).toList();
 
       final pastMonthReadDates =
           List<String>.from(data['pastMonthReadDates'] ?? []).where((s) {
-        final date = parseDate(s);
-        if (date == null) return false;
-        return today.difference(date).inDays < 30;
-      }).toList();
+            final date = parseDate(s);
+            if (date == null) return false;
+            return today.difference(date).inDays < 30;
+          }).toList();
 
       final readSet = {...pastWeekReadDates, ...pastMonthReadDates};
       int streak = (data['streak'] is int) ? data['streak'] : 0;
@@ -310,10 +311,12 @@ class _HomePageState extends State<HomePage>
         'streak': streak,
         'pastWeekReadDates': pastWeekReadDates,
         'pastMonthReadDates': pastMonthReadDates,
-        'totalReadDays':
-            (data['totalReadDays'] is int) ? data['totalReadDays'] : 0,
-        'longestStreak':
-            (data['longestStreak'] is int) ? data['longestStreak'] : streak,
+        'totalReadDays': (data['totalReadDays'] is int)
+            ? data['totalReadDays']
+            : 0,
+        'longestStreak': (data['longestStreak'] is int)
+            ? data['longestStreak']
+            : streak,
       }, SetOptions(merge: true));
     } catch (e, st) {
       if (kDebugMode) {
@@ -392,8 +395,8 @@ class _HomePageState extends State<HomePage>
           .collection('reading')
           .doc(dateKey)
           .set({
-        'read': true,
-      }, SetOptions(merge: true)); // Mark read in Firestore.
+            'read': true,
+          }, SetOptions(merge: true)); // Mark read in Firestore.
 
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
@@ -443,8 +446,10 @@ class _HomePageState extends State<HomePage>
       final yesterdayDateKey =
           '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
 
-      final yesterdayDoc =
-          await userDocRef.collection('reading').doc(yesterdayDateKey).get();
+      final yesterdayDoc = await userDocRef
+          .collection('reading')
+          .doc(yesterdayDateKey)
+          .get();
 
       int streak = (data['streak'] is int) ? data['streak'] : 0;
       if (yesterdayDoc.exists && yesterdayDoc.data()?['read'] == true) {
@@ -476,12 +481,14 @@ class _HomePageState extends State<HomePage>
         }
       }
 
-      int totalReadDays =
-          (data['totalReadDays'] is int) ? data['totalReadDays'] : 0;
+      int totalReadDays = (data['totalReadDays'] is int)
+          ? data['totalReadDays']
+          : 0;
       totalReadDays += 1;
 
-      int longestStreak =
-          (data['longestStreak'] is int) ? data['longestStreak'] : streak;
+      int longestStreak = (data['longestStreak'] is int)
+          ? data['longestStreak']
+          : streak;
       if (streak > longestStreak) {
         longestStreak = streak;
       }
@@ -707,10 +714,17 @@ class _HomePageState extends State<HomePage>
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       )
-                    : ReadSwitchTile(
-                        value: _readToday,
-                        onChanged:
-                            _readToday ? null : (value) => _toggleReadStatus(),
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Mark today as read'),
+                          ReadSwitchTile(
+                            value: _readToday,
+                            onChanged: _readToday
+                                ? null
+                                : (value) => _toggleReadStatus(),
+                          ),
+                        ],
                       ),
               ),
               const SizedBox(height: 16),
@@ -720,23 +734,22 @@ class _HomePageState extends State<HomePage>
                   sunday: DateTime.now().subtract(
                     Duration(days: DateTime.now().weekday % 7),
                   ),
+                  showNavigation: false,
                 ),
               ),
               const SizedBox(height: 16),
-                IgnorePointer(
-                  child: MonthStreakCalendar(
-                    readDates: _readDates,
-                    month: DateTime(
-                      DateTime.now().year,
-                      DateTime.now().month,
-                    ),
-                  ),
+              IgnorePointer(
+                child: MonthStreakCalendar(
+                  readDates: _readDates,
+                  month: DateTime(DateTime.now().year, DateTime.now().month),
+                  showNavigation: false,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
   }
 
   @override
