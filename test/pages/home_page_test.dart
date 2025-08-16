@@ -13,6 +13,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/widgets/read_switch_tile.dart';
 import 'package:bible_read/widgets/success_animation.dart';
+import '../helpers/mock_lottie_http_client.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -141,6 +142,8 @@ class ThrowingFirestore extends FakeFirebaseFirestore {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(setupLottieHttpOverrides);
+  tearDownAll(resetHttpOverrides);
 
   testWidgets('HomePage shows static UI elements', (WidgetTester tester) async {
     final firestore = FakeFirebaseFirestore();

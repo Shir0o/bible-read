@@ -29,7 +29,10 @@ class SuccessAnimation extends StatelessWidget {
     return Center(
       child: GestureDetector(
         onTap: onDismiss,
-        child: Lottie.asset('assets/animations/success.json', repeat: false),
+        child: Lottie.network(
+          'https://raw.githubusercontent.com/xvrh/lottie-flutter/master/example/assets/lottiefiles/scan_qr_code_success.json',
+          repeat: false,
+        ),
       ),
     );
   }

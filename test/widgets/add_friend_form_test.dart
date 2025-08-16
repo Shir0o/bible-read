@@ -11,6 +11,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:bible_read/widgets/animated_action_button.dart';
 import 'package:bible_read/widgets/success_animation.dart';
+import '../helpers/mock_lottie_http_client.dart';
 
 class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
 
@@ -37,6 +38,8 @@ class RecordingFriendService extends FriendService {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(setupLottieHttpOverrides);
+  tearDownAll(resetHttpOverrides);
 
   late FakeFirebaseFirestore firestore;
   late RecordingFriendService service;
