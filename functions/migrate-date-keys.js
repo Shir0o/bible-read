@@ -1,6 +1,17 @@
 const admin = require('firebase-admin');
 let db;
 
+// Helper to delete a document and all of its subcollections recursively
+async function deleteDocDeep(ref) {
+  // Prefer recursive delete to avoid leaving subcollections behind
+  if (admin.firestore && typeof admin.firestore().recursiveDelete === 'function') {
+    await admin.firestore().recursiveDelete(ref);
+  } else {
+    // Fallback: best-effort single doc delete
+    await ref.delete();
+  }
+}
+
 function padKey(id) {
   const [y, m, d] = id.split('-').map(v => parseInt(v, 10));
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -54,7 +65,7 @@ async function migrateReadLogs() {
         }
       }
     }
-    await oldDoc.delete();
+    await deleteDocDeep(oldDoc);
   }
 
   const rewards = await db.collection('daily_rewards').listDocuments();
@@ -64,7 +75,18 @@ async function migrateReadLogs() {
     if (oldKey === newKey) continue;
     const data = (await oldRef.get()).data();
     if (data) await db.collection('daily_rewards').doc(newKey).set(data);
-    await oldRef.delete();
+    await deleteDocDeep(oldRef);
+  }
+}
+
+// Defensive cleanup to remove any lingering non–zero-padded docs
+async function cleanupNonPaddedDates(collectionName) {
+  const docs = await db.collection(collectionName).listDocuments();
+  const padded = /^\d{4}-\d{2}-\d{2}$/;
+  for (const docRef of docs) {
+    if (!padded.test(docRef.id)) {
+      await deleteDocDeep(docRef);
+    }
   }
 }
 
@@ -74,6 +96,8 @@ async function main() {
   const users = await db.collection('users').listDocuments();
   for (const user of users) await migrateUser(user.id);
   await migrateReadLogs();
+  await cleanupNonPaddedDates('read_logs');
+  await cleanupNonPaddedDates('daily_rewards');
   console.log('Migration complete');
 }
 
