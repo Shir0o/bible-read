@@ -1,3 +1,32 @@
+# Release 1.11.0
+
+This release includes a major refactoring of the codebase, new features, bug fixes, and documentation updates.
+
+## Features
+
+*   **Network-hosted assets:** The app now uses network-hosted assets for images and animations, reducing the app size and improving performance.
+*   **History Page:** A new history page has been added to view your reading history.
+*   **"More" Sheet:** A new "More" sheet has been added to the main navigation for less frequently used items.
+*   **Network Achievement Icons:** The app now supports network-hosted achievement icons.
+
+## Enhancements
+
+*   **Refactored Calendar Widgets:** The calendar widgets have been refactored for better performance and maintainability.
+*   **Simplified Home Page:** The home page has been simplified to improve the user experience.
+*   **Improved Data Migration:** The data migration script has been improved for better robustness.
+*   **Updated Dependencies:** Dependencies have been updated to their latest versions.
+
+## Fixes
+
+*   **Hero Tag Conflicts:** Fixed hero tag conflicts that were causing issues with animations.
+*   **Comment Drawer Tests:** Fixed issues with the comment drawer tests.
+*   **Group Creation Exception:** Fixed an exception that was occurring when creating a new group.
+
+## Documentation
+
+*   **Updated README.md:** The README.md file has been updated with information about the new features and changes.
+*   **New Documentation:** New documentation has been added for the new features.
+
 # Release 1.10.0
 
 This release introduces group reading challenge functionality so you can read with others and track progress together.
