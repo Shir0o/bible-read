@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 /// Displays a badge image or icon with an optional locked overlay.
@@ -38,21 +39,18 @@ class BadgeIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final Widget image;
     if (imageUrl != null) {
-      image = Image.network(
-        imageUrl!,
+      image = CachedNetworkImage(
+        imageUrl: imageUrl!,
         width: size,
         height: size,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return SizedBox(
-            width: size,
-            height: size,
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) =>
+        placeholder: (context, url) => SizedBox(
+          width: size,
+          height: size,
+          child: const Center(
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+        errorWidget: (context, url, error) =>
             Icon(Icons.image_not_supported, size: size),
       );
     } else {
