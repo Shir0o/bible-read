@@ -32,6 +32,23 @@ class SuccessAnimation extends StatelessWidget {
         child: Lottie.network(
           'https://raw.githubusercontent.com/xvrh/lottie-flutter/master/example/assets/lottiefiles/scan_qr_code_success.json',
           repeat: false,
+          frameBuilder: (context, child, composition) {
+            if (composition == null) {
+              return const SizedBox(
+                width: 120,
+                height: 120,
+                child: Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              );
+            }
+            return child;
+          },
+          errorBuilder: (context, error, stackTrace) => const Icon(
+            Icons.check_circle,
+            color: Colors.green,
+            size: 120,
+          ),
         ),
       ),
     );

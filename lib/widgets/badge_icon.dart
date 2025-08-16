@@ -42,6 +42,18 @@ class BadgeIcon extends StatelessWidget {
         imageUrl!,
         width: size,
         height: size,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return SizedBox(
+            width: size,
+            height: size,
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) =>
+            Icon(Icons.image_not_supported, size: size),
       );
     } else {
       image = Icon(iconData!, size: size);
