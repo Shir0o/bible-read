@@ -440,16 +440,20 @@ class _ReadLogPageState extends State<ReadLogPage> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           if (isFirst)
-                                            BadgeIcon(
-                                              imageUrl: allAchievements
-                                                  .firstWhere((a) =>
-                                                      a.id == 'firstReader')
-                                                  .imageUrl,
-                                              iconData: allAchievements
-                                                  .firstWhere((a) =>
-                                                      a.id == 'firstReader')
-                                                  .icon,
-                                              size: 24,
+                                            Tooltip(
+                                              message:
+                                                  'First reader of the day',
+                                              child: BadgeIcon(
+                                                imageUrl: allAchievements
+                                                    .firstWhere((a) =>
+                                                        a.id == 'firstReader')
+                                                    .imageUrl,
+                                                iconData: allAchievements
+                                                    .firstWhere((a) =>
+                                                        a.id == 'firstReader')
+                                                    .icon,
+                                                size: 24,
+                                              ),
                                             ),
                                           Padding(
                                             padding: const EdgeInsets.symmetric(
