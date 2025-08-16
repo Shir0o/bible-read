@@ -58,6 +58,12 @@ offline. To host or update badges:
 2. Replace the image URL in this document with the new hosted link.
 3. Ensure the host allows hotlinking so the badge renders correctly.
 
+### Badge image caching
+
+Badge images downloaded in the app are cached locally to minimize
+bandwidth. See [docs/cache.md](docs/cache.md) for details on how caching
+works and how to clear stored images.
+
 ### Signup Notification Setup
 
 The Cloud Function `sendSignupNotification` sends a push notification to the user specified by `ADMIN_UID` whenever a new account is created. Set `ADMIN_UID` using Firebase Functions config before deploying:
