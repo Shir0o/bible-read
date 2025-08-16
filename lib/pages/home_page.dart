@@ -33,7 +33,8 @@ class HomePage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })? markFirstReader;
+  })?
+  markFirstReader;
 
   HomePage({
     super.key,
@@ -41,8 +42,8 @@ class HomePage extends StatefulWidget {
     FirebaseAuth? auth,
     this.functions,
     this.markFirstReader,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -95,10 +96,10 @@ class _HomePageState extends State<HomePage>
       // Kick off all Firestore reads in parallel.
       final snapshots =
           await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-        userDocRef.get(),
-        userDocRef.collection('reading').doc(dateKey).get(),
-        userDocRef.collection('summary').doc('data').get(),
-      ], eagerError: true);
+            userDocRef.get(),
+            userDocRef.collection('reading').doc(dateKey).get(),
+            userDocRef.collection('summary').doc('data').get(),
+          ], eagerError: true);
 
       final userDoc = snapshots[0];
       final todayDoc = snapshots[1];
@@ -266,8 +267,6 @@ class _HomePageState extends State<HomePage>
     try {
       final userDocRef = widget.firestore.collection('users').doc(user.uid);
       final summaryDocRef = userDocRef.collection('summary').doc('data');
-      final doc = await summaryDocRef.get();
-      final data = doc.data() ?? {};
 
       final today = DateTime.now();
       String formatDate(DateTime d) =>
@@ -277,28 +276,52 @@ class _HomePageState extends State<HomePage>
       final weekStatus = await _getReadStatusForRange(7);
       final monthStatus = await _getReadStatusForRange(30);
 
-      final pastWeekReadDates =
-          weekStatus.entries.where((e) => e.value).map((e) => e.key).toList();
-      final pastMonthReadDates =
-          monthStatus.entries.where((e) => e.value).map((e) => e.key).toList();
+      final pastWeekReadDates = weekStatus.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList();
+      final pastMonthReadDates = monthStatus.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList();
 
-      // Recalculate current streak based on most recent reads.
-      int streak = 0;
-      for (int i = 0; i < 30; i++) {
-        final key = formatDate(today.subtract(Duration(days: i)));
-        if (monthStatus[key] == true) {
-          streak += 1;
-        } else {
-          break;
+      // Fetch all reading entries to recompute aggregate counters.
+      final readingSnapshot = await userDocRef.collection('reading').get();
+      final readDateSet = <String>{};
+      for (final readDoc in readingSnapshot.docs) {
+        final data = readDoc.data();
+        if (data['read'] == true) {
+          readDateSet.add(readDoc.id);
         }
       }
 
-      int totalReadDays =
-          (data['totalReadDays'] is int) ? data['totalReadDays'] : 0;
-      int longestStreak =
-          (data['longestStreak'] is int) ? data['longestStreak'] : 0;
-      if (streak > longestStreak) {
-        longestStreak = streak;
+      final totalReadDays = readDateSet.length;
+
+      // Recalculate current streak based on most recent consecutive reads.
+      int streak = 0;
+      var cursor = DateTime(today.year, today.month, today.day);
+      while (readDateSet.contains(formatDate(cursor))) {
+        streak += 1;
+        cursor = cursor.subtract(const Duration(days: 1));
+      }
+
+      // Determine the longest streak across all recorded reads.
+      int longestStreak = 0;
+      if (readDateSet.isNotEmpty) {
+        final sortedDates = readDateSet.map((d) => DateTime.parse(d)).toList()
+          ..sort();
+        int current = 1;
+        longestStreak = 1;
+        for (int i = 1; i < sortedDates.length; i++) {
+          if (sortedDates[i].difference(sortedDates[i - 1]).inDays == 1) {
+            current += 1;
+          } else {
+            current = 1;
+          }
+          if (current > longestStreak) {
+            longestStreak = current;
+          }
+        }
       }
 
       await summaryDocRef.set({
@@ -385,8 +408,8 @@ class _HomePageState extends State<HomePage>
           .collection('reading')
           .doc(dateKey)
           .set({
-        'read': true,
-      }, SetOptions(merge: true)); // Mark read in Firestore.
+            'read': true,
+          }, SetOptions(merge: true)); // Mark read in Firestore.
 
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
@@ -436,8 +459,10 @@ class _HomePageState extends State<HomePage>
       final yesterdayDateKey =
           '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
 
-      final yesterdayDoc =
-          await userDocRef.collection('reading').doc(yesterdayDateKey).get();
+      final yesterdayDoc = await userDocRef
+          .collection('reading')
+          .doc(yesterdayDateKey)
+          .get();
 
       int streak = (data['streak'] is int) ? data['streak'] : 0;
       if (yesterdayDoc.exists && yesterdayDoc.data()?['read'] == true) {
@@ -469,12 +494,14 @@ class _HomePageState extends State<HomePage>
         }
       }
 
-      int totalReadDays =
-          (data['totalReadDays'] is int) ? data['totalReadDays'] : 0;
+      int totalReadDays = (data['totalReadDays'] is int)
+          ? data['totalReadDays']
+          : 0;
       totalReadDays += 1;
 
-      int longestStreak =
-          (data['longestStreak'] is int) ? data['longestStreak'] : streak;
+      int longestStreak = (data['longestStreak'] is int)
+          ? data['longestStreak']
+          : streak;
       if (streak > longestStreak) {
         longestStreak = streak;
       }
