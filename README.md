@@ -197,3 +197,10 @@ Crash reports and logs are viewable on the Crashlytics dashboard under
     ```
 
 2.  Upload the generated `.aab` file to the Google Play Console for distribution.
+
+## Licenses and Attributions
+
+- Achievement badges in this README use icons from the [Font Awesome Free](https://fontawesome.com) set, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- The success animation uses [`scan_qr_code_success.json`](https://raw.githubusercontent.com/xvrh/lottie-flutter/master/example/assets/lottiefiles/scan_qr_code_success.json) from the [xvrh/lottie-flutter](https://github.com/xvrh/lottie-flutter) project, licensed under [MIT](https://raw.githubusercontent.com/xvrh/lottie-flutter/master/LICENSE).
+
+See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for full details.
