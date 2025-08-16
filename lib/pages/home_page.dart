@@ -33,8 +33,7 @@ class HomePage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })?
-  markFirstReader;
+  })? markFirstReader;
 
   HomePage({
     super.key,
@@ -42,8 +41,8 @@ class HomePage extends StatefulWidget {
     FirebaseAuth? auth,
     this.functions,
     this.markFirstReader,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -67,8 +66,11 @@ class _HomePageState extends State<HomePage>
   }
 
   /// Fetches today's read flag and calendar history from Firestore.
-  /// Creates a user document if necessary and updates local state. When
-  /// [showLoading] is true, a spinner is shown while the request is in flight.
+  /// Creates a user document if necessary and updates local state. Cached
+  /// calendar ranges older than a week or month are discarded and, when the
+  /// cached lists are incomplete, the missing days are queried directly from
+  /// the `reading` collection. When [showLoading] is true, a spinner is shown
+  /// while the request is in flight.
   Future<void> _loadReadStatus({bool showLoading = true}) async {
     if (showLoading && !_disposed && mounted) {
       setState(() {
@@ -96,10 +98,10 @@ class _HomePageState extends State<HomePage>
       // Kick off all Firestore reads in parallel.
       final snapshots =
           await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-            userDocRef.get(),
-            userDocRef.collection('reading').doc(dateKey).get(),
-            userDocRef.collection('summary').doc('data').get(),
-          ], eagerError: true);
+        userDocRef.get(),
+        userDocRef.collection('reading').doc(dateKey).get(),
+        userDocRef.collection('summary').doc('data').get(),
+      ], eagerError: true);
 
       final userDoc = snapshots[0];
       final todayDoc = snapshots[1];
@@ -146,7 +148,13 @@ class _HomePageState extends State<HomePage>
 
       // Load calendar data from summary doc.
       final data = summaryDoc.data() ?? {};
-      final weekDates = List<String>.from(data['pastWeekReadDates'] ?? []);
+      var weekDates = List<String>.from(data['pastWeekReadDates'] ?? []);
+      weekDates = weekDates.where((d) {
+        final parsed = DateTime.tryParse(d);
+        if (parsed == null) return false;
+        final diff = today.difference(parsed).inDays;
+        return diff >= 0 && diff < 7;
+      }).toList();
       final savedWeek = List<bool>.filled(7, false, growable: true);
       // Compute this week's Sunday (calendar week: Sunday to Saturday)
       final currentWeekday = today.weekday; // 1 = Mon, ..., 7 = Sun
@@ -161,16 +169,21 @@ class _HomePageState extends State<HomePage>
       }
 
       final savedMonth = <bool>[];
-      final monthDates = List<String>.from(data['pastMonthReadDates'] ?? []);
-      final now = DateTime.now();
-      final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+      var monthDates = List<String>.from(data['pastMonthReadDates'] ?? []);
+      monthDates = monthDates.where((d) {
+        final parsed = DateTime.tryParse(d);
+        if (parsed == null) return false;
+        final diff = today.difference(parsed).inDays;
+        return diff >= 0 && diff < 30;
+      }).toList();
+      final daysInMonth = DateTime(today.year, today.month + 1, 0).day;
       for (int i = 1; i <= daysInMonth; i++) {
         final key =
-            '${now.year}-${now.month.toString().padLeft(2, '0')}-${i.toString().padLeft(2, '0')}';
+            '${today.year}-${today.month.toString().padLeft(2, '0')}-${i.toString().padLeft(2, '0')}';
         savedMonth.add(monthDates.contains(key));
       }
 
-      if (weekDates.isEmpty) {
+      if (weekDates.length < 7) {
         // Backfill the past week by querying reading documents directly.
         final weekStatus = await _getReadStatusForRange(7);
         savedWeek.clear();
@@ -181,13 +194,13 @@ class _HomePageState extends State<HomePage>
           savedWeek.add(weekStatus[key] ?? false);
         }
       }
-      if (monthDates.isEmpty) {
+      if (monthDates.length < 30) {
         // Backfill the past month similarly.
         final monthStatus = await _getReadStatusForRange(30);
         savedMonth.clear();
         for (int i = 1; i <= daysInMonth; i++) {
           final key =
-              '${now.year}-${now.month.toString().padLeft(2, '0')}-${i.toString().padLeft(2, '0')}';
+              '${today.year}-${today.month.toString().padLeft(2, '0')}-${i.toString().padLeft(2, '0')}';
           savedMonth.add(monthStatus[key] ?? false);
         }
       }
@@ -201,7 +214,7 @@ class _HomePageState extends State<HomePage>
       }
       for (int i = 0; i < savedMonth.length; i++) {
         if (savedMonth[i]) {
-          readDates.add(DateTime(now.year, now.month, i + 1));
+          readDates.add(DateTime(today.year, today.month, i + 1));
         }
       }
 
@@ -276,14 +289,10 @@ class _HomePageState extends State<HomePage>
       final weekStatus = await _getReadStatusForRange(7);
       final monthStatus = await _getReadStatusForRange(30);
 
-      final pastWeekReadDates = weekStatus.entries
-          .where((e) => e.value)
-          .map((e) => e.key)
-          .toList();
-      final pastMonthReadDates = monthStatus.entries
-          .where((e) => e.value)
-          .map((e) => e.key)
-          .toList();
+      final pastWeekReadDates =
+          weekStatus.entries.where((e) => e.value).map((e) => e.key).toList();
+      final pastMonthReadDates =
+          monthStatus.entries.where((e) => e.value).map((e) => e.key).toList();
 
       // Fetch all reading entries to recompute aggregate counters.
       final readingSnapshot = await userDocRef.collection('reading').get();
@@ -408,8 +417,8 @@ class _HomePageState extends State<HomePage>
           .collection('reading')
           .doc(dateKey)
           .set({
-            'read': true,
-          }, SetOptions(merge: true)); // Mark read in Firestore.
+        'read': true,
+      }, SetOptions(merge: true)); // Mark read in Firestore.
 
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
@@ -459,10 +468,8 @@ class _HomePageState extends State<HomePage>
       final yesterdayDateKey =
           '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
 
-      final yesterdayDoc = await userDocRef
-          .collection('reading')
-          .doc(yesterdayDateKey)
-          .get();
+      final yesterdayDoc =
+          await userDocRef.collection('reading').doc(yesterdayDateKey).get();
 
       int streak = (data['streak'] is int) ? data['streak'] : 0;
       if (yesterdayDoc.exists && yesterdayDoc.data()?['read'] == true) {
@@ -494,14 +501,12 @@ class _HomePageState extends State<HomePage>
         }
       }
 
-      int totalReadDays = (data['totalReadDays'] is int)
-          ? data['totalReadDays']
-          : 0;
+      int totalReadDays =
+          (data['totalReadDays'] is int) ? data['totalReadDays'] : 0;
       totalReadDays += 1;
 
-      int longestStreak = (data['longestStreak'] is int)
-          ? data['longestStreak']
-          : streak;
+      int longestStreak =
+          (data['longestStreak'] is int) ? data['longestStreak'] : streak;
       if (streak > longestStreak) {
         longestStreak = streak;
       }
