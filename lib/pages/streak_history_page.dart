@@ -77,6 +77,14 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
     _loadStats();
   }
 
+  /// Loads streak statistics and read dates for the selected period.
+  ///
+  /// For the current week or month we first consult the cached arrays in the
+  /// user's summary document. Those arrays may contain dates outside the
+  /// requested window or may omit some days entirely. We therefore filter the
+  /// cached dates to the current period and, if the remaining list doesn't cover
+  /// every day, fall back to querying individual `reading` documents via
+  /// [_queryRange].
   Future<void> _loadStats() async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
@@ -104,8 +112,18 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
       Set<DateTime> readDates = {};
 
       if (isCurrentWeek) {
-        final dates = List<String>.from(data['pastWeekReadDates'] ?? []);
-        if (dates.isNotEmpty) {
+        final end = _periodStart.add(const Duration(days: 6));
+        var dates = List<String>.from(data['pastWeekReadDates'] ?? []);
+        // Keep only dates within the selected week. The summary cache may
+        // contain stale entries so we filter them out first.
+        dates = dates.where((d) {
+          final parsed = DateTime.tryParse(d);
+          return parsed != null && !parsed.isBefore(_periodStart) &&
+              !parsed.isAfter(end);
+        }).toList();
+        if (dates.length == 7) {
+          // All seven days are present meaning the summary fully covers the
+          // week, so we can trust it without hitting Firestore.
           final set = dates.toSet();
           for (int i = 0; i < 7; i++) {
             final day = _periodStart.add(Duration(days: i));
@@ -117,22 +135,24 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
             }
           }
         } else {
-          readDates = await _queryRange(
-            userDocRef,
-            _periodStart,
-            _periodStart.add(const Duration(days: 6)),
-          );
+          // If the filtered list doesn't include all days, fall back to
+          // querying individual reading documents for an authoritative answer.
+          readDates = await _queryRange(userDocRef, _periodStart, end);
           periodCount = readDates.length;
         }
       } else if (isCurrentMonth) {
-        final dates = List<String>.from(data['pastMonthReadDates'] ?? []);
-        if (dates.isNotEmpty) {
+        final end = DateTime(_periodStart.year, _periodStart.month + 1, 0);
+        var dates = List<String>.from(data['pastMonthReadDates'] ?? []);
+        // Apply the same windowing to the cached month data.
+        dates = dates.where((d) {
+          final parsed = DateTime.tryParse(d);
+          return parsed != null && !parsed.isBefore(_periodStart) &&
+              !parsed.isAfter(end);
+        }).toList();
+        final daysInMonth = end.day;
+        if (dates.length == daysInMonth) {
+          // The summary has an entry for every day of the month.
           final set = dates.toSet();
-          final daysInMonth = DateTime(
-            _periodStart.year,
-            _periodStart.month + 1,
-            0,
-          ).day;
           for (int i = 0; i < daysInMonth; i++) {
             final day = _periodStart.add(Duration(days: i));
             final key =
@@ -143,7 +163,8 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
             }
           }
         } else {
-          final end = DateTime(_periodStart.year, _periodStart.month + 1, 0);
+          // Otherwise query the backing documents to ensure we have complete
+          // data for the month.
           readDates = await _queryRange(userDocRef, _periodStart, end);
           periodCount = readDates.length;
         }
