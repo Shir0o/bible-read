@@ -52,7 +52,9 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
     }, createHttpClient: (_) => _MockHttpClient());
 
     expect(find.byType(Image), findsOneWidget);
