@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -57,7 +58,7 @@ void main() {
       await tester.pump();
     }, createHttpClient: (_) => _MockHttpClient());
 
-    expect(find.byType(Image), findsOneWidget);
+    expect(find.byType(CachedNetworkImage), findsOneWidget);
   });
 }
 
