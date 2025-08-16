@@ -115,6 +115,16 @@ void main() {
           'pastMonthReadDates': <String>[],
         });
 
+    for (int i = 0; i < 2; i++) {
+      final day = currentWeekStart.add(Duration(days: i));
+      await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('reading')
+          .doc(_fmt(day))
+          .set({'read': true});
+    }
+
     for (int i = 0; i < 3; i++) {
       final day = prevWeekStart.add(Duration(days: i));
       await firestore
