@@ -7,9 +7,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bible_read/widgets/achievement_summary.dart';
 import 'package:bible_read/widgets/badge_icon.dart';
 import 'package:bible_read/widgets/success_animation.dart';
+import '../helpers/mock_lottie_http_client.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(setupLottieHttpOverrides);
+  tearDownAll(resetHttpOverrides);
 
   testWidgets('returns empty widget when no user', (tester) async {
     final firestore = FakeFirebaseFirestore();
