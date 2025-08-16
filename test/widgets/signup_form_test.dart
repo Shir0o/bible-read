@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/widgets/signup_form.dart';
 import 'package:bible_read/widgets/success_animation.dart';
+import '../helpers/mock_lottie_http_client.dart';
 
 class RecordingAuth extends MockFirebaseAuth {
   bool createCalled = false;
@@ -39,6 +40,8 @@ class FailingAuth extends MockFirebaseAuth {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(setupLottieHttpOverrides);
+  tearDownAll(resetHttpOverrides);
 
   testWidgets('creates account and writes user document then calls onComplete',
       (tester) async {
