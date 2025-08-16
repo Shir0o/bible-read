@@ -566,6 +566,64 @@ void main() {
     expect(summary.data()?['streak'], 0);
   });
 
+  testWidgets('refresh rebuilds summary arrays from reading data',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(uid: 'u4');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+    final googlePlatform = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = googlePlatform;
+
+    String keyFor(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+    final today = DateTime.now();
+    final todayKey = keyFor(today);
+    final twoDaysAgo = today.subtract(const Duration(days: 2));
+    final twoDaysKey = keyFor(twoDaysAgo);
+
+    // Create reading documents for today and two days ago.
+    final readingRef =
+        firestore.collection('users').doc(user.uid).collection('reading');
+    await readingRef.doc(todayKey).set({'read': true});
+    await readingRef.doc(twoDaysKey).set({'read': true});
+
+    // Existing summary document with incorrect data.
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('summary')
+        .doc('data')
+        .set({
+      'streak': 0,
+      'pastWeekReadDates': [],
+      'pastMonthReadDates': ['bad'],
+      'totalReadDays': 0,
+      'longestStreak': 0,
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
+
+    final summary = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('summary')
+        .doc('data')
+        .get();
+    expect(summary.data()?['pastWeekReadDates'], [todayKey, twoDaysKey]);
+    expect(summary.data()?['pastMonthReadDates'], [todayKey, twoDaysKey]);
+  });
+
   testWidgets('load failure hides progress indicator', (tester) async {
     final firestore = ThrowingFirestore();
     final auth = MockFirebaseAuth(
