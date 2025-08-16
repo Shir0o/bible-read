@@ -481,24 +481,42 @@ class _HomePageState extends State<HomePage>
       final dateKey =
           '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
-      final pastWeekReadDates = List<String>.from(
+      var pastWeekReadDates = List<String>.from(
         data['pastWeekReadDates'] ?? [],
       );
-      if (!pastWeekReadDates.contains(dateKey)) {
-        pastWeekReadDates.add(dateKey);
-        if (pastWeekReadDates.length > 7) {
-          pastWeekReadDates.removeRange(0, pastWeekReadDates.length - 7);
-        }
+      pastWeekReadDates = pastWeekReadDates
+          .where((d) {
+            final parsed = DateTime.tryParse(d);
+            if (parsed == null) return false;
+            final diff = today.difference(parsed).inDays;
+            return diff >= 0 && diff < 7;
+          })
+          .toSet()
+          .toList();
+      pastWeekReadDates.add(dateKey);
+      pastWeekReadDates = pastWeekReadDates.toSet().toList();
+      if (pastWeekReadDates.length > 7) {
+        pastWeekReadDates =
+            pastWeekReadDates.sublist(pastWeekReadDates.length - 7);
       }
 
-      final pastMonthReadDates = List<String>.from(
+      var pastMonthReadDates = List<String>.from(
         data['pastMonthReadDates'] ?? [],
       );
-      if (!pastMonthReadDates.contains(dateKey)) {
-        pastMonthReadDates.add(dateKey);
-        if (pastMonthReadDates.length > 30) {
-          pastMonthReadDates.removeRange(0, pastMonthReadDates.length - 30);
-        }
+      pastMonthReadDates = pastMonthReadDates
+          .where((d) {
+            final parsed = DateTime.tryParse(d);
+            if (parsed == null) return false;
+            final diff = today.difference(parsed).inDays;
+            return diff >= 0 && diff < 30;
+          })
+          .toSet()
+          .toList();
+      pastMonthReadDates.add(dateKey);
+      pastMonthReadDates = pastMonthReadDates.toSet().toList();
+      if (pastMonthReadDates.length > 30) {
+        pastMonthReadDates =
+            pastMonthReadDates.sublist(pastMonthReadDates.length - 30);
       }
 
       int totalReadDays =
