@@ -38,14 +38,25 @@ The app currently offers the following achievements. Badge icons are provided by
 
 | Icon | ID | Description |
 | ---- | -- | ----------- |
-| ![book-open-reader](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/book-open-reader.svg) | `firstReader` | Be the first person to log reading for the day. |
-| ![fire](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/fire.svg) | `streak7` | Read the Bible seven days in a row. |
-| ![calendar-check](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/calendar-check.svg) | `days30` | Log 30 days of reading. |
-| ![fire-flame-curved](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/fire-flame-curved.svg) | `streak30` | Read every day for a full month. |
+| ![book-open-reader](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/book-open-reader.svg) | `firstReader` | Be the first person to log reading for the day. |
+| ![fire](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/fire.svg) | `streak7` | Read the Bible seven days in a row. |
+| ![calendar-check](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/calendar-check.svg) | `days30` | Log 30 days of reading. |
+| ![fire-flame-curved](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/fire-flame-curved.svg) | `streak30` | Read every day for a full month. |
 
 Achievements are displayed in a scrollable list where each row shows the badge,
 title and description. Locked items are overlaid with a lock icon until they are
 earned.
+
+### Remote icons and badges
+
+Achievement icons above are loaded from Font Awesome over the network. This keeps
+the repository light, but the images will not appear when the README is viewed
+offline. To host or update badges:
+
+1. Upload the image to a publicly accessible location such as a CDN or another
+   GitHub repository.
+2. Replace the image URL in this document with the new hosted link.
+3. Ensure the host allows hotlinking so the badge renders correctly.
 
 ### Signup Notification Setup
 
