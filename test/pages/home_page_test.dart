@@ -624,6 +624,67 @@ void main() {
     expect(summary.data()?['pastMonthReadDates'], [todayKey, twoDaysKey]);
   });
 
+  testWidgets('refresh rebuilds summary counters from reading data',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(uid: 'u5');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+    final googlePlatform = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = googlePlatform;
+
+    String keyFor(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+    final today = DateTime.now();
+    final yesterday = today.subtract(const Duration(days: 1));
+    final twoDaysAgo = today.subtract(const Duration(days: 2));
+    final fiveDaysAgo = today.subtract(const Duration(days: 5));
+    final sixDaysAgo = today.subtract(const Duration(days: 6));
+
+    final readingRef =
+        firestore.collection('users').doc(user.uid).collection('reading');
+    await readingRef.doc(keyFor(today)).set({'read': true});
+    await readingRef.doc(keyFor(yesterday)).set({'read': true});
+    await readingRef.doc(keyFor(twoDaysAgo)).set({'read': true});
+    await readingRef.doc(keyFor(fiveDaysAgo)).set({'read': true});
+    await readingRef.doc(keyFor(sixDaysAgo)).set({'read': true});
+
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('summary')
+        .doc('data')
+        .set({
+      'streak': 0,
+      'longestStreak': 0,
+      'totalReadDays': 0,
+      'pastWeekReadDates': [],
+      'pastMonthReadDates': [],
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
+
+    final summary = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('summary')
+        .doc('data')
+        .get();
+    expect(summary.data()?['streak'], 3);
+    expect(summary.data()?['longestStreak'], 3);
+    expect(summary.data()?['totalReadDays'], 5);
+  });
+
   testWidgets('load failure hides progress indicator', (tester) async {
     final firestore = ThrowingFirestore();
     final auth = MockFirebaseAuth(
