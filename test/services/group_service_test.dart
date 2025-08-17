@@ -11,6 +11,9 @@ import 'package:mocktail/mocktail.dart';
 import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:bible_read/services/group_service.dart';
+import 'package:bible_read/models/notification_preferences.dart';
+import 'package:bible_read/services/notification_service.dart'
+    show NotificationCollections;
 
 class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
 
@@ -124,6 +127,17 @@ void main() {
       expect(request.data()?['uid'], 'u2');
       expect(request.data()?['name'], 'User');
       expect(request.data()?['requestedAt'], isA<Timestamp>());
+
+      final notifSnap = await firestore
+          .collection(NotificationCollections.users)
+          .doc('u1')
+          .collection(NotificationCollections.notifications)
+          .get();
+      expect(notifSnap.docs.length, 1);
+      final data = notifSnap.docs.first.data();
+      expect(data['type'], NotificationType.friendRequest.name);
+      expect(data['fromUid'], 'u2');
+      expect(data['senderUid'], 'u2');
     });
 
     test('joinGroup preserves existing role', () async {
