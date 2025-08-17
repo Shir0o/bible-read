@@ -17,3 +17,9 @@ flutter config --no-analytics
 yes | flutter doctor --android-licenses || true
 flutter pub get
 
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  echo "Flutter SDK installed in $REPO_ROOT/flutter"
+  echo "Add it to your PATH by running:"
+  echo "  export PATH=\"$REPO_ROOT/flutter/bin:\$PATH\""
+fi
+

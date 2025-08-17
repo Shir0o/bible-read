@@ -108,10 +108,10 @@ This project is a starting point for a Flutter application.
     cd bible-read
     ```
 
-2.  Set up the Flutter SDK and fetch dependencies:
+2.  Set up the Flutter SDK and fetch dependencies (adds Flutter to your `PATH` for this session):
 
     ```bash
-    ./scripts/setup_flutter.sh
+    source scripts/setup_flutter.sh
     ```
 
 3.  Run the app:
@@ -132,10 +132,10 @@ The integration tests bundled with this project require a local Flutter SDK.
 Run the setup script to download the SDK and any dependencies:
 
 ```bash
-./scripts/setup_flutter.sh
+source scripts/setup_flutter.sh
 ```
 
-After installation the Flutter commands such as `flutter test` will be available.
+If you run the script without `source`, add Flutter to your `PATH` manually using the command printed at the end of the setup script.
 
 ## Development
 
