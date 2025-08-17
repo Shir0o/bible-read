@@ -119,7 +119,8 @@ class _GroupsPageState extends State<GroupsPage> {
     }
     setState(() => _inProgress = true);
     try {
-      await widget.groupService.joinGroup(groupId: id, uid: user.uid);
+      await widget.groupService
+          .joinGroup(groupId: id, uid: user.uid, name: user.displayName ?? '');
       if (mounted) {
         ScaffoldMessenger.of(
           context,

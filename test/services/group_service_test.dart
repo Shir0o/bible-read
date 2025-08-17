@@ -72,7 +72,7 @@ void main() {
           .doc('g1')
           .set({'name': 'G', 'ownerUid': 'u1'});
 
-      await service.joinGroup(groupId: 'g1', uid: 'u2');
+      await service.joinGroup(groupId: 'g1', uid: 'u2', name: 'User');
 
       final member = await firestore
           .collection(GroupCollections.groups)
@@ -84,10 +84,11 @@ void main() {
       final joinedAt = member.data()?['joinedAt'];
       expect(member.data()?['uid'], 'u2');
       expect(member.data()?['role'], 'member');
+      expect(member.data()?['name'], 'User');
       expect(joinedAt, isA<Timestamp>());
 
       // Re-join should not update joinedAt
-      await service.joinGroup(groupId: 'g1', uid: 'u2');
+      await service.joinGroup(groupId: 'g1', uid: 'u2', name: 'User');
       final member2 = await firestore
           .collection(GroupCollections.groups)
           .doc('g1')
@@ -95,6 +96,34 @@ void main() {
           .doc('u2')
           .get();
       expect(member2.data()?['joinedAt'], joinedAt);
+    });
+
+    test('joinGroup on private group creates join request', () async {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc('g1')
+          .set({'name': 'G', 'ownerUid': 'u1', 'isPublic': false});
+
+      await service.joinGroup(groupId: 'g1', uid: 'u2', name: 'User');
+
+      final member = await firestore
+          .collection(GroupCollections.groups)
+          .doc('g1')
+          .collection(GroupCollections.members)
+          .doc('u2')
+          .get();
+      expect(member.exists, isFalse);
+
+      final request = await firestore
+          .collection(GroupCollections.groups)
+          .doc('g1')
+          .collection(GroupCollections.joinRequests)
+          .doc('u2')
+          .get();
+      expect(request.exists, isTrue);
+      expect(request.data()?['uid'], 'u2');
+      expect(request.data()?['name'], 'User');
+      expect(request.data()?['requestedAt'], isA<Timestamp>());
     });
 
     test('joinGroup preserves existing role', () async {
@@ -106,11 +135,54 @@ void main() {
         'joinedAt': Timestamp.fromDate(DateTime.utc(2024)),
       });
 
-      await service.joinGroup(groupId: 'g1', uid: 'u1');
+      await service.joinGroup(groupId: 'g1', uid: 'u1', name: 'Owner');
 
       final member =
           await groupRef.collection(GroupCollections.members).doc('u1').get();
       expect(member.data()?['role'], 'owner');
+    });
+
+    test('approveJoinRequest moves member and removes request', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1', 'isPublic': false});
+      await groupRef.collection(GroupCollections.joinRequests).doc('u2').set({
+        'uid': 'u2',
+        'name': 'User',
+        'requestedAt': Timestamp.fromDate(DateTime.utc(2024)),
+      });
+
+      await service.approveJoinRequest(groupId: 'g1', uid: 'u2');
+
+      final member =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      expect(member.exists, isTrue);
+      expect(member.data()?['name'], 'User');
+      final request = await groupRef
+          .collection(GroupCollections.joinRequests)
+          .doc('u2')
+          .get();
+      expect(request.exists, isFalse);
+    });
+
+    test('denyJoinRequest removes request without adding member', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1', 'isPublic': false});
+      await groupRef.collection(GroupCollections.joinRequests).doc('u2').set({
+        'uid': 'u2',
+        'name': 'User',
+        'requestedAt': Timestamp.fromDate(DateTime.utc(2024)),
+      });
+
+      await service.denyJoinRequest(groupId: 'g1', uid: 'u2');
+
+      final member =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      expect(member.exists, isFalse);
+      final request = await groupRef
+          .collection(GroupCollections.joinRequests)
+          .doc('u2')
+          .get();
+      expect(request.exists, isFalse);
     });
 
     test('leaveGroup removes membership document', () async {
@@ -482,6 +554,7 @@ void main() {
       final mockFs = MockFirebaseFirestore();
       final groups = MockCollectionReference<Map<String, dynamic>>();
       final groupDoc = MockDocumentReference<Map<String, dynamic>>();
+      final groupSnap = MockDocumentSnapshot<Map<String, dynamic>>();
       final members = MockCollectionReference<Map<String, dynamic>>();
       final memberDoc = MockDocumentReference<Map<String, dynamic>>();
       final memberSnap = MockDocumentSnapshot<Map<String, dynamic>>();
@@ -489,6 +562,8 @@ void main() {
 
       when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
       when(() => groups.doc('g1')).thenReturn(groupDoc);
+      when(() => groupDoc.get()).thenAnswer((_) async => groupSnap);
+      when(() => groupSnap.data()).thenReturn({'isPublic': true});
       when(() => groupDoc.collection(GroupCollections.members))
           .thenReturn(members);
       when(() => members.doc('u1')).thenReturn(memberDoc);
@@ -507,7 +582,7 @@ void main() {
       final svc = GroupService(firestore: mockFs);
 
       await expectLater(
-          svc.joinGroup(groupId: 'g1', uid: 'u1'), throwsA(same(err)));
+          svc.joinGroup(groupId: 'g1', uid: 'u1', name: 'Name'), throwsA(same(err)));
 
       verify(() => crash.recordError(err, any(),
           reason: null,

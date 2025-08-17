@@ -18,6 +18,9 @@ class GroupCollections {
 
   /// Sub-collection containing the reading schedule.
   static const String schedule = 'schedule';
+
+  /// Sub-collection containing join requests awaiting approval.
+  static const String joinRequests = 'joinRequests';
 }
 
 /// Provides helper methods for managing reading groups.
@@ -59,15 +62,31 @@ class GroupService {
   }
 
   /// Join the group with [groupId] as [uid].
-  Future<void> joinGroup({required String groupId, required String uid}) async {
+  ///
+  /// If the group is not public a join request will be created instead.
+  Future<void> joinGroup({
+    required String groupId,
+    required String uid,
+    required String name,
+  }) async {
     try {
+      final groupDoc = await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .get();
+      final isPublic = groupDoc.data()?['isPublic'] as bool? ?? true;
+      if (!isPublic) {
+        await requestJoin(groupId: groupId, uid: uid, name: name);
+        return;
+      }
+
       final memberRef = firestore
           .collection(GroupCollections.groups)
           .doc(groupId)
           .collection(GroupCollections.members)
           .doc(uid);
       final snap = await memberRef.get();
-      final data = <String, dynamic>{'uid': uid};
+      final data = <String, dynamic>{'uid': uid, 'name': name};
       if (snap.exists) {
         final role = snap.data()?['role'];
         if (role != null) data['role'] = role;
@@ -76,6 +95,78 @@ class GroupService {
         data['joinedAt'] = FieldValue.serverTimestamp();
       }
       await memberRef.set(data, SetOptions(merge: true));
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
+  }
+
+  /// Create a join request for [uid] on [groupId].
+  Future<void> requestJoin({
+    required String groupId,
+    required String uid,
+    required String name,
+  }) async {
+    try {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.joinRequests)
+          .doc(uid)
+          .set({
+        'uid': uid,
+        'name': name,
+        'requestedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
+  }
+
+  /// Approve a join request for [uid] on [groupId].
+  Future<void> approveJoinRequest({
+    required String groupId,
+    required String uid,
+  }) async {
+    try {
+      final groupRef =
+          firestore.collection(GroupCollections.groups).doc(groupId);
+      final requestRef =
+          groupRef.collection(GroupCollections.joinRequests).doc(uid);
+      final requestSnap = await requestRef.get();
+      final name = requestSnap.data()?['name'] as String?;
+
+      final memberRef =
+          groupRef.collection(GroupCollections.members).doc(uid);
+      final data = <String, dynamic>{
+        'uid': uid,
+        'role': 'member',
+        'joinedAt': FieldValue.serverTimestamp(),
+      };
+      if (name != null && name.isNotEmpty) {
+        data['name'] = name;
+      }
+      await memberRef.set(data, SetOptions(merge: true));
+      await requestRef.delete();
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
+  }
+
+  /// Deny a join request for [uid] on [groupId].
+  Future<void> denyJoinRequest({
+    required String groupId,
+    required String uid,
+  }) async {
+    try {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.joinRequests)
+          .doc(uid)
+          .delete();
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;
