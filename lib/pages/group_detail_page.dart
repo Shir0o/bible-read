@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -121,6 +122,109 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
+            if (isOwner) ...[
+              Text('Join Requests', style: AppTextStyles.subtitle),
+              const SizedBox(height: 8),
+              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: widget.groupService.firestore
+                    .collection(GroupCollections.groups)
+                    .doc(widget.group.id)
+                    .collection(GroupCollections.joinRequests)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Text('Failed to load join requests');
+                  }
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final requests = snapshot.data!.docs;
+                  if (requests.isEmpty) {
+                    return const Text('No pending requests');
+                  }
+                  return Column(
+                    children: requests.map((d) {
+                      final data = d.data();
+                      final uid = data['uid'] as String? ?? d.id;
+                      final name = data['name'] as String? ?? '';
+                      return ListTile(
+                        title: Text(name.isEmpty ? uid : name),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.check),
+                              onPressed: () async {
+                                try {
+                                  await widget.groupService.approveJoinRequest(
+                                    groupId: widget.group.id,
+                                    uid: uid,
+                                  );
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Request approved'),
+                                      ),
+                                    );
+                                  }
+                                } catch (e, st) {
+                                  if (kDebugMode) {
+                                    debugPrint('Failed to approve request: $e');
+                                  }
+                                  ErrorLogger.log(e, st);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(
+                                      const SnackBar(
+                                        content:
+                                            Text('Failed to approve request'),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () async {
+                                try {
+                                  await widget.groupService.denyJoinRequest(
+                                    groupId: widget.group.id,
+                                    uid: uid,
+                                  );
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Request denied'),
+                                      ),
+                                    );
+                                  }
+                                } catch (e, st) {
+                                  if (kDebugMode) {
+                                    debugPrint('Failed to deny request: $e');
+                                  }
+                                  ErrorLogger.log(e, st);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(
+                                      const SnackBar(
+                                        content:
+                                            Text('Failed to deny request'),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
             Text('Members', style: AppTextStyles.subtitle),
             const SizedBox(height: 8),
             StreamBuilder<List<String>>(
