@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../models/app_notification.dart';
 import '../models/group_schedule.dart';
 import '../models/group.dart';
+import '../models/notification_preferences.dart';
 import 'error_logger.dart';
+import 'notification_service.dart';
 
 /// Names of Firestore collections used for group features.
 class GroupCollections {
@@ -28,9 +31,14 @@ class GroupService {
   /// Firestore instance used for database operations.
   final FirebaseFirestore firestore;
 
+  /// Service for writing notification documents.
+  final NotificationService notificationService;
+
   /// Creates a [GroupService] using [FirebaseFirestore.instance] by default.
-  GroupService({FirebaseFirestore? firestore})
-      : firestore = firestore ?? FirebaseFirestore.instance;
+  GroupService({FirebaseFirestore? firestore, NotificationService? notificationService})
+      : firestore = firestore ?? FirebaseFirestore.instance,
+        notificationService =
+            notificationService ?? NotificationService(firestore: firestore ?? FirebaseFirestore.instance);
 
   /// Create a new group owned by [ownerUid] with [name].
   ///
@@ -118,6 +126,29 @@ class GroupService {
         'name': name,
         'requestedAt': FieldValue.serverTimestamp(),
       });
+
+      final groupSnap = await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .get();
+      final ownerUid = groupSnap.data()?['ownerUid'] as String?;
+      if (ownerUid != null && ownerUid != uid) {
+        final notificationId = firestore
+            .collection(NotificationCollections.users)
+            .doc(ownerUid)
+            .collection(NotificationCollections.notifications)
+            .doc()
+            .id;
+        final notification = AppNotification(
+          id: notificationId,
+          type: NotificationType.friendRequest,
+          fromUid: uid,
+          senderUid: uid,
+          timestamp: DateTime.now(),
+          read: false,
+        );
+        await notificationService.addNotification(ownerUid, notification);
+      }
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;

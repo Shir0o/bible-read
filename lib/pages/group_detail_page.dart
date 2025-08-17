@@ -143,83 +143,88 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     return const Text('No pending requests');
                   }
                   return Column(
-                    children: requests.map((d) {
-                      final data = d.data();
-                      final uid = data['uid'] as String? ?? d.id;
-                      final name = data['name'] as String? ?? '';
-                      return ListTile(
-                        title: Text(name.isEmpty ? uid : name),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.check),
-                              onPressed: () async {
-                                try {
-                                  await widget.groupService.approveJoinRequest(
-                                    groupId: widget.group.id,
-                                    uid: uid,
-                                  );
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Request approved'),
-                                      ),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pending requests: ${requests.length}',
+                        style: AppTextStyles.body,
+                      ),
+                      const SizedBox(height: 8),
+                      ...requests.map((d) {
+                        final data = d.data();
+                        final uid = data['uid'] as String? ?? d.id;
+                        final name = data['name'] as String? ?? '';
+                        return ListTile(
+                          title: Text(name.isEmpty ? uid : name),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.check),
+                                onPressed: () async {
+                                  try {
+                                    await widget.groupService.approveJoinRequest(
+                                      groupId: widget.group.id,
+                                      uid: uid,
                                     );
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Request approved'),
+                                        ),
+                                      );
+                                    }
+                                  } catch (e, st) {
+                                    if (kDebugMode) {
+                                      debugPrint('Failed to approve request: $e');
+                                    }
+                                    ErrorLogger.log(e, st);
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Failed to approve request'),
+                                        ),
+                                      );
+                                    }
                                   }
-                                } catch (e, st) {
-                                  if (kDebugMode) {
-                                    debugPrint('Failed to approve request: $e');
-                                  }
-                                  ErrorLogger.log(e, st);
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(
-                                      const SnackBar(
-                                        content:
-                                            Text('Failed to approve request'),
-                                      ),
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: () async {
+                                  try {
+                                    await widget.groupService.denyJoinRequest(
+                                      groupId: widget.group.id,
+                                      uid: uid,
                                     );
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Request denied'),
+                                        ),
+                                      );
+                                    }
+                                  } catch (e, st) {
+                                    if (kDebugMode) {
+                                      debugPrint('Failed to deny request: $e');
+                                    }
+                                    ErrorLogger.log(e, st);
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Failed to deny request'),
+                                        ),
+                                      );
+                                    }
                                   }
-                                }
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.close),
-                              onPressed: () async {
-                                try {
-                                  await widget.groupService.denyJoinRequest(
-                                    groupId: widget.group.id,
-                                    uid: uid,
-                                  );
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Request denied'),
-                                      ),
-                                    );
-                                  }
-                                } catch (e, st) {
-                                  if (kDebugMode) {
-                                    debugPrint('Failed to deny request: $e');
-                                  }
-                                  ErrorLogger.log(e, st);
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(
-                                      const SnackBar(
-                                        content:
-                                            Text('Failed to deny request'),
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      const SizedBox(height: 16),
+                    ],
                   );
                 },
               ),
