@@ -15,6 +15,7 @@ class RecordingGroupService extends GroupService {
   bool? createdIsPublic;
   String? joinGroupId;
   String? joinUid;
+  String? joinName;
   bool failCreate = false;
   bool failJoin = false;
 
@@ -34,12 +35,17 @@ class RecordingGroupService extends GroupService {
   }
 
   @override
-  Future<void> joinGroup({required String groupId, required String uid}) async {
+  Future<void> joinGroup({
+    required String groupId,
+    required String uid,
+    required String name,
+  }) async {
     if (failJoin) {
       throw FirebaseException(plugin: 'firestore');
     }
     joinGroupId = groupId;
     joinUid = uid;
+    joinName = name;
   }
 }
 
@@ -50,7 +56,9 @@ void main() {
 
   setUp(() {
     firestore = FakeFirebaseFirestore();
-    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1', displayName: 'Test User'),
+        signedIn: true);
   });
 
   Future<void> pumpPage(WidgetTester tester, GroupService service) async {
@@ -134,6 +142,7 @@ void main() {
 
     expect(service.joinGroupId, 'g1');
     expect(service.joinUid, 'u1');
+    expect(service.joinName, 'Test User');
     expect(find.text('Joined group'), findsOneWidget);
   });
 
