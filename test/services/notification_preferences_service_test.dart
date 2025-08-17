@@ -1,7 +1,21 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bible_read/services/notification_preferences_service.dart';
+import 'package:mocktail/mocktail.dart';
+
 import 'package:bible_read/models/notification_preferences.dart';
+import 'package:bible_read/services/notification_preferences_service.dart';
+
+class _MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
+
+class _MockCollectionReference extends Mock
+    implements CollectionReference<Map<String, dynamic>> {}
+
+class _MockDocumentReference extends Mock
+    implements DocumentReference<Map<String, dynamic>> {}
+
+class _MockQuerySnapshot extends Mock
+    implements QuerySnapshot<Map<String, dynamic>> {}
 
 void main() {
   group('NotificationPreferencesService', () {
@@ -41,6 +55,47 @@ void main() {
 
       final prefs = await service.fetchPreferences('u1');
       expect(prefs[NotificationType.dailyReminder], isFalse);
+    });
+
+    test('fetchPreferences caches results', () async {
+      final firestore = _MockFirebaseFirestore();
+      final users = _MockCollectionReference();
+      final userDoc = _MockDocumentReference();
+      final prefsCol = _MockCollectionReference();
+      final snap = _MockQuerySnapshot();
+
+      var reads = 0;
+
+      when(() => firestore.collection('users')).thenReturn(users);
+      when(() => users.doc('u1')).thenReturn(userDoc);
+      when(() => userDoc.collection('notificationPrefs'))
+          .thenReturn(prefsCol);
+      when(() => prefsCol.get()).thenAnswer((_) async {
+        reads++;
+        when(() => snap.docs)
+            .thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[]);
+        return snap;
+      });
+
+      final service = NotificationPreferencesService(firestore: firestore);
+
+      await service.fetchPreferences('u1');
+      await service.fetchPreferences('u1');
+
+      expect(reads, 1);
+    });
+
+    test('non-boolean enabled values default to true', () async {
+      await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('notificationPrefs')
+          .doc('dailyReminder')
+          .set({'enabled': 'yes'});
+
+      final prefs = await service.fetchPreferences('u1');
+
+      expect(prefs[NotificationType.dailyReminder], isTrue);
     });
   });
 }
