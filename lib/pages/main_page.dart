@@ -72,6 +72,9 @@ class _MainPageState extends State<MainPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late final FriendService _friendService;
   late final GroupService _groupService;
+  final GlobalKey<ReadLogPageState> _readLogKey = GlobalKey<ReadLogPageState>();
+  final GlobalKey<LeaderboardPageState> _leaderboardKey =
+      GlobalKey<LeaderboardPageState>();
   late final List<Widget> _pages;
 
   @override
@@ -86,6 +89,7 @@ class _MainPageState extends State<MainPage> {
         functions: FirebaseFunctions.instance,
       ),
       ReadLogPage(
+        key: _readLogKey,
         firestore: widget.firestore,
         auth: widget.auth,
         onSendLikeNotification: widget.sendLikeNotification ??
@@ -132,6 +136,7 @@ class _MainPageState extends State<MainPage> {
             },
       ),
       LeaderboardPage(
+        key: _leaderboardKey,
         firestore: widget.firestore,
         auth: widget.auth,
         friendService: _friendService,
@@ -250,6 +255,11 @@ class _MainPageState extends State<MainPage> {
     setState(() {
       _selectedIndex = index;
     });
+    if (index == 1) {
+      _readLogKey.currentState?.refresh();
+    } else if (index == 2) {
+      _leaderboardKey.currentState?.refresh();
+    }
   }
 
   void _navigateFromMenu(int index) {
@@ -262,6 +272,11 @@ class _MainPageState extends State<MainPage> {
     setState(() {
       _selectedIndex = index;
     });
+    if (index == 1) {
+      _readLogKey.currentState?.refresh();
+    } else if (index == 2) {
+      _leaderboardKey.currentState?.refresh();
+    }
   }
 
   @override
