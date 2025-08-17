@@ -111,7 +111,9 @@ service cloud.firestore {
 
       match /members/{uid} {
         allow read: if request.auth != null;
-        allow create: if isOwnerOrAdmin();
+        allow create: if isOwnerOrAdmin() &&
+          exists(/databases/$(database)/documents/groups/$(groupId)/joinRequests/$(uid)) &&
+          !existsAfter(/databases/$(database)/documents/groups/$(groupId)/joinRequests/$(uid));
         allow delete: if isOwnerOrAdmin();
         allow update: if request.auth.uid == uid || isOwnerOrAdmin();
       }
@@ -119,6 +121,12 @@ service cloud.firestore {
       match /schedule/{date} {
         allow read: if request.auth != null;
         allow write: if isOwnerOrAdmin();
+      }
+
+      match /joinRequests/{uid} {
+        allow create: if request.auth != null && request.auth.uid == uid;
+        allow read: if isOwnerOrAdmin();
+        allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
       }
     }
 
