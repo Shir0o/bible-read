@@ -31,14 +31,21 @@ class GroupService {
 
   /// Create a new group owned by [ownerUid] with [name].
   ///
+  /// [isPublic] controls whether the group is publicly visible.
+  ///
   /// Returns the id of the created group.
   Future<String> createGroup({
     required String ownerUid,
     required String name,
+    bool isPublic = true,
   }) async {
     try {
       final doc = firestore.collection(GroupCollections.groups).doc();
-      await doc.set({'name': name, 'ownerUid': ownerUid});
+      await doc.set({
+        'name': name,
+        'ownerUid': ownerUid,
+        'isPublic': isPublic,
+      });
       await doc.collection(GroupCollections.members).doc(ownerUid).set({
         'uid': ownerUid,
         'role': 'owner',
