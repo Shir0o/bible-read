@@ -206,6 +206,9 @@ class _ReadLogPageState extends State<ReadLogPage> {
     }
   }
 
+  /// Reloads the read log entries.
+  Future<void> refresh() => _loadLogs();
+
   Future<void> _toggleLike(String logUid) async {
     final user = widget.auth.currentUser;
     if (user == null) return;
@@ -527,3 +530,5 @@ class _ReadLogPageState extends State<ReadLogPage> {
     );
   }
 }
+
+typedef ReadLogPageState = _ReadLogPageState;

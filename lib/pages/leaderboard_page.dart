@@ -213,6 +213,14 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     }
   }
 
+  /// Reloads leaderboard data.
+  Future<void> refresh() async {
+    await Future.wait([
+      _loadPublicLeaderboard(),
+      _loadFriendsLeaderboard(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
@@ -308,3 +316,5 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     );
   }
 }
+
+typedef LeaderboardPageState = _LeaderboardPageState;
