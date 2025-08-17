@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -119,22 +120,27 @@ class _GroupsPageState extends State<GroupsPage> {
     }
     setState(() => _inProgress = true);
     try {
-      await widget.groupService
-          .joinGroup(groupId: id, uid: user.uid, name: user.displayName ?? '');
+      await widget.groupService.requestJoin(
+        groupId: id,
+        uid: user.uid,
+        name: user.displayName ?? '',
+      );
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Joined group')));
+        ).showSnackBar(
+          const SnackBar(content: Text('Join request sent')),
+        );
       }
     } catch (e, st) {
       if (kDebugMode) {
-        debugPrint('Failed to join group: $e');
+        debugPrint('Failed to request join: $e');
       }
       ErrorLogger.log(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Failed to join group. Please try again.'),
+            content: Text('Failed to request join. Please try again.'),
           ),
         );
       }
@@ -189,25 +195,41 @@ class _GroupsPageState extends State<GroupsPage> {
                     builder: (context, mySnap) {
                       final joined =
                           mySnap.data?.map((g) => g.id).toSet() ?? <String>{};
-                      return ListView.separated(
-                        itemCount: groups.length,
-                        separatorBuilder: (_, __) => const Divider(height: 0),
-                        itemBuilder: (context, index) {
-                          final g = groups[index];
-                          return ListTile(
-                            title: Text(g.name),
-                            trailing: joined.contains(g.id)
-                                ? const Icon(Icons.check)
-                                : null,
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => GroupDetailPage(
-                                    group: g,
-                                    groupService: widget.groupService,
-                                    auth: widget.auth,
-                                  ),
-                                ),
+                      return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        stream: widget.groupService.firestore
+                            .collectionGroup(GroupCollections.joinRequests)
+                            .where('uid', isEqualTo: user.uid)
+                            .snapshots(),
+                        builder: (context, reqSnap) {
+                          final pending = reqSnap.hasData
+                              ? reqSnap.data!.docs
+                                  .map((d) => d.reference.parent.parent?.id)
+                                  .whereType<String>()
+                                  .toSet()
+                              : <String>{};
+                          return ListView.separated(
+                            itemCount: groups.length,
+                            separatorBuilder: (_, __) => const Divider(height: 0),
+                            itemBuilder: (context, index) {
+                              final g = groups[index];
+                              return ListTile(
+                                title: Text(g.name),
+                                trailing: joined.contains(g.id)
+                                    ? const Icon(Icons.check)
+                                    : pending.contains(g.id)
+                                        ? const Text('Pending')
+                                        : null,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => GroupDetailPage(
+                                        group: g,
+                                        groupService: widget.groupService,
+                                        auth: widget.auth,
+                                      ),
+                                    ),
+                                  );
+                                },
                               );
                             },
                           );
