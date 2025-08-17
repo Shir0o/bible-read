@@ -52,6 +52,7 @@ void main() {
       expect(doc.exists, isTrue);
       expect(doc.data()?['name'], 'Test');
       expect(doc.data()?['ownerUid'], 'u1');
+      expect(doc.data()?['isPublic'], true);
 
       final member = await firestore
           .collection(GroupCollections.groups)
