@@ -3,12 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/widgets/week_streak_calendar.dart';
 import 'package:bible_read/widgets/month_streak_calendar.dart';
 
-void main() {
-  const fixedNow = DateTime(2024, 1, 10);
-  final fixedSunday =
-      fixedNow.subtract(Duration(days: fixedNow.weekday % 7));
-  final fixedMonth = DateTime(fixedNow.year, fixedNow.month);
+final fixedNow = DateTime(2024, 1, 10);
+final fixedSunday = DateTime(2024, 1, 7);
+final fixedMonth = DateTime(2024, 1, 1);
 
+void main() {
   testWidgets('WeekStreakCalendar renders without interactive day cells', (
     tester,
   ) async {
@@ -87,8 +86,8 @@ void main() {
     tester,
   ) async {
     final readDates = {
-      DateTime(fixedNow.year, fixedNow.month, fixedNow.day),
-      DateTime(fixedNow.year, fixedNow.month, fixedNow.day - 1),
+      fixedNow,
+      DateTime(2024, 1, 9),
     };
     await tester.pumpWidget(
       MaterialApp(
@@ -105,8 +104,8 @@ void main() {
     tester,
   ) async {
     final readDates = {
-      DateTime(fixedMonth.year, fixedMonth.month, 1),
-      DateTime(fixedMonth.year, fixedMonth.month, 2),
+      DateTime(2024, 1, 1),
+      DateTime(2024, 1, 2),
     };
     await tester.pumpWidget(
       MaterialApp(
