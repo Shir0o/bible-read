@@ -190,6 +190,17 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
     }
   }
 
+  const dateKey = new Date().toISOString().slice(0, 10);
+  const readDoc = await db
+    .collection('users')
+    .doc(toUid)
+    .collection('reading')
+    .doc(dateKey)
+    .get();
+  if (readDoc.exists && readDoc.data()?.read === true) {
+    return { alreadyRead: true };
+  }
+
   const userDoc = await db.collection('users').doc(toUid).get();
   const token = userDoc.data()?.fcmToken;
   if (token) {

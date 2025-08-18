@@ -448,11 +448,11 @@ void main() {
               'toUid': toUid,
               'fromName': fromName,
             };
-            return false;
+            return NudgeResult.sent;
           },
         );
 
-        final alreadySent = await friendService.nudgeFriend(
+        final result = await friendService.nudgeFriend(
           currentUid: currentUid,
           friendUid: friendUid,
           currentName: currentName,
@@ -464,7 +464,7 @@ void main() {
           'toUid': friendUid,
           'fromName': currentName,
         });
-        expect(alreadySent, isFalse);
+        expect(result, NudgeResult.sent);
       });
     });
 
