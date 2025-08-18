@@ -18,21 +18,21 @@ To run Flutter commands, ensure the local Flutter SDK is configured. Follow the 
 
 ## Cloud Functions
 
-Install Node 20 and run `npm ci` inside the `functions/` directory to set up the dependencies. A typical setup using the NodeSource repository looks like:
+The `functions/` directory is a standalone Node.js project separate from the Flutter app. When working there:
 
 ```bash
+# install Node 20 (example using NodeSource)
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
-cd functions && npm ci
+cd functions
+npm ci
+npm run lint
+npm test
 ```
 
-Run `npm run lint` and `npm test` to ensure the Cloud Functions pass linting and unit tests.
-- Local tests require `functions/serviceAccount.json`; without it the functions tests will fail.
-  This file contains a service account key and must be kept private (ignored by Git).
-
-## Working in `functions/` vs Flutter
-
-The `functions/` directory is a standalone Node project. When modifying files there, run `npm ci`, `npm run lint`, and `npm test` from inside that folder to install dependencies, check code style, and execute the Cloud Functions tests. Keep `node_modules/` out of version control. Everything outside of `functions/` is part of the Flutter application. Edit Dart files from the repository root and use the commands in [Programmatic checks](#programmatic-checks). Avoid mixing Node and Flutter tooling across directories.
+- Keep `functions/node_modules/` out of version control.
+- Local tests require `functions/serviceAccount.json`, which must remain private.
+- Use Node tooling only inside `functions/`; run Flutter commands from the repository root for Dart code.
 
 ## Contribution and style guidelines
 
