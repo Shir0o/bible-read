@@ -49,8 +49,9 @@ export PUB_CACHE="$PUB_CACHE_DIR"
 export PATH="$REPO_ROOT/flutter/bin:$PATH"
 
 flutter --version
-flutter config --no-analytics
-yes | flutter doctor --android-licenses || true
+flutter config --no-analytics &
+(yes | flutter doctor --android-licenses || true) &
+wait
 
 # Use offline mode when caches already exist to skip network downloads
 if [ -d flutter/bin/cache ] && [ -d "$PUB_CACHE_DIR" ]; then
