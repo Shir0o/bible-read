@@ -134,7 +134,7 @@ class _FriendsPageState extends State<FriendsPage> {
                                           ),
                                           onPressed: nudged
                                               ? null
-                                              : () {
+                                              : () async {
                                                   final messenger =
                                                       ScaffoldMessenger.of(
                                                     context,
@@ -142,29 +142,58 @@ class _FriendsPageState extends State<FriendsPage> {
                                                   setState(() {
                                                     _nudgedToday.add(f.uid);
                                                   });
-                                                  messenger.showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text(
-                                                        'Nudge sent',
-                                                      ),
-                                                    ),
-                                                  );
-                                                  widget.friendService
-                                                      .nudgeFriend(
-                                                    currentUid: user.uid,
-                                                    friendUid: f.uid,
-                                                    currentName:
-                                                        user.displayName ??
-                                                            'You',
-                                                  )
-                                                      .catchError((e, st) {
+                                                  try {
+                                                    final result = await widget
+                                                        .friendService
+                                                        .nudgeFriend(
+                                                      currentUid: user.uid,
+                                                      friendUid: f.uid,
+                                                      currentName:
+                                                          user.displayName ??
+                                                              'You',
+                                                    );
+                                                    if (!mounted) return;
+                                                    switch (result) {
+                                                      case NudgeResult
+                                                            .alreadyRead:
+                                                        setState(() {
+                                                          _nudgedToday
+                                                              .remove(f.uid);
+                                                        });
+                                                        messenger.showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text(
+                                                              'Friend already read today',
+                                                            ),
+                                                          ),
+                                                        );
+                                                        break;
+                                                      case NudgeResult
+                                                            .alreadySent:
+                                                        messenger.showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text(
+                                                              'Nudge already sent',
+                                                            ),
+                                                          ),
+                                                        );
+                                                        break;
+                                                      case NudgeResult.sent:
+                                                      default:
+                                                        messenger.showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text(
+                                                              'Nudge sent',
+                                                            ),
+                                                          ),
+                                                        );
+                                                    }
+                                                  } catch (e, st) {
                                                     debugPrint(
                                                       'Failed to send nudge: $e',
                                                     );
                                                     ErrorLogger.log(e, st);
-                                                    if (!mounted) {
-                                                      return false;
-                                                    }
+                                                    if (!mounted) return;
                                                     setState(() {
                                                       _nudgedToday.remove(
                                                         f.uid,
@@ -177,8 +206,7 @@ class _FriendsPageState extends State<FriendsPage> {
                                                         ),
                                                       ),
                                                     );
-                                                    return false;
-                                                  });
+                                                  }
                                                 },
                                         );
                                       },

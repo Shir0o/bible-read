@@ -542,6 +542,49 @@ describe('other cloud functions', () => {
     Object.defineProperty(admin, 'messaging', { value: () => ({ send: async () => {} }), writable: true });
   });
 
+  it('sendNudgeNotification skips if already read today', async () => {
+    const originalFirestore = admin.firestore;
+    const originalMessaging = admin.messaging;
+    let sent = false;
+    const fakeDb = {
+      collection: () => ({
+        doc: () => ({
+          collection: (sub) => ({
+            doc: () => ({
+              get: async () => {
+                if (sub === 'notificationPrefs') {
+                  return { exists: false };
+                }
+                if (sub === 'nudges') {
+                  return { exists: false };
+                }
+                if (sub === 'reading') {
+                  return { exists: true, data: () => ({ read: true }) };
+                }
+                return { exists: false };
+              },
+              set: async () => { sent = true; }
+            })
+          }),
+          get: async () => ({ data: () => ({ fcmToken: 'tokR' }) })
+        })
+      })
+    };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    let captured;
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    Object.defineProperty(admin, 'messaging', { value: () => ({ send: async (m) => { captured = m; } }), configurable: true, writable: true });
+
+    const wrapped = functionsTest.wrap(myFunctions.sendNudgeNotification);
+    const res = await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
+    assert.equal(res.alreadyRead, true);
+    assert.equal(captured, undefined);
+    assert.equal(sent, false);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  });
+
   it('sendNudgeNotification timestamp object without toDate', async () => {
     const originalFirestore = admin.firestore;
     const originalMessaging = admin.messaging;

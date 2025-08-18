@@ -65,11 +65,23 @@ typedef DeleteFriendRequestPairFn = Future<void> Function({
 });
 
 /// Signature for calling the `sendNudgeNotification` Cloud Function.
-typedef SendNudgeNotificationFn = Future<bool> Function({
+typedef SendNudgeNotificationFn = Future<NudgeResult> Function({
   required String fromUid,
   required String toUid,
   required String fromName,
 });
+
+/// Possible outcomes when sending a nudge.
+enum NudgeResult {
+  /// The nudge was sent successfully.
+  sent,
+
+  /// A nudge was already sent today.
+  alreadySent,
+
+  /// The friend already read today.
+  alreadyRead,
+}
 
 /// Provides helper methods for friend request CRUD operations.
 class FriendService {
@@ -134,7 +146,7 @@ class FriendService {
   }
 
   /// Default implementation that invokes the Cloud Function to send a nudge.
-  static Future<bool> _defaultSendNudgeNotification({
+  static Future<NudgeResult> _defaultSendNudgeNotification({
     required String fromUid,
     required String toUid,
     required String fromName,
@@ -146,7 +158,13 @@ class FriendService {
       'fromName': fromName,
     });
     final data = result.data;
-    return data['alreadySent'] is bool ? data['alreadySent'] as bool : false;
+    if (data['alreadyRead'] == true) {
+      return NudgeResult.alreadyRead;
+    }
+    if (data['alreadySent'] == true) {
+      return NudgeResult.alreadySent;
+    }
+    return NudgeResult.sent;
   }
 
   /// Send a friend request from [fromUid] to [toUid].
@@ -312,7 +330,7 @@ class FriendService {
   }
 
   /// Send a nudge notification to [friendUid] from [currentUid].
-  Future<bool> nudgeFriend({
+  Future<NudgeResult> nudgeFriend({
     required String currentUid,
     required String friendUid,
     required String currentName,
