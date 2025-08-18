@@ -75,3 +75,5 @@ If you modify Cloud Functions code in `functions/`, run `npm run lint` and `npm 
 
 In Codex, run the commands in [Programmatic checks](#programmatic-checks). If the full Flutter test suite exceeds the session limit, execute a minimal subset of tests (e.g., `flutter test --no-pub test/widget_test.dart`) or run the full suite locally.
 
+For a one-minute command performing basic checks, see [docs/quick_fix.md](docs/quick_fix.md).
+
