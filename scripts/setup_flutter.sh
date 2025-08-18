@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 if [ ! -d flutter ]; then
-  git clone https://github.com/flutter/flutter.git -b stable flutter
+  git clone --depth 1 https://github.com/flutter/flutter.git -b stable flutter
 fi
 
 export PATH="$REPO_ROOT/flutter/bin:$PATH"
