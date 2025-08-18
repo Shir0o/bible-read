@@ -66,17 +66,20 @@ class DailyNotificationService {
     final prefs = await prefsService.fetchPreferences(user.uid);
     if (!prefs[NotificationType.dailyReminder]) return false;
 
-    final now = tz.TZDateTime.now(tz.local);
+    final nowUtc = DateTime.now().toUtc();
     var scheduled = tz.TZDateTime(
       tz.local,
-      now.year,
-      now.month,
-      now.day,
+      nowUtc.year,
+      nowUtc.month,
+      nowUtc.day,
       time.hour,
       time.minute,
       time.second,
     );
-    if (scheduled.isBefore(now)) {
+    final targetSeconds = time.hour * 3600 + time.minute * 60 + time.second;
+    final nowSeconds = nowUtc.hour * 3600 + nowUtc.minute * 60 + nowUtc.second;
+    // If the scheduled time is not later in the day, roll to the next day.
+    if (targetSeconds <= nowSeconds) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
 
