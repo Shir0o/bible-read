@@ -86,6 +86,33 @@ class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
 
   @override
   Future<String?> getToken({String? vapidKey}) async => token;
+
+  @override
+  Future<NotificationSettings> requestPermission({
+    bool alert = true,
+    bool announcement = false,
+    bool badge = true,
+    bool carPlay = false,
+    bool criticalAlert = false,
+    bool provisional = false,
+    bool sound = true,
+    bool providesAppNotificationSettings = false,
+  }) async {
+    return const NotificationSettings(
+      alert: AppleNotificationSetting.enabled,
+      announcement: AppleNotificationSetting.enabled,
+      authorizationStatus: AuthorizationStatus.authorized,
+      badge: AppleNotificationSetting.enabled,
+      carPlay: AppleNotificationSetting.enabled,
+      lockScreen: AppleNotificationSetting.enabled,
+      notificationCenter: AppleNotificationSetting.enabled,
+      showPreviews: AppleShowPreviewSetting.always,
+      timeSensitive: AppleNotificationSetting.enabled,
+      criticalAlert: AppleNotificationSetting.enabled,
+      sound: AppleNotificationSetting.enabled,
+      providesAppNotificationSettings: AppleNotificationSetting.disabled,
+    );
+  }
 }
 
 class RecordingNotificationService extends DailyNotificationService {
