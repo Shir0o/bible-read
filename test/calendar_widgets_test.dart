@@ -3,6 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/widgets/week_streak_calendar.dart';
 import 'package:bible_read/widgets/month_streak_calendar.dart';
 
+final fixedNow = DateTime(2024, 1, 10);
+final fixedSunday = DateTime(2024, 1, 7);
+final fixedMonth = DateTime(2024, 1, 1);
+
 void main() {
   testWidgets('WeekStreakCalendar renders without interactive day cells', (
     tester,
@@ -11,9 +15,7 @@ void main() {
       MaterialApp(
         home: WeekStreakCalendar(
           readDates: <DateTime>{},
-          sunday: DateTime.now().subtract(
-            Duration(days: DateTime.now().weekday % 7),
-          ),
+          sunday: fixedSunday,
         ),
       ),
     );
@@ -33,9 +35,7 @@ void main() {
       MaterialApp(
         home: WeekStreakCalendar(
           readDates: <DateTime>{},
-          sunday: DateTime.now().subtract(
-            Duration(days: DateTime.now().weekday % 7),
-          ),
+          sunday: fixedSunday,
           showNavigation: false,
         ),
       ),
@@ -52,7 +52,7 @@ void main() {
       MaterialApp(
         home: MonthStreakCalendar(
           readDates: <DateTime>{},
-          month: DateTime(DateTime.now().year, DateTime.now().month),
+          month: fixedMonth,
         ),
       ),
     );
@@ -72,7 +72,7 @@ void main() {
       MaterialApp(
         home: MonthStreakCalendar(
           readDates: <DateTime>{},
-          month: DateTime(DateTime.now().year, DateTime.now().month),
+          month: fixedMonth,
           showNavigation: false,
         ),
       ),
@@ -85,18 +85,15 @@ void main() {
   testWidgets('WeekStreakCalendar highlights provided read dates', (
     tester,
   ) async {
-    final now = DateTime.now();
     final readDates = {
-      DateTime(now.year, now.month, now.day),
-      DateTime(now.year, now.month, now.day - 1),
+      fixedNow,
+      DateTime(2024, 1, 9),
     };
     await tester.pumpWidget(
       MaterialApp(
         home: WeekStreakCalendar(
           readDates: readDates,
-          sunday: DateTime.now().subtract(
-            Duration(days: DateTime.now().weekday % 7),
-          ),
+          sunday: fixedSunday,
         ),
       ),
     );
@@ -106,16 +103,15 @@ void main() {
   testWidgets('MonthStreakCalendar highlights provided read dates', (
     tester,
   ) async {
-    final now = DateTime.now();
     final readDates = {
-      DateTime(now.year, now.month, 1),
-      DateTime(now.year, now.month, 2),
+      DateTime(2024, 1, 1),
+      DateTime(2024, 1, 2),
     };
     await tester.pumpWidget(
       MaterialApp(
         home: MonthStreakCalendar(
           readDates: readDates,
-          month: DateTime(now.year, now.month),
+          month: fixedMonth,
         ),
       ),
     );
