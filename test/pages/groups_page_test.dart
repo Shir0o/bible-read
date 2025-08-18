@@ -13,9 +13,9 @@ class RecordingGroupService extends GroupService {
   String? createdName;
   String? createdOwner;
   bool? createdIsPublic;
-  String? joinGroupId;
-  String? joinUid;
-  String? joinName;
+  String? requestedGroupId;
+  String? requestedUid;
+  String? requestedName;
   bool failCreate = false;
   bool failJoin = false;
 
@@ -35,7 +35,7 @@ class RecordingGroupService extends GroupService {
   }
 
   @override
-  Future<void> joinGroup({
+  Future<void> requestJoin({
     required String groupId,
     required String uid,
     required String name,
@@ -43,9 +43,9 @@ class RecordingGroupService extends GroupService {
     if (failJoin) {
       throw FirebaseException(plugin: 'firestore');
     }
-    joinGroupId = groupId;
-    joinUid = uid;
-    joinName = name;
+    requestedGroupId = groupId;
+    requestedUid = uid;
+    requestedName = name;
   }
 }
 
@@ -140,10 +140,10 @@ void main() {
     await tester.tap(find.text('Join'));
     await tester.pumpAndSettle();
 
-    expect(service.joinGroupId, 'g1');
-    expect(service.joinUid, 'u1');
-    expect(service.joinName, 'Test User');
-    expect(find.text('Joined group'), findsOneWidget);
+    expect(service.requestedGroupId, 'g1');
+    expect(service.requestedUid, 'u1');
+    expect(service.requestedName, 'Test User');
+    expect(find.text('Join request sent'), findsOneWidget);
   });
 
   testWidgets('join group failure shows error', (tester) async {
@@ -160,7 +160,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Failed to join group. Please try again.'),
+      find.text('Failed to request join. Please try again.'),
       findsOneWidget,
     );
   });
