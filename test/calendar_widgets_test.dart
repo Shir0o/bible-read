@@ -20,7 +20,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(WeekStreakCalendar),
-        matching: find.byType(InkWell),
+        matching: find.byType(IconButton),
       ),
       findsNWidgets(2),
     );
@@ -59,7 +59,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(MonthStreakCalendar),
-        matching: find.byType(InkWell),
+        matching: find.byType(IconButton),
       ),
       findsNWidgets(2),
     );
