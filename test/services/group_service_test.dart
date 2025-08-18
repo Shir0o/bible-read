@@ -3,7 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
+import 'package:firebase_core_platform_interface/test.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -595,8 +595,8 @@ void main() {
 
       final svc = GroupService(firestore: mockFs);
 
-      await expectLater(
-          svc.joinGroup(groupId: 'g1', uid: 'u1', name: 'Name'), throwsA(same(err)));
+      await expectLater(svc.joinGroup(groupId: 'g1', uid: 'u1', name: 'Name'),
+          throwsA(same(err)));
 
       verify(() => crash.recordError(err, any(),
           reason: null,
