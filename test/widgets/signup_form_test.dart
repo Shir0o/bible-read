@@ -66,7 +66,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
     await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
     await tester.tap(find.text('Sign Up'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(auth.createCalled, isTrue);
     expect(auth.email, 'user@example.com');
