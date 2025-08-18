@@ -1,7 +1,6 @@
 # Agent instructions
 
-This repository hosts a Flutter application. The code you will usually modify
-lives in the Dart sources under `lib/` and the tests under `test/`.
+This repository hosts a Flutter application. The code you will usually modify lives in the Dart sources under `lib/` and the tests under `test/`.
 
 ## Overview of the codebase
 
@@ -11,26 +10,15 @@ lives in the Dart sources under `lib/` and the tests under `test/`.
   - `lib/firebase_options.dart` configures Firebase and is generated
 - `test/` – unit and widget tests
 
-Some parts of the UI are currently being migrated to a more modular widget
-structure. Focus on the Dart files above rather than the platform specific
-directories (`android/`, `ios/`, etc.). The `flutter/` directory holds the SDK
-and **must not be committed**.
+Some parts of the UI are currently being migrated to a more modular widget structure. Focus on the Dart files above rather than the platform specific directories (`android/`, `ios/`, etc.). The `flutter/` directory holds the SDK and **must not be committed**.
 
 ## Environment setup
 
-To run Flutter commands in this repository, the Codex environment must set up
-the local Flutter SDK. Run the provided script to clone the repository, add the
-SDK to `PATH`, disable analytics, accept Android licenses, and fetch
-dependencies:
-
-```bash
-./scripts/setup_flutter.sh
-```
+To run Flutter commands, ensure the local Flutter SDK is configured. Follow the steps in [Programmatic checks](#programmatic-checks) to set up the SDK and run formatting, analysis, and tests.
 
 ## Cloud Functions
 
-Install Node 20 and run `npm ci` inside the `functions/` directory to set up the
-dependencies. A typical setup using the NodeSource repository looks like:
+Install Node 20 and run `npm ci` inside the `functions/` directory to set up the dependencies. A typical setup using the NodeSource repository looks like:
 
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -44,21 +32,13 @@ Run `npm run lint` and `npm test` to ensure the Cloud Functions pass linting and
 
 ## Working in `functions/` vs Flutter
 
-The `functions/` directory is a standalone Node project. When modifying files
-there, run `npm ci`, `npm run lint`, and `npm test` from inside that folder to
-install dependencies, check code style, and execute the Cloud Functions tests. Keep
-`node_modules/` out of version control. Everything outside of `functions/` is
-part of the Flutter application. Edit Dart files from the repository root and
-use `dart format`, `flutter analyze`, and `flutter test`
-as outlined below. Avoid mixing Node and Flutter tooling across directories.
+The `functions/` directory is a standalone Node project. When modifying files there, run `npm ci`, `npm run lint`, and `npm test` from inside that folder to install dependencies, check code style, and execute the Cloud Functions tests. Keep `node_modules/` out of version control. Everything outside of `functions/` is part of the Flutter application. Edit Dart files from the repository root and use the commands in [Programmatic checks](#programmatic-checks). Avoid mixing Node and Flutter tooling across directories.
 
 ## Contribution and style guidelines
 
-- Format Dart code with `dart format lib test` before committing.
-- Follow the lints defined in `analysis_options.yaml`; run `flutter analyze` to
-  verify there are no warnings.
-- Ensure all relevant tests pass before committing; run `flutter test --no-pub`
-  for Flutter code and `npm run lint` then `npm test` in `functions/` for Cloud Functions changes.
+- Run the commands in [Programmatic checks](#programmatic-checks) before committing.
+- For Cloud Functions changes, run `npm run lint` then `npm test` in `functions/`.
+- Follow the lints defined in `analysis_options.yaml`.
 - Use `const` constructors when possible and prefer camelCase names.
 - Wrap asynchronous work in `try`/`catch` blocks and return `Future<void>`.
 - Document public functions with brief comments.
@@ -69,116 +49,29 @@ Caught exceptions should be recorded using `ErrorLogger.log`. Always pass the st
 
 ### Parts being migrated
 
-The pages in `lib/pages` are gradually being broken into smaller widgets found
-in `lib/widgets`. When adding features prefer creating a widget in the widgets
-folder and composing pages from those widgets.
+The pages in `lib/pages` are gradually being broken into smaller widgets found in `lib/widgets`. When adding features prefer creating a widget in the widgets folder and composing pages from those widgets.
 
 ## Programmatic checks
 
-Run `./scripts/setup_flutter.sh` once so the Flutter SDK is on your `PATH`
-before running lints or tests. After the setup completes, run the following
-commands to format the code, analyze it, and execute all tests:
+Run the following commands to set up the Flutter SDK, format the code, analyze it, and execute all tests:
 
 ```bash
+./scripts/setup_flutter.sh
 dart format lib test
 flutter analyze
 flutter test --no-pub
 ```
 
-If you modify Cloud Functions code in `functions/`, run `npm run lint` and
-`npm test` in that directory to verify linting and tests as well.
-
-If your change does not modify any code (e.g., documentation updates), you may skip running tests.
-
+If you modify Cloud Functions code in `functions/`, run `npm run lint` and `npm test` in that directory to verify linting and tests as well. If your change does not modify any code (e.g., documentation updates), you may skip running tests.
 
 ## Agent workflow
 
 - Explore `README.md` and existing Dart sources for context before editing.
 - Write or update documentation when introducing new features or behaviour.
 - Summarize changes and reference file paths in the PR description.
-- Include a "Testing" section in the PR with the results of running the checks
-  above.
+- Include a "Testing" section in the PR with the results of running the checks above.
 
 ## Running tests in Codex
 
-To run fast, essentials-only tests in Codex:
+In Codex, run the commands in [Programmatic checks](#programmatic-checks). If the full Flutter test suite exceeds the session limit, execute a minimal subset of tests (e.g., `flutter test --no-pub test/widget_test.dart`) or run the full suite locally.
 
-
-1. **Set up Flutter SDK and dependencies** (first time only):
-   ```bash
-   ./scripts/setup_flutter.sh
-   ```
-
-2. **Run tests**:
-   ```bash
-   flutter test --no-pub
-   ```
-   A full run of `flutter test --no-pub` typically exceeds Codex's 1-minute
-   session limit. In such restricted environments, run only a minimal subset
-   of tests (for example, `flutter test --no-pub test/widget_test.dart`) or
-   skip tests here and execute the full suite locally instead.
-
-### Handling environment limit errors
-
-If `flutter test` reports "Flutter tests were not run because the Flutter tool build process exceeded the environment's limits", do the following:
-
-- Run `./scripts/setup_flutter.sh` to pre-cache the SDK.
-- Execute a minimal test subset, e.g. `flutter test --no-pub test/widget_test.dart`.
-- Run the full suite locally or in CI environments with sufficient resources.
-
-
-### Tips for faster runs
-
-- Use `--no-pub` to skip dependency checks when re-running.
-- Only unit/widget tests are run—no emulator/device needed.
-- Cache `.pub-cache/` and `flutter/bin/cache` to avoid re-downloading.
-
-### Quick-fix & 1‑minute safe command
-
-When Codex enforces a ~1 minute execution window, use the command below to
-**format**, **auto-fix lints**, **scope analysis**, and **run only a very small
-set of tests** so it consistently finishes in time:
-
-```bash
-# Linux or CI environments that have GNU `timeout` available
-timeout 55s bash -lc '
-  # 1) Format and apply safe automated fixes
-  dart format lib test
-  dart fix --apply || true
-
-  # 2) Analyze only Dart sources and tests (skip platform dirs) and skip pub
-  flutter analyze lib test --no-pub
-
-  # 3) Run a tiny, fast test slice to stay under 1 minute
-  # Prefer running only changed tests if any were modified in the last commit;
-  # otherwise fall back to a known-fast file.
-  CHANGED_TESTS=$(git diff --name-only --diff-filter=AM HEAD~1 -- test | tr "\n" " ")
-  if [ -n "$CHANGED_TESTS" ]; then
-    flutter test --no-pub $CHANGED_TESTS
-  else
-    flutter test --no-pub test/widget_test.dart
-  fi
-'
-```
-
-**Notes**
-- On macOS local shells without GNU coreutils, install `gtimeout` via Homebrew and
-  replace `timeout` with `gtimeout`.
-- `dart fix --apply` only performs **safe** automatic fixes. If `flutter analyze`
-  still reports issues, follow the hints it prints and commit the manual fixes.
-- Keep slow/integration tests tagged (e.g., `@Tags(['slow'])`) and **exclude**
-  them in fast paths with `-x slow` when needed:
-
-  ```bash
-  flutter test --no-pub -x slow test/widget_test.dart
-  ```
-
-- For PRs, prefer running the **full** suite locally or in CI without the
-  1-minute cap:
-
-  ```bash
-  dart format lib test
-  dart fix --apply
-  flutter analyze
-  flutter test --no-pub
-  ```
