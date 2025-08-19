@@ -49,6 +49,7 @@ npm test
 ## Contribution and style guidelines
 
 - Run the commands in [Programmatic checks](#programmatic-checks) before committing.
+- Ensure new code is formatted with `dart format --fix` and that `flutter analyze` reports no warnings or errors before submission.
 - For Cloud Functions changes, run `npm run lint` then `npm test` in `functions/`.
 - Follow the lints defined in `analysis_options.yaml`.
 - Use `const` constructors when possible and prefer camelCase names.
@@ -68,10 +69,12 @@ The pages in `lib/pages` are gradually being broken into smaller widgets found i
 Run the following commands to format the code, analyze it, and execute all tests:
 
 ```bash
-dart format lib test
+dart format --fix lib test
 flutter analyze
 flutter test --no-pub
 ```
+
+Only commit changes once `flutter analyze` reports no issues.
 
 If you modify Cloud Functions code in `functions/`, run `npm run lint` and `npm test` in that directory to verify linting and tests as well. If your change does not modify any code (e.g., documentation updates), you may skip running tests.
 
