@@ -75,6 +75,34 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> pumpAndNavigate(
+    WidgetTester tester, {
+    required GroupService service,
+    required MockFirebaseAuth auth,
+  }) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => GroupDetailPage(
+                  group: group,
+                  groupService: service,
+                  auth: auth,
+                ),
+              ),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('displays members and schedule', (tester) async {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     final members =
@@ -214,14 +242,14 @@ void main() {
     expect(newDoc.exists, isTrue);
   });
 
-  testWidgets('join button joins public group', (tester) async {
+  testWidgets('join button via navigation joins public group', (tester) async {
     group = const Group(id: 'g1', name: 'Study', ownerUid: 'u1');
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     auth = MockFirebaseAuth(
         mockUser: MockUser(uid: 'u2', displayName: 'User'), signedIn: true);
     final service = RecordingGroupService(firestore: firestore);
 
-    await pumpPage(tester, service: service, auth: auth);
+    await pumpAndNavigate(tester, service: service, auth: auth);
 
     await tester.tap(find.text('Join Group'));
     await tester.pumpAndSettle();
@@ -233,7 +261,8 @@ void main() {
     expect(find.text('Join Group'), findsNothing);
   });
 
-  testWidgets('join button sends request for private group', (tester) async {
+  testWidgets('join button via navigation requests private group',
+      (tester) async {
     group = const Group(
       id: 'g1',
       name: 'Study',
@@ -245,7 +274,7 @@ void main() {
         mockUser: MockUser(uid: 'u2', displayName: 'User'), signedIn: true);
     final service = RecordingGroupService(firestore: firestore);
 
-    await pumpPage(tester, service: service, auth: auth);
+    await pumpAndNavigate(tester, service: service, auth: auth);
 
     await tester.tap(find.text('Join Group'));
     await tester.pumpAndSettle();
@@ -255,14 +284,14 @@ void main() {
     expect(find.text('Join Group'), findsNothing);
   });
 
-  testWidgets('join button failure shows error', (tester) async {
+  testWidgets('join button via navigation failure shows error', (tester) async {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     auth = MockFirebaseAuth(
         mockUser: MockUser(uid: 'u2', displayName: 'User'), signedIn: true);
     final service = RecordingGroupService(firestore: firestore)
       ..failJoin = true;
 
-    await pumpPage(tester, service: service, auth: auth);
+    await pumpAndNavigate(tester, service: service, auth: auth);
 
     await tester.tap(find.text('Join Group'));
     await tester.pumpAndSettle();
