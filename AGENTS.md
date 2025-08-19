@@ -68,6 +68,8 @@ The pages in `lib/pages` are gradually being broken into smaller widgets found i
 
 ## Programmatic checks
 
+For documentation-only changes (e.g., `.md` files), you do not need to run `dart format`, `flutter analyze`, or `flutter test`.
+
 Run the following commands to format the code, analyze it, and execute all tests:
 
 ```bash
@@ -83,7 +85,7 @@ Every file should maintain at least 95% coverage.
 
 Only commit changes once `flutter analyze` reports no issues.
 
-If you modify Cloud Functions code in `functions/`, run `npm run lint` and `npm test` in that directory to verify linting and tests as well. If your change does not modify any code (e.g., documentation updates), you may skip running tests.
+If you modify Cloud Functions code in `functions/`, run `npm run lint` and `npm test` in that directory to verify linting and tests as well.
 
 ## Agent workflow
 
