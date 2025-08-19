@@ -87,71 +87,6 @@ class _GroupsPageState extends State<GroupsPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
     }
   }
-
-  Future<void> _joinGroup() async {
-    final controller = TextEditingController();
-    final user = widget.auth.currentUser;
-    final id = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Join Group'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(labelText: 'Group ID'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(controller.text.trim()),
-              child: const Text('Join'),
-            ),
-          ],
-        );
-      },
-    );
-    if (user == null || id == null || id.isEmpty || !mounted) {
-      controller.dispose();
-      return;
-    }
-    setState(() => _inProgress = true);
-    try {
-      await widget.groupService.requestJoin(
-        groupId: id,
-        uid: user.uid,
-        name: user.displayName ?? '',
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          const SnackBar(content: Text('Join request sent')),
-        );
-      }
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to request join: $e');
-      }
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to request join. Please try again.'),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _inProgress = false);
-      }
-      WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
@@ -160,18 +95,6 @@ class _GroupsPageState extends State<GroupsPage> {
         'Groups',
         leading: const MenuButton(),
         automaticallyImplyLeading: false,
-        actions: [
-          PopupMenuButton<int>(
-            onSelected: (value) {
-              if (value == 0 && !_inProgress) {
-                _joinGroup();
-              }
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem<int>(value: 0, child: Text('Join group')),
-            ],
-          ),
-        ],
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
