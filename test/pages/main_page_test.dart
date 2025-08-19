@@ -481,6 +481,79 @@ void main() {
     expect(calledName, 'Test');
   });
 
+  testWidgets('calls sendCommentNotification when a comment is submitted',
+      (tester) async {
+    bool wasCalled = false;
+    String? calledUid;
+    String? calledName;
+
+    final fakeFirestore = FakeFirebaseFirestore();
+    final commenter =
+        MockUser(uid: 'commenter123', displayName: 'Test Commenter');
+    final auth = MockFirebaseAuth(mockUser: commenter, signedIn: true);
+
+    // Seed Firestore with an owner log entry
+    await fakeFirestore.collection('users').doc('owner456').set({});
+    final now = DateTime.now();
+    final dateKey =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    await fakeFirestore
+        .collection('read_logs')
+        .doc(dateKey)
+        .collection('entries')
+        .doc('owner456')
+        .set({'name': 'Owner User', 'timestamp': Timestamp.now()});
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: fakeFirestore,
+          messaging: FakeFirebaseMessaging(null),
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+          sendCommentNotification: (
+              {required String ownerUid, required String commenterName}) async {
+            wasCalled = true;
+            calledUid = ownerUid;
+            calledName = commenterName;
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Navigate to Feed (ReadLogPage)
+    await tester.tap(find.byIcon(Icons.feed));
+    await tester.pumpAndSettle();
+
+    final ownerLogFinder = find.byWidgetPredicate(
+      (widget) =>
+          widget is ListTile &&
+          widget.title is Text &&
+          (widget.title as Text).data == 'Owner read today!',
+    );
+    expect(ownerLogFinder, findsOneWidget);
+
+    // Open comment drawer
+    await tester.tap(
+      find.descendant(
+        of: ownerLogFinder,
+        matching: find.byIcon(Icons.mode_comment_outlined),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Submit a comment
+    await tester.enterText(find.byType(TextField), 'Nice read');
+    await tester.tap(find.byIcon(Icons.send));
+    await tester.pumpAndSettle();
+
+    expect(wasCalled, isTrue);
+    expect(calledUid, 'owner456');
+    expect(calledName, 'Test');
+  });
+
   testWidgets('shows error page when appCheckFailed is true', (tester) async {
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
