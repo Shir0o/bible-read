@@ -121,6 +121,43 @@ void main() {
     expect(service.id, 'n1');
     expect(find.byType(AchievementsPage), findsOneWidget);
   });
+
+  testWidgets(
+      'shows SnackBar and keeps notification unread on markRead failure',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final service = _FailingService(firestore: firestore);
+    final user = MockUser(uid: 'u4');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('notifications')
+        .doc('n1')
+        .set({
+      'type': NotificationType.like.name,
+      'timestamp': Timestamp.now(),
+      'read': false,
+      'senderUid': 'u5',
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NotificationCenterPage(service: service, auth: auth),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(ListTile));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('Failed to mark notification as read.'), findsOneWidget);
+    final icon = tester.widget<Icon>(find.byIcon(Icons.thumb_up));
+    expect(icon.color, Colors.blue);
+  });
 }
 
 class _RecordingNotificationsService extends NotificationService {
@@ -147,5 +184,14 @@ class _RecordingService extends NotificationService {
     called = true;
     this.uid = uid;
     id = notificationId;
+  }
+}
+
+class _FailingService extends NotificationService {
+  _FailingService({required super.firestore});
+
+  @override
+  Future<void> markRead(String uid, String notificationId) async {
+    throw Exception('markRead failed');
   }
 }
