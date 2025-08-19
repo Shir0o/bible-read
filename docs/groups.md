@@ -4,7 +4,7 @@ Reading groups allow multiple users to follow a shared Bible plan. The data is s
 
 ## Creating and Joining
 
-Users create a group in the app which generates a unique group identifier. The creator shares this ID so others can join. When a user enters the ID, a membership document is added under the group's `members` subcollection.
+Users can create a group from the app. All available groups are listed on the Groups page, and opening a group shows a **Join Group** button on the detail page. Joining a public group immediately adds the user as a member, while private groups send a join request for the owner to approve.
 
 ## Collections
 
