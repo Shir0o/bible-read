@@ -82,6 +82,12 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
+
+  @visibleForTesting
+  int get selectedIndex => _selectedIndex;
+
+  @visibleForTesting
+  void onItemTapped(int index) => _onItemTapped(index);
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late final FriendService _friendService;
   late final GroupService _groupService;
