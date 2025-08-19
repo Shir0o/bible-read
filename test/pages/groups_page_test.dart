@@ -29,7 +29,6 @@ class RecordingGroupService extends GroupService {
     createdIsPublic = isPublic;
     return 'gid';
   }
-
 }
 
 void main() {
@@ -40,8 +39,9 @@ void main() {
   setUp(() {
     firestore = FakeFirebaseFirestore();
     auth = MockFirebaseAuth(
-        mockUser: MockUser(uid: 'u1', displayName: 'Test User'),
-        signedIn: true);
+      mockUser: MockUser(uid: 'u1', displayName: 'Test User'),
+      signedIn: true,
+    );
   });
 
   Future<void> pumpPage(WidgetTester tester, GroupService service) async {
@@ -64,10 +64,10 @@ void main() {
         .collection('members')
         .doc('m1')
         .set({
-      'uid': 'u1',
-      'role': 'owner',
-      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
-    });
+          'uid': 'u1',
+          'role': 'owner',
+          'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+        });
     await firestore.collection('groups').doc('g2').set({
       'name': 'Other',
       'ownerUid': 'u2',
@@ -77,6 +77,45 @@ void main() {
 
     expect(find.text('Study'), findsOneWidget);
     expect(find.text('Other'), findsOneWidget);
+  });
+
+  testWidgets('shows joined and pending indicators', (tester) async {
+    await firestore.collection('groups').doc('g1').set({
+      'name': 'Study',
+      'ownerUid': 'u1',
+    });
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u1')
+        .set({
+          'uid': 'u1',
+          'role': 'member',
+          'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+        });
+    await firestore.collection('groups').doc('g2').set({
+      'name': 'Other',
+      'ownerUid': 'u2',
+    });
+    await firestore
+        .collection('groups')
+        .doc('g2')
+        .collection('joinRequests')
+        .doc('u1')
+        .set({'uid': 'u1'});
+
+    await pumpPage(tester, GroupService(firestore: firestore));
+
+    final joinedTile = tester.widget<ListTile>(
+      find.widgetWithText(ListTile, 'Study'),
+    );
+    expect((joinedTile.trailing as Icon).icon, Icons.check);
+
+    final pendingTile = tester.widget<ListTile>(
+      find.widgetWithText(ListTile, 'Other'),
+    );
+    expect((pendingTile.trailing as Text).data, 'Pending');
   });
 
   testWidgets('create group success shows snackbar', (tester) async {
@@ -110,5 +149,4 @@ void main() {
       findsOneWidget,
     );
   });
-
 }
