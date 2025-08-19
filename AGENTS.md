@@ -28,6 +28,8 @@ flutter pub get
 
 The `flutter` directory holds the SDK and **must not be committed**. To speed up repeated runs you may preserve the `flutter/bin/cache` and `.pub-cache` directories by setting `FLUTTER_BIN_CACHE` and `PUB_CACHE_SRC` to cached locations and copying them back after the commands above.
 
+For documentation-only updates (e.g., changes limited to `.md` files), you do not need to clone this repository, install Flutter, or run any of the setup commands in this section.
+
 ## Cloud Functions
 
 The `functions/` directory is a standalone Node.js project separate from the Flutter app. When working there:
