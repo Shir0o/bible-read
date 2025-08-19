@@ -70,13 +70,12 @@ The pages in `lib/pages` are gradually being broken into smaller widgets found i
 
 For documentation-only changes (e.g., `.md` files), you do not need to run `dart format`, `flutter analyze`, or `flutter test`.
 
-Run the following commands to format the code, analyze it, and execute all tests:
+Run the following commands to format the code, analyze it, execute all tests, and generate coverage:
 
 ```bash
 dart format --fix lib test
 flutter analyze
-flutter test --no-pub
-flutter test --coverage
+flutter test --coverage --no-pub
 lcov --remove coverage/lcov.info 'lib/firebase_options.dart' -o coverage/lcov.info
 lcov --list coverage/lcov.info
 ```
