@@ -72,7 +72,12 @@ Run the following commands to format the code, analyze it, and execute all tests
 dart format --fix lib test
 flutter analyze
 flutter test --no-pub
+flutter test --coverage
+lcov --remove coverage/lcov.info 'lib/firebase_options.dart' -o coverage/lcov.info
+lcov --list coverage/lcov.info
 ```
+
+Every file should maintain at least 95% coverage.
 
 Only commit changes once `flutter analyze` reports no issues.
 
