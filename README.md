@@ -108,10 +108,14 @@ This project is a starting point for a Flutter application.
     cd bible-read
     ```
 
-2.  Set up the Flutter SDK and fetch dependencies (adds Flutter to your `PATH` for this session):
+2.  Install the Flutter SDK and fetch dependencies:
 
     ```bash
-    source scripts/setup_flutter.sh
+    git clone --depth 1 https://github.com/flutter/flutter.git -b stable flutter
+    export PUB_CACHE="$PWD/.pub-cache"
+    export PATH="$PWD/flutter/bin:$PATH"
+    flutter config --no-analytics
+    flutter pub get
     ```
 
 3.  Run the app:
@@ -129,17 +133,19 @@ launches to log in with those credentials.
 ## Installing Flutter
 
 The integration tests bundled with this project require a local Flutter SDK.
-Run the setup script to download the SDK and any dependencies:
+Clone the SDK into the repository and add it to your path:
 
 ```bash
-source scripts/setup_flutter.sh
+git clone --depth 1 https://github.com/flutter/flutter.git -b stable flutter
+export PUB_CACHE="$PWD/.pub-cache"
+export PATH="$PWD/flutter/bin:$PATH"
+flutter config --no-analytics
+flutter pub get
 ```
-
-If you run the script without `source`, add Flutter to your `PATH` manually using the command printed at the end of the setup script.
 
 ## Development
 
-Run the setup script once to install Flutter. After making changes, run the
+Install Flutter as shown above. After making changes, run the
 following programmatic checks to format, analyze, and test your code:
 
 ```bash
