@@ -41,6 +41,12 @@ class MainPage extends StatefulWidget {
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
   final DailyNotificationService Function() dailyNotificationServiceProvider;
+  final LeaderboardPage Function({
+    Key? key,
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+    FriendService? friendService,
+  }) leaderboardPageBuilder;
   final SendLikeNotification? sendLikeNotification;
   final SendCommentNotification? sendCommentNotification;
   final FirebaseMessaging messaging;
@@ -53,6 +59,12 @@ class MainPage extends StatefulWidget {
     GoogleSignIn Function()? googleSignInProvider,
     FirebaseMessaging? messaging,
     DailyNotificationService Function()? dailyNotificationServiceProvider,
+    LeaderboardPage Function({
+      Key? key,
+      FirebaseFirestore? firestore,
+      FirebaseAuth? auth,
+      FriendService? friendService,
+    })? leaderboardPageBuilder,
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
@@ -61,7 +73,8 @@ class MainPage extends StatefulWidget {
         messaging = messaging ?? FirebaseMessaging.instance,
         googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
         dailyNotificationServiceProvider =
-            dailyNotificationServiceProvider ?? DailyNotificationService.new;
+            dailyNotificationServiceProvider ?? DailyNotificationService.new,
+        leaderboardPageBuilder = leaderboardPageBuilder ?? LeaderboardPage.new;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -135,7 +148,7 @@ class _MainPageState extends State<MainPage> {
               });
             },
       ),
-      LeaderboardPage(
+      widget.leaderboardPageBuilder(
         key: _leaderboardKey,
         firestore: widget.firestore,
         auth: widget.auth,
