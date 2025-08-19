@@ -14,7 +14,19 @@ Some parts of the UI are currently being migrated to a more modular widget struc
 
 ## Environment setup
 
-To run Flutter commands, ensure the local Flutter SDK is configured. Follow the steps in [Programmatic checks](#programmatic-checks) to set up the SDK and run formatting, analysis, and tests.
+Clone the Flutter SDK and add it to the path before running checks:
+
+```bash
+git clone --depth 1 https://github.com/flutter/flutter.git -b stable flutter
+export PUB_CACHE="$PWD/.pub-cache"
+export PATH="$PWD/flutter/bin:$PATH"
+flutter --version
+flutter config --no-analytics
+yes | flutter doctor --android-licenses || true
+flutter pub get
+```
+
+The `flutter` directory holds the SDK and **must not be committed**. To speed up repeated runs you may preserve the `flutter/bin/cache` and `.pub-cache` directories by setting `FLUTTER_BIN_CACHE` and `PUB_CACHE_SRC` to cached locations and copying them back after the commands above.
 
 ## Cloud Functions
 
@@ -53,10 +65,9 @@ The pages in `lib/pages` are gradually being broken into smaller widgets found i
 
 ## Programmatic checks
 
-Run the following commands to set up the Flutter SDK, format the code, analyze it, and execute all tests:
+Run the following commands to format the code, analyze it, and execute all tests:
 
 ```bash
-./scripts/setup_flutter.sh
 dart format lib test
 flutter analyze
 flutter test --no-pub
