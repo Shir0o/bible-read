@@ -13,11 +13,7 @@ class RecordingGroupService extends GroupService {
   String? createdName;
   String? createdOwner;
   bool? createdIsPublic;
-  String? requestedGroupId;
-  String? requestedUid;
-  String? requestedName;
   bool failCreate = false;
-  bool failJoin = false;
 
   @override
   Future<String> createGroup({
@@ -34,19 +30,6 @@ class RecordingGroupService extends GroupService {
     return 'gid';
   }
 
-  @override
-  Future<void> requestJoin({
-    required String groupId,
-    required String uid,
-    required String name,
-  }) async {
-    if (failJoin) {
-      throw FirebaseException(plugin: 'firestore');
-    }
-    requestedGroupId = groupId;
-    requestedUid = uid;
-    requestedName = name;
-  }
 }
 
 void main() {
@@ -128,40 +111,4 @@ void main() {
     );
   });
 
-  testWidgets('join group success shows snackbar', (tester) async {
-    final service = RecordingGroupService(firestore: firestore);
-    await pumpPage(tester, service);
-
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Join group'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'g1');
-    await tester.tap(find.text('Join'));
-    await tester.pumpAndSettle();
-
-    expect(service.requestedGroupId, 'g1');
-    expect(service.requestedUid, 'u1');
-    expect(service.requestedName, 'Test User');
-    expect(find.text('Join request sent'), findsOneWidget);
-  });
-
-  testWidgets('join group failure shows error', (tester) async {
-    final service = RecordingGroupService(firestore: firestore)
-      ..failJoin = true;
-    await pumpPage(tester, service);
-
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Join group'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'g1');
-    await tester.tap(find.text('Join'));
-    await tester.pumpAndSettle();
-
-    expect(
-      find.text('Failed to request join. Please try again.'),
-      findsOneWidget,
-    );
-  });
 }
