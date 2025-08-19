@@ -14,6 +14,10 @@ class RecordingGroupService extends GroupService {
 
   bool failUpdate = false;
   GroupSchedule? lastSchedule;
+  bool failJoin = false;
+  String? joinedGroupId;
+  String? joinedUid;
+  String? joinedName;
 
   @override
   Future<void> updateSchedule({
@@ -25,6 +29,21 @@ class RecordingGroupService extends GroupService {
     }
     lastSchedule = schedule;
     await super.updateSchedule(groupId: groupId, schedule: schedule);
+  }
+
+  @override
+  Future<void> joinGroup({
+    required String groupId,
+    required String uid,
+    required String name,
+  }) async {
+    joinedGroupId = groupId;
+    joinedUid = uid;
+    joinedName = name;
+    if (failJoin) {
+      throw FirebaseException(plugin: 'firestore');
+    }
+    await super.joinGroup(groupId: groupId, uid: uid, name: name);
   }
 }
 
@@ -193,5 +212,63 @@ void main() {
         .get();
     expect(oldDoc.exists, isFalse);
     expect(newDoc.exists, isTrue);
+  });
+
+  testWidgets('join button joins public group', (tester) async {
+    group = const Group(id: 'g1', name: 'Study', ownerUid: 'u1');
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u2', displayName: 'User'), signedIn: true);
+    final service = RecordingGroupService(firestore: firestore);
+
+    await pumpPage(tester, service: service, auth: auth);
+
+    await tester.tap(find.text('Join Group'));
+    await tester.pumpAndSettle();
+
+    expect(service.joinedGroupId, 'g1');
+    expect(service.joinedUid, 'u2');
+    expect(service.joinedName, 'User');
+    expect(find.text('Joined group'), findsOneWidget);
+    expect(find.text('Join Group'), findsNothing);
+  });
+
+  testWidgets('join button sends request for private group', (tester) async {
+    group = const Group(
+      id: 'g1',
+      name: 'Study',
+      ownerUid: 'u1',
+      isPublic: false,
+    );
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u2', displayName: 'User'), signedIn: true);
+    final service = RecordingGroupService(firestore: firestore);
+
+    await pumpPage(tester, service: service, auth: auth);
+
+    await tester.tap(find.text('Join Group'));
+    await tester.pumpAndSettle();
+
+    expect(service.joinedGroupId, 'g1');
+    expect(find.text('Join request sent'), findsOneWidget);
+    expect(find.text('Join Group'), findsNothing);
+  });
+
+  testWidgets('join button failure shows error', (tester) async {
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u2', displayName: 'User'), signedIn: true);
+    final service = RecordingGroupService(firestore: firestore)
+      ..failJoin = true;
+
+    await pumpPage(tester, service: service, auth: auth);
+
+    await tester.tap(find.text('Join Group'));
+    await tester.pumpAndSettle();
+
+    expect(service.joinedGroupId, 'g1');
+    expect(find.text('Failed to join group'), findsOneWidget);
+    expect(find.text('Join Group'), findsOneWidget);
   });
 }

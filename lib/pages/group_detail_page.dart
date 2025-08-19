@@ -40,6 +40,7 @@ class GroupDetailPage extends StatefulWidget {
 class _GroupDetailPageState extends State<GroupDetailPage> {
   List<GroupSchedule>? _scheduleOverride;
   List<GroupSchedule>? _latestSchedule;
+  bool _joinPending = false;
 
   Future<void> _editSchedule([GroupSchedule? schedule]) async {
     final result = await Navigator.of(context).push<GroupSchedule>(
@@ -122,6 +123,63 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
+            if (!isOwner && user != null)
+              StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: widget.groupService.firestore
+                    .collection(GroupCollections.groups)
+                    .doc(widget.group.id)
+                    .collection(GroupCollections.members)
+                    .doc(user.uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final isMember = snapshot.data?.exists ?? false;
+                  if (!isMember && !_joinPending) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            try {
+                              await widget.groupService.joinGroup(
+                                groupId: widget.group.id,
+                                uid: user.uid,
+                                name: user.displayName ?? '',
+                              );
+                              if (mounted) {
+                                setState(() {
+                                  _joinPending = true;
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(widget.group.isPublic
+                                        ? 'Joined group'
+                                        : 'Join request sent'),
+                                  ),
+                                );
+                              }
+                            } catch (e, st) {
+                              if (kDebugMode) {
+                                debugPrint('Failed to join group: $e');
+                              }
+                              ErrorLogger.log(e, st);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Failed to join group'),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          child: const Text('Join Group'),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
             if (isOwner) ...[
               Text('Join Requests', style: AppTextStyles.subtitle),
               const SizedBox(height: 8),
@@ -163,12 +221,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                 icon: const Icon(Icons.check),
                                 onPressed: () async {
                                   try {
-                                    await widget.groupService.approveJoinRequest(
+                                    await widget.groupService
+                                        .approveJoinRequest(
                                       groupId: widget.group.id,
                                       uid: uid,
                                     );
                                     if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         const SnackBar(
                                           content: Text('Request approved'),
                                         ),
@@ -176,13 +236,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     }
                                   } catch (e, st) {
                                     if (kDebugMode) {
-                                      debugPrint('Failed to approve request: $e');
+                                      debugPrint(
+                                          'Failed to approve request: $e');
                                     }
                                     ErrorLogger.log(e, st);
                                     if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         const SnackBar(
-                                          content: Text('Failed to approve request'),
+                                          content:
+                                              Text('Failed to approve request'),
                                         ),
                                       );
                                     }
@@ -198,7 +261,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                       uid: uid,
                                     );
                                     if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         const SnackBar(
                                           content: Text('Request denied'),
                                         ),
@@ -210,9 +274,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     }
                                     ErrorLogger.log(e, st);
                                     if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         const SnackBar(
-                                          content: Text('Failed to deny request'),
+                                          content:
+                                              Text('Failed to deny request'),
                                         ),
                                       );
                                     }
