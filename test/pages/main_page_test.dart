@@ -575,9 +575,7 @@ void main() {
     expect(find.byType(ResponsiveScaffold), findsNothing);
   });
 
-  testWidgets('navigation is disabled when appCheckFailed is true', (
-    tester,
-  ) async {
+  testWidgets('ignores navigation when App Check fails', (tester) async {
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
       signedIn: true,
@@ -599,13 +597,13 @@ void main() {
 
     // Record the state and attempt to select the Feed destination.
     final state = tester.state(find.byType(MainPage)) as dynamic;
-    expect(state.selectedIndex, 0);
+    expect(state.selectedIndex, equals(0));
     state.onItemTapped(1);
     await tester.pump();
 
     // Navigation should have no effect.
     expect(find.textContaining('App verification failed'), findsOneWidget);
-    expect(state.selectedIndex, 0);
+    expect(state.selectedIndex, equals(0));
   });
 
   testWidgets('signing out returns to profile and restricts navigation', (
