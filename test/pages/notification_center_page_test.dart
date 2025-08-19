@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bible_read/models/notification_preferences.dart';
+import 'package:bible_read/models/app_notification.dart';
 import 'package:bible_read/pages/notification_center_page.dart';
 import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/pages/achievements_page.dart';
@@ -70,6 +71,22 @@ void main() {
     expect(find.text('No notifications'), findsOneWidget);
   });
 
+  testWidgets('prompts sign in when user is not authenticated', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final service = _RecordingNotificationsService(firestore: firestore);
+    final auth = MockFirebaseAuth(signedIn: false);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NotificationCenterPage(service: service, auth: auth),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Please sign in'), findsOneWidget);
+    expect(service.subscribed, isFalse);
+  });
+
   testWidgets('tapping achievement marks read and opens achievements',
       (tester) async {
     final firestore = FakeFirebaseFirestore();
@@ -104,6 +121,18 @@ void main() {
     expect(service.id, 'n1');
     expect(find.byType(AchievementsPage), findsOneWidget);
   });
+}
+
+class _RecordingNotificationsService extends NotificationService {
+  _RecordingNotificationsService({required super.firestore});
+
+  bool subscribed = false;
+
+  @override
+  Stream<List<AppNotification>> notifications(String uid) {
+    subscribed = true;
+    return const Stream.empty();
+  }
 }
 
 class _RecordingService extends NotificationService {
