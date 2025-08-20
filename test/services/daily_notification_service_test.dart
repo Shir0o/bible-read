@@ -77,9 +77,9 @@ void main() {
       );
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-            timezoneChannel,
-            (MethodCall call) async => 'America/Detroit',
-          );
+        timezoneChannel,
+        (MethodCall call) async => 'America/Detroit',
+      );
       tz.setLocalLocation(tz.getLocation('UTC'));
       crashlytics = MockCrashlytics();
     });
