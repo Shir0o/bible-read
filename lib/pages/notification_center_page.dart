@@ -9,6 +9,7 @@ import '../services/error_logger.dart';
 import '../services/notification_service.dart';
 import 'achievements_page.dart';
 import 'friend_requests_page.dart';
+import '../services/friend_service.dart';
 import '../widgets/common_styles.dart';
 
 /// Page showing a list of notifications for the current user.
@@ -151,6 +152,10 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
           MaterialPageRoute(
             builder: (_) => FriendRequestsPage(
               auth: widget.auth,
+              friendService: FriendService(
+                firestore: widget.service.firestore,
+                notificationService: widget.service,
+              ),
             ),
           ),
         );

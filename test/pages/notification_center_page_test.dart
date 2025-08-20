@@ -11,6 +11,7 @@ import 'package:bible_read/models/app_notification.dart';
 import 'package:bible_read/pages/notification_center_page.dart';
 import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/pages/achievements_page.dart';
+import 'package:bible_read/pages/friend_requests_page.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -143,6 +144,41 @@ void main() {
     expect(service.uid, user.uid);
     expect(service.id, 'n1');
     expect(find.byType(AchievementsPage), findsOneWidget);
+  });
+
+  testWidgets('tapping friend request marks read and opens friend requests',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final service = _RecordingService(firestore: firestore);
+    final user = MockUser(uid: 'u6');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('notifications')
+        .doc('n1')
+        .set({
+      'type': NotificationType.friendRequest.name,
+      'timestamp': Timestamp.now(),
+      'read': false,
+      'senderUid': 'u7',
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NotificationCenterPage(service: service, auth: auth),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(ListTile));
+    await tester.pumpAndSettle();
+
+    expect(service.called, isTrue);
+    expect(service.uid, user.uid);
+    expect(service.id, 'n1');
+    expect(find.byType(FriendRequestsPage), findsOneWidget);
   });
 
   testWidgets(
