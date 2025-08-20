@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
@@ -69,6 +71,27 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No notifications'), findsOneWidget);
+  });
+
+  testWidgets('shows loading indicator before notifications arrive',
+      (tester) async {
+    final controller = StreamController<List<AppNotification>>();
+    addTearDown(controller.close);
+    final service = _StreamNotificationsService(
+      stream: controller.stream,
+      firestore: FakeFirebaseFirestore(),
+    );
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u5'), signedIn: true);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NotificationCenterPage(service: service, auth: auth),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 
   testWidgets('prompts sign in when user is not authenticated', (tester) async {
@@ -158,6 +181,18 @@ void main() {
     final icon = tester.widget<Icon>(find.byIcon(Icons.thumb_up));
     expect(icon.color, Colors.blue);
   });
+}
+
+class _StreamNotificationsService extends NotificationService {
+  _StreamNotificationsService({
+    required this.stream,
+    required super.firestore,
+  });
+
+  final Stream<List<AppNotification>> stream;
+
+  @override
+  Stream<List<AppNotification>> notifications(String uid) => stream;
 }
 
 class _RecordingNotificationsService extends NotificationService {
