@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/comment.dart';
+import '../services/error_logger.dart';
 import 'comment_section.dart';
 
 /// Displays comments in a modal bottom sheet.
@@ -42,9 +43,7 @@ class CommentDrawer extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom,
-        ),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.33,
@@ -92,10 +91,11 @@ class _CommentDrawerState extends State<CommentDrawer> {
         }
       });
       return saved;
-    } catch (e) {
+    } catch (e, st) {
       if (mounted) {
         setState(() => _comments.remove(temp));
       }
+      await ErrorLogger.log(e, st);
       rethrow;
     }
   }
@@ -112,8 +112,6 @@ class _CommentDrawerState extends State<CommentDrawer> {
       ),
     );
 
-    return SafeArea(
-      child: content,
-    );
+    return SafeArea(child: content);
   }
 }
