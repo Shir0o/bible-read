@@ -1,3 +1,4 @@
+// ignore_for_file: subtype_of_sealed_class
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -68,8 +69,7 @@ void main() {
 
       when(() => firestore.collection('users')).thenReturn(users);
       when(() => users.doc('u1')).thenReturn(userDoc);
-      when(() => userDoc.collection('notificationPrefs'))
-          .thenReturn(prefsCol);
+      when(() => userDoc.collection('notificationPrefs')).thenReturn(prefsCol);
       when(() => prefsCol.get()).thenAnswer((_) async {
         reads++;
         when(() => snap.docs)

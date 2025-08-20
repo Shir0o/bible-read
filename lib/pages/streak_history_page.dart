@@ -19,8 +19,8 @@ class StreakHistoryPage extends StatefulWidget {
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<StreakHistoryPage> createState() => _StreakHistoryPageState();
@@ -91,17 +91,14 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
 
     try {
       final userDocRef = widget.firestore.collection('users').doc(uid);
-      final summaryDoc = await userDocRef
-          .collection('summary')
-          .doc('data')
-          .get();
+      final summaryDoc =
+          await userDocRef.collection('summary').doc('data').get();
       final data = summaryDoc.data() ?? {};
 
       final now = DateTime.now();
       final bool isCurrentWeek =
           _period == _Period.week && _periodStart == _startOfWeek(now);
-      final bool isCurrentMonth =
-          _period == _Period.month &&
+      final bool isCurrentMonth = _period == _Period.month &&
           _periodStart.year == now.year &&
           _periodStart.month == now.month;
 
@@ -118,7 +115,8 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
         // contain stale entries so we filter them out first.
         dates = dates.where((d) {
           final parsed = DateTime.tryParse(d);
-          return parsed != null && !parsed.isBefore(_periodStart) &&
+          return parsed != null &&
+              !parsed.isBefore(_periodStart) &&
               !parsed.isAfter(end);
         }).toList();
         if (dates.length == 7) {
@@ -146,7 +144,8 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
         // Apply the same windowing to the cached month data.
         dates = dates.where((d) {
           final parsed = DateTime.tryParse(d);
-          return parsed != null && !parsed.isBefore(_periodStart) &&
+          return parsed != null &&
+              !parsed.isBefore(_periodStart) &&
               !parsed.isAfter(end);
         }).toList();
         final daysInMonth = end.day;
@@ -197,11 +196,9 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
     final readingCollection = userDocRef.collection('reading');
     final futures = <Future<DocumentSnapshot<Map<String, dynamic>>>>[];
     final dates = <DateTime>[];
-    for (
-      DateTime day = start;
-      !day.isAfter(end);
-      day = day.add(const Duration(days: 1))
-    ) {
+    for (DateTime day = start;
+        !day.isAfter(end);
+        day = day.add(const Duration(days: 1))) {
       final key =
           '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
       futures.add(readingCollection.doc(key).get());

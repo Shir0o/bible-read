@@ -15,7 +15,7 @@ void main() {
     });
 
     test('friend request rules restrict fields', () {
-      expect(rulesText.contains("friendRequestsSent/{toUid} {"), isTrue);
+      expect(rulesText.contains('friendRequestsSent/{toUid} {'), isTrue);
       expect(rulesText.contains("hasOnly(['timestamp'])"), isTrue);
       expect(rulesText.contains("hasOnly(['timestamp', 'name'])"), isTrue);
     });
