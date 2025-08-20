@@ -87,6 +87,7 @@ class _GroupsPageState extends State<GroupsPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
@@ -132,7 +133,8 @@ class _GroupsPageState extends State<GroupsPage> {
                               : <String>{};
                           return ListView.separated(
                             itemCount: groups.length,
-                            separatorBuilder: (_, __) => const Divider(height: 0),
+                            separatorBuilder: (_, __) =>
+                                const Divider(height: 0),
                             itemBuilder: (context, index) {
                               final g = groups[index];
                               return ListTile(

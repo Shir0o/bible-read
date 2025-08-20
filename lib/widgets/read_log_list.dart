@@ -64,7 +64,7 @@ class ReadLogList extends StatelessWidget {
                     const maxToShow = 3;
                     final displayText = likeNames.length > maxToShow
                         ? '${likeNames.take(maxToShow).join(", ")} +${likeNames.length - maxToShow} more'
-                        : likeNames.join(", ");
+                        : likeNames.join(', ');
 
                     return Text('Liked by $displayText');
                   }(),
