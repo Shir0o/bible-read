@@ -13,8 +13,53 @@ import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/pages/achievements_page.dart';
 import 'package:bible_read/pages/friend_requests_page.dart';
 
+Future<void> _renderType(WidgetTester tester, NotificationType type) async {
+  final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u0'), signedIn: true);
+  final notification = AppNotification(
+    id: 'id1',
+    type: type,
+    timestamp: DateTime.now(),
+    read: false,
+  );
+  final service = _SingleNotificationService(notification: notification);
+  await tester.pumpWidget(
+    MaterialApp(
+      home: NotificationCenterPage(service: service, auth: auth),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('maps notification types to icons and text', (tester) async {
+    final iconMap = {
+      NotificationType.like: Icons.thumb_up,
+      NotificationType.nudge: Icons.notifications_active,
+      NotificationType.signup: Icons.person_add,
+      NotificationType.achievement: Icons.emoji_events,
+      NotificationType.friendRequest: Icons.person_add_alt,
+      NotificationType.dailyReminder: Icons.calendar_today,
+      NotificationType.comment: Icons.comment,
+    };
+
+    final textMap = {
+      NotificationType.like: 'Someone liked your reading',
+      NotificationType.nudge: 'You were nudged to read',
+      NotificationType.signup: 'New signup',
+      NotificationType.achievement: 'Achievement unlocked',
+      NotificationType.friendRequest: 'You received a friend request',
+      NotificationType.dailyReminder: 'Daily reading reminder',
+      NotificationType.comment: 'New comment on your reading',
+    };
+
+    for (final type in NotificationType.values) {
+      await _renderType(tester, type);
+      expect(find.byIcon(iconMap[type]!), findsOneWidget);
+      expect(find.text(textMap[type]!), findsOneWidget);
+    }
+  });
 
   testWidgets('renders notifications from service', (tester) async {
     final firestore = FakeFirebaseFirestore();
@@ -265,4 +310,15 @@ class _FailingService extends NotificationService {
   Future<void> markRead(String uid, String notificationId) async {
     throw Exception('markRead failed');
   }
+}
+
+class _SingleNotificationService extends NotificationService {
+  _SingleNotificationService({required this.notification})
+      : super(firestore: FakeFirebaseFirestore());
+
+  final AppNotification notification;
+
+  @override
+  Stream<List<AppNotification>> notifications(String uid) =>
+      Stream.value([notification]);
 }
