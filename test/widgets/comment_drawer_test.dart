@@ -1,8 +1,13 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
+import 'package:bible_read/services/error_logger.dart';
 import 'package:bible_read/widgets/comment_drawer.dart';
 import 'package:bible_read/models/comment.dart';
 
@@ -15,6 +20,8 @@ class RecordingOnAdd {
     return completer.future;
   }
 }
+
+class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -83,5 +90,47 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(recorder.message, 'Nice');
+  });
+
+  testWidgets('logs error when onAdd throws', (tester) async {
+    setupFirebaseCoreMocks();
+    await Firebase.initializeApp();
+    final crashlytics = MockCrashlytics();
+    ErrorLogger.crashlytics = crashlytics;
+    when(
+      () => crashlytics.recordError(
+        any(),
+        any(),
+        reason: any(named: 'reason'),
+        information: any(named: 'information'),
+        printDetails: any(named: 'printDetails'),
+        fatal: any(named: 'fatal'),
+      ),
+    ).thenAnswer((_) async {});
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CommentDrawer(
+          comments: const <Comment>[],
+          onAdd: (_) => Future.error(Exception('fail')),
+          commenterName: 'Tester',
+        ),
+      ),
+    );
+
+    final state = tester.state(find.byType(CommentDrawer)) as dynamic;
+
+    await expectLater(state._handleAdd('Oops'), throwsException);
+
+    verify(
+      () => crashlytics.recordError(
+        any(),
+        any(),
+        reason: any(named: 'reason'),
+        information: any(named: 'information'),
+        printDetails: any(named: 'printDetails'),
+        fatal: false,
+      ),
+    ).called(1);
   });
 }
