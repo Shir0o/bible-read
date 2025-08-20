@@ -9,11 +9,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
-import '../widgets/read_switch_tile.dart';
+import '../widgets/read_status_section.dart';
 import '../widgets/success_animation.dart';
 import '../widgets/menu_button.dart';
-import '../widgets/week_streak_calendar.dart';
-import '../widgets/month_streak_calendar.dart';
 import '../services/achievement_service.dart';
 import '../services/notification_service.dart';
 import '../models/achievement.dart';
@@ -738,50 +736,11 @@ class _HomePageState extends State<HomePage>
             left: 16,
             right: 16,
           ),
-          child: Column(
-            children: [
-              CommonStyles.buildCard(
-                child: _toggleLoading
-                    ? const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Mark today as read'),
-                          ReadSwitchTile(
-                            value: _readToday,
-                            onChanged: _readToday
-                                ? null
-                                : (value) => _toggleReadStatus(),
-                          ),
-                        ],
-                      ),
-              ),
-              const SizedBox(height: 16),
-              IgnorePointer(
-                child: WeekStreakCalendar(
-                  readDates: _readDates,
-                  sunday: DateTime.now().subtract(
-                    Duration(days: DateTime.now().weekday % 7),
-                  ),
-                  showNavigation: false,
-                ),
-              ),
-              const SizedBox(height: 16),
-              IgnorePointer(
-                child: MonthStreakCalendar(
-                  readDates: _readDates,
-                  month: DateTime(DateTime.now().year, DateTime.now().month),
-                  showNavigation: false,
-                ),
-              ),
-            ],
+          child: ReadStatusSection(
+            toggleLoading: _toggleLoading,
+            readToday: _readToday,
+            onToggle: _toggleReadStatus,
+            readDates: _readDates,
           ),
         ),
       ),
