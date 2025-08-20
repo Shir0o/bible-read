@@ -70,6 +70,12 @@ The pages in `lib/pages` are gradually being broken into smaller widgets found i
 
 For documentation-only changes (e.g., `.md` files), you do not need to run `dart format`, `flutter analyze`, or `flutter test`.
 
+Install lcov before running coverage commands:
+
+```bash
+sudo apt-get update && sudo apt-get install -y lcov
+```
+
 Run the following commands to format the code, analyze it, execute all tests, and generate coverage:
 
 ```bash
