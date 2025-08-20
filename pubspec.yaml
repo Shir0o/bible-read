@@ -73,7 +73,7 @@ dev_dependencies:
   fake_firebase_security_rules: ^0.5.3
   mock_exceptions: ^0.8.2
   mocktail: ^1.0.0
-  firebase_crashlytics_platform_interface: any
+  firebase_crashlytics_platform_interface: ^3.8.9
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
