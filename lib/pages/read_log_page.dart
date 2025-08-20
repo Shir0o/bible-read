@@ -11,12 +11,9 @@ import '../models/achievement.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
 import '../services/notification_service.dart';
-import '../widgets/badge_icon.dart';
-import '../widgets/comment_section.dart';
-import '../widgets/comment_drawer.dart';
 import '../widgets/menu_button.dart';
 import '../models/comment.dart';
-import '../models/achievement_definition.dart';
+import '../widgets/read_log_list.dart';
 
 class ReadLogPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -399,131 +396,14 @@ class _ReadLogPageState extends State<ReadLogPage> {
                     : Padding(
                         padding: const EdgeInsets.only(
                             top: 16.0, bottom: 48.0, left: 16, right: 16),
-                        child: ListView.builder(
-                          itemCount: _logs.length,
-                          itemBuilder: (context, index) {
-                            final log = _logs[index];
-                            final isLiked = (log['liked'] as bool? ?? false);
-                            final isFirst =
-                                (log['firstReader'] as bool? ?? false);
-                            return Card(
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              elevation: 4,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ListTile(
-                                      leading: const Icon(
-                                        Icons.check_circle,
-                                        color: Colors.green,
-                                      ),
-                                      title: Text(
-                                        '${log['name']} read today!',
-                                        style: AppTextStyles.subtitle,
-                                      ),
-                                      subtitle: () {
-                                        final likeNames =
-                                            (log['likeNames'] as List?) ?? [];
-                                        if (likeNames.isEmpty) return null;
-
-                                        const maxToShow = 3;
-                                        final displayText = likeNames.length >
-                                                maxToShow
-                                            ? '${likeNames.take(maxToShow).join(", ")} +${likeNames.length - maxToShow} more'
-                                            : likeNames.join(", ");
-
-                                        return Text('Liked by $displayText');
-                                      }(),
-                                      trailing: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          if (isFirst)
-                                            Tooltip(
-                                              message:
-                                                  'First reader of the day',
-                                              child: BadgeIcon(
-                                                imageUrl: allAchievements
-                                                    .firstWhere((a) =>
-                                                        a.id == 'firstReader')
-                                                    .imageUrl,
-                                                iconData: allAchievements
-                                                    .firstWhere((a) =>
-                                                        a.id == 'firstReader')
-                                                    .icon,
-                                                size: 24,
-                                              ),
-                                            ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 4.0),
-                                            child: IconButton(
-                                              icon: AnimatedSwitcher(
-                                                duration: const Duration(
-                                                    milliseconds: 300),
-                                                transitionBuilder:
-                                                    (child, animation) =>
-                                                        ScaleTransition(
-                                                            scale: animation,
-                                                            child: child),
-                                                child: Icon(
-                                                  isLiked
-                                                      ? Icons.favorite
-                                                      : Icons.favorite_border,
-                                                  key: ValueKey<bool>(isLiked),
-                                                  color: isLiked
-                                                      ? Colors.red
-                                                      : null,
-                                                ),
-                                              ),
-                                              onPressed: isLiked
-                                                  ? null
-                                                  : () {
-                                                      _toggleLike(log['uid']);
-                                                    },
-                                            ),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(
-                                                Icons.mode_comment_outlined),
-                                            onPressed: () {
-                                              final commenter = (widget
-                                                          .auth
-                                                          .currentUser
-                                                          ?.displayName ??
-                                                      '')
-                                                  .split(' ')
-                                                  .first;
-                                              CommentDrawer.show(
-                                                context,
-                                                comments: List<Comment>.from(
-                                                    log['comments']
-                                                        as List<Comment>),
-                                                onAdd: (msg) => _addComment(
-                                                    log['uid'], msg),
-                                                commenterName: commenter,
-                                              );
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    CommentSection(
-                                      comments: List<Comment>.from(
-                                          log['comments'] as List<Comment>),
-                                      onAdd: (msg) =>
-                                          _addComment(log['uid'], msg),
-                                      showInput: false,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
+                        child: ReadLogList(
+                          logs: _logs,
+                          onToggleLike: _toggleLike,
+                          onAddComment: _addComment,
+                          commenterName:
+                              (widget.auth.currentUser?.displayName ?? '')
+                                  .split(' ')
+                                  .first,
                         ),
                       ),
       ),

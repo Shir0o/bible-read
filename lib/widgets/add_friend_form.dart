@@ -52,39 +52,36 @@ class _AddFriendFormState extends State<AddFriendForm> {
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Request sent')));
 
-    unawaited(
-      widget.friendService
-          .sendFriendRequestByEmail(
-        fromUid: user.uid,
-        fromName: user.displayName ?? '',
-        toEmail: email,
-      )
-          .then((_) {
-        if (mounted) {
-          SuccessAnimation.show(context);
-          widget.onComplete?.call();
-        }
-      }).catchError((Object e, StackTrace st) async {
+    unawaited(() async {
+      try {
+        await widget.friendService.sendFriendRequestByEmail(
+          fromUid: user.uid,
+          fromName: user.displayName ?? '',
+          toEmail: email,
+        );
+        if (!mounted) return;
+        SuccessAnimation.show(context);
+        widget.onComplete?.call();
+      } catch (e, st) {
         if (kDebugMode) {
           debugPrint('Failed to send friend request: $e');
         }
         await ErrorLogger.log(e, st);
-        if (mounted) {
-          _controller
-            ..text = previous
-            ..selection = TextSelection.fromPosition(
-              TextPosition(offset: previous.length),
-            );
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              const SnackBar(
-                content: Text('Failed to send request. Please try again.'),
-              ),
-            );
-        }
-      }),
-    );
+        if (!mounted) return;
+        _controller
+          ..text = previous
+          ..selection = TextSelection.fromPosition(
+            TextPosition(offset: previous.length),
+          );
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Failed to send request. Please try again.'),
+            ),
+          );
+      }
+    }());
   }
 
   @override

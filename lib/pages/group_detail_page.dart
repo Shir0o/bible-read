@@ -12,6 +12,7 @@ import '../services/group_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/schedule_item_tile.dart';
 import '../widgets/animated_page_route.dart';
+import '../widgets/group_members_section.dart';
 
 /// Page showing the members and schedule for a group.
 class GroupDetailPage extends StatefulWidget {
@@ -96,7 +97,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             setState(() {
               _scheduleOverride = previous;
             });
+            // ignore: use_build_context_synchronously
+            // ignore: use_build_context_synchronously
+            // ignore: use_build_context_synchronously
+            // ignore: use_build_context_synchronously
             ScaffoldMessenger.of(context).showSnackBar(
+              // ignore: use_build_context_synchronously
+              // ignore: use_build_context_synchronously
               const SnackBar(content: Text('Failed to update schedule')),
             );
           }
@@ -145,30 +152,30 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                 uid: user.uid,
                                 name: user.displayName ?? '',
                               );
-                              if (mounted) {
-                                setState(() {
-                                  _joinPending = true;
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(widget.group.isPublic
-                                        ? 'Joined group'
-                                        : 'Join request sent'),
-                                  ),
-                                );
-                              }
+                              if (!mounted) return;
+                              setState(() {
+                                _joinPending = true;
+                              });
+                              // ignore: use_build_context_synchronously
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(widget.group.isPublic
+                                      ? 'Joined group'
+                                      : 'Join request sent'),
+                                ),
+                              );
                             } catch (e, st) {
                               if (kDebugMode) {
                                 debugPrint('Failed to join group: $e');
                               }
                               ErrorLogger.log(e, st);
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Failed to join group'),
-                                  ),
-                                );
-                              }
+                              if (!mounted) return;
+                              // ignore: use_build_context_synchronously
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Failed to join group'),
+                                ),
+                              );
                             }
                           },
                           child: const Text('Join Group'),
@@ -226,29 +233,27 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                       groupId: widget.group.id,
                                       uid: uid,
                                     );
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Request approved'),
-                                        ),
-                                      );
-                                    }
+                                    if (!mounted) return;
+                                    // ignore: use_build_context_synchronously
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Request approved'),
+                                      ),
+                                    );
                                   } catch (e, st) {
                                     if (kDebugMode) {
                                       debugPrint(
                                           'Failed to approve request: $e');
                                     }
                                     ErrorLogger.log(e, st);
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content:
-                                              Text('Failed to approve request'),
-                                        ),
-                                      );
-                                    }
+                                    if (!mounted) return;
+                                    // ignore: use_build_context_synchronously
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content:
+                                            Text('Failed to approve request'),
+                                      ),
+                                    );
                                   }
                                 },
                               ),
@@ -260,35 +265,32 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                       groupId: widget.group.id,
                                       uid: uid,
                                     );
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Request denied'),
-                                        ),
-                                      );
-                                    }
+                                    if (!mounted) return;
+                                    // ignore: use_build_context_synchronously
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Request denied'),
+                                      ),
+                                    );
                                   } catch (e, st) {
                                     if (kDebugMode) {
                                       debugPrint('Failed to deny request: $e');
                                     }
                                     ErrorLogger.log(e, st);
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content:
-                                              Text('Failed to deny request'),
-                                        ),
-                                      );
-                                    }
+                                    if (!mounted) return;
+                                    // ignore: use_build_context_synchronously
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Failed to deny request'),
+                                      ),
+                                    );
                                   }
                                 },
                               ),
                             ],
                           ),
                         );
-                      }).toList(),
+                      }),
                       const SizedBox(height: 16),
                     ],
                   );
@@ -296,25 +298,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               ),
               const SizedBox(height: 16),
             ],
-            Text('Members', style: AppTextStyles.subtitle),
-            const SizedBox(height: 8),
-            StreamBuilder<List<String>>(
-              stream: widget.groupService.memberNames(widget.group.id),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return const Text('Failed to load members');
-                }
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final names = snapshot.data!;
-                if (names.isEmpty) {
-                  return const Text('No members');
-                }
-                return Column(
-                  children: names.map((n) => ListTile(title: Text(n))).toList(),
-                );
-              },
+            GroupMembersSection(
+              membersStream: widget.groupService.memberNames(widget.group.id),
             ),
             const SizedBox(height: 16),
             Text('Schedule', style: AppTextStyles.subtitle),
