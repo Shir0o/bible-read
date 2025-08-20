@@ -58,9 +58,8 @@ class ResponsiveScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isWide = MediaQuery.of(context).size.width >= 600;
     final int displayIndex = contentIndex ?? selectedIndex;
-    final int safeDisplay = pages.isEmpty
-        ? 0
-        : displayIndex.clamp(0, pages.length - 1);
+    final int safeDisplay =
+        pages.isEmpty ? 0 : displayIndex.clamp(0, pages.length - 1);
     final int safeSelected = destinations.isEmpty
         ? 0
         : selectedIndex.clamp(0, destinations.length - 1);

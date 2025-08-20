@@ -162,7 +162,10 @@ void main() {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: true);
     // Create a user without a name field but with a streak so it appears
-    await firestore.collection('users').doc('u1').set({'email': 'u1@example.com'});
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .set({'email': 'u1@example.com'});
     await firestore
         .collection('users')
         .doc('u1')

@@ -35,10 +35,12 @@ class GroupService {
   final NotificationService notificationService;
 
   /// Creates a [GroupService] using [FirebaseFirestore.instance] by default.
-  GroupService({FirebaseFirestore? firestore, NotificationService? notificationService})
+  GroupService(
+      {FirebaseFirestore? firestore, NotificationService? notificationService})
       : firestore = firestore ?? FirebaseFirestore.instance,
-        notificationService =
-            notificationService ?? NotificationService(firestore: firestore ?? FirebaseFirestore.instance);
+        notificationService = notificationService ??
+            NotificationService(
+                firestore: firestore ?? FirebaseFirestore.instance);
 
   /// Create a new group owned by [ownerUid] with [name].
   ///
@@ -168,8 +170,7 @@ class GroupService {
       final requestSnap = await requestRef.get();
       final name = requestSnap.data()?['name'] as String?;
 
-      final memberRef =
-          groupRef.collection(GroupCollections.members).doc(uid);
+      final memberRef = groupRef.collection(GroupCollections.members).doc(uid);
       final data = <String, dynamic>{
         'uid': uid,
         'role': 'member',
