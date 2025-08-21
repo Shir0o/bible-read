@@ -761,12 +761,11 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
 
     final state = tester.state(find.byType(MainPage)) as dynamic;
     state.navigateFromMenu(4);
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     final responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
