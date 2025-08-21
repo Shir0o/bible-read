@@ -179,7 +179,6 @@ class _FriendsPageState extends State<FriendsPage> {
                                                         );
                                                         break;
                                                       case NudgeResult.sent:
-                                                      default:
                                                         messenger.showSnackBar(
                                                           const SnackBar(
                                                             content: Text(
@@ -187,6 +186,7 @@ class _FriendsPageState extends State<FriendsPage> {
                                                             ),
                                                           ),
                                                         );
+                                                        break;
                                                     }
                                                   } catch (e, st) {
                                                     debugPrint(
