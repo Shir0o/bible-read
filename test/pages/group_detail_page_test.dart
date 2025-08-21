@@ -277,4 +277,28 @@ void main() {
     expect(find.text('Failed to join group'), findsOneWidget);
     expect(find.text('Join Group'), findsOneWidget);
   });
+
+  testWidgets('pending join request hides join button', (tester) async {
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('joinRequests')
+        .doc('u2')
+        .set({
+      'uid': 'u2',
+      'name': 'User',
+    });
+    auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u2', displayName: 'User'), signedIn: true);
+    final service = GroupService(firestore: firestore);
+
+    await pumpPage(tester, service: service, auth: auth);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+    await pumpPage(tester, service: service, auth: auth);
+
+    expect(find.text('Join Group'), findsNothing);
+    expect(find.text('Join request pending'), findsOneWidget);
+  });
 }
