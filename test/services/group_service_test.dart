@@ -380,7 +380,8 @@ void main() {
       when(() => memberQuery.where('uid', isEqualTo: 'u1'))
           .thenReturn(memberQuery);
       when(() => memberQuery.snapshots()).thenAnswer((_) {
-        final controller = StreamController<QuerySnapshot<Map<String, dynamic>>>();
+        final controller =
+            StreamController<QuerySnapshot<Map<String, dynamic>>>();
         Future.microtask(() {
           controller.addError(err);
           controller.close();

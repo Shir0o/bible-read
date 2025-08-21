@@ -74,13 +74,8 @@ class GroupService {
     required String groupId,
     required String uid,
     required String name,
-  }) async {
-    try {
-      await requestJoin(groupId: groupId, uid: uid, name: name);
-    } catch (e, st) {
-      await ErrorLogger.log(e, st);
-      rethrow;
-    }
+  }) {
+    return requestJoin(groupId: groupId, uid: uid, name: name);
   }
 
   /// Create a join request for [uid] on [groupId].
