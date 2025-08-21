@@ -55,10 +55,10 @@ void main() {
     test('allAchievements have unique ids and one badge source', () {
       final ids = <String>{};
       for (final achievement in allAchievements) {
-        // ignore: deprecated_member_use_from_same_package
         final sources = [
           achievement.imageUrl,
           achievement.icon,
+          // ignore: deprecated_member_use_from_same_package
           achievement.assetPath
         ].where((s) => s != null).length;
         expect(

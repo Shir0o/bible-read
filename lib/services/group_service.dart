@@ -44,20 +44,16 @@ class GroupService {
 
   /// Create a new group owned by [ownerUid] with [name].
   ///
-  /// [isPublic] controls whether the group is publicly visible.
-  ///
   /// Returns the id of the created group.
   Future<String> createGroup({
     required String ownerUid,
     required String name,
-    bool isPublic = true,
   }) async {
     try {
       final doc = firestore.collection(GroupCollections.groups).doc();
       await doc.set({
         'name': name,
         'ownerUid': ownerUid,
-        'isPublic': isPublic,
       });
       await doc.collection(GroupCollections.members).doc(ownerUid).set({
         'uid': ownerUid,
@@ -73,42 +69,13 @@ class GroupService {
 
   /// Join the group with [groupId] as [uid].
   ///
-  /// If the group is not public a join request will be created instead.
+  /// This always creates a join request for the group owner to approve.
   Future<void> joinGroup({
     required String groupId,
     required String uid,
     required String name,
-  }) async {
-    try {
-      final groupDoc = await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .get();
-      final isPublic = groupDoc.data()?['isPublic'] as bool? ?? true;
-      if (!isPublic) {
-        await requestJoin(groupId: groupId, uid: uid, name: name);
-        return;
-      }
-
-      final memberRef = firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection(GroupCollections.members)
-          .doc(uid);
-      final snap = await memberRef.get();
-      final data = <String, dynamic>{'uid': uid, 'name': name};
-      if (snap.exists) {
-        final role = snap.data()?['role'];
-        if (role != null) data['role'] = role;
-      } else {
-        data['role'] = 'member';
-        data['joinedAt'] = FieldValue.serverTimestamp();
-      }
-      await memberRef.set(data, SetOptions(merge: true));
-    } catch (e, st) {
-      await ErrorLogger.log(e, st);
-      rethrow;
-    }
+  }) {
+    return requestJoin(groupId: groupId, uid: uid, name: name);
   }
 
   /// Create a join request for [uid] on [groupId].

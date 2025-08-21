@@ -1,5 +1,7 @@
 // ignore_for_file: subtype_of_sealed_class
 
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -55,7 +57,7 @@ void main() {
       expect(doc.exists, isTrue);
       expect(doc.data()?['name'], 'Test');
       expect(doc.data()?['ownerUid'], 'u1');
-      expect(doc.data()?['isPublic'], true);
+      expect(doc.data()?.containsKey('isPublic'), isFalse);
 
       final member = await firestore
           .collection(GroupCollections.groups)
@@ -69,43 +71,11 @@ void main() {
       expect(member.data()?['joinedAt'], isA<Timestamp>());
     });
 
-    test('joinGroup adds membership document', () async {
+    test('joinGroup creates join request and notification', () async {
       await firestore
           .collection(GroupCollections.groups)
           .doc('g1')
           .set({'name': 'G', 'ownerUid': 'u1'});
-
-      await service.joinGroup(groupId: 'g1', uid: 'u2', name: 'User');
-
-      final member = await firestore
-          .collection(GroupCollections.groups)
-          .doc('g1')
-          .collection(GroupCollections.members)
-          .doc('u2')
-          .get();
-      expect(member.exists, isTrue);
-      final joinedAt = member.data()?['joinedAt'];
-      expect(member.data()?['uid'], 'u2');
-      expect(member.data()?['role'], 'member');
-      expect(member.data()?['name'], 'User');
-      expect(joinedAt, isA<Timestamp>());
-
-      // Re-join should not update joinedAt
-      await service.joinGroup(groupId: 'g1', uid: 'u2', name: 'User');
-      final member2 = await firestore
-          .collection(GroupCollections.groups)
-          .doc('g1')
-          .collection(GroupCollections.members)
-          .doc('u2')
-          .get();
-      expect(member2.data()?['joinedAt'], joinedAt);
-    });
-
-    test('joinGroup on private group creates join request', () async {
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc('g1')
-          .set({'name': 'G', 'ownerUid': 'u1', 'isPublic': false});
 
       await service.joinGroup(groupId: 'g1', uid: 'u2', name: 'User');
 
@@ -140,25 +110,9 @@ void main() {
       expect(data['senderUid'], 'u2');
     });
 
-    test('joinGroup preserves existing role', () async {
-      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
-      await groupRef.collection(GroupCollections.members).doc('u1').set({
-        'uid': 'u1',
-        'role': 'owner',
-        'joinedAt': Timestamp.fromDate(DateTime.utc(2024)),
-      });
-
-      await service.joinGroup(groupId: 'g1', uid: 'u1', name: 'Owner');
-
-      final member =
-          await groupRef.collection(GroupCollections.members).doc('u1').get();
-      expect(member.data()?['role'], 'owner');
-    });
-
     test('approveJoinRequest moves member and removes request', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'u1', 'isPublic': false});
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
       await groupRef.collection(GroupCollections.joinRequests).doc('u2').set({
         'uid': 'u2',
         'name': 'User',
@@ -180,7 +134,7 @@ void main() {
 
     test('denyJoinRequest removes request without adding member', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'u1', 'isPublic': false});
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
       await groupRef.collection(GroupCollections.joinRequests).doc('u2').set({
         'uid': 'u2',
         'name': 'User',
@@ -425,8 +379,15 @@ void main() {
           .thenReturn(memberQuery);
       when(() => memberQuery.where('uid', isEqualTo: 'u1'))
           .thenReturn(memberQuery);
-      when(() => memberQuery.snapshots()).thenAnswer(
-          (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err));
+      when(() => memberQuery.snapshots()).thenAnswer((_) {
+        final controller =
+            StreamController<QuerySnapshot<Map<String, dynamic>>>();
+        Future.microtask(() {
+          controller.addError(err);
+          controller.close();
+        });
+        return controller.stream;
+      });
 
       when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
       when(() => groups.where('ownerUid', isEqualTo: 'u1'))
@@ -568,22 +529,16 @@ void main() {
       final mockFs = MockFirebaseFirestore();
       final groups = MockCollectionReference<Map<String, dynamic>>();
       final groupDoc = MockDocumentReference<Map<String, dynamic>>();
-      final groupSnap = MockDocumentSnapshot<Map<String, dynamic>>();
-      final members = MockCollectionReference<Map<String, dynamic>>();
-      final memberDoc = MockDocumentReference<Map<String, dynamic>>();
-      final memberSnap = MockDocumentSnapshot<Map<String, dynamic>>();
+      final joinRequests = MockCollectionReference<Map<String, dynamic>>();
+      final joinDoc = MockDocumentReference<Map<String, dynamic>>();
       final err = Exception('fail');
 
       when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
       when(() => groups.doc('g1')).thenReturn(groupDoc);
-      when(() => groupDoc.get()).thenAnswer((_) async => groupSnap);
-      when(() => groupSnap.data()).thenReturn({'isPublic': true});
-      when(() => groupDoc.collection(GroupCollections.members))
-          .thenReturn(members);
-      when(() => members.doc('u1')).thenReturn(memberDoc);
-      when(() => memberDoc.get()).thenAnswer((_) async => memberSnap);
-      when(() => memberSnap.exists).thenReturn(false);
-      when(() => memberDoc.set(any(), any())).thenThrow(err);
+      when(() => groupDoc.collection(GroupCollections.joinRequests))
+          .thenReturn(joinRequests);
+      when(() => joinRequests.doc('u1')).thenReturn(joinDoc);
+      when(() => joinDoc.set(any())).thenThrow(err);
 
       final crash = MockCrashlytics();
       ErrorLogger.crashlytics = crash;

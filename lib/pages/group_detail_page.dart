@@ -158,10 +158,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                               });
                               // ignore: use_build_context_synchronously
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(widget.group.isPublic
-                                      ? 'Joined group'
-                                      : 'Join request sent'),
+                                const SnackBar(
+                                  content: Text('Join request sent'),
                                 ),
                               );
                             } catch (e, st) {
