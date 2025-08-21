@@ -685,6 +685,45 @@ void main() {
     expect(summary.data()?['totalReadDays'], 5);
   });
 
+  testWidgets('refresh unlocks streak achievement', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(uid: 'u6');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+    final googlePlatform = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = googlePlatform;
+
+    String keyFor(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+    final today = DateTime.now();
+    final readingRef =
+        firestore.collection('users').doc(user.uid).collection('reading');
+    for (int i = 0; i < 7; i++) {
+      final date = today.subtract(Duration(days: i));
+      await readingRef.doc(keyFor(date)).set({'read': true});
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(firestore: firestore, auth: auth),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
+
+    final achievementDoc = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('achievements')
+        .doc('streak7')
+        .get();
+    expect(achievementDoc.exists, isTrue);
+  });
+
   testWidgets('load failure hides progress indicator', (tester) async {
     final firestore = ThrowingFirestore();
     final auth = MockFirebaseAuth(

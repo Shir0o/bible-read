@@ -338,6 +338,7 @@ class _HomePageState extends State<HomePage>
         'totalReadDays': totalReadDays,
         'longestStreak': longestStreak,
       }, SetOptions(merge: true));
+      await _checkAchievements(user.uid, streak, totalReadDays);
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to update summary: $e');
