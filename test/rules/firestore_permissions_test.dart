@@ -268,5 +268,74 @@ void main() {
           }),
           isTrue);
     });
+
+    group('/members', () {
+      const membersPath = '$base/g1/members';
+
+      test('reject direct member creation without join request', () {
+        expect(
+            rules.isAllowed('$membersPath/u2', Method.write, variables: {
+              ...auth('alice'),
+              'resource': {
+                'data': {'ownerUid': 'alice'}
+              }
+            }),
+            isFalse);
+      });
+
+      test('members cannot change role', () {
+        expect(
+            rules.isAllowed('$membersPath/u2', Method.update, variables: {
+              ...auth('u2'),
+              'resource': {
+                'data': {'uid': 'u2', 'role': 'member'}
+              },
+              'request': {
+                'resource': {
+                  'data': {'uid': 'u2', 'role': 'admin'}
+                }
+              }
+            }),
+            isFalse);
+      });
+    });
+
+    group('/joinRequests', () {
+      const requestPath = '$base/g1/joinRequests/u2';
+
+      test('requesting user can create join request', () {
+        expect(
+            rules.isAllowed(requestPath, Method.write, variables: auth('u2')),
+            isTrue);
+      });
+
+      test('other users cannot create join request', () {
+        expect(
+            rules.isAllowed(requestPath, Method.write, variables: auth('bob')),
+            isFalse);
+      });
+
+      test('owner can delete join request', () {
+        expect(
+            rules.isAllowed(requestPath, Method.delete, variables: {
+              ...auth('alice'),
+              'resource': {
+                'data': {'ownerUid': 'alice'}
+              }
+            }),
+            isTrue);
+      });
+
+      test('requester cannot delete join request', () {
+        expect(
+            rules.isAllowed(requestPath, Method.delete, variables: {
+              ...auth('u2'),
+              'resource': {
+                'data': {'ownerUid': 'alice'}
+              }
+            }),
+            isFalse);
+      });
+    });
   });
 }
