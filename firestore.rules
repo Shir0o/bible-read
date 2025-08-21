@@ -115,7 +115,11 @@ service cloud.firestore {
           exists(/databases/$(database)/documents/groups/$(groupId)/joinRequests/$(uid)) &&
           !existsAfter(/databases/$(database)/documents/groups/$(groupId)/joinRequests/$(uid));
         allow delete: if isOwnerOrAdmin();
-        allow update: if request.auth.uid == uid || isOwnerOrAdmin();
+        allow update: if isOwnerOrAdmin() || (
+          request.auth.uid == uid &&
+          request.resource.data.role == resource.data.role &&
+          request.resource.data.uid == resource.data.uid
+        );
       }
 
       match /schedule/{date} {
