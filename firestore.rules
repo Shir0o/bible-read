@@ -92,10 +92,8 @@ service cloud.firestore {
       }
 
       function isOwner() {
-        return request.auth != null && (
-          resource.data.ownerUid == request.auth.uid ||
-          request.resource.data.ownerUid == request.auth.uid
-        );
+        return request.auth != null &&
+          get(/databases/$(database)/documents/groups/$(groupId)).data.ownerUid == request.auth.uid;
       }
 
       function isOwnerOrAdmin() {

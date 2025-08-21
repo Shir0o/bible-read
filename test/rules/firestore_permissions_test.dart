@@ -302,16 +302,29 @@ void main() {
 
     group('/joinRequests', () {
       const requestPath = '$base/g1/joinRequests/u2';
+      final getGroup = {
+        'get': {
+          'databases/$db/documents/groups/g1': {
+            'data': {'ownerUid': 'alice'}
+          }
+        }
+      };
 
       test('requesting user can create join request', () {
         expect(
-            rules.isAllowed(requestPath, Method.write, variables: auth('u2')),
+            rules.isAllowed(requestPath, Method.write, variables: {
+              ...auth('u2'),
+              ...getGroup,
+            }),
             isTrue);
       });
 
       test('other users cannot create join request', () {
         expect(
-            rules.isAllowed(requestPath, Method.write, variables: auth('bob')),
+            rules.isAllowed(requestPath, Method.write, variables: {
+              ...auth('bob'),
+              ...getGroup,
+            }),
             isFalse);
       });
 
@@ -319,9 +332,7 @@ void main() {
         expect(
             rules.isAllowed(requestPath, Method.delete, variables: {
               ...auth('alice'),
-              'resource': {
-                'data': {'ownerUid': 'alice'}
-              }
+              ...getGroup,
             }),
             isTrue);
       });
@@ -330,9 +341,25 @@ void main() {
         expect(
             rules.isAllowed(requestPath, Method.delete, variables: {
               ...auth('u2'),
-              'resource': {
-                'data': {'ownerUid': 'alice'}
-              }
+              ...getGroup,
+            }),
+            isFalse);
+      });
+
+      test('owner can read join requests', () {
+        expect(
+            rules.isAllowed(requestPath, Method.read, variables: {
+              ...auth('alice'),
+              ...getGroup,
+            }),
+            isTrue);
+      });
+
+      test('non-owner cannot read join requests', () {
+        expect(
+            rules.isAllowed(requestPath, Method.read, variables: {
+              ...auth('bob'),
+              ...getGroup,
             }),
             isFalse);
       });
