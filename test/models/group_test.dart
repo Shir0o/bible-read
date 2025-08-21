@@ -12,7 +12,6 @@ void main() {
       await firestore.collection('groups').doc('g1').set({
         'name': 'Test',
         'ownerUid': 'u1',
-        'isPublic': false,
       });
       final doc = await firestore.collection('groups').doc('g1').get();
 
@@ -20,7 +19,6 @@ void main() {
       expect(group.id, 'g1');
       expect(group.name, 'Test');
       expect(group.ownerUid, 'u1');
-      expect(group.isPublic, isFalse);
     });
 
     test('fromFirestore handles missing fields', () async {
@@ -31,7 +29,6 @@ void main() {
       final group = Group.fromFirestore(doc);
       expect(group.name, '');
       expect(group.ownerUid, '');
-      expect(group.isPublic, isTrue);
     });
 
     test('toFirestore outputs expected map', () {
@@ -39,10 +36,9 @@ void main() {
         id: 'g1',
         name: 'Test',
         ownerUid: 'u1',
-        isPublic: false,
       );
       final map = group.toFirestore();
-      expect(map, {'name': 'Test', 'ownerUid': 'u1', 'isPublic': false});
+      expect(map, {'name': 'Test', 'ownerUid': 'u1'});
     });
   });
 }

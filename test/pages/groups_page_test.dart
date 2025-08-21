@@ -12,21 +12,18 @@ class RecordingGroupService extends GroupService {
 
   String? createdName;
   String? createdOwner;
-  bool? createdIsPublic;
   bool failCreate = false;
 
   @override
   Future<String> createGroup({
     required String ownerUid,
     required String name,
-    bool isPublic = true,
   }) async {
     if (failCreate) {
       throw FirebaseException(plugin: 'firestore');
     }
     createdName = name;
     createdOwner = ownerUid;
-    createdIsPublic = isPublic;
     return 'gid';
   }
 }

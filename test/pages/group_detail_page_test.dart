@@ -242,7 +242,7 @@ void main() {
     expect(newDoc.exists, isTrue);
   });
 
-  testWidgets('join button via navigation joins public group', (tester) async {
+  testWidgets('join button via navigation sends join request', (tester) async {
     group = const Group(id: 'g1', name: 'Study', ownerUid: 'u1');
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     auth = MockFirebaseAuth(
@@ -257,29 +257,6 @@ void main() {
     expect(service.joinedGroupId, 'g1');
     expect(service.joinedUid, 'u2');
     expect(service.joinedName, 'User');
-    expect(find.text('Joined group'), findsOneWidget);
-    expect(find.text('Join Group'), findsNothing);
-  });
-
-  testWidgets('join button via navigation requests private group',
-      (tester) async {
-    group = const Group(
-      id: 'g1',
-      name: 'Study',
-      ownerUid: 'u1',
-      isPublic: false,
-    );
-    await firestore.collection('groups').doc('g1').set(group.toFirestore());
-    auth = MockFirebaseAuth(
-        mockUser: MockUser(uid: 'u2', displayName: 'User'), signedIn: true);
-    final service = RecordingGroupService(firestore: firestore);
-
-    await pumpAndNavigate(tester, service: service, auth: auth);
-
-    await tester.tap(find.text('Join Group'));
-    await tester.pumpAndSettle();
-
-    expect(service.joinedGroupId, 'g1');
     expect(find.text('Join request sent'), findsOneWidget);
     expect(find.text('Join Group'), findsNothing);
   });
