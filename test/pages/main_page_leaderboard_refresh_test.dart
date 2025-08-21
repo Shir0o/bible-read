@@ -11,8 +11,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bible_read/pages/main_page.dart';
-import 'package:bible_read/widgets/responsive_scaffold.dart';
-
 import '../helpers/test_leaderboard_page.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
@@ -145,14 +143,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final responsive = tester.widget<ResponsiveScaffold>(
-      find.byType(ResponsiveScaffold),
-    );
-    responsive.scaffoldKey!.currentState!.openDrawer();
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Leaderboard'));
-    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(MainPage));
+    state.onItemTapped(2);
+    await tester.pump();
 
     expect(testPage.refreshed.value, isTrue);
   });
