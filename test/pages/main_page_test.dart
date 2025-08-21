@@ -21,6 +21,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../helpers/test_read_log_page.dart';
+
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
   GoogleSignInUserData? user;
@@ -243,6 +245,46 @@ void main() {
       find.byType(ResponsiveScaffold),
     );
     expect(responsive.contentIndex, 6);
+  });
+
+  testWidgets('onItemTapped refreshes read log page', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    late TestReadLogPage testPage;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          firestore: firestore,
+          auth: auth,
+          messaging: FakeFirebaseMessaging(null),
+          readLogPageBuilder: ({
+            Key? key,
+            FirebaseFirestore? firestore,
+            FirebaseAuth? auth,
+            required SendLikeNotification onSendLikeNotification,
+            required SendCommentNotification onSendCommentNotification,
+          }) {
+            return testPage = TestReadLogPage(
+              key: key,
+              firestore: firestore,
+              auth: auth,
+              onSendLikeNotification: onSendLikeNotification,
+              onSendCommentNotification: onSendCommentNotification,
+            );
+          },
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state(find.byType(MainPage)) as dynamic;
+    state.onItemTapped(1);
+    await tester.pump();
+
+    expect(testPage.refreshed.value, isTrue);
   });
 
   testWidgets('attemptSilentSignIn runs during initState', (tester) async {
