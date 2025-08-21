@@ -105,6 +105,10 @@ class _MainPageState extends State<MainPage> {
   /// Allows tests to invoke the tap handler directly.
   @visibleForTesting
   void onItemTapped(int index) => _onItemTapped(index);
+
+  /// Allows tests to trigger menu navigation directly.
+  @visibleForTesting
+  void navigateFromMenu(int index) => _navigateFromMenu(index);
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late final FriendService _friendService;
   late final GroupService _groupService;
