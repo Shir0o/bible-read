@@ -179,8 +179,9 @@ void main() {
     expect(find.text('Sign in with Google'), findsOneWidget);
   });
 
-  testWidgets('tapping protected drawer item when signed out has no effect',
-      (tester) async {
+  testWidgets('tapping protected drawer item when signed out has no effect', (
+    tester,
+  ) async {
     final auth = MockFirebaseAuth();
     await tester.pumpWidget(
       MaterialApp(
@@ -214,12 +215,15 @@ void main() {
     );
     final firestore = FakeFirebaseFirestore();
     await tester.pumpWidget(
-      MaterialApp(
-        home: MainPage(
-          auth: auth,
-          firestore: firestore,
-          messaging: FakeFirebaseMessaging(null),
-          dailyNotificationServiceProvider: DailyNotificationService.new,
+      MediaQuery(
+        data: const MediaQueryData(size: Size(400, 600)),
+        child: MaterialApp(
+          home: MainPage(
+            auth: auth,
+            firestore: firestore,
+            messaging: FakeFirebaseMessaging(null),
+            dailyNotificationServiceProvider: DailyNotificationService.new,
+          ),
         ),
       ),
     );
@@ -275,10 +279,43 @@ void main() {
     expect(responsive.contentIndex, 6);
   });
 
+  testWidgets('bottom navigation hidden on non-core pages', (tester) async {
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+    final firestore = FakeFirebaseFirestore();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: firestore,
+          messaging: FakeFirebaseMessaging(null),
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final hasNav = find.byType(NavigationBar).evaluate().isNotEmpty ||
+        find.byType(NavigationRail).evaluate().isNotEmpty;
+    expect(hasNav, isTrue);
+
+    final state = tester.state(find.byType(MainPage)) as dynamic;
+    state.navigateFromMenu(3);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FriendsPage), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(NavigationRail), findsNothing);
+  });
+
   testWidgets('onItemTapped refreshes read log page', (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
     late TestReadLogPage testPage;
 
     await tester.pumpWidget(
@@ -455,8 +492,9 @@ void main() {
     expect(service.scheduled, isTrue);
   });
 
-  testWidgets('skips Firestore write and reminder when token unchanged',
-      (tester) async {
+  testWidgets('skips Firestore write and reminder when token unchanged', (
+    tester,
+  ) async {
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u-skip'),
       signedIn: true,
@@ -551,15 +589,18 @@ void main() {
     expect(calledName, 'Test');
   });
 
-  testWidgets('calls sendCommentNotification when a comment is submitted',
-      (tester) async {
+  testWidgets('calls sendCommentNotification when a comment is submitted', (
+    tester,
+  ) async {
     bool wasCalled = false;
     String? calledUid;
     String? calledName;
 
     final fakeFirestore = FakeFirebaseFirestore();
-    final commenter =
-        MockUser(uid: 'commenter123', displayName: 'Test Commenter');
+    final commenter = MockUser(
+      uid: 'commenter123',
+      displayName: 'Test Commenter',
+    );
     final auth = MockFirebaseAuth(mockUser: commenter, signedIn: true);
 
     // Seed Firestore with an owner log entry
@@ -581,8 +622,10 @@ void main() {
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
           dailyNotificationServiceProvider: DailyNotificationService.new,
-          sendCommentNotification: (
-              {required String ownerUid, required String commenterName}) async {
+          sendCommentNotification: ({
+            required String ownerUid,
+            required String commenterName,
+          }) async {
             wasCalled = true;
             calledUid = ownerUid;
             calledName = commenterName;
@@ -726,7 +769,7 @@ void main() {
     final scaffold = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
-    expect(scaffold.destinations.length, 1);
+    expect(scaffold.destinations.length, 0);
     expect(find.byIcon(Icons.home), findsNothing);
     expect(find.byIcon(Icons.feed), findsNothing);
     expect(find.byIcon(Icons.leaderboard), findsNothing);
@@ -770,7 +813,7 @@ void main() {
     final responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
-    expect(responsive.selectedIndex, 0);
+    expect(responsive.selectedIndex, 4);
     expect(responsive.contentIndex, 4);
   });
 }
