@@ -146,8 +146,10 @@ class GroupService {
       if (name != null && name.isNotEmpty) {
         data['name'] = name;
       }
-      await memberRef.set(data, SetOptions(merge: true));
-      await requestRef.delete();
+      final batch = firestore.batch();
+      batch.set(memberRef, data, SetOptions(merge: true));
+      batch.delete(requestRef);
+      await batch.commit();
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;
