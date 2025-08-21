@@ -41,7 +41,6 @@ class GroupDetailPage extends StatefulWidget {
 class _GroupDetailPageState extends State<GroupDetailPage> {
   List<GroupSchedule>? _scheduleOverride;
   List<GroupSchedule>? _latestSchedule;
-  bool _joinPending = false;
 
   Future<void> _editSchedule([GroupSchedule? schedule]) async {
     final result = await Navigator.of(context).push<GroupSchedule>(
@@ -140,46 +139,61 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     .snapshots(),
                 builder: (context, snapshot) {
                   final isMember = snapshot.data?.exists ?? false;
-                  if (!isMember && !_joinPending) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () async {
-                            try {
-                              await widget.groupService.joinGroup(
-                                groupId: widget.group.id,
-                                uid: user.uid,
-                                name: user.displayName ?? '',
-                              );
-                              if (!mounted) return;
-                              setState(() {
-                                _joinPending = true;
-                              });
-                              // ignore: use_build_context_synchronously
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Join request sent'),
-                                ),
-                              );
-                            } catch (e, st) {
-                              if (kDebugMode) {
-                                debugPrint('Failed to join group: $e');
-                              }
-                              ErrorLogger.log(e, st);
-                              if (!mounted) return;
-                              // ignore: use_build_context_synchronously
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Failed to join group'),
-                                ),
-                              );
-                            }
-                          },
-                          child: const Text('Join Group'),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                  if (!isMember) {
+                    return StreamBuilder<
+                        DocumentSnapshot<Map<String, dynamic>>>(
+                      stream: widget.groupService.firestore
+                          .collection(GroupCollections.groups)
+                          .doc(widget.group.id)
+                          .collection(GroupCollections.joinRequests)
+                          .doc(user.uid)
+                          .snapshots(),
+                      builder: (context, reqSnapshot) {
+                        final isPending = reqSnapshot.data?.exists ?? false;
+                        if (isPending) {
+                          return const Padding(
+                            padding: EdgeInsets.only(bottom: 16),
+                            child: Text('Join request pending'),
+                          );
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () async {
+                                try {
+                                  await widget.groupService.joinGroup(
+                                    groupId: widget.group.id,
+                                    uid: user.uid,
+                                    name: user.displayName ?? '',
+                                  );
+                                  if (!mounted) return;
+                                  // ignore: use_build_context_synchronously
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Join request sent'),
+                                    ),
+                                  );
+                                } catch (e, st) {
+                                  if (kDebugMode) {
+                                    debugPrint('Failed to join group: $e');
+                                  }
+                                  ErrorLogger.log(e, st);
+                                  if (!mounted) return;
+                                  // ignore: use_build_context_synchronously
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Failed to join group'),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: const Text('Join Group'),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        );
+                      },
                     );
                   }
                   return const SizedBox.shrink();
