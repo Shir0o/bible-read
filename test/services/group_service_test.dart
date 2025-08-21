@@ -32,11 +32,15 @@ class MockQuery<T> extends Mock implements Query<T> {}
 
 class MockQuerySnapshot<T> extends Mock implements QuerySnapshot<T> {}
 
+class MockWriteBatch extends Mock implements WriteBatch {}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    registerFallbackValue(<String, dynamic>{});
+    registerFallbackValue(SetOptions(merge: true));
     await Firebase.initializeApp();
   });
 
@@ -130,6 +134,43 @@ void main() {
           .doc('u2')
           .get();
       expect(request.exists, isFalse);
+    });
+
+    test('approveJoinRequest performs batched write', () async {
+      final firestore = MockFirebaseFirestore();
+      final service = GroupService(firestore: firestore);
+
+      final groups = MockCollectionReference<Map<String, dynamic>>();
+      final groupRef = MockDocumentReference<Map<String, dynamic>>();
+      final joinRequests = MockCollectionReference<Map<String, dynamic>>();
+      final members = MockCollectionReference<Map<String, dynamic>>();
+      final requestRef = MockDocumentReference<Map<String, dynamic>>();
+      final memberRef = MockDocumentReference<Map<String, dynamic>>();
+      final requestSnap = MockDocumentSnapshot<Map<String, dynamic>>();
+      final batch = MockWriteBatch();
+
+      when(() => firestore.collection(GroupCollections.groups))
+          .thenReturn(groups);
+      when(() => groups.doc('g1')).thenReturn(groupRef);
+      when(() => groupRef.collection(GroupCollections.joinRequests))
+          .thenReturn(joinRequests);
+      when(() => groupRef.collection(GroupCollections.members))
+          .thenReturn(members);
+      when(() => joinRequests.doc('u2')).thenReturn(requestRef);
+      when(() => members.doc('u2')).thenReturn(memberRef);
+      when(() => requestRef.get()).thenAnswer((_) async => requestSnap);
+      when(() => requestSnap.data()).thenReturn({'name': 'User'});
+      when(() => firestore.batch()).thenReturn(batch);
+      when(() => batch.commit()).thenAnswer((_) async {});
+
+      await service.approveJoinRequest(groupId: 'g1', uid: 'u2');
+
+      verify(() => batch.set(memberRef, any<Map<String, dynamic>>(), any()))
+          .called(1);
+      verify(() => batch.delete(requestRef)).called(1);
+      verify(() => batch.commit()).called(1);
+      verifyNever(() => memberRef.set(any(), any()));
+      verifyNever(() => requestRef.delete());
     });
 
     test('denyJoinRequest removes request without adding member', () async {
