@@ -737,4 +737,40 @@ void main() {
 
     expect(find.text('Sign in with Google'), findsOneWidget);
   });
+
+  testWidgets('drawer navigation updates content index', (tester) async {
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+    fakePlatform.user = GoogleSignInUserData(
+      email: 'test@example.com',
+      id: '123',
+      displayName: 'Test',
+    );
+    final fakeNotifications = FakeNotificationsPlatform();
+    FlutterLocalNotificationsPlatform.instance = fakeNotifications;
+    final firestore = FakeFirebaseFirestore();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: firestore,
+          messaging: FakeFirebaseMessaging(null),
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state(find.byType(MainPage)) as dynamic;
+    state.navigateFromMenu(4);
+    await tester.pumpAndSettle();
+
+    final responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
+    expect(responsive.selectedIndex, 0);
+    expect(responsive.contentIndex, 4);
+  });
 }
