@@ -47,6 +47,13 @@ class MainPage extends StatefulWidget {
     FirebaseAuth? auth,
     FriendService? friendService,
   }) leaderboardPageBuilder;
+  final ReadLogPage Function({
+    Key? key,
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+    required SendLikeNotification onSendLikeNotification,
+    required SendCommentNotification onSendCommentNotification,
+  }) readLogPageBuilder;
   final SendLikeNotification? sendLikeNotification;
   final SendCommentNotification? sendCommentNotification;
   final FirebaseMessaging messaging;
@@ -65,6 +72,13 @@ class MainPage extends StatefulWidget {
       FirebaseAuth? auth,
       FriendService? friendService,
     })? leaderboardPageBuilder,
+    ReadLogPage Function({
+      Key? key,
+      FirebaseFirestore? firestore,
+      FirebaseAuth? auth,
+      required SendLikeNotification onSendLikeNotification,
+      required SendCommentNotification onSendCommentNotification,
+    })? readLogPageBuilder,
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
@@ -74,7 +88,8 @@ class MainPage extends StatefulWidget {
         googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
         dailyNotificationServiceProvider =
             dailyNotificationServiceProvider ?? DailyNotificationService.new,
-        leaderboardPageBuilder = leaderboardPageBuilder ?? LeaderboardPage.new;
+        leaderboardPageBuilder = leaderboardPageBuilder ?? LeaderboardPage.new,
+        readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -109,7 +124,7 @@ class _MainPageState extends State<MainPage> {
         auth: widget.auth,
         functions: FirebaseFunctions.instance,
       ),
-      ReadLogPage(
+      widget.readLogPageBuilder(
         key: _readLogKey,
         firestore: widget.firestore,
         auth: widget.auth,
