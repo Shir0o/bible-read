@@ -4,7 +4,7 @@ Reading groups allow multiple users to follow a shared Bible plan. The data is s
 
 ## Creating and Joining
 
-Users can create a group from the app. All available groups are listed on the Groups page, and opening a group shows a **Join Group** button on the detail page. Joining a public group immediately adds the user as a member, while private groups send a join request for the owner to approve.
+Users can create a group from the app. All groups are visible and listed on the Groups page. Opening a group shows a **Join Group** button on the detail page. Selecting this button sends a join request that the group owner or an admin must approve before membership is granted.
 
 ## Collections
 
@@ -26,4 +26,4 @@ Firestore security rules restrict modifications to group data:
 
 ## UI
 
-The app includes a `GroupsPage` listing all available groups (`lib/pages/groups_page.dart`). Selecting a group opens a `GroupDetailPage` (`lib/pages/group_detail_page.dart`) showing the member list and reading schedule. Any user can view a group's details, while group owners can add or edit schedule entries from this page.
+The app includes a `GroupsPage` listing all available groups (`lib/pages/groups_page.dart`). Selecting a group opens a `GroupDetailPage` (`lib/pages/group_detail_page.dart`) showing the member list and reading schedule. Any user can view a group's details and submit a join request, while group owners can add or edit schedule entries from this page.
