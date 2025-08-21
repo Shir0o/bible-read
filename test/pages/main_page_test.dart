@@ -179,6 +179,34 @@ void main() {
     expect(find.text('Sign in with Google'), findsOneWidget);
   });
 
+  testWidgets('tapping protected drawer item when signed out has no effect',
+      (tester) async {
+    final auth = MockFirebaseAuth();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Attempt to navigate to a protected page via the drawer.
+    final responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
+    responsive.scaffoldKey!.currentState!.openDrawer();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.people));
+    await tester.pumpAndSettle();
+
+    // The profile page should remain visible and navigation index unchanged.
+    final state = tester.state(find.byType(MainPage)) as dynamic;
+    expect(state.selectedIndex, 0);
+    expect(find.text('Sign in with Google'), findsOneWidget);
+  });
+
   testWidgets('navigation updates selected index', (tester) async {
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
