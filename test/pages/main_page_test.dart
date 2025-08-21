@@ -14,6 +14,7 @@ import 'package:bible_read/pages/read_log_page.dart';
 import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/pages/achievements_page.dart';
 import 'package:bible_read/pages/streak_history_page.dart';
+import 'package:bible_read/pages/leaderboard_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:bible_read/services/daily_notification_service.dart';
@@ -308,6 +309,40 @@ void main() {
     expect(find.byType(FriendsPage), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
     expect(find.byType(NavigationRail), findsNothing);
+  });
+
+  testWidgets('bottom navigation hidden when navigating to leaderboard', (
+    tester,
+  ) async {
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+    final firestore = FakeFirebaseFirestore();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(size: Size(400, 800)),
+          child: MainPage(
+            auth: auth,
+            firestore: firestore,
+            messaging: FakeFirebaseMessaging(null),
+            dailyNotificationServiceProvider: DailyNotificationService.new,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify the bottom navigation bar is initially visible.
+    expect(find.byType(NavigationBar), findsOneWidget);
+
+    final state = tester.state(find.byType(MainPage)) as dynamic;
+    state.navigateFromMenu(2);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LeaderboardPage), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
   });
 
   testWidgets('onItemTapped refreshes read log page', (tester) async {
