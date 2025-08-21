@@ -165,6 +165,7 @@ void main() {
 
       await service.approveJoinRequest(groupId: 'g1', uid: 'u2');
 
+      verify(() => firestore.batch()).called(1);
       verify(() => batch.set(memberRef, any<Map<String, dynamic>>(), any()))
           .called(1);
       verify(() => batch.delete(requestRef)).called(1);
@@ -594,6 +595,8 @@ void main() {
       await expectLater(svc.joinGroup(groupId: 'g1', uid: 'u1', name: 'Name'),
           throwsA(same(err)));
 
+      verify(() => joinRequests.doc('u1')).called(1);
+      verify(() => joinDoc.set(any())).called(1);
       verify(() => crash.recordError(err, any(),
           reason: null,
           information: any(named: 'information'),
