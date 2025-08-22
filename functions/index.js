@@ -264,10 +264,17 @@ exports.deleteFriendRequestPair = onCall({ region: "us-central1" }, async (req) 
   const sentRef = db.collection("users").doc(fromUid)
     .collection("friendRequestsSent").doc(toUid);
   try {
-    await Promise.all([
-      receivedRef.delete(),
-      sentRef.delete()
-    ]);
+    const notificationsSnap = await db
+      .collection('users')
+      .doc(toUid)
+      .collection('notifications')
+      .where('type', '==', 'friendRequest')
+      .where('fromUid', '==', fromUid)
+      .get();
+
+    const ops = [receivedRef.delete(), sentRef.delete()];
+    notificationsSnap.forEach((doc) => ops.push(doc.ref.delete()));
+    await Promise.all(ops);
   } catch (err) {
     functions.logger.error('Failed to delete friend request pair', err);
     throw new functions.https.HttpsError(
@@ -323,6 +330,12 @@ exports.acceptFriendRequest = onCall({ region: "us-central1" }, async (req) => {
   batch.delete(fromRef.collection("friendRequestsSent").doc(toUid));
   batch.delete(toRef.collection("friendRequestsReceived").doc(fromUid));
   try {
+    const notificationsSnap = await toRef
+      .collection('notifications')
+      .where('type', '==', 'friendRequest')
+      .where('fromUid', '==', fromUid)
+      .get();
+    notificationsSnap.forEach((doc) => batch.update(doc.ref, { read: true }));
     await batch.commit();
   } catch (err) {
     functions.logger.error('Failed to accept friend request', err);
