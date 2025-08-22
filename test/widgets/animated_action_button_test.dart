@@ -7,11 +7,11 @@ import 'package:bible_read/widgets/animated_action_button.dart';
 import 'package:bible_read/services/vibration_service.dart';
 
 class _RecordingVibrationService extends VibrationService {
-  int lightCount = 0;
+  int tapCount = 0;
 
   @override
-  Future<void> lightImpact() async {
-    lightCount++;
+  Future<void> tap() async {
+    tapCount++;
   }
 }
 
@@ -48,9 +48,9 @@ void main() {
       MaterialApp(
         home: AnimatedActionButton(
           onPressed: () {},
-          child: const Text('Tap'),
           enableHapticFeedback: true,
           vibrationService: service,
+          child: const Text('Tap'),
         ),
       ),
     );
@@ -59,7 +59,7 @@ void main() {
     );
     detector.onTapDown!(TapDownDetails(kind: PointerDeviceKind.touch));
     await tester.pump();
-    expect(service.lightCount, 1);
+    expect(service.tapCount, 1);
   });
 
   testWidgets('does not vibrate when disabled', (tester) async {
@@ -68,9 +68,9 @@ void main() {
       MaterialApp(
         home: AnimatedActionButton(
           onPressed: () {},
-          child: const Text('Tap'),
           enableHapticFeedback: false,
           vibrationService: service,
+          child: const Text('Tap'),
         ),
       ),
     );
@@ -79,7 +79,7 @@ void main() {
     );
     detector.onTapDown!(TapDownDetails(kind: PointerDeviceKind.touch));
     await tester.pump();
-    expect(service.lightCount, 0);
+    expect(service.tapCount, 0);
   });
 
   testWidgets('shows loading indicator and disables onPressed', (tester) async {

@@ -95,6 +95,12 @@ The app can vibrate the device to provide haptic feedback for certain actions.
 Vibration is enabled by default and may be toggled from the Settings page under
 **Vibration**.
 
+The [VibrationService](lib/services/vibration_service.dart) exposes a
+`tap()` helper for a light impact. Widgets can obtain the service by reading a
+global instance from a `Provider` or by accepting a [VibrationService]
+through their constructors. For example, `AnimatedActionButton` accepts a
+`vibrationService` parameter that defaults to `const VibrationService()`.
+
 Vibration requires hardware support and is not available on all platforms.
 Devices without a vibration motor—including many tablets, web browsers, and
 desktop environments—will ignore the setting. Simulators and emulators may also
