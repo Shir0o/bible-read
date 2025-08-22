@@ -8,6 +8,7 @@ import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/models/app_notification.dart';
 import 'package:bible_read/models/notification_preferences.dart';
 import 'package:bible_read/pages/notification_center_page.dart';
+import 'package:bible_read/services/vibration_service.dart';
 
 class FakeNotificationService extends NotificationService {
   FakeNotificationService({required Stream<List<AppNotification>> stream})
@@ -18,6 +19,15 @@ class FakeNotificationService extends NotificationService {
 
   @override
   Stream<List<AppNotification>> notifications(String uid) => stream;
+}
+
+class _RecordingVibrationService extends VibrationService {
+  int mediumCount = 0;
+
+  @override
+  Future<void> mediumImpact() async {
+    mediumCount++;
+  }
 }
 
 void main() {
@@ -62,12 +72,17 @@ void main() {
       senderUid: 'b',
     );
     final service = FakeNotificationService(stream: Stream.value([n1, n2]));
+    final vibrationService = _RecordingVibrationService();
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           appBar: AppBar(actions: [
-            NotificationButton(service: service, auth: auth),
+            NotificationButton(
+              service: service,
+              auth: auth,
+              vibrationService: vibrationService,
+            ),
           ]),
         ),
       ),
@@ -79,6 +94,7 @@ void main() {
     await tester.tap(find.byTooltip('Notifications'));
     await tester.pumpAndSettle();
 
+    expect(vibrationService.mediumCount, 1);
     expect(find.byType(NotificationCenterPage), findsOneWidget);
   });
 
