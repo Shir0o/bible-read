@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/widgets/read_switch_tile.dart';
+import 'package:bible_read/services/vibration_service.dart';
+
+class _RecordingVibrationService extends VibrationService {
+  int lightCount = 0;
+
+  @override
+  Future<void> lightImpact() async {
+    lightCount++;
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +32,7 @@ void main() {
   testWidgets('Tapping the tile toggles the switch and calls onChanged', (
     tester,
   ) async {
+    final service = _RecordingVibrationService();
     var value = false;
     bool? callbackValue;
 
@@ -35,6 +46,7 @@ void main() {
                 callbackValue = newValue;
                 setState(() => value = newValue);
               },
+              vibrationService: service,
             ),
           ),
         ),
@@ -56,6 +68,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
+    expect(service.lightCount, 1);
     expect(callbackValue, isTrue);
     expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
   });
@@ -75,5 +88,30 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('toggling the switch triggers vibration', (tester) async {
+    final service = _RecordingVibrationService();
+    var value = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) => ReadSwitchTile(
+              value: value,
+              onChanged: (newValue) {
+                setState(() => value = newValue);
+              },
+              vibrationService: service,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+
+    expect(service.lightCount, 1);
   });
 }
