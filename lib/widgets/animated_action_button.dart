@@ -17,6 +17,8 @@ class AnimatedActionButton extends StatefulWidget {
   final bool isLoading;
 
   /// Whether to trigger a light vibration on press.
+  ///
+  /// Defaults to `true`.
   final bool enableHapticFeedback;
 
   /// Service used to trigger vibrations.
@@ -28,7 +30,7 @@ class AnimatedActionButton extends StatefulWidget {
     required this.onPressed,
     required this.child,
     this.isLoading = false,
-    this.enableHapticFeedback = false,
+    this.enableHapticFeedback = true,
     VibrationService? vibrationService,
   }) : vibrationService = vibrationService ?? const VibrationService();
 
