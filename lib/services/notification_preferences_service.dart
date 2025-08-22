@@ -8,6 +8,7 @@ class NotificationPreferencesService {
   final FirebaseFirestore firestore;
 
   final Map<String, NotificationPreferences> _cache = {};
+  final Map<String, bool> _vibrationCache = {};
 
   /// Creates a [NotificationPreferencesService].
   NotificationPreferencesService({FirebaseFirestore? firestore})
@@ -36,6 +37,23 @@ class NotificationPreferencesService {
     return prefs;
   }
 
+  /// Fetches whether vibration is enabled for the user with [uid].
+  /// Results are cached.
+  Future<bool> fetchVibrationEnabled(String uid) async {
+    final cached = _vibrationCache[uid];
+    if (cached != null) return cached;
+    final doc = await firestore
+        .collection('users')
+        .doc(uid)
+        .collection('notificationPrefs')
+        .doc('vibration')
+        .get();
+    final enabled = doc.data()?['enabled'];
+    final value = enabled is bool ? enabled : true;
+    _vibrationCache[uid] = value;
+    return value;
+  }
+
   /// Updates the preference [type] for [uid].
   Future<void> updatePreference(
       String uid, NotificationType type, bool enabled) async {
@@ -52,5 +70,16 @@ class NotificationPreferencesService {
       ...current.values,
       type: enabled,
     });
+  }
+
+  /// Updates the vibration preference for [uid].
+  Future<void> updateVibrationEnabled(String uid, bool enabled) async {
+    await firestore
+        .collection('users')
+        .doc(uid)
+        .collection('notificationPrefs')
+        .doc('vibration')
+        .set({'enabled': enabled});
+    _vibrationCache[uid] = enabled;
   }
 }

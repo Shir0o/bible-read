@@ -97,5 +97,25 @@ void main() {
 
       expect(prefs[NotificationType.dailyReminder], isTrue);
     });
+
+    test('fetchVibrationEnabled defaults to true', () async {
+      final enabled = await service.fetchVibrationEnabled('u1');
+      expect(enabled, isTrue);
+    });
+
+    test('updateVibrationEnabled writes document and updates cache', () async {
+      await service.updateVibrationEnabled('u1', false);
+      final doc = await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('notificationPrefs')
+          .doc('vibration')
+          .get();
+      expect(doc.exists, isTrue);
+      expect(doc.data()?['enabled'], false);
+
+      final enabled = await service.fetchVibrationEnabled('u1');
+      expect(enabled, isFalse);
+    });
   });
 }
