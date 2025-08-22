@@ -1,6 +1,7 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter_test/flutter_test.dart';
+// ignore: depend_on_referenced_packages
 import 'package:vibration_platform_interface/vibration_platform_interface.dart';
 
 import 'package:bible_read/services/vibration_service.dart';
@@ -51,7 +52,7 @@ void main() {
       auth: auth,
       prefsService: _MockPrefsService(true),
     );
-    await service.lightImpact();
+    await service.tap();
     expect(platform.vibrated, isTrue);
   });
 
@@ -67,7 +68,7 @@ void main() {
       auth: auth,
       prefsService: _MockPrefsService(false),
     );
-    await service.lightImpact();
+    await service.tap();
     expect(platform.vibrated, isFalse);
   });
 }
