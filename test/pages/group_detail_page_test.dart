@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -8,6 +10,7 @@ import 'package:bible_read/models/group.dart';
 import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/pages/group_detail_page.dart';
 import 'package:bible_read/services/group_service.dart';
+import 'package:bible_read/services/vibration_service.dart';
 
 class RecordingGroupService extends GroupService {
   RecordingGroupService({required super.firestore});
@@ -47,8 +50,23 @@ class RecordingGroupService extends GroupService {
   }
 }
 
+class _RecordingVibrationService extends VibrationService {
+  int lightCount = 0;
+
+  @override
+  Future<void> lightImpact() async {
+    lightCount++;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setupFirebaseCoreMocks();
+
+  setUpAll(() async {
+    await Firebase.initializeApp();
+  });
+
   late FakeFirebaseFirestore firestore;
   late MockFirebaseAuth auth;
   late Group group;
@@ -62,6 +80,7 @@ void main() {
     WidgetTester tester, {
     required GroupService service,
     required MockFirebaseAuth auth,
+    VibrationService? vibrationService,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -69,6 +88,7 @@ void main() {
           group: group,
           groupService: service,
           auth: auth,
+          vibrationService: vibrationService,
         ),
       ),
     );
@@ -79,6 +99,7 @@ void main() {
     WidgetTester tester, {
     required GroupService service,
     required MockFirebaseAuth auth,
+    VibrationService? vibrationService,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -90,6 +111,7 @@ void main() {
                   group: group,
                   groupService: service,
                   auth: auth,
+                  vibrationService: vibrationService,
                 ),
               ),
             ),
@@ -142,8 +164,14 @@ void main() {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     final service = RecordingGroupService(firestore: firestore);
+    final vibration = _RecordingVibrationService();
 
-    await pumpPage(tester, service: service, auth: auth);
+    await pumpPage(
+      tester,
+      service: service,
+      auth: auth,
+      vibrationService: vibration,
+    );
 
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
@@ -151,6 +179,7 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
+    expect(vibration.lightCount, 1);
     expect(service.lastSchedule?.chapters, ['Ex 1']);
     expect(find.text('Ex 1'), findsOneWidget);
   });
@@ -170,7 +199,12 @@ void main() {
     final service = RecordingGroupService(firestore: firestore)
       ..failUpdate = true;
 
-    await pumpPage(tester, service: service, auth: auth);
+    await pumpPage(
+      tester,
+      service: service,
+      auth: auth,
+      vibrationService: _RecordingVibrationService(),
+    );
 
     await tester.tap(find.byIcon(Icons.edit));
     await tester.pumpAndSettle();
@@ -249,7 +283,14 @@ void main() {
         mockUser: MockUser(uid: 'u2', displayName: 'User'), signedIn: true);
     final service = RecordingGroupService(firestore: firestore);
 
-    await pumpAndNavigate(tester, service: service, auth: auth);
+    final vibration = _RecordingVibrationService();
+
+    await pumpAndNavigate(
+      tester,
+      service: service,
+      auth: auth,
+      vibrationService: vibration,
+    );
 
     await tester.tap(find.text('Join Group'));
     await tester.pumpAndSettle();
@@ -259,6 +300,7 @@ void main() {
     expect(service.joinedName, 'User');
     expect(find.text('Join request sent'), findsOneWidget);
     expect(find.text('Join Group'), findsNothing);
+    expect(vibration.lightCount, 1);
   });
 
   testWidgets('join button via navigation failure shows error', (tester) async {
@@ -268,7 +310,12 @@ void main() {
     final service = RecordingGroupService(firestore: firestore)
       ..failJoin = true;
 
-    await pumpAndNavigate(tester, service: service, auth: auth);
+    await pumpAndNavigate(
+      tester,
+      service: service,
+      auth: auth,
+      vibrationService: _RecordingVibrationService(),
+    );
 
     await tester.tap(find.text('Join Group'));
     await tester.pumpAndSettle();
