@@ -30,16 +30,21 @@ class NotificationSettingsPage extends StatefulWidget {
 class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   NotificationPreferences? _prefs;
   bool _loading = true;
+  bool _vibrationEnabled = true;
 
   @override
   void initState() {
     super.initState();
     final user = widget.auth.currentUser;
     if (user != null) {
-      widget.service.fetchPreferences(user.uid).then((p) {
+      Future.wait([
+        widget.service.fetchPreferences(user.uid),
+        widget.service.fetchVibrationEnabled(user.uid),
+      ]).then((result) {
         if (mounted) {
           setState(() {
-            _prefs = p;
+            _prefs = result[0] as NotificationPreferences;
+            _vibrationEnabled = result[1] as bool;
             _loading = false;
           });
         }
@@ -74,6 +79,25 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     });
   }
 
+  void _toggleVibration(bool value) {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+    final previous = _vibrationEnabled;
+    setState(() {
+      _vibrationEnabled = value;
+    });
+    widget.service.updateVibrationEnabled(user.uid, value).catchError((e, st) {
+      ErrorLogger.log(e, st);
+      if (!mounted) return;
+      setState(() {
+        _vibrationEnabled = previous;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update preferences')),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,15 +109,20 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             : (_prefs == null
                 ? const Center(child: Text('Please sign in'))
                 : ListView(
-                    children: NotificationType.values
-                        .map(
-                          (type) => SwitchListTile(
-                            title: Text(_label(type)),
-                            value: _prefs![type],
-                            onChanged: (val) => _toggle(type, val),
-                          ),
-                        )
-                        .toList(),
+                    children: [
+                      ...NotificationType.values.map(
+                        (type) => SwitchListTile(
+                          title: Text(_label(type)),
+                          value: _prefs![type],
+                          onChanged: (val) => _toggle(type, val),
+                        ),
+                      ),
+                      SwitchListTile(
+                        title: const Text('Vibration'),
+                        value: _vibrationEnabled,
+                        onChanged: _toggleVibration,
+                      ),
+                    ],
                   )),
       ),
     );
