@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../services/vibration_service.dart';
 
 /// Tappable switch that briefly scales on toggle.
 class ReadSwitchTile extends StatefulWidget {
@@ -11,19 +14,26 @@ class ReadSwitchTile extends StatefulWidget {
   /// Whether to play the scale animation when toggled.
   final bool animate;
 
+  /// Service used to trigger vibrations.
+  final VibrationService vibrationService;
+
   /// Creates an animated [ReadSwitchTile].
   const ReadSwitchTile({
     super.key,
     required this.value,
     required this.onChanged,
-  }) : animate = true;
+    VibrationService? vibrationService,
+  })  : vibrationService = vibrationService ?? const VibrationService(),
+        animate = true;
 
   /// Creates a [ReadSwitchTile] without animation.
   const ReadSwitchTile.noAnimation({
     super.key,
     required this.value,
     required this.onChanged,
-  }) : animate = false;
+    VibrationService? vibrationService,
+  })  : vibrationService = vibrationService ?? const VibrationService(),
+        animate = false;
 
   @override
   State<ReadSwitchTile> createState() => _ReadSwitchTileState();
@@ -59,6 +69,7 @@ class _ReadSwitchTileState extends State<ReadSwitchTile>
 
   void _handleChanged(bool newValue) {
     widget.onChanged?.call(newValue);
+    unawaited(widget.vibrationService.lightImpact());
     if (widget.animate) _triggerAnimation();
   }
 
