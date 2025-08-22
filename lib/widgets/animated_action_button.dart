@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
+import '../services/vibration_service.dart';
 
 /// A button that provides press feedback via a scale animation and
 /// optionally shows a loading indicator.
@@ -13,8 +16,11 @@ class AnimatedActionButton extends StatefulWidget {
   /// Whether to display a loading spinner and disable the button.
   final bool isLoading;
 
-  /// Whether to trigger a light haptic feedback on press.
+  /// Whether to trigger a light vibration on press.
   final bool enableHapticFeedback;
+
+  /// Service used to trigger vibrations.
+  final VibrationService vibrationService;
 
   /// Creates an [AnimatedActionButton].
   const AnimatedActionButton({
@@ -23,7 +29,8 @@ class AnimatedActionButton extends StatefulWidget {
     required this.child,
     this.isLoading = false,
     this.enableHapticFeedback = false,
-  });
+    VibrationService? vibrationService,
+  }) : vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<AnimatedActionButton> createState() => _AnimatedActionButtonState();
@@ -53,7 +60,7 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
 
   void _onTapDown(TapDownDetails details) {
     if (widget.enableHapticFeedback) {
-      HapticFeedback.lightImpact();
+      unawaited(widget.vibrationService.lightImpact());
     }
     _controller.animateTo(0.95, curve: Curves.easeInOut);
   }
