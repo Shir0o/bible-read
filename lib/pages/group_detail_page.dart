@@ -107,12 +107,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               _scheduleOverride = previous;
             });
             // ignore: use_build_context_synchronously
-            // ignore: use_build_context_synchronously
-            // ignore: use_build_context_synchronously
-            // ignore: use_build_context_synchronously
             ScaffoldMessenger.of(context).showSnackBar(
-              // ignore: use_build_context_synchronously
-              // ignore: use_build_context_synchronously
               const SnackBar(content: Text('Failed to update schedule')),
             );
           }

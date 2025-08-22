@@ -140,7 +140,7 @@ void main() {
     expect(find.text('Email Sign Up'), findsOneWidget);
   });
 
-  testWidgets('auth buttons vibrate', (tester) async {
+  testWidgets('email sign-in button vibrates', (tester) async {
     final vibration = _RecordingVibrationService();
     await tester.pumpWidget(
       MaterialApp(
@@ -157,10 +157,25 @@ void main() {
     await tester.tap(find.text('Email Sign In'));
     await tester.pumpAndSettle();
     expect(vibration.lightCount, 1);
+  });
+
+  testWidgets('email sign-up button vibrates', (tester) async {
+    final vibration = _RecordingVibrationService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UserProfilePage(
+          auth: MockFirebaseAuth(),
+          firestore: FakeFirebaseFirestore(),
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+          vibrationService: vibration,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Email Sign Up'));
     await tester.pumpAndSettle();
-    expect(vibration.lightCount, 2);
+    expect(vibration.lightCount, 1);
   });
 
   testWidgets('successful sign in navigates to main page', (tester) async {
