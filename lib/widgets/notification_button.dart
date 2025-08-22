@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/app_notification.dart';
 import '../services/notification_service.dart';
+import '../services/vibration_service.dart';
 import '../pages/notification_center_page.dart';
 
 /// Icon button that navigates to [NotificationCenterPage] and shows the
@@ -14,13 +17,18 @@ class NotificationButton extends StatelessWidget {
   /// Firebase auth instance.
   final FirebaseAuth auth;
 
+  /// Service used to trigger vibrations.
+  final VibrationService vibrationService;
+
   /// Creates a [NotificationButton].
   NotificationButton({
     super.key,
     NotificationService? service,
     FirebaseAuth? auth,
+    VibrationService? vibrationService,
   })  : service = service ?? NotificationService(),
-        auth = auth ?? FirebaseAuth.instance;
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +82,7 @@ class NotificationButton extends StatelessWidget {
             ],
           ),
           onPressed: () {
+            unawaited(vibrationService.mediumImpact());
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => NotificationCenterPage(
