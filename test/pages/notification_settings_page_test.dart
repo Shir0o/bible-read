@@ -17,6 +17,12 @@ void main() {
         .collection('notificationPrefs')
         .doc('like')
         .set({'enabled': false});
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('notificationPrefs')
+        .doc('vibration')
+        .set({'enabled': false});
 
     final auth =
         MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
@@ -30,7 +36,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SwitchListTile),
-        findsNWidgets(NotificationType.values.length));
+        findsNWidgets(NotificationType.values.length + 1));
     final likeSwitch = tester.widget<SwitchListTile>(
         find.widgetWithText(SwitchListTile, 'Like Notifications'));
     expect(likeSwitch.value, isFalse);
@@ -63,5 +69,20 @@ void main() {
         .doc('dailyReminder')
         .get();
     expect(dailyDoc.data()?['enabled'], false);
+
+    final vibrationSwitch = tester.widget<SwitchListTile>(
+        find.widgetWithText(SwitchListTile, 'Vibration'));
+    expect(vibrationSwitch.value, isFalse);
+
+    await tester.tap(find.widgetWithText(SwitchListTile, 'Vibration'));
+    await tester.pumpAndSettle();
+
+    final vibrationDoc = await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('notificationPrefs')
+        .doc('vibration')
+        .get();
+    expect(vibrationDoc.data()?['enabled'], true);
   });
 }
