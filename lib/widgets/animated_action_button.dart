@@ -60,7 +60,7 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
 
   void _onTapDown(TapDownDetails details) {
     if (widget.enableHapticFeedback) {
-      unawaited(widget.vibrationService.lightImpact());
+      unawaited(widget.vibrationService.tap());
     }
     _controller.animateTo(0.95, curve: Curves.easeInOut);
   }

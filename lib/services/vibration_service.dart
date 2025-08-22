@@ -15,6 +15,9 @@ class VibrationService {
   /// Creates a [VibrationService].
   const VibrationService({this.auth, this.prefsService});
 
+  /// Trigger a standard tap vibration.
+  Future<void> tap() => lightImpact();
+
   /// Trigger a light impact vibration.
   Future<void> lightImpact() => _vibrate(20);
 
