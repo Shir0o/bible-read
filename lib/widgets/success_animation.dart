@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+
+import '../services/vibration_service.dart';
 
 /// Overlay animation shown on successful actions.
 class SuccessAnimation extends StatelessWidget {
@@ -10,7 +14,11 @@ class SuccessAnimation extends StatelessWidget {
 
   /// Displays the success animation using an [Overlay] above the current
   /// context.
-  static Future<void> show(BuildContext context) {
+  static Future<void> show(
+    BuildContext context, {
+    VibrationService? vibrationService,
+  }) {
+    unawaited((vibrationService ?? const VibrationService()).mediumImpact());
     final overlay = Overlay.of(context);
     late OverlayEntry entry;
     entry = OverlayEntry(
@@ -37,18 +45,13 @@ class SuccessAnimation extends StatelessWidget {
               return const SizedBox(
                 width: 120,
                 height: 120,
-                child: Center(
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
               );
             }
             return child;
           },
-          errorBuilder: (context, error, stackTrace) => const Icon(
-            Icons.check_circle,
-            color: Colors.green,
-            size: 120,
-          ),
+          errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.check_circle, color: Colors.green, size: 120),
         ),
       ),
     );
