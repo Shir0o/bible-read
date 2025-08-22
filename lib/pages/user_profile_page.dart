@@ -18,6 +18,8 @@ import 'signup_page.dart';
 import '../widgets/animated_action_button.dart';
 import '../widgets/animated_page_route.dart';
 import '../widgets/menu_button.dart';
+import '../widgets/vibration_button.dart';
+import '../services/vibration_service.dart';
 
 class UserProfilePage extends StatefulWidget {
   final GoogleSignInAccount? user;
@@ -26,6 +28,7 @@ class UserProfilePage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FriendService friendService;
   final DailyNotificationService Function() dailyNotificationServiceProvider;
+  final VibrationService vibrationService;
 
   factory UserProfilePage({
     Key? key,
@@ -35,6 +38,7 @@ class UserProfilePage extends StatefulWidget {
     FirebaseFirestore? firestore,
     FriendService? friendService,
     DailyNotificationService Function()? dailyNotificationServiceProvider,
+    VibrationService? vibrationService,
   }) {
     final fs = firestore ?? FirebaseFirestore.instance;
     return UserProfilePage._(
@@ -46,6 +50,7 @@ class UserProfilePage extends StatefulWidget {
       friendService: friendService ?? FriendService(firestore: fs),
       dailyNotificationServiceProvider:
           dailyNotificationServiceProvider ?? DailyNotificationService.new,
+      vibrationService: vibrationService ?? const VibrationService(),
     );
   }
 
@@ -57,6 +62,7 @@ class UserProfilePage extends StatefulWidget {
     required this.firestore,
     required this.friendService,
     required this.dailyNotificationServiceProvider,
+    required this.vibrationService,
   });
 
   @override
@@ -193,7 +199,8 @@ class UserProfilePageState extends State<UserProfilePage> {
                             child: const Text('Sign in with Google'),
                           ),
                           const SizedBox(height: 8),
-                          ElevatedButton(
+                          VibrationButton(
+                            vibrationService: widget.vibrationService,
                             onPressed: () {
                               Navigator.of(context).push(
                                 animatedPageRoute(
@@ -204,7 +211,8 @@ class UserProfilePageState extends State<UserProfilePage> {
                             child: const Text('Email Sign In'),
                           ),
                           const SizedBox(height: 8),
-                          ElevatedButton(
+                          VibrationButton(
+                            vibrationService: widget.vibrationService,
                             onPressed: () {
                               Navigator.of(context).push(
                                 animatedPageRoute(
@@ -260,7 +268,8 @@ class UserProfilePageState extends State<UserProfilePage> {
                               child: const Text('Sign Out'),
                             ),
                             const SizedBox(height: 8),
-                            ElevatedButton(
+                            VibrationButton(
+                              vibrationService: widget.vibrationService,
                               onPressed: () {
                                 Navigator.of(context).push(
                                   animatedPageRoute(
