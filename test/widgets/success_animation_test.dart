@@ -48,11 +48,14 @@ void main() {
   testWidgets('invokes vibration when shown', (tester) async {
     final service = _RecordingVibrationService();
     await tester.pumpWidget(const MaterialApp(home: Scaffold()));
-    await SuccessAnimation.show(
-      tester.element(find.byType(Scaffold)),
-      vibrationService: service,
-    );
+    await HttpOverrides.runZoned(() async {
+      SuccessAnimation.show(
+        tester.element(find.byType(Scaffold)),
+        vibrationService: service,
+      );
+    }, createHttpClient: (_) => _ErrorHttpClient());
     await tester.pump();
+    await tester.pump(const Duration(seconds: 3));
     expect(service.mediumCount, 1);
   });
 }
