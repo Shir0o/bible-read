@@ -4,6 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/widgets/animated_action_button.dart';
+import 'package:bible_read/services/vibration_service.dart';
+
+class _RecordingVibrationService extends VibrationService {
+  int lightCount = 0;
+
+  @override
+  Future<void> lightImpact() async {
+    lightCount++;
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -11,15 +21,13 @@ void main() {
   testWidgets('scales down on press and returns on release', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: AnimatedActionButton(
-          onPressed: () {},
-          child: const Text('Tap'),
-        ),
+        home: AnimatedActionButton(onPressed: () {}, child: const Text('Tap')),
       ),
     );
 
     final state = tester.state<State<AnimatedActionButton>>(
-        find.byType(AnimatedActionButton)) as dynamic;
+      find.byType(AnimatedActionButton),
+    ) as dynamic;
     final detector = tester.widget<GestureDetector>(
       find.byKey(const Key('animated_action_button_detector')),
     );
@@ -32,6 +40,46 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(state.animation.value, 1.0);
+  });
+
+  testWidgets('triggers vibration when enabled', (tester) async {
+    final service = _RecordingVibrationService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AnimatedActionButton(
+          onPressed: () {},
+          child: const Text('Tap'),
+          enableHapticFeedback: true,
+          vibrationService: service,
+        ),
+      ),
+    );
+    final detector = tester.widget<GestureDetector>(
+      find.byKey(const Key('animated_action_button_detector')),
+    );
+    detector.onTapDown!(TapDownDetails(kind: PointerDeviceKind.touch));
+    await tester.pump();
+    expect(service.lightCount, 1);
+  });
+
+  testWidgets('does not vibrate when disabled', (tester) async {
+    final service = _RecordingVibrationService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AnimatedActionButton(
+          onPressed: () {},
+          child: const Text('Tap'),
+          enableHapticFeedback: false,
+          vibrationService: service,
+        ),
+      ),
+    );
+    final detector = tester.widget<GestureDetector>(
+      find.byKey(const Key('animated_action_button_detector')),
+    );
+    detector.onTapDown!(TapDownDetails(kind: PointerDeviceKind.touch));
+    await tester.pump();
+    expect(service.lightCount, 0);
   });
 
   testWidgets('shows loading indicator and disables onPressed', (tester) async {

@@ -1,11 +1,19 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vibration/vibration.dart';
 
 import 'error_logger.dart';
+import 'notification_preferences_service.dart';
 
 /// Provides simple haptic feedback helpers.
 class VibrationService {
+  /// Firebase auth instance used to identify the current user.
+  final FirebaseAuth? auth;
+
+  /// Service used to read vibration preferences.
+  final NotificationPreferencesService? prefsService;
+
   /// Creates a [VibrationService].
-  const VibrationService();
+  const VibrationService({this.auth, this.prefsService});
 
   /// Trigger a light impact vibration.
   Future<void> lightImpact() => _vibrate(20);
@@ -18,6 +26,11 @@ class VibrationService {
 
   Future<void> _vibrate(int duration) async {
     try {
+      final user = (auth ?? FirebaseAuth.instance).currentUser;
+      if (user == null) return;
+      final enabled = await (prefsService ?? NotificationPreferencesService())
+          .fetchVibrationEnabled(user.uid);
+      if (!enabled) return;
       if (await Vibration.hasVibrator()) {
         await Vibration.vibrate(duration: duration);
       }
