@@ -16,6 +16,7 @@ import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/badge_icon.dart';
 import 'package:bible_read/services/daily_notification_service.dart';
+import 'package:bible_read/services/vibration_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
@@ -99,6 +100,15 @@ class FakeNotificationsPlatform extends FlutterLocalNotificationsPlatform {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _RecordingVibrationService extends VibrationService {
+  int lightCount = 0;
+
+  @override
+  Future<void> lightImpact() async {
+    lightCount++;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
@@ -128,6 +138,29 @@ void main() {
     expect(find.text('Sign in with Google'), findsOneWidget);
     expect(find.text('Email Sign In'), findsOneWidget);
     expect(find.text('Email Sign Up'), findsOneWidget);
+  });
+
+  testWidgets('auth buttons vibrate', (tester) async {
+    final vibration = _RecordingVibrationService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UserProfilePage(
+          auth: MockFirebaseAuth(),
+          firestore: FakeFirebaseFirestore(),
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+          vibrationService: vibration,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Email Sign In'));
+    await tester.pumpAndSettle();
+    expect(vibration.lightCount, 1);
+
+    await tester.tap(find.text('Email Sign Up'));
+    await tester.pumpAndSettle();
+    expect(vibration.lightCount, 2);
   });
 
   testWidgets('successful sign in navigates to main page', (tester) async {
@@ -293,6 +326,30 @@ void main() {
 
     expect(googlePlatform.signOutCalled, isTrue);
     expect(auth.signOutCalled, isTrue);
+  });
+
+  testWidgets('notification settings button vibrates', (tester) async {
+    final vibration = _RecordingVibrationService();
+    final firestore = FakeFirebaseFirestore();
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UserProfilePage(
+          auth: auth,
+          firestore: firestore,
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+          vibrationService: vibration,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Notification Settings'));
+    await tester.pumpAndSettle();
+
+    expect(vibration.lightCount, 1);
   });
 
   testWidgets('shows achievements summary for signed in user', (tester) async {

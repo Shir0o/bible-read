@@ -13,6 +13,8 @@ import '../widgets/common_styles.dart';
 import '../widgets/schedule_item_tile.dart';
 import '../widgets/animated_page_route.dart';
 import '../widgets/group_members_section.dart';
+import '../widgets/vibration_button.dart';
+import '../services/vibration_service.dart';
 
 /// Page showing the members and schedule for a group.
 class GroupDetailPage extends StatefulWidget {
@@ -25,14 +27,19 @@ class GroupDetailPage extends StatefulWidget {
   /// Auth instance to identify the current user.
   final FirebaseAuth auth;
 
+  /// Service used to trigger vibrations.
+  final VibrationService vibrationService;
+
   /// Creates a [GroupDetailPage].
   GroupDetailPage({
     super.key,
     required this.group,
     GroupService? groupService,
     FirebaseAuth? auth,
+    VibrationService? vibrationService,
   })  : groupService = groupService ?? GroupService(),
-        auth = auth ?? FirebaseAuth.instance;
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<GroupDetailPage> createState() => _GroupDetailPageState();
@@ -45,7 +52,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   Future<void> _editSchedule([GroupSchedule? schedule]) async {
     final result = await Navigator.of(context).push<GroupSchedule>(
       animatedPageRoute(
-        _EditScheduleDialog(schedule: schedule),
+        _EditScheduleDialog(
+          schedule: schedule,
+          vibrationService: widget.vibrationService,
+        ),
       ),
     );
 
@@ -159,7 +169,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ElevatedButton(
+                            VibrationButton(
+                              vibrationService: widget.vibrationService,
                               onPressed: () async {
                                 try {
                                   await widget.groupService.joinGroup(
@@ -352,8 +363,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 }
 
 class _EditScheduleDialog extends StatefulWidget {
+  const _EditScheduleDialog({
+    this.schedule,
+    VibrationService? vibrationService,
+  }) : vibrationService = vibrationService ?? const VibrationService();
+
   final GroupSchedule? schedule;
-  const _EditScheduleDialog({this.schedule});
+  final VibrationService vibrationService;
 
   @override
   State<_EditScheduleDialog> createState() => _EditScheduleDialogState();
@@ -427,7 +443,8 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
+        VibrationButton(
+          vibrationService: widget.vibrationService,
           onPressed: _save,
           child: const Text('Save'),
         ),
