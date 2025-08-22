@@ -155,12 +155,20 @@ describe('other cloud functions', () => {
     let deletedA = false, deletedB = false;
     const fakeDb = {
       collection: () => ({
-        doc: (uid) => ({
-          collection: (sub) => ({
-            doc: () => ({
-              delete: async () => { if(sub.includes('Received')) deletedA = true; else deletedB = true; }
-            })
-          })
+        doc: () => ({
+          collection: (sub) => {
+            if (sub === 'friendRequestsReceived') {
+              return { doc: () => ({ delete: async () => { deletedA = true; } }) };
+            }
+            if (sub === 'friendRequestsSent') {
+              return { doc: () => ({ delete: async () => { deletedB = true; } }) };
+            }
+            if (sub === 'notifications') {
+              return {
+                where: () => ({ where: () => ({ get: async () => ({ forEach: () => {} }) }) })
+              };
+            }
+          }
         })
       })
     };
@@ -182,11 +190,16 @@ describe('other cloud functions', () => {
     const fakeDb = {
       collection: () => ({
         doc: () => ({
-          collection: () => ({
-            doc: () => ({
-              delete: async () => { throw new Error('nope'); }
-            })
-          })
+          collection: (sub) => {
+            if (sub === 'friendRequestsReceived' || sub === 'friendRequestsSent') {
+              return { doc: () => ({ delete: async () => { throw new Error('nope'); } }) };
+            }
+            if (sub === 'notifications') {
+              return {
+                where: () => ({ where: () => ({ get: async () => ({ forEach: () => {} }) }) })
+              };
+            }
+          }
         })
       })
     };
@@ -217,7 +230,18 @@ describe('other cloud functions', () => {
       commit: async () => { commit = true; }
     };
     const fakeDb = {
-      collection: () => ({ doc: () => ({ collection: () => ({ doc: () => ({}) }) }) }),
+      collection: () => ({
+        doc: () => ({
+          collection: (sub) => {
+            if (sub === 'notifications') {
+              return {
+                where: () => ({ where: () => ({ get: async () => ({ forEach: () => {} }) }) })
+              };
+            }
+            return { doc: () => ({}) };
+          }
+        })
+      }),
       batch: () => fakeBatch
     };
     function fakeFirestore() { return fakeDb; }
@@ -241,7 +265,18 @@ describe('other cloud functions', () => {
       commit: async () => { throw new Error('boom'); }
     };
     const fakeDb = {
-      collection: () => ({ doc: () => ({ collection: () => ({ doc: () => ({}) }) }) }),
+      collection: () => ({
+        doc: () => ({
+          collection: (sub) => {
+            if (sub === 'notifications') {
+              return {
+                where: () => ({ where: () => ({ get: async () => ({ forEach: () => {} }) }) })
+              };
+            }
+            return { doc: () => ({}) };
+          }
+        })
+      }),
       batch: () => fakeBatch
     };
     function fakeFirestore() { return fakeDb; }
@@ -816,6 +851,92 @@ describe('other cloud functions', () => {
     } catch (err) {
       assert.equal(err.code, 'unauthenticated');
     }
+  });
+
+  it('deleteFriendRequestPair removes notification', async () => {
+    const originalFirestore = admin.firestore;
+    let receivedDeleted = false;
+    let sentDeleted = false;
+    let notifDeleted = false;
+    const fakeDb = {
+      collection: () => ({
+        doc: () => ({
+          collection: (sub) => {
+            if (sub === 'friendRequestsReceived') {
+              return { doc: () => ({ delete: async () => { receivedDeleted = true; } }) };
+            }
+            if (sub === 'friendRequestsSent') {
+              return { doc: () => ({ delete: async () => { sentDeleted = true; } }) };
+            }
+            if (sub === 'notifications') {
+              return {
+                where: () => ({
+                  where: () => ({
+                    get: async () => ({
+                      forEach: (cb) => cb({ ref: { delete: async () => { notifDeleted = true; } } })
+                    })
+                  })
+                })
+              };
+            }
+          }
+        })
+      })
+    };
+    function fakeFirestore() { return fakeDb; }
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    const wrapped = functionsTest.wrap(myFunctions.deleteFriendRequestPair);
+    await wrapped({ data: { fromUid: 'a', toUid: 'b' }, auth: { uid: 'b' } });
+    assert.equal(receivedDeleted, true);
+    assert.equal(sentDeleted, true);
+    assert.equal(notifDeleted, true);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+  });
+
+  it('acceptFriendRequest marks notification read', async () => {
+    const originalFirestore = admin.firestore;
+    const notifRef = { id: 'n1' };
+    let updated = false;
+    const fakeDb = {
+      collection: () => ({
+        doc: () => ({
+          collection: (sub) => {
+            if (sub === 'friends') {
+              return { doc: () => ({}) };
+            }
+            if (sub === 'friendRequestsSent' || sub === 'friendRequestsReceived') {
+              return { doc: () => ({}) };
+            }
+            if (sub === 'notifications') {
+              return {
+                where: () => ({
+                  where: () => ({
+                    get: async () => ({ forEach: (cb) => cb({ ref: notifRef }) })
+                  })
+                })
+              };
+            }
+          }
+        })
+      }),
+      batch: () => ({
+        set: () => {},
+        delete: () => {},
+        update: (ref, data) => {
+          if (ref === notifRef && data.read === true) {
+            updated = true;
+          }
+        },
+        commit: async () => {}
+      })
+    };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    const wrapped = functionsTest.wrap(myFunctions.acceptFriendRequest);
+    await wrapped({ data: { fromUid: 'a', toUid: 'b', fromName: 'A', toName: 'B' }, auth: { uid: 'b' } });
+    assert.equal(updated, true);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   });
 
   it('markFirstReader unauthenticated', async () => {
