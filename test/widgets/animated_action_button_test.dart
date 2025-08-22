@@ -21,7 +21,11 @@ void main() {
   testWidgets('scales down on press and returns on release', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: AnimatedActionButton(onPressed: () {}, child: const Text('Tap')),
+        home: AnimatedActionButton(
+          onPressed: () {},
+          vibrationService: _RecordingVibrationService(),
+          child: const Text('Tap'),
+        ),
       ),
     );
 
@@ -42,13 +46,12 @@ void main() {
     expect(state.animation.value, 1.0);
   });
 
-  testWidgets('triggers vibration when enabled', (tester) async {
+  testWidgets('triggers vibration by default', (tester) async {
     final service = _RecordingVibrationService();
     await tester.pumpWidget(
       MaterialApp(
         home: AnimatedActionButton(
           onPressed: () {},
-          enableHapticFeedback: true,
           vibrationService: service,
           child: const Text('Tap'),
         ),
@@ -91,6 +94,7 @@ void main() {
             pressed = true;
           },
           isLoading: true,
+          enableHapticFeedback: false,
           child: const Text('Submit'),
         ),
       ),
@@ -113,6 +117,7 @@ void main() {
         home: AnimatedActionButton(
           onPressed: () {},
           isLoading: false,
+          enableHapticFeedback: false,
           child: const Text('Go'),
         ),
       ),
@@ -124,6 +129,7 @@ void main() {
         home: AnimatedActionButton(
           onPressed: () {},
           isLoading: true,
+          enableHapticFeedback: false,
           child: const Text('Go'),
         ),
       ),
