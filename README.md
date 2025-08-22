@@ -89,6 +89,17 @@ Define a new value in `NotificationType` and store a boolean under the
 send a push message you can also save it in a `notifications` subcollection
 using the `AppNotification` model so the app can display a history of alerts.
 
+## Vibration
+
+The app can vibrate the device to provide haptic feedback for certain actions.
+Vibration is enabled by default and may be toggled from the Settings page under
+**Vibration**.
+
+Vibration requires hardware support and is not available on all platforms.
+Devices without a vibration motor—including many tablets, web browsers, and
+desktop environments—will ignore the setting. Simulators and emulators may also
+skip vibration even when a physical device supports it.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
