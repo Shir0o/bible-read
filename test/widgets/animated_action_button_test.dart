@@ -25,11 +25,9 @@ void main() {
       ),
     );
 
-    final state =
-        tester.state<State<AnimatedActionButton>>(
-              find.byType(AnimatedActionButton),
-            )
-            as dynamic;
+    final state = tester.state<State<AnimatedActionButton>>(
+      find.byType(AnimatedActionButton),
+    ) as dynamic;
     final detector = tester.widget<GestureDetector>(
       find.byKey(const Key('animated_action_button_detector')),
     );
@@ -56,10 +54,11 @@ void main() {
         ),
       ),
     );
-
-    await tester.tap(find.byType(ElevatedButton));
+    final detector = tester.widget<GestureDetector>(
+      find.byKey(const Key('animated_action_button_detector')),
+    );
+    detector.onTapDown!(TapDownDetails(kind: PointerDeviceKind.touch));
     await tester.pump();
-
     expect(service.lightCount, 1);
   });
 
@@ -75,10 +74,11 @@ void main() {
         ),
       ),
     );
-
-    await tester.tap(find.byType(ElevatedButton));
+    final detector = tester.widget<GestureDetector>(
+      find.byKey(const Key('animated_action_button_detector')),
+    );
+    detector.onTapDown!(TapDownDetails(kind: PointerDeviceKind.touch));
     await tester.pump();
-
     expect(service.lightCount, 0);
   });
 
