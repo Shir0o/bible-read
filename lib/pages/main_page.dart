@@ -9,6 +9,7 @@ import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:bible_read/widgets/app_drawer.dart';
 import '../services/friend_service.dart';
 import '../services/group_service.dart';
+import '../services/vibration_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -27,16 +28,14 @@ import 'home_page.dart';
 import 'read_log_page.dart';
 import 'app_check_error_page.dart';
 
-typedef SendLikeNotification =
-    Future<void> Function({
-      required String ownerUid,
-      required String likerName,
-    });
-typedef SendCommentNotification =
-    Future<void> Function({
-      required String ownerUid,
-      required String commenterName,
-    });
+typedef SendLikeNotification = Future<void> Function({
+  required String ownerUid,
+  required String likerName,
+});
+typedef SendCommentNotification = Future<void> Function({
+  required String ownerUid,
+  required String commenterName,
+});
 
 class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -48,19 +47,18 @@ class MainPage extends StatefulWidget {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     FriendService? friendService,
-  })
-  leaderboardPageBuilder;
+  }) leaderboardPageBuilder;
   final ReadLogPage Function({
     Key? key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     required SendLikeNotification onSendLikeNotification,
     required SendCommentNotification onSendCommentNotification,
-  })
-  readLogPageBuilder;
+  }) readLogPageBuilder;
   final SendLikeNotification? sendLikeNotification;
   final SendCommentNotification? sendCommentNotification;
   final FirebaseMessaging messaging;
+  final VibrationService vibrationService;
   final bool appCheckFailed;
 
   MainPage({
@@ -69,33 +67,33 @@ class MainPage extends StatefulWidget {
     FirebaseAuth? auth,
     GoogleSignIn Function()? googleSignInProvider,
     FirebaseMessaging? messaging,
+    VibrationService? vibrationService,
     DailyNotificationService Function()? dailyNotificationServiceProvider,
     LeaderboardPage Function({
       Key? key,
       FirebaseFirestore? firestore,
       FirebaseAuth? auth,
       FriendService? friendService,
-    })?
-    leaderboardPageBuilder,
+    })? leaderboardPageBuilder,
     ReadLogPage Function({
       Key? key,
       FirebaseFirestore? firestore,
       FirebaseAuth? auth,
       required SendLikeNotification onSendLikeNotification,
       required SendCommentNotification onSendCommentNotification,
-    })?
-    readLogPageBuilder,
+    })? readLogPageBuilder,
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       messaging = messaging ?? FirebaseMessaging.instance,
-       googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
-       dailyNotificationServiceProvider =
-           dailyNotificationServiceProvider ?? DailyNotificationService.new,
-       leaderboardPageBuilder = leaderboardPageBuilder ?? LeaderboardPage.new,
-       readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        messaging = messaging ?? FirebaseMessaging.instance,
+        googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
+        dailyNotificationServiceProvider =
+            dailyNotificationServiceProvider ?? DailyNotificationService.new,
+        vibrationService = vibrationService ?? const VibrationService(),
+        leaderboardPageBuilder = leaderboardPageBuilder ?? LeaderboardPage.new,
+        readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -103,6 +101,8 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
+
+  VibrationService get vibrationService => widget.vibrationService;
 
   /// Current navigation index, exposed for tests.
   @visibleForTesting
@@ -138,8 +138,7 @@ class _MainPageState extends State<MainPage> {
         key: _readLogKey,
         firestore: widget.firestore,
         auth: widget.auth,
-        onSendLikeNotification:
-            widget.sendLikeNotification ??
+        onSendLikeNotification: widget.sendLikeNotification ??
             ({required String ownerUid, required String likerName}) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) {
@@ -160,8 +159,7 @@ class _MainPageState extends State<MainPage> {
                 'likerName': likerName,
               });
             },
-        onSendCommentNotification:
-            widget.sendCommentNotification ??
+        onSendCommentNotification: widget.sendCommentNotification ??
             ({required String ownerUid, required String commenterName}) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) {
@@ -281,8 +279,8 @@ class _MainPageState extends State<MainPage> {
         }());
 
         await widget.dailyNotificationServiceProvider().scheduleDailyReminder(
-          const Time(8, 0),
-        );
+              const Time(8, 0),
+            );
       } else {
         debugPrint(
           'Skipping Firestore write and reminder: token unchanged or null',
@@ -292,6 +290,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _onItemTapped(int index) {
+    unawaited(vibrationService.lightImpact());
     if (widget.appCheckFailed) {
       return;
     }
@@ -311,6 +310,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _navigateFromMenu(int index) {
+    unawaited(vibrationService.lightImpact());
     final bool signedIn = widget.auth.currentUser != null;
     final int profileIndex = signedIn ? 8 : 0;
     if (!signedIn && index != profileIndex) {
@@ -347,7 +347,10 @@ class _MainPageState extends State<MainPage> {
 
     return ResponsiveScaffold(
       scaffoldKey: _scaffoldKey,
-      drawer: AppDrawer(onNavigate: _navigateFromMenu),
+      drawer: AppDrawer(
+        onNavigate: _navigateFromMenu,
+        vibrationService: widget.vibrationService,
+      ),
       selectedIndex: navIndex,
       contentIndex: _selectedIndex,
       onDestinationSelected: _onItemTapped,
