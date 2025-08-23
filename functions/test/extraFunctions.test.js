@@ -893,6 +893,37 @@ describe('other cloud functions', () => {
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   });
 
+  it('removeFriendRequestNotification prunes notifications on delete', async () => {
+    const originalFirestore = admin.firestore;
+    let notifDeleted = false;
+    const fakeDb = {
+      collection: () => ({
+        doc: () => ({
+          collection: (sub) => {
+            if (sub === 'notifications') {
+              return {
+                where: () => ({
+                  where: () => ({
+                    get: async () => ({
+                      forEach: (cb) => cb({ ref: { delete: async () => { notifDeleted = true; } } })
+                    })
+                  })
+                })
+              };
+            }
+            return {};
+          }
+        })
+      })
+    };
+    function fakeFirestore() { return fakeDb; }
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    const wrapped = functionsTest.wrap(myFunctions.removeFriendRequestNotification);
+    await wrapped({}, { params: { uid: 'u2', fromUid: 'u1' } });
+    assert.equal(notifDeleted, true);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+  });
+
   it('acceptFriendRequest marks notification read', async () => {
     const originalFirestore = admin.firestore;
     const notifRef = { id: 'n1' };
