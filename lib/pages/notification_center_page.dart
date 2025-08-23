@@ -161,7 +161,11 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
         try {
           final requests = await friendService.pendingRequests(uid).first;
           if (requests.isEmpty) {
-            await widget.service.markRead(uid, n.id);
+            try {
+              await widget.service.markRead(uid, n.id);
+            } catch (e, st) {
+              ErrorLogger.log(e, st);
+            }
             if (context.mounted) {
               messenger.showSnackBar(
                 const SnackBar(
