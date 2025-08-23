@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/pages/groups_page.dart';
 import 'package:bible_read/services/group_service.dart';
+import 'package:bible_read/services/vibration_service.dart';
 
 class RecordingGroupService extends GroupService {
   RecordingGroupService({required super.firestore});
@@ -28,10 +29,20 @@ class RecordingGroupService extends GroupService {
   }
 }
 
+class _RecordingVibrationService extends VibrationService {
+  int lightCount = 0;
+
+  @override
+  Future<void> lightImpact() async {
+    lightCount++;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late FakeFirebaseFirestore firestore;
   late MockFirebaseAuth auth;
+  late _RecordingVibrationService vibration;
 
   setUp(() {
     firestore = FakeFirebaseFirestore();
@@ -39,12 +50,17 @@ void main() {
       mockUser: MockUser(uid: 'u1', displayName: 'Test User'),
       signedIn: true,
     );
+    vibration = _RecordingVibrationService();
   });
 
   Future<void> pumpPage(WidgetTester tester, GroupService service) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: GroupsPage(groupService: service, auth: auth),
+        home: GroupsPage(
+          groupService: service,
+          auth: auth,
+          vibrationService: vibration,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -128,6 +144,7 @@ void main() {
     expect(service.createdName, 'New');
     expect(service.createdOwner, 'u1');
     expect(find.text('Group created'), findsOneWidget);
+    expect(vibration.lightCount, 1);
   });
 
   testWidgets('create group failure shows error', (tester) async {
@@ -145,5 +162,6 @@ void main() {
       find.text('Failed to create group. Please try again.'),
       findsOneWidget,
     );
+    expect(vibration.lightCount, 1);
   });
 }
