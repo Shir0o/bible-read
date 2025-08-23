@@ -86,7 +86,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                             }));
                           }
                           if (context.mounted) {
-                            _navigate(context, n);
+                            unawaited(_navigate(context, n));
                           }
                         },
                       );
@@ -137,25 +137,54 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
     }
   }
 
-  void _navigate(BuildContext context, AppNotification n) {
+  Future<void> _navigate(BuildContext context, AppNotification n) async {
     switch (n.type) {
       case NotificationType.achievement:
-        Navigator.of(context).push(
+        if (!context.mounted) return;
+        await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => AchievementsPage(
-                auth: widget.auth, firestore: widget.service.firestore),
+              auth: widget.auth,
+              firestore: widget.service.firestore,
+            ),
           ),
         );
         break;
       case NotificationType.friendRequest:
-        Navigator.of(context).push(
+        final uid = widget.auth.currentUser?.uid;
+        if (uid == null) break;
+        final messenger = ScaffoldMessenger.of(context);
+        final friendService = FriendService(
+          firestore: widget.service.firestore,
+          notificationService: widget.service,
+        );
+        try {
+          final requests = await friendService.pendingRequests(uid).first;
+          if (requests.isEmpty) {
+            try {
+              await widget.service.markRead(uid, n.id);
+            } catch (e, st) {
+              ErrorLogger.log(e, st);
+            }
+            if (context.mounted) {
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('No pending friend requests'),
+                ),
+              );
+            }
+            break;
+          }
+        } catch (e, st) {
+          ErrorLogger.log(e, st);
+          break;
+        }
+        if (!context.mounted) return;
+        await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => FriendRequestsPage(
               auth: widget.auth,
-              friendService: FriendService(
-                firestore: widget.service.firestore,
-                notificationService: widget.service,
-              ),
+              friendService: friendService,
             ),
           ),
         );
