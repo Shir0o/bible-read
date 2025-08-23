@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import '../services/friend_service.dart';
+import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
 import '../services/notification_service.dart';
@@ -19,10 +20,18 @@ class FriendsPage extends StatefulWidget {
   /// Firebase auth instance.
   final FirebaseAuth auth;
 
+  /// Service used to trigger vibrations.
+  final VibrationService vibrationService;
+
   /// Creates a [FriendsPage].
-  FriendsPage({super.key, FriendService? friendService, FirebaseAuth? auth})
-      : friendService = friendService ?? FriendService(),
-        auth = auth ?? FirebaseAuth.instance;
+  FriendsPage({
+    super.key,
+    FriendService? friendService,
+    FirebaseAuth? auth,
+    VibrationService? vibrationService,
+  })  : friendService = friendService ?? FriendService(),
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<FriendsPage> createState() => _FriendsPageState();
@@ -71,6 +80,7 @@ class _FriendsPageState extends State<FriendsPage> {
             IconButton(
               icon: const Icon(Icons.person_add),
               onPressed: () {
+                unawaited(widget.vibrationService.lightImpact());
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => FriendRequestsPage(
@@ -227,6 +237,7 @@ class _FriendsPageState extends State<FriendsPage> {
           : FloatingActionButton(
               heroTag: 'friends-fab',
               onPressed: () {
+                unawaited(widget.vibrationService.lightImpact());
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => AddFriendPage(
