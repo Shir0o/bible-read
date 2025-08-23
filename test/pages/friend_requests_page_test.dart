@@ -90,6 +90,12 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('shows message when no pending requests', (tester) async {
+    await pumpPage(tester);
+
+    expect(find.text('No friend requests'), findsOneWidget);
+  });
+
   testWidgets('shows back button in app bar', (tester) async {
     await pumpPage(tester);
 

@@ -210,6 +210,13 @@ void main() {
       'senderUid': 'u7',
     });
 
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('friendRequestsReceived')
+        .doc('u7')
+        .set({'name': 'Alice'});
+
     await tester.pumpWidget(
       MaterialApp(
         home: NotificationCenterPage(service: service, auth: auth),
@@ -224,6 +231,42 @@ void main() {
     expect(service.uid, user.uid);
     expect(service.id, 'n1');
     expect(find.byType(FriendRequestsPage), findsOneWidget);
+  });
+
+  testWidgets(
+      'tapping friend request with no pending requests shows SnackBar and does not navigate',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final service = _RecordingService(firestore: firestore);
+    final user = MockUser(uid: 'u8');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('notifications')
+        .doc('n1')
+        .set({
+      'type': NotificationType.friendRequest.name,
+      'timestamp': Timestamp.now(),
+      'read': false,
+      'senderUid': 'u9',
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NotificationCenterPage(service: service, auth: auth),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(ListTile));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('No pending friend requests'), findsOneWidget);
+    expect(find.byType(FriendRequestsPage), findsNothing);
+    expect(service.called, isTrue);
   });
 
   testWidgets(
