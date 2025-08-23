@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 import '../models/group.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
+import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import 'group_detail_page.dart';
 import '../widgets/menu_button.dart';
@@ -18,10 +20,18 @@ class GroupsPage extends StatefulWidget {
   /// Firebase auth instance.
   final FirebaseAuth auth;
 
+  /// Service used to trigger vibrations.
+  final VibrationService vibrationService;
+
   /// Creates a [GroupsPage].
-  GroupsPage({super.key, GroupService? groupService, FirebaseAuth? auth})
-      : groupService = groupService ?? GroupService(),
-        auth = auth ?? FirebaseAuth.instance;
+  GroupsPage({
+    super.key,
+    GroupService? groupService,
+    FirebaseAuth? auth,
+    VibrationService? vibrationService,
+  })  : groupService = groupService ?? GroupService(),
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<GroupsPage> createState() => _GroupsPageState();
@@ -44,12 +54,17 @@ class _GroupsPageState extends State<GroupsPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                unawaited(widget.vibrationService.lightImpact());
+                Navigator.of(context).pop();
+              },
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(controller.text.trim()),
+              onPressed: () {
+                unawaited(widget.vibrationService.lightImpact());
+                Navigator.of(context).pop(controller.text.trim());
+              },
               child: const Text('Create'),
             ),
           ],
@@ -145,6 +160,8 @@ class _GroupsPageState extends State<GroupsPage> {
                                         ? const Text('Pending')
                                         : null,
                                 onTap: () {
+                                  unawaited(
+                                      widget.vibrationService.lightImpact());
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (context) => GroupDetailPage(
