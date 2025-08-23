@@ -349,6 +349,27 @@ exports.acceptFriendRequest = onCall({ region: "us-central1" }, async (req) => {
   return { success: true };
 });
 
+exports.removeFriendRequestNotification = functions.firestore
+  .document('users/{uid}/friendRequestsReceived/{fromUid}')
+  .onDelete(async (_snap, context) => {
+    const { uid, fromUid } = context.params;
+    const db = admin.firestore();
+    try {
+      const notificationsSnap = await db
+        .collection('users')
+        .doc(uid)
+        .collection('notifications')
+        .where('type', '==', 'friendRequest')
+        .where('fromUid', '==', fromUid)
+        .get();
+      const deletions = [];
+      notificationsSnap.forEach((doc) => deletions.push(doc.ref.delete()));
+      await Promise.all(deletions);
+    } catch (err) {
+      functions.logger.error('Failed to prune friend request notifications', err);
+    }
+  });
+
 exports.sendSignupNotification = functions.auth.user().onCreate(async (user) => {
   const adminUid = process.env.ADMIN_UID;
   if (!adminUid) {
