@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 import '../services/friend_service.dart';
+import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/friend_request_widget.dart';
 
@@ -13,13 +15,18 @@ class FriendRequestsPage extends StatelessWidget {
   /// Auth instance to identify the current user.
   final FirebaseAuth auth;
 
+  /// Service used to trigger vibrations.
+  final VibrationService vibrationService;
+
   /// Creates a [FriendRequestsPage].
   FriendRequestsPage({
     super.key,
     FriendService? friendService,
     FirebaseAuth? auth,
+    VibrationService? vibrationService,
   })  : friendService = friendService ?? FriendService(),
-        auth = auth ?? FirebaseAuth.instance;
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +35,7 @@ class FriendRequestsPage extends StatelessWidget {
       appBar: CommonStyles.buildAppBar(
         'Friend Requests',
         leading: BackButton(onPressed: () {
+          unawaited(vibrationService.lightImpact());
           Navigator.of(context).pop();
         }),
         automaticallyImplyLeading: true,
