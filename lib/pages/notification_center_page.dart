@@ -10,6 +10,7 @@ import '../services/notification_service.dart';
 import 'achievements_page.dart';
 import 'friend_requests_page.dart';
 import '../services/friend_service.dart';
+import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 
 /// Page showing a list of notifications for the current user.
@@ -20,13 +21,18 @@ class NotificationCenterPage extends StatefulWidget {
   /// Auth instance to identify the current user.
   final FirebaseAuth auth;
 
+  /// Service used to trigger vibrations.
+  final VibrationService vibrationService;
+
   /// Creates a [NotificationCenterPage].
   NotificationCenterPage({
     super.key,
     NotificationService? service,
     FirebaseAuth? auth,
+    VibrationService? vibrationService,
   })  : service = service ?? NotificationService(),
-        auth = auth ?? FirebaseAuth.instance;
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<NotificationCenterPage> createState() => _NotificationCenterPageState();
@@ -141,6 +147,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
     switch (n.type) {
       case NotificationType.achievement:
         if (!context.mounted) return;
+        unawaited(widget.vibrationService.lightImpact());
         await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => AchievementsPage(
@@ -180,6 +187,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
           break;
         }
         if (!context.mounted) return;
+        unawaited(widget.vibrationService.lightImpact());
         await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => FriendRequestsPage(
