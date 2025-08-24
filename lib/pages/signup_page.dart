@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/signup_form.dart';
 import 'main_page.dart';
@@ -14,10 +17,18 @@ class SignupPage extends StatefulWidget {
   /// Firestore instance used to store user data.
   final FirebaseFirestore firestore;
 
+  /// Service used to trigger vibrations.
+  final VibrationService vibrationService;
+
   /// Creates a [SignupPage].
-  SignupPage({super.key, FirebaseAuth? auth, FirebaseFirestore? firestore})
-      : auth = auth ?? FirebaseAuth.instance,
-        firestore = firestore ?? FirebaseFirestore.instance;
+  SignupPage({
+    super.key,
+    FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+    VibrationService? vibrationService,
+  })  : auth = auth ?? FirebaseAuth.instance,
+        firestore = firestore ?? FirebaseFirestore.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<SignupPage> createState() => _SignupPageState();
@@ -36,6 +47,7 @@ class _SignupPageState extends State<SignupPage> {
             auth: widget.auth,
             firestore: widget.firestore,
             onComplete: () {
+              unawaited(widget.vibrationService.mediumImpact());
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (_) => MainPage()),
               );

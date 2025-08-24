@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/login_form.dart';
 import 'main_page.dart';
@@ -10,9 +13,16 @@ class LoginPage extends StatefulWidget {
   /// Auth instance used to sign in.
   final FirebaseAuth auth;
 
+  /// Service used to trigger vibrations.
+  final VibrationService vibrationService;
+
   /// Creates a [LoginPage].
-  LoginPage({super.key, FirebaseAuth? auth})
-      : auth = auth ?? FirebaseAuth.instance;
+  LoginPage({
+    super.key,
+    FirebaseAuth? auth,
+    VibrationService? vibrationService,
+  })  : auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -30,6 +40,7 @@ class _LoginPageState extends State<LoginPage> {
           child: LoginForm(
             auth: widget.auth,
             onComplete: () {
+              unawaited(widget.vibrationService.mediumImpact());
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (_) => MainPage()),
               );
