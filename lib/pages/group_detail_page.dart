@@ -125,7 +125,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       floatingActionButton: isOwner
           ? FloatingActionButton(
               heroTag: 'group-detail-fab',
-              onPressed: _editSchedule,
+              onPressed: () {
+                unawaited(widget.vibrationService.lightImpact());
+                _editSchedule();
+              },
               child: const Icon(Icons.add),
             )
           : null,
@@ -434,7 +437,8 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
         ],
       ),
       actions: [
-        TextButton(
+        VibrationButton(
+          vibrationService: widget.vibrationService,
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
