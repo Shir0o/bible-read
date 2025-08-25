@@ -21,6 +21,7 @@ import 'package:bible_read/services/daily_notification_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bible_read/services/vibration_service.dart';
 
 import '../helpers/test_read_log_page.dart';
 
@@ -141,6 +142,18 @@ class FakeNotificationsPlatform extends FlutterLocalNotificationsPlatform {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _RecordingVibrationService extends VibrationService {
+  int lightCount = 0;
+  int? indexDuringCall;
+  int Function()? getIndex;
+
+  @override
+  Future<void> lightImpact() async {
+    indexDuringCall = getIndex?.call();
+    lightCount++;
+  }
 }
 
 void main() {
@@ -343,6 +356,62 @@ void main() {
 
     expect(find.byType(LeaderboardPage), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
+  });
+
+  testWidgets('_navigateFromMenu triggers vibration before updating index',
+      (tester) async {
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+    final vibration = _RecordingVibrationService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: FakeFirebaseFirestore(),
+          vibrationService: vibration,
+          messaging: FakeFirebaseMessaging(null),
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state(find.byType(MainPage)) as dynamic;
+    vibration.getIndex = () => state.selectedIndex;
+
+    state.navigateFromMenu(3);
+    await tester.pump();
+
+    expect(vibration.lightCount, 1);
+    expect(vibration.indexDuringCall, 0);
+    expect(state.selectedIndex, 3);
+  });
+
+  testWidgets('_navigateFromMenu does not vibrate when navigation blocked',
+      (tester) async {
+    final auth = MockFirebaseAuth();
+    final vibration = _RecordingVibrationService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: FakeFirebaseFirestore(),
+          vibrationService: vibration,
+          messaging: FakeFirebaseMessaging(null),
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state(find.byType(MainPage)) as dynamic;
+    state.navigateFromMenu(3);
+    await tester.pump();
+
+    expect(vibration.lightCount, 0);
+    expect(state.selectedIndex, 0);
   });
 
   testWidgets('onItemTapped refreshes read log page', (tester) async {
