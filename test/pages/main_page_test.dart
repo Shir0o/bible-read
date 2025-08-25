@@ -920,4 +920,53 @@ void main() {
     expect(responsive.selectedIndex, 4);
     expect(responsive.contentIndex, 4);
   });
+
+  testWidgets('signing in on non-home page shows bottom nav', (tester) async {
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+    fakePlatform.user = GoogleSignInUserData(
+      email: 'test@example.com',
+      id: '123',
+      displayName: 'Test',
+    );
+    final fakeNotifications = FakeNotificationsPlatform();
+    FlutterLocalNotificationsPlatform.instance = fakeNotifications;
+    final firestore = FakeFirebaseFirestore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: firestore,
+          messaging: FakeFirebaseMessaging(null),
+          dailyNotificationServiceProvider: DailyNotificationService.new,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state(find.byType(MainPage)) as dynamic;
+    state.navigateFromMenu(4);
+    await tester.pumpAndSettle();
+    expect(state.selectedIndex, 4);
+
+    await auth.signOut();
+    await tester.pumpAndSettle();
+
+    await auth.signInWithCredential(
+      GoogleAuthProvider.credential(
+        accessToken: 'token',
+        idToken: 'id',
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final scaffold = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
+    expect(scaffold.destinations.length, 2);
+    expect(state.selectedIndex, 0);
+  });
 }

@@ -1,43 +1,44 @@
-import 'package:bible_read/pages/leaderboard_page.dart';
-import 'package:bible_read/pages/user_profile_page.dart';
-import 'package:bible_read/pages/friends_page.dart';
-import 'package:bible_read/pages/achievements_page.dart';
-import 'package:bible_read/pages/groups_page.dart';
-import 'package:bible_read/pages/friend_requests_page.dart';
-import 'package:bible_read/pages/streak_history_page.dart';
-import 'package:bible_read/widgets/responsive_scaffold.dart';
-import 'package:bible_read/widgets/app_drawer.dart';
-import '../services/friend_service.dart';
-import '../services/group_service.dart';
-import '../services/vibration_service.dart';
+import 'dart:async';
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:bible_read/pages/achievements_page.dart';
+import 'package:bible_read/pages/friend_requests_page.dart';
+import 'package:bible_read/pages/friends_page.dart';
+import 'package:bible_read/pages/groups_page.dart';
+import 'package:bible_read/pages/leaderboard_page.dart';
+import 'package:bible_read/pages/streak_history_page.dart';
+import 'package:bible_read/pages/user_profile_page.dart';
+import 'package:bible_read/widgets/app_drawer.dart';
+import 'package:bible_read/widgets/responsive_scaffold.dart';
+
 import '../services/daily_notification_service.dart';
 import '../services/error_logger.dart';
-import 'dart:async';
+import '../services/friend_service.dart';
+import '../services/group_service.dart';
+import '../services/vibration_service.dart';
 
+import 'app_check_error_page.dart';
 import 'home_page.dart';
 import 'read_log_page.dart';
-import 'app_check_error_page.dart';
 
-typedef SendLikeNotification =
-    Future<void> Function({
-      required String ownerUid,
-      required String likerName,
-    });
-typedef SendCommentNotification =
-    Future<void> Function({
-      required String ownerUid,
-      required String commenterName,
-    });
+typedef SendLikeNotification = Future<void> Function({
+  required String ownerUid,
+  required String likerName,
+});
+typedef SendCommentNotification = Future<void> Function({
+  required String ownerUid,
+  required String commenterName,
+});
 
 class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -49,16 +50,14 @@ class MainPage extends StatefulWidget {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     FriendService? friendService,
-  })
-  leaderboardPageBuilder;
+  }) leaderboardPageBuilder;
   final ReadLogPage Function({
     Key? key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     required SendLikeNotification onSendLikeNotification,
     required SendCommentNotification onSendCommentNotification,
-  })
-  readLogPageBuilder;
+  }) readLogPageBuilder;
   final SendLikeNotification? sendLikeNotification;
   final SendCommentNotification? sendCommentNotification;
   final FirebaseMessaging messaging;
@@ -78,28 +77,26 @@ class MainPage extends StatefulWidget {
       FirebaseFirestore? firestore,
       FirebaseAuth? auth,
       FriendService? friendService,
-    })?
-    leaderboardPageBuilder,
+    })? leaderboardPageBuilder,
     ReadLogPage Function({
       Key? key,
       FirebaseFirestore? firestore,
       FirebaseAuth? auth,
       required SendLikeNotification onSendLikeNotification,
       required SendCommentNotification onSendCommentNotification,
-    })?
-    readLogPageBuilder,
+    })? readLogPageBuilder,
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       messaging = messaging ?? FirebaseMessaging.instance,
-       googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
-       dailyNotificationServiceProvider =
-           dailyNotificationServiceProvider ?? DailyNotificationService.new,
-       vibrationService = vibrationService ?? const VibrationService(),
-       leaderboardPageBuilder = leaderboardPageBuilder ?? LeaderboardPage.new,
-       readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        messaging = messaging ?? FirebaseMessaging.instance,
+        googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
+        dailyNotificationServiceProvider =
+            dailyNotificationServiceProvider ?? DailyNotificationService.new,
+        vibrationService = vibrationService ?? const VibrationService(),
+        leaderboardPageBuilder = leaderboardPageBuilder ?? LeaderboardPage.new,
+        readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -107,6 +104,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
+  StreamSubscription<User?>? _authSub;
 
   VibrationService get vibrationService => widget.vibrationService;
 
@@ -144,8 +142,7 @@ class _MainPageState extends State<MainPage> {
         key: _readLogKey,
         firestore: widget.firestore,
         auth: widget.auth,
-        onSendLikeNotification:
-            widget.sendLikeNotification ??
+        onSendLikeNotification: widget.sendLikeNotification ??
             ({required String ownerUid, required String likerName}) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) {
@@ -166,8 +163,7 @@ class _MainPageState extends State<MainPage> {
                 'likerName': likerName,
               });
             },
-        onSendCommentNotification:
-            widget.sendCommentNotification ??
+        onSendCommentNotification: widget.sendCommentNotification ??
             ({required String ownerUid, required String commenterName}) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) {
@@ -210,6 +206,11 @@ class _MainPageState extends State<MainPage> {
       ),
     ];
     _attemptSilentSignIn();
+    _authSub = widget.auth.authStateChanges().listen((user) {
+      setState(() {
+        _selectedIndex = 0;
+      });
+    });
   }
 
   Future<void> _attemptSilentSignIn() async {
@@ -287,8 +288,8 @@ class _MainPageState extends State<MainPage> {
         }());
 
         await widget.dailyNotificationServiceProvider().scheduleDailyReminder(
-          const Time(8, 0),
-        );
+              const Time(8, 0),
+            );
       } else {
         debugPrint(
           'Skipping Firestore write and reminder: token unchanged or null',
@@ -333,6 +334,12 @@ class _MainPageState extends State<MainPage> {
     } else if (index == 2) {
       _leaderboardKey.currentState?.refresh();
     }
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
   }
 
   @override
