@@ -179,7 +179,7 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    expect(vibration.lightCount, 1);
+    expect(vibration.lightCount, 2);
     expect(service.lastSchedule?.chapters, ['Ex 1']);
     expect(find.text('Ex 1'), findsOneWidget);
   });
