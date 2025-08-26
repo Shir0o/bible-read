@@ -293,7 +293,7 @@ void main() {
     expect(responsive.contentIndex, 6);
   });
 
-  testWidgets('bottom navigation hidden on non-core pages', (tester) async {
+  testWidgets('bottom navigation remains on non-core pages', (tester) async {
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
       signedIn: true,
@@ -320,11 +320,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(FriendsPage), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
-    expect(find.byType(NavigationRail), findsNothing);
+
+    final hasNavAfter = find.byType(NavigationBar).evaluate().isNotEmpty ||
+        find.byType(NavigationRail).evaluate().isNotEmpty;
+    expect(hasNavAfter, isTrue);
   });
 
-  testWidgets('bottom navigation hidden when navigating to leaderboard', (
+  testWidgets('bottom navigation remains when navigating to leaderboard', (
     tester,
   ) async {
     final auth = MockFirebaseAuth(
@@ -355,7 +357,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(LeaderboardPage), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(NavigationBar), findsOneWidget);
   });
 
   testWidgets('_navigateFromMenu triggers vibration before updating index',
@@ -917,7 +919,7 @@ void main() {
     final responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
-    expect(responsive.selectedIndex, 4);
+    expect(responsive.selectedIndex, 1);
     expect(responsive.contentIndex, 4);
   });
 }

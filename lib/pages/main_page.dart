@@ -28,16 +28,14 @@ import 'home_page.dart';
 import 'read_log_page.dart';
 import 'app_check_error_page.dart';
 
-typedef SendLikeNotification =
-    Future<void> Function({
-      required String ownerUid,
-      required String likerName,
-    });
-typedef SendCommentNotification =
-    Future<void> Function({
-      required String ownerUid,
-      required String commenterName,
-    });
+typedef SendLikeNotification = Future<void> Function({
+  required String ownerUid,
+  required String likerName,
+});
+typedef SendCommentNotification = Future<void> Function({
+  required String ownerUid,
+  required String commenterName,
+});
 
 class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -49,16 +47,14 @@ class MainPage extends StatefulWidget {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     FriendService? friendService,
-  })
-  leaderboardPageBuilder;
+  }) leaderboardPageBuilder;
   final ReadLogPage Function({
     Key? key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     required SendLikeNotification onSendLikeNotification,
     required SendCommentNotification onSendCommentNotification,
-  })
-  readLogPageBuilder;
+  }) readLogPageBuilder;
   final SendLikeNotification? sendLikeNotification;
   final SendCommentNotification? sendCommentNotification;
   final FirebaseMessaging messaging;
@@ -78,28 +74,26 @@ class MainPage extends StatefulWidget {
       FirebaseFirestore? firestore,
       FirebaseAuth? auth,
       FriendService? friendService,
-    })?
-    leaderboardPageBuilder,
+    })? leaderboardPageBuilder,
     ReadLogPage Function({
       Key? key,
       FirebaseFirestore? firestore,
       FirebaseAuth? auth,
       required SendLikeNotification onSendLikeNotification,
       required SendCommentNotification onSendCommentNotification,
-    })?
-    readLogPageBuilder,
+    })? readLogPageBuilder,
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       messaging = messaging ?? FirebaseMessaging.instance,
-       googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
-       dailyNotificationServiceProvider =
-           dailyNotificationServiceProvider ?? DailyNotificationService.new,
-       vibrationService = vibrationService ?? const VibrationService(),
-       leaderboardPageBuilder = leaderboardPageBuilder ?? LeaderboardPage.new,
-       readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        messaging = messaging ?? FirebaseMessaging.instance,
+        googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
+        dailyNotificationServiceProvider =
+            dailyNotificationServiceProvider ?? DailyNotificationService.new,
+        vibrationService = vibrationService ?? const VibrationService(),
+        leaderboardPageBuilder = leaderboardPageBuilder ?? LeaderboardPage.new,
+        readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -144,8 +138,7 @@ class _MainPageState extends State<MainPage> {
         key: _readLogKey,
         firestore: widget.firestore,
         auth: widget.auth,
-        onSendLikeNotification:
-            widget.sendLikeNotification ??
+        onSendLikeNotification: widget.sendLikeNotification ??
             ({required String ownerUid, required String likerName}) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) {
@@ -166,8 +159,7 @@ class _MainPageState extends State<MainPage> {
                 'likerName': likerName,
               });
             },
-        onSendCommentNotification:
-            widget.sendCommentNotification ??
+        onSendCommentNotification: widget.sendCommentNotification ??
             ({required String ownerUid, required String commenterName}) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) {
@@ -287,8 +279,8 @@ class _MainPageState extends State<MainPage> {
         }());
 
         await widget.dailyNotificationServiceProvider().scheduleDailyReminder(
-          const Time(8, 0),
-        );
+              const Time(8, 0),
+            );
       } else {
         debugPrint(
           'Skipping Firestore write and reminder: token unchanged or null',
@@ -343,9 +335,9 @@ class _MainPageState extends State<MainPage> {
 
     final bool signedIn = widget.auth.currentUser != null;
     final List<Widget> pages = signedIn ? _pages : [_pages.last];
-    final bool showBottomNav = signedIn && _selectedIndex <= 1;
+    final bool showBottomNav = signedIn;
 
-    final int navIndex = _selectedIndex;
+    final int navIndex = _selectedIndex.clamp(0, 1);
     final destinations = showBottomNav
         ? const [
             NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
