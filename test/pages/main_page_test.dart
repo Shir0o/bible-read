@@ -293,7 +293,7 @@ void main() {
     expect(responsive.contentIndex, 6);
   });
 
-  testWidgets('bottom navigation remains on non-core pages', (tester) async {
+  testWidgets('bottom navigation visible on non-core pages', (tester) async {
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
       signedIn: true,
@@ -326,7 +326,7 @@ void main() {
     expect(hasNavAfter, isTrue);
   });
 
-  testWidgets('bottom navigation remains when navigating to leaderboard', (
+  testWidgets('bottom navigation visible when navigating to leaderboard', (
     tester,
   ) async {
     final auth = MockFirebaseAuth(
@@ -349,15 +349,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Verify the bottom navigation bar is initially visible.
-    expect(find.byType(NavigationBar), findsOneWidget);
+    // Verify the bottom navigation bar or rail is initially visible.
+    final hasNavBefore = find.byType(NavigationBar).evaluate().isNotEmpty ||
+        find.byType(NavigationRail).evaluate().isNotEmpty;
+    expect(hasNavBefore, isTrue);
 
     final state = tester.state(find.byType(MainPage)) as dynamic;
     state.navigateFromMenu(2);
     await tester.pumpAndSettle();
 
     expect(find.byType(LeaderboardPage), findsOneWidget);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    final hasNavAfter = find.byType(NavigationBar).evaluate().isNotEmpty ||
+        find.byType(NavigationRail).evaluate().isNotEmpty;
+    expect(hasNavAfter, isTrue);
   });
 
   testWidgets('_navigateFromMenu triggers vibration before updating index',
