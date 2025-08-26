@@ -101,6 +101,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
+  final List<int> _navHistory = [0];
 
   VibrationService get vibrationService => widget.vibrationService;
 
@@ -301,6 +302,9 @@ class _MainPageState extends State<MainPage> {
     }
     setState(() {
       _selectedIndex = index;
+      if (_navHistory.last != index) {
+        _navHistory.add(index);
+      }
     });
     if (index == 1) {
       _readLogKey.currentState?.refresh();
@@ -319,12 +323,26 @@ class _MainPageState extends State<MainPage> {
     unawaited(vibrationService.lightImpact());
     setState(() {
       _selectedIndex = index;
+      if (_navHistory.last != index) {
+        _navHistory.add(index);
+      }
     });
     if (index == 1) {
       _readLogKey.currentState?.refresh();
     } else if (index == 2) {
       _leaderboardKey.currentState?.refresh();
     }
+  }
+
+  Future<bool> _onWillPop() async {
+    if (_navHistory.length > 1) {
+      setState(() {
+        _navHistory.removeLast();
+        _selectedIndex = _navHistory.last;
+      });
+      return false;
+    }
+    return true;
   }
 
   @override
@@ -345,17 +363,21 @@ class _MainPageState extends State<MainPage> {
           ]
         : const <NavigationDestination>[];
 
-    return ResponsiveScaffold(
-      scaffoldKey: _scaffoldKey,
-      drawer: AppDrawer(
-        onNavigate: _navigateFromMenu,
-        vibrationService: widget.vibrationService,
+    // ignore: deprecated_member_use
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: ResponsiveScaffold(
+        scaffoldKey: _scaffoldKey,
+        drawer: AppDrawer(
+          onNavigate: _navigateFromMenu,
+          vibrationService: widget.vibrationService,
+        ),
+        selectedIndex: navIndex,
+        contentIndex: _selectedIndex,
+        onDestinationSelected: _onItemTapped,
+        pages: pages,
+        destinations: destinations,
       ),
-      selectedIndex: navIndex,
-      contentIndex: _selectedIndex,
-      onDestinationSelected: _onItemTapped,
-      pages: pages,
-      destinations: destinations,
     );
   }
 }
