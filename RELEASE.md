@@ -1,3 +1,30 @@
+# Release 1.12.0
+
+This release adds haptic feedback across the app, improves notification handling for friend requests, streamlines group join requests, and enhances navigation behavior and test coverage.
+
+## Features
+
+*   **Haptics and Vibration Service:** Introduces a centralized `VibrationService`, a reusable `VibrationButton` widget, and a user setting to enable/disable vibrations. Haptic feedback is now wired into main navigation, app drawer, friends and groups pages, add friend flow, auth pages, notification center, and common controls like menu/notification buttons and read switch tiles. Haptics are enabled by default.
+*   **Notification Handling:** Creates and prunes friend request notifications to avoid stale entries, and covers empty/failure cases.
+*   **Group Join Requests:** Adds join-request flow and owner notifications, with corresponding Firestore rules and service methods.
+*   **Navigation Behavior:** Tracks navigation history, handles back button behavior, and hides the bottom navigation on non-core pages when appropriate.
+*   **Crashlytics (iOS):** Integrates Firebase Crashlytics into the iOS build.
+
+## Enhancements
+
+*   **Tests & Stability:** Expands widget and service tests (navigation visibility, Firebase messaging token caching, daily notification behavior, error logging edge cases, achievements/streak widgets, drawer interactions). Initializes Firebase in tests and prevents unintended network calls in vibration tests.
+*   **Dependencies:** Adds `device_info_plus` to support platform-specific behavior (locked in `pubspec.lock`).
+*   **UI Polish:** Small refactors to keep bottom navigation visible when expected and to smooth navigation transitions.
+
+## Fixes
+
+*   **Stale Notifications:** Cleans up outdated friend request notifications.
+*   **Daily Reminder Scheduling:** Fixes scheduling edge cases to improve reliability.
+
+## Documentation
+
+*   Clarifies vibration capabilities and settings, group joining workflow, and programmatic checks; adds a quick-fix guide and streamlines setup docs.
+
 # Release 1.11.0
 
 This release includes a major refactoring of the codebase, new features, bug fixes, and documentation updates.
