@@ -17,6 +17,7 @@ import '../services/notification_service.dart';
 import '../models/achievement.dart';
 import '../theme/app_theme.dart';
 import 'read_log_page.dart';
+import '../services/reading_status_service.dart';
 
 /// Landing page that displays reading progress and loads user data from
 /// Firestore when the app starts.
@@ -39,8 +40,14 @@ class HomePage extends StatefulWidget {
     FirebaseAuth? auth,
     this.functions,
     this.markFirstReader,
+    ReadingStatusService? readingStatusService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance;
+        auth = auth ?? FirebaseAuth.instance,
+        readingStatusService = readingStatusService ??
+            ReadingStatusService(firestore: firestore, auth: auth);
+
+  /// Service for loading and updating reading status.
+  final ReadingStatusService readingStatusService;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -63,12 +70,7 @@ class _HomePageState extends State<HomePage>
     _loadReadStatus();
   }
 
-  /// Fetches today's read flag and calendar history from Firestore.
-  /// Creates a user document if necessary and updates local state. Cached
-  /// calendar ranges older than a week or month are discarded and, when the
-  /// cached lists are incomplete, the missing days are queried directly from
-  /// the `reading` collection. When [showLoading] is true, a spinner is shown
-  /// while the request is in flight.
+  /// Fetches today's read flag and calendar history.
   Future<void> _loadReadStatus({bool showLoading = true}) async {
     if (showLoading && !_disposed && mounted) {
       setState(() {
@@ -77,151 +79,13 @@ class _HomePageState extends State<HomePage>
     }
 
     try {
-      final user = widget.auth.currentUser;
-      if (user == null) {
-        if (showLoading && !_disposed && mounted) {
-          setState(() {
-            _toggleLoading = false;
-          });
-        }
-        return;
-      }
-
-      final today = DateTime.now();
-      final dateKey =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-
-      final userDocRef = widget.firestore.collection('users').doc(user.uid);
-
-      // Kick off all Firestore reads in parallel.
-      final snapshots =
-          await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-        userDocRef.get(),
-        userDocRef.collection('reading').doc(dateKey).get(),
-        userDocRef.collection('summary').doc('data').get(),
-      ], eagerError: true);
-
-      final userDoc = snapshots[0];
-      final todayDoc = snapshots[1];
-      final summaryDoc = snapshots[2];
-
-      if (!userDoc.exists) {
-        // Reload only when user data is needed to create the document.
-        await user.reload();
-        final refreshedUser = widget.auth.currentUser;
-
-        await userDocRef.set({
-          'name': refreshedUser?.displayName ?? '',
-          'email': refreshedUser?.email?.toLowerCase() ?? '',
-        });
-
-        // Initialize subcollections so later queries succeed.
-        final friendsCollection = userDocRef.collection('friends');
-        final friendRequestsSentCollection = userDocRef.collection(
-          'friendRequestsSent',
-        );
-
-        await Future.wait([
-          friendsCollection.doc('init').set({
-            'status': 'placeholder',
-            'timestamp': Timestamp.now(),
-          }, SetOptions(merge: true)),
-          friendRequestsSentCollection.doc('init').set({
-            'status': 'placeholder',
-            'timestamp': Timestamp.now(),
-          }, SetOptions(merge: true)),
-        ]);
-      }
-
-      // Read today's status from the reading subcollection result.
-      if (todayDoc.exists && todayDoc.data() != null) {
-        final data = todayDoc.data()!;
-        final hasRead = data.containsKey('read') ? data['read'] : false;
-        if (!_disposed && mounted) {
-          setState(() {
-            _readToday = hasRead;
-          });
-        }
-      }
-
-      // Load calendar data from summary doc.
-      final data = summaryDoc.data() ?? {};
-      var weekDates = List<String>.from(data['pastWeekReadDates'] ?? []);
-      weekDates = weekDates.where((d) {
-        final parsed = DateTime.tryParse(d);
-        if (parsed == null) return false;
-        final diff = today.difference(parsed).inDays;
-        return diff >= 0 && diff < 7;
-      }).toList();
-      final savedWeek = List<bool>.filled(7, false, growable: true);
-      // Compute this week's Sunday (calendar week: Sunday to Saturday)
-      final currentWeekday = today.weekday; // 1 = Mon, ..., 7 = Sun
-      final sunday = today.subtract(
-        Duration(days: currentWeekday % 7),
-      ); // get this week's Sunday
-      for (int i = 0; i < 7; i++) {
-        final date = sunday.add(Duration(days: i)); // Sunday to Saturday
-        final key =
-            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-        savedWeek[i] = weekDates.contains(key);
-      }
-
-      final savedMonth = <bool>[];
-      var monthDates = List<String>.from(data['pastMonthReadDates'] ?? []);
-      monthDates = monthDates.where((d) {
-        final parsed = DateTime.tryParse(d);
-        if (parsed == null) return false;
-        final diff = today.difference(parsed).inDays;
-        return diff >= 0 && diff < 30;
-      }).toList();
-      final daysInMonth = DateTime(today.year, today.month + 1, 0).day;
-      for (int i = 1; i <= daysInMonth; i++) {
-        final key =
-            '${today.year}-${today.month.toString().padLeft(2, '0')}-${i.toString().padLeft(2, '0')}';
-        savedMonth.add(monthDates.contains(key));
-      }
-
-      if (weekDates.length < 7) {
-        // Backfill the past week by querying reading documents directly.
-        final weekStatus = await _getReadStatusForRange(7);
-        savedWeek.clear();
-        for (int i = 0; i < 7; i++) {
-          final date = sunday.add(Duration(days: i));
-          final key =
-              '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-          savedWeek.add(weekStatus[key] ?? false);
-        }
-      }
-      if (monthDates.length < 30) {
-        // Backfill the past month similarly.
-        final monthStatus = await _getReadStatusForRange(30);
-        savedMonth.clear();
-        for (int i = 1; i <= daysInMonth; i++) {
-          final key =
-              '${today.year}-${today.month.toString().padLeft(2, '0')}-${i.toString().padLeft(2, '0')}';
-          savedMonth.add(monthStatus[key] ?? false);
-        }
-      }
-
-      final readDates = <DateTime>{};
-      for (int i = 0; i < savedWeek.length; i++) {
-        if (savedWeek[i]) {
-          final date = sunday.add(Duration(days: i));
-          readDates.add(DateTime(date.year, date.month, date.day));
-        }
-      }
-      for (int i = 0; i < savedMonth.length; i++) {
-        if (savedMonth[i]) {
-          readDates.add(DateTime(today.year, today.month, i + 1));
-        }
-      }
-
+      final status = await widget.readingStatusService.fetchStatus();
       if (!_disposed && mounted) {
-        // Update state with fetched data.
         setState(() {
-          _pastWeek = savedWeek;
-          _pastMonth = savedMonth;
-          _readDates = readDates;
+          _readToday = status.readToday;
+          _pastWeek = status.pastWeek;
+          _pastMonth = status.pastMonth;
+          _readDates = status.readDates;
         });
       }
     } catch (e, st) {
@@ -238,36 +102,6 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Returns a map indicating whether the user has read on each of the past
-  /// [daysBack] days. The keys are formatted as `yyyy-MM-dd`.
-  Future<Map<String, bool>> _getReadStatusForRange(int daysBack) async {
-    final user = widget.auth.currentUser;
-    if (user == null) return {};
-
-    final userDocRef = widget.firestore.collection('users').doc(user.uid);
-    final readingCollection = userDocRef.collection('reading');
-
-    final now = DateTime.now();
-    final futures = <Future<MapEntry<String, bool>>>[];
-
-    for (int i = 0; i < daysBack; i++) {
-      final date = now.subtract(Duration(days: i));
-      final docId =
-          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      final key = docId;
-
-      futures.add(
-        readingCollection.doc(docId).get().then((doc) {
-          final read = doc.exists && doc.data()?['read'] == true;
-          return MapEntry(key, read);
-        }),
-      );
-    }
-
-    final results = await Future.wait(futures);
-    return Map.fromEntries(results);
-  }
-
   /// Cleans and updates the cached summary document without scanning the entire
   /// reading collection. Removes outdated entries, ensures the summary document
   /// exists and resets the streak if a day was missed.
@@ -276,69 +110,8 @@ class _HomePageState extends State<HomePage>
     if (user == null) return;
 
     try {
-      final userDocRef = widget.firestore.collection('users').doc(user.uid);
-      final summaryDocRef = userDocRef.collection('summary').doc('data');
-
-      final today = DateTime.now();
-      String formatDate(DateTime d) =>
-          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-
-      // Query recent reading documents to rebuild cached arrays.
-      final weekStatus = await _getReadStatusForRange(7);
-      final monthStatus = await _getReadStatusForRange(30);
-
-      final pastWeekReadDates =
-          weekStatus.entries.where((e) => e.value).map((e) => e.key).toList();
-      final pastMonthReadDates =
-          monthStatus.entries.where((e) => e.value).map((e) => e.key).toList();
-
-      // Fetch all reading entries to recompute aggregate counters.
-      final readingSnapshot = await userDocRef.collection('reading').get();
-      final readDateSet = <String>{};
-      for (final readDoc in readingSnapshot.docs) {
-        final data = readDoc.data();
-        if (data['read'] == true) {
-          readDateSet.add(readDoc.id);
-        }
-      }
-
-      final totalReadDays = readDateSet.length;
-
-      // Recalculate current streak based on most recent consecutive reads.
-      int streak = 0;
-      var cursor = DateTime(today.year, today.month, today.day);
-      while (readDateSet.contains(formatDate(cursor))) {
-        streak += 1;
-        cursor = cursor.subtract(const Duration(days: 1));
-      }
-
-      // Determine the longest streak across all recorded reads.
-      int longestStreak = 0;
-      if (readDateSet.isNotEmpty) {
-        final sortedDates = readDateSet.map((d) => DateTime.parse(d)).toList()
-          ..sort();
-        int current = 1;
-        longestStreak = 1;
-        for (int i = 1; i < sortedDates.length; i++) {
-          if (sortedDates[i].difference(sortedDates[i - 1]).inDays == 1) {
-            current += 1;
-          } else {
-            current = 1;
-          }
-          if (current > longestStreak) {
-            longestStreak = current;
-          }
-        }
-      }
-
-      await summaryDocRef.set({
-        'streak': streak,
-        'pastWeekReadDates': pastWeekReadDates,
-        'pastMonthReadDates': pastMonthReadDates,
-        'totalReadDays': totalReadDays,
-        'longestStreak': longestStreak,
-      }, SetOptions(merge: true));
-      await _checkAchievements(user.uid, streak, totalReadDays);
+      final stats = await widget.readingStatusService.updateSummary();
+      await _checkAchievements(user.uid, stats.streak, stats.totalReadDays);
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to update summary: $e');
