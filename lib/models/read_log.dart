@@ -55,19 +55,21 @@ class ReadLog {
     String? firstReaderUid,
   }) async {
     final data = doc.data() ?? <String, dynamic>{};
-    final likesSnapshot = await doc.reference.collection('likes').get();
-    final likeDocs = likesSnapshot.docs;
+
+    final likesFuture = doc.reference.collection('likes').get();
+    final commentsFuture =
+        doc.reference.collection('comments').orderBy('timestamp').get();
+
+    final results = await Future.wait([likesFuture, commentsFuture]);
+    final likeDocs = (results[0] as QuerySnapshot<Map<String, dynamic>>).docs;
+    final commentsSnap = results[1] as QuerySnapshot<Map<String, dynamic>>;
+
     final liked = likeDocs.any((d) => d.id == currentUid);
     final likeNames = likeDocs
         .map((d) => (d.data()['name'] ?? 'Unknown').toString())
         .toList();
-    final commentsSnap = await doc.reference
-        .collection('comments')
-        .orderBy('timestamp')
-        .get();
-    final comments = commentsSnap.docs
-        .map((d) => Comment.fromFirestore(d))
-        .toList();
+    final comments =
+        commentsSnap.docs.map((d) => Comment.fromFirestore(d)).toList();
     final name = (data['name'] ?? doc.id).toString().split(' ').first;
     return ReadLog(
       uid: doc.id,
@@ -81,11 +83,23 @@ class ReadLog {
 
   /// Parses a [ReadLog] from JSON.
   factory ReadLog.fromJson(Map<String, dynamic> json) => ReadLog(
-    uid: json['uid'] as String? ?? '',
-    name: json['name'] as String? ?? '',
-    likeNames: List<String>.from(json['likeNames'] as List? ?? []),
-    comments: List<Comment>.from(json['comments'] as List? ?? []),
-    liked: json['liked'] as bool? ?? false,
-    firstReader: json['firstReader'] as bool? ?? false,
-  );
+        uid: json['uid'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        likeNames: List<String>.from(json['likeNames'] as List? ?? []),
+        comments: (json['comments'] as List<dynamic>? ?? [])
+            .map((c) => Comment.fromJson(Map<String, dynamic>.from(c as Map)))
+            .toList(),
+        liked: json['liked'] as bool? ?? false,
+        firstReader: json['firstReader'] as bool? ?? false,
+      );
+
+  /// Converts this log to JSON.
+  Map<String, dynamic> toJson() => {
+        'uid': uid,
+        'name': name,
+        'likeNames': likeNames,
+        'comments': comments.map((c) => c.toJson()).toList(),
+        'liked': liked,
+        'firstReader': firstReader,
+      };
 }
