@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/comment.dart';
 import '../models/achievement_definition.dart';
+import '../models/read_log.dart';
 import 'badge_icon.dart';
 import 'comment_drawer.dart';
 import 'comment_section.dart';
@@ -10,7 +11,7 @@ import 'common_styles.dart';
 /// Displays a list of read log entries.
 class ReadLogList extends StatelessWidget {
   /// Log entries to show.
-  final List<Map<String, dynamic>> logs;
+  final List<ReadLog> logs;
 
   /// Callback when the like button is pressed.
   final void Function(String uid) onToggleLike;
@@ -35,8 +36,8 @@ class ReadLogList extends StatelessWidget {
       itemCount: logs.length,
       itemBuilder: (context, index) {
         final log = logs[index];
-        final isLiked = (log['liked'] as bool? ?? false);
-        final isFirst = (log['firstReader'] as bool? ?? false);
+        final isLiked = log.liked;
+        final isFirst = log.firstReader;
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8),
           elevation: 4,
@@ -49,16 +50,13 @@ class ReadLogList extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ListTile(
-                  leading: const Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                  ),
+                  leading: const Icon(Icons.check_circle, color: Colors.green),
                   title: Text(
-                    '${log['name']} read today!',
+                    '${log.name} read today!',
                     style: AppTextStyles.subtitle,
                   ),
                   subtitle: () {
-                    final likeNames = (log['likeNames'] as List?) ?? [];
+                    final likeNames = log.likeNames;
                     if (likeNames.isEmpty) return null;
 
                     const maxToShow = 3;
@@ -99,7 +97,7 @@ class ReadLogList extends StatelessWidget {
                           ),
                           onPressed: isLiked
                               ? null
-                              : () => onToggleLike(log['uid'] as String),
+                              : () => onToggleLike(log.uid),
                         ),
                       ),
                       IconButton(
@@ -107,10 +105,8 @@ class ReadLogList extends StatelessWidget {
                         onPressed: () {
                           CommentDrawer.show(
                             context,
-                            comments: List<Comment>.from(
-                                log['comments'] as List<Comment>),
-                            onAdd: (msg) =>
-                                onAddComment(log['uid'] as String, msg),
+                            comments: log.comments,
+                            onAdd: (msg) => onAddComment(log.uid, msg),
                             commenterName: commenterName,
                           );
                         },
@@ -119,9 +115,8 @@ class ReadLogList extends StatelessWidget {
                   ),
                 ),
                 CommentSection(
-                  comments:
-                      List<Comment>.from(log['comments'] as List<Comment>),
-                  onAdd: (msg) => onAddComment(log['uid'] as String, msg),
+                  comments: log.comments,
+                  onAdd: (msg) => onAddComment(log.uid, msg),
                   showInput: false,
                 ),
               ],

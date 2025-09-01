@@ -14,6 +14,7 @@ import '../services/notification_service.dart';
 import '../widgets/menu_button.dart';
 import '../models/comment.dart';
 import '../widgets/read_log_list.dart';
+import '../models/read_log.dart';
 
 class ReadLogPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -21,11 +22,13 @@ class ReadLogPage extends StatefulWidget {
   final Future<void> Function({
     required String ownerUid,
     required String likerName,
-  }) onSendLikeNotification;
+  })
+  onSendLikeNotification;
   final Future<void> Function({
     required String ownerUid,
     required String commenterName,
-  }) onSendCommentNotification;
+  })
+  onSendCommentNotification;
   final DateTime Function() dateProvider;
 
   ReadLogPage({
@@ -35,9 +38,9 @@ class ReadLogPage extends StatefulWidget {
     required this.onSendLikeNotification,
     required this.onSendCommentNotification,
     DateTime Function()? dateProvider,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        dateProvider = dateProvider ?? DateTime.now;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       dateProvider = dateProvider ?? DateTime.now;
 
   @override
   State<ReadLogPage> createState() => _ReadLogPageState();
@@ -49,7 +52,8 @@ class ReadLogPage extends StatefulWidget {
     Future<Map<String, dynamic>?> Function({
       required String dateKey,
       required String uid,
-    })? markFirstReader,
+    })?
+    markFirstReader,
     DateTime Function()? dateProvider,
   }) async {
     final db = firestore ?? FirebaseFirestore.instance;
@@ -62,19 +66,19 @@ class ReadLogPage extends StatefulWidget {
         .collection('entries')
         .doc(user.uid)
         .set({
-      'name': (user.displayName ?? '').split(' ').first,
-      'email': user.email?.toLowerCase() ?? '',
-      'timestamp': Timestamp.now(),
-    });
+          'name': (user.displayName ?? '').split(' ').first,
+          'email': user.email?.toLowerCase() ?? '',
+          'timestamp': Timestamp.now(),
+        });
     final handler = markFirstReader;
     Map<String, dynamic>? result;
     if (handler != null) {
       result = await handler(dateKey: dateKey, uid: user.uid);
     } else if (functions != null) {
       try {
-        final res = await functions
-            .httpsCallable('markFirstReader')
-            .call({'dateKey': dateKey});
+        final res = await functions.httpsCallable('markFirstReader').call({
+          'dateKey': dateKey,
+        });
         if (res.data is Map) {
           result = Map<String, dynamic>.from(res.data as Map);
         }
@@ -101,20 +105,24 @@ class ReadLogPage extends StatefulWidget {
 }
 
 class _ReadLogPageState extends State<ReadLogPage> {
-  List<Map<String, dynamic>> _logs = [];
+  List<ReadLog> _logs = [];
   bool _loading = true;
   bool _loadError = false;
 
-  Future<void> _sendLikeNotification(
-      {required String ownerUid, required String likerName}) async {
+  Future<void> _sendLikeNotification({
+    required String ownerUid,
+    required String likerName,
+  }) async {
     await widget.onSendLikeNotification(
       ownerUid: ownerUid,
       likerName: likerName,
     );
   }
 
-  Future<void> _sendCommentNotification(
-      {required String ownerUid, required String commenterName}) async {
+  Future<void> _sendCommentNotification({
+    required String ownerUid,
+    required String commenterName,
+  }) async {
     await widget.onSendCommentNotification(
       ownerUid: ownerUid,
       commenterName: commenterName,
@@ -136,7 +144,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
       return;
     }
     bool error = false;
-    List<Map<String, dynamic>> logs = [];
+    List<ReadLog> logs = [];
     try {
       final now = widget.dateProvider();
       final dateKey =
@@ -162,30 +170,15 @@ class _ReadLogPageState extends State<ReadLogPage> {
         firstReaderUid = null;
       }
 
-      logs = await Future.wait(snapshot.docs.map((doc) async {
-        final data = doc.data();
-        final likesSnapshot = await doc.reference.collection('likes').get();
-        final likeDocs = likesSnapshot.docs;
-        final liked = likeDocs.any((d) => d.id == currentUser.uid);
-        final likeNames = likeDocs
-            .map((d) => (d.data()['name'] ?? 'Unknown').toString())
-            .toList();
-        final commentsSnap = await doc.reference
-            .collection('comments')
-            .orderBy('timestamp')
-            .get();
-        final comments =
-            commentsSnap.docs.map((d) => Comment.fromFirestore(d)).toList();
-        return {
-          'uid': doc.id,
-          'name': (data['name'] ?? doc.id).toString().split(' ').first,
-          'read': true,
-          'liked': liked,
-          'likeNames': likeNames,
-          'firstReader': firstReaderUid != null && doc.id == firstReaderUid,
-          'comments': comments,
-        };
-      }).toList());
+      logs = await Future.wait(
+        snapshot.docs.map((doc) {
+          return ReadLog.fromFirestore(
+            doc,
+            currentUid: currentUser.uid,
+            firstReaderUid: firstReaderUid,
+          );
+        }).toList(),
+      );
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Load logs failed: $e');
@@ -209,25 +202,20 @@ class _ReadLogPageState extends State<ReadLogPage> {
   Future<void> _toggleLike(String logUid) async {
     final user = widget.auth.currentUser;
     if (user == null) return;
-    final index = _logs.indexWhere((log) => log['uid'] == logUid);
+    final index = _logs.indexWhere((log) => log.uid == logUid);
     if (index == -1) return;
-    final original = Map<String, dynamic>.from(_logs[index]);
+    final original = _logs[index];
 
-    if (original['liked'] == true) {
+    if (original.liked) {
       return;
     }
 
     final likerName = (user.displayName ?? '').split(' ').first;
-    final updatedNames = List<String>.from(original['likeNames'] ?? [])
-      ..add(likerName);
+    final updatedNames = List<String>.from(original.likeNames)..add(likerName);
 
     // Optimistically update UI
     setState(() {
-      _logs[index] = {
-        ...original,
-        'liked': true,
-        'likeNames': updatedNames,
-      };
+      _logs[index] = original.copyWith(liked: true, likeNames: updatedNames);
     });
 
     final now = widget.dateProvider();
@@ -248,15 +236,9 @@ class _ReadLogPageState extends State<ReadLogPage> {
         }
         return;
       }
-      await likeRef.set({
-        'timestamp': Timestamp.now(),
-        'name': likerName,
-      });
+      await likeRef.set({'timestamp': Timestamp.now(), 'name': likerName});
       if (logUid != user.uid) {
-        await _sendLikeNotification(
-          ownerUid: logUid,
-          likerName: likerName,
-        );
+        await _sendLikeNotification(ownerUid: logUid, likerName: likerName);
       }
     } catch (e, st) {
       if (kDebugMode) {
@@ -277,7 +259,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
     if (user == null) {
       throw StateError('User not signed in');
     }
-    final index = _logs.indexWhere((log) => log['uid'] == logUid);
+    final index = _logs.indexWhere((log) => log.uid == logUid);
     if (index == -1) {
       throw StateError('Log not found');
     }
@@ -291,13 +273,12 @@ class _ReadLogPageState extends State<ReadLogPage> {
       timestamp: DateTime.now(),
     );
 
-    final originalComments =
-        List<Comment>.from(_logs[index]['comments'] as List<Comment>? ?? []);
+    final original = _logs[index];
+    final originalComments = List<Comment>.from(original.comments);
     setState(() {
-      _logs[index] = {
-        ..._logs[index],
-        'comments': [...originalComments, comment],
-      };
+      _logs[index] = original.copyWith(
+        comments: [...originalComments, comment],
+      );
     });
 
     final now = widget.dateProvider();
@@ -321,17 +302,11 @@ class _ReadLogPageState extends State<ReadLogPage> {
       if (mounted) {
         final updated = List<Comment>.from(originalComments)..add(persisted);
         setState(() {
-          _logs[index] = {
-            ..._logs[index],
-            'comments': updated,
-          };
+          _logs[index] = original.copyWith(comments: updated);
         });
       }
       if (logUid != user.uid) {
-        await _sendCommentNotification(
-          ownerUid: logUid,
-          commenterName: author,
-        );
+        await _sendCommentNotification(ownerUid: logUid, commenterName: author);
       }
       return persisted;
     } catch (e, st) {
@@ -341,14 +316,12 @@ class _ReadLogPageState extends State<ReadLogPage> {
       ErrorLogger.log(e, st);
       if (mounted) {
         setState(() {
-          _logs[index] = {
-            ..._logs[index],
-            'comments': originalComments,
-          };
+          _logs[index] = original;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Failed to add comment. Please try again.')),
+            content: Text('Failed to add comment. Please try again.'),
+          ),
         );
       }
       rethrow;
@@ -378,34 +351,35 @@ class _ReadLogPageState extends State<ReadLogPage> {
                 child: const CircularProgressIndicator(),
               )
             : _loadError
-                ? Center(
-                    child: Text(
-                      'Unable to load feed.',
-                      style: AppTextStyles.subtitle
-                          .copyWith(color: Colors.white70),
-                    ),
-                  )
-                : widget.auth.currentUser == null
-                    ? Center(
-                        child: Text(
-                          'Please sign in to view your read log.',
-                          style: AppTextStyles.subtitle
-                              .copyWith(color: Colors.white70),
-                        ),
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.only(
-                            top: 16.0, bottom: 48.0, left: 16, right: 16),
-                        child: ReadLogList(
-                          logs: _logs,
-                          onToggleLike: _toggleLike,
-                          onAddComment: _addComment,
-                          commenterName:
-                              (widget.auth.currentUser?.displayName ?? '')
-                                  .split(' ')
-                                  .first,
-                        ),
-                      ),
+            ? Center(
+                child: Text(
+                  'Unable to load feed.',
+                  style: AppTextStyles.subtitle.copyWith(color: Colors.white70),
+                ),
+              )
+            : widget.auth.currentUser == null
+            ? Center(
+                child: Text(
+                  'Please sign in to view your read log.',
+                  style: AppTextStyles.subtitle.copyWith(color: Colors.white70),
+                ),
+              )
+            : Padding(
+                padding: const EdgeInsets.only(
+                  top: 16.0,
+                  bottom: 48.0,
+                  left: 16,
+                  right: 16,
+                ),
+                child: ReadLogList(
+                  logs: _logs,
+                  onToggleLike: _toggleLike,
+                  onAddComment: _addComment,
+                  commenterName: (widget.auth.currentUser?.displayName ?? '')
+                      .split(' ')
+                      .first,
+                ),
+              ),
       ),
     );
   }

@@ -39,11 +39,36 @@ class Comment {
     );
   }
 
+  /// Parses a [Comment] from JSON.
+  factory Comment.fromJson(Map<String, dynamic> json) {
+    final ts = json['timestamp'];
+    return Comment(
+      id: json['id'] as String? ?? '',
+      uid: json['uid'] as String? ?? '',
+      authorName: json['authorName'] as String? ?? '',
+      message: json['message'] as String? ?? '',
+      timestamp: ts is String
+          ? DateTime.tryParse(ts) ?? DateTime.now()
+          : ts is int
+              ? DateTime.fromMillisecondsSinceEpoch(ts)
+              : DateTime.now(),
+    );
+  }
+
   /// Serializes this comment for Firestore.
   Map<String, dynamic> toFirestore() => {
         'uid': uid,
         'authorName': authorName,
         'message': message,
         'timestamp': Timestamp.fromDate(timestamp),
+      };
+
+  /// Converts this comment to JSON.
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'uid': uid,
+        'authorName': authorName,
+        'message': message,
+        'timestamp': timestamp.toIso8601String(),
       };
 }
