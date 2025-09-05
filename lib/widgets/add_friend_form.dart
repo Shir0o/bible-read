@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../services/error_logger.dart';
 
 import '../services/friend_service.dart';
+import '../services/vibration_service.dart';
 import 'animated_action_button.dart';
 import 'success_animation.dart';
 
@@ -20,13 +21,17 @@ class AddFriendForm extends StatefulWidget {
   /// Optional callback when the request completes successfully.
   final VoidCallback? onComplete;
 
+  /// Service used for haptic feedback.
+  final VibrationService vibrationService;
+
   /// Creates an [AddFriendForm].
   const AddFriendForm({
     super.key,
     required this.friendService,
     required this.auth,
     this.onComplete,
-  });
+    VibrationService? vibrationService,
+  }) : vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<AddFriendForm> createState() => _AddFriendFormState();
@@ -34,6 +39,7 @@ class AddFriendForm extends StatefulWidget {
 
 class _AddFriendFormState extends State<AddFriendForm> {
   final TextEditingController _controller = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -41,47 +47,53 @@ class _AddFriendFormState extends State<AddFriendForm> {
     super.dispose();
   }
 
-  void _sendRequest() {
+  Future<void> _sendRequest() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
     final previous = _controller.text;
     final email = previous.trim().toLowerCase();
     if (email.isEmpty) return;
 
+    setState(() => _isLoading = true);
     _controller.clear();
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Request sent')));
 
-    unawaited(() async {
-      try {
-        await widget.friendService.sendFriendRequestByEmail(
-          fromUid: user.uid,
-          fromName: user.displayName ?? '',
-          toEmail: email,
-        );
-        if (!mounted) return;
-        SuccessAnimation.show(context);
-        widget.onComplete?.call();
-      } catch (e, st) {
-        if (kDebugMode) {
-          debugPrint('Failed to send friend request: $e');
-        }
-        await ErrorLogger.log(e, st);
-        if (!mounted) return;
-        _controller
-          ..text = previous
-          ..selection = TextSelection.fromPosition(
-            TextPosition(offset: previous.length),
-          );
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            const SnackBar(
-              content: Text('Failed to send request. Please try again.'),
-            ),
-          );
+    try {
+      await widget.friendService.sendFriendRequestByEmail(
+        fromUid: user.uid,
+        fromName: user.displayName ?? '',
+        toEmail: email,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Request sent')));
+      SuccessAnimation.show(
+        context,
+        vibrationService: widget.vibrationService,
+      );
+      widget.onComplete?.call();
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to send friend request: $e');
       }
-    }());
+      await ErrorLogger.log(e, st);
+      if (!mounted) return;
+      _controller
+        ..text = previous
+        ..selection = TextSelection.fromPosition(
+          TextPosition(offset: previous.length),
+        );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Failed to send request. Please try again.'),
+          ),
+        );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -97,6 +109,8 @@ class _AddFriendFormState extends State<AddFriendForm> {
         const SizedBox(height: 16),
         AnimatedActionButton(
           onPressed: _sendRequest,
+          isLoading: _isLoading,
+          vibrationService: widget.vibrationService,
           child: const Text('Send'),
         ),
       ],

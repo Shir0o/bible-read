@@ -60,9 +60,10 @@ class ReadLog {
     final commentsFuture =
         doc.reference.collection('comments').orderBy('timestamp').get();
 
-    final results = await Future.wait([likesFuture, commentsFuture]);
-    final likeDocs = (results[0] as QuerySnapshot<Map<String, dynamic>>).docs;
-    final commentsSnap = results[1] as QuerySnapshot<Map<String, dynamic>>;
+    final results = await Future.wait<QuerySnapshot<Map<String, dynamic>>>(
+        [likesFuture, commentsFuture]);
+    final likeDocs = results[0].docs;
+    final commentsSnap = results[1];
 
     final liked = likeDocs.any((d) => d.id == currentUid);
     final likeNames = likeDocs

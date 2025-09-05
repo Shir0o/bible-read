@@ -6,11 +6,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/widgets/add_friend_form.dart';
 import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/notification_service.dart';
+import 'package:bible_read/services/notification_preferences_service.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:bible_read/widgets/animated_action_button.dart';
 import 'package:bible_read/widgets/success_animation.dart';
+import 'package:bible_read/services/vibration_service.dart';
 import '../helpers/mock_lottie_http_client.dart';
 
 class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
@@ -32,8 +34,16 @@ class RecordingFriendService extends FriendService {
     required String toEmail,
   }) async {
     lastEmail = toEmail;
-    if (throwError) return Future.error(Exception('fail'));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    if (throwError) throw Exception('fail');
   }
+}
+
+class StubPrefsService extends NotificationPreferencesService {
+  StubPrefsService() : super(firestore: FakeFirebaseFirestore());
+
+  @override
+  Future<bool> fetchVibrationEnabled(String uid) async => true;
 }
 
 void main() {
@@ -56,10 +66,16 @@ void main() {
   });
 
   Future<void> pumpForm(WidgetTester tester) async {
+    final vibrationService =
+        VibrationService(auth: auth, prefsService: StubPrefsService());
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: AddFriendForm(friendService: service, auth: auth),
+          body: AddFriendForm(
+            friendService: service,
+            auth: auth,
+            vibrationService: vibrationService,
+          ),
         ),
       ),
     );
@@ -79,9 +95,17 @@ void main() {
     await tester.tap(find.text('Send'));
     await tester.pump();
 
+    expect(find.byKey(const ValueKey('spinner')), findsOneWidget);
+    expect(find.text('Request sent'), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 10));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
     expect(service.lastEmail, 'friend@example.com');
     expect(find.text('Request sent'), findsOneWidget);
     expect(find.byType(SuccessAnimation), findsOneWidget);
+    expect(find.byKey(const ValueKey('spinner')), findsNothing);
     final textField =
         tester.widget<TextField>(find.byKey(const Key('addFriendEmailField')));
     expect(textField.controller!.text, isEmpty);
@@ -104,7 +128,15 @@ void main() {
         find.byKey(const Key('addFriendEmailField')), 'friend@example.com');
     final buttonFinder = find.byType(AnimatedActionButton);
     await tester.tap(buttonFinder);
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('spinner')), findsOneWidget);
+    expect(
+        find.text('Failed to send request. Please try again.'), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 10));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
     expect(service.lastEmail, 'friend@example.com');
     expect(
@@ -112,7 +144,8 @@ void main() {
     final textField =
         tester.widget<TextField>(find.byKey(const Key('addFriendEmailField')));
     expect(textField.controller!.text, 'friend@example.com');
+    expect(find.byKey(const ValueKey('spinner')), findsNothing);
     expect(
         tester.widget<AnimatedActionButton>(buttonFinder).onPressed, isNotNull);
-  }, skip: true);
+  });
 }
