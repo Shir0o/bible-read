@@ -42,7 +42,9 @@ class AchievementService {
                 id: doc.id,
                 title: data['title'] ?? '',
                 type: data['type'] ?? '',
-                dateUnlocked: (data['dateUnlocked'] as Timestamp).toDate(),
+                dateUnlocked: data['dateUnlocked'] is Timestamp
+                    ? (data['dateUnlocked'] as Timestamp).toDate()
+                    : DateTime.now(),
               );
             }).toList());
   }
