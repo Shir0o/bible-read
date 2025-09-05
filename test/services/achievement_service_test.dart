@@ -67,6 +67,43 @@ void main() {
       expect(list.last.type, 't1');
     });
 
+    test('achievements stream handles missing dateUnlocked', () async {
+      const uid = 'userMissing';
+      final collection = firestore
+          .collection('users')
+          .doc(uid)
+          .collection(AchievementService.achievementsCollection);
+
+      await collection.doc('a1').set({
+        'title': 'NoDate',
+        'type': 't1',
+      });
+
+      final list = await service.achievements(uid).first;
+      expect(list.length, 1);
+      final now = DateTime.now();
+      expect(now.difference(list.first.dateUnlocked).inSeconds < 5, isTrue);
+    });
+
+    test('achievements stream handles invalid dateUnlocked type', () async {
+      const uid = 'userInvalid';
+      final collection = firestore
+          .collection('users')
+          .doc(uid)
+          .collection(AchievementService.achievementsCollection);
+
+      await collection.doc('a1').set({
+        'title': 'Bad',
+        'type': 't1',
+        'dateUnlocked': 'not a timestamp',
+      });
+
+      final list = await service.achievements(uid).first;
+      expect(list.length, 1);
+      final now = DateTime.now();
+      expect(now.difference(list.first.dateUnlocked).inSeconds < 5, isTrue);
+    });
+
     test('unlockedAchievementIds stream emits set of ids', () async {
       const uid = 'user3';
       final collection = firestore
