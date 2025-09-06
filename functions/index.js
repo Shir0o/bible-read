@@ -11,6 +11,11 @@ const { onCall } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
+const {
+  getFcmToken,
+  isNotificationEnabled,
+  sendNotification,
+} = require("./notification-utils");
 
 admin.initializeApp();
 
@@ -41,19 +46,12 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
     throw new Error("invalid-argument: Missing data");
   }
 
-  const db = admin.firestore();
-  const likePref = await db
-    .collection('users')
-    .doc(ownerUid)
-    .collection('notificationPrefs')
-    .doc('like')
-    .get();
-  if (likePref.exists && likePref.data()?.enabled === false) {
+  const enabled = await isNotificationEnabled(ownerUid, 'like');
+  if (!enabled) {
     return;
   }
 
-  const userDoc = await db.collection('users').doc(ownerUid).get();
-  const token = userDoc.data()?.fcmToken;
+  const token = await getFcmToken(ownerUid);
 
   if (!token) {
     console.log(
@@ -62,26 +60,11 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
     return;
   }
 
-  const message = {
-    token,
-    notification: {
+  try {
+    return await sendNotification(token, {
       title: "📖 New Like on Your Reading!",
       body: `${likerName} liked your reading log.`,
-    },
-    android: {
-      priority: "high",
-    },
-    apns: {
-      payload: {
-        aps: {
-          sound: "default",
-        },
-      },
-    },
-  };
-
-  try {
-    return await admin.messaging().send(message);
+    });
   } catch (err) {
     functions.logger.error('Failed to send like notification', err);
     throw new functions.https.HttpsError(
@@ -105,36 +88,22 @@ exports.sendCommentNotification = onCall({ region: 'us-central1' }, async (req) 
     throw new functions.https.HttpsError('invalid-argument', 'Missing data');
   }
 
-  const db = admin.firestore();
-  const commentPref = await db
-    .collection('users')
-    .doc(ownerUid)
-    .collection('notificationPrefs')
-    .doc('comment')
-    .get();
-  if (commentPref.exists && commentPref.data()?.enabled === false) {
+  const enabled = await isNotificationEnabled(ownerUid, 'comment');
+  if (!enabled) {
     return;
   }
 
-  const userDoc = await db.collection('users').doc(ownerUid).get();
-  const token = userDoc.data()?.fcmToken;
+  const token = await getFcmToken(ownerUid);
   if (!token) {
     functions.logger.info(`No FCM token for user ${ownerUid}`);
     return;
   }
 
-  const message = {
-    token,
-    notification: {
+  try {
+    return await sendNotification(token, {
       title: '📖 New Comment',
       body: `${commenterName} commented on your reading.`,
-    },
-    android: { priority: 'high' },
-    apns: { payload: { aps: { sound: 'default' } } },
-  };
-
-  try {
-    return await admin.messaging().send(message);
+    });
   } catch (err) {
     functions.logger.error('Failed to send comment notification', err);
     throw new functions.https.HttpsError(
@@ -161,13 +130,8 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
   const fromUid = req.auth.uid;
   const db = admin.firestore();
 
-  const nudgePref = await db
-    .collection('users')
-    .doc(toUid)
-    .collection('notificationPrefs')
-    .doc('nudge')
-    .get();
-  if (nudgePref.exists && nudgePref.data()?.enabled === false) {
+  const enabled = await isNotificationEnabled(toUid, 'nudge');
+  if (!enabled) {
     await db
       .collection('users')
       .doc(fromUid)
@@ -201,29 +165,13 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
     return { alreadyRead: true };
   }
 
-  const userDoc = await db.collection('users').doc(toUid).get();
-  const token = userDoc.data()?.fcmToken;
+  const token = await getFcmToken(toUid);
   if (token) {
-    const message = {
-      token,
-      notification: {
+    try {
+      await sendNotification(token, {
         title: "📖 Time to Read!",
         body: `${fromName} nudged you to read today.`,
-      },
-      android: {
-        priority: "high",
-      },
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-          },
-        },
-      },
-    };
-
-    try {
-      await admin.messaging().send(message);
+      });
     } catch (err) {
       functions.logger.error('Failed to send nudge notification', err);
       throw new functions.https.HttpsError(
@@ -377,8 +325,7 @@ exports.sendSignupNotification = functions.auth.user().onCreate(async (user) => 
     return;
   }
 
-  const adminDoc = await admin.firestore().collection('users').doc(adminUid).get();
-  const token = adminDoc.data()?.fcmToken;
+  const token = await getFcmToken(adminUid);
   if (!token) {
     functions.logger.warn(`No FCM token for admin user ${adminUid}`);
     return;
@@ -386,18 +333,11 @@ exports.sendSignupNotification = functions.auth.user().onCreate(async (user) => 
 
   // Prefer displayName, then email, otherwise use a generic label
   const name = user.displayName || user.email || 'New user';
-  const message = {
-    token,
-    notification: {
+  try {
+    await sendNotification(token, {
       title: 'New Signup',
       body: `${name} just signed up.`,
-    },
-    android: { priority: 'high' },
-    apns: { payload: { aps: { sound: 'default' } } },
-  };
-
-  try {
-    await admin.messaging().send(message);
+    });
   } catch (err) {
     functions.logger.error('Failed to send signup notification', err);
   }
