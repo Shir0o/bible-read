@@ -10,11 +10,13 @@ admin.app = () => ({ options: { projectId: 'demo' } });
 
 const functionsTest = require('firebase-functions-test')({projectId: 'demo'});
 const myFunctions = require('../index');
+const utils = require('../notification-utils');
 
 process.env.NODE_ENV = 'test';
 process.env.ADMIN_UID = 'admin1';
 
 describe('other cloud functions', () => {
+  afterEach(() => utils.invalidateUserCache());
   it('sendCommentNotification sends message', async () => {
     const originalFirestore = admin.firestore;
     const originalMessaging = admin.messaging;
