@@ -13,7 +13,6 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **Comments:** Reply to others in the feed by leaving comments on their logs. Tap the comment icon to open a drawer showing all replies and a field to add your own.
 *   **Comment Notifications:** Get notified when someone comments on your reading.
 *   **Nudge Friends:** Remind friends to read by sending a nudge notification.
-*   **Daily Reading Reminder:** Receive a push notification each day you haven't logged a reading yet. You can enable or disable this reminder from the Settings page.
 *   **Signup Notification:** The admin user receives a push notification whenever someone creates an account.
 *   **Customizable Notifications:** Choose which notifications you receive from the settings page.
 *   **Permanent Likes:** Likes cannot be removed once given.

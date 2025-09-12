@@ -117,8 +117,6 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
         return Icon(Icons.emoji_events, color: color);
       case NotificationType.friendRequest:
         return Icon(Icons.person_add_alt, color: color);
-      case NotificationType.dailyReminder:
-        return Icon(Icons.calendar_today, color: color);
       case NotificationType.comment:
         return Icon(Icons.comment, color: color);
     }
@@ -136,8 +134,6 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
         return 'Achievement unlocked';
       case NotificationType.friendRequest:
         return 'You received a friend request';
-      case NotificationType.dailyReminder:
-        return 'Daily reading reminder';
       case NotificationType.comment:
         return 'New comment on your reading';
     }
@@ -200,7 +196,6 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
       case NotificationType.like:
       case NotificationType.nudge:
       case NotificationType.signup:
-      case NotificationType.dailyReminder:
       case NotificationType.comment:
         break;
     }
