@@ -20,7 +20,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
-import '../services/daily_notification_service.dart';
 import '../services/error_logger.dart';
 import 'dart:async';
 
@@ -41,7 +40,6 @@ class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
-  final DailyNotificationService Function() dailyNotificationServiceProvider;
   final LeaderboardPage Function({
     Key? key,
     FirebaseFirestore? firestore,
@@ -68,7 +66,6 @@ class MainPage extends StatefulWidget {
     GoogleSignIn Function()? googleSignInProvider,
     FirebaseMessaging? messaging,
     VibrationService? vibrationService,
-    DailyNotificationService Function()? dailyNotificationServiceProvider,
     LeaderboardPage Function({
       Key? key,
       FirebaseFirestore? firestore,
@@ -89,8 +86,6 @@ class MainPage extends StatefulWidget {
         auth = auth ?? FirebaseAuth.instance,
         messaging = messaging ?? FirebaseMessaging.instance,
         googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
-        dailyNotificationServiceProvider =
-            dailyNotificationServiceProvider ?? DailyNotificationService.new,
         vibrationService = vibrationService ?? const VibrationService(),
         leaderboardPageBuilder = leaderboardPageBuilder ?? LeaderboardPage.new,
         readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
@@ -198,8 +193,6 @@ class _MainPageState extends State<MainPage> {
         auth: widget.auth,
         firestore: widget.firestore,
         friendService: _friendService,
-        dailyNotificationServiceProvider:
-            widget.dailyNotificationServiceProvider,
       ),
     ];
     _attemptSilentSignIn();
@@ -278,13 +271,9 @@ class _MainPageState extends State<MainPage> {
             }
           }
         }());
-
-        await widget.dailyNotificationServiceProvider().scheduleDailyReminder(
-              const Time(8, 0),
-            );
       } else {
         debugPrint(
-          'Skipping Firestore write and reminder: token unchanged or null',
+          'Skipping Firestore write: token unchanged or null',
         );
       }
     }
