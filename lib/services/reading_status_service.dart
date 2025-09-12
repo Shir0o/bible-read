@@ -291,23 +291,31 @@ class ReadingStatusService {
     final readingCollection = userDocRef.collection('reading');
 
     final now = DateTime.now();
-    final futures = <Future<MapEntry<String, bool>>>[];
+    String formatDate(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+    final startDate = now.subtract(Duration(days: daysBack - 1));
+    final startId = formatDate(startDate);
+    final endId = formatDate(now);
+
+    final querySnapshot = await readingCollection
+        .where(FieldPath.documentId,
+            isGreaterThanOrEqualTo: startId, isLessThanOrEqualTo: endId)
+        .get();
+
+    final status = <String, bool>{};
     for (int i = 0; i < daysBack; i++) {
       final date = now.subtract(Duration(days: i));
-      final docId =
-          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      final key = docId;
-
-      futures.add(
-        readingCollection.doc(docId).get().then((doc) {
-          final read = doc.exists && doc.data()?['read'] == true;
-          return MapEntry(key, read);
-        }),
-      );
+      status[formatDate(date)] = false;
     }
 
-    final results = await Future.wait(futures);
-    return Map.fromEntries(results);
+    for (final doc in querySnapshot.docs) {
+      final data = doc.data();
+      if (data['read'] == true) {
+        status[doc.id] = true;
+      }
+    }
+
+    return status;
   }
 }
