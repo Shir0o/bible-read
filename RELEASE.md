@@ -120,12 +120,7 @@ This release introduces daily reminder notifications to help you stay consistent
 
 ## Features
 
-*   **Daily Reading Reminder:** Enable a daily notification from the Settings page to be reminded when you haven't logged a reading.
-*   Users can now customize their notification preferences to enable or disable the daily reminder.
-
-## Fixes
-* Added tests to verify that the daily reminder is scheduled correctly.
-* Updated dependencies and fixed issues with the daily reminder tests.
+*   Users can now customize their notification preferences.
 
 # Release 1.7.0
 

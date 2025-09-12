@@ -4,7 +4,6 @@ enum NotificationType {
   signup,
   achievement,
   friendRequest,
-  dailyReminder,
   comment,
 }
 
