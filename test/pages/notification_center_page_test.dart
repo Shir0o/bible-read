@@ -40,7 +40,6 @@ void main() {
       NotificationType.signup: Icons.person_add,
       NotificationType.achievement: Icons.emoji_events,
       NotificationType.friendRequest: Icons.person_add_alt,
-      NotificationType.dailyReminder: Icons.calendar_today,
       NotificationType.comment: Icons.comment,
     };
 
@@ -50,7 +49,6 @@ void main() {
       NotificationType.signup: 'New signup',
       NotificationType.achievement: 'Achievement unlocked',
       NotificationType.friendRequest: 'You received a friend request',
-      NotificationType.dailyReminder: 'Daily reading reminder',
       NotificationType.comment: 'New comment on your reading',
     };
 
