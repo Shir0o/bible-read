@@ -394,15 +394,20 @@ class GroupService {
           }
         }
 
+        final futures = <Future<QuerySnapshot<Map<String, dynamic>>>>[];
         for (var i = 0; i < missingUids.length; i += 10) {
           final batch = missingUids.sublist(
             i,
             i + 10 > missingUids.length ? missingUids.length : i + 10,
           );
-          final query = await firestore
+          futures.add(firestore
               .collection('users')
               .where(FieldPath.documentId, whereIn: batch)
-              .get();
+              .get());
+        }
+
+        final results = await Future.wait(futures);
+        for (final query in results) {
           for (final user in query.docs) {
             final userName = user.data()['name'] as String?;
             if (userName != null && userName.isNotEmpty) {
