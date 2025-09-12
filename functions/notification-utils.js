@@ -1,13 +1,27 @@
 const admin = require('firebase-admin');
 
+// Cache tokens and notification pref flags by UID.
+// Map structure: uid -> { token: string|undefined, prefs: Map<string, boolean> }
+const cache = new Map();
+
 /**
  * Retrieves the FCM token for a user.
  * @param {string} uid User ID.
  * @returns {Promise<string|undefined>} token or undefined if not found.
  */
 async function getFcmToken(uid) {
+  const entry = cache.get(uid);
+  if (entry && entry.token !== undefined) {
+    return entry.token;
+  }
   const snap = await admin.firestore().collection('users').doc(uid).get();
-  return snap.data()?.fcmToken;
+  const token = snap.data()?.fcmToken;
+  if (entry) {
+    entry.token = token;
+  } else {
+    cache.set(uid, { token, prefs: new Map() });
+  }
+  return token;
 }
 
 /**
@@ -17,13 +31,23 @@ async function getFcmToken(uid) {
  * @returns {Promise<boolean>} True if enabled.
  */
 async function isNotificationEnabled(uid, type) {
+  const entry = cache.get(uid);
+  if (entry && entry.prefs.has(type)) {
+    return entry.prefs.get(type);
+  }
   const prefSnap = await admin.firestore()
     .collection('users')
     .doc(uid)
     .collection('notificationPrefs')
     .doc(type)
     .get();
-  return !(prefSnap.exists && prefSnap.data()?.enabled === false);
+  const enabled = !(prefSnap.exists && prefSnap.data()?.enabled === false);
+  if (entry) {
+    entry.prefs.set(type, enabled);
+  } else {
+    cache.set(uid, { token: undefined, prefs: new Map([[type, enabled]]) });
+  }
+  return enabled;
 }
 
 /**
@@ -42,4 +66,21 @@ function sendNotification(token, { title, body }) {
   return admin.messaging().send(message);
 }
 
-module.exports = { getFcmToken, isNotificationEnabled, sendNotification };
+/**
+ * Invalidates cached token and prefs for a user.
+ * @param {string} uid User ID.
+ */
+function invalidateUserCache(uid) {
+  if (uid) {
+    cache.delete(uid);
+  } else {
+    cache.clear();
+  }
+}
+
+module.exports = {
+  getFcmToken,
+  isNotificationEnabled,
+  sendNotification,
+  invalidateUserCache,
+};
