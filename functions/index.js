@@ -46,17 +46,15 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
     throw new Error("invalid-argument: Missing data");
   }
 
-  const enabled = await isNotificationEnabled(ownerUid, 'like');
-  if (!enabled) {
-    return;
-  }
+  const [enabled, token] = await Promise.all([
+    isNotificationEnabled(ownerUid, 'like'),
+    getFcmToken(ownerUid),
+  ]);
 
-  const token = await getFcmToken(ownerUid);
-
-  if (!token) {
-    console.log(
-      `No FCM token for user ${ownerUid}`
-    );
+  if (!enabled || !token) {
+    if (!token) {
+      console.log(`No FCM token for user ${ownerUid}`);
+    }
     return;
   }
 
@@ -88,14 +86,15 @@ exports.sendCommentNotification = onCall({ region: 'us-central1' }, async (req) 
     throw new functions.https.HttpsError('invalid-argument', 'Missing data');
   }
 
-  const enabled = await isNotificationEnabled(ownerUid, 'comment');
-  if (!enabled) {
-    return;
-  }
+  const [enabled, token] = await Promise.all([
+    isNotificationEnabled(ownerUid, 'comment'),
+    getFcmToken(ownerUid),
+  ]);
 
-  const token = await getFcmToken(ownerUid);
-  if (!token) {
-    functions.logger.info(`No FCM token for user ${ownerUid}`);
+  if (!enabled || !token) {
+    if (!token) {
+      functions.logger.info(`No FCM token for user ${ownerUid}`);
+    }
     return;
   }
 
@@ -129,19 +128,21 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
 
   const fromUid = req.auth.uid;
   const db = admin.firestore();
+  const logRef = db.collection('users').doc(fromUid)
+    .collection('nudges').doc(toUid);
 
-  const enabled = await isNotificationEnabled(toUid, 'nudge');
+  const [enabled, token] = await Promise.all([
+    isNotificationEnabled(toUid, 'nudge'),
+    getFcmToken(toUid),
+  ]);
+
   if (!enabled) {
-    await db
-      .collection('users')
-      .doc(fromUid)
-      .collection('nudges')
-      .doc(toUid)
-      .set({ timestamp: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    await logRef.set(
+      { timestamp: admin.firestore.FieldValue.serverTimestamp() },
+      { merge: true }
+    );
     return { alreadySent: false };
   }
-  const logRef = db.collection("users").doc(fromUid)
-    .collection("nudges").doc(toUid);
 
   const logDoc = await logRef.get();
   const now = new Date();
@@ -165,21 +166,26 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
     return { alreadyRead: true };
   }
 
-  const token = await getFcmToken(toUid);
-  if (token) {
-    try {
-      await sendNotification(token, {
-        title: "📖 Time to Read!",
-        body: `${fromName} nudged you to read today.`,
-      });
-    } catch (err) {
-      functions.logger.error('Failed to send nudge notification', err);
-      throw new functions.https.HttpsError(
-        'internal',
-        'Failed to send nudge notification',
-        err instanceof Error ? err.message : String(err)
-      );
-    }
+  if (!token) {
+    await logRef.set(
+      { timestamp: admin.firestore.FieldValue.serverTimestamp() },
+      { merge: true }
+    );
+    return { alreadySent: false };
+  }
+
+  try {
+    await sendNotification(token, {
+      title: "📖 Time to Read!",
+      body: `${fromName} nudged you to read today.`,
+    });
+  } catch (err) {
+    functions.logger.error('Failed to send nudge notification', err);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to send nudge notification',
+      err instanceof Error ? err.message : String(err)
+    );
   }
 
   await logRef.set(
