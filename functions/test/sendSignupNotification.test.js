@@ -12,10 +12,12 @@ admin.app = () => ({ options: { projectId: 'demo' } });
 
 const functionsTest = require('firebase-functions-test')({projectId: 'demo'});
 const myFunctions = require('../index');
+const utils = require('../notification-utils');
 
 process.env.ADMIN_UID = 'admin1';
 
 describe('sendSignupNotification', () => {
+afterEach(() => utils.invalidateUserCache());
 
   it('builds payload', async () => {
   const originalFirestore = admin.firestore;
