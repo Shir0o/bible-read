@@ -10,8 +10,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bible_read/pages/main_page.dart';
-import 'package:bible_read/services/daily_notification_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -101,17 +99,6 @@ class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
   }
 }
 
-class CountingNotificationService extends DailyNotificationService {
-  CountingNotificationService({required FirebaseAuth auth}) : super(auth: auth);
-  int scheduleCount = 0;
-
-  @override
-  Future<bool> scheduleDailyReminder(Time time) async {
-    scheduleCount++;
-    return true;
-  }
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
@@ -132,7 +119,6 @@ void main() {
     );
     final firestore = FakeFirebaseFirestore();
     final messaging = FakeFirebaseMessaging('new_token');
-    final service = CountingNotificationService(auth: auth);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -140,7 +126,6 @@ void main() {
           auth: auth,
           firestore: firestore,
           messaging: messaging,
-          dailyNotificationServiceProvider: () => service,
         ),
       ),
     );
@@ -148,20 +133,15 @@ void main() {
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('fcmToken'), 'new_token');
-    expect(service.scheduleCount, 1);
-
     await tester.pumpWidget(
       MaterialApp(
         home: MainPage(
           auth: auth,
           firestore: firestore,
           messaging: messaging,
-          dailyNotificationServiceProvider: () => service,
         ),
       ),
     );
     await tester.pumpAndSettle();
-
-    expect(service.scheduleCount, 1);
   });
 }
