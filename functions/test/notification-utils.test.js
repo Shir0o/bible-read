@@ -10,6 +10,7 @@ const originalMessaging = admin.messaging;
 afterEach(() => {
   Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  utils.invalidateUserCache();
 });
 
 describe('notification-utils', () => {
@@ -23,6 +24,50 @@ describe('notification-utils', () => {
     });
     const token = await utils.getFcmToken('u1');
     assert.equal(token, 'abc');
+  });
+
+  it('caches FCM tokens', async () => {
+    let calls = 0;
+    Object.defineProperty(admin, 'firestore', {
+      value: () => ({
+        collection: () => ({ doc: () => ({ get: async () => { calls++; return { data: () => ({ fcmToken: 'abc' }) }; } }) })
+      }),
+      writable: true,
+      configurable: true,
+    });
+    const t1 = await utils.getFcmToken('u1');
+    assert.equal(t1, 'abc');
+    Object.defineProperty(admin, 'firestore', {
+      value: () => ({
+        collection: () => ({ doc: () => ({ get: async () => { calls++; return { data: () => ({ fcmToken: 'def' }) }; } }) })
+      }),
+      writable: true,
+      configurable: true,
+    });
+    const t2 = await utils.getFcmToken('u1');
+    assert.equal(t2, 'abc');
+    assert.equal(calls, 1);
+  });
+
+  it('invalidateUserCache refreshes token', async () => {
+    Object.defineProperty(admin, 'firestore', {
+      value: () => ({
+        collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ fcmToken: 'abc' }) }) }) })
+      }),
+      writable: true,
+      configurable: true,
+    });
+    await utils.getFcmToken('u1');
+    utils.invalidateUserCache('u1');
+    Object.defineProperty(admin, 'firestore', {
+      value: () => ({
+        collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ fcmToken: 'def' }) }) }) })
+      }),
+      writable: true,
+      configurable: true,
+    });
+    const t = await utils.getFcmToken('u1');
+    assert.equal(t, 'def');
   });
 
   it('isNotificationEnabled respects pref', async () => {
@@ -41,6 +86,74 @@ describe('notification-utils', () => {
     });
     const enabled = await utils.isNotificationEnabled('u1', 'like');
     assert.equal(enabled, false);
+  });
+
+  it('caches notification prefs', async () => {
+    let calls = 0;
+    Object.defineProperty(admin, 'firestore', {
+      value: () => ({
+        collection: () => ({
+          doc: () => ({
+            collection: () => ({
+              doc: () => ({ get: async () => { calls++; return { exists: false, data: () => ({}) }; } })
+            })
+          })
+        })
+      }),
+      writable: true,
+      configurable: true,
+    });
+    const first = await utils.isNotificationEnabled('u1', 'like');
+    assert.equal(first, true);
+    Object.defineProperty(admin, 'firestore', {
+      value: () => ({
+        collection: () => ({
+          doc: () => ({
+            collection: () => ({
+              doc: () => ({ get: async () => { calls++; return { exists: true, data: () => ({ enabled: false }) }; } })
+            })
+          })
+        })
+      }),
+      writable: true,
+      configurable: true,
+    });
+    const second = await utils.isNotificationEnabled('u1', 'like');
+    assert.equal(second, true);
+    assert.equal(calls, 1);
+  });
+
+  it('invalidateUserCache refreshes prefs', async () => {
+    Object.defineProperty(admin, 'firestore', {
+      value: () => ({
+        collection: () => ({
+          doc: () => ({
+            collection: () => ({
+              doc: () => ({ get: async () => ({ exists: true, data: () => ({ enabled: false }) }) })
+            })
+          })
+        })
+      }),
+      writable: true,
+      configurable: true,
+    });
+    await utils.isNotificationEnabled('u1', 'like');
+    utils.invalidateUserCache('u1');
+    Object.defineProperty(admin, 'firestore', {
+      value: () => ({
+        collection: () => ({
+          doc: () => ({
+            collection: () => ({
+              doc: () => ({ get: async () => ({ exists: true, data: () => ({ enabled: true }) }) })
+            })
+          })
+        })
+      }),
+      writable: true,
+      configurable: true,
+    });
+    const enabled = await utils.isNotificationEnabled('u1', 'like');
+    assert.equal(enabled, true);
   });
 
   it('sendNotification forwards message', async () => {

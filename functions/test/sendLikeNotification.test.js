@@ -9,10 +9,12 @@ admin.app = () => ({ options: { projectId: 'demo' } });
 
 const functionsTest = require('firebase-functions-test')({projectId: 'demo'});
 const myFunctions = require('../index');
+const utils = require('../notification-utils');
 
 process.env.NODE_ENV = 'test';
 
 describe('sendLikeNotification', () => {
+afterEach(() => utils.invalidateUserCache());
 
   it('sends payload when enabled', async () => {
   const originalFirestore = admin.firestore;
