@@ -8,7 +8,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/notification_button.dart';
 import '../services/notification_service.dart';
-import '../services/daily_notification_service.dart';
 import '../services/friend_service.dart';
 import '../widgets/achievement_summary.dart';
 import 'notification_settings_page.dart';
@@ -27,7 +26,6 @@ class UserProfilePage extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final FriendService friendService;
-  final DailyNotificationService Function() dailyNotificationServiceProvider;
   final VibrationService vibrationService;
 
   factory UserProfilePage({
@@ -37,7 +35,6 @@ class UserProfilePage extends StatefulWidget {
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     FriendService? friendService,
-    DailyNotificationService Function()? dailyNotificationServiceProvider,
     VibrationService? vibrationService,
   }) {
     final fs = firestore ?? FirebaseFirestore.instance;
@@ -48,8 +45,6 @@ class UserProfilePage extends StatefulWidget {
       auth: auth ?? FirebaseAuth.instance,
       firestore: fs,
       friendService: friendService ?? FriendService(firestore: fs),
-      dailyNotificationServiceProvider:
-          dailyNotificationServiceProvider ?? DailyNotificationService.new,
       vibrationService: vibrationService ?? const VibrationService(),
     );
   }
@@ -61,7 +56,6 @@ class UserProfilePage extends StatefulWidget {
     required this.auth,
     required this.firestore,
     required this.friendService,
-    required this.dailyNotificationServiceProvider,
     required this.vibrationService,
   });
 
@@ -132,14 +126,6 @@ class UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _handleSignOut() async {
-    try {
-      await widget.dailyNotificationServiceProvider().cancelDailyReminder();
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Cancel daily reminder failed: $e');
-      }
-      ErrorLogger.log(e, st);
-    }
     final googleSignIn = widget.googleSignInProvider();
     try {
       await googleSignIn.signOut();
