@@ -11,7 +11,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'firebase_options.dart';
 import 'services/error_logger.dart';
-import 'services/daily_notification_service.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -134,8 +133,6 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.appTheme,
       home: MainPage(
         appCheckFailed: appCheckFailed,
-        dailyNotificationServiceProvider: () =>
-            DailyNotificationService(plugin: _localNotificationsPlugin),
       ),
     );
   }

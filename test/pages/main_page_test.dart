@@ -17,9 +17,7 @@ import 'package:bible_read/pages/streak_history_page.dart';
 import 'package:bible_read/pages/leaderboard_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:bible_read/services/daily_notification_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bible_read/services/vibration_service.dart';
 
@@ -119,31 +117,6 @@ class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
   }
 }
 
-class RecordingNotificationService extends DailyNotificationService {
-  bool scheduled = false;
-
-  RecordingNotificationService({required FirebaseAuth auth})
-      : super(auth: auth);
-
-  @override
-  Future<bool> scheduleDailyReminder(Time time) async {
-    scheduled = true;
-    return true;
-  }
-}
-
-class FakeNotificationsPlatform extends FlutterLocalNotificationsPlatform {
-  int? canceledId;
-
-  @override
-  Future<void> cancel(int id) async {
-    canceledId = id;
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
 class _RecordingVibrationService extends VibrationService {
   int lightCount = 0;
   int? indexDuringCall;
@@ -175,9 +148,7 @@ void main() {
   testWidgets('MainPage navigation to profile', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: MainPage(
-          dailyNotificationServiceProvider: DailyNotificationService.new,
-        ),
+        home: MainPage(),
       ),
     );
     await tester.pumpAndSettle();
@@ -201,7 +172,6 @@ void main() {
       MaterialApp(
         home: MainPage(
           auth: auth,
-          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );
@@ -236,7 +206,6 @@ void main() {
             auth: auth,
             firestore: firestore,
             messaging: FakeFirebaseMessaging(null),
-            dailyNotificationServiceProvider: DailyNotificationService.new,
           ),
         ),
       ),
@@ -305,7 +274,6 @@ void main() {
           auth: auth,
           firestore: firestore,
           messaging: FakeFirebaseMessaging(null),
-          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );
@@ -342,7 +310,6 @@ void main() {
             auth: auth,
             firestore: firestore,
             messaging: FakeFirebaseMessaging(null),
-            dailyNotificationServiceProvider: DailyNotificationService.new,
           ),
         ),
       ),
@@ -378,7 +345,6 @@ void main() {
           firestore: FakeFirebaseFirestore(),
           vibrationService: vibration,
           messaging: FakeFirebaseMessaging(null),
-          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );
@@ -406,7 +372,6 @@ void main() {
           firestore: FakeFirebaseFirestore(),
           vibrationService: vibration,
           messaging: FakeFirebaseMessaging(null),
-          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );
@@ -449,7 +414,6 @@ void main() {
               onSendCommentNotification: onSendCommentNotification,
             );
           },
-          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );
@@ -470,9 +434,7 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
-        home: MainPage(
-          dailyNotificationServiceProvider: DailyNotificationService.new,
-        ),
+        home: MainPage(),
       ),
     );
     await tester.pumpAndSettle();
@@ -490,7 +452,6 @@ void main() {
           data: MediaQueryData(size: Size(800, 600)),
           child: MainPage(
             auth: auth,
-            dailyNotificationServiceProvider: DailyNotificationService.new,
           ),
         ),
       ),
@@ -504,7 +465,6 @@ void main() {
           data: MediaQueryData(size: Size(400, 600)),
           child: MainPage(
             auth: auth,
-            dailyNotificationServiceProvider: DailyNotificationService.new,
           ),
         ),
       ),
@@ -522,7 +482,6 @@ void main() {
           data: const MediaQueryData(size: Size(400, 600)),
           child: MainPage(
             auth: auth,
-            dailyNotificationServiceProvider: DailyNotificationService.new,
           ),
         ),
       ),
@@ -563,7 +522,6 @@ void main() {
           auth: auth,
           firestore: fakeFirestore,
           messaging: messaging,
-          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );
@@ -577,58 +535,6 @@ void main() {
     expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
   });
 
-  testWidgets('schedules reminder when user already signed in', (tester) async {
-    fakePlatform.user = null;
-    final fakeFirestore = FakeFirebaseFirestore();
-    final testUser = MockUser(uid: 'u-signin');
-    final auth = MockFirebaseAuth(mockUser: testUser, signedIn: true);
-    final messaging = FakeFirebaseMessaging('tok');
-    final service = RecordingNotificationService(auth: auth);
-
-    await fakeFirestore.collection('users').doc(testUser.uid).set({});
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MainPage(
-          auth: auth,
-          firestore: fakeFirestore,
-          messaging: messaging,
-          dailyNotificationServiceProvider: () => service,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(service.scheduled, isTrue);
-  });
-
-  testWidgets('skips Firestore write and reminder when token unchanged', (
-    tester,
-  ) async {
-    final auth = MockFirebaseAuth(
-      mockUser: MockUser(uid: 'u-skip'),
-      signedIn: true,
-    );
-    final firestore = FakeFirebaseFirestore();
-    final messaging = FakeFirebaseMessaging('tok');
-    final service = RecordingNotificationService(auth: auth);
-
-    SharedPreferences.setMockInitialValues({'fcmToken': 'tok'});
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MainPage(
-          auth: auth,
-          firestore: firestore,
-          messaging: messaging,
-          dailyNotificationServiceProvider: () => service,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(service.scheduled, isFalse);
-  });
   testWidgets('calls sendLikeNotification when a like is triggered', (
     tester,
   ) async {
@@ -660,7 +566,6 @@ void main() {
           auth: auth,
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
-          dailyNotificationServiceProvider: DailyNotificationService.new,
           sendLikeNotification: (
               {required String ownerUid, required String likerName}) async {
             wasCalled = true;
@@ -731,7 +636,6 @@ void main() {
           auth: auth,
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
-          dailyNotificationServiceProvider: DailyNotificationService.new,
           sendCommentNotification: ({
             required String ownerUid,
             required String commenterName,
@@ -787,7 +691,6 @@ void main() {
         home: MainPage(
           auth: auth,
           appCheckFailed: true,
-          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );
@@ -808,7 +711,6 @@ void main() {
         home: MainPage(
           auth: auth,
           appCheckFailed: true,
-          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );
@@ -841,8 +743,6 @@ void main() {
       id: '123',
       displayName: 'Test',
     );
-    final fakeNotifications = FakeNotificationsPlatform();
-    FlutterLocalNotificationsPlatform.instance = fakeNotifications;
     final firestore = FakeFirebaseFirestore();
     await tester.pumpWidget(
       MaterialApp(
@@ -850,7 +750,6 @@ void main() {
           auth: auth,
           firestore: firestore,
           messaging: FakeFirebaseMessaging(null),
-          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );
@@ -901,8 +800,6 @@ void main() {
       id: '123',
       displayName: 'Test',
     );
-    final fakeNotifications = FakeNotificationsPlatform();
-    FlutterLocalNotificationsPlatform.instance = fakeNotifications;
     final firestore = FakeFirebaseFirestore();
     await tester.pumpWidget(
       MaterialApp(
@@ -910,7 +807,6 @@ void main() {
           auth: auth,
           firestore: firestore,
           messaging: FakeFirebaseMessaging(null),
-          dailyNotificationServiceProvider: DailyNotificationService.new,
         ),
       ),
     );
