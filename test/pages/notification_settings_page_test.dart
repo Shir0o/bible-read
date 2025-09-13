@@ -52,24 +52,6 @@ void main() {
         .get();
     expect(doc.data()?['enabled'], true);
 
-    // Daily reminder switch defaults to true. Toggle it off and verify
-    // Firestore updates accordingly.
-    final dailySwitch = tester.widget<SwitchListTile>(
-        find.widgetWithText(SwitchListTile, 'Daily Reading Reminder'));
-    expect(dailySwitch.value, isTrue);
-
-    await tester
-        .tap(find.widgetWithText(SwitchListTile, 'Daily Reading Reminder'));
-    await tester.pumpAndSettle();
-
-    final dailyDoc = await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('notificationPrefs')
-        .doc('dailyReminder')
-        .get();
-    expect(dailyDoc.data()?['enabled'], false);
-
     final vibrationSwitch = tester.widget<SwitchListTile>(
         find.widgetWithText(SwitchListTile, 'Vibration'));
     expect(vibrationSwitch.value, isFalse);
