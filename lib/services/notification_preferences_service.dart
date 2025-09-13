@@ -28,10 +28,6 @@ class NotificationPreferencesService {
       final enabled = doc.data()['enabled'];
       data[doc.id] = enabled is bool ? enabled : true;
     }
-    // Ensure the dailyReminder preference defaults to true when the document
-    // does not exist. This prevents Cloud Functions from treating an undefined
-    // preference as disabled.
-    data.putIfAbsent(NotificationType.dailyReminder.name, () => true);
     final prefs = NotificationPreferences.fromFirestore(data);
     _cache[uid] = prefs;
     return prefs;
@@ -64,8 +60,6 @@ class NotificationPreferencesService {
         .doc(type.name)
         .set({'enabled': enabled});
     final current = _cache[uid] ?? NotificationPreferences();
-    // Ensure the new preference is reflected in the cached copy, including the
-    // daily reminder entry.
     _cache[uid] = NotificationPreferences(values: {
       ...current.values,
       type: enabled,
