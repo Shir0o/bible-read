@@ -25,6 +25,12 @@ class NotificationPreferencesService {
         .get();
     final data = <String, dynamic>{};
     for (final doc in snap.docs) {
+      try {
+        // Ignore documents that do not map to a [NotificationType].
+        NotificationType.values.byName(doc.id);
+      } catch (_) {
+        continue;
+      }
       final enabled = doc.data()['enabled'];
       data[doc.id] = enabled is bool ? enabled : true;
     }
@@ -52,19 +58,21 @@ class NotificationPreferencesService {
 
   /// Updates the preference [type] for [uid].
   Future<void> updatePreference(
-      String uid, NotificationType type, bool enabled) async {
+    String uid,
+    NotificationType type,
+    bool enabled,
+  ) async {
     await firestore
         .collection('users')
         .doc(uid)
         .collection('notificationPrefs')
         .doc(type.name)
         .set({'enabled': enabled});
-    final current = _cache[uid] ?? NotificationPreferences();
+    final currentValues = _cache[uid]?.values ?? {};
     // Ensure the new preference is reflected in the cached copy.
-    _cache[uid] = NotificationPreferences(values: {
-      ...current.values,
-      type: enabled,
-    });
+    _cache[uid] = NotificationPreferences(
+      values: {...currentValues, type: enabled},
+    );
   }
 
   /// Updates the vibration preference for [uid].
