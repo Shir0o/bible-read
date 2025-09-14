@@ -1,6 +1,6 @@
 # Notifications
 
-This document provides an overview of how notifications are handled in the app.
+This document provides an overview of how push notifications are handled in the app.
 
 ## Services and models
 
@@ -12,9 +12,6 @@ This document provides an overview of how notifications are handled in the app.
 
 ## FCM tokens
 Firebase Cloud Messaging tokens are retrieved on sign‑in and stored in the user's document under `fcmToken` so backend services can address push messages to the device.
-
-## Local reminders
-Local reminder notifications are scheduled on the device using `zonedSchedule`. The service ensures the timezone database is initialized before scheduling the reminder.
 
 ## Cloud Functions
 Cloud Functions in the `functions/` directory send push notifications. Callable functions such as `sendLikeNotification` and `sendCommentNotification` read the recipient's `fcmToken` and `notificationPrefs` to respect user settings before sending a message.
