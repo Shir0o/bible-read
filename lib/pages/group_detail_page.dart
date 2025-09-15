@@ -320,7 +320,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               const SizedBox(height: 16),
             ],
             GroupMembersSection(
-              membersStream: widget.groupService.memberNames(widget.group.id),
+              membersStream:
+                  widget.groupService.memberDailyCompletion(widget.group.id),
             ),
             const SizedBox(height: 16),
             Text('Schedule', style: AppTextStyles.subtitle),
