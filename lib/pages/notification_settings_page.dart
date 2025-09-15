@@ -142,6 +142,10 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         return 'Friend Request Notifications';
       case NotificationType.comment:
         return 'Comment Notifications';
+      case NotificationType.groupJoinRequest:
+        return 'Group Join Request Notifications';
+      case NotificationType.groupScheduleUpdate:
+        return 'Group Schedule Update Notifications';
     }
   }
 }
