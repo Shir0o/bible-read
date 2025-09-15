@@ -110,7 +110,7 @@ class GroupService {
             .id;
         final notification = AppNotification(
           id: notificationId,
-          type: NotificationType.friendRequest,
+          type: NotificationType.groupJoinRequest,
           fromUid: uid,
           senderUid: uid,
           timestamp: DateTime.now(),
@@ -210,6 +210,29 @@ class GroupService {
         'date': Timestamp.fromDate(utcDate),
         'chapters': schedule.chapters,
       });
+
+      final members = await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.members)
+          .get();
+
+      for (final doc in members.docs) {
+        final uid = doc.id;
+        final notificationId = firestore
+            .collection(NotificationCollections.users)
+            .doc(uid)
+            .collection(NotificationCollections.notifications)
+            .doc()
+            .id;
+        final notification = AppNotification(
+          id: notificationId,
+          type: NotificationType.groupScheduleUpdate,
+          timestamp: DateTime.now(),
+          read: false,
+        );
+        await notificationService.addNotification(uid, notification);
+      }
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;

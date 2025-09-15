@@ -41,6 +41,8 @@ void main() {
       NotificationType.achievement: Icons.emoji_events,
       NotificationType.friendRequest: Icons.person_add_alt,
       NotificationType.comment: Icons.comment,
+      NotificationType.groupJoinRequest: Icons.group_add,
+      NotificationType.groupScheduleUpdate: Icons.schedule,
     };
 
     final textMap = {
@@ -50,6 +52,8 @@ void main() {
       NotificationType.achievement: 'Achievement unlocked',
       NotificationType.friendRequest: 'You received a friend request',
       NotificationType.comment: 'New comment on your reading',
+      NotificationType.groupJoinRequest: 'You received a group join request',
+      NotificationType.groupScheduleUpdate: 'Group schedule updated',
     };
 
     for (final type in NotificationType.values) {

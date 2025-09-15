@@ -5,6 +5,8 @@ enum NotificationType {
   achievement,
   friendRequest,
   comment,
+  groupJoinRequest,
+  groupScheduleUpdate,
 }
 
 /// Stores whether each notification type is enabled for a user.
