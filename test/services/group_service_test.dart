@@ -109,7 +109,7 @@ void main() {
           .get();
       expect(notifSnap.docs.length, 1);
       final data = notifSnap.docs.first.data();
-      expect(data['type'], NotificationType.friendRequest.name);
+      expect(data['type'], NotificationType.groupJoinRequest.name);
       expect(data['fromUid'], 'u2');
       expect(data['senderUid'], 'u2');
     });
@@ -231,6 +231,41 @@ void main() {
       expect(stored.date, schedule.date);
       expect((doc.data()?['date'] as Timestamp).toDate(),
           DateTime.utc(2024, 1, 1).toLocal());
+    });
+
+    test('updateSchedule notifies group members', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      await groupRef
+          .collection(GroupCollections.members)
+          .doc('u1')
+          .set({'uid': 'u1'});
+      await groupRef
+          .collection(GroupCollections.members)
+          .doc('u2')
+          .set({'uid': 'u2'});
+      final schedule = GroupSchedule(
+        date: DateTime(2024, 1, 1),
+        chapters: const ['Gen 1'],
+      );
+
+      await service.updateSchedule(groupId: 'g1', schedule: schedule);
+
+      final notif1 = await firestore
+          .collection(NotificationCollections.users)
+          .doc('u1')
+          .collection(NotificationCollections.notifications)
+          .get();
+      final notif2 = await firestore
+          .collection(NotificationCollections.users)
+          .doc('u2')
+          .collection(NotificationCollections.notifications)
+          .get();
+
+      expect(notif1.docs.single.data()['type'],
+          NotificationType.groupScheduleUpdate.name);
+      expect(notif2.docs.single.data()['type'],
+          NotificationType.groupScheduleUpdate.name);
     });
 
     test('fetchTodaysChapters returns schedule for today', () async {

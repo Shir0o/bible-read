@@ -119,6 +119,10 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
         return Icon(Icons.person_add_alt, color: color);
       case NotificationType.comment:
         return Icon(Icons.comment, color: color);
+      case NotificationType.groupJoinRequest:
+        return Icon(Icons.group_add, color: color);
+      case NotificationType.groupScheduleUpdate:
+        return Icon(Icons.schedule, color: color);
     }
   }
 
@@ -136,6 +140,10 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
         return 'You received a friend request';
       case NotificationType.comment:
         return 'New comment on your reading';
+      case NotificationType.groupJoinRequest:
+        return 'You received a group join request';
+      case NotificationType.groupScheduleUpdate:
+        return 'Group schedule updated';
     }
   }
 
@@ -197,6 +205,8 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
       case NotificationType.nudge:
       case NotificationType.signup:
       case NotificationType.comment:
+      case NotificationType.groupJoinRequest:
+      case NotificationType.groupScheduleUpdate:
         break;
     }
   }
