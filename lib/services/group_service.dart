@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/app_notification.dart';
+import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../models/group.dart';
 import '../models/notification_preferences.dart';
@@ -445,6 +446,152 @@ class GroupService {
         return <String>[];
       }
     });
+  }
+
+  /// Stream of daily completion progress for members of [groupId].
+  Stream<List<GroupMemberProgressData>> memberDailyCompletion(
+    String groupId, {
+    DateTime? date,
+  }) {
+    final targetDate = date ?? DateTime.now();
+    final dateId = _dateId(targetDate);
+
+    final membersSnaps = firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.members)
+        .snapshots()
+        .handleError((e, st) {
+      unawaited(ErrorLogger.log(e, st));
+      throw e;
+    });
+
+    final logsSnaps = firestore
+        .collection('read_logs')
+        .doc(dateId)
+        .collection('entries')
+        .snapshots()
+        .handleError((e, st) {
+      unawaited(ErrorLogger.log(e, st));
+      throw e;
+    });
+
+    return Stream<List<GroupMemberProgressData>>.multi((controller) {
+      QuerySnapshot<Map<String, dynamic>>? latestMembers;
+      QuerySnapshot<Map<String, dynamic>>? latestLogs;
+
+      Future<void> emit() async {
+        final members = latestMembers;
+        final logs = latestLogs;
+        if (members == null || logs == null) {
+          return;
+        }
+
+        try {
+          final progress = await _buildMemberDailyCompletion(members, logs);
+          controller.add(progress);
+        } catch (e, st) {
+          await ErrorLogger.log(e, st);
+          controller.addError(e, st);
+        }
+      }
+
+      final memberSub = membersSnaps.listen(
+        (snap) {
+          latestMembers = snap;
+          unawaited(emit());
+        },
+        onError: controller.addError,
+      );
+
+      final logSub = logsSnaps.listen(
+        (snap) {
+          latestLogs = snap;
+          unawaited(emit());
+        },
+        onError: controller.addError,
+      );
+
+      controller
+        ..onListen = () {
+          if (latestMembers != null && latestLogs != null) {
+            unawaited(emit());
+          }
+        }
+        ..onCancel = () {
+          memberSub.cancel();
+          logSub.cancel();
+        };
+    });
+  }
+
+  Future<List<GroupMemberProgressData>> _buildMemberDailyCompletion(
+    QuerySnapshot<Map<String, dynamic>> membersSnap,
+    QuerySnapshot<Map<String, dynamic>> logsSnap,
+  ) async {
+    final order = <String>[];
+    final providedNames = <String, String>{};
+    final missingUids = <String>[];
+
+    for (final doc in membersSnap.docs) {
+      final data = doc.data();
+      final uid = (data['uid'] as String?) ?? doc.id;
+      if (uid.isEmpty) {
+        continue;
+      }
+      order.add(uid);
+      final name = data['name'] as String?;
+      if (name != null && name.isNotEmpty) {
+        providedNames[uid] = name;
+      } else {
+        missingUids.add(uid);
+      }
+    }
+
+    final resolvedNames = await _fetchUserNames(missingUids);
+    final completedUids = logsSnap.docs.map((doc) => doc.id).toSet();
+
+    return [
+      for (final uid in order)
+        GroupMemberProgressData(
+          uid: uid,
+          name: providedNames[uid] ?? resolvedNames[uid] ?? uid,
+          completion: completedUids.contains(uid) ? 1.0 : 0.0,
+        )
+    ];
+  }
+
+  Future<Map<String, String>> _fetchUserNames(List<String> uids) async {
+    if (uids.isEmpty) {
+      return <String, String>{};
+    }
+
+    final uniqueUids = uids.toSet().toList();
+    final futures = <Future<QuerySnapshot<Map<String, dynamic>>>>[];
+    for (var i = 0; i < uniqueUids.length; i += 10) {
+      final end = i + 10 > uniqueUids.length ? uniqueUids.length : i + 10;
+      final batch = uniqueUids.sublist(i, end);
+      futures.add(firestore
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: batch)
+          .get());
+    }
+
+    final names = <String, String>{};
+    if (futures.isEmpty) {
+      return names;
+    }
+
+    final results = await Future.wait(futures);
+    for (final query in results) {
+      for (final user in query.docs) {
+        final userName = user.data()['name'] as String?;
+        if (userName != null && userName.isNotEmpty) {
+          names[user.id] = userName;
+        }
+      }
+    }
+    return names;
   }
 
   /// Stream of schedule entries for [groupId] ordered by date.

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../models/group_member_progress.dart';
 import 'common_styles.dart';
+import 'group_member_progress.dart';
 
 /// Displays the list of members for a group.
 class GroupMembersSection extends StatelessWidget {
-  /// Stream of member names.
-  final Stream<List<String>> membersStream;
+  /// Stream of member progress values.
+  final Stream<List<GroupMemberProgressData>> membersStream;
 
   const GroupMembersSection({
     super.key,
@@ -19,7 +21,7 @@ class GroupMembersSection extends StatelessWidget {
       children: [
         Text('Members', style: AppTextStyles.subtitle),
         const SizedBox(height: 8),
-        StreamBuilder<List<String>>(
+        StreamBuilder<List<GroupMemberProgressData>>(
           stream: membersStream,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
@@ -28,12 +30,19 @@ class GroupMembersSection extends StatelessWidget {
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
-            final names = snapshot.data!;
-            if (names.isEmpty) {
+            final members = snapshot.data!;
+            if (members.isEmpty) {
               return const Text('No members');
             }
             return Column(
-              children: names.map((n) => ListTile(title: Text(n))).toList(),
+              children: members
+                  .map(
+                    (member) => GroupMemberProgress(
+                      name: member.name,
+                      completion: member.completion,
+                    ),
+                  )
+                  .toList(),
             );
           },
         ),
