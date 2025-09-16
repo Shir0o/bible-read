@@ -9,10 +9,11 @@ import '../models/group.dart';
 import '../models/group_schedule.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
+import '../services/plan_service.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/schedule_item_tile.dart';
 import '../widgets/animated_page_route.dart';
 import '../widgets/group_members_section.dart';
+import '../widgets/schedule_item_tile.dart';
 import '../widgets/vibration_button.dart';
 import '../services/vibration_service.dart';
 
@@ -30,6 +31,9 @@ class GroupDetailPage extends StatefulWidget {
   /// Service used to trigger vibrations.
   final VibrationService vibrationService;
 
+  /// Generates reading plan schedules.
+  final PlanService planService;
+
   /// Creates a [GroupDetailPage].
   GroupDetailPage({
     super.key,
@@ -37,9 +41,11 @@ class GroupDetailPage extends StatefulWidget {
     GroupService? groupService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
+    PlanService? planService,
   })  : groupService = groupService ?? GroupService(),
         auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService();
+        vibrationService = vibrationService ?? const VibrationService(),
+        planService = planService ?? const PlanService();
 
   @override
   State<GroupDetailPage> createState() => _GroupDetailPageState();
@@ -48,6 +54,101 @@ class GroupDetailPage extends StatefulWidget {
 class _GroupDetailPageState extends State<GroupDetailPage> {
   List<GroupSchedule>? _scheduleOverride;
   List<GroupSchedule>? _latestSchedule;
+  ReadingPlan? _selectedPlan;
+  bool _isApplyingPlan = false;
+
+  String _dateKey(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  Future<void> _applySelectedPlan() async {
+    final plan = _selectedPlan;
+    if (plan == null || _isApplyingPlan) {
+      return;
+    }
+
+    unawaited(widget.vibrationService.lightImpact());
+
+    final hasOverride = _scheduleOverride != null;
+    final previousOverride =
+        hasOverride ? List<GroupSchedule>.from(_scheduleOverride!) : null;
+    final baseSchedule = List<GroupSchedule>.from(
+        _scheduleOverride ?? _latestSchedule ?? <GroupSchedule>[])
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    DateTime startDate = today;
+    if (baseSchedule.isNotEmpty) {
+      final latest = baseSchedule.last;
+      final latestDate =
+          DateTime(latest.date.year, latest.date.month, latest.date.day);
+      if (!latestDate.isBefore(startDate)) {
+        startDate = latestDate.add(const Duration(days: 1));
+      }
+    }
+
+    final generated =
+        widget.planService.createSchedule(plan: plan, startDate: startDate);
+    final existingDates = baseSchedule.map((s) => _dateKey(s.date)).toSet();
+    final additions = generated
+        .where((entry) => !existingDates.contains(_dateKey(entry.date)))
+        .toList();
+
+    if (additions.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Plan already scheduled')),
+      );
+      return;
+    }
+
+    final updated = List<GroupSchedule>.from(baseSchedule)
+      ..addAll(additions)
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    if (mounted) {
+      setState(() {
+        _isApplyingPlan = true;
+        _scheduleOverride = updated;
+      });
+    }
+
+    try {
+      for (final schedule in additions) {
+        await widget.groupService
+            .updateSchedule(groupId: widget.group.id, schedule: schedule);
+      }
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isApplyingPlan = false;
+        _scheduleOverride = null;
+        _latestSchedule = updated;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Plan applied')),
+      );
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to apply plan: $e');
+      }
+      ErrorLogger.log(e, st);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isApplyingPlan = false;
+        _scheduleOverride = hasOverride ? previousOverride : null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to apply plan')),
+      );
+    }
+  }
 
   Future<void> _editSchedule([GroupSchedule? schedule]) async {
     final result = await Navigator.of(context).push<GroupSchedule>(
@@ -129,6 +230,17 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             .doc(user.uid)
             .snapshots()
         : null;
+
+    final plans = widget.planService.plans;
+    ReadingPlanDefinition? selectedPlanDefinition;
+    if (_selectedPlan != null) {
+      try {
+        selectedPlanDefinition =
+            plans.firstWhere((plan) => plan.plan == _selectedPlan);
+      } catch (_) {
+        selectedPlanDefinition = null;
+      }
+    }
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: memberStream,
@@ -338,6 +450,73 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 const SizedBox(height: 16),
                 Text('Schedule', style: AppTextStyles.subtitle),
                 const SizedBox(height: 8),
+                if (isOwner) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            labelText: 'Reading plan',
+                            border: OutlineInputBorder(),
+                          ),
+                          isEmpty: _selectedPlan == null,
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<ReadingPlan>(
+                              key: const Key('plan-dropdown'),
+                              value: _selectedPlan,
+                              isExpanded: true,
+                              hint: const Text('Select a plan'),
+                              items: plans
+                                  .map(
+                                    (plan) => DropdownMenuItem<ReadingPlan>(
+                                      value: plan.plan,
+                                      child: Text(plan.title),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: _isApplyingPlan
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _selectedPlan = value;
+                                      });
+                                    },
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 56,
+                        child: ElevatedButton(
+                          key: const Key('apply-plan-button'),
+                          onPressed: _selectedPlan == null || _isApplyingPlan
+                              ? null
+                              : () => unawaited(_applySelectedPlan()),
+                          child: _isApplyingPlan
+                              ? const SizedBox(
+                                  height: 16,
+                                  width: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Apply'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (selectedPlanDefinition != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        selectedPlanDefinition.description,
+                        style: AppTextStyles.body,
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                ],
                 StreamBuilder<List<GroupSchedule>>(
                   stream: widget.groupService.schedule(widget.group.id),
                   builder: (context, snapshot) {
