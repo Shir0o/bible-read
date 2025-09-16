@@ -211,6 +211,77 @@ void main() {
       expect(member.exists, isFalse);
     });
 
+    test('promoteToAdmin updates member role to admin', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'owner'});
+      await groupRef.collection(GroupCollections.members).doc('u2').set({
+        'uid': 'u2',
+        'role': 'member',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+      });
+
+      await service.promoteToAdmin(
+        groupId: 'g1',
+        ownerUid: 'owner',
+        uid: 'u2',
+      );
+
+      final member =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      expect(member.data()?['role'], 'admin');
+    });
+
+    test('demoteAdmin downgrades admin role to member', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'owner'});
+      await groupRef.collection(GroupCollections.members).doc('u2').set({
+        'uid': 'u2',
+        'role': 'admin',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+      });
+
+      await service.demoteAdmin(
+        groupId: 'g1',
+        ownerUid: 'owner',
+        uid: 'u2',
+      );
+
+      final member =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      expect(member.data()?['role'], 'member');
+    });
+
+    test('role changes require owner permissions', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'owner'});
+      await groupRef.collection(GroupCollections.members).doc('u2').set({
+        'uid': 'u2',
+        'role': 'member',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 3)),
+      });
+      await groupRef.collection(GroupCollections.members).doc('u3').set({
+        'uid': 'u3',
+        'role': 'admin',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 4)),
+      });
+
+      await expectLater(
+        service.promoteToAdmin(groupId: 'g1', ownerUid: 'intruder', uid: 'u2'),
+        throwsStateError,
+      );
+      await expectLater(
+        service.demoteAdmin(groupId: 'g1', ownerUid: 'intruder', uid: 'u3'),
+        throwsStateError,
+      );
+
+      final member =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      final admin =
+          await groupRef.collection(GroupCollections.members).doc('u3').get();
+      expect(member.data()?['role'], 'member');
+      expect(admin.data()?['role'], 'admin');
+    });
+
     test('updateSchedule writes schedule document', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
