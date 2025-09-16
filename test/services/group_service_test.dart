@@ -61,6 +61,7 @@ void main() {
       expect(doc.exists, isTrue);
       expect(doc.data()?['name'], 'Test');
       expect(doc.data()?['ownerUid'], 'u1');
+      expect(doc.data()?['memberCount'], 1);
       expect(doc.data()?.containsKey('isPublic'), isFalse);
 
       final member = await firestore
@@ -116,7 +117,7 @@ void main() {
 
     test('approveJoinRequest moves member and removes request', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1', 'memberCount': 1});
       await groupRef.collection(GroupCollections.joinRequests).doc('u2').set({
         'uid': 'u2',
         'name': 'User',
@@ -134,6 +135,28 @@ void main() {
           .doc('u2')
           .get();
       expect(request.exists, isFalse);
+      final groupDoc = await groupRef.get();
+      expect(groupDoc.data()?['memberCount'], 2);
+    });
+
+    test('approveJoinRequest seeds memberCount when missing', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      await groupRef.collection(GroupCollections.members).doc('u1').set({
+        'uid': 'u1',
+        'role': 'owner',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+      });
+      await groupRef.collection(GroupCollections.joinRequests).doc('u2').set({
+        'uid': 'u2',
+        'name': 'User',
+        'requestedAt': Timestamp.fromDate(DateTime.utc(2024, 2, 1)),
+      });
+
+      await service.approveJoinRequest(groupId: 'g1', uid: 'u2');
+
+      final groupDoc = await groupRef.get();
+      expect(groupDoc.data()?['memberCount'], 2);
     });
 
     test('approveJoinRequest performs batched write', () async {
@@ -147,11 +170,16 @@ void main() {
       final requestRef = MockDocumentReference<Map<String, dynamic>>();
       final memberRef = MockDocumentReference<Map<String, dynamic>>();
       final requestSnap = MockDocumentSnapshot<Map<String, dynamic>>();
+      final memberSnap = MockDocumentSnapshot<Map<String, dynamic>>();
+      final groupSnap = MockDocumentSnapshot<Map<String, dynamic>>();
       final batch = MockWriteBatch();
 
       when(() => firestore.collection(GroupCollections.groups))
           .thenReturn(groups);
       when(() => groups.doc('g1')).thenReturn(groupRef);
+      when(() => groupRef.get()).thenAnswer((_) async => groupSnap);
+      when(() => groupSnap.exists).thenReturn(true);
+      when(() => groupSnap.data()).thenReturn({'memberCount': 1});
       when(() => groupRef.collection(GroupCollections.joinRequests))
           .thenReturn(joinRequests);
       when(() => groupRef.collection(GroupCollections.members))
@@ -160,6 +188,8 @@ void main() {
       when(() => members.doc('u2')).thenReturn(memberRef);
       when(() => requestRef.get()).thenAnswer((_) async => requestSnap);
       when(() => requestSnap.data()).thenReturn({'name': 'User'});
+      when(() => memberRef.get()).thenAnswer((_) async => memberSnap);
+      when(() => memberSnap.exists).thenReturn(false);
       when(() => firestore.batch()).thenReturn(batch);
       when(() => batch.commit()).thenAnswer((_) async {});
 
@@ -167,6 +197,8 @@ void main() {
 
       verify(() => firestore.batch()).called(1);
       verify(() => batch.set(memberRef, any<Map<String, dynamic>>(), any()))
+          .called(1);
+      verify(() => batch.update(groupRef, any<Map<String, dynamic>>()))
           .called(1);
       verify(() => batch.delete(requestRef)).called(1);
       verify(() => batch.commit()).called(1);
@@ -176,7 +208,7 @@ void main() {
 
     test('denyJoinRequest removes request without adding member', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1', 'memberCount': 2});
       await groupRef.collection(GroupCollections.joinRequests).doc('u2').set({
         'uid': 'u2',
         'name': 'User',
@@ -197,7 +229,7 @@ void main() {
 
     test('leaveGroup removes membership document', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1', 'memberCount': 2});
       await groupRef.collection(GroupCollections.members).doc('u2').set({
         'uid': 'u2',
         'role': 'member',
@@ -209,6 +241,31 @@ void main() {
       final member =
           await groupRef.collection(GroupCollections.members).doc('u2').get();
       expect(member.exists, isFalse);
+      final groupDoc = await groupRef.get();
+      expect(groupDoc.data()?['memberCount'], 1);
+    });
+
+    test('leaveGroup seeds memberCount when missing', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      await groupRef.collection(GroupCollections.members).doc('u1').set({
+        'uid': 'u1',
+        'role': 'owner',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+      });
+      await groupRef.collection(GroupCollections.members).doc('u2').set({
+        'uid': 'u2',
+        'role': 'member',
+        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+      });
+
+      await service.leaveGroup(groupId: 'g1', uid: 'u2');
+
+      final groupDoc = await groupRef.get();
+      expect(groupDoc.data()?['memberCount'], 1);
+      final remaining =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      expect(remaining.exists, isFalse);
     });
 
     test('promoteToAdmin updates member role to admin', () async {
@@ -749,13 +806,22 @@ void main() {
       final groupDoc = MockDocumentReference<Map<String, dynamic>>();
       final members = MockCollectionReference<Map<String, dynamic>>();
       final memberDoc = MockDocumentReference<Map<String, dynamic>>();
+      final memberSnap = MockDocumentSnapshot<Map<String, dynamic>>();
+      final groupSnap = MockDocumentSnapshot<Map<String, dynamic>>();
+      final batch = MockWriteBatch();
 
       when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
       when(() => groups.doc('g1')).thenReturn(groupDoc);
       when(() => groupDoc.collection(GroupCollections.members))
           .thenReturn(members);
       when(() => members.doc('u1')).thenReturn(memberDoc);
-      when(() => memberDoc.delete())
+      when(() => memberDoc.get()).thenAnswer((_) async => memberSnap);
+      when(() => memberSnap.exists).thenReturn(true);
+      when(() => groupDoc.get()).thenAnswer((_) async => groupSnap);
+      when(() => groupSnap.exists).thenReturn(true);
+      when(() => groupSnap.data()).thenReturn({'memberCount': 1});
+      when(() => mockFs.batch()).thenReturn(batch);
+      when(() => batch.commit())
           .thenAnswer((_) => Future<void>.error(Exception('fail')));
 
       final crash = MockCrashlytics();

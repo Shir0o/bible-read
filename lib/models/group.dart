@@ -11,11 +11,15 @@ class Group {
   /// UID of the user who owns the group.
   final String ownerUid;
 
+  /// Number of members currently in the group.
+  final int memberCount;
+
   /// Creates a [Group].
   const Group({
     required this.id,
     required this.name,
     required this.ownerUid,
+    this.memberCount = 0,
   });
 
   /// Reads a [Group] from a Firestore document.
@@ -25,6 +29,7 @@ class Group {
       id: doc.id,
       name: data['name'] as String? ?? '',
       ownerUid: data['ownerUid'] as String? ?? '',
+      memberCount: (data['memberCount'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -32,5 +37,6 @@ class Group {
   Map<String, dynamic> toFirestore() => {
         'name': name,
         'ownerUid': ownerUid,
+        'memberCount': memberCount,
       };
 }
