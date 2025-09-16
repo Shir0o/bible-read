@@ -217,7 +217,7 @@ void main() {
     expect(find.text('Gen 2'), findsNothing);
   });
 
-  testWidgets('fab visible only to owner', (tester) async {
+  testWidgets('fab visible to owners and admins', (tester) async {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
 
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
@@ -225,7 +225,32 @@ void main() {
         service: GroupService(firestore: firestore), auth: auth);
     expect(find.byType(FloatingActionButton), findsOneWidget);
 
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u2')
+        .set({
+      'uid': 'u2',
+      'role': 'admin',
+      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+    });
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u2'), signedIn: true);
+    await pumpPage(tester,
+        service: GroupService(firestore: firestore), auth: auth);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u3')
+        .set({
+      'uid': 'u3',
+      'role': 'member',
+      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 3)),
+    });
+    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u3'), signedIn: true);
     await pumpPage(tester,
         service: GroupService(firestore: firestore), auth: auth);
     expect(find.byType(FloatingActionButton), findsNothing);
