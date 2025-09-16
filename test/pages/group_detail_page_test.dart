@@ -10,6 +10,7 @@ import 'package:bible_read/models/group.dart';
 import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/pages/group_detail_page.dart';
 import 'package:bible_read/services/group_service.dart';
+import 'package:bible_read/services/plan_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 
 class RecordingGroupService extends GroupService {
@@ -81,6 +82,7 @@ void main() {
     required GroupService service,
     required MockFirebaseAuth auth,
     VibrationService? vibrationService,
+    PlanService? planService,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -89,6 +91,7 @@ void main() {
           groupService: service,
           auth: auth,
           vibrationService: vibrationService,
+          planService: planService,
         ),
       ),
     );
@@ -100,6 +103,7 @@ void main() {
     required GroupService service,
     required MockFirebaseAuth auth,
     VibrationService? vibrationService,
+    PlanService? planService,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -112,6 +116,7 @@ void main() {
                   groupService: service,
                   auth: auth,
                   vibrationService: vibrationService,
+                  planService: planService,
                 ),
               ),
             ),
@@ -372,5 +377,105 @@ void main() {
 
     expect(find.text('Join Group'), findsNothing);
     expect(find.text('Join request pending'), findsOneWidget);
+  });
+
+  testWidgets('owner can apply a reading plan to populate schedule',
+      (tester) async {
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+
+    await pumpPage(
+      tester,
+      service: GroupService(firestore: firestore),
+      auth: auth,
+      planService: const PlanService(),
+    );
+
+    await tester.tap(find.byKey(const Key('plan-dropdown')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Creation Foundations (3 days)').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('apply-plan-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Gen 1'), findsOneWidget);
+    expect(find.text('Gen 2'), findsOneWidget);
+    expect(find.text('Gen 3'), findsOneWidget);
+
+    final docs = await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('schedule')
+        .orderBy('date')
+        .get();
+
+    expect(docs.docs.length, 3);
+    final storedSchedules =
+        docs.docs.map(GroupSchedule.fromFirestore).toList(growable: false);
+    expect(
+      storedSchedules.map((s) => s.chapters).toList(),
+      equals([
+        ['Gen 1'],
+        ['Gen 2'],
+        ['Gen 3'],
+      ]),
+    );
+  });
+
+  testWidgets('plan entries start after the latest scheduled date',
+      (tester) async {
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('schedule')
+        .doc('2099-01-01')
+        .set({
+      'date': Timestamp.fromDate(DateTime(2099, 1, 1)),
+      'chapters': ['Intro'],
+    });
+    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+
+    await pumpPage(
+      tester,
+      service: GroupService(firestore: firestore),
+      auth: auth,
+      planService: const PlanService(),
+    );
+
+    await tester.tap(find.byKey(const Key('plan-dropdown')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Creation Foundations (3 days)').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('apply-plan-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final dayTwo = await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('schedule')
+        .doc('2099-01-02')
+        .get();
+    final dayThree = await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('schedule')
+        .doc('2099-01-03')
+        .get();
+    final dayFour = await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('schedule')
+        .doc('2099-01-04')
+        .get();
+
+    expect(dayTwo.exists, isTrue);
+    expect(dayThree.exists, isTrue);
+    expect(dayFour.exists, isTrue);
+    expect(GroupSchedule.fromFirestore(dayTwo).chapters, ['Gen 1']);
   });
 }
