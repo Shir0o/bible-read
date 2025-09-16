@@ -55,6 +55,7 @@ class GroupService {
       await doc.set({
         'name': name,
         'ownerUid': ownerUid,
+        'memberCount': 1,
       });
       await doc.collection(GroupCollections.members).doc(ownerUid).set({
         'uid': ownerUid,
@@ -139,6 +140,7 @@ class GroupService {
       final name = requestSnap.data()?['name'] as String?;
 
       final memberRef = groupRef.collection(GroupCollections.members).doc(uid);
+      final memberSnap = await memberRef.get();
       final data = <String, dynamic>{
         'uid': uid,
         'role': 'member',
@@ -149,6 +151,10 @@ class GroupService {
       }
       final batch = firestore.batch();
       batch.set(memberRef, data, SetOptions(merge: true));
+      if (!memberSnap.exists) {
+        await _ensureMemberCount(groupRef);
+        batch.update(groupRef, {'memberCount': FieldValue.increment(1)});
+      }
       batch.delete(requestRef);
       await batch.commit();
     } catch (e, st) {
@@ -181,12 +187,18 @@ class GroupService {
     required String uid,
   }) async {
     try {
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection(GroupCollections.members)
-          .doc(uid)
-          .delete();
+      final groupRef =
+          firestore.collection(GroupCollections.groups).doc(groupId);
+      final memberRef = groupRef.collection(GroupCollections.members).doc(uid);
+      final memberSnap = await memberRef.get();
+      if (!memberSnap.exists) {
+        return;
+      }
+      await _ensureMemberCount(groupRef);
+      final batch = firestore.batch();
+      batch.delete(memberRef);
+      batch.update(groupRef, {'memberCount': FieldValue.increment(-1)});
+      await batch.commit();
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;
@@ -262,6 +274,25 @@ class GroupService {
       await ErrorLogger.log(e, st);
       rethrow;
     }
+  }
+
+  Future<void> _ensureMemberCount(
+    DocumentReference<Map<String, dynamic>> groupRef,
+  ) async {
+    final groupSnap = await groupRef.get();
+    if (!groupSnap.exists) {
+      return;
+    }
+    final data = groupSnap.data();
+    if (data != null && data.containsKey('memberCount')) {
+      return;
+    }
+    final membersSnap =
+        await groupRef.collection(GroupCollections.members).get();
+    await groupRef.set(
+      {'memberCount': membersSnap.docs.length},
+      SetOptions(merge: true),
+    );
   }
 
   /// Update or create a [schedule] entry for [groupId].

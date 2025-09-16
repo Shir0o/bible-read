@@ -12,6 +12,7 @@ void main() {
       await firestore.collection('groups').doc('g1').set({
         'name': 'Test',
         'ownerUid': 'u1',
+        'memberCount': 3,
       });
       final doc = await firestore.collection('groups').doc('g1').get();
 
@@ -19,6 +20,7 @@ void main() {
       expect(group.id, 'g1');
       expect(group.name, 'Test');
       expect(group.ownerUid, 'u1');
+      expect(group.memberCount, 3);
     });
 
     test('fromFirestore handles missing fields', () async {
@@ -29,6 +31,7 @@ void main() {
       final group = Group.fromFirestore(doc);
       expect(group.name, '');
       expect(group.ownerUid, '');
+      expect(group.memberCount, 0);
     });
 
     test('toFirestore outputs expected map', () {
@@ -36,9 +39,10 @@ void main() {
         id: 'g1',
         name: 'Test',
         ownerUid: 'u1',
+        memberCount: 5,
       );
       final map = group.toFirestore();
-      expect(map, {'name': 'Test', 'ownerUid': 'u1'});
+      expect(map, {'name': 'Test', 'ownerUid': 'u1', 'memberCount': 5});
     });
   });
 }
