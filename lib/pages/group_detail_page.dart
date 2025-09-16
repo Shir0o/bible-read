@@ -119,244 +119,260 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   @override
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
-    final isOwner = user != null && user.uid == widget.group.ownerUid;
-    return Scaffold(
-      appBar: CommonStyles.buildAppBar(widget.group.name),
-      floatingActionButton: isOwner
-          ? FloatingActionButton(
-              heroTag: 'group-detail-fab',
-              onPressed: () {
-                unawaited(widget.vibrationService.lightImpact());
-                _editSchedule();
-              },
-              child: const Icon(Icons.add),
-            )
-          : null,
-      body: Container(
-        decoration: CommonStyles.backgroundGradient,
-        padding: const EdgeInsets.all(16),
-        child: ListView(
-          children: [
-            if (!isOwner && user != null)
-              StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                stream: widget.groupService.firestore
-                    .collection(GroupCollections.groups)
-                    .doc(widget.group.id)
-                    .collection(GroupCollections.members)
-                    .doc(user.uid)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  final isMember = snapshot.data?.exists ?? false;
-                  if (!isMember) {
-                    return StreamBuilder<
-                        DocumentSnapshot<Map<String, dynamic>>>(
-                      stream: widget.groupService.firestore
-                          .collection(GroupCollections.groups)
-                          .doc(widget.group.id)
-                          .collection(GroupCollections.joinRequests)
-                          .doc(user.uid)
-                          .snapshots(),
-                      builder: (context, reqSnapshot) {
-                        final isPending = reqSnapshot.data?.exists ?? false;
-                        if (isPending) {
-                          return const Padding(
-                            padding: EdgeInsets.only(bottom: 16),
-                            child: Text('Join request pending'),
-                          );
-                        }
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            VibrationButton(
-                              vibrationService: widget.vibrationService,
-                              onPressed: () async {
-                                try {
-                                  await widget.groupService.joinGroup(
-                                    groupId: widget.group.id,
-                                    uid: user.uid,
-                                    name: user.displayName ?? '',
-                                  );
-                                  if (!mounted) return;
-                                  // ignore: use_build_context_synchronously
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Join request sent'),
-                                    ),
-                                  );
-                                } catch (e, st) {
-                                  if (kDebugMode) {
-                                    debugPrint('Failed to join group: $e');
-                                  }
-                                  ErrorLogger.log(e, st);
-                                  if (!mounted) return;
-                                  // ignore: use_build_context_synchronously
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Failed to join group'),
-                                    ),
-                                  );
+    final userUid = user?.uid;
+    final isOwner = userUid != null && userUid == widget.group.ownerUid;
+    final memberStream = user != null
+        ? widget.groupService.firestore
+            .collection(GroupCollections.groups)
+            .doc(widget.group.id)
+            .collection(GroupCollections.members)
+            .doc(user.uid)
+            .snapshots()
+        : null;
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: memberStream,
+      builder: (context, membershipSnapshot) {
+        final memberDoc = membershipSnapshot.data;
+        final role = memberDoc?.data()?['role'] as String?;
+        final isMember = isOwner || (memberDoc?.exists ?? false);
+        final hasAdminPrivileges =
+            isOwner || role == 'admin' || role == 'owner';
+        final canManageRequests = hasAdminPrivileges;
+        final canEditSchedule = hasAdminPrivileges;
+
+        return Scaffold(
+          appBar: CommonStyles.buildAppBar(widget.group.name),
+          floatingActionButton: canEditSchedule
+              ? FloatingActionButton(
+                  heroTag: 'group-detail-fab',
+                  onPressed: () {
+                    unawaited(widget.vibrationService.lightImpact());
+                    _editSchedule();
+                  },
+                  child: const Icon(Icons.add),
+                )
+              : null,
+          body: Container(
+            decoration: CommonStyles.backgroundGradient,
+            padding: const EdgeInsets.all(16),
+            child: ListView(
+              children: [
+                if (!isOwner && user != null && !isMember)
+                  StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                    stream: widget.groupService.firestore
+                        .collection(GroupCollections.groups)
+                        .doc(widget.group.id)
+                        .collection(GroupCollections.joinRequests)
+                        .doc(user.uid)
+                        .snapshots(),
+                    builder: (context, reqSnapshot) {
+                      final isPending = reqSnapshot.data?.exists ?? false;
+                      if (isPending) {
+                        return const Padding(
+                          padding: EdgeInsets.only(bottom: 16),
+                          child: Text('Join request pending'),
+                        );
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          VibrationButton(
+                            vibrationService: widget.vibrationService,
+                            onPressed: () async {
+                              try {
+                                await widget.groupService.joinGroup(
+                                  groupId: widget.group.id,
+                                  uid: user.uid,
+                                  name: user.displayName ?? '',
+                                );
+                                if (!mounted) return;
+                                // ignore: use_build_context_synchronously
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Join request sent'),
+                                  ),
+                                );
+                              } catch (e, st) {
+                                if (kDebugMode) {
+                                  debugPrint('Failed to join group: $e');
                                 }
-                              },
-                              child: const Text('Join Group'),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                        );
-                      },
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-            if (isOwner) ...[
-              Text('Join Requests', style: AppTextStyles.subtitle),
-              const SizedBox(height: 8),
-              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: widget.groupService.firestore
-                    .collection(GroupCollections.groups)
-                    .doc(widget.group.id)
-                    .collection(GroupCollections.joinRequests)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return const Text('Failed to load join requests');
-                  }
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final requests = snapshot.data!.docs;
-                  if (requests.isEmpty) {
-                    return const Text('No pending requests');
-                  }
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Pending requests: ${requests.length}',
-                        style: AppTextStyles.body,
-                      ),
-                      const SizedBox(height: 8),
-                      ...requests.map((d) {
-                        final data = d.data();
-                        final uid = data['uid'] as String? ?? d.id;
-                        final name = data['name'] as String? ?? '';
-                        return ListTile(
-                          title: Text(name.isEmpty ? uid : name),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.check),
-                                onPressed: () async {
-                                  try {
-                                    await widget.groupService
-                                        .approveJoinRequest(
-                                      groupId: widget.group.id,
-                                      uid: uid,
-                                    );
-                                    if (!mounted) return;
-                                    // ignore: use_build_context_synchronously
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Request approved'),
-                                      ),
-                                    );
-                                  } catch (e, st) {
-                                    if (kDebugMode) {
-                                      debugPrint(
-                                          'Failed to approve request: $e');
-                                    }
-                                    ErrorLogger.log(e, st);
-                                    if (!mounted) return;
-                                    // ignore: use_build_context_synchronously
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content:
-                                            Text('Failed to approve request'),
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () async {
-                                  try {
-                                    await widget.groupService.denyJoinRequest(
-                                      groupId: widget.group.id,
-                                      uid: uid,
-                                    );
-                                    if (!mounted) return;
-                                    // ignore: use_build_context_synchronously
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Request denied'),
-                                      ),
-                                    );
-                                  } catch (e, st) {
-                                    if (kDebugMode) {
-                                      debugPrint('Failed to deny request: $e');
-                                    }
-                                    ErrorLogger.log(e, st);
-                                    if (!mounted) return;
-                                    // ignore: use_build_context_synchronously
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Failed to deny request'),
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                            ],
+                                ErrorLogger.log(e, st);
+                                if (!mounted) return;
+                                // ignore: use_build_context_synchronously
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Failed to join group'),
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Text('Join Group'),
                           ),
-                        );
-                      }),
-                      const SizedBox(height: 16),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-            GroupMembersSection(
-              membersStream:
-                  widget.groupService.memberDailyCompletion(widget.group.id),
+                          const SizedBox(height: 16),
+                        ],
+                      );
+                    },
+                  ),
+                if (canManageRequests) ...[
+                  Text('Join Requests', style: AppTextStyles.subtitle),
+                  const SizedBox(height: 8),
+                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: widget.groupService.firestore
+                        .collection(GroupCollections.groups)
+                        .doc(widget.group.id)
+                        .collection(GroupCollections.joinRequests)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return const Text('Failed to load join requests');
+                      }
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final requests = snapshot.data!.docs;
+                      if (requests.isEmpty) {
+                        return const Text('No pending requests');
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pending requests: ${requests.length}',
+                            style: AppTextStyles.body,
+                          ),
+                          const SizedBox(height: 8),
+                          ...requests.map((d) {
+                            final data = d.data();
+                            final uid = data['uid'] as String? ?? d.id;
+                            final name = data['name'] as String? ?? '';
+                            return ListTile(
+                              title: Text(name.isEmpty ? uid : name),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.check),
+                                    onPressed: () async {
+                                      try {
+                                        await widget.groupService
+                                            .approveJoinRequest(
+                                          groupId: widget.group.id,
+                                          uid: uid,
+                                        );
+                                        if (!mounted) return;
+                                        // ignore: use_build_context_synchronously
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Request approved'),
+                                          ),
+                                        );
+                                      } catch (e, st) {
+                                        if (kDebugMode) {
+                                          debugPrint(
+                                              'Failed to approve request: $e');
+                                        }
+                                        ErrorLogger.log(e, st);
+                                        if (!mounted) return;
+                                        // ignore: use_build_context_synchronously
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                'Failed to approve request'),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () async {
+                                      try {
+                                        await widget.groupService
+                                            .denyJoinRequest(
+                                          groupId: widget.group.id,
+                                          uid: uid,
+                                        );
+                                        if (!mounted) return;
+                                        // ignore: use_build_context_synchronously
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Request denied'),
+                                          ),
+                                        );
+                                      } catch (e, st) {
+                                        if (kDebugMode) {
+                                          debugPrint(
+                                              'Failed to deny request: $e');
+                                        }
+                                        ErrorLogger.log(e, st);
+                                        if (!mounted) return;
+                                        // ignore: use_build_context_synchronously
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content:
+                                                Text('Failed to deny request'),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: 16),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+                GroupMembersSection(
+                  membersStream: widget.groupService
+                      .memberDailyCompletion(widget.group.id),
+                ),
+                const SizedBox(height: 16),
+                Text('Schedule', style: AppTextStyles.subtitle),
+                const SizedBox(height: 8),
+                StreamBuilder<List<GroupSchedule>>(
+                  stream: widget.groupService.schedule(widget.group.id),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return const Text('Failed to load schedule');
+                    }
+                    if (!snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final fetched = List<GroupSchedule>.from(snapshot.data!)
+                      ..sort((a, b) => a.date.compareTo(b.date));
+                    _latestSchedule = fetched;
+                    final schedule = _scheduleOverride ?? _latestSchedule!;
+                    if (schedule.isEmpty) {
+                      return const Text('No schedule');
+                    }
+                    return Column(
+                      children: schedule
+                          .map(
+                            (s) => ScheduleItemTile(
+                              schedule: s,
+                              onEdit: canEditSchedule
+                                  ? () => _editSchedule(s)
+                                  : null,
+                            ),
+                          )
+                          .toList(),
+                    );
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text('Schedule', style: AppTextStyles.subtitle),
-            const SizedBox(height: 8),
-            StreamBuilder<List<GroupSchedule>>(
-              stream: widget.groupService.schedule(widget.group.id),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return const Text('Failed to load schedule');
-                }
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final fetched = List<GroupSchedule>.from(snapshot.data!)
-                  ..sort((a, b) => a.date.compareTo(b.date));
-                _latestSchedule = fetched;
-                final schedule = _scheduleOverride ?? _latestSchedule!;
-                if (schedule.isEmpty) {
-                  return const Text('No schedule');
-                }
-                return Column(
-                  children: schedule
-                      .map(
-                        (s) => ScheduleItemTile(
-                          schedule: s,
-                          onEdit: isOwner ? () => _editSchedule(s) : null,
-                        ),
-                      )
-                      .toList(),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

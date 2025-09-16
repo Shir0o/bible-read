@@ -193,6 +193,77 @@ class GroupService {
     }
   }
 
+  /// Promote the member with [uid] to `admin` when requested by [ownerUid].
+  Future<void> promoteToAdmin({
+    required String groupId,
+    required String ownerUid,
+    required String uid,
+  }) async {
+    try {
+      final groupRef =
+          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupSnap = await groupRef.get();
+      final actualOwner = groupSnap.data()?['ownerUid'] as String?;
+      if (actualOwner != ownerUid) {
+        throw StateError('Only the group owner can promote admins.');
+      }
+
+      if (uid == actualOwner) {
+        return;
+      }
+
+      final memberRef = groupRef.collection(GroupCollections.members).doc(uid);
+      final memberSnap = await memberRef.get();
+      if (!memberSnap.exists) {
+        throw StateError('Cannot promote a non-member.');
+      }
+      final currentRole = memberSnap.data()?['role'] as String?;
+      if (currentRole == 'admin') {
+        return;
+      }
+      await memberRef.update({'role': 'admin'});
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
+  }
+
+  /// Demote the member with [uid] from `admin` to `member` when requested by
+  /// [ownerUid].
+  Future<void> demoteAdmin({
+    required String groupId,
+    required String ownerUid,
+    required String uid,
+  }) async {
+    try {
+      final groupRef =
+          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupSnap = await groupRef.get();
+      final actualOwner = groupSnap.data()?['ownerUid'] as String?;
+      if (actualOwner != ownerUid) {
+        throw StateError('Only the group owner can demote admins.');
+      }
+
+      if (uid == actualOwner) {
+        throw StateError('The owner cannot be demoted.');
+      }
+
+      final memberRef = groupRef.collection(GroupCollections.members).doc(uid);
+      final memberSnap = await memberRef.get();
+      if (!memberSnap.exists) {
+        throw StateError('Cannot demote a non-member.');
+      }
+      final currentRole = memberSnap.data()?['role'] as String?;
+      if (currentRole != 'admin') {
+        throw StateError('Only admins can be demoted.');
+      }
+      await memberRef.update({'role': 'member'});
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
+  }
+
   /// Update or create a [schedule] entry for [groupId].
   Future<void> updateSchedule({
     required String groupId,
