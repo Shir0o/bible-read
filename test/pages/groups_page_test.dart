@@ -70,6 +70,7 @@ void main() {
     await firestore.collection('groups').doc('g1').set({
       'name': 'Study',
       'ownerUid': 'u1',
+      'memberCount': 1,
     });
     await firestore
         .collection('groups')
@@ -84,18 +85,22 @@ void main() {
     await firestore.collection('groups').doc('g2').set({
       'name': 'Other',
       'ownerUid': 'u2',
+      'memberCount': 0,
     });
 
     await pumpPage(tester, GroupService(firestore: firestore));
 
     expect(find.text('Study'), findsOneWidget);
     expect(find.text('Other'), findsOneWidget);
+    expect(find.text('1 member'), findsOneWidget);
+    expect(find.text('0 members'), findsOneWidget);
   });
 
   testWidgets('shows joined and pending indicators', (tester) async {
     await firestore.collection('groups').doc('g1').set({
       'name': 'Study',
       'ownerUid': 'u1',
+      'memberCount': 2,
     });
     await firestore
         .collection('groups')
@@ -110,6 +115,7 @@ void main() {
     await firestore.collection('groups').doc('g2').set({
       'name': 'Other',
       'ownerUid': 'u2',
+      'memberCount': 3,
     });
     await firestore
         .collection('groups')
@@ -129,6 +135,8 @@ void main() {
       find.widgetWithText(ListTile, 'Other'),
     );
     expect((pendingTile.trailing as Text).data, 'Pending');
+    expect(find.text('2 members'), findsOneWidget);
+    expect(find.text('3 members'), findsOneWidget);
   });
 
   testWidgets('create group success shows snackbar', (tester) async {

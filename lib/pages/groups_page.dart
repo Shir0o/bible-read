@@ -154,6 +154,9 @@ class _GroupsPageState extends State<GroupsPage> {
                               final g = groups[index];
                               return ListTile(
                                 title: Text(g.name),
+                                subtitle: Text(
+                                  '${g.memberCount} member${g.memberCount == 1 ? '' : 's'}',
+                                ),
                                 trailing: joined.contains(g.id)
                                     ? const Icon(Icons.check)
                                     : pending.contains(g.id)
