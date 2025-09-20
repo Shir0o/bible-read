@@ -11,6 +11,10 @@ import 'package:google_sign_in_platform_interface/google_sign_in_platform_interf
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'package:bible_read/pages/home_page.dart';
+import 'package:bible_read/models/season.dart';
+import 'package:bible_read/models/seasonal_challenge.dart';
+import 'package:bible_read/models/seasonal_challenge_progress.dart';
+import 'package:bible_read/services/seasonal_challenge_service.dart';
 import 'package:bible_read/widgets/read_switch_tile.dart';
 import 'package:bible_read/widgets/success_animation.dart';
 import '../helpers/mock_lottie_http_client.dart';
@@ -122,6 +126,40 @@ class ThrowingCollectionReference
   }
 }
 
+class _FakeSeasonalChallengeService extends SeasonalChallengeService {
+  _FakeSeasonalChallengeService({super.firestore});
+
+  @override
+  Future<Season?> fetchActiveSeason() async => null;
+
+  @override
+  Stream<List<SeasonalChallenge>> streamChallenges(String seasonId) =>
+      const Stream<List<SeasonalChallenge>>.empty();
+
+  @override
+  Stream<SeasonalChallengeProgress?> streamProgress({
+    required String uid,
+    required String seasonId,
+    required String challengeId,
+  }) =>
+      const Stream<SeasonalChallengeProgress?>.empty();
+
+  @override
+  Future<SeasonalChallengeProgress> incrementDailyProgress({
+    required String uid,
+    required SeasonalChallenge challenge,
+    int amount = 1,
+  }) async {
+    return SeasonalChallengeProgress(
+      id: '${challenge.seasonId}_${challenge.id}',
+      uid: uid,
+      seasonId: challenge.seasonId,
+      challengeId: challenge.id,
+      totalProgress: amount,
+    );
+  }
+}
+
 class ThrowingFirestore extends FakeFirebaseFirestore {
   @override
   CollectionReference<Map<String, dynamic>> collection(String path) {
@@ -153,7 +191,12 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -170,7 +213,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -187,7 +235,12 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -206,7 +259,12 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -250,7 +308,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -279,7 +342,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -305,7 +373,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -363,6 +436,8 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
           markFirstReader: (
               {required String dateKey, required String uid}) async {
             called = true;
@@ -422,7 +497,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -459,7 +539,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -487,7 +572,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -546,7 +636,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -604,7 +699,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -664,7 +764,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -705,7 +810,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -733,7 +843,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: HomePage(firestore: firestore, auth: auth),
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService:
+              _FakeSeasonalChallengeService(firestore: firestore),
+        ),
       ),
     );
     await tester.pumpAndSettle();
