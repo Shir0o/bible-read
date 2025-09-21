@@ -15,6 +15,7 @@ import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/pages/achievements_page.dart';
 import 'package:bible_read/pages/streak_history_page.dart';
 import 'package:bible_read/pages/leaderboard_page.dart';
+import 'package:bible_read/pages/seasonal_challenges_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -151,7 +152,9 @@ void main() {
         home: MainPage(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Profile should be shown by default when not authenticated
     expect(find.text('Sign in with Google'), findsOneWidget);
@@ -159,7 +162,9 @@ void main() {
     // Profile should be shown when tapping profile or if it's the only page.
     if (find.byIcon(Icons.person).evaluate().isNotEmpty) {
       await tester.tap(find.byIcon(Icons.person));
-      await tester.pumpAndSettle();
+      await tester.pump();
+
+      await tester.pump(const Duration(milliseconds: 500));
     }
     expect(find.text('Sign in with Google'), findsOneWidget);
   });
@@ -175,16 +180,22 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Attempt to navigate to a protected page via the drawer.
     final responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
     responsive.scaffoldKey!.currentState!.openDrawer();
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.people));
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('Friends'));
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     // The profile page should remain visible and navigation index unchanged.
     final state = tester.state(find.byType(MainPage)) as dynamic;
@@ -218,48 +229,64 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.feed));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(ReadLogPage), findsOneWidget);
     responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
     expect(responsive.contentIndex, 1);
 
+    // Seasonal challenges via bottom navigation
+    await tester.tap(find.byIcon(Icons.flag));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(SeasonalChallengesPage), findsOneWidget);
+    responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
+    expect(responsive.contentIndex, 2);
+
     // Friends navigation via drawer
     responsive.scaffoldKey!.currentState!.openDrawer();
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.people));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('Friends'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(FriendsPage), findsOneWidget);
     responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
-    expect(responsive.contentIndex, 3);
+    expect(responsive.contentIndex, 4);
 
     // Achievements navigation via drawer
     responsive.scaffoldKey!.currentState!.openDrawer();
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.emoji_events));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('Achievements'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(AchievementsPage), findsOneWidget);
     responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
-    expect(responsive.contentIndex, 5);
+    expect(responsive.contentIndex, 6);
 
     // History navigation via drawer
     responsive.scaffoldKey!.currentState!.openDrawer();
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.calendar_today));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('History'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(StreakHistoryPage), findsOneWidget);
     responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
-    expect(responsive.contentIndex, 6);
+    expect(responsive.contentIndex, 7);
   });
 
   testWidgets('bottom navigation visible on non-core pages', (tester) async {
@@ -277,15 +304,19 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     final hasNav = find.byType(NavigationBar).evaluate().isNotEmpty ||
         find.byType(NavigationRail).evaluate().isNotEmpty;
     expect(hasNav, isTrue);
 
     final state = tester.state(find.byType(MainPage)) as dynamic;
-    state.navigateFromMenu(3);
-    await tester.pumpAndSettle();
+    state.navigateFromMenu(4);
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(FriendsPage), findsOneWidget);
 
@@ -314,7 +345,9 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Verify the bottom navigation bar or rail is initially visible.
     final hasNavBefore = find.byType(NavigationBar).evaluate().isNotEmpty ||
@@ -322,8 +355,10 @@ void main() {
     expect(hasNavBefore, isTrue);
 
     final state = tester.state(find.byType(MainPage)) as dynamic;
-    state.navigateFromMenu(2);
-    await tester.pumpAndSettle();
+    state.navigateFromMenu(3);
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(LeaderboardPage), findsOneWidget);
     final hasNavAfter = find.byType(NavigationBar).evaluate().isNotEmpty ||
@@ -348,17 +383,19 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     final state = tester.state(find.byType(MainPage)) as dynamic;
     vibration.getIndex = () => state.selectedIndex;
 
-    state.navigateFromMenu(3);
+    state.navigateFromMenu(4);
     await tester.pump();
 
     expect(vibration.lightCount, 1);
     expect(vibration.indexDuringCall, 0);
-    expect(state.selectedIndex, 3);
+    expect(state.selectedIndex, 4);
   });
 
   testWidgets('_navigateFromMenu does not vibrate when navigation blocked',
@@ -375,7 +412,9 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     final state = tester.state(find.byType(MainPage)) as dynamic;
     state.navigateFromMenu(3);
@@ -417,7 +456,9 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     final state = tester.state(find.byType(MainPage)) as dynamic;
     state.onItemTapped(1);
@@ -437,7 +478,9 @@ void main() {
         home: MainPage(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
     expect(fakePlatform.silentSignInCount, 1);
   });
 
@@ -486,7 +529,9 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(NavigationDestination), findsNothing);
     expect(find.text('Sign in with Google'), findsOneWidget);
@@ -526,7 +571,9 @@ void main() {
       ),
     );
 
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     final userDoc =
         await fakeFirestore.collection('users').doc(testUser.uid).get();
@@ -576,11 +623,15 @@ void main() {
       ),
     );
 
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Navigate to Feed (ReadLogPage)
     await tester.tap(find.byIcon(Icons.feed));
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Find the ListTile for 'Owner User' and tap the like button
     final ownerLogFinder = find.byWidgetPredicate(
@@ -597,7 +648,9 @@ void main() {
         matching: find.byIcon(Icons.favorite_border),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(wasCalled, isTrue);
     expect(calledUid, 'owner456');
@@ -648,11 +701,15 @@ void main() {
       ),
     );
 
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Navigate to Feed (ReadLogPage)
     await tester.tap(find.byIcon(Icons.feed));
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     final ownerLogFinder = find.byWidgetPredicate(
       (widget) =>
@@ -669,12 +726,16 @@ void main() {
         matching: find.byIcon(Icons.mode_comment_outlined),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Submit a comment
     await tester.enterText(find.byType(TextField), 'Nice read');
     await tester.tap(find.byIcon(Icons.send));
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(wasCalled, isTrue);
     expect(calledUid, 'owner456');
@@ -695,7 +756,9 @@ void main() {
       ),
     );
 
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.textContaining('App verification failed'), findsOneWidget);
     expect(find.byType(ResponsiveScaffold), findsNothing);
@@ -715,7 +778,9 @@ void main() {
       ),
     );
 
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Verify the error page is shown.
     expect(find.textContaining('App verification failed'), findsOneWidget);
@@ -754,11 +819,13 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Navigate to a different page first
     await tester.tap(find.byIcon(Icons.feed));
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(ReadLogPage), findsOneWidget);
 
     // Go to profile and sign out
@@ -766,11 +833,17 @@ void main() {
       find.byType(ResponsiveScaffold),
     );
     responsive.scaffoldKey!.currentState!.openDrawer();
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.text('Profile'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.text('Sign Out'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Should now show the unauthenticated profile page
     expect(find.text('Sign in with Google'), findsOneWidget);
@@ -810,16 +883,20 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     final state = tester.state(find.byType(MainPage)) as dynamic;
-    state.navigateFromMenu(4);
-    await tester.pumpAndSettle();
+    state.navigateFromMenu(5);
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     final responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
-    expect(responsive.selectedIndex, 1);
-    expect(responsive.contentIndex, 4);
+    expect(responsive.selectedIndex, 2);
+    expect(responsive.contentIndex, 5);
   });
 }
