@@ -129,7 +129,9 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('fcmToken'), 'new_token');
@@ -142,6 +144,8 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
   });
 }

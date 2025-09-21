@@ -5,6 +5,7 @@ import 'package:bible_read/pages/achievements_page.dart';
 import 'package:bible_read/pages/groups_page.dart';
 import 'package:bible_read/pages/friend_requests_page.dart';
 import 'package:bible_read/pages/streak_history_page.dart';
+import 'package:bible_read/pages/seasonal_challenges_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:bible_read/widgets/app_drawer.dart';
 import '../services/friend_service.dart';
@@ -95,8 +96,13 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  int _selectedIndex = 0;
-  final List<int> _navHistory = [0];
+  static const int _homeIndex = 0;
+  static const int _readLogIndex = 1;
+  static const int _leaderboardIndex = 3;
+  static const int _profileIndex = 9;
+
+  int _selectedIndex = _homeIndex;
+  final List<int> _navHistory = [_homeIndex];
 
   VibrationService get vibrationService => widget.vibrationService;
 
@@ -176,6 +182,9 @@ class _MainPageState extends State<MainPage> {
                 'commenterName': commenterName,
               });
             },
+      ),
+      SeasonalChallengesPage(
+        auth: widget.auth,
       ),
       widget.leaderboardPageBuilder(
         key: _leaderboardKey,
@@ -285,7 +294,7 @@ class _MainPageState extends State<MainPage> {
       return;
     }
     final bool signedIn = widget.auth.currentUser != null;
-    final int profileIndex = signedIn ? 8 : 0;
+    final int profileIndex = signedIn ? _profileIndex : _homeIndex;
     if (!signedIn && index != profileIndex) {
       return;
     }
@@ -295,16 +304,16 @@ class _MainPageState extends State<MainPage> {
         _navHistory.add(index);
       }
     });
-    if (index == 1) {
+    if (index == _readLogIndex) {
       _readLogKey.currentState?.refresh();
-    } else if (index == 2) {
+    } else if (index == _leaderboardIndex) {
       _leaderboardKey.currentState?.refresh();
     }
   }
 
   void _navigateFromMenu(int index) {
     final bool signedIn = widget.auth.currentUser != null;
-    final int profileIndex = signedIn ? 8 : 0;
+    final int profileIndex = signedIn ? _profileIndex : _homeIndex;
     if (!signedIn && index != profileIndex) {
       // Block navigation to signed-in pages if not signed in
       return;
@@ -316,9 +325,9 @@ class _MainPageState extends State<MainPage> {
         _navHistory.add(index);
       }
     });
-    if (index == 1) {
+    if (index == _readLogIndex) {
       _readLogKey.currentState?.refresh();
-    } else if (index == 2) {
+    } else if (index == _leaderboardIndex) {
       _leaderboardKey.currentState?.refresh();
     }
   }
@@ -344,13 +353,16 @@ class _MainPageState extends State<MainPage> {
     final List<Widget> pages = signedIn ? _pages : [_pages.last];
     final bool showBottomNav = signedIn;
 
-    final int navIndex = _selectedIndex.clamp(0, 1);
     final destinations = showBottomNav
         ? const [
             NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
             NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
+            NavigationDestination(icon: Icon(Icons.flag), label: 'Seasonal'),
           ]
         : const <NavigationDestination>[];
+    final int navIndex = destinations.isEmpty
+        ? 0
+        : _selectedIndex.clamp(0, destinations.length - 1);
 
     // ignore: deprecated_member_use
     return WillPopScope(
