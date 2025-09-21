@@ -127,7 +127,8 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     final dynamic state = tester.state(find.byType(MainPage));
     state.onItemTapped(1);
