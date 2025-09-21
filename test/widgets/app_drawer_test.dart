@@ -29,11 +29,12 @@ void main() {
       expect(find.byType(AppDrawer), findsNothing);
     }
 
-    await checkTile('Leaderboard', 2);
-    await checkTile('Friends', 3);
-    await checkTile('Groups', 4);
-    await checkTile('Achievements', 5);
-    await checkTile('History', 6);
-    await checkTile('Profile', 8);
+    await checkTile('Seasonal Challenges', 2);
+    await checkTile('Leaderboard', 3);
+    await checkTile('Friends', 4);
+    await checkTile('Groups', 5);
+    await checkTile('Achievements', 6);
+    await checkTile('History', 7);
+    await checkTile('Profile', 9);
   });
 }

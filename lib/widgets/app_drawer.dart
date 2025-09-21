@@ -39,7 +39,7 @@ class AppDrawer extends StatelessWidget {
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
-                onNavigate(2);
+                onNavigate(3);
               },
             ),
             ListTile(
@@ -48,7 +48,7 @@ class AppDrawer extends StatelessWidget {
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
-                onNavigate(3);
+                onNavigate(4);
               },
             ),
             ListTile(
@@ -57,7 +57,16 @@ class AppDrawer extends StatelessWidget {
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
-                onNavigate(4);
+                onNavigate(5);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.flag),
+              title: const Text('Seasonal Challenges'),
+              onTap: () {
+                unawaited(vibrationService.lightImpact());
+                Navigator.pop(context);
+                onNavigate(2);
               },
             ),
             ListTile(
@@ -66,7 +75,7 @@ class AppDrawer extends StatelessWidget {
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
-                onNavigate(5);
+                onNavigate(6);
               },
             ),
             ListTile(
@@ -75,7 +84,7 @@ class AppDrawer extends StatelessWidget {
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
-                onNavigate(6);
+                onNavigate(7);
               },
             ),
             const Divider(),
@@ -85,7 +94,7 @@ class AppDrawer extends StatelessWidget {
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
-                onNavigate(8);
+                onNavigate(9);
               },
             ),
           ],

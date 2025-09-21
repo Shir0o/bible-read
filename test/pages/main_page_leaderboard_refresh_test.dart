@@ -141,10 +141,12 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
 
     final dynamic state = tester.state(find.byType(MainPage));
-    state.onItemTapped(2);
+    state.onItemTapped(3);
     await tester.pump();
 
     expect(testPage.refreshed.value, isTrue);
