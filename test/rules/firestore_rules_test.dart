@@ -32,5 +32,13 @@ void main() {
           rulesText.contains('allow read: if request.auth != null;'), isTrue);
       expect(rulesText.contains('allow write: if isOwnerOrAdmin();'), isTrue);
     });
+
+    test('includes seasonal challenge rules', () {
+      expect(rulesText.contains('match /seasons/{seasonId}'), isTrue);
+      expect(rulesText.contains('match /challenges/{challengeId}'), isTrue);
+      expect(rulesText.contains('match /seasonChallenges/{docId}'), isTrue);
+      expect(rulesText.contains('match /seasonRewards/{docId}'), isTrue);
+      expect(rulesText.contains('hasValidProgressFlags'), isTrue);
+    });
   });
 }
