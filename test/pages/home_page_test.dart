@@ -1,5 +1,7 @@
 // ignore_for_file: subtype_of_sealed_class
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -160,6 +162,35 @@ class _FakeSeasonalChallengeService extends SeasonalChallengeService {
   }
 }
 
+class _StubSeasonalChallengeService extends SeasonalChallengeService {
+  _StubSeasonalChallengeService({
+    required this.season,
+    required this.challenges,
+    required this.progressStreams,
+  }) : super(firestore: FakeFirebaseFirestore());
+
+  final Season? season;
+  final List<SeasonalChallenge> challenges;
+  final Map<String, Stream<SeasonalChallengeProgress?>> progressStreams;
+
+  @override
+  Future<Season?> fetchActiveSeason() async => season;
+
+  @override
+  Stream<List<SeasonalChallenge>> streamChallenges(String seasonId) =>
+      Stream<List<SeasonalChallenge>>.value(challenges);
+
+  @override
+  Stream<SeasonalChallengeProgress?> streamProgress({
+    required String uid,
+    required String seasonId,
+    required String challengeId,
+  }) {
+    return progressStreams[challengeId] ??
+        Stream<SeasonalChallengeProgress?>.value(null);
+  }
+}
+
 class ThrowingFirestore extends FakeFirebaseFirestore {
   @override
   CollectionReference<Map<String, dynamic>> collection(String path) {
@@ -203,6 +234,67 @@ void main() {
 
     expect(find.text('Bible Reading Challenge'), findsOneWidget);
     expect(find.byType(ReadSwitchTile), findsOneWidget);
+  });
+
+  testWidgets('shows seasonal summary when active challenge data is available',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'seasonal-user'),
+      signedIn: true,
+    );
+    final season = Season(
+      id: 'spring',
+      title: 'Season of Growth',
+      description: 'Lean into daily reading habits.',
+      startDate: DateTime.now().subtract(const Duration(days: 1)),
+      endDate: DateTime.now().add(const Duration(days: 30)),
+    );
+    final challenge = SeasonalChallenge(
+      id: 'c1',
+      seasonId: 'spring',
+      title: 'Daily Reading Challenge',
+      description: 'Finish five readings this week.',
+      metric: 'chapters',
+      goal: 10,
+    );
+    final progress = SeasonalChallengeProgress(
+      id: 'spring_c1',
+      uid: 'seasonal-user',
+      seasonId: 'spring',
+      challengeId: 'c1',
+      totalProgress: 4,
+    );
+
+    final service = _StubSeasonalChallengeService(
+      season: season,
+      challenges: [challenge],
+      progressStreams: {
+        challenge.id: Stream<SeasonalChallengeProgress?>.value(progress),
+      },
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          seasonalChallengeService: service,
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Season of Growth'), findsOneWidget);
+    expect(find.text('Daily Reading Challenge'), findsOneWidget);
+    expect(find.text('Finish five readings this week.'), findsOneWidget);
+    expect(find.text('4 / 10 chapters'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextButton, 'View challenges'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows "User not signed in" when not authenticated', (
