@@ -22,13 +22,11 @@ class ReadLogPage extends StatefulWidget {
   final Future<void> Function({
     required String ownerUid,
     required String likerName,
-  })
-  onSendLikeNotification;
+  }) onSendLikeNotification;
   final Future<void> Function({
     required String ownerUid,
     required String commenterName,
-  })
-  onSendCommentNotification;
+  }) onSendCommentNotification;
   final DateTime Function() dateProvider;
 
   ReadLogPage({
@@ -38,9 +36,9 @@ class ReadLogPage extends StatefulWidget {
     required this.onSendLikeNotification,
     required this.onSendCommentNotification,
     DateTime Function()? dateProvider,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       dateProvider = dateProvider ?? DateTime.now;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        dateProvider = dateProvider ?? DateTime.now;
 
   @override
   State<ReadLogPage> createState() => _ReadLogPageState();
@@ -52,8 +50,7 @@ class ReadLogPage extends StatefulWidget {
     Future<Map<String, dynamic>?> Function({
       required String dateKey,
       required String uid,
-    })?
-    markFirstReader,
+    })? markFirstReader,
     DateTime Function()? dateProvider,
   }) async {
     final db = firestore ?? FirebaseFirestore.instance;
@@ -66,10 +63,10 @@ class ReadLogPage extends StatefulWidget {
         .collection('entries')
         .doc(user.uid)
         .set({
-          'name': (user.displayName ?? '').split(' ').first,
-          'email': user.email?.toLowerCase() ?? '',
-          'timestamp': Timestamp.now(),
-        });
+      'name': (user.displayName ?? '').split(' ').first,
+      'email': user.email?.toLowerCase() ?? '',
+      'timestamp': Timestamp.now(),
+    });
     final handler = markFirstReader;
     Map<String, dynamic>? result;
     if (handler != null) {
@@ -351,35 +348,38 @@ class _ReadLogPageState extends State<ReadLogPage> {
                 child: const CircularProgressIndicator(),
               )
             : _loadError
-            ? Center(
-                child: Text(
-                  'Unable to load feed.',
-                  style: AppTextStyles.subtitle.copyWith(color: Colors.white70),
-                ),
-              )
-            : widget.auth.currentUser == null
-            ? Center(
-                child: Text(
-                  'Please sign in to view your read log.',
-                  style: AppTextStyles.subtitle.copyWith(color: Colors.white70),
-                ),
-              )
-            : Padding(
-                padding: const EdgeInsets.only(
-                  top: 16.0,
-                  bottom: 48.0,
-                  left: 16,
-                  right: 16,
-                ),
-                child: ReadLogList(
-                  logs: _logs,
-                  onToggleLike: _toggleLike,
-                  onAddComment: _addComment,
-                  commenterName: (widget.auth.currentUser?.displayName ?? '')
-                      .split(' ')
-                      .first,
-                ),
-              ),
+                ? Center(
+                    child: Text(
+                      'Unable to load feed.',
+                      style: AppTextStyles.subtitle
+                          .copyWith(color: Colors.white70),
+                    ),
+                  )
+                : widget.auth.currentUser == null
+                    ? Center(
+                        child: Text(
+                          'Please sign in to view your read log.',
+                          style: AppTextStyles.subtitle
+                              .copyWith(color: Colors.white70),
+                        ),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.only(
+                          top: 16.0,
+                          bottom: 48.0,
+                          left: 16,
+                          right: 16,
+                        ),
+                        child: ReadLogList(
+                          logs: _logs,
+                          onToggleLike: _toggleLike,
+                          onAddComment: _addComment,
+                          commenterName:
+                              (widget.auth.currentUser?.displayName ?? '')
+                                  .split(' ')
+                                  .first,
+                        ),
+                      ),
       ),
     );
   }

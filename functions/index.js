@@ -113,6 +113,135 @@ exports.sendCommentNotification = onCall({ region: 'us-central1' }, async (req) 
   }
 });
 
+exports.claimSeasonalChallengeReward = onCall({ region: 'us-central1' }, async (req) => {
+  if (!req.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated.'
+    );
+  }
+
+  const { seasonId, challengeId } = req.data || {};
+  if (!seasonId || !challengeId) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Missing seasonId or challengeId'
+    );
+  }
+
+  const uid = req.auth.uid;
+  const db = admin.firestore();
+  const challengeRef = db
+    .collection('seasons')
+    .doc(seasonId)
+    .collection('challenges')
+    .doc(challengeId);
+  const progressRef = db
+    .collection('users')
+    .doc(uid)
+    .collection('seasonChallenges')
+    .doc(`${seasonId}_${challengeId}`);
+  const rewardRef = db
+    .collection('users')
+    .doc(uid)
+    .collection('seasonRewards')
+    .doc(`${seasonId}_${challengeId}`);
+
+  let challengeData;
+  let rewardRecord;
+
+  await db.runTransaction(async (transaction) => {
+    const [challengeSnap, progressSnap, rewardSnap] = await Promise.all([
+      transaction.get(challengeRef),
+      transaction.get(progressRef),
+      transaction.get(rewardRef),
+    ]);
+
+    if (!challengeSnap.exists) {
+      throw new functions.https.HttpsError('not-found', 'Challenge not found');
+    }
+
+    if (!progressSnap.exists) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'Progress not found'
+      );
+    }
+
+    if (rewardSnap.exists || progressSnap.data()?.rewardClaimedAt) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'Reward already claimed'
+      );
+    }
+
+    challengeData = challengeSnap.data() || {};
+    const goalValue = Number(challengeData.goal || 0);
+    const progressData = progressSnap.data() || {};
+    const total = Number(progressData.totalProgress || 0);
+    if (goalValue > 0 && total < goalValue) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'Challenge not complete'
+      );
+    }
+
+    const claimedAt = admin.firestore.FieldValue.serverTimestamp();
+    rewardRecord = {
+      seasonId,
+      challengeId,
+      challengeTitle: challengeData.title || '',
+      reward: challengeData.reward || null,
+      claimedAt,
+    };
+
+    transaction.set(rewardRef, rewardRecord);
+    transaction.set(
+      progressRef,
+      { rewardClaimedAt: claimedAt },
+      { merge: true }
+    );
+  });
+
+  const notificationsRef = db
+    .collection('users')
+    .doc(uid)
+    .collection('notifications');
+  const notificationId = notificationsRef.doc().id;
+  const message = rewardRecord?.reward?.title
+    ? `You claimed ${rewardRecord.reward.title}.`
+    : 'Your seasonal challenge reward is ready!';
+
+  await notificationsRef.doc(notificationId).set({
+    type: 'seasonalChallenge',
+    read: false,
+    message,
+    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  const [enabled, token] = await Promise.all([
+    isNotificationEnabled(uid, 'seasonalChallenge'),
+    getFcmToken(uid),
+  ]);
+
+  if (enabled && token) {
+    const title = 'Seasonal reward unlocked';
+    const body = challengeData?.title
+      ? `You completed "${challengeData.title}".`
+      : 'Your seasonal challenge reward is ready!';
+    try {
+      await sendNotification(token, { title, body });
+    } catch (err) {
+      functions.logger.error(
+        'Failed to send seasonal challenge notification',
+        err,
+      );
+    }
+  }
+
+  return { success: true };
+});
+
 exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) => {
   if (!req.auth) {
     throw new functions.https.HttpsError(

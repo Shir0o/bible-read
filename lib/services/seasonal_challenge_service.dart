@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import '../models/season.dart';
 import '../models/seasonal_challenge.dart';
@@ -20,6 +21,9 @@ class SeasonalChallengePaths {
   /// Sub-collection storing rewards under a season.
   static const String rewards = 'rewards';
 
+  /// Sub-collection storing rewards claimed by a user.
+  static const String userSeasonRewards = 'seasonRewards';
+
   /// Top-level collection storing user documents.
   static const String users = 'users';
 
@@ -27,19 +31,28 @@ class SeasonalChallengePaths {
   static const String userSeasonChallenges = 'seasonChallenges';
 }
 
+/// Signature for invoking the seasonal challenge reward Cloud Function.
+typedef ClaimSeasonalChallengeRewardFn = Future<void> Function({
+  required String seasonId,
+  required String challengeId,
+});
+
 /// Provides helpers for reading seasonal challenges and updating progress.
 class SeasonalChallengeService {
   /// Firestore instance used for reads and writes.
   final FirebaseFirestore firestore;
 
   final DateTime Function() _clock;
+  final ClaimSeasonalChallengeRewardFn _claimRewardFn;
 
   /// Creates a [SeasonalChallengeService].
   SeasonalChallengeService({
     FirebaseFirestore? firestore,
     DateTime Function()? clock,
+    ClaimSeasonalChallengeRewardFn? claimRewardFn,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
-        _clock = clock ?? DateTime.now;
+        _clock = clock ?? DateTime.now,
+        _claimRewardFn = claimRewardFn ?? _defaultClaimSeasonalChallengeReward;
 
   /// Returns the currently active season, if any.
   Future<Season?> fetchActiveSeason() async {
@@ -169,30 +182,47 @@ class SeasonalChallengeService {
   }
 
   /// Marks the reward for [progress] as claimed for [uid].
-  Future<SeasonalChallengeProgress> claimReward({
+  Future<void> claimReward({
     required String uid,
     required SeasonalChallengeProgress progress,
   }) async {
     try {
-      final docRef = _progressDoc(uid, progress.seasonId, progress.challengeId);
-      final claimedAt = _clock();
-      final updated = SeasonalChallengeProgress(
-        id: progress.id.isEmpty ? docRef.id : progress.id,
-        uid: progress.uid.isEmpty ? uid : progress.uid,
+      await _claimRewardFn(
         seasonId: progress.seasonId,
         challengeId: progress.challengeId,
-        dailyProgress: progress.dailyProgress,
-        totalProgress: progress.totalProgress,
-        updatedAt: claimedAt,
-        completedAt: progress.completedAt,
-        rewardClaimedAt: claimedAt,
       );
-      await docRef.set(updated.toFirestore(), SetOptions(merge: true));
-      return updated;
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;
     }
+
+    try {
+      await _progressDoc(uid, progress.seasonId, progress.challengeId).get();
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+    }
+
+    try {
+      await firestore
+          .collection(SeasonalChallengePaths.users)
+          .doc(uid)
+          .collection(SeasonalChallengePaths.userSeasonRewards)
+          .get();
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+    }
+  }
+
+  static Future<void> _defaultClaimSeasonalChallengeReward({
+    required String seasonId,
+    required String challengeId,
+  }) async {
+    final callable = FirebaseFunctions.instanceFor(region: 'us-central1')
+        .httpsCallable('claimSeasonalChallengeReward');
+    await callable.call({
+      'seasonId': seasonId,
+      'challengeId': challengeId,
+    });
   }
 
   DocumentReference<Map<String, dynamic>> _progressDoc(

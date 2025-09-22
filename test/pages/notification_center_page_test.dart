@@ -12,6 +12,7 @@ import 'package:bible_read/pages/notification_center_page.dart';
 import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/pages/achievements_page.dart';
 import 'package:bible_read/pages/friend_requests_page.dart';
+import 'package:bible_read/pages/seasonal_challenges_page.dart';
 
 Future<void> _renderType(WidgetTester tester, NotificationType type) async {
   final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u0'), signedIn: true);
@@ -43,6 +44,7 @@ void main() {
       NotificationType.comment: Icons.comment,
       NotificationType.groupJoinRequest: Icons.group_add,
       NotificationType.groupScheduleUpdate: Icons.schedule,
+      NotificationType.seasonalChallenge: Icons.eco,
     };
 
     final textMap = {
@@ -54,6 +56,7 @@ void main() {
       NotificationType.comment: 'New comment on your reading',
       NotificationType.groupJoinRequest: 'You received a group join request',
       NotificationType.groupScheduleUpdate: 'Group schedule updated',
+      NotificationType.seasonalChallenge: 'Seasonal challenge reward ready',
     };
 
     for (final type in NotificationType.values) {
@@ -233,6 +236,57 @@ void main() {
     expect(service.uid, user.uid);
     expect(service.id, 'n1');
     expect(find.byType(FriendRequestsPage), findsOneWidget);
+  });
+
+  testWidgets('tapping seasonal challenge opens seasonal challenges',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final service = _RecordingService(firestore: firestore);
+    final user = MockUser(uid: 'u10');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    final now = DateTime.now();
+    await firestore.collection('seasons').doc('season').set({
+      'title': 'Season',
+      'description': 'Active season',
+      'startDate': Timestamp.fromDate(now.subtract(const Duration(days: 1))),
+      'endDate': Timestamp.fromDate(now.add(const Duration(days: 10))),
+    });
+    await firestore
+        .collection('seasons')
+        .doc('season')
+        .collection('challenges')
+        .doc('challenge')
+        .set({
+      'seasonId': 'season',
+      'title': 'Complete readings',
+      'description': 'Finish readings',
+      'metric': 'chapters',
+      'goal': 1,
+    });
+
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('notifications')
+        .doc('n1')
+        .set({
+      'type': NotificationType.seasonalChallenge.name,
+      'timestamp': Timestamp.now(),
+      'read': false,
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NotificationCenterPage(service: service, auth: auth),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(ListTile));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SeasonalChallengesPage), findsOneWidget);
   });
 
   testWidgets(

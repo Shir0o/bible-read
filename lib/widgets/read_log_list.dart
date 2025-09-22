@@ -95,9 +95,8 @@ class ReadLogList extends StatelessWidget {
                               color: isLiked ? Colors.red : null,
                             ),
                           ),
-                          onPressed: isLiked
-                              ? null
-                              : () => onToggleLike(log.uid),
+                          onPressed:
+                              isLiked ? null : () => onToggleLike(log.uid),
                         ),
                       ),
                       IconButton(
