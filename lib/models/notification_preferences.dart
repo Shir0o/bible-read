@@ -7,6 +7,7 @@ enum NotificationType {
   comment,
   groupJoinRequest,
   groupScheduleUpdate,
+  seasonalChallenge,
 }
 
 /// Stores whether each notification type is enabled for a user.
