@@ -1,3 +1,23 @@
+# Release 1.13.0
+
+This release launches seasonal challenges with limited-time rewards and richer
+notifications.
+
+## Features
+
+*   **Seasonal Challenges Tab:** Adds a dedicated Seasonal page and home dashboard
+    summary fed by Firestore so players can join rotating challenges, monitor
+    progress, and claim bespoke rewards without app updates.
+*   **Reward Claim Flow:** Introduces the `SeasonalChallengeService` and a
+    `claimSeasonalChallengeReward` Cloud Function to gate reward eligibility,
+    record claims under each user, and surface a confirmation notification.
+
+## Notifications
+
+*   **Seasonal Challenge Alerts:** New `seasonalChallenge` notification type with a
+    matching preference toggle so users control whether reward-ready push messages
+    are delivered.
+
 # Release 1.12.0
 
 This release adds haptic feedback across the app, improves notification handling for friend requests, streamlines group join requests, and enhances navigation behavior and test coverage.

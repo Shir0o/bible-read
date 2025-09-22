@@ -20,7 +20,10 @@ A Flutter application designed to help individuals and groups track their daily 
 *   **Groups Page:** Browse all reading groups, create or join them, and open any group to view its members and daily chapter assignments. See [docs/groups.md](docs/groups.md) for details on group reading.
 *   **Add Friend Page:** The **+** button opens a separate page for sending friend requests.
 *   **Notification Center:** Recent alerts are stored in-app and can be viewed from the bell icon while your notification preferences still control which ones trigger push messages.
-*   **Achievements:** Unlock achievements like being the first reader of the day and view them from the Achievements page.
+*   **Seasonal Challenges:** Join limited-time challenges, track progress from the
+    home dashboard, and visit the Seasonal tab to claim exclusive rewards before the
+    season ends.
+*   **Achievements:** Unlock evergreen badges such as being the first reader of the day and view them from the Achievements page.
 ### Posting Comments
 
 Each entry in the reading feed includes a comment field labeled "Add a comment..." with a **Post** button so you can reply to others. Comments appear above the field after posting.
@@ -41,6 +44,14 @@ The app currently offers the following achievements. Badge icons are provided by
 | ![fire](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/fire.svg) | `streak7` | Read the Bible seven days in a row. |
 | ![calendar-check](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/calendar-check.svg) | `days30` | Log 30 days of reading. |
 | ![fire-flame-curved](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/fire-flame-curved.svg) | `streak30` | Read every day for a full month. |
+
+In addition to these evergreen achievements, rotating seasonal challenges provide
+time-boxed goals with bespoke rewards. Each season defines its own set of
+challenges and prizes—such as bonus points, exclusive badges, or limited
+artwork—that appear on the **Seasonal** tab and in the seasonal summary on the home
+page. Progress updates whenever you read, and once a goal is completed you can
+claim the reward directly from the Seasonal Challenges page; a notification is also
+saved in the Notification Center so the reward is easy to find later.
 
 Achievements are displayed in a scrollable list where each row shows the badge,
 title and description. Locked items are overlaid with a lock icon until they are
