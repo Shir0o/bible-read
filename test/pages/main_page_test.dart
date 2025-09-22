@@ -226,6 +226,9 @@ void main() {
       find.byType(ResponsiveScaffold),
     );
     expect(responsive.contentIndex, 0);
+    final labels = responsive.destinations.map((d) => d.label).toList();
+    expect(labels.length, 3);
+    expect(labels, contains('Seasonal'));
 
     await tester.tap(find.byIcon(Icons.feed));
     await tester.pump();
@@ -236,7 +239,31 @@ void main() {
     );
     expect(responsive.contentIndex, 1);
 
-    // Seasonal challenges via bottom navigation
+    // Seasonal challenges via drawer menu entry
+    responsive.scaffoldKey!.currentState!.openDrawer();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    final seasonalMenuItem = find.text('Seasonal Challenges');
+    expect(seasonalMenuItem, findsOneWidget);
+    await tester.tap(seasonalMenuItem);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(SeasonalChallengesPage), findsOneWidget);
+    responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
+    expect(responsive.contentIndex, 2);
+
+    // Navigate back home before testing the seasonal tab
+    await tester.tap(find.byIcon(Icons.home));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
+    expect(responsive.contentIndex, 0);
+
+    // Seasonal challenges via bottom navigation tab
     await tester.tap(find.byIcon(Icons.flag));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
