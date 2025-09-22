@@ -38,7 +38,10 @@ void main() {
       expect(rulesText.contains('match /challenges/{challengeId}'), isTrue);
       expect(rulesText.contains('match /seasonChallenges/{docId}'), isTrue);
       expect(rulesText.contains('match /seasonRewards/{docId}'), isTrue);
-      expect(rulesText.contains('hasValidProgressFlags'), isTrue);
+      expect(
+          rulesText.contains('request.resource.data.progress == true'), isTrue);
+      expect(
+          rulesText.contains('request.resource.data.claimed == false'), isTrue);
     });
   });
 }
