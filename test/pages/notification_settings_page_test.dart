@@ -37,6 +37,13 @@ void main() {
 
     expect(find.byType(SwitchListTile),
         findsNWidgets(NotificationType.values.length + 1));
+    expect(
+      find.widgetWithText(
+        SwitchListTile,
+        'Seasonal Challenge Notifications',
+      ),
+      findsOneWidget,
+    );
     final likeSwitch = tester.widget<SwitchListTile>(
         find.widgetWithText(SwitchListTile, 'Like Notifications'));
     expect(likeSwitch.value, isFalse);

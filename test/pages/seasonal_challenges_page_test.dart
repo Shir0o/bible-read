@@ -4,7 +4,6 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bible_read/models/season.dart';
 import 'package:bible_read/models/seasonal_challenge.dart';
 import 'package:bible_read/models/seasonal_reward.dart';
 import 'package:bible_read/pages/seasonal_challenges_page.dart';
@@ -97,6 +96,19 @@ void main() {
       final service = SeasonalChallengeService(
         firestore: firestore,
         clock: () => now,
+        claimRewardFn: ({required seasonId, required challengeId}) async {
+          await firestore
+              .collection('users')
+              .doc('user-1')
+              .collection('seasonChallenges')
+              .doc('${seasonId}_$challengeId')
+              .set(
+            {
+              'rewardClaimedAt': Timestamp.fromDate(now),
+            },
+            SetOptions(merge: true),
+          );
+        },
       );
 
       await tester.pumpWidget(
@@ -150,6 +162,28 @@ void main() {
       final service = SeasonalChallengeService(
         firestore: firestore,
         clock: () => now,
+        claimRewardFn: ({required seasonId, required challengeId}) async {
+          await firestore
+              .collection('users')
+              .doc('user-1')
+              .collection('seasonChallenges')
+              .doc('${seasonId}_$challengeId')
+              .set(
+            {
+              'rewardClaimedAt': Timestamp.fromDate(now),
+            },
+            SetOptions(merge: true),
+          );
+
+          await firestore
+              .collection('users')
+              .doc('user-1')
+              .collection('seasonRewards')
+              .doc('${seasonId}_$challengeId')
+              .set({
+            'claimedAt': Timestamp.fromDate(now),
+          });
+        },
       );
 
       await tester.pumpWidget(
