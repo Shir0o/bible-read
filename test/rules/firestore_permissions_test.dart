@@ -15,6 +15,10 @@ void main() {
         }
       };
 
+  Map<String, dynamic> noAuth() => {
+        'request': {'auth': null}
+      };
+
   setUpAll(() {
     final rulesLines = File('firestore.rules').readAsLinesSync();
     final filtered = rulesLines
@@ -363,6 +367,107 @@ void main() {
             }),
             isFalse);
       });
+    });
+  });
+
+  group('/seasons', () {
+    const seasonsBase = 'databases/$db/documents/seasons';
+    const challengesBase = 'databases/$db/documents/seasons/spring/challenges';
+
+    test('signed-in user can read season document', () {
+      expect(
+          rules.isAllowed('$seasonsBase/spring', Method.read,
+              variables: auth('alice')),
+          isTrue);
+    });
+
+    test('unauthenticated read of season denied', () {
+      expect(
+          rules.isAllowed('$seasonsBase/spring', Method.read,
+              variables: noAuth()),
+          isFalse);
+    });
+
+    test('challenge docs are read-only', () {
+      expect(
+          rules.isAllowed('$challengesBase/c1', Method.read,
+              variables: auth('alice')),
+          isTrue);
+      expect(
+          rules.isAllowed('$challengesBase/c1', Method.write,
+              variables: auth('alice')),
+          isFalse);
+    });
+  });
+
+  group('/seasonChallenges', () {
+    const base =
+        'databases/$db/documents/users/alice/seasonChallenges/spring_c1';
+
+    test('owner can read progress document', () {
+      expect(
+          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
+    });
+
+    test('owner can write valid progress flags', () {
+      expect(
+          rules.isAllowed(base, Method.write, variables: {
+            ...auth('alice'),
+            'request': {
+              ...auth('alice')['request'],
+              'resource': {
+                'data': {'progress': true, 'claimed': false}
+              }
+            }
+          }),
+          isTrue);
+    });
+
+    test('rejects invalid progress flag values', () {
+      expect(
+          rules.isAllowed(base, Method.write, variables: {
+            ...auth('alice'),
+            'request': {
+              ...auth('alice')['request'],
+              'resource': {
+                'data': {'progress': 'yes'}
+              }
+            }
+          }),
+          isFalse);
+    });
+
+    test('other user cannot write progress', () {
+      expect(
+          rules.isAllowed(base, Method.write, variables: {
+            ...auth('bob'),
+            'request': {
+              ...auth('bob')['request'],
+              'resource': {
+                'data': {'progress': true, 'claimed': false}
+              }
+            }
+          }),
+          isFalse);
+    });
+  });
+
+  group('/seasonRewards', () {
+    const base = 'databases/$db/documents/users/alice/seasonRewards/spring_c1';
+
+    test('owner can read reward', () {
+      expect(
+          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
+    });
+
+    test('writes to reward denied', () {
+      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
+          isFalse);
+    });
+
+    test('other users cannot read reward', () {
+      expect(
+          rules.isAllowed(base, Method.read, variables: auth('bob')), isFalse);
     });
   });
 }
