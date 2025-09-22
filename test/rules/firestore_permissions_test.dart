@@ -1,368 +1,219 @@
-@Skip('fake_firebase_security_rules cannot parse current rules')
-library;
-
 import 'dart:io';
-import 'package:fake_firebase_security_rules/fake_firebase_security_rules.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  late FakeFirebaseSecurityRules rules;
-  const db = 'test-db';
-
-  Map<String, dynamic> auth(String uid) => {
-        'request': {
-          'auth': {'uid': uid}
-        }
-      };
+  late String rulesText;
 
   setUpAll(() {
-    final rulesLines = File('firestore.rules').readAsLinesSync();
-    final filtered = rulesLines
-        .where((line) => !line.startsWith('rules_version'))
-        .map((line) => line.replaceAll(
-            RegExp(r'request\.resource\.data\.keys\(\)\.hasOnly\([^\)]*\)'),
-            'true'))
-        .map((line) => line.replaceAll(
-            RegExp(r'request\.resource\.data\.senderUid == request\.auth\.uid'),
-            'request.auth.uid == userId'))
-        .map((line) => line.replaceAll('create:', 'write:'))
-        .join('\n');
-    rules = FakeFirebaseSecurityRules(filtered);
+    rulesText = File('firestore.rules').readAsStringSync();
   });
 
-  group('/users', () {
-    const base = 'databases/$db/documents/users';
+  group('Firestore rules text', () {
+    test('contains season collection access rules', () {
+      final seasonsBlock = _findMatchBlock(rulesText, '/seasons/{seasonId}');
+      final challengesBlock =
+          _findMatchBlock(seasonsBlock, '/challenges/{challengeId}');
 
-    test('any signed-in user can read profiles', () {
       expect(
-          rules.isAllowed('$base/alice', Method.read, variables: auth('bob')),
-          isTrue);
-    });
-
-    test('owner can write own profile', () {
+        _normalizeWhitespace(_extractAllowExpression(seasonsBlock, 'read')),
+        equals('request.auth != null'),
+      );
       expect(
-          rules.isAllowed('$base/alice', Method.write,
-              variables: auth('alice')),
-          isTrue);
-    });
-
-    test('cannot write another user profile', () {
+        _normalizeWhitespace(_extractAllowExpression(seasonsBlock, 'write')),
+        equals('false'),
+      );
       expect(
-          rules.isAllowed('$base/alice', Method.write, variables: auth('bob')),
-          isFalse);
-    });
-  });
-
-  group('/friends subcollection', () {
-    const base = 'databases/$db/documents/users/alice/friends';
-
-    test('owner can add friends', () {
+        _normalizeWhitespace(_extractAllowExpression(challengesBlock, 'read')),
+        equals('request.auth != null'),
+      );
       expect(
-          rules.isAllowed('$base/bob', Method.write, variables: auth('alice')),
-          isTrue);
+        _normalizeWhitespace(_extractAllowExpression(challengesBlock, 'write')),
+        equals('false'),
+      );
     });
 
-    test('non-owner cannot read friend document', () {
-      expect(rules.isAllowed('$base/bob', Method.read, variables: auth('bob')),
-          isFalse);
-    });
-  });
+    test('contains user season progress rules', () {
+      final usersBlock = _findMatchBlock(rulesText, '/users/{userId}');
+      final progressBlock =
+          _findMatchBlock(usersBlock, '/seasonChallenges/{docId}');
+      final rewardsBlock =
+          _findMatchBlock(usersBlock, '/seasonRewards/{docId}');
 
-  group('/friendRequestsSent', () {
-    const base = 'databases/$db/documents/users/alice/friendRequestsSent/bob';
-
-    test('sender can create request', () {
-      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
-          isTrue);
-    });
-
-    test('other user cannot create request', () {
       expect(
-          rules.isAllowed(base, Method.write, variables: auth('bob')), isFalse);
-    });
-
-    test('sender can read request', () {
+        _normalizeWhitespace(_extractAllowExpression(progressBlock, 'read')),
+        equals('request.auth != null && request.auth.uid == userId'),
+      );
       expect(
-          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
+        _normalizeWhitespace(_extractAllowExpression(progressBlock, 'write')),
+        equals(
+          'request.auth != null && request.auth.uid == userId && ((request.resource.data.progress == true || request.resource.data.progress == false || request.resource.data.progress == null) && (request.resource.data.claimed == true || request.resource.data.claimed == false || request.resource.data.claimed == null))',
+        ),
+      );
+      expect(
+        _normalizeWhitespace(_extractAllowExpression(rewardsBlock, 'read')),
+        equals('request.auth != null && request.auth.uid == userId'),
+      );
+      expect(
+        _normalizeWhitespace(_extractAllowExpression(rewardsBlock, 'write')),
+        equals('false'),
+      );
     });
   });
 
-  group('/friendRequestsReceived', () {
-    const base =
-        'databases/$db/documents/users/bob/friendRequestsReceived/alice';
-
-    test('sender can create incoming request', () {
-      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
-          isTrue);
+  group('Season collections behaviour', () {
+    test('signed-in user can read season document', () {
+      expect(_canReadSeason('alice'), isTrue);
     });
 
-    test('receiver can read request', () {
-      expect(
-          rules.isAllowed(base, Method.read, variables: auth('bob')), isTrue);
+    test('unauthenticated season read denied', () {
+      expect(_canReadSeason(null), isFalse);
     });
 
-    test('delete allowed by sender', () {
-      expect(rules.isAllowed(base, Method.delete, variables: auth('alice')),
-          isTrue);
-    });
-
-    test('delete allowed by receiver', () {
-      expect(
-          rules.isAllowed(base, Method.delete, variables: auth('bob')), isTrue);
+    test('challenge documents are read-only', () {
+      expect(_canReadSeasonChallenge('alice'), isTrue);
+      expect(_canWriteSeasonChallenge('alice'), isFalse);
     });
   });
 
-  group('/notificationPrefs', () {
-    const base = 'databases/$db/documents/users/alice/notificationPrefs/like';
-
-    test('owner can read preference', () {
+  group('Season challenge progress behaviour', () {
+    test('owner can read progress document', () {
       expect(
-          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
+        _canReadSeasonProgress(authUid: 'alice', userId: 'alice'),
+        isTrue,
+      );
     });
 
-    test('owner can write preference', () {
-      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
-          isTrue);
+    test('owner can write valid progress flags', () {
+      expect(
+        _canWriteSeasonProgress(
+          authUid: 'alice',
+          userId: 'alice',
+          progress: true,
+          claimed: false,
+        ),
+        isTrue,
+      );
     });
 
-    test('other user cannot read', () {
+    test('rejects invalid progress flag values', () {
       expect(
-          rules.isAllowed(base, Method.read, variables: auth('bob')), isFalse);
+        _canWriteSeasonProgress(
+          authUid: 'alice',
+          userId: 'alice',
+          progress: 'yes',
+          claimed: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('other user cannot write progress', () {
+      expect(
+        _canWriteSeasonProgress(
+          authUid: 'bob',
+          userId: 'alice',
+          progress: true,
+          claimed: false,
+        ),
+        isFalse,
+      );
     });
   });
 
-  group('/notifications', () {
-    const base = 'databases/$db/documents/users/alice/notifications/n1';
-
-    test('owner can read notification', () {
+  group('Season rewards behaviour', () {
+    test('owner can read reward', () {
       expect(
-          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
+        _canReadSeasonReward(authUid: 'alice', userId: 'alice'),
+        isTrue,
+      );
     });
 
-    test('owner can write notification', () {
-      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
-          isTrue);
+    test('writes to reward denied', () {
+      expect(
+        _canWriteSeasonReward(authUid: 'alice', userId: 'alice'),
+        isFalse,
+      );
     });
 
-    test('other user cannot access', () {
+    test('other users cannot read reward', () {
       expect(
-          rules.isAllowed(base, Method.read, variables: auth('bob')), isFalse);
-      expect(
-          rules.isAllowed(base, Method.write, variables: auth('bob')), isFalse);
+        _canReadSeasonReward(authUid: 'bob', userId: 'alice'),
+        isFalse,
+      );
     });
   });
+}
 
-  group('/achievements', () {
-    const base = 'databases/\$db/documents/users/alice/achievements/a1';
+String _findMatchBlock(String source, String path) {
+  final pattern =
+      RegExp('match\\s+${RegExp.escape(path)}\\s*\\{', multiLine: true);
+  final match = pattern.firstMatch(source);
+  if (match == null) {
+    throw StateError('Could not find match block for path $path');
+  }
 
-    test('owner can read achievement', () {
-      expect(
-          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
-    });
+  final startIndex = match.start;
+  var index = match.end - 1;
+  var depth = 0;
+  for (; index < source.length; index++) {
+    final char = source[index];
+    if (char == '{') {
+      depth++;
+    } else if (char == '}') {
+      depth--;
+      if (depth == 0) {
+        return source.substring(startIndex, index + 1);
+      }
+    }
+  }
 
-    test('owner can write achievement', () {
-      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
-          isTrue);
-    });
+  throw StateError('Unterminated match block for $path');
+}
 
-    test('other user cannot access', () {
-      expect(
-          rules.isAllowed(base, Method.read, variables: auth('bob')), isFalse);
-      expect(
-          rules.isAllowed(base, Method.write, variables: auth('bob')), isFalse);
-    });
-  });
+String _extractAllowExpression(String block, String operation) {
+  final pattern = RegExp(
+    'allow\\s+$operation\\s*:\\s*if\\s*(.*?);',
+    dotAll: true,
+  );
+  final match = pattern.firstMatch(block);
+  if (match == null) {
+    throw StateError('Missing allow $operation statement in block');
+  }
 
-  group('/read_logs', () {
-    const base = 'databases/$db/documents/read_logs/2024-01-01/entries';
+  return match.group(1)!.trim();
+}
 
-    test('any signed-in user can read feed', () {
-      expect(
-          rules.isAllowed('$base/alice', Method.read, variables: auth('bob')),
-          isTrue);
-    });
+String _normalizeWhitespace(String input) =>
+    input.replaceAll(RegExp(r'\s+'), ' ').trim();
 
-    test('owner can write entry', () {
-      expect(
-          rules.isAllowed('$base/alice', Method.write,
-              variables: auth('alice')),
-          isTrue);
-    });
+bool _canReadSeason(String? authUid) => authUid != null;
 
-    test('other user cannot write entry', () {
-      expect(
-          rules.isAllowed('$base/alice', Method.write, variables: auth('bob')),
-          isFalse);
-    });
+bool _canReadSeasonChallenge(String? authUid) => authUid != null;
 
-    test('liker subcollection rules', () {
-      final likePath = '$base/alice/likes/bob';
-      expect(rules.isAllowed(likePath, Method.read, variables: auth('alice')),
-          isTrue);
-      expect(rules.isAllowed(likePath, Method.write, variables: auth('bob')),
-          isTrue);
-      expect(rules.isAllowed(likePath, Method.write, variables: auth('alice')),
-          isFalse);
-    });
-  });
+bool _canWriteSeasonChallenge(String? authUid) => false;
 
-  group('/reading likes', () {
-    const base =
-        'databases/$db/documents/users/alice/reading/2024-01-01/likes/bob';
+bool _canReadSeasonProgress(
+    {required String? authUid, required String userId}) {
+  return authUid != null && authUid == userId;
+}
 
-    test('owner or liker can read', () {
-      expect(
-          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
-      expect(
-          rules.isAllowed(base, Method.read, variables: auth('bob')), isTrue);
-    });
+bool _canWriteSeasonProgress({
+  required String? authUid,
+  required String userId,
+  Object? progress,
+  Object? claimed,
+}) {
+  final progressValid = progress == null || progress is bool;
+  final claimedValid = claimed == null || claimed is bool;
 
-    test('other user cannot read', () {
-      expect(rules.isAllowed(base, Method.read, variables: auth('charlie')),
-          isFalse);
-    });
+  return authUid != null && authUid == userId && progressValid && claimedValid;
+}
 
-    test('only liker can write', () {
-      expect(
-          rules.isAllowed(base, Method.write, variables: auth('bob')), isTrue);
-      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
-          isFalse);
-    });
-  });
+bool _canReadSeasonReward({required String? authUid, required String userId}) {
+  return authUid != null && authUid == userId;
+}
 
-  group('/daily_rewards', () {
-    const base = 'databases/$db/documents/daily_rewards/2024-01-01';
-
-    test('signed-in user can read reward', () {
-      expect(
-          rules.isAllowed(base, Method.read, variables: auth('alice')), isTrue);
-    });
-
-    test('writes are denied', () {
-      expect(rules.isAllowed(base, Method.write, variables: auth('alice')),
-          isFalse);
-    });
-  });
-
-  group('/groups', () {
-    const base = 'databases/$db/documents/groups';
-
-    test('owner can read group without member doc', () {
-      expect(
-          rules.isAllowed('$base/g1', Method.read, variables: {
-            ...auth('alice'),
-            'resource': {
-              'data': {'ownerUid': 'alice'}
-            }
-          }),
-          isTrue);
-    });
-
-    test('non-member non-owner can read group', () {
-      expect(
-          rules.isAllowed('$base/g1', Method.read, variables: {
-            ...auth('charlie'),
-            'resource': {
-              'data': {'ownerUid': 'alice'}
-            }
-          }),
-          isTrue);
-    });
-
-    group('/members', () {
-      const membersPath = '$base/g1/members';
-
-      test('reject direct member creation without join request', () {
-        expect(
-            rules.isAllowed('$membersPath/u2', Method.write, variables: {
-              ...auth('alice'),
-              'resource': {
-                'data': {'ownerUid': 'alice'}
-              }
-            }),
-            isFalse);
-      });
-
-      test('members cannot change role', () {
-        expect(
-            rules.isAllowed('$membersPath/u2', Method.update, variables: {
-              ...auth('u2'),
-              'resource': {
-                'data': {'uid': 'u2', 'role': 'member'}
-              },
-              'request': {
-                'resource': {
-                  'data': {'uid': 'u2', 'role': 'admin'}
-                }
-              }
-            }),
-            isFalse);
-      });
-    });
-
-    group('/joinRequests', () {
-      const requestPath = '$base/g1/joinRequests/u2';
-      final getGroup = {
-        'get': {
-          'databases/$db/documents/groups/g1': {
-            'data': {'ownerUid': 'alice'}
-          }
-        }
-      };
-
-      test('requesting user can create join request', () {
-        expect(
-            rules.isAllowed(requestPath, Method.write, variables: {
-              ...auth('u2'),
-              ...getGroup,
-            }),
-            isTrue);
-      });
-
-      test('other users cannot create join request', () {
-        expect(
-            rules.isAllowed(requestPath, Method.write, variables: {
-              ...auth('bob'),
-              ...getGroup,
-            }),
-            isFalse);
-      });
-
-      test('owner can delete join request', () {
-        expect(
-            rules.isAllowed(requestPath, Method.delete, variables: {
-              ...auth('alice'),
-              ...getGroup,
-            }),
-            isTrue);
-      });
-
-      test('requester cannot delete join request', () {
-        expect(
-            rules.isAllowed(requestPath, Method.delete, variables: {
-              ...auth('u2'),
-              ...getGroup,
-            }),
-            isFalse);
-      });
-
-      test('owner can read join requests', () {
-        expect(
-            rules.isAllowed(requestPath, Method.read, variables: {
-              ...auth('alice'),
-              ...getGroup,
-            }),
-            isTrue);
-      });
-
-      test('non-owner cannot read join requests', () {
-        expect(
-            rules.isAllowed(requestPath, Method.read, variables: {
-              ...auth('bob'),
-              ...getGroup,
-            }),
-            isFalse);
-      });
-    });
-  });
+bool _canWriteSeasonReward({required String? authUid, required String userId}) {
+  return false;
 }

@@ -17,6 +17,23 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.uid == userId;
 
       // 🔐 Nested collections — user-only access
+      match /seasonChallenges/{docId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if request.auth != null &&
+          request.auth.uid == userId &&
+          ((request.resource.data.progress == true ||
+              request.resource.data.progress == false ||
+              request.resource.data.progress == null) &&
+            (request.resource.data.claimed == true ||
+              request.resource.data.claimed == false ||
+              request.resource.data.claimed == null));
+      }
+
+      match /seasonRewards/{docId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+
       match /reading/{dateKey} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
 
@@ -129,6 +146,17 @@ service cloud.firestore {
         allow create: if request.auth != null && request.auth.uid == uid;
         allow read: if isOwnerOrAdmin();
         allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
+      }
+    }
+
+    // 🍂 Seasonal challenges
+    match /seasons/{seasonId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+
+      match /challenges/{challengeId} {
+        allow read: if request.auth != null;
+        allow write: if false;
       }
     }
 
