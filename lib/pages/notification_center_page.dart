@@ -7,8 +7,10 @@ import '../models/app_notification.dart';
 import '../models/notification_preferences.dart';
 import '../services/error_logger.dart';
 import '../services/notification_service.dart';
+import '../services/seasonal_challenge_service.dart';
 import 'achievements_page.dart';
 import 'friend_requests_page.dart';
+import 'seasonal_challenges_page.dart';
 import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
@@ -123,6 +125,8 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
         return Icon(Icons.group_add, color: color);
       case NotificationType.groupScheduleUpdate:
         return Icon(Icons.schedule, color: color);
+      case NotificationType.seasonalChallenge:
+        return Icon(Icons.eco, color: color);
     }
   }
 
@@ -144,6 +148,8 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
         return 'You received a group join request';
       case NotificationType.groupScheduleUpdate:
         return 'Group schedule updated';
+      case NotificationType.seasonalChallenge:
+        return 'Seasonal challenge reward ready';
     }
   }
 
@@ -197,6 +203,20 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
             builder: (_) => FriendRequestsPage(
               auth: widget.auth,
               friendService: friendService,
+            ),
+          ),
+        );
+        break;
+      case NotificationType.seasonalChallenge:
+        if (!context.mounted) return;
+        unawaited(widget.vibrationService.lightImpact());
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => SeasonalChallengesPage(
+              auth: widget.auth,
+              service: SeasonalChallengeService(
+                firestore: widget.service.firestore,
+              ),
             ),
           ),
         );

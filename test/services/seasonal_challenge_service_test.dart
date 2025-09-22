@@ -174,7 +174,7 @@ void main() {
       expect(progress.totalProgress, 1);
     });
 
-    test('claimReward stores the claimed timestamp', () async {
+    test('claimReward invokes callable and refreshes state', () async {
       const challenge = SeasonalChallenge(
         id: 'share',
         seasonId: 'spring2024',
@@ -189,10 +189,37 @@ void main() {
         challenge: challenge,
       );
 
-      final claimed =
-          await service.claimReward(uid: 'user3', progress: progress);
+      final calls = <Map<String, String>>[];
+      final claimingService = SeasonalChallengeService(
+        firestore: firestore,
+        clock: () => now,
+        claimRewardFn: ({required seasonId, required challengeId}) async {
+          calls.add({'seasonId': seasonId, 'challengeId': challengeId});
+          await firestore
+              .collection(SeasonalChallengePaths.users)
+              .doc('user3')
+              .collection(SeasonalChallengePaths.userSeasonChallenges)
+              .doc('${seasonId}_$challengeId')
+              .set(
+            {
+              'rewardClaimedAt': Timestamp.fromDate(now),
+            },
+            SetOptions(merge: true),
+          );
+          await firestore
+              .collection(SeasonalChallengePaths.users)
+              .doc('user3')
+              .collection(SeasonalChallengePaths.userSeasonRewards)
+              .doc('${seasonId}_$challengeId')
+              .set({'claimedAt': Timestamp.fromDate(now)});
+        },
+      );
 
-      expect(claimed.rewardClaimedAt, isNotNull);
+      await claimingService.claimReward(uid: 'user3', progress: progress);
+
+      expect(calls, [
+        {'seasonId': 'spring2024', 'challengeId': 'share'},
+      ]);
 
       final stored = await firestore
           .collection(SeasonalChallengePaths.users)
@@ -201,6 +228,14 @@ void main() {
           .doc('spring2024_share')
           .get();
       expect(stored.data()?['rewardClaimedAt'], isA<Timestamp>());
+
+      final rewardDoc = await firestore
+          .collection(SeasonalChallengePaths.users)
+          .doc('user3')
+          .collection(SeasonalChallengePaths.userSeasonRewards)
+          .doc('spring2024_share')
+          .get();
+      expect(rewardDoc.exists, isTrue);
     });
 
     test('incrementDailyProgress preserves reward metadata that already exists',
