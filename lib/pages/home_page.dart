@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,13 +9,9 @@ import '../services/error_logger.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../models/achievement.dart';
-import '../models/season.dart';
-import '../models/seasonal_challenge.dart';
-import '../models/seasonal_challenge_progress.dart';
 import '../services/achievement_service.dart';
 import '../services/notification_service.dart';
 import '../services/reading_status_service.dart';
-import '../services/seasonal_challenge_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/menu_button.dart';
@@ -24,7 +19,6 @@ import '../widgets/notification_button.dart';
 import '../widgets/read_status_section.dart';
 import '../widgets/success_animation.dart';
 import 'read_log_page.dart';
-import 'seasonal_challenges_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
 /// Firestore when the app starts.
@@ -41,9 +35,6 @@ class HomePage extends StatefulWidget {
     required String uid,
   })? markFirstReader;
 
-  static final SeasonalChallengeService _defaultSeasonalChallengeService =
-      SeasonalChallengeService();
-
   HomePage({
     super.key,
     FirebaseFirestore? firestore,
@@ -51,19 +42,13 @@ class HomePage extends StatefulWidget {
     this.functions,
     this.markFirstReader,
     ReadingStatusService? readingStatusService,
-    SeasonalChallengeService? seasonalChallengeService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         readingStatusService = readingStatusService ??
-            ReadingStatusService(firestore: firestore, auth: auth),
-        seasonalChallengeService =
-            seasonalChallengeService ?? _defaultSeasonalChallengeService;
+            ReadingStatusService(firestore: firestore, auth: auth);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
-
-  /// Service for seasonal challenge progress and metadata.
-  final SeasonalChallengeService seasonalChallengeService;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -79,27 +64,18 @@ class _HomePageState extends State<HomePage>
   List<bool> _pastWeek = [];
   List<bool> _pastMonth = [];
   Set<DateTime> _readDates = {};
-  bool _seasonLoading = false;
-  Season? _activeSeason;
-  List<SeasonalChallenge> _seasonChallenges = const [];
-  final Map<String, SeasonalChallengeProgress?> _progressByChallenge = {};
-  StreamSubscription<List<SeasonalChallenge>>? _challengeSubscription;
-  final Map<String, StreamSubscription<SeasonalChallengeProgress?>>
-      _progressSubscriptions = {};
 
   @override
   void initState() {
     super.initState();
     _loadReadStatus();
-    unawaited(_initializeSeasonalChallenges());
   }
 
   @override
   void didUpdateWidget(covariant HomePage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.seasonalChallengeService != widget.seasonalChallengeService ||
-        oldWidget.auth != widget.auth) {
-      unawaited(_initializeSeasonalChallenges());
+    if (oldWidget.auth != widget.auth) {
+      unawaited(_loadReadStatus());
     }
   }
 
@@ -132,177 +108,6 @@ class _HomePageState extends State<HomePage>
           _toggleLoading = false; // Always stop loading.
         });
       }
-    }
-  }
-
-  Future<void> _initializeSeasonalChallenges() async {
-    if (!_disposed && mounted) {
-      setState(() {
-        _seasonLoading = true;
-      });
-    } else {
-      _seasonLoading = true;
-    }
-
-    try {
-      final season = await widget.seasonalChallengeService.fetchActiveSeason();
-      if (!_disposed && mounted) {
-        setState(() {
-          _activeSeason = season;
-        });
-      } else {
-        _activeSeason = season;
-      }
-      await _subscribeToChallenges(season);
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to load seasonal challenges: $e');
-      }
-      await ErrorLogger.log(e, st);
-      await _cancelSeasonalSubscriptions();
-      if (!_disposed && mounted) {
-        setState(() {
-          _activeSeason = null;
-          _seasonChallenges = const [];
-          _progressByChallenge.clear();
-        });
-      } else {
-        _activeSeason = null;
-        _seasonChallenges = const [];
-        _progressByChallenge.clear();
-      }
-    } finally {
-      if (!_disposed && mounted) {
-        setState(() {
-          _seasonLoading = false;
-        });
-      } else {
-        _seasonLoading = false;
-      }
-    }
-  }
-
-  Future<void> _subscribeToChallenges(Season? season) async {
-    final previous = _challengeSubscription;
-    _challengeSubscription = null;
-    if (previous != null) {
-      await previous.cancel();
-    }
-    await _cancelProgressSubscriptions();
-
-    if (season == null) {
-      if (!_disposed && mounted) {
-        setState(() {
-          _seasonChallenges = const [];
-          _progressByChallenge.clear();
-        });
-      } else {
-        _seasonChallenges = const [];
-        _progressByChallenge.clear();
-      }
-      return;
-    }
-
-    _challengeSubscription = widget.seasonalChallengeService
-        .streamChallenges(season.id)
-        .listen((challenges) {
-      if (!_disposed && mounted) {
-        setState(() {
-          _seasonChallenges = challenges;
-        });
-      } else {
-        _seasonChallenges = challenges;
-      }
-      unawaited(_updateProgressSubscriptions(season.id, challenges));
-    }, onError: (Object error, StackTrace stackTrace) {
-      if (kDebugMode) {
-        debugPrint('Seasonal challenge stream error: $error');
-      }
-      unawaited(ErrorLogger.log(error, stackTrace));
-    });
-  }
-
-  Future<void> _updateProgressSubscriptions(
-    String seasonId,
-    List<SeasonalChallenge> challenges,
-  ) async {
-    final userId = widget.auth.currentUser?.uid;
-    if (userId == null) {
-      await _cancelProgressSubscriptions();
-      if (!_disposed && mounted) {
-        setState(() {
-          _progressByChallenge.clear();
-        });
-      } else {
-        _progressByChallenge.clear();
-      }
-      return;
-    }
-
-    final activeChallengeIds = challenges.map((c) => c.id).toSet();
-    final toRemove = _progressSubscriptions.keys
-        .where((id) => !activeChallengeIds.contains(id))
-        .toList();
-    for (final id in toRemove) {
-      final subscription = _progressSubscriptions.remove(id);
-      if (subscription != null) {
-        await subscription.cancel();
-      }
-      _progressByChallenge.remove(id);
-    }
-
-    for (final challenge in challenges) {
-      if (_progressSubscriptions.containsKey(challenge.id)) {
-        continue;
-      }
-      final subscription = widget.seasonalChallengeService
-          .streamProgress(
-        uid: userId,
-        seasonId: seasonId,
-        challengeId: challenge.id,
-      )
-          .listen((progress) {
-        if (!_disposed && mounted) {
-          setState(() {
-            _progressByChallenge[challenge.id] = progress;
-          });
-        } else {
-          _progressByChallenge[challenge.id] = progress;
-        }
-      }, onError: (Object error, StackTrace stackTrace) {
-        if (kDebugMode) {
-          debugPrint('Seasonal progress stream error: $error');
-        }
-        unawaited(ErrorLogger.log(error, stackTrace));
-      });
-      _progressSubscriptions[challenge.id] = subscription;
-    }
-
-    if (!_disposed && mounted) {
-      setState(() {});
-    }
-  }
-
-  Future<void> _cancelSeasonalSubscriptions() async {
-    final challengeSubscription = _challengeSubscription;
-    _challengeSubscription = null;
-    if (challengeSubscription != null) {
-      await challengeSubscription.cancel();
-    }
-    await _cancelProgressSubscriptions();
-  }
-
-  Future<void> _cancelProgressSubscriptions() async {
-    if (_progressSubscriptions.isEmpty) {
-      return;
-    }
-    final subscriptions =
-        List<StreamSubscription<SeasonalChallengeProgress?>>.from(
-      _progressSubscriptions.values,
-    );
-    _progressSubscriptions.clear();
-    for (final subscription in subscriptions) {
-      await subscription.cancel();
     }
   }
 
@@ -398,8 +203,6 @@ class _HomePageState extends State<HomePage>
 
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
-
-      unawaited(_incrementSeasonalProgress());
 
       if (!_disposed && mounted) {
         SuccessAnimation.show(context);
@@ -532,42 +335,6 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  Future<void> _incrementSeasonalProgress() async {
-    final user = widget.auth.currentUser;
-    final season = _activeSeason;
-    if (user == null || season == null) {
-      return;
-    }
-
-    if (_seasonChallenges.isEmpty) {
-      return;
-    }
-
-    for (final challenge in _seasonChallenges) {
-      final progress = _progressByChallenge[challenge.id];
-      if (!challenge.repeatable && _isChallengeComplete(challenge, progress)) {
-        continue;
-      }
-
-      try {
-        final updated = await widget.seasonalChallengeService
-            .incrementDailyProgress(uid: user.uid, challenge: challenge);
-        if (!_disposed && mounted) {
-          setState(() {
-            _progressByChallenge[challenge.id] = updated;
-          });
-        } else {
-          _progressByChallenge[challenge.id] = updated;
-        }
-      } catch (e, st) {
-        if (kDebugMode) {
-          debugPrint('Failed to increment seasonal challenge: $e');
-        }
-        await ErrorLogger.log(e, st);
-      }
-    }
-  }
-
   /// Unlocks achievements based on the user's streak and total read days.
   Future<void> _checkAchievements(
     String uid,
@@ -603,256 +370,6 @@ class _HomePageState extends State<HomePage>
         debugPrint('Failed to unlock achievements: $e');
       }
       ErrorLogger.log(e, st);
-    }
-  }
-
-  SeasonalChallenge? _selectFeaturedChallenge() {
-    if (_seasonChallenges.isEmpty) {
-      return null;
-    }
-    for (final challenge in _seasonChallenges) {
-      if (!_isChallengeComplete(challenge)) {
-        return challenge;
-      }
-    }
-    return _seasonChallenges.first;
-  }
-
-  bool _allChallengesCompleted() {
-    if (_seasonChallenges.isEmpty) {
-      return false;
-    }
-    for (final challenge in _seasonChallenges) {
-      if (!_isChallengeComplete(challenge)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool _isChallengeComplete(
-    SeasonalChallenge challenge, [
-    SeasonalChallengeProgress? progress,
-  ]) {
-    final resolved = progress ?? _progressByChallenge[challenge.id];
-    if (resolved == null) {
-      return false;
-    }
-    if (resolved.completedAt != null) {
-      return true;
-    }
-    if (challenge.goal <= 0) {
-      return false;
-    }
-    return resolved.totalProgress >= challenge.goal;
-  }
-
-  Widget _buildSeasonalSummary() {
-    final theme = Theme.of(context);
-    final season = _activeSeason;
-    final titleStyle =
-        theme.textTheme.titleMedium?.merge(AppTextStyles.subtitle) ??
-            AppTextStyles.subtitle;
-    final bodyStyle = theme.textTheme.bodyMedium?.merge(AppTextStyles.body) ??
-        AppTextStyles.body;
-    final subtleStyle = theme.textTheme.bodySmall?.merge(AppTextStyles.body) ??
-        AppTextStyles.body;
-
-    Widget buildCard(List<Widget> children) {
-      return CommonStyles.buildCard(
-        margin: EdgeInsets.zero,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: children,
-        ),
-      );
-    }
-
-    if (_seasonLoading) {
-      return buildCard([
-        Text('Seasonal challenges', style: titleStyle),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Loading latest seasonal challenges...',
-                style: bodyStyle,
-              ),
-            ),
-          ],
-        ),
-      ]);
-    }
-
-    if (season == null) {
-      return buildCard([
-        Text('Seasonal challenges', style: titleStyle),
-        const SizedBox(height: 8),
-        Text(
-          'No active seasonal challenge is available right now. Check back soon!',
-          style: bodyStyle,
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: _openSeasonalChallengesPage,
-            child: const Text('View challenges'),
-          ),
-        ),
-      ]);
-    }
-
-    if (_seasonChallenges.isEmpty) {
-      return buildCard([
-        Text(
-          season.title.isEmpty ? 'Seasonal challenges' : season.title,
-          style: titleStyle,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'New challenges will arrive shortly.',
-          style: bodyStyle,
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: _openSeasonalChallengesPage,
-            child: const Text('View season'),
-          ),
-        ),
-      ]);
-    }
-
-    if (_allChallengesCompleted()) {
-      return buildCard([
-        Text(
-          season.title.isEmpty ? 'Seasonal challenges' : season.title,
-          style: titleStyle,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'You have completed every challenge this season. Celebrate your progress!',
-          style: bodyStyle,
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: _openSeasonalChallengesPage,
-            child: const Text('View rewards'),
-          ),
-        ),
-      ]);
-    }
-
-    final featured = _selectFeaturedChallenge();
-    if (featured == null) {
-      return buildCard([
-        Text(
-          season.title.isEmpty ? 'Seasonal challenges' : season.title,
-          style: titleStyle,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "Explore this season's challenges.",
-          style: bodyStyle,
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: _openSeasonalChallengesPage,
-            child: const Text('View challenges'),
-          ),
-        ),
-      ]);
-    }
-
-    final progress = _progressByChallenge[featured.id];
-    final total = progress?.totalProgress ?? 0;
-    final goal = featured.goal <= 0 ? 0 : featured.goal;
-    final materialLocalizations = MaterialLocalizations.of(context);
-    final completion = goal <= 0
-        ? (progress == null ? 0.0 : 1.0)
-        : (total / goal).clamp(0.0, 1.0);
-    final progressLabel = goal <= 0
-        ? '${materialLocalizations.formatDecimal(total)} ${featured.metric}'
-            .trim()
-        : '${materialLocalizations.formatDecimal(math.min(total, goal))} / '
-                '${materialLocalizations.formatDecimal(goal)} ${featured.metric}'
-            .trim();
-    final isComplete = _isChallengeComplete(featured, progress);
-    final isClaimed = progress?.rewardClaimedAt != null;
-    String message;
-    if (isClaimed) {
-      message = 'Reward claimed! Explore the details on the seasonal page.';
-    } else if (isComplete) {
-      message = 'You have completed this challenge. Claim your reward!';
-    } else if (featured.description.isNotEmpty) {
-      message = featured.description;
-    } else {
-      message = 'Keep going to finish this challenge.';
-    }
-
-    final buttonLabel =
-        isComplete && !isClaimed ? 'Claim reward' : 'View challenges';
-
-    return buildCard([
-      Text(
-        season.title.isEmpty ? 'Seasonal challenges' : season.title,
-        style: titleStyle,
-      ),
-      const SizedBox(height: 4),
-      Text(
-        featured.title,
-        style: bodyStyle.copyWith(fontWeight: FontWeight.w600),
-      ),
-      const SizedBox(height: 12),
-      LinearProgressIndicator(
-        value: goal <= 0 ? null : completion,
-        minHeight: 6,
-      ),
-      const SizedBox(height: 8),
-      Text(progressLabel, style: subtleStyle),
-      const SizedBox(height: 8),
-      Text(message, style: subtleStyle),
-      const SizedBox(height: 12),
-      Align(
-        alignment: Alignment.centerRight,
-        child: TextButton(
-          onPressed: _openSeasonalChallengesPage,
-          child: Text(buttonLabel),
-        ),
-      ),
-    ]);
-  }
-
-  Future<void> _openSeasonalChallengesPage() async {
-    if (!mounted) {
-      return;
-    }
-    try {
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (context) => SeasonalChallengesPage(
-            service: widget.seasonalChallengeService,
-          ),
-        ),
-      );
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to open seasonal challenges: $e');
-      }
-      await ErrorLogger.log(e, st);
     }
   }
 
@@ -975,7 +492,6 @@ class _HomePageState extends State<HomePage>
             await firebaseUser.reload();
           }
           await _updateSummary();
-          await _initializeSeasonalChallenges();
           await _loadReadStatus();
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1006,8 +522,6 @@ class _HomePageState extends State<HomePage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildSeasonalSummary(),
-              const SizedBox(height: 24),
               ReadStatusSection(
                 toggleLoading: _toggleLoading,
                 readToday: _readToday,
@@ -1024,18 +538,6 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _disposed = true;
-    final challengeSubscription = _challengeSubscription;
-    _challengeSubscription = null;
-    if (challengeSubscription != null) {
-      unawaited(challengeSubscription.cancel());
-    }
-    if (_progressSubscriptions.isNotEmpty) {
-      for (final subscription in _progressSubscriptions.values) {
-        unawaited(subscription.cancel());
-      }
-      _progressSubscriptions.clear();
-    }
-    _progressByChallenge.clear();
     super.dispose();
   }
 
