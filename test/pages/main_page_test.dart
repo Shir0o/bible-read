@@ -227,8 +227,8 @@ void main() {
     );
     expect(responsive.contentIndex, 0);
     final labels = responsive.destinations.map((d) => d.label).toList();
-    expect(labels.length, 3);
-    expect(labels, contains('Seasonal'));
+    expect(labels, ['Home', 'Feed']);
+    expect(responsive.selectedIndex, 0);
 
     await tester.tap(find.byIcon(Icons.feed));
     await tester.pump();
@@ -238,6 +238,17 @@ void main() {
       find.byType(ResponsiveScaffold),
     );
     expect(responsive.contentIndex, 1);
+    expect(responsive.selectedIndex, 1);
+
+    // Return home before opening drawer destinations
+    await tester.tap(find.byIcon(Icons.home));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
+    expect(responsive.contentIndex, 0);
+    expect(responsive.selectedIndex, 0);
 
     // Seasonal challenges via drawer menu entry
     responsive.scaffoldKey!.currentState!.openDrawer();
@@ -253,25 +264,7 @@ void main() {
       find.byType(ResponsiveScaffold),
     );
     expect(responsive.contentIndex, 2);
-
-    // Navigate back home before testing the seasonal tab
-    await tester.tap(find.byIcon(Icons.home));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    responsive = tester.widget<ResponsiveScaffold>(
-      find.byType(ResponsiveScaffold),
-    );
-    expect(responsive.contentIndex, 0);
-
-    // Seasonal challenges via bottom navigation tab
-    await tester.tap(find.byIcon(Icons.flag));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.byType(SeasonalChallengesPage), findsOneWidget);
-    responsive = tester.widget<ResponsiveScaffold>(
-      find.byType(ResponsiveScaffold),
-    );
-    expect(responsive.contentIndex, 2);
+    expect(responsive.selectedIndex, 0);
 
     // Friends navigation via drawer
     responsive.scaffoldKey!.currentState!.openDrawer();
@@ -923,7 +916,7 @@ void main() {
     final responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
-    expect(responsive.selectedIndex, 2);
+    expect(responsive.selectedIndex, 0);
     expect(responsive.contentIndex, 5);
   });
 }

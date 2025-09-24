@@ -100,8 +100,13 @@ class _MainPageState extends State<MainPage> {
   static const int _readLogIndex = 1;
   static const int _leaderboardIndex = 3;
   static const int _profileIndex = 9;
+  static const List<int> _bottomNavIndices = <int>[
+    _homeIndex,
+    _readLogIndex,
+  ];
 
   int _selectedIndex = _homeIndex;
+  int _currentBottomNavIndex = _homeIndex;
   final List<int> _navHistory = [_homeIndex];
 
   VibrationService get vibrationService => widget.vibrationService;
@@ -298,12 +303,7 @@ class _MainPageState extends State<MainPage> {
     if (!signedIn && index != profileIndex) {
       return;
     }
-    setState(() {
-      _selectedIndex = index;
-      if (_navHistory.last != index) {
-        _navHistory.add(index);
-      }
-    });
+    _setSelectedIndex(index);
     if (index == _readLogIndex) {
       _readLogKey.currentState?.refresh();
     } else if (index == _leaderboardIndex) {
@@ -319,12 +319,7 @@ class _MainPageState extends State<MainPage> {
       return;
     }
     unawaited(vibrationService.lightImpact());
-    setState(() {
-      _selectedIndex = index;
-      if (_navHistory.last != index) {
-        _navHistory.add(index);
-      }
-    });
+    _setSelectedIndex(index);
     if (index == _readLogIndex) {
       _readLogKey.currentState?.refresh();
     } else if (index == _leaderboardIndex) {
@@ -332,11 +327,26 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  void _setSelectedIndex(int index) {
+    setState(() {
+      _selectedIndex = index;
+      if (_navHistory.last != index) {
+        _navHistory.add(index);
+      }
+      if (_bottomNavIndices.contains(index)) {
+        _currentBottomNavIndex = index;
+      }
+    });
+  }
+
   Future<bool> _onWillPop() async {
     if (_navHistory.length > 1) {
       setState(() {
         _navHistory.removeLast();
         _selectedIndex = _navHistory.last;
+        if (_bottomNavIndices.contains(_selectedIndex)) {
+          _currentBottomNavIndex = _selectedIndex;
+        }
       });
       return false;
     }
@@ -357,12 +367,13 @@ class _MainPageState extends State<MainPage> {
         ? const [
             NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
             NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
-            NavigationDestination(icon: Icon(Icons.flag), label: 'Seasonal'),
           ]
         : const <NavigationDestination>[];
-    final int navIndex = destinations.isEmpty
-        ? 0
-        : _selectedIndex.clamp(0, destinations.length - 1);
+    int navIndex = 0;
+    if (destinations.isNotEmpty) {
+      final int index = _bottomNavIndices.indexOf(_currentBottomNavIndex);
+      navIndex = index >= 0 && index < destinations.length ? index : 0;
+    }
 
     // ignore: deprecated_member_use
     return WillPopScope(
