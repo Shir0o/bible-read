@@ -632,8 +632,9 @@ class GroupService {
         }
 
         try {
-          final progress =
-              await _buildMemberDailyCompletion(members, logs, includeUid);
+          final progress = await _buildMemberDailyCompletion(
+              members, logs, includeUid,
+              groupId: groupId, date: targetDate);
           controller.add(progress);
         } catch (e, st) {
           await ErrorLogger.log(e, st);
@@ -673,8 +674,10 @@ class GroupService {
   Future<List<GroupMemberProgressData>> _buildMemberDailyCompletion(
     QuerySnapshot<Map<String, dynamic>> membersSnap,
     QuerySnapshot<Map<String, dynamic>> logsSnap,
-    String? includeUid,
-  ) async {
+    String? includeUid, {
+    required String groupId,
+    required DateTime date,
+  }) async {
     final order = <String>[];
     final providedNames = <String, String>{};
     final missingUids = <String>[];
@@ -703,14 +706,51 @@ class GroupService {
     }
 
     final resolvedNames = await _fetchUserNames(missingUids);
-    final completedUids = logsSnap.docs.map((doc) => doc.id).toSet();
+
+    // Determine total schedule items for the date.
+    final utcDate = DateTime.utc(date.year, date.month, date.day);
+    final schedSnap = await firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.schedule)
+        .where('date', isEqualTo: Timestamp.fromDate(utcDate))
+        .get();
+    final totalItems = schedSnap.docs.length;
+    if (totalItems == 0) {
+      return [
+        for (final uid in order)
+          GroupMemberProgressData(
+            uid: uid,
+            name: providedNames[uid] ?? resolvedNames[uid] ?? uid,
+            completion: 0.0,
+          )
+      ];
+    }
+
+    // For each user, count completed items under read_logs/{dateId}/groups/{groupId}/entries/{uid}/items.
+    final dateId = _dateId(date);
+    final futures = <Future<int>>[];
+    for (final uid in order) {
+      futures.add(firestore
+          .collection('read_logs')
+          .doc(dateId)
+          .collection('groups')
+          .doc(groupId)
+          .collection('entries')
+          .doc(uid)
+          .collection('items')
+          .get()
+          .then((snap) => snap.docs.length)
+          .catchError((_) => 0));
+    }
+    final counts = await Future.wait(futures);
 
     return [
-      for (final uid in order)
+      for (var i = 0; i < order.length; i++)
         GroupMemberProgressData(
-          uid: uid,
-          name: providedNames[uid] ?? resolvedNames[uid] ?? uid,
-          completion: completedUids.contains(uid) ? 1.0 : 0.0,
+          uid: order[i],
+          name: providedNames[order[i]] ?? resolvedNames[order[i]] ?? order[i],
+          completion: (counts[i] / totalItems).clamp(0.0, 1.0),
         )
     ];
   }

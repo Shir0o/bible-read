@@ -19,6 +19,9 @@ class ScheduleItemTile extends StatelessWidget {
   /// Toggle handler to mark/unmark as read for the current user.
   final ValueChanged<bool>? onToggleRead;
 
+  /// Callback when the tile is tapped.
+  final VoidCallback? onTap;
+
   /// Creates a [ScheduleItemTile].
   const ScheduleItemTile({
     super.key,
@@ -27,6 +30,7 @@ class ScheduleItemTile extends StatelessWidget {
     this.onDelete,
     this.currentUserRead,
     this.onToggleRead,
+    this.onTap,
   });
 
   @override
@@ -57,6 +61,7 @@ class ScheduleItemTile extends StatelessWidget {
     return ListTile(
       title: Text(dateString),
       subtitle: Text(schedule.chapters.join(', ')),
+      onTap: onTap,
       trailing: actions.isEmpty
           ? null
           : Row(mainAxisSize: MainAxisSize.min, children: actions),
