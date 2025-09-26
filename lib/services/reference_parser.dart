@@ -442,3 +442,10 @@ class ReferenceParser {
         .join(' ');
   }
 }
+
+class _Ref {
+  final String book;
+  final int index;
+  final int chapter;
+  const _Ref(this.book, this.index, this.chapter);
+}
