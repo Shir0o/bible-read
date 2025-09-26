@@ -96,7 +96,7 @@ void main() {
     expect(find.text('0 members'), findsOneWidget);
   });
 
-  testWidgets('shows joined and pending indicators', (tester) async {
+  testWidgets('shows pending indicator (no joined checkmark)', (tester) async {
     await firestore.collection('groups').doc('g1').set({
       'name': 'Study',
       'ownerUid': 'u1',
@@ -129,7 +129,7 @@ void main() {
     final joinedTile = tester.widget<ListTile>(
       find.widgetWithText(ListTile, 'Study'),
     );
-    expect((joinedTile.trailing as Icon).icon, Icons.check);
+    expect(joinedTile.trailing, isNull);
 
     final pendingTile = tester.widget<ListTile>(
       find.widgetWithText(ListTile, 'Other'),

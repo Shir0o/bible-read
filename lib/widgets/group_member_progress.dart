@@ -8,10 +8,14 @@ class GroupMemberProgress extends StatelessWidget {
   /// Completion percentage expressed as a value between 0 and 1.
   final double completion;
 
+  /// Optional trailing widget to display instead of default percentage text.
+  final Widget? trailing;
+
   const GroupMemberProgress({
     super.key,
     required this.name,
     required this.completion,
+    this.trailing,
   });
 
   @override
@@ -26,7 +30,7 @@ class GroupMemberProgress extends StatelessWidget {
         padding: const EdgeInsets.only(top: 4),
         child: LinearProgressIndicator(value: clamped),
       ),
-      trailing: Text('$percent%'),
+      trailing: trailing ?? Text('$percent%'),
     );
   }
 }

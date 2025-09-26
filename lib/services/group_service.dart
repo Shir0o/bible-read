@@ -62,6 +62,34 @@ class GroupService {
         'role': 'owner',
         'joinedAt': FieldValue.serverTimestamp(),
       });
+      // Best-effort: populate owner's display name on member record.
+      try {
+        final userSnap =
+            await firestore.collection('users').doc(ownerUid).get();
+        final data = userSnap.data();
+        if (data != null) {
+          final n = (data['name'] as String?)?.trim();
+          final dn = (data['displayName'] as String?)?.trim();
+          final em = (data['email'] as String?)?.trim();
+          String? chosen = n?.isNotEmpty == true
+              ? n
+              : dn?.isNotEmpty == true
+                  ? dn
+                  : (em?.isNotEmpty == true
+                      ? (em!.contains('@')
+                          ? em.substring(0, em.indexOf('@'))
+                          : em)
+                      : null);
+          if (chosen != null && chosen.isNotEmpty) {
+            await doc
+                .collection(GroupCollections.members)
+                .doc(ownerUid)
+                .set({'name': chosen}, SetOptions(merge: true));
+          }
+        }
+      } catch (e, st) {
+        await ErrorLogger.log(e, st);
+      }
       return doc.id;
     } catch (e, st) {
       await ErrorLogger.log(e, st);
@@ -300,6 +328,7 @@ class GroupService {
     required String groupId,
     required GroupSchedule schedule,
   }) async {
+    // First, write the schedule document. If this fails, bubble up the error.
     try {
       final docId = _dateId(schedule.date);
       final utcDate = DateTime.utc(
@@ -313,7 +342,14 @@ class GroupService {
         'date': Timestamp.fromDate(utcDate),
         'chapters': schedule.chapters,
       });
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
 
+    // Best-effort: attempt to notify members. Log failures but do not fail
+    // the schedule update, since notifications can be restricted by rules.
+    try {
       final members = await firestore
           .collection(GroupCollections.groups)
           .doc(groupId)
@@ -322,23 +358,28 @@ class GroupService {
 
       for (final doc in members.docs) {
         final uid = doc.id;
-        final notificationId = firestore
-            .collection(NotificationCollections.users)
-            .doc(uid)
-            .collection(NotificationCollections.notifications)
-            .doc()
-            .id;
-        final notification = AppNotification(
-          id: notificationId,
-          type: NotificationType.groupScheduleUpdate,
-          timestamp: DateTime.now(),
-          read: false,
-        );
-        await notificationService.addNotification(uid, notification);
+        try {
+          final notificationId = firestore
+              .collection(NotificationCollections.users)
+              .doc(uid)
+              .collection(NotificationCollections.notifications)
+              .doc()
+              .id;
+          final notification = AppNotification(
+            id: notificationId,
+            type: NotificationType.groupScheduleUpdate,
+            timestamp: DateTime.now(),
+            read: false,
+          );
+          await notificationService.addNotification(uid, notification);
+        } catch (e, st) {
+          await ErrorLogger.log(e, st);
+          // continue notifying other members
+        }
       }
     } catch (e, st) {
       await ErrorLogger.log(e, st);
-      rethrow;
+      // Do not rethrow: schedule has been updated successfully.
     }
   }
 
@@ -554,6 +595,7 @@ class GroupService {
   Stream<List<GroupMemberProgressData>> memberDailyCompletion(
     String groupId, {
     DateTime? date,
+    String? includeUid,
   }) {
     final targetDate = date ?? DateTime.now();
     final dateId = _dateId(targetDate);
@@ -590,7 +632,8 @@ class GroupService {
         }
 
         try {
-          final progress = await _buildMemberDailyCompletion(members, logs);
+          final progress =
+              await _buildMemberDailyCompletion(members, logs, includeUid);
           controller.add(progress);
         } catch (e, st) {
           await ErrorLogger.log(e, st);
@@ -630,6 +673,7 @@ class GroupService {
   Future<List<GroupMemberProgressData>> _buildMemberDailyCompletion(
     QuerySnapshot<Map<String, dynamic>> membersSnap,
     QuerySnapshot<Map<String, dynamic>> logsSnap,
+    String? includeUid,
   ) async {
     final order = <String>[];
     final providedNames = <String, String>{};
@@ -648,6 +692,12 @@ class GroupService {
       } else {
         missingUids.add(uid);
       }
+    }
+
+    // Ensure current user (admin/owner) appears even if not in members.
+    if (includeUid != null && includeUid.isNotEmpty && !order.contains(includeUid)) {
+      order.add(includeUid);
+      missingUids.add(includeUid);
     }
 
     final resolvedNames = await _fetchUserNames(missingUids);
@@ -687,9 +737,21 @@ class GroupService {
     final results = await Future.wait(futures);
     for (final query in results) {
       for (final user in query.docs) {
-        final userName = user.data()['name'] as String?;
+        final data = user.data();
+        final userName = (data['name'] as String?)?.trim();
+        final displayName = (data['displayName'] as String?)?.trim();
+        final email = (data['email'] as String?)?.trim();
+        String? chosen;
         if (userName != null && userName.isNotEmpty) {
-          names[user.id] = userName;
+          chosen = userName;
+        } else if (displayName != null && displayName.isNotEmpty) {
+          chosen = displayName;
+        } else if (email != null && email.isNotEmpty) {
+          final at = email.indexOf('@');
+          chosen = at > 0 ? email.substring(0, at) : email;
+        }
+        if (chosen != null && chosen.isNotEmpty) {
+          names[user.id] = chosen;
         }
       }
     }
