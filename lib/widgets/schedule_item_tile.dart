@@ -10,25 +10,56 @@ class ScheduleItemTile extends StatelessWidget {
   /// Callback when the edit button is tapped.
   final VoidCallback? onEdit;
 
+  /// Callback when the delete button is tapped.
+  final VoidCallback? onDelete;
+
+  /// Whether the current user has marked this date as read.
+  final bool? currentUserRead;
+
+  /// Toggle handler to mark/unmark as read for the current user.
+  final ValueChanged<bool>? onToggleRead;
+
   /// Creates a [ScheduleItemTile].
   const ScheduleItemTile({
     super.key,
     required this.schedule,
     this.onEdit,
+    this.onDelete,
+    this.currentUserRead,
+    this.onToggleRead,
   });
 
   @override
   Widget build(BuildContext context) {
     final dateString = schedule.date.toIso8601String().split('T').first;
+    final actions = <Widget>[];
+    if (onEdit != null) {
+      actions.add(IconButton(
+        icon: const Icon(Icons.edit),
+        tooltip: 'Edit',
+        onPressed: onEdit,
+      ));
+    }
+    if (onDelete != null) {
+      actions.add(IconButton(
+        icon: const Icon(Icons.delete_outline),
+        tooltip: 'Delete',
+        onPressed: onDelete,
+      ));
+    }
+    if (onToggleRead != null && currentUserRead != null) {
+      actions.add(Checkbox(
+        value: currentUserRead,
+        onChanged: (v) => onToggleRead?.call(v ?? false),
+      ));
+    }
+
     return ListTile(
       title: Text(dateString),
       subtitle: Text(schedule.chapters.join(', ')),
-      trailing: onEdit == null
+      trailing: actions.isEmpty
           ? null
-          : IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: onEdit,
-            ),
+          : Row(mainAxisSize: MainAxisSize.min, children: actions),
     );
   }
 }

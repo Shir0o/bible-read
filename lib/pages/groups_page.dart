@@ -157,11 +157,9 @@ class _GroupsPageState extends State<GroupsPage> {
                                 subtitle: Text(
                                   '${g.memberCount} member${g.memberCount == 1 ? '' : 's'}',
                                 ),
-                                trailing: joined.contains(g.id)
-                                    ? const Icon(Icons.check)
-                                    : pending.contains(g.id)
-                                        ? const Text('Pending')
-                                        : null,
+                                trailing: pending.contains(g.id)
+                                    ? const Text('Pending')
+                                    : null,
                                 onTap: () {
                                   unawaited(
                                       widget.vibrationService.lightImpact());
