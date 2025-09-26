@@ -52,8 +52,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   List<GroupSchedule>? _scheduleOverride;
   List<GroupSchedule>? _latestSchedule;
   late final TextEditingController _todayController;
+  late final TextEditingController _nameController;
   bool _isSavingToday = false;
   bool _editMode = false;
+  bool _isSavingName = false;
+  late String _groupName;
 
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -62,20 +65,21 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   void initState() {
     super.initState();
     _todayController = TextEditingController();
+    _groupName = widget.group.name;
+    _nameController = TextEditingController(text: _groupName);
   }
 
   @override
   void dispose() {
     _todayController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
   Future<void> _saveToday() async {
     if (_isSavingToday) return;
     final text = _todayController.text.trim();
-    final chapters = ReferenceParser.normalizeList(
-      text.split(',').map((c) => c.trim()).where((c) => c.isNotEmpty),
-    );
+    final chapters = ReferenceParser.parseChaptersList(text);
     if (chapters.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -171,6 +175,30 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     }
   }
 
+  Future<void> _saveGroupName() async {
+    final newName = _nameController.text.trim();
+    if (newName.isEmpty || newName == _groupName || _isSavingName) return;
+    setState(() => _isSavingName = true);
+    try {
+      await widget.groupService
+          .updateGroupName(groupId: widget.group.id, name: newName);
+      if (!mounted) return;
+      setState(() {
+        _groupName = newName;
+        _isSavingName = false;
+      });
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Group name updated')));
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('Failed to update group name: $e');
+      ErrorLogger.log(e, st);
+      if (!mounted) return;
+      setState(() => _isSavingName = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Failed to update name')));
+    }
+  }
+
   Future<void> _toggleMyRead(bool read) async {
     final user = widget.auth.currentUser;
     if (user == null) return;
@@ -183,6 +211,48 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           user,
           firestore: widget.groupService.firestore,
           dateProvider: () => now,
+        );
+        await widget.groupService.firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('reading')
+            .doc(dateKey)
+            .set({'read': true}, SetOptions(merge: true));
+      } else {
+        await widget.groupService.firestore
+            .collection('read_logs')
+            .doc(dateKey)
+            .collection('entries')
+            .doc(user.uid)
+            .delete();
+        await widget.groupService.firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('reading')
+            .doc(dateKey)
+            .set({'read': false}, SetOptions(merge: true));
+      }
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('Failed to toggle read: $e');
+      ErrorLogger.log(e, st);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update read status')));
+    }
+  }
+
+  Future<void> _toggleMyReadFor(DateTime date, bool read) async {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+    try {
+      final target = DateTime(date.year, date.month, date.day);
+      final dateKey =
+          '${target.year}-${target.month.toString().padLeft(2, '0')}-${target.day.toString().padLeft(2, '0')}';
+      if (read) {
+        await ReadLogPage.writeReadLogEntry(
+          user,
+          firestore: widget.groupService.firestore,
+          dateProvider: () => target,
         );
         await widget.groupService.firestore
             .collection('users')
@@ -317,7 +387,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
         return Scaffold(
           appBar: CommonStyles.buildAppBar(
-            widget.group.name,
+            _groupName,
             actions: hasAdminPrivileges
                 ? [
                     IconButton(
@@ -347,6 +417,41 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             padding: const EdgeInsets.all(16),
             child: ListView(
               children: [
+                if (_editMode && hasAdminPrivileges) ...[
+                  const SectionHeader('Group'),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          key: const Key('group-name-field'),
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Group name',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 56,
+                        child: ElevatedButton(
+                          key: const Key('save-group-name-button'),
+                          onPressed: _isSavingName ? null : _saveGroupName,
+                          child: _isSavingName
+                              ? const SizedBox(
+                                  height: 16,
+                                  width: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Save'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 if (!isOwner && user != null && !isMember)
                   StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                     stream: widget.groupService.firestore
@@ -520,10 +625,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ),
                 ],
                 GroupMembersSection(
-                  membersStream: widget.groupService
-                      .memberDailyCompletion(widget.group.id, includeUid: userUid),
-                  currentUid: userUid,
-                  onToggleCurrentUserRead: (read) => _toggleMyRead(read),
+                  membersStream: widget.groupService.memberDailyCompletion(
+                      widget.group.id,
+                      includeUid: userUid),
                 ),
                 const SectionHeader('Schedule'),
                 if (canEditSchedule) ...[
@@ -580,60 +684,44 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       return const Text('No schedule');
                     }
                     final user = widget.auth.currentUser;
-                    if (user == null) {
-                      return Column(
-                        children: schedule
-                            .map(
-                              (s) => ScheduleItemTile(
-                                schedule: s,
-                                onEdit: canEditSchedule
-                                    ? () => _editSchedule(s)
-                                    : null,
-                                onDelete: canEditSchedule
-                                    ? () => _deleteSchedule(s)
-                                    : null,
-                              ),
-                            )
-                            .toList(),
-                      );
-                    }
-
-                    final now = DateTime.now();
-                    final today = DateTime(now.year, now.month, now.day);
-                    final dateKey =
-                        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-                    final readDoc = widget.groupService.firestore
-                        .collection('read_logs')
-                        .doc(dateKey)
-                        .collection('entries')
-                        .doc(user.uid)
-                        .snapshots();
-
-                    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                      stream: readDoc,
-                      builder: (context, readSnap) {
-                        final myRead = readSnap.data?.exists ?? false;
-                        return Column(
-                          children: schedule
-                              .map(
-                                (s) {
-                                  final isToday = _dateKey(s.date) == _dateKey(today);
-                                  return ScheduleItemTile(
-                                    schedule: s,
-                                    onEdit: canEditSchedule
-                                        ? () => _editSchedule(s)
-                                        : null,
-                                    onDelete: canEditSchedule
-                                        ? () => _deleteSchedule(s)
-                                        : null,
-                                    currentUserRead: isToday ? myRead : null,
-                                    onToggleRead: isToday ? (v) => _toggleMyRead(v) : null,
-                                  );
-                                },
-                              )
-                              .toList(),
+                    return Column(
+                      children: schedule.map((s) {
+                        final baseTile = ScheduleItemTile(
+                          schedule: s,
+                          onEdit:
+                              canEditSchedule ? () => _editSchedule(s) : null,
+                          onDelete:
+                              canEditSchedule ? () => _deleteSchedule(s) : null,
                         );
-                      },
+                        if (user == null || canEditSchedule) {
+                          return baseTile;
+                        }
+                        final dateKey = _dateKey(s.date);
+                        final readStream = widget.groupService.firestore
+                            .collection('read_logs')
+                            .doc(dateKey)
+                            .collection('entries')
+                            .doc(user.uid)
+                            .snapshots();
+                        return StreamBuilder<
+                            DocumentSnapshot<Map<String, dynamic>>>(
+                          stream: readStream,
+                          builder: (context, snap) {
+                            final myRead = snap.data?.exists ?? false;
+                            return ScheduleItemTile(
+                              schedule: s,
+                              onEdit: canEditSchedule
+                                  ? () => _editSchedule(s)
+                                  : null,
+                              onDelete: canEditSchedule
+                                  ? () => _deleteSchedule(s)
+                                  : null,
+                              currentUserRead: myRead,
+                              onToggleRead: (v) => _toggleMyReadFor(s.date, v),
+                            );
+                          },
+                        );
+                      }).toList(),
                     );
                   },
                 ),
@@ -693,12 +781,7 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
   }
 
   void _save() {
-    final chapters = ReferenceParser.normalizeList(
-      _controller.text
-          .split(',')
-          .map((c) => c.trim())
-          .where((c) => c.isNotEmpty),
-    );
+    final chapters = ReferenceParser.parseChaptersList(_controller.text);
     Navigator.of(context)
         .pop(GroupSchedule(date: _selected, chapters: chapters));
   }
