@@ -104,6 +104,145 @@ class ReferenceParser {
     'John',
   };
 
+  /// Canonical order and chapter counts for expansion across ranges.
+  static const List<String> _bookOrder = [
+    'Genesis',
+    'Exodus',
+    'Leviticus',
+    'Numbers',
+    'Deuteronomy',
+    'Joshua',
+    'Judges',
+    'Ruth',
+    '1 Samuel',
+    '2 Samuel',
+    '1 Kings',
+    '2 Kings',
+    '1 Chronicles',
+    '2 Chronicles',
+    'Ezra',
+    'Nehemiah',
+    'Esther',
+    'Job',
+    'Psalm',
+    'Proverbs',
+    'Ecclesiastes',
+    'Song of Songs',
+    'Isaiah',
+    'Jeremiah',
+    'Lamentations',
+    'Ezekiel',
+    'Daniel',
+    'Hosea',
+    'Joel',
+    'Amos',
+    'Obadiah',
+    'Jonah',
+    'Micah',
+    'Nahum',
+    'Habakkuk',
+    'Zephaniah',
+    'Haggai',
+    'Zechariah',
+    'Malachi',
+    'Matthew',
+    'Mark',
+    'Luke',
+    'John',
+    'Acts',
+    'Romans',
+    '1 Corinthians',
+    '2 Corinthians',
+    'Galatians',
+    'Ephesians',
+    'Philippians',
+    'Colossians',
+    '1 Thessalonians',
+    '2 Thessalonians',
+    '1 Timothy',
+    '2 Timothy',
+    'Titus',
+    'Philemon',
+    'Hebrews',
+    'James',
+    '1 Peter',
+    '2 Peter',
+    '1 John',
+    '2 John',
+    '3 John',
+    'Jude',
+    'Revelation',
+  ];
+
+  static const Map<String, int> _chapters = {
+    'Genesis': 50,
+    'Exodus': 40,
+    'Leviticus': 27,
+    'Numbers': 36,
+    'Deuteronomy': 34,
+    'Joshua': 24,
+    'Judges': 21,
+    'Ruth': 4,
+    '1 Samuel': 31,
+    '2 Samuel': 24,
+    '1 Kings': 22,
+    '2 Kings': 25,
+    '1 Chronicles': 29,
+    '2 Chronicles': 36,
+    'Ezra': 10,
+    'Nehemiah': 13,
+    'Esther': 10,
+    'Job': 42,
+    'Psalm': 150,
+    'Proverbs': 31,
+    'Ecclesiastes': 12,
+    'Song of Songs': 8,
+    'Isaiah': 66,
+    'Jeremiah': 52,
+    'Lamentations': 5,
+    'Ezekiel': 48,
+    'Daniel': 12,
+    'Hosea': 14,
+    'Joel': 3,
+    'Amos': 9,
+    'Obadiah': 1,
+    'Jonah': 4,
+    'Micah': 7,
+    'Nahum': 3,
+    'Habakkuk': 3,
+    'Zephaniah': 3,
+    'Haggai': 2,
+    'Zechariah': 14,
+    'Malachi': 4,
+    'Matthew': 28,
+    'Mark': 16,
+    'Luke': 24,
+    'John': 21,
+    'Acts': 28,
+    'Romans': 16,
+    '1 Corinthians': 16,
+    '2 Corinthians': 13,
+    'Galatians': 6,
+    'Ephesians': 6,
+    'Philippians': 4,
+    'Colossians': 4,
+    '1 Thessalonians': 5,
+    '2 Thessalonians': 3,
+    '1 Timothy': 6,
+    '2 Timothy': 4,
+    'Titus': 3,
+    'Philemon': 1,
+    'Hebrews': 13,
+    'James': 5,
+    '1 Peter': 5,
+    '2 Peter': 3,
+    '1 John': 5,
+    '2 John': 1,
+    '3 John': 1,
+    'Jude': 1,
+    'Revelation': 22,
+  };
+
   /// Normalizes a single reference (e.g. "jn 3:16" -> "John 3"). Returns the
   /// trimmed input if parsing fails.
   static String normalizeOne(String input) {
@@ -146,6 +285,127 @@ class ReferenceParser {
       if (norm.trim().isNotEmpty) out.add(norm);
     }
     return out;
+  }
+
+  /// Parses a free-form input (commas/semicolons allowed, ranges with '-', '–', '—', 'to')
+  /// and returns an expanded list of canonical chapter references.
+  static List<String> parseChaptersList(String input) {
+    final parts = input
+        .split(RegExp(r'[;,]'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final out = <String>[];
+    for (final part in parts) {
+      if (RegExp(r'[-–—]|\bto\b', caseSensitive: false).hasMatch(part)) {
+        final rangeSplit =
+            part.split(RegExp(r'[-–—]|\bto\b', caseSensitive: false));
+        if (rangeSplit.length >= 2) {
+          final start = _parseEndpoint(rangeSplit.first.trim());
+          final end = _parseEndpoint(rangeSplit.last.trim());
+          if (start != null && end != null) {
+            out.addAll(_expandRange(start, end));
+            continue;
+          }
+        }
+      }
+      final single = _parseEndpoint(part);
+      if (single != null) {
+        out.add('${single.book} ${single.chapter}');
+      } else {
+        final fallback = normalizeOne(part);
+        if (fallback.trim().isNotEmpty) out.add(fallback);
+      }
+    }
+    return out;
+  }
+
+  static String? _resolveBookName(String key) {
+    var base = _bookMap[key];
+    if (base != null) return base;
+    final keyStart = _bookMap.keys.firstWhere(
+      (k) => k.startsWith(key),
+      orElse: () => '',
+    );
+    if (keyStart.isNotEmpty) return _bookMap[keyStart];
+    String? best;
+    var bestDist = 3;
+    for (final entry in _bookMap.entries) {
+      final d = _lev(key, entry.key);
+      if (d < bestDist) {
+        bestDist = d;
+        best = entry.value;
+      }
+    }
+    return best;
+  }
+
+  static int _lev(String a, String b) {
+    final m = a.length, n = b.length;
+    if (m == 0) return n;
+    if (n == 0) return m;
+    final dp = List.generate(m + 1, (_) => List<int>.filled(n + 1, 0));
+    for (var i = 0; i <= m; i++) dp[i][0] = i;
+    for (var j = 0; j <= n; j++) dp[0][j] = j;
+    for (var i = 1; i <= m; i++) {
+      for (var j = 1; j <= n; j++) {
+        final cost = a[i - 1] == b[j - 1] ? 0 : 1;
+        final del = dp[i - 1][j] + 1;
+        final ins = dp[i][j - 1] + 1;
+        final sub = dp[i - 1][j - 1] + cost;
+        dp[i][j] =
+            del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
+      }
+    }
+    return dp[m][n];
+  }
+
+  static _Ref? _parseEndpoint(String s) {
+    final re = RegExp(
+        r'^\s*(?:(\d|[Ii]{1,3})\s*)?([A-Za-z][A-Za-z .]*?)(?:\s+(\d+))?\s*$');
+    final m = re.firstMatch(s);
+    if (m == null) return null;
+    final ordStr = m.group(1);
+    final rawBook = (m.group(2) ?? '').trim();
+    final chapStr = (m.group(3) ?? '').trim();
+    final ordinal = _parseOrdinal(ordStr);
+    final bookKey = _canonKey(rawBook);
+    var base = _resolveBookName(bookKey) ?? _titleCase(rawBook);
+    if (base == 'Psalms') base = 'Psalm';
+    final needsOrdinal = ordinal != null && _ordinalBooks.contains(base);
+    final displayBook = needsOrdinal ? '${ordinal!} $base' : base;
+    final chapters = _chapters[displayBook];
+    if (chapters == null) return null;
+    int chapter;
+    if (chapStr.isEmpty) {
+      chapter = 1;
+    } else {
+      chapter = int.tryParse(chapStr) ?? 1;
+    }
+    if (chapter < 1) chapter = 1;
+    if (chapter > chapters) chapter = chapters;
+    final idx = _bookOrder.indexOf(displayBook);
+    if (idx == -1) return null;
+    return _Ref(displayBook, idx, chapter);
+  }
+
+  static List<String> _expandRange(_Ref a, _Ref b) {
+    _Ref start = a, end = b;
+    if (a.index > b.index || (a.index == b.index && a.chapter > b.chapter)) {
+      start = b;
+      end = a;
+    }
+    final result = <String>[];
+    for (var i = start.index; i <= end.index; i++) {
+      final book = _bookOrder[i];
+      final maxCh = _chapters[book] ?? 1;
+      final from = i == start.index ? start.chapter : 1;
+      final to = i == end.index ? end.chapter : maxCh;
+      for (var c = from; c <= to; c++) {
+        result.add('$book $c');
+      }
+    }
+    return result;
   }
 
   static int? _parseOrdinal(String? s) {

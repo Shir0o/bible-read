@@ -695,7 +695,9 @@ class GroupService {
     }
 
     // Ensure current user (admin/owner) appears even if not in members.
-    if (includeUid != null && includeUid.isNotEmpty && !order.contains(includeUid)) {
+    if (includeUid != null &&
+        includeUid.isNotEmpty &&
+        !order.contains(includeUid)) {
       order.add(includeUid);
       missingUids.add(includeUid);
     }
@@ -778,5 +780,21 @@ class GroupService {
         return <GroupSchedule>[];
       }
     });
+  }
+
+  /// Update the group's display name.
+  Future<void> updateGroupName({
+    required String groupId,
+    required String name,
+  }) async {
+    try {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .set({'name': name}, SetOptions(merge: true));
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
   }
 }
