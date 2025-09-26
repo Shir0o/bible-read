@@ -10,9 +10,13 @@ class GroupMembersSection extends StatelessWidget {
   /// Stream of member progress values.
   final Stream<List<GroupMemberProgressData>> membersStream;
 
+  /// Title for the section header.
+  final String title;
+
   const GroupMembersSection({
     super.key,
     required this.membersStream,
+    this.title = 'Members',
   });
 
   @override
@@ -20,7 +24,7 @@ class GroupMembersSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader('Members'),
+        SectionHeader(title),
         StreamBuilder<List<GroupMemberProgressData>>(
           stream: membersStream,
           builder: (context, snapshot) {
