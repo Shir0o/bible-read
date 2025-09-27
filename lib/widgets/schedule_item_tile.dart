@@ -19,6 +19,12 @@ class ScheduleItemTile extends StatelessWidget {
   /// Toggle handler to mark/unmark as read for the current user.
   final ValueChanged<bool>? onToggleRead;
 
+  /// Indices of chapters the current user has checked for this date.
+  final Set<int>? checkedChapters;
+
+  /// Called when a chapter at [index] is toggled.
+  final void Function(int index, bool value)? onToggleChapter;
+
   /// Callback when the tile is tapped.
   final VoidCallback? onTap;
 
@@ -30,6 +36,8 @@ class ScheduleItemTile extends StatelessWidget {
     this.onDelete,
     this.currentUserRead,
     this.onToggleRead,
+    this.checkedChapters,
+    this.onToggleChapter,
     this.onTap,
   });
 
@@ -58,13 +66,39 @@ class ScheduleItemTile extends StatelessWidget {
       ));
     }
 
-    return ListTile(
-      title: Text(dateString),
-      subtitle: Text(schedule.chapters.join(', ')),
-      onTap: onTap,
-      trailing: actions.isEmpty
-          ? null
-          : Row(mainAxisSize: MainAxisSize.min, children: actions),
+    final showPerChapter = checkedChapters != null && onToggleChapter != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          title: Text(dateString),
+          subtitle:
+              showPerChapter ? null : Text(schedule.chapters.join(', ')),
+          onTap: onTap,
+          trailing: actions.isEmpty
+              ? null
+              : Row(mainAxisSize: MainAxisSize.min, children: actions),
+        ),
+        if (showPerChapter)
+          Padding(
+            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (int i = 0; i < schedule.chapters.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: FilterChip(
+                      label: Text(schedule.chapters[i]),
+                      selected: checkedChapters!.contains(i),
+                      onSelected: (v) => onToggleChapter!(i, v),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

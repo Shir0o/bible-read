@@ -196,6 +196,7 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
     final readingCollection = userDocRef.collection('reading');
     final futures = <Future<DocumentSnapshot<Map<String, dynamic>>>>[];
     final dates = <DateTime>[];
+    final keys = <String>[];
     for (DateTime day = start;
         !day.isAfter(end);
         day = day.add(const Duration(days: 1))) {
@@ -203,12 +204,38 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
           '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
       futures.add(readingCollection.doc(key).get());
       dates.add(day);
+      keys.add(key);
     }
     final snaps = await Future.wait(futures);
     final result = <DateTime>{};
     for (int i = 0; i < snaps.length; i++) {
       if (snaps[i].data()?['read'] == true) {
         result.add(dates[i]);
+      }
+    }
+
+    // Fallback: if a date is not present in users/{uid}/reading,
+    // check read_logs/{date}/entries/{uid} to avoid stale history.
+    final uid = userDocRef.id;
+    final fallbacks = <Future<DocumentSnapshot<Map<String, dynamic>>>>[];
+    final fallbackIdx = <int>[];
+    for (int i = 0; i < dates.length; i++) {
+      if (!result.contains(dates[i])) {
+        fallbacks.add(widget.firestore
+            .collection('read_logs')
+            .doc(keys[i])
+            .collection('entries')
+            .doc(uid)
+            .get());
+        fallbackIdx.add(i);
+      }
+    }
+    if (fallbacks.isNotEmpty) {
+      final fbSnaps = await Future.wait(fallbacks);
+      for (int j = 0; j < fbSnaps.length; j++) {
+        if (fbSnaps[j].exists) {
+          result.add(dates[fallbackIdx[j]]);
+        }
       }
     }
     return result;

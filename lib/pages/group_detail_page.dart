@@ -244,7 +244,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     }
   }
 
-  Future<void> _toggleMyReadFor(DateTime date, int itemIndex, bool read) async {
+  Future<void> _toggleMyReadForDate(DateTime date, bool read) async {
     final user = widget.auth.currentUser;
     if (user == null) return;
     try {
@@ -252,65 +252,87 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       final dateKey =
           '${target.year}-${target.month.toString().padLeft(2, '0')}-${target.day.toString().padLeft(2, '0')}';
       final db = widget.groupService.firestore;
-      final groupId = widget.group.id;
-      final itemDoc = db
-          .collection('read_logs')
-          .doc(dateKey)
-          .collection('groups')
-          .doc(groupId)
-          .collection('entries')
-          .doc(user.uid)
-          .collection('items')
-          .doc(itemIndex.toString());
-      if (read) {
-        await itemDoc.set({'done': true, 'ts': Timestamp.now()});
-      } else {
-        await itemDoc.delete();
-      }
-
-      final utcDate = DateTime.utc(target.year, target.month, target.day);
-      final schedSnap = await db
+      final progressDoc = db
           .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection(GroupCollections.schedule)
-          .where('date', isEqualTo: Timestamp.fromDate(utcDate))
-          .get();
-      final totalItems = schedSnap.docs.length;
-
-      final completedSnap = await db
-          .collection('read_logs')
+          .doc(widget.group.id)
+          .collection('progress')
           .doc(dateKey)
-          .collection('groups')
-          .doc(groupId)
           .collection('entries')
-          .doc(user.uid)
-          .collection('items')
-          .get();
-      final completed = completedSnap.docs.length;
-      final allDone = totalItems > 0 && completed >= totalItems;
-
-      if (allDone) {
-        await ReadLogPage.writeReadLogEntry(
-          user,
-          firestore: db,
-          dateProvider: () => target,
-        );
+          .doc(user.uid);
+      if (read) {
+        await progressDoc.set({'done': true, 'ts': Timestamp.now()});
       } else {
-        await db
-            .collection('read_logs')
-            .doc(dateKey)
-            .collection('entries')
-            .doc(user.uid)
-            .delete();
+        await progressDoc.delete();
       }
-      await db
-          .collection('users')
-          .doc(user.uid)
-          .collection('reading')
-          .doc(dateKey)
-          .set({'read': allDone}, SetOptions(merge: true));
     } catch (e, st) {
       if (kDebugMode) debugPrint('Failed to toggle read: $e');
+      ErrorLogger.log(e, st);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update read status')));
+    }
+  }
+
+  Future<void> _toggleMyChapterForDate(
+      DateTime date, int chapterIndex, bool read) async {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+    try {
+      final target = DateTime(date.year, date.month, date.day);
+      final dateKey =
+          '${target.year}-${target.month.toString().padLeft(2, '0')}-${target.day.toString().padLeft(2, '0')}';
+      final db = widget.groupService.firestore;
+      final base = db
+          .collection(GroupCollections.groups)
+          .doc(widget.group.id)
+          .collection('progress')
+          .doc(dateKey)
+          .collection('entries')
+          .doc(user.uid);
+      final itemDoc = base.collection('items').doc(chapterIndex.toString());
+      if (read) {
+        await Future.wait([
+          base.set({
+            'done': true,
+            'ts': Timestamp.now(),
+            'uid': user.uid,
+            'groupId': widget.group.id,
+            'dateId': dateKey,
+          }, SetOptions(merge: true)),
+          itemDoc.set({'done': true, 'ts': Timestamp.now()}),
+        ]);
+        final itemsSnap = await base.collection('items').get();
+        await base.set({'count': itemsSnap.size}, SetOptions(merge: true));
+        // Update overall summary completed count for this member.
+        final summaryDoc = db
+            .collection(GroupCollections.groups)
+            .doc(widget.group.id)
+            .collection('progressSummary')
+            .doc('data')
+            .collection('entries')
+            .doc(user.uid);
+        await summaryDoc.set({'completed': FieldValue.increment(1)}, SetOptions(merge: true));
+      } else {
+        await itemDoc.delete();
+        // If no items remain, remove the entry doc to avoid stale 100% fallbacks.
+        final itemsSnap = await base.collection('items').get();
+        if (itemsSnap.size == 0) {
+          await base.delete();
+        } else {
+          await base.set({'count': itemsSnap.size}, SetOptions(merge: true));
+        }
+        // Decrement overall summary counter safely.
+        final summaryDoc = db
+            .collection(GroupCollections.groups)
+            .doc(widget.group.id)
+            .collection('progressSummary')
+            .doc('data')
+            .collection('entries')
+            .doc(user.uid);
+        await summaryDoc.set({'completed': FieldValue.increment(-1)}, SetOptions(merge: true));
+      }
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('Failed to toggle chapter: $e');
       ErrorLogger.log(e, st);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -660,12 +682,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ),
                 ],
                 GroupMembersSection(
-                  title:
-                      'Members (for ${_progressDate.toIso8601String().split('T').first})',
-                  membersStream: widget.groupService.memberDailyCompletion(
+                  title: 'Members',
+                  membersStream: widget.groupService.memberOverallCompletion(
                     widget.group.id,
                     includeUid: userUid,
-                    date: _progressDate,
                   ),
                 ),
                 const SectionHeader('Schedule'),
@@ -746,21 +766,24 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           return baseTile;
                         }
                         final dateKey = _dateKey(s.date);
-                        final readStream = widget.groupService.firestore
-                            .collection('read_logs')
-                            .doc(dateKey)
-                            .collection('groups')
+                        final itemsStream = widget.groupService.firestore
+                            .collection(GroupCollections.groups)
                             .doc(widget.group.id)
+                            .collection('progress')
+                            .doc(dateKey)
                             .collection('entries')
                             .doc(user.uid)
                             .collection('items')
-                            .doc(index.toString())
                             .snapshots();
                         return StreamBuilder<
-                            DocumentSnapshot<Map<String, dynamic>>>(
-                          stream: readStream,
+                            QuerySnapshot<Map<String, dynamic>>>(
+                          stream: itemsStream,
                           builder: (context, snap) {
-                            final myRead = snap.data?.exists ?? false;
+                            final checked = <int>{};
+                            for (final d in snap.data?.docs ?? const []) {
+                              final idx = int.tryParse(d.id);
+                              if (idx != null) checked.add(idx);
+                            }
                             return ScheduleItemTile(
                               schedule: s,
                               onEdit: canEditSchedule
@@ -769,13 +792,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                               onDelete: canEditSchedule
                                   ? () => _deleteSchedule(s)
                                   : null,
-                              currentUserRead: myRead,
-                              onToggleRead: (v) {
+                              checkedChapters: checked,
+                              onToggleChapter: (chapterIndex, v) {
                                 setState(() {
                                   _progressDate = DateTime(
                                       s.date.year, s.date.month, s.date.day);
                                 });
-                                _toggleMyReadFor(s.date, index, v);
+                                _toggleMyChapterForDate(
+                                    s.date, chapterIndex, v);
                               },
                               onTap: !canEditSchedule
                                   ? () {

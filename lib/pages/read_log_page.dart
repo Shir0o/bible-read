@@ -67,6 +67,18 @@ class ReadLogPage extends StatefulWidget {
       'email': user.email?.toLowerCase() ?? '',
       'timestamp': Timestamp.now(),
     });
+
+    // Keep the per-user reading collection in sync for streak calculations.
+    try {
+      await db
+          .collection('users')
+          .doc(user.uid)
+          .collection('reading')
+          .doc(dateKey)
+          .set({'read': true}, SetOptions(merge: true));
+    } catch (_) {
+      // Best effort: ignore failures here since the log entry itself succeeded.
+    }
     final handler = markFirstReader;
     Map<String, dynamic>? result;
     if (handler != null) {
