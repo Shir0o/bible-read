@@ -151,6 +151,12 @@ service cloud.firestore {
         allow write: if isOwnerOrAdmin();
       }
 
+      // Auto-schedule templates
+      match /scheduleTemplates/{templateId} {
+        allow read: if isMember() || isOwnerOrAdmin();
+        allow write: if isOwnerOrAdmin();
+      }
+
       // Per-group progress: members can mark their own completion for a date.
       match /progress/{dateId} {
         // Allow owner/admin to read progress for management; members can read too.

@@ -196,21 +196,26 @@ class FriendService {
     );
     await batch.commit();
 
-    final notificationId = firestore
-        .collection(NotificationCollections.users)
-        .doc(toUid)
-        .collection(NotificationCollections.notifications)
-        .doc()
-        .id;
+    // Use a deterministic ID to avoid duplicate notifications per sender.
+    final deterministicId = 'friendRequest_${fromUid}';
     final notification = AppNotification(
-      id: notificationId,
+      id: deterministicId,
       type: NotificationType.friendRequest,
       fromUid: fromUid,
       senderUid: fromUid,
+      message: fromName.isNotEmpty
+          ? '$fromName sent you a friend request'
+          : null,
       timestamp: DateTime.now(),
       read: false,
     );
-    await notificationService.addNotification(toUid, notification);
+    // Merge to update timestamp/message and reset read=false while keeping a single doc.
+    await firestore
+        .collection(NotificationCollections.users)
+        .doc(toUid)
+        .collection(NotificationCollections.notifications)
+        .doc(deterministicId)
+        .set(notification.toFirestore(), SetOptions(merge: true));
   }
 
   /// Send a friend request from [fromUid] to the user with [toEmail].

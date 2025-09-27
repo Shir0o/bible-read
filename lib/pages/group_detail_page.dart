@@ -9,6 +9,7 @@ import '../models/group.dart';
 import '../models/group_schedule.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
+import '../models/schedule_template.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/animated_page_route.dart';
 import '../widgets/group_members_section.dart';
@@ -18,6 +19,7 @@ import '../services/vibration_service.dart';
 import '../widgets/section_header.dart';
 import '../services/reference_parser.dart';
 import 'read_log_page.dart';
+import 'group_join_requests_page.dart';
 
 /// Page showing the members and schedule for a group.
 class GroupDetailPage extends StatefulWidget {
@@ -58,6 +60,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   bool _editMode = false;
   bool _isSavingName = false;
   late String _groupName;
+  ScheduleTemplate? _scheduleTemplate;
+  late final TextEditingController _autoTimeController;
+  late final TextEditingController _autoTzController;
+  bool _isSavingTemplate = false;
 
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -68,6 +74,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     _todayController = TextEditingController();
     _groupName = widget.group.name;
     _nameController = TextEditingController(text: _groupName);
+    _autoTimeController = TextEditingController(text: '00:00');
+    _autoTzController = TextEditingController(text: 'UTC');
     final now = DateTime.now();
     _progressDate = DateTime(now.year, now.month, now.day);
   }
@@ -76,6 +84,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   void dispose() {
     _todayController.dispose();
     _nameController.dispose();
+    _autoTimeController.dispose();
+    _autoTzController.dispose();
     super.dispose();
   }
 
@@ -441,10 +451,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       builder: (context, membershipSnapshot) {
         final memberDoc = membershipSnapshot.data;
         final role = memberDoc?.data()?['role'] as String?;
-        final isMember = isOwner || (memberDoc?.exists ?? false);
-        final hasAdminPrivileges =
-            isOwner || role == 'admin' || role == 'owner';
-        final canManageRequests = hasAdminPrivileges && _editMode;
+    final isMember = isOwner || (memberDoc?.exists ?? false);
+    final hasAdminPrivileges =
+        isOwner || role == 'admin' || role == 'owner';
         final canEditSchedule = hasAdminPrivileges && _editMode;
 
         // Determine if a schedule for today already exists to control
@@ -460,6 +469,23 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             _groupName,
             actions: hasAdminPrivileges
                 ? [
+                    // Join requests action for owners/admins.
+                    IconButton(
+                      icon: const Icon(Icons.group_add_outlined),
+                      tooltip: 'Join requests',
+                      onPressed: () {
+                        unawaited(widget.vibrationService.lightImpact());
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => GroupJoinRequestsPage(
+                              groupId: widget.group.id,
+                              groupService: widget.groupService,
+                              auth: widget.auth,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                     IconButton(
                       icon: Icon(_editMode ? Icons.check : Icons.edit),
                       tooltip: _editMode ? 'Done' : 'Edit',
@@ -521,6 +547,145 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  const SectionHeader('Auto Schedule'),
+                  StreamBuilder<ScheduleTemplate>(
+                    stream: widget.groupService
+                        .scheduleTemplateStream(widget.group.id),
+                    builder: (context, snap) {
+                      final template = snap.data ??
+                          (_scheduleTemplate ?? ScheduleTemplate.defaultUtc());
+                      // Keep local copy and controllers in sync
+                      _scheduleTemplate = template;
+                      final curTime = _autoTimeController.text.trim();
+                      final curTz = _autoTzController.text.trim();
+                      if (curTime.isEmpty || curTime != template.startTimeLocal) {
+                        _autoTimeController.text = template.startTimeLocal;
+                      }
+                      if (curTz.isEmpty || curTz != template.timezone) {
+                        _autoTzController.text = template.timezone;
+                      }
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SwitchListTile(
+                            title: const Text('Auto-add daily schedule'),
+                            value: template.active,
+                            onChanged: (v) async {
+                              setState(() => _isSavingTemplate = true);
+                              try {
+                                await widget.groupService.saveScheduleTemplate(
+                                  groupId: widget.group.id,
+                                  template: template.copyWith(active: v),
+                                );
+                              } catch (e, st) {
+                                if (kDebugMode) {
+                                  debugPrint('Failed to save template: $e');
+                                }
+                                ErrorLogger.log(e, st);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('Failed to update auto schedule'),
+                                    ),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _isSavingTemplate = false);
+                                }
+                              }
+                            },
+                          ),
+                          if (template.active) ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _autoTimeController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Start time (HH:mm)',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _autoTzController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Timezone (IANA, e.g. UTC)',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: 44,
+                              child: ElevatedButton(
+                                onPressed: _isSavingTemplate
+                                    ? null
+                                    : () async {
+                                        final t = (_scheduleTemplate ??
+                                                ScheduleTemplate.defaultUtc())
+                                            .copyWith(
+                                          startTimeLocal:
+                                              _autoTimeController.text.trim(),
+                                          timezone: _autoTzController.text.trim(),
+                                        );
+                                        setState(
+                                            () => _isSavingTemplate = true);
+                                        try {
+                                          await widget.groupService
+                                              .saveScheduleTemplate(
+                                                  groupId: widget.group.id,
+                                                  template: t);
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(const SnackBar(
+                                                    content: Text(
+                                                        'Auto schedule saved')));
+                                          }
+                                        } catch (e, st) {
+                                          if (kDebugMode) {
+                                            debugPrint(
+                                                'Failed to save template fields: $e');
+                                          }
+                                          ErrorLogger.log(e, st);
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(const SnackBar(
+                                                    content: Text(
+                                                        'Failed to save')));
+                                          }
+                                        } finally {
+                                          if (mounted) {
+                                            setState(() =>
+                                                _isSavingTemplate = false);
+                                          }
+                                        }
+                                      },
+                                child: _isSavingTemplate
+                                    ? const SizedBox(
+                                        height: 16,
+                                        width: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text('Save Auto Schedule'),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 16),
+                        ],
+                      );
+                    },
+                  ),
                 ],
                 if (!isOwner && user != null && !isMember)
                   StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -578,122 +743,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       );
                     },
                   ),
-                if (canManageRequests) ...[
-                  const SectionHeader('Join Requests'),
-                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: widget.groupService.firestore
-                        .collection(GroupCollections.groups)
-                        .doc(widget.group.id)
-                        .collection(GroupCollections.joinRequests)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return const Text('Failed to load join requests');
-                      }
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      final requests = snapshot.data!.docs;
-                      if (requests.isEmpty) {
-                        return const Text('No pending requests');
-                      }
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Pending requests: ${requests.length}',
-                            style: AppTextStyles.body,
-                          ),
-                          const SizedBox(height: 8),
-                          ...requests.map((d) {
-                            final data = d.data();
-                            final uid = data['uid'] as String? ?? d.id;
-                            final name = data['name'] as String? ?? '';
-                            return ListTile(
-                              title: Text(name.isEmpty ? uid : name),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.check),
-                                    onPressed: () async {
-                                      try {
-                                        await widget.groupService
-                                            .approveJoinRequest(
-                                          groupId: widget.group.id,
-                                          uid: uid,
-                                        );
-                                        if (!mounted) return;
-                                        // ignore: use_build_context_synchronously
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Request approved'),
-                                          ),
-                                        );
-                                      } catch (e, st) {
-                                        if (kDebugMode) {
-                                          debugPrint(
-                                              'Failed to approve request: $e');
-                                        }
-                                        ErrorLogger.log(e, st);
-                                        if (!mounted) return;
-                                        // ignore: use_build_context_synchronously
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Failed to approve request'),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.close),
-                                    onPressed: () async {
-                                      try {
-                                        await widget.groupService
-                                            .denyJoinRequest(
-                                          groupId: widget.group.id,
-                                          uid: uid,
-                                        );
-                                        if (!mounted) return;
-                                        // ignore: use_build_context_synchronously
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Request denied'),
-                                          ),
-                                        );
-                                      } catch (e, st) {
-                                        if (kDebugMode) {
-                                          debugPrint(
-                                              'Failed to deny request: $e');
-                                        }
-                                        ErrorLogger.log(e, st);
-                                        if (!mounted) return;
-                                        // ignore: use_build_context_synchronously
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content:
-                                                Text('Failed to deny request'),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
-                          const SizedBox(height: 24),
-                        ],
-                      );
-                    },
-                  ),
-                ],
+                // Join requests moved to a dedicated page via the app bar action.
                 GroupMembersSection(
                   title: 'Members',
                   membersStream: widget.groupService.memberOverallCompletion(

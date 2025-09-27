@@ -7,6 +7,7 @@ import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../models/group.dart';
 import '../models/notification_preferences.dart';
+import '../models/schedule_template.dart';
 import 'error_logger.dart';
 import 'notification_service.dart';
 
@@ -25,6 +26,9 @@ class GroupCollections {
 
   /// Sub-collection containing join requests awaiting approval.
   static const String joinRequests = 'joinRequests';
+
+  /// Sub-collection containing auto-schedule templates.
+  static const String scheduleTemplates = 'scheduleTemplates';
 }
 
 /// Provides helper methods for managing reading groups.
@@ -132,21 +136,26 @@ class GroupService {
           .get();
       final ownerUid = groupSnap.data()?['ownerUid'] as String?;
       if (ownerUid != null && ownerUid != uid) {
-        final notificationId = firestore
-            .collection(NotificationCollections.users)
-            .doc(ownerUid)
-            .collection(NotificationCollections.notifications)
-            .doc()
-            .id;
+        // Deterministic ID to avoid duplicates per requester per group.
+        final notificationId = 'groupJoinRequest_${groupId}_$uid';
         final notification = AppNotification(
           id: notificationId,
           type: NotificationType.groupJoinRequest,
           fromUid: uid,
           senderUid: uid,
+          groupId: groupId,
+          message: name.isNotEmpty
+              ? '$name requested to join your group'
+              : null,
           timestamp: DateTime.now(),
           read: false,
         );
-        await notificationService.addNotification(ownerUid, notification);
+        await firestore
+            .collection(NotificationCollections.users)
+            .doc(ownerUid)
+            .collection(NotificationCollections.notifications)
+            .doc(notificationId)
+            .set(notification.toFirestore(), SetOptions(merge: true));
       }
     } catch (e, st) {
       await ErrorLogger.log(e, st);
@@ -589,6 +598,37 @@ class GroupService {
         sub2.cancel();
       };
     });
+  }
+
+  /// Stream the default schedule template for [groupId].
+  Stream<ScheduleTemplate> scheduleTemplateStream(String groupId) {
+    final ref = firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.scheduleTemplates)
+        .doc('default');
+    return ref.snapshots().map((snap) {
+      if (!snap.exists) return ScheduleTemplate.defaultUtc();
+      return ScheduleTemplate.fromFirestore(snap);
+    });
+  }
+
+  /// Save the default schedule template for [groupId].
+  Future<void> saveScheduleTemplate({
+    required String groupId,
+    required ScheduleTemplate template,
+  }) async {
+    try {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.scheduleTemplates)
+          .doc('default')
+          .set(template.toFirestore(), SetOptions(merge: true));
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
   }
 
   /// Stream of member display names for [groupId].
