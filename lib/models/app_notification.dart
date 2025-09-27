@@ -35,6 +35,7 @@ class AppNotification {
     this.fromUid,
     this.senderUid,
     this.message,
+    this.groupId,
     required this.timestamp,
     required this.read,
   });
