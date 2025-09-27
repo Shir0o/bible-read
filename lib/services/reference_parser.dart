@@ -302,7 +302,14 @@ class ReferenceParser {
             part.split(RegExp(r'[-–—]|\bto\b', caseSensitive: false));
         if (rangeSplit.length >= 2) {
           final start = _parseEndpoint(rangeSplit.first.trim());
-          final end = _parseEndpoint(rangeSplit.last.trim());
+          var end = _parseEndpoint(rangeSplit.last.trim());
+          // Shorthand like "deut 28-31": inherit book from start.
+          if (start != null && end == null) {
+            final tail = rangeSplit.last.trim();
+            if (RegExp(r'^\d+$').hasMatch(tail)) {
+              end = _parseEndpoint('${start.book} $tail');
+            }
+          }
           if (start != null && end != null) {
             out.addAll(_expandRange(start, end));
             continue;

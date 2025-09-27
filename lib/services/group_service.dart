@@ -610,32 +610,58 @@ class GroupService {
       throw e;
     });
 
-    final logsSnaps = firestore
-        .collection('read_logs')
+    // Group-scoped per-date entries marking completion
+    final progressSnaps = firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection('progress')
         .doc(dateId)
         .collection('entries')
-        .snapshots()
-        .handleError((e, st) {
-      unawaited(ErrorLogger.log(e, st));
-      throw e;
-    });
+        .snapshots();
 
     return Stream<List<GroupMemberProgressData>>.multi((controller) {
       QuerySnapshot<Map<String, dynamic>>? latestMembers;
-      QuerySnapshot<Map<String, dynamic>>? latestLogs;
+      QuerySnapshot<Map<String, dynamic>>? latestProgress;
+      bool progressDenied = false;
 
       Future<void> emit() async {
         final members = latestMembers;
-        final logs = latestLogs;
-        if (members == null || logs == null) {
-          return;
-        }
+        final progress = latestProgress;
+        if (members == null) return;
 
         try {
-          final progress = await _buildMemberDailyCompletion(
-              members, logs, includeUid,
+          if (progress == null && progressDenied) {
+            // Treat as no completed entries visible; emit zeros for all members.
+            final order = <String>[];
+            final providedNames = <String, String>{};
+            for (final doc in members.docs) {
+              final data = doc.data();
+              final uid = (data['uid'] as String?) ?? doc.id;
+              if (uid.isEmpty) continue;
+              order.add(uid);
+              final name = data['name'] as String?;
+              if (name != null && name.isNotEmpty) {
+                providedNames[uid] = name;
+              }
+            }
+            final resolved = await _fetchUserNames(order
+                .where((uid) => !providedNames.containsKey(uid))
+                .toList());
+            controller.add([
+              for (final uid in order)
+                GroupMemberProgressData(
+                  uid: uid,
+                  name: providedNames[uid] ?? resolved[uid] ?? uid,
+                  completion: 0.0,
+                )
+            ]);
+            return;
+          }
+          if (progress == null) return;
+          final list = await _buildMemberDailyCompletion(
+              members, progress, includeUid,
               groupId: groupId, date: targetDate);
-          controller.add(progress);
+          controller.add(list);
         } catch (e, st) {
           await ErrorLogger.log(e, st);
           controller.addError(e, st);
@@ -650,30 +676,187 @@ class GroupService {
         onError: controller.addError,
       );
 
-      final logSub = logsSnaps.listen(
+      final progSub = progressSnaps.listen(
         (snap) {
-          latestLogs = snap;
+          latestProgress = snap;
+          progressDenied = false;
           unawaited(emit());
         },
-        onError: controller.addError,
+        onError: (e, st) async {
+          await ErrorLogger.log(e, st);
+          progressDenied = true;
+          latestProgress = null;
+          unawaited(emit());
+        },
       );
 
       controller
         ..onListen = () {
-          if (latestMembers != null && latestLogs != null) {
+          if (latestMembers != null && (latestProgress != null || progressDenied)) {
             unawaited(emit());
           }
         }
         ..onCancel = () {
           memberSub.cancel();
-          logSub.cancel();
+          progSub.cancel();
         };
+    });
+  }
+
+  /// Stream of overall completion across all scheduled chapters for the group.
+  /// Completion is computed as sum(checked items) / sum(total scheduled items).
+  Stream<List<GroupMemberProgressData>> memberOverallCompletion(
+    String groupId, {
+    String? includeUid,
+  }) {
+    final membersSnaps = firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.members)
+        .snapshots()
+        .handleError((e, st) {
+      unawaited(ErrorLogger.log(e, st));
+      throw e;
+    });
+
+    final scheduleSnaps = firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.schedule)
+        .snapshots()
+        .handleError((e, st) {
+      unawaited(ErrorLogger.log(e, st));
+      throw e;
+    });
+
+    final entriesSnaps = firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection('progressSummary')
+        .doc('data')
+        .collection('entries')
+        .snapshots()
+        .handleError((e, st) {
+      unawaited(ErrorLogger.log(e, st));
+      throw e;
+    });
+
+    return Stream<List<GroupMemberProgressData>>.multi((controller) {
+      QuerySnapshot<Map<String, dynamic>>? latestMembers;
+      QuerySnapshot<Map<String, dynamic>>? latestSchedule;
+      QuerySnapshot<Map<String, dynamic>>? latestEntries;
+
+      Future<void> emit() async {
+        if (latestMembers == null || latestSchedule == null || latestEntries == null) {
+          return;
+        }
+        try {
+          // Build order and names similar to daily completion.
+          final order = <String>[];
+          final providedNames = <String, String>{};
+          final missingUids = <String>[];
+          for (final doc in latestMembers!.docs) {
+            final data = doc.data();
+            final uid = (data['uid'] as String?) ?? doc.id;
+            if (uid.isEmpty) continue;
+            order.add(uid);
+            final name = data['name'] as String?;
+            if (name != null && name.isNotEmpty) {
+              providedNames[uid] = name;
+            } else {
+              missingUids.add(uid);
+            }
+          }
+
+          // Include owner if missing
+          try {
+            final groupSnap = await firestore
+                .collection(GroupCollections.groups)
+                .doc(groupId)
+                .get();
+            final ownerUid = groupSnap.data()?['ownerUid'] as String?;
+            if (ownerUid != null && ownerUid.isNotEmpty && !order.contains(ownerUid)) {
+              order.add(ownerUid);
+              missingUids.add(ownerUid);
+            }
+          } catch (e, st) {
+            await ErrorLogger.log(e, st);
+          }
+
+          if (includeUid != null && includeUid.isNotEmpty && !order.contains(includeUid)) {
+            order.add(includeUid);
+            missingUids.add(includeUid);
+          }
+
+          final resolvedNames = await _fetchUserNames(missingUids);
+
+          // Total scheduled items = sum of all chapter counts.
+          int totalItems = 0;
+          for (final doc in latestSchedule!.docs) {
+            final ch = (doc.data()['chapters'] as List?)?.length ?? 0;
+            totalItems += ch;
+          }
+          if (totalItems == 0) {
+            controller.add([
+              for (final uid in order)
+                GroupMemberProgressData(
+                  uid: uid,
+                  name: providedNames[uid] ?? resolvedNames[uid] ?? uid,
+                  completion: 0.0,
+                )
+            ]);
+            return;
+          }
+
+          // Sum counts per uid from entries.
+          final counts = <String, int>{};
+          for (final e in latestEntries!.docs) {
+            final data = e.data();
+            final uid = e.id;
+            if (uid.isEmpty) continue;
+            final c = (data['completed'] as num?)?.toInt();
+            if (c == null) continue;
+            counts[uid] = c;
+          }
+
+          controller.add([
+            for (final uid in order)
+              GroupMemberProgressData(
+                uid: uid,
+                name: providedNames[uid] ?? resolvedNames[uid] ?? uid,
+                completion: ((counts[uid] ?? 0) / totalItems).clamp(0.0, 1.0),
+              )
+          ]);
+        } catch (e, st) {
+          await ErrorLogger.log(e, st);
+          controller.addError(e, st);
+        }
+      }
+
+      final subMembers = membersSnaps.listen((snap) {
+        latestMembers = snap;
+        unawaited(emit());
+      }, onError: controller.addError);
+      final subSched = scheduleSnaps.listen((snap) {
+        latestSchedule = snap;
+        unawaited(emit());
+      }, onError: controller.addError);
+      final subEntries = entriesSnaps.listen((snap) {
+        latestEntries = snap;
+        unawaited(emit());
+      }, onError: controller.addError);
+
+      controller.onCancel = () {
+        subMembers.cancel();
+        subSched.cancel();
+        subEntries.cancel();
+      };
     });
   }
 
   Future<List<GroupMemberProgressData>> _buildMemberDailyCompletion(
     QuerySnapshot<Map<String, dynamic>> membersSnap,
-    QuerySnapshot<Map<String, dynamic>> logsSnap,
+    QuerySnapshot<Map<String, dynamic>> progressSnap,
     String? includeUid, {
     required String groupId,
     required DateTime date,
@@ -697,6 +880,20 @@ class GroupService {
       }
     }
 
+    // Always include the group owner in the member list even if no
+    // membership document exists (for older data).
+    try {
+      final groupSnap =
+          await firestore.collection(GroupCollections.groups).doc(groupId).get();
+      final ownerUid = groupSnap.data()?['ownerUid'] as String?;
+      if (ownerUid != null && ownerUid.isNotEmpty && !order.contains(ownerUid)) {
+        order.add(ownerUid);
+        missingUids.add(ownerUid);
+      }
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+    }
+
     // Ensure current user (admin/owner) appears even if not in members.
     if (includeUid != null &&
         includeUid.isNotEmpty &&
@@ -707,15 +904,16 @@ class GroupService {
 
     final resolvedNames = await _fetchUserNames(missingUids);
 
-    // Determine total schedule items for the date.
-    final utcDate = DateTime.utc(date.year, date.month, date.day);
-    final schedSnap = await firestore
+    // Determine total schedule items (chapters) for the date.
+    final dateId = _dateId(date);
+    final schedDoc = await firestore
         .collection(GroupCollections.groups)
         .doc(groupId)
         .collection(GroupCollections.schedule)
-        .where('date', isEqualTo: Timestamp.fromDate(utcDate))
+        .doc(dateId)
         .get();
-    final totalItems = schedSnap.docs.length;
+    final chapters = (schedDoc.data()?['chapters'] as List?)?.length ?? 0;
+    final totalItems = chapters;
     if (totalItems == 0) {
       return [
         for (final uid in order)
@@ -727,30 +925,38 @@ class GroupService {
       ];
     }
 
-    // For each user, count completed items under read_logs/{dateId}/groups/{groupId}/entries/{uid}/items.
-    final dateId = _dateId(date);
-    final futures = <Future<int>>[];
+    // Compute completion as itemsChecked / totalItems.
+    // Backwards compatibility: if an entry exists but has no items, treat as 100%.
+    final entryUids = <String>{for (final d in progressSnap.docs) d.id};
+    final futures = <Future<double>>[];
     for (final uid in order) {
-      futures.add(firestore
-          .collection('read_logs')
-          .doc(dateId)
-          .collection('groups')
-          .doc(groupId)
-          .collection('entries')
-          .doc(uid)
-          .collection('items')
-          .get()
-          .then((snap) => snap.docs.length)
-          .catchError((_) => 0));
+      futures.add(() async {
+        if (totalItems == 0) return 0.0;
+        try {
+          final itemsSnap = await firestore
+              .collection(GroupCollections.groups)
+              .doc(groupId)
+              .collection('progress')
+              .doc(dateId)
+              .collection('entries')
+              .doc(uid)
+              .collection('items')
+              .get();
+          final count = itemsSnap.docs.length;
+          return (count / totalItems).clamp(0.0, 1.0);
+        } catch (_) {
+          // If we cannot read items (permissions or missing), treat as 0%.
+          return 0.0;
+        }
+      }());
     }
-    final counts = await Future.wait(futures);
-
+    final completions = await Future.wait(futures);
     return [
       for (var i = 0; i < order.length; i++)
         GroupMemberProgressData(
           uid: order[i],
           name: providedNames[order[i]] ?? resolvedNames[order[i]] ?? order[i],
-          completion: (counts[i] / totalItems).clamp(0.0, 1.0),
+          completion: completions[i],
         )
     ];
   }
@@ -835,6 +1041,135 @@ class GroupService {
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;
+    }
+  }
+
+  /// Permanently delete a group and its subcollections. Only the owner should
+  /// call this. Rules enforce permissions; we also verify on the client.
+  Future<void> deleteGroup({
+    required String groupId,
+    required String ownerUid,
+  }) async {
+    final groupRef = firestore.collection(GroupCollections.groups).doc(groupId);
+    try {
+      final snap = await groupRef.get();
+      final data = snap.data();
+      if (data == null || data['ownerUid'] != ownerUid) {
+        throw StateError('Only the group owner can delete this group.');
+      }
+
+      // Delete members
+      final members =
+          await groupRef.collection(GroupCollections.members).get();
+      for (final doc in members.docs) {
+        try {
+          await doc.reference.delete();
+        } catch (_) {}
+      }
+
+      // Delete schedule
+      final sched = await groupRef.collection(GroupCollections.schedule).get();
+      for (final doc in sched.docs) {
+        try {
+          await doc.reference.delete();
+        } catch (_) {}
+      }
+
+      // Delete join requests
+      final requests =
+          await groupRef.collection(GroupCollections.joinRequests).get();
+      for (final doc in requests.docs) {
+        try {
+          await doc.reference.delete();
+        } catch (_) {}
+      }
+
+      // Delete progress entries (progress/{dateId}/entries/* and date docs)
+      final progressDates = await groupRef.collection('progress').get();
+      for (final dateDoc in progressDates.docs) {
+        try {
+          final entries = await dateDoc.reference.collection('entries').get();
+          for (final entry in entries.docs) {
+            try {
+              await entry.reference.delete();
+            } catch (_) {}
+          }
+          // Delete the date document itself
+          await dateDoc.reference.delete();
+        } catch (_) {}
+      }
+
+      // Finally delete the group document
+      await groupRef.delete();
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
+  }
+
+  /// Recalculate and persist the overall completed chapter count for [uid]
+  /// within [groupId] by summing per-day entry item counts. Also backfills the
+  /// per-day 'count' field when missing.
+  Future<void> recalcProgressForUserInGroup({
+    required String groupId,
+    required String uid,
+  }) async {
+    try {
+      final groupRef = firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupSnap = await groupRef.get();
+      if (!groupSnap.exists) return;
+      final ownerUid = groupSnap.data()?['ownerUid'] as String?;
+      final isOwner = ownerUid == uid;
+
+      // Ensure user is a member or owner before proceeding.
+      final memberSnap = await groupRef
+          .collection(GroupCollections.members)
+          .doc(uid)
+          .get();
+      if (!memberSnap.exists && !isOwner) return;
+
+      final progressDates = await groupRef.collection('progress').get();
+      int total = 0;
+      for (final dateDoc in progressDates.docs) {
+        try {
+          final entryRef =
+              dateDoc.reference.collection('entries').doc(uid);
+          final entrySnap = await entryRef.get();
+          if (!entrySnap.exists) continue;
+          int? count = (entrySnap.data()?['count'] as num?)?.toInt();
+          if (count == null) {
+            final itemsSnap = await entryRef.collection('items').get();
+            count = itemsSnap.docs.length;
+            try {
+              await entryRef.set({'count': count}, SetOptions(merge: true));
+            } catch (_) {}
+          }
+          total += count;
+        } catch (e, st) {
+          await ErrorLogger.log(e, st);
+        }
+      }
+
+      final summaryRef = groupRef
+          .collection('progressSummary')
+          .doc('data')
+          .collection('entries')
+          .doc(uid);
+      await summaryRef.set({'completed': total}, SetOptions(merge: true));
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+    }
+  }
+
+  /// Recalculate progress summaries for all groups the user belongs to or owns.
+  Future<void> fixMemberProgressSummariesForUser(String uid) async {
+    try {
+      final groups = await groupsForUser(uid).first;
+      for (final g in groups) {
+        await recalcProgressForUserInGroup(groupId: g.id, uid: uid);
+      }
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
     }
   }
 }

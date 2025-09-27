@@ -39,6 +39,22 @@ class GroupsPage extends StatefulWidget {
 
 class _GroupsPageState extends State<GroupsPage> {
   bool _inProgress = false;
+  String? _deletingGroupId;
+  int _refreshTick = 0;
+
+  Future<void> _refresh() async {
+    try {
+      await widget.auth.currentUser?.reload();
+      final uid = widget.auth.currentUser?.uid;
+      if (uid != null) {
+        // Validate and fix cached member progress for joined/owned groups.
+        await widget.groupService.fixMemberProgressSummariesForUser(uid);
+      }
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _refreshTick++);
+    }
+  }
 
   Future<void> _createGroup() async {
     final controller = TextEditingController();
@@ -103,6 +119,46 @@ class _GroupsPageState extends State<GroupsPage> {
     }
   }
 
+  Future<void> _confirmAndDelete(Group g) async {
+    final user = widget.auth.currentUser;
+    if (user == null || user.uid != g.ownerUid) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Group'),
+        content: Text(
+            'Are you sure you want to delete "${g.name}"? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    setState(() => _deletingGroupId = g.id);
+    try {
+      await widget.groupService.deleteGroup(groupId: g.id, ownerUid: user.uid);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Group deleted')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to delete group')),
+      );
+    } finally {
+      if (mounted) setState(() => _deletingGroupId = null);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
@@ -115,21 +171,59 @@ class _GroupsPageState extends State<GroupsPage> {
       body: Container(
         decoration: CommonStyles.backgroundGradient,
         child: user == null
-            ? const Center(child: Text('Please sign in'))
+            ? RefreshIndicator(
+                onRefresh: _refresh,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(height: 200),
+                    Center(child: Text('Please sign in')),
+                  ],
+                ),
+              )
             : StreamBuilder<List<Group>>(
+                key: ValueKey('all-groups-$_refreshTick'),
                 stream: widget.groupService.allGroups(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
-                    return const Center(child: Text('Failed to load groups'));
+                    return RefreshIndicator(
+                      onRefresh: _refresh,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          SizedBox(height: 200),
+                          Center(child: Text('Failed to load groups')),
+                        ],
+                      ),
+                    );
                   }
                   if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
+                    return RefreshIndicator(
+                      onRefresh: _refresh,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          SizedBox(height: 200),
+                          Center(child: CircularProgressIndicator()),
+                        ],
+                      ),
+                    );
                   }
                   final groups = snapshot.data!;
                   if (groups.isEmpty) {
-                    return const Center(child: Text('No groups'));
+                    return RefreshIndicator(
+                      onRefresh: _refresh,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          SizedBox(height: 200),
+                          Center(child: Text('No groups')),
+                        ],
+                      ),
+                    );
                   }
                   return StreamBuilder<List<Group>>(
+                    key: ValueKey('my-groups-$_refreshTick'),
                     stream: widget.groupService.groupsForUser(user.uid),
                     builder: (context, mySnap) {
                       final joined =
@@ -146,36 +240,79 @@ class _GroupsPageState extends State<GroupsPage> {
                                   .whereType<String>()
                                   .toSet()
                               : <String>{};
-                          return ListView.separated(
-                            itemCount: groups.length,
-                            separatorBuilder: (_, __) =>
-                                const Divider(height: 0),
-                            itemBuilder: (context, index) {
+                          return RefreshIndicator(
+                            onRefresh: _refresh,
+                            child: ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: groups.length,
+                              separatorBuilder: (_, __) =>
+                                  const Divider(height: 0),
+                              itemBuilder: (context, index) {
                               final g = groups[index];
-                              return ListTile(
-                                title: Text(g.name),
-                                subtitle: Text(
-                                  '${g.memberCount} member${g.memberCount == 1 ? '' : 's'}',
-                                ),
-                                trailing: pending.contains(g.id)
-                                    ? const Text('Pending')
-                                    : null,
-                                onTap: () {
-                                  unawaited(
-                                      widget.vibrationService.lightImpact());
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => GroupDetailPage(
-                                        group: g,
-                                        groupService: widget.groupService,
-                                        auth: widget.auth,
-                                      ),
+                              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                                stream: widget.groupService.firestore
+                                    .collection(GroupCollections.groups)
+                                    .doc(g.id)
+                                    .collection(GroupCollections.members)
+                                    .snapshots(),
+                                builder: (context, memberSnap) {
+                                  final docs = memberSnap.data?.docs ?? const [];
+                                  final liveCount = docs.length;
+                                  // Ensure the owner appears in count even if their member doc is missing.
+                                  final hasOwner = docs.any((d) =>
+                                      d.id == g.ownerUid ||
+                                      (d.data()['uid'] as String?) == g.ownerUid);
+                                  final adjusted = hasOwner ? liveCount : liveCount + 1;
+                                  final count = (memberSnap.hasData && adjusted > 0)
+                                      ? adjusted
+                                      : g.memberCount;
+                                  return ListTile(
+                                    title: Text(g.name),
+                                    subtitle: Text(
+                                      '$count member${count == 1 ? '' : 's'}',
                                     ),
+                                    trailing: g.ownerUid == user.uid
+                                        ? IconButton(
+                                            icon: _deletingGroupId == g.id
+                                                ? const SizedBox(
+                                                    height: 20,
+                                                    width: 20,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
+                                                  )
+                                                : const Icon(
+                                                    Icons.delete_outline,
+                                                    color: Colors.redAccent,
+                                                  ),
+                                            tooltip: 'Delete group',
+                                            onPressed: _deletingGroupId == g.id
+                                                ? null
+                                                : () => _confirmAndDelete(g),
+                                          )
+                                        : (pending.contains(g.id)
+                                            ? const Text('Pending')
+                                            : null),
+                                    onTap: () {
+                                      unawaited(widget.vibrationService
+                                          .lightImpact());
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) => GroupDetailPage(
+                                            group: g,
+                                            groupService: widget.groupService,
+                                            auth: widget.auth,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   );
                                 },
                               );
                             },
-                          );
+                          ),
+                        );
                         },
                       );
                     },
