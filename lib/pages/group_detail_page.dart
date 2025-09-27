@@ -290,47 +290,60 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           .collection('entries')
           .doc(user.uid);
       final itemDoc = base.collection('items').doc(chapterIndex.toString());
-      if (read) {
-        await Future.wait([
-          base.set({
+      final summaryDoc = db
+          .collection(GroupCollections.groups)
+          .doc(widget.group.id)
+          .collection('progressSummary')
+          .doc('data')
+          .collection('entries')
+          .doc(user.uid);
+
+      await db.runTransaction((tx) async {
+        final itemSnap = await tx.get(itemDoc);
+        final baseSnap = await tx.get(base);
+        final nowTs = Timestamp.now();
+
+        if (read) {
+          if (itemSnap.exists) return; // already checked
+          tx.set(itemDoc, {'done': true, 'ts': nowTs});
+          final prevCount = (baseSnap.data()?['count'] as num?)?.toInt() ?? 0;
+          final baseData = {
             'done': true,
-            'ts': Timestamp.now(),
+            'ts': nowTs,
             'uid': user.uid,
             'groupId': widget.group.id,
             'dateId': dateKey,
-          }, SetOptions(merge: true)),
-          itemDoc.set({'done': true, 'ts': Timestamp.now()}),
-        ]);
-        final itemsSnap = await base.collection('items').get();
-        await base.set({'count': itemsSnap.size}, SetOptions(merge: true));
-        // Update overall summary completed count for this member.
-        final summaryDoc = db
-            .collection(GroupCollections.groups)
-            .doc(widget.group.id)
-            .collection('progressSummary')
-            .doc('data')
-            .collection('entries')
-            .doc(user.uid);
-        await summaryDoc.set({'completed': FieldValue.increment(1)}, SetOptions(merge: true));
-      } else {
-        await itemDoc.delete();
-        // If no items remain, remove the entry doc to avoid stale 100% fallbacks.
-        final itemsSnap = await base.collection('items').get();
-        if (itemsSnap.size == 0) {
-          await base.delete();
+            'count': prevCount + 1,
+          };
+          if (baseSnap.exists) {
+            tx.update(base, baseData);
+          } else {
+            tx.set(base, baseData);
+          }
+          final summarySnap = await tx.get(summaryDoc);
+          final prevCompleted =
+              (summarySnap.data()?['completed'] as num?)?.toInt() ?? 0;
+          tx.set(summaryDoc, {'completed': prevCompleted + 1},
+              SetOptions(merge: true));
         } else {
-          await base.set({'count': itemsSnap.size}, SetOptions(merge: true));
+          if (!itemSnap.exists) return; // already unchecked
+          tx.delete(itemDoc);
+          final prevCount = (baseSnap.data()?['count'] as num?)?.toInt() ?? 0;
+          final newCount = prevCount > 0 ? prevCount - 1 : 0;
+          if (baseSnap.exists) {
+            if (newCount == 0) {
+              tx.delete(base);
+            } else {
+              tx.update(base, {'count': newCount, 'ts': nowTs});
+            }
+          }
+          final summarySnap = await tx.get(summaryDoc);
+          final prevCompleted =
+              (summarySnap.data()?['completed'] as num?)?.toInt() ?? 0;
+          final newCompleted = prevCompleted > 0 ? prevCompleted - 1 : 0;
+          tx.set(summaryDoc, {'completed': newCompleted}, SetOptions(merge: true));
         }
-        // Decrement overall summary counter safely.
-        final summaryDoc = db
-            .collection(GroupCollections.groups)
-            .doc(widget.group.id)
-            .collection('progressSummary')
-            .doc('data')
-            .collection('entries')
-            .doc(user.uid);
-        await summaryDoc.set({'completed': FieldValue.increment(-1)}, SetOptions(merge: true));
-      }
+      });
     } catch (e, st) {
       if (kDebugMode) debugPrint('Failed to toggle chapter: $e');
       ErrorLogger.log(e, st);
