@@ -227,6 +227,31 @@ class GroupService {
       batch.delete(memberRef);
       batch.update(groupRef, {'memberCount': FieldValue.increment(-1)});
       await batch.commit();
+
+      // Cleanup user's progress summary and per-date entries (best-effort).
+      try {
+        await groupRef
+            .collection('progressSummary')
+            .doc('data')
+            .collection('entries')
+            .doc(uid)
+            .delete();
+      } catch (_) {}
+      try {
+        final dates = await groupRef.collection('progress').get();
+        for (final d in dates.docs) {
+          try {
+            final entryRef = d.reference.collection('entries').doc(uid);
+            final items = await entryRef.collection('items').get();
+            for (final it in items.docs) {
+              try {
+                await it.reference.delete();
+              } catch (_) {}
+            }
+            await entryRef.delete();
+          } catch (_) {}
+        }
+      } catch (_) {}
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;
@@ -390,12 +415,47 @@ class GroupService {
   }) async {
     try {
       final docId = _dateId(date);
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
+      final groupRef =
+          firestore.collection(GroupCollections.groups).doc(groupId);
+      // Delete schedule doc
+      await groupRef
           .collection(GroupCollections.schedule)
           .doc(docId)
           .delete();
+
+      // Cleanup any progress entries for this date and update summaries.
+      final dateRef = groupRef.collection('progress').doc(docId);
+      final entries = await dateRef.collection('entries').get();
+      for (final entry in entries.docs) {
+        final uid = entry.id;
+        final cnt = (entry.data()['count'] as num?)?.toInt() ?? 0;
+        try {
+          if (cnt > 0) {
+            // Decrement cached total for this member.
+            await groupRef
+                .collection('progressSummary')
+                .doc('data')
+                .collection('entries')
+                .doc(uid)
+                .set({'completed': FieldValue.increment(-cnt)},
+                    SetOptions(merge: true));
+          }
+          // Delete items and entry
+          final items = await entry.reference.collection('items').get();
+          for (final it in items.docs) {
+            try {
+              await it.reference.delete();
+            } catch (_) {}
+          }
+          await entry.reference.delete();
+        } catch (e, st) {
+          await ErrorLogger.log(e, st);
+        }
+      }
+      // Delete the progress date doc itself
+      try {
+        await dateRef.delete();
+      } catch (_) {}
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;
