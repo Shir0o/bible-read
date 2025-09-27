@@ -19,6 +19,9 @@ class AppNotification {
   /// Optional message content.
   final String? message;
 
+  /// Optional group id this notification refers to (e.g., group join request).
+  final String? groupId;
+
   /// Time the notification was created.
   final DateTime timestamp;
 
@@ -50,6 +53,7 @@ class AppNotification {
       fromUid: data['fromUid'] as String?,
       senderUid: data['senderUid'] as String?,
       message: data['message'] as String?,
+      groupId: data['groupId'] as String?,
       timestamp: ts is Timestamp ? ts.toDate() : DateTime.now(),
       read: data['read'] is bool ? data['read'] as bool : false,
     );
@@ -61,6 +65,7 @@ class AppNotification {
         if (fromUid != null) 'fromUid': fromUid,
         if (senderUid != null) 'senderUid': senderUid,
         if (message != null) 'message': message,
+        if (groupId != null) 'groupId': groupId,
         'timestamp': Timestamp.fromDate(timestamp),
         'read': read,
       };

@@ -204,9 +204,7 @@ class _HomePageState extends State<HomePage>
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
 
-      if (!_disposed && mounted) {
-        SuccessAnimation.show(context);
-      }
+      // Removed success animation after backend success to reduce noise.
 
       unawaited(_loadReadStatus(showLoading: false));
     } catch (e, st) {
@@ -349,6 +347,17 @@ class _HomePageState extends State<HomePage>
           Achievement(
             id: 'streak7',
             title: '7-Day Streak',
+            type: 'streak',
+            dateUnlocked: DateTime.now(),
+          ),
+        );
+      }
+      if (streak >= 30) {
+        await service.unlockAchievement(
+          uid,
+          Achievement(
+            id: 'streak30',
+            title: '30-Day Streak',
             type: 'streak',
             dateUnlocked: DateTime.now(),
           ),

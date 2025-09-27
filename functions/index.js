@@ -478,6 +478,96 @@ exports.sendSignupNotification = functions.auth.user().onCreate(async (user) => 
   }
 });
 
+/**
+ * Daily job: create today's schedule documents for groups that have
+ * auto-schedule enabled via `groups/{groupId}/scheduleTemplates/default`.
+ *
+ * The created schedule is an empty chapter list for the date key (YYYY-MM-DD).
+ * This is idempotent: if the doc already exists, it is skipped.
+ */
+exports.materializeDailySchedules = functions.pubsub
+  .schedule('0 4 * * *') // 04:00 UTC daily
+  .timeZone('UTC')
+  .onRun(async () => {
+    const db = admin.firestore();
+
+    // Helper to compute local date parts in a given IANA timezone.
+    function localDateParts(date, timeZone) {
+      try {
+        const fmt = new Intl.DateTimeFormat('en-US', {
+          timeZone,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        });
+        const parts = fmt.formatToParts(date);
+        const y = Number(parts.find((p) => p.type === 'year')?.value);
+        const m = Number(parts.find((p) => p.type === 'month')?.value);
+        const d = Number(parts.find((p) => p.type === 'day')?.value);
+        if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+          throw new Error('Invalid local parts');
+        }
+        return { y, m, d };
+      } catch (err) {
+        functions.logger.warn(
+          `Invalid timezone "${timeZone}"; defaulting to UTC`,
+          err
+        );
+        const z = new Date();
+        return { y: z.getUTCFullYear(), m: z.getUTCMonth() + 1, d: z.getUTCDate() };
+      }
+    }
+
+    const templatesSnap = await db
+      .collectionGroup('scheduleTemplates')
+      .where('active', '==', true)
+      .get();
+
+    const tasks = [];
+    templatesSnap.forEach((doc) => {
+      const data = doc.data() || {};
+      const timeZone = (data.timezone || 'UTC').toString();
+      const { y, m, d } = localDateParts(new Date(), timeZone);
+      const dateKey = `${y.toString().padStart(4, '0')}-${m
+        .toString()
+        .padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+      const utcMidnight = new Date(Date.UTC(y, m - 1, d));
+      const groupRef = doc.ref.parent.parent; // groups/{groupId}
+      if (!groupRef) return;
+      const scheduleRef = groupRef.collection('schedule').doc(dateKey);
+      tasks.push(
+        scheduleRef.get().then(async (snap) => {
+          if (snap.exists) return;
+          try {
+            await scheduleRef.create({
+              date: admin.firestore.Timestamp.fromDate(utcMidnight),
+              chapters: [],
+              // Marker for debugging/source tracing
+              _source: 'auto',
+            });
+          } catch (err) {
+            // Ignore ABORTED due to contention; this is idempotent
+            functions.logger.warn('Failed to create schedule', {
+              group: groupRef.path,
+              dateKey,
+              error: err,
+            });
+          }
+        })
+      );
+    });
+
+    // Limit concurrency to avoid overwhelming Firestore (simple chunking)
+    const chunkSize = 25;
+    for (let i = 0; i < tasks.length; i += chunkSize) {
+      const chunk = tasks.slice(i, i + chunkSize);
+      // eslint-disable-next-line no-await-in-loop
+      await Promise.all(chunk);
+    }
+
+    return null;
+  });
+
 exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
   if (!req.auth) {
     throw new functions.https.HttpsError(

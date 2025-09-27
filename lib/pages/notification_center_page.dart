@@ -11,6 +11,9 @@ import '../services/seasonal_challenge_service.dart';
 import 'achievements_page.dart';
 import 'friend_requests_page.dart';
 import 'seasonal_challenges_page.dart';
+import '../models/group.dart';
+import '../services/group_service.dart';
+import 'group_detail_page.dart';
 import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
@@ -141,11 +144,15 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
       case NotificationType.achievement:
         return 'Achievement unlocked';
       case NotificationType.friendRequest:
-        return 'You received a friend request';
+        return n.message?.isNotEmpty == true
+            ? n.message!
+            : 'You received a friend request';
       case NotificationType.comment:
         return 'New comment on your reading';
       case NotificationType.groupJoinRequest:
-        return 'You received a group join request';
+        return n.message?.isNotEmpty == true
+            ? n.message!
+            : 'You received a group join request';
       case NotificationType.groupScheduleUpdate:
         return 'Group schedule updated';
       case NotificationType.seasonalChallenge:
@@ -168,34 +175,10 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
         );
         break;
       case NotificationType.friendRequest:
-        final uid = widget.auth.currentUser?.uid;
-        if (uid == null) break;
-        final messenger = ScaffoldMessenger.of(context);
         final friendService = FriendService(
           firestore: widget.service.firestore,
           notificationService: widget.service,
         );
-        try {
-          final requests = await friendService.pendingRequests(uid).first;
-          if (requests.isEmpty) {
-            try {
-              await widget.service.markRead(uid, n.id);
-            } catch (e, st) {
-              ErrorLogger.log(e, st);
-            }
-            if (context.mounted) {
-              messenger.showSnackBar(
-                const SnackBar(
-                  content: Text('No pending friend requests'),
-                ),
-              );
-            }
-            break;
-          }
-        } catch (e, st) {
-          ErrorLogger.log(e, st);
-          break;
-        }
         if (!context.mounted) return;
         unawaited(widget.vibrationService.lightImpact());
         await Navigator.of(context).push(
@@ -225,8 +208,47 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
       case NotificationType.nudge:
       case NotificationType.signup:
       case NotificationType.comment:
-      case NotificationType.groupJoinRequest:
       case NotificationType.groupScheduleUpdate:
+        break;
+      case NotificationType.groupJoinRequest:
+        // Navigate to the specific group’s detail page when possible.
+        try {
+          final gid = n.groupId;
+          if (gid == null) {
+            final messenger = ScaffoldMessenger.of(context);
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text('Open the group to manage join requests.'),
+              ),
+            );
+            break;
+          }
+          final snap = await widget.service.firestore
+              .collection('groups')
+              .doc(gid)
+              .get();
+          if (!snap.exists) {
+            final messenger = ScaffoldMessenger.of(context);
+            messenger.showSnackBar(
+              const SnackBar(content: Text('Group not found')),
+            );
+            break;
+          }
+          final group = Group.fromFirestore(snap);
+          if (!context.mounted) return;
+          unawaited(widget.vibrationService.lightImpact());
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => GroupDetailPage(
+                group: group,
+                groupService: GroupService(firestore: widget.service.firestore),
+                auth: widget.auth,
+              ),
+            ),
+          );
+        } catch (e, st) {
+          ErrorLogger.log(e, st);
+        }
         break;
     }
   }
