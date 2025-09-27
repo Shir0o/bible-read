@@ -1,3 +1,78 @@
+# Release 1.14.0
+
+This release overhauls Group Details progress, adds per‑chapter tracking with
+cached overall completion, improves the Groups list UX (refresh, counts, and
+delete), strengthens Firestore rules, and fixes streak/leaderboard accuracy.
+
+## Highlights
+
+*   Group progress is now group‑scoped and independent from the daily public feed.
+*   Per‑chapter chips let you check/uncheck individual chapters for each day.
+*   Overall member progress shows percentage across all scheduled days, backed
+    by a cached summary that updates instantly on every toggle.
+
+## Group Details
+
+*   Per‑chapter chips under each schedule date with transactional writes to:
+    *   `groups/{groupId}/progress/{dateId}/entries/{uid}/items/{index}`
+    *   Maintains per‑day `count` on `entries/{uid}`
+    *   Updates cached overall `completed` counter at
+        `groups/{groupId}/progressSummary/data/entries/{uid}`
+*   Overall progress bar now reflects sum of checked chapters across all dates
+    divided by total scheduled chapters (not just one day).
+*   Owner always appears in the Members list (read‑only unless owner/admin).
+*   Removed the "(for yyyy-mm-dd)" suffix from the Members header.
+
+## Groups List
+
+*   Live member counts include admins and owner (streams `members` and adjusts
+    count if the owner doc is missing).
+*   Pull‑to‑refresh now:
+    *   Reloads user session
+    *   Validates and fixes the cached `progressSummary` for the signed‑in user
+      by summing per‑day items and backfilling missing per‑day counts
+*   Owners can delete groups (with confirmation). Deletion cleans up:
+    members, schedule, joinRequests, progress (entries/items), and the group doc.
+
+## Parsing & History
+
+*   ReferenceParser: supports shorthand like `deut 28-31` expanding to each
+    chapter.
+*   History week/month views backfill from `read_logs` when per‑user reading
+    docs are missing, avoiding undercount until navigation.
+
+## Leaderboard & Streaks
+
+*   Writing to the public feed also updates `users/{uid}/reading/{date}` to keep
+    streak calculations accurate.
+*   Summary/streak backfills from `read_logs` to avoid "1‑day" streaks when
+    history exists only in the feed.
+
+## Firestore Rules
+
+*   Allow group creation by any signed‑in user; restrict updates/deletes to
+    owner/admin.
+*   Group progress:
+    *   Read/write for `progress/{date}/entries/{uid}` and `items/{index}`
+      (members write own, owner/admin can read/delete for cleanup)
+    *   Cached summary at `progressSummary/data/entries/{uid}` (member write own,
+      owner/admin can delete)
+*   Join Requests: allow the requesting user to read their own join requests via
+    collectionGroup queries.
+
+## Cleanup & Integrity
+
+*   Schedule deletion decrements affected users' cached totals and removes per‑day
+    entries/items.
+*   Leaving a group removes the user's `progressSummary` entry and their per‑day
+    progress entries/items.
+
+## Miscellaneous Fixes
+
+*   Non‑members viewing a group no longer see member load failures (graceful
+    fallback when progress permissions are denied).
+*   Fixed a typo in progress stream initialization.
+
 # Release 1.13.0
 
 This release launches seasonal challenges with limited-time rewards and richer
