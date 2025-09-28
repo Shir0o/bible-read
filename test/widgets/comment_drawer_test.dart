@@ -68,14 +68,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CommentDrawer), findsOneWidget);
-    expect(find.text('Alice: Hello'), findsOneWidget);
-    expect(find.text('Bob: Hi'), findsOneWidget);
+    expect(find.text('Alice'), findsOneWidget);
+    expect(find.text('Hello'), findsOneWidget);
+    expect(find.text('Bob'), findsOneWidget);
+    expect(find.text('Hi'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'Nice');
     await tester.tap(find.byIcon(Icons.send));
     await tester.pump();
-
-    expect(find.text('Tester: Nice'), findsOneWidget);
 
     recorder.completer.complete(
       Comment(

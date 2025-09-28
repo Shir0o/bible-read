@@ -7,19 +7,44 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bible_read/widgets/achievement_summary.dart';
 import 'package:bible_read/widgets/badge_icon.dart';
 import 'package:bible_read/widgets/success_animation.dart';
+import 'package:bible_read/services/vibration_service.dart';
 import '../helpers/mock_lottie_http_client.dart';
+
+class _TestVibrationService extends VibrationService {
+  const _TestVibrationService() : super();
+
+  @override
+  Future<void> tap() async {}
+
+  @override
+  Future<void> lightImpact() async {}
+
+  @override
+  Future<void> mediumImpact() async {}
+
+  @override
+  Future<void> heavyImpact() async {}
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(setupLottieHttpOverrides);
   tearDownAll(resetHttpOverrides);
 
+  const vibration = _TestVibrationService();
+
   testWidgets('returns empty widget when no user', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: false);
 
     await tester.pumpWidget(
-      MaterialApp(home: AchievementSummary(firestore: firestore, auth: auth)),
+      MaterialApp(
+        home: AchievementSummary(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: vibration,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -43,7 +68,13 @@ void main() {
     });
 
     await tester.pumpWidget(
-      MaterialApp(home: AchievementSummary(firestore: firestore, auth: auth)),
+      MaterialApp(
+        home: AchievementSummary(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: vibration,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -58,7 +89,13 @@ void main() {
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
     await tester.pumpWidget(
-      MaterialApp(home: AchievementSummary(firestore: firestore, auth: auth)),
+      MaterialApp(
+        home: AchievementSummary(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: vibration,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -72,7 +109,13 @@ void main() {
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
     await tester.pumpWidget(
-      MaterialApp(home: AchievementSummary(firestore: firestore, auth: auth)),
+      MaterialApp(
+        home: AchievementSummary(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: vibration,
+        ),
+      ),
     );
     await tester.pump();
 

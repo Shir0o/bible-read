@@ -3,6 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/widgets/read_status_section.dart';
 import 'package:bible_read/widgets/read_switch_tile.dart';
+import 'package:bible_read/services/vibration_service.dart';
+
+class _TestVibrationService extends VibrationService {
+  const _TestVibrationService() : super();
+
+  @override
+  Future<void> lightImpact() async {}
+}
 
 void main() {
   testWidgets('shows loading indicator when toggling', (tester) async {
@@ -23,6 +31,7 @@ void main() {
 
   testWidgets('tapping switch calls onToggle', (tester) async {
     var called = false;
+    const vibration = _TestVibrationService();
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -33,6 +42,7 @@ void main() {
             onToggle: () {
               called = true;
             },
+            vibrationService: vibration,
           ),
         ),
       ),

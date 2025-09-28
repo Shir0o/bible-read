@@ -54,4 +54,54 @@ void main() {
     await tester.pumpAndSettle();
     expect(tapped, isTrue);
   });
+
+  testWidgets('shows read checkbox when state provided', (tester) async {
+    bool? toggled;
+    final schedule = GroupSchedule(
+      date: DateTime(2024, 1, 1),
+      chapters: const ['Genesis 1'],
+    );
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: ScheduleItemTile(
+          schedule: schedule,
+          currentUserRead: false,
+          onToggleRead: (value) => toggled = value,
+        ),
+      ),
+    ));
+
+    final checkboxFinder = find.byType(Checkbox);
+    expect(checkboxFinder, findsOneWidget);
+    await tester.tap(checkboxFinder);
+    await tester.pumpAndSettle();
+    expect(toggled, isTrue);
+  });
+
+  testWidgets('renders per-chapter chips and forwards toggles', (tester) async {
+    final toggles = <int, bool>{};
+    final schedule = GroupSchedule(
+      date: DateTime(2024, 2, 2),
+      chapters: const ['Genesis 1', 'Genesis 2'],
+    );
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: ScheduleItemTile(
+          schedule: schedule,
+          checkedChapters: {0},
+          onToggleChapter: (index, value) => toggles[index] = value,
+        ),
+      ),
+    ));
+
+    expect(find.text('Genesis 1'), findsAtLeastNWidgets(1));
+    expect(find.text('Genesis 2'), findsAtLeastNWidgets(1));
+
+    await tester.tap(find.text('Genesis 2').first);
+    await tester.pump();
+
+    expect(toggles[1], isTrue);
+  });
 }

@@ -265,7 +265,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           .collection('entries')
           .doc(user.uid);
       if (read) {
-        await progressDoc.set({'done': true, 'ts': Timestamp.now()});
+        await progressDoc.set(
+          {
+            'done': true,
+            'ts': Timestamp.now(),
+            'uid': user.uid,
+            'groupId': widget.group.id,
+            'dateId': dateKey,
+          },
+          SetOptions(merge: true),
+        );
       } else {
         await progressDoc.delete();
       }
@@ -306,7 +315,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       await db.runTransaction((tx) async {
         final itemSnap = await tx.get(itemDoc);
         final baseSnap = await tx.get(base);
+        final summarySnap = await tx.get(summaryDoc);
         final nowTs = Timestamp.now();
+        final prevCompleted =
+            (summarySnap.data()?['completed'] as num?)?.toInt() ?? 0;
 
         if (read) {
           if (itemSnap.exists) return; // already checked
@@ -325,9 +337,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           } else {
             tx.set(base, baseData);
           }
-          final summarySnap = await tx.get(summaryDoc);
-          final prevCompleted =
-              (summarySnap.data()?['completed'] as num?)?.toInt() ?? 0;
           tx.set(summaryDoc, {'completed': prevCompleted + 1},
               SetOptions(merge: true));
         } else {
@@ -342,15 +351,111 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               tx.update(base, {'count': newCount, 'ts': nowTs});
             }
           }
-          final summarySnap = await tx.get(summaryDoc);
-          final prevCompleted =
-              (summarySnap.data()?['completed'] as num?)?.toInt() ?? 0;
           final newCompleted = prevCompleted > 0 ? prevCompleted - 1 : 0;
-          tx.set(summaryDoc, {'completed': newCompleted}, SetOptions(merge: true));
+          tx.set(
+              summaryDoc, {'completed': newCompleted}, SetOptions(merge: true));
         }
       });
     } catch (e, st) {
       if (kDebugMode) debugPrint('Failed to toggle chapter: $e');
+      ErrorLogger.log(e, st);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update read status')));
+    }
+  }
+
+  Future<void> _setMyReadStatusForDate({
+    required GroupSchedule schedule,
+    required bool read,
+    required Set<int> currentlyChecked,
+  }) async {
+    if (schedule.chapters.isEmpty) {
+      return;
+    }
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+    try {
+      final target =
+          DateTime(schedule.date.year, schedule.date.month, schedule.date.day);
+      final dateKey =
+          '${target.year}-${target.month.toString().padLeft(2, '0')}-${target.day.toString().padLeft(2, '0')}';
+      final db = widget.groupService.firestore;
+      final entryRef = db
+          .collection(GroupCollections.groups)
+          .doc(widget.group.id)
+          .collection('progress')
+          .doc(dateKey)
+          .collection('entries')
+          .doc(user.uid);
+      final summaryRef = db
+          .collection(GroupCollections.groups)
+          .doc(widget.group.id)
+          .collection('progressSummary')
+          .doc('data')
+          .collection('entries')
+          .doc(user.uid);
+
+      await db.runTransaction((tx) async {
+        final entrySnap = await tx.get(entryRef);
+        final summarySnap = await tx.get(summaryRef);
+        final nowTs = Timestamp.now();
+        final currentCount = (entrySnap.data()?['count'] as num?)?.toInt() ??
+            currentlyChecked.length;
+        final desiredCount = read ? schedule.chapters.length : 0;
+        final delta = desiredCount - currentCount;
+        final itemsCollection = entryRef.collection('items');
+        final prevCompleted =
+            (summarySnap.data()?['completed'] as num?)?.toInt() ?? 0;
+
+        if (read) {
+          for (var i = 0; i < schedule.chapters.length; i++) {
+            if (currentlyChecked.contains(i)) continue;
+            tx.set(
+              itemsCollection.doc(i.toString()),
+              {'done': true, 'ts': nowTs},
+            );
+          }
+          tx.set(
+            entryRef,
+            {
+              'done': true,
+              'ts': nowTs,
+              'uid': user.uid,
+              'groupId': widget.group.id,
+              'dateId': dateKey,
+              'count': desiredCount,
+            },
+            SetOptions(merge: true),
+          );
+        } else {
+          if (currentlyChecked.isNotEmpty) {
+            for (final idx in currentlyChecked) {
+              tx.delete(itemsCollection.doc(idx.toString()));
+            }
+          }
+          if (entrySnap.exists) {
+            if (desiredCount == 0) {
+              tx.delete(entryRef);
+            } else {
+              tx.update(entryRef, {'count': desiredCount, 'ts': nowTs});
+            }
+          }
+        }
+
+        if (delta != 0) {
+          final updatedCompleted = prevCompleted + delta;
+          tx.set(
+            summaryRef,
+            {
+              'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
+            },
+            SetOptions(merge: true),
+          );
+        }
+      });
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('Failed to toggle read: $e');
       ErrorLogger.log(e, st);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -446,9 +551,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       builder: (context, membershipSnapshot) {
         final memberDoc = membershipSnapshot.data;
         final role = memberDoc?.data()?['role'] as String?;
-    final isMember = isOwner || (memberDoc?.exists ?? false);
-    final hasAdminPrivileges =
-        isOwner || role == 'admin' || role == 'owner';
+        final isMember = isOwner || (memberDoc?.exists ?? false);
+        final hasAdminPrivileges =
+            isOwner || role == 'admin' || role == 'owner';
         final canEditSchedule = hasAdminPrivileges && _editMode;
 
         // Determine if a schedule for today already exists to control
@@ -545,12 +650,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   const SizedBox(height: 16),
                   const SectionHeader('Auto Content Plans'),
                   StreamBuilder<List<(String, ScheduleTemplate)>>(
-                    stream: widget.groupService
-                        .scheduleTemplates(widget.group.id),
+                    stream:
+                        widget.groupService.scheduleTemplates(widget.group.id),
                     builder: (context, listSnap) {
                       final items = (listSnap.data ?? const []);
                       if (items.isEmpty) {
-                        return const Text('No plans yet. Tap Add Plan to create one.');
+                        return const Text(
+                            'No plans yet. Tap Add Plan to create one.');
                       }
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -564,7 +670,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                               title: Text(
                                 (t.name?.isNotEmpty == true)
                                     ? t.name!
-                                    : (isDefault ? 'Default Auto Plan' : 'Auto Plan $id'),
+                                    : (isDefault
+                                        ? 'Default Auto Plan'
+                                        : 'Auto Plan $id'),
                               ),
                               subtitle: Text(
                                   '${t.plan ?? 'none'} · ${t.startTimeLocal} ${t.timezone}'),
@@ -575,13 +683,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     icon: const Icon(Icons.edit_outlined),
                                     tooltip: 'Edit',
                                     onPressed: () async {
-                                      final edited = await showDialog<ScheduleTemplate>(
+                                      final edited =
+                                          await showDialog<ScheduleTemplate>(
                                         context: context,
-                                        builder: (_) => _EditAutoTemplateDialog(initial: t),
+                                        builder: (_) =>
+                                            _EditAutoTemplateDialog(initial: t),
                                       );
                                       if (edited != null) {
                                         try {
-                                          await widget.groupService.updateScheduleTemplate(
+                                          await widget.groupService
+                                              .updateScheduleTemplate(
                                             groupId: widget.group.id,
                                             templateId: id,
                                             template: edited,
@@ -611,52 +722,71 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     onSelected: (value) async {
                                       if (value == 'reset') {
                                         try {
-                                          await FirebaseFunctions.instanceFor(region: 'us-central1')
+                                          await FirebaseFunctions.instanceFor(
+                                                  region: 'us-central1')
                                               .httpsCallable('resetPlanCursor')
                                               .call({
                                             'groupId': widget.group.id,
                                             'templateId': id,
-                                            'cursorRef': (t.startRef ?? 'Gen 1'),
+                                            'cursorRef':
+                                                (t.startRef ?? 'Gen 1'),
                                           });
                                           if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Plan cursor reset')),
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Plan cursor reset')),
                                             );
                                           }
                                         } catch (e, st) {
                                           ErrorLogger.log(e, st);
                                           if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Failed to reset plan')),
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Failed to reset plan')),
                                             );
                                           }
                                         }
                                       } else if (value == 'today') {
                                         try {
-                                          await FirebaseFunctions.instanceFor(region: 'us-central1')
+                                          await FirebaseFunctions.instanceFor(
+                                                  region: 'us-central1')
                                               .httpsCallable('materializeToday')
                                               .call({
                                             'groupId': widget.group.id,
                                             'templateId': id,
                                           });
                                           if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Created/updated today\'s entry')),
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Created/updated today\'s entry')),
                                             );
                                           }
                                         } catch (e, st) {
                                           ErrorLogger.log(e, st);
                                           if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Failed to create today')),
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Failed to create today')),
                                             );
                                           }
                                         }
                                       }
                                     },
                                     itemBuilder: (context) => const [
-                                      PopupMenuItem(value: 'today', child: Text('Create Today Now')),
-                                      PopupMenuItem(value: 'reset', child: Text('Reset Next to Start')),
+                                      PopupMenuItem(
+                                          value: 'today',
+                                          child: Text('Create Today Now')),
+                                      PopupMenuItem(
+                                          value: 'reset',
+                                          child: Text('Reset Next to Start')),
                                     ],
                                   ),
                                   if (!isDefault)
@@ -695,7 +825,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           builder: (_) => _EditAutoTemplateDialog(
                             initial: ScheduleTemplate.defaultUtc().copyWith(
                               plan: 'sequential_ot',
-                              weekdays: const ['MO', 'TU', 'WE', 'TH', 'FR', 'SA'],
+                              weekdays: const [
+                                'MO',
+                                'TU',
+                                'WE',
+                                'TH',
+                                'FR',
+                                'SA'
+                              ],
                               chaptersPerDay: 1,
                               name: 'New Auto Plan',
                             ),
@@ -857,49 +994,95 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           return baseTile;
                         }
                         final dateKey = _dateKey(s.date);
-                        final itemsStream = widget.groupService.firestore
+                        final entryRef = widget.groupService.firestore
                             .collection(GroupCollections.groups)
                             .doc(widget.group.id)
                             .collection('progress')
                             .doc(dateKey)
                             .collection('entries')
-                            .doc(user.uid)
-                            .collection('items')
-                            .snapshots();
+                            .doc(user.uid);
+
                         return StreamBuilder<
-                            QuerySnapshot<Map<String, dynamic>>>(
-                          stream: itemsStream,
-                          builder: (context, snap) {
-                            final checked = <int>{};
-                            for (final d in snap.data?.docs ?? const []) {
-                              final idx = int.tryParse(d.id);
-                              if (idx != null) checked.add(idx);
-                            }
-                            return ScheduleItemTile(
-                              schedule: s,
-                              onEdit: canEditSchedule
-                                  ? () => _editSchedule(s)
-                                  : null,
-                              onDelete: canEditSchedule
-                                  ? () => _deleteSchedule(s)
-                                  : null,
-                              checkedChapters: checked,
-                              onToggleChapter: (chapterIndex, v) {
-                                setState(() {
-                                  _progressDate = DateTime(
-                                      s.date.year, s.date.month, s.date.day);
-                                });
-                                _toggleMyChapterForDate(
-                                    s.date, chapterIndex, v);
+                            DocumentSnapshot<Map<String, dynamic>>>(
+                          stream: entryRef.snapshots(),
+                          builder: (context, entrySnap) {
+                            final entryData = entrySnap.data?.data();
+                            final baseDone = entryData?['done'] == true;
+                            return StreamBuilder<
+                                QuerySnapshot<Map<String, dynamic>>>(
+                              stream: entryRef.collection('items').snapshots(),
+                              builder: (context, itemsSnap) {
+                                final checked = <int>{};
+                                for (final d
+                                    in itemsSnap.data?.docs ?? const []) {
+                                  final idx = int.tryParse(d.id);
+                                  if (idx != null) checked.add(idx);
+                                }
+
+                                final totalChapters = s.chapters.length;
+                                final hasChapters = totalChapters > 0;
+                                final allChecked = hasChapters &&
+                                    checked.length >= totalChapters;
+
+                                bool? currentUserRead;
+                                ValueChanged<bool>? onToggleRead;
+                                if (hasChapters) {
+                                  currentUserRead = allChecked;
+                                  onToggleRead = (value) {
+                                    if (value == allChecked) return;
+                                    setState(() {
+                                      _progressDate = DateTime(s.date.year,
+                                          s.date.month, s.date.day);
+                                    });
+                                    unawaited(_setMyReadStatusForDate(
+                                      schedule: s,
+                                      read: value,
+                                      currentlyChecked: Set<int>.from(checked),
+                                    ));
+                                  };
+                                } else {
+                                  currentUserRead = baseDone;
+                                  onToggleRead = (value) {
+                                    setState(() {
+                                      _progressDate = DateTime(s.date.year,
+                                          s.date.month, s.date.day);
+                                    });
+                                    unawaited(
+                                        _toggleMyReadForDate(s.date, value));
+                                  };
+                                }
+
+                                return ScheduleItemTile(
+                                  schedule: s,
+                                  onEdit: canEditSchedule
+                                      ? () => _editSchedule(s)
+                                      : null,
+                                  onDelete: canEditSchedule
+                                      ? () => _deleteSchedule(s)
+                                      : null,
+                                  currentUserRead: currentUserRead,
+                                  onToggleRead: onToggleRead,
+                                  checkedChapters: checked,
+                                  onToggleChapter: (chapterIndex, v) {
+                                    setState(() {
+                                      _progressDate = DateTime(s.date.year,
+                                          s.date.month, s.date.day);
+                                    });
+                                    _toggleMyChapterForDate(
+                                        s.date, chapterIndex, v);
+                                  },
+                                  onTap: !canEditSchedule
+                                      ? () {
+                                          setState(() {
+                                            _progressDate = DateTime(
+                                                s.date.year,
+                                                s.date.month,
+                                                s.date.day);
+                                          });
+                                        }
+                                      : null,
+                                );
                               },
-                              onTap: !canEditSchedule
-                                  ? () {
-                                      setState(() {
-                                        _progressDate = DateTime(s.date.year,
-                                            s.date.month, s.date.day);
-                                      });
-                                    }
-                                  : null,
                             );
                           },
                         );
@@ -1009,7 +1192,8 @@ class _EditAutoTemplateDialog extends StatefulWidget {
   final ScheduleTemplate? initial;
 
   @override
-  State<_EditAutoTemplateDialog> createState() => _EditAutoTemplateDialogState();
+  State<_EditAutoTemplateDialog> createState() =>
+      _EditAutoTemplateDialogState();
 }
 
 class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
@@ -1073,7 +1257,8 @@ class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
             ),
             const SizedBox(height: 8),
             TextField(
-              decoration: const InputDecoration(labelText: 'Start time (HH:mm)'),
+              decoration:
+                  const InputDecoration(labelText: 'Start time (HH:mm)'),
               controller: _timeCtl,
               onChanged: (v) => _startTime = v.trim(),
             ),
@@ -1092,9 +1277,11 @@ class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
               value: _plan ?? '',
               items: const [
                 DropdownMenuItem(value: '', child: Text('None')),
-                DropdownMenuItem(value: 'sequential_ot', child: Text('Sequential OT')),
+                DropdownMenuItem(
+                    value: 'sequential_ot', child: Text('Sequential OT')),
               ],
-              onChanged: (v) => setState(() => _plan = (v?.isEmpty ?? true) ? null : v),
+              onChanged: (v) =>
+                  setState(() => _plan = (v?.isEmpty ?? true) ? null : v),
               decoration: const InputDecoration(labelText: 'Plan'),
             ),
             if (_plan != null) ...[
@@ -1102,7 +1289,8 @@ class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
               TextField(
                 controller: _chapters,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Chapters per day'),
+                decoration:
+                    const InputDecoration(labelText: 'Chapters per day'),
               ),
               const SizedBox(height: 8),
               Align(
@@ -1110,7 +1298,15 @@ class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
                 child: Wrap(
                   spacing: 6,
                   children: [
-                    for (final code in const ['SU','MO','TU','WE','TH','FR','SA'])
+                    for (final code in const [
+                      'SU',
+                      'MO',
+                      'TU',
+                      'WE',
+                      'TH',
+                      'FR',
+                      'SA'
+                    ])
                       FilterChip(
                         label: Text(code),
                         selected: _weekdays.contains(code),
@@ -1130,7 +1326,8 @@ class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
               const SizedBox(height: 8),
               TextField(
                 controller: _startRef,
-                decoration: const InputDecoration(labelText: 'Start at (e.g., Gen 1)'),
+                decoration:
+                    const InputDecoration(labelText: 'Start at (e.g., Gen 1)'),
               ),
             ],
           ],

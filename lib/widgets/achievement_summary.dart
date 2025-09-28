@@ -7,6 +7,7 @@ import '../services/achievement_service.dart';
 import 'badge_icon.dart';
 import 'success_animation.dart';
 import '../models/achievement_definition.dart';
+import '../services/vibration_service.dart';
 
 /// Displays a count of unlocked achievements for the current user.
 class AchievementSummary extends StatefulWidget {
@@ -21,8 +22,13 @@ class AchievementSummary extends StatefulWidget {
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
+    VibrationService? vibrationService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance;
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
+
+  /// Service used for triggering celebratory haptics.
+  final VibrationService vibrationService;
 
   @override
   State<AchievementSummary> createState() => _AchievementSummaryState();
@@ -48,7 +54,10 @@ class _AchievementSummaryState extends State<AchievementSummary> {
         if (_lastCount != null && count > _lastCount!) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              SuccessAnimation.show(context);
+              SuccessAnimation.show(
+                context,
+                vibrationService: widget.vibrationService,
+              );
             }
           });
         }
