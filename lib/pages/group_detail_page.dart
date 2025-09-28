@@ -62,14 +62,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   bool _editMode = false;
   bool _isSavingName = false;
   late String _groupName;
-  ScheduleTemplate? _scheduleTemplate;
-  late final TextEditingController _autoTimeController;
-  late final TextEditingController _autoTzController;
-  late final TextEditingController _autoChaptersController;
-  late final TextEditingController _autoStartRefController;
-  String? _autoPlan; // null or 'sequential_ot'
-  Set<String> _autoWeekdays = <String>{};
-  bool _isSavingTemplate = false;
+  // Automation Plans UI (consolidated): handled via list + dialogs.
 
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -80,10 +73,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     _todayController = TextEditingController();
     _groupName = widget.group.name;
     _nameController = TextEditingController(text: _groupName);
-    _autoTimeController = TextEditingController(text: '00:00');
-    _autoTzController = TextEditingController(text: 'UTC');
-    _autoChaptersController = TextEditingController(text: '');
-    _autoStartRefController = TextEditingController(text: 'Gen 1');
     final now = DateTime.now();
     _progressDate = DateTime(now.year, now.month, now.day);
   }
@@ -92,10 +81,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   void dispose() {
     _todayController.dispose();
     _nameController.dispose();
-    _autoTimeController.dispose();
-    _autoTzController.dispose();
-    _autoChaptersController.dispose();
-    _autoStartRefController.dispose();
     super.dispose();
   }
 
@@ -558,389 +543,176 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const SectionHeader('Auto Schedule'),
-                  StreamBuilder<ScheduleTemplate>(
+                  const SectionHeader('Auto Content Plans'),
+                  StreamBuilder<List<(String, ScheduleTemplate)>>(
                     stream: widget.groupService
-                        .scheduleTemplateStream(widget.group.id),
-                    builder: (context, snap) {
-                      final template = snap.data ??
-                          (_scheduleTemplate ?? ScheduleTemplate.defaultUtc());
-                      // Keep local copy and controllers in sync
-                      _scheduleTemplate = template;
-                      final curTime = _autoTimeController.text.trim();
-                      final curTz = _autoTzController.text.trim();
-                      if (curTime.isEmpty || curTime != template.startTimeLocal) {
-                        _autoTimeController.text = template.startTimeLocal;
+                        .scheduleTemplates(widget.group.id),
+                    builder: (context, listSnap) {
+                      final items = (listSnap.data ?? const []);
+                      if (items.isEmpty) {
+                        return const Text('No plans yet. Tap Add Plan to create one.');
                       }
-                      if (curTz.isEmpty || curTz != template.timezone) {
-                        _autoTzController.text = template.timezone;
-                      }
-                      // Sync plan fields
-                      _autoPlan = template.plan;
-                      final ch = template.chaptersPerDay == null
-                          ? ''
-                          : template.chaptersPerDay.toString();
-                      if (_autoChaptersController.text != ch) {
-                        _autoChaptersController.text = ch;
-                      }
-                      if ((template.startRef ?? '').isNotEmpty &&
-                          _autoStartRefController.text != template.startRef) {
-                        _autoStartRefController.text = template.startRef!;
-                      }
-                      _autoWeekdays = Set<String>.from(
-                        (template.weekdays ?? const <String>[]) as Iterable,
-                      );
-
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Existing default template editor (quick path)
-                          SwitchListTile(
-                            title: const Text('Auto-add daily schedule'),
-                            value: template.active,
-                            onChanged: (v) async {
-                              setState(() => _isSavingTemplate = true);
-                              try {
-                                await widget.groupService.saveScheduleTemplate(
-                                  groupId: widget.group.id,
-                                  template: template.copyWith(active: v),
-                                );
-                              } catch (e, st) {
-                                if (kDebugMode) {
-                                  debugPrint('Failed to save template: $e');
-                                }
-                                ErrorLogger.log(e, st);
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content:
-                                          Text('Failed to update auto schedule'),
-                                    ),
-                                  );
-                                }
-                              } finally {
-                                if (mounted) {
-                                  setState(() => _isSavingTemplate = false);
-                                }
-                              }
-                            },
-                          ),
-                          if (template.active) ...[
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _autoTimeController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Start time (HH:mm)',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _autoTzController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Timezone (IANA, e.g. UTC)',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            DropdownButtonFormField<String>(
-                              value: _autoPlan ?? '',
-                              items: const [
-                                DropdownMenuItem(value: '', child: Text('None (empty entries)')),
-                                DropdownMenuItem(value: 'sequential_ot', child: Text('Sequential OT (Mon–Sat)')),
-                              ],
-                              onChanged: (v) {
-                                setState(() => _autoPlan = (v?.isEmpty ?? true) ? null : v);
-                              },
-                              decoration: const InputDecoration(
-                                labelText: 'Auto content plan',
-                                border: OutlineInputBorder(),
+                          ...items.map((entry) {
+                            final id = entry.$1;
+                            final t = entry.$2;
+                            final isDefault = id == 'default';
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                (t.name?.isNotEmpty == true)
+                                    ? t.name!
+                                    : (isDefault ? 'Default Auto Plan' : 'Auto Plan $id'),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            if (_autoPlan != null) ...[
-                              TextField(
-                                controller: _autoChaptersController,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  labelText: 'Chapters per day',
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 6,
+                              subtitle: Text(
+                                  '${t.plan ?? 'none'} · ${t.startTimeLocal} ${t.timezone}'),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  for (final code in const ['SU','MO','TU','WE','TH','FR','SA'])
-                                    FilterChip(
-                                      label: Text(code),
-                                      selected: _autoWeekdays.contains(code),
-                                      onSelected: (v) {
-                                        setState(() {
-                                          if (v) {
-                                            _autoWeekdays.add(code);
-                                          } else {
-                                            _autoWeekdays.remove(code);
-                                          }
-                                        });
-                                      },
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              TextField(
-                                controller: _autoStartRefController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Start at (e.g., Gen 1)',
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                            ],
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              height: 44,
-                              child: ElevatedButton(
-                                onPressed: _isSavingTemplate
-                                    ? null
-                                    : () async {
-                                        final t = (_scheduleTemplate ??
-                                                ScheduleTemplate.defaultUtc())
-                                            .copyWith(
-                                          startTimeLocal:
-                                              _autoTimeController.text.trim(),
-                                          timezone: _autoTzController.text.trim(),
-                                          plan: _autoPlan,
-                                          chaptersPerDay: int.tryParse(
-                                              _autoChaptersController.text.trim()),
-                                          weekdays: _autoPlan == null
-                                              ? null
-                                              : _autoWeekdays.toList(),
-                                          startRef: _autoPlan == null
-                                              ? null
-                                              : _autoStartRefController.text.trim(),
-                                        );
-                                        setState(
-                                            () => _isSavingTemplate = true);
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined),
+                                    tooltip: 'Edit',
+                                    onPressed: () async {
+                                      final edited = await showDialog<ScheduleTemplate>(
+                                        context: context,
+                                        builder: (_) => _EditAutoTemplateDialog(initial: t),
+                                      );
+                                      if (edited != null) {
                                         try {
-                                          await widget.groupService
-                                              .saveScheduleTemplate(
-                                                  groupId: widget.group.id,
-                                                  template: t);
-                                          if (mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(const SnackBar(
-                                                    content: Text(
-                                                        'Auto schedule saved')));
+                                          await widget.groupService.updateScheduleTemplate(
+                                            groupId: widget.group.id,
+                                            templateId: id,
+                                            template: edited,
+                                          );
+                                        } catch (e, st) {
+                                          ErrorLogger.log(e, st);
+                                        }
+                                      }
+                                    },
+                                  ),
+                                  Switch(
+                                    value: t.active,
+                                    onChanged: (v) async {
+                                      try {
+                                        await widget.groupService
+                                            .updateScheduleTemplate(
+                                          groupId: widget.group.id,
+                                          templateId: id,
+                                          template: t.copyWith(active: v),
+                                        );
+                                      } catch (e, st) {
+                                        ErrorLogger.log(e, st);
+                                      }
+                                    },
+                                  ),
+                                  PopupMenuButton<String>(
+                                    onSelected: (value) async {
+                                      if (value == 'reset') {
+                                        try {
+                                          await FirebaseFunctions.instanceFor(region: 'us-central1')
+                                              .httpsCallable('resetPlanCursor')
+                                              .call({
+                                            'groupId': widget.group.id,
+                                            'templateId': id,
+                                            'cursorRef': (t.startRef ?? 'Gen 1'),
+                                          });
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Plan cursor reset')),
+                                            );
                                           }
                                         } catch (e, st) {
-                                          if (kDebugMode) {
-                                            debugPrint(
-                                                'Failed to save template fields: $e');
-                                          }
                                           ErrorLogger.log(e, st);
-                                          if (mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(const SnackBar(
-                                                    content: Text(
-                                                        'Failed to save')));
-                                          }
-                                        } finally {
-                                          if (mounted) {
-                                            setState(() =>
-                                                _isSavingTemplate = false);
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Failed to reset plan')),
+                                            );
                                           }
                                         }
-                                      },
-                                child: _isSavingTemplate
-                                    ? const SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : const Text('Save Auto Schedule'),
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 16),
-                          const SectionHeader('Auto Templates'),
-                          StreamBuilder<List<(String, ScheduleTemplate)>>(
-                            stream: widget.groupService
-                                .scheduleTemplates(widget.group.id),
-                            builder: (context, listSnap) {
-                              final items = (listSnap.data ?? const [])
-                                  .where((e) => e.$1 != 'default')
-                                  .toList();
-                              if (items.isEmpty) {
-                                return const Text(
-                                    'No additional templates. Use Add Template to create more.');
-                              }
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ...items.map((entry) {
-                                    final id = entry.$1;
-                                    final t = entry.$2;
-                                  return ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    title: Text(t.name?.isNotEmpty == true
-                                        ? t.name!
-                                        : 'Template $id'),
-                                    subtitle: Text(
-                                        '${t.plan ?? 'none'} · ${t.startTimeLocal} ${t.timezone}'),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.edit_outlined),
-                                          tooltip: 'Edit',
-                                          onPressed: () async {
-                                            final edited = await showDialog<ScheduleTemplate>(
-                                              context: context,
-                                              builder: (_) => _EditAutoTemplateDialog(initial: t),
+                                      } else if (value == 'today') {
+                                        try {
+                                          await FirebaseFunctions.instanceFor(region: 'us-central1')
+                                              .httpsCallable('materializeToday')
+                                              .call({
+                                            'groupId': widget.group.id,
+                                            'templateId': id,
+                                          });
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Created/updated today\'s entry')),
                                             );
-                                            if (edited != null) {
-                                              try {
-                                                await widget.groupService.updateScheduleTemplate(
-                                                  groupId: widget.group.id,
-                                                  templateId: id,
-                                                  template: edited,
-                                                );
-                                              } catch (e, st) {
-                                                ErrorLogger.log(e, st);
-                                              }
-                                            }
-                                          },
-                                        ),
-                                        Switch(
-                                          value: t.active,
-                                          onChanged: (v) async {
-                                            try {
-                                              await widget.groupService
-                                                  .updateScheduleTemplate(
-                                                groupId: widget.group.id,
-                                                templateId: id,
-                                                template: t.copyWith(active: v),
-                                              );
-                                            } catch (e, st) {
-                                              ErrorLogger.log(e, st);
-                                            }
-                                          },
-                                        ),
-                                        PopupMenuButton<String>(
-                                          onSelected: (value) async {
-                                            if (value == 'reset') {
-                                              try {
-                                                await FirebaseFunctions.instanceFor(region: 'us-central1')
-                                                    .httpsCallable('resetPlanCursor')
-                                                    .call({
-                                                  'groupId': widget.group.id,
-                                                  'templateId': id,
-                                                  'cursorRef': (t.startRef ?? 'Gen 1'),
-                                                });
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(content: Text('Plan cursor reset')),
-                                                  );
-                                                }
-                                              } catch (e, st) {
-                                                ErrorLogger.log(e, st);
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(content: Text('Failed to reset plan')),
-                                                  );
-                                                }
-                                              }
-                                            } else if (value == 'today') {
-                                              try {
-                                                await FirebaseFunctions.instanceFor(region: 'us-central1')
-                                                    .httpsCallable('materializeToday')
-                                                    .call({
-                                                  'groupId': widget.group.id,
-                                                  'templateId': id,
-                                                });
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(content: Text('Created/updated today\'s entry')),
-                                                  );
-                                                }
-                                              } catch (e, st) {
-                                                ErrorLogger.log(e, st);
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(content: Text('Failed to create today')),
-                                                  );
-                                                }
-                                              }
-                                            }
-                                          },
-                                          itemBuilder: (context) => const [
-                                            PopupMenuItem(value: 'today', child: Text('Create Today Now')),
-                                            PopupMenuItem(value: 'reset', child: Text('Reset Next to Start')),
-                                          ],
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete_outline),
-                                          tooltip: 'Delete',
-                                          onPressed: () async {
-                                            try {
-                                              await widget.groupService
-                                                  .deleteScheduleTemplate(
-                                                groupId: widget.group.id,
-                                                templateId: id,
-                                              );
-                                            } catch (e, st) {
-                                              ErrorLogger.log(e, st);
-                                            }
-                                          },
-                                        )
-                                      ],
-                                    ),
-                                  );
-                                }),
-                                ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 44,
-                            child: OutlinedButton.icon(
-                              icon: const Icon(Icons.add),
-                              label: const Text('Add Template'),
-                              onPressed: () async {
-                                final created = await showDialog<ScheduleTemplate>(
-                                  context: context,
-                                  builder: (_) => _EditAutoTemplateDialog(
-                                    initial: ScheduleTemplate.defaultUtc()
-                                        .copyWith(plan: 'sequential_ot', weekdays: const ['MO','TU','WE','TH','FR','SA'], chaptersPerDay: 1, name: 'New Template'),
+                                          }
+                                        } catch (e, st) {
+                                          ErrorLogger.log(e, st);
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Failed to create today')),
+                                            );
+                                          }
+                                        }
+                                      }
+                                    },
+                                    itemBuilder: (context) => const [
+                                      PopupMenuItem(value: 'today', child: Text('Create Today Now')),
+                                      PopupMenuItem(value: 'reset', child: Text('Reset Next to Start')),
+                                    ],
                                   ),
-                                );
-                                if (created != null) {
-                                  try {
-                                    await widget.groupService.createScheduleTemplate(
-                                      groupId: widget.group.id,
-                                      template: created,
-                                    );
-                                  } catch (e, st) {
-                                    ErrorLogger.log(e, st);
-                                  }
-                                }
-                              },
-                            ),
-                          ),
+                                  if (!isDefault)
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline),
+                                      tooltip: 'Delete',
+                                      onPressed: () async {
+                                        try {
+                                          await widget.groupService
+                                              .deleteScheduleTemplate(
+                                            groupId: widget.group.id,
+                                            templateId: id,
+                                          );
+                                        } catch (e, st) {
+                                          ErrorLogger.log(e, st);
+                                        }
+                                      },
+                                    )
+                                ],
+                              ),
+                            );
+                          }),
                         ],
                       );
                     },
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 44,
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Auto Plan'),
+                      onPressed: () async {
+                        final created = await showDialog<ScheduleTemplate>(
+                          context: context,
+                          builder: (_) => _EditAutoTemplateDialog(
+                            initial: ScheduleTemplate.defaultUtc().copyWith(
+                              plan: 'sequential_ot',
+                              weekdays: const ['MO', 'TU', 'WE', 'TH', 'FR', 'SA'],
+                              chaptersPerDay: 1,
+                              name: 'New Auto Plan',
+                            ),
+                          ),
+                        );
+                        if (created != null) {
+                          try {
+                            await widget.groupService.createScheduleTemplate(
+                              groupId: widget.group.id,
+                              template: created,
+                            );
+                          } catch (e, st) {
+                            ErrorLogger.log(e, st);
+                          }
+                        }
+                      },
+                    ),
                   ),
                 ],
                 if (!isOwner && user != null && !isMember)
@@ -1282,7 +1054,7 @@ class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('New Auto Template'),
+      title: const Text('New Auto Plan'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
