@@ -11,6 +11,7 @@ import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/pages/group_detail_page.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
+import 'package:bible_read/services/plan_service.dart';
 
 class RecordingGroupService extends GroupService {
   RecordingGroupService({required super.firestore});
@@ -81,6 +82,7 @@ void main() {
     required GroupService service,
     required MockFirebaseAuth auth,
     VibrationService? vibrationService,
+    PlanService? planService,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -89,6 +91,7 @@ void main() {
           groupService: service,
           auth: auth,
           vibrationService: vibrationService,
+          planService: planService,
         ),
       ),
     );
@@ -100,6 +103,7 @@ void main() {
     required GroupService service,
     required MockFirebaseAuth auth,
     VibrationService? vibrationService,
+    PlanService? planService,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -112,6 +116,7 @@ void main() {
                   groupService: service,
                   auth: auth,
                   vibrationService: vibrationService,
+                  planService: planService,
                 ),
               ),
             ),

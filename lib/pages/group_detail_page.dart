@@ -11,17 +11,26 @@ import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../models/schedule_template.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/animated_page_route.dart';
 import '../widgets/group_members_section.dart';
 import '../widgets/schedule_item_tile.dart';
 import '../widgets/vibration_button.dart';
 import '../services/vibration_service.dart';
 import '../widgets/section_header.dart';
-import '../services/reference_parser.dart';
+import '../services/plan_service.dart';
 import 'read_log_page.dart';
 import 'group_join_requests_page.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import '../models/schedule_template.dart';
+
+export '../services/plan_service.dart'
+    show PlanService, ReadingPlan, ReadingPlanDefinition;
+
+List<String> _splitChapterInput(String input) {
+  return input
+      .split(RegExp(r'[;,]'))
+      .map((part) => part.trim())
+      .where((part) => part.isNotEmpty)
+      .toList();
+}
 
 /// Page showing the members and schedule for a group.
 class GroupDetailPage extends StatefulWidget {
@@ -37,6 +46,9 @@ class GroupDetailPage extends StatefulWidget {
   /// Service used to trigger vibrations.
   final VibrationService vibrationService;
 
+  /// Service used to generate predefined reading plans.
+  final PlanService planService;
+
   /// Creates a [GroupDetailPage].
   GroupDetailPage({
     super.key,
@@ -44,9 +56,11 @@ class GroupDetailPage extends StatefulWidget {
     GroupService? groupService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
+    PlanService? planService,
   })  : groupService = groupService ?? GroupService(),
         auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService();
+        vibrationService = vibrationService ?? const VibrationService(),
+        planService = planService ?? const PlanService();
 
   @override
   State<GroupDetailPage> createState() => _GroupDetailPageState();
@@ -62,6 +76,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   bool _editMode = false;
   bool _isSavingName = false;
   late String _groupName;
+  ReadingPlan? _selectedPlan;
+  bool _applyingPlan = false;
   // Automation Plans UI (consolidated): handled via list + dialogs.
 
   String _dateKey(DateTime date) =>
@@ -75,6 +91,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     _nameController = TextEditingController(text: _groupName);
     final now = DateTime.now();
     _progressDate = DateTime(now.year, now.month, now.day);
+    final plans = widget.planService.plans;
+    if (plans.isNotEmpty) {
+      _selectedPlan = plans.first.plan;
+    }
   }
 
   @override
@@ -87,7 +107,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   Future<void> _saveToday() async {
     if (_isSavingToday) return;
     final text = _todayController.text.trim();
-    final chapters = ReferenceParser.parseChaptersList(text);
+    final chapters = _splitChapterInput(text);
     if (chapters.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -142,6 +162,66 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       });
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Failed to save')));
+    }
+  }
+
+  Future<void> _applySelectedPlan() async {
+    final planType = _selectedPlan;
+    if (planType == null || _applyingPlan) return;
+    final current = List<GroupSchedule>.from(
+      _scheduleOverride ?? _latestSchedule ?? const <GroupSchedule>[],
+    );
+    current.sort((a, b) => a.date.compareTo(b.date));
+    final now = DateTime.now();
+    final DateTime startDate;
+    if (current.isEmpty) {
+      startDate = DateTime(now.year, now.month, now.day);
+    } else {
+      final latest = current.last.date;
+      startDate = DateTime(latest.year, latest.month, latest.day)
+          .add(const Duration(days: 1));
+    }
+    final generated = widget.planService.createSchedule(
+      plan: planType,
+      startDate: startDate,
+    );
+    if (generated.isEmpty) return;
+
+    final previousOverride = _scheduleOverride;
+    final previousLatest = _latestSchedule;
+    final optimistic = List<GroupSchedule>.from(current)
+      ..addAll(generated)
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    setState(() {
+      _applyingPlan = true;
+      _scheduleOverride = optimistic;
+    });
+
+    try {
+      for (final schedule in generated) {
+        await widget.groupService.updateSchedule(
+          groupId: widget.group.id,
+          schedule: schedule,
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        _applyingPlan = false;
+        _latestSchedule = optimistic;
+        _scheduleOverride = null;
+      });
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      if (!mounted) return;
+      setState(() {
+        _applyingPlan = false;
+        _scheduleOverride = previousOverride;
+        _latestSchedule = previousLatest;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to apply plan')),
+      );
     }
   }
 
@@ -205,6 +285,45 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Failed to update name')));
     }
+  }
+
+  Future<void> _showRenameDialog() async {
+    if (_isSavingName) return;
+    _nameController.text = _groupName;
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Rename Group'),
+          content: TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(labelText: 'Group name'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(_nameController.text.trim()),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    if (result == null) {
+      _nameController.text = _groupName;
+      return;
+    }
+    final trimmed = result.trim();
+    if (trimmed.isEmpty || trimmed == _groupName) {
+      _nameController.text = _groupName;
+      return;
+    }
+    _nameController.text = trimmed;
+    await _saveGroupName();
   }
 
   Future<void> _toggleMyRead(bool read) async {
@@ -465,11 +584,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
   Future<void> _editSchedule([GroupSchedule? schedule]) async {
     final result = await Navigator.of(context).push<GroupSchedule>(
-      animatedPageRoute(
-        _EditScheduleDialog(
+      MaterialPageRoute(
+        builder: (_) => _EditScheduleDialog(
           schedule: schedule,
           vibrationService: widget.vibrationService,
         ),
+        fullscreenDialog: true,
       ),
     );
 
@@ -495,38 +615,33 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       final dateChanged = schedule != null && schedule.date != result.date;
       final newSchedule = List<GroupSchedule>.from(updated);
 
-      unawaited(() async {
-        try {
-          if (dateChanged) {
-            await widget.groupService.deleteSchedule(
-              groupId: widget.group.id,
-              date: schedule.date,
-            );
-          }
-          await widget.groupService
-              .updateSchedule(groupId: widget.group.id, schedule: result);
-          if (mounted) {
-            setState(() {
-              _scheduleOverride = null;
-              _latestSchedule = newSchedule;
-            });
-          }
-        } catch (e, st) {
-          if (kDebugMode) {
-            debugPrint('Failed to update schedule: $e');
-          }
-          ErrorLogger.log(e, st);
-          if (mounted) {
-            setState(() {
-              _scheduleOverride = previous;
-            });
-            // ignore: use_build_context_synchronously
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Failed to update schedule')),
-            );
-          }
+      try {
+        if (dateChanged) {
+          await widget.groupService.deleteSchedule(
+            groupId: widget.group.id,
+            date: schedule.date,
+          );
         }
-      }());
+        await widget.groupService
+            .updateSchedule(groupId: widget.group.id, schedule: result);
+        if (mounted) {
+          setState(() {
+            _scheduleOverride = null;
+            _latestSchedule = newSchedule;
+          });
+        }
+      } catch (e, st) {
+        ErrorLogger.log(e, st);
+        if (mounted) {
+          setState(() {
+            _scheduleOverride = previous;
+          });
+          // ignore: use_build_context_synchronously
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to update schedule')),
+          );
+        }
+      }
     }
   }
 
@@ -554,7 +669,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         final isMember = isOwner || (memberDoc?.exists ?? false);
         final hasAdminPrivileges =
             isOwner || role == 'admin' || role == 'owner';
-        final canEditSchedule = hasAdminPrivileges && _editMode;
+        final isEditingSchedule = hasAdminPrivileges;
 
         // Determine if a schedule for today already exists to control
         // whether the Save button/input should be enabled.
@@ -587,7 +702,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       },
                     ),
                     IconButton(
-                      icon: Icon(_editMode ? Icons.check : Icons.edit),
+                      icon: Icon(
+                          _editMode ? Icons.check : Icons.edit_note_outlined),
                       tooltip: _editMode ? 'Done' : 'Edit',
                       onPressed: () {
                         setState(() {
@@ -598,7 +714,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ]
                 : null,
           ),
-          floatingActionButton: canEditSchedule
+          floatingActionButton: hasAdminPrivileges
               ? FloatingActionButton(
                   heroTag: 'group-detail-fab',
                   onPressed: () {
@@ -615,37 +731,19 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               children: [
                 if (_editMode && hasAdminPrivileges) ...[
                   const SectionHeader('Group'),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          key: const Key('group-name-field'),
-                          controller: _nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Group name',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: 56,
-                        child: ElevatedButton(
-                          key: const Key('save-group-name-button'),
-                          onPressed: _isSavingName ? null : _saveGroupName,
-                          child: _isSavingName
-                              ? const SizedBox(
-                                  height: 16,
-                                  width: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Save'),
-                        ),
-                      ),
-                    ],
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: const Key('rename-group-button'),
+                      icon: const Icon(Icons.drive_file_rename_outline),
+                      onPressed: _isSavingName
+                          ? null
+                          : () {
+                              unawaited(widget.vibrationService.lightImpact());
+                              _showRenameDialog();
+                            },
+                      label: const Text('Rename group'),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const SectionHeader('Auto Content Plans'),
@@ -917,7 +1015,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ),
                 ),
                 const SectionHeader('Schedule'),
-                if (canEditSchedule) ...[
+                if (isEditingSchedule) ...[
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -947,7 +1045,58 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Text('Save'),
+                              : const Text('Save today'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                if (hasAdminPrivileges &&
+                    widget.planService.plans.isNotEmpty) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<ReadingPlan>(
+                          key: const Key('plan-dropdown'),
+                          value: _selectedPlan,
+                          decoration: const InputDecoration(
+                            labelText: 'Apply reading plan',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: widget.planService.plans
+                              .map(
+                                (definition) => DropdownMenuItem<ReadingPlan>(
+                                  value: definition.plan,
+                                  child: Text(definition.title),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: _applyingPlan
+                              ? null
+                              : (value) {
+                                  setState(() => _selectedPlan = value);
+                                },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 56,
+                        child: ElevatedButton(
+                          key: const Key('apply-plan-button'),
+                          onPressed: (_selectedPlan == null || _applyingPlan)
+                              ? null
+                              : _applySelectedPlan,
+                          child: _applyingPlan
+                              ? const SizedBox(
+                                  height: 16,
+                                  width: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Apply'),
                         ),
                       ),
                     ],
@@ -978,10 +1127,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         final baseTile = ScheduleItemTile(
                           schedule: s,
                           onEdit:
-                              canEditSchedule ? () => _editSchedule(s) : null,
-                          onDelete:
-                              canEditSchedule ? () => _deleteSchedule(s) : null,
-                          onTap: !canEditSchedule
+                              isEditingSchedule ? () => _editSchedule(s) : null,
+                          onDelete: isEditingSchedule
+                              ? () => _deleteSchedule(s)
+                              : null,
+                          onTap: !isEditingSchedule
                               ? () {
                                   setState(() {
                                     _progressDate = DateTime(
@@ -990,7 +1140,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                 }
                               : null,
                         );
-                        if (user == null || canEditSchedule) {
+                        if (user == null || isEditingSchedule) {
                           return baseTile;
                         }
                         final dateKey = _dateKey(s.date);
@@ -1054,10 +1204,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
                                 return ScheduleItemTile(
                                   schedule: s,
-                                  onEdit: canEditSchedule
+                                  onEdit: isEditingSchedule
                                       ? () => _editSchedule(s)
                                       : null,
-                                  onDelete: canEditSchedule
+                                  onDelete: isEditingSchedule
                                       ? () => _deleteSchedule(s)
                                       : null,
                                   currentUserRead: currentUserRead,
@@ -1071,7 +1221,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     _toggleMyChapterForDate(
                                         s.date, chapterIndex, v);
                                   },
-                                  onTap: !canEditSchedule
+                                  onTap: !isEditingSchedule
                                       ? () {
                                           setState(() {
                                             _progressDate = DateTime(
@@ -1146,43 +1296,68 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
   }
 
   void _save() {
-    final chapters = ReferenceParser.parseChaptersList(_controller.text);
+    final chapters = _splitChapterInput(_controller.text);
     Navigator.of(context)
         .pop(GroupSchedule(date: _selected, chapters: chapters));
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.schedule == null ? 'Add Schedule' : 'Edit Schedule'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _controller,
-            decoration: const InputDecoration(
-              labelText: 'Chapters (comma separated)',
+    final title = widget.schedule == null ? 'Add Schedule' : 'Edit Schedule';
+    final dateLabel = _selected.toIso8601String().split('T').first;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () {
+            unawaited(widget.vibrationService.lightImpact());
+            Navigator.of(context).pop();
+          },
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () {
+                unawaited(widget.vibrationService.lightImpact());
+                _save();
+              },
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Text('Save'),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: _pickDate,
-            child: Text(_selected.toIso8601String().split('T').first),
           ),
         ],
       ),
-      actions: [
-        VibrationButton(
-          vibrationService: widget.vibrationService,
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _controller,
+                decoration: const InputDecoration(
+                  labelText: 'Chapters (comma separated)',
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Date',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              TextButton(
+                onPressed: _pickDate,
+                child: Text(dateLabel),
+              ),
+            ],
+          ),
         ),
-        VibrationButton(
-          vibrationService: widget.vibrationService,
-          onPressed: _save,
-          child: const Text('Save'),
-        ),
-      ],
+      ),
     );
   }
 }
