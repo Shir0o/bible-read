@@ -613,6 +613,54 @@ class GroupService {
     });
   }
 
+  /// Stream all schedule templates for [groupId].
+  Stream<List<(String id, ScheduleTemplate template)>> scheduleTemplates(
+      String groupId) {
+    final col = firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.scheduleTemplates);
+    return col.snapshots().map((snap) => snap.docs
+        .map((d) => (d.id, ScheduleTemplate.fromFirestore(d)))
+        .toList());
+  }
+
+  /// Create a new schedule template for [groupId] and return its id.
+  Future<String> createScheduleTemplate({
+    required String groupId,
+    required ScheduleTemplate template,
+  }) async {
+    try {
+      final doc = await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.scheduleTemplates)
+          .add(template.toFirestore());
+      return doc.id;
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
+  }
+
+  /// Delete an existing schedule template by [templateId].
+  Future<void> deleteScheduleTemplate({
+    required String groupId,
+    required String templateId,
+  }) async {
+    try {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.scheduleTemplates)
+          .doc(templateId)
+          .delete();
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
+  }
+
   /// Save the default schedule template for [groupId].
   Future<void> saveScheduleTemplate({
     required String groupId,
@@ -624,6 +672,25 @@ class GroupService {
           .doc(groupId)
           .collection(GroupCollections.scheduleTemplates)
           .doc('default')
+          .set(template.toFirestore(), SetOptions(merge: true));
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
+  }
+
+  /// Update an existing schedule template by id for [groupId].
+  Future<void> updateScheduleTemplate({
+    required String groupId,
+    required String templateId,
+    required ScheduleTemplate template,
+  }) async {
+    try {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.scheduleTemplates)
+          .doc(templateId)
           .set(template.toFirestore(), SetOptions(merge: true));
     } catch (e, st) {
       await ErrorLogger.log(e, st);

@@ -47,4 +47,16 @@ Group owners/admins can enable an "Auto-add daily schedule" option on the Group 
 - `startTimeLocal: string` – HH:mm in the group's local time (informational in MVP)
 - `rrule: string` – recurrence rule, defaults to `FREQ=DAILY;INTERVAL=1`
 
-When enabled, a Cloud Function runs daily and creates an empty schedule document for the current local date if one does not exist yet. This is idempotent and safe to rerun.
+When enabled, a Cloud Function runs daily and creates a schedule document for the current local date if one does not exist yet. This is idempotent and safe to rerun. By default chapters are empty, but you can configure a plan to generate content automatically.
+
+### Auto content (plans)
+
+Add optional fields to `groups/{groupId}/scheduleTemplates/default` to auto‑fill chapters:
+
+- `plan: 'sequential_ot'` – sequential Old Testament
+- `chaptersPerDay: number` – how many chapters to assign per scheduled day
+- `weekdays: string[]` – RFC weekday codes like `['MO','TU','WE','TH','FR','SA']`
+- `startRef: string` – where to start, e.g. `"Gen 1"`
+
+Behavior:
+- For `sequential_ot`, the job assigns the next `chaptersPerDay` chapters, continuing from the last scheduled day’s final chapter (or `startRef` if none). It respects `weekdays` (skips Sunday if omitted).
