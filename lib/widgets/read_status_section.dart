@@ -4,6 +4,7 @@ import 'common_styles.dart';
 import 'month_streak_calendar.dart';
 import 'read_switch_tile.dart';
 import 'week_streak_calendar.dart';
+import '../services/vibration_service.dart';
 
 /// Displays the user's read toggle and streak calendars.
 class ReadStatusSection extends StatelessWidget {
@@ -19,13 +20,17 @@ class ReadStatusSection extends StatelessWidget {
   /// Dates that the user has read.
   final Set<DateTime> readDates;
 
+  /// Service used for toggle vibrations.
+  final VibrationService vibrationService;
+
   const ReadStatusSection({
     super.key,
     required this.toggleLoading,
     required this.readToday,
     this.onToggle,
     required this.readDates,
-  });
+    VibrationService? vibrationService,
+  }) : vibrationService = vibrationService ?? const VibrationService();
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +58,7 @@ class ReadStatusSection extends StatelessWidget {
                     ReadSwitchTile(
                       value: readToday,
                       onChanged: readToday ? null : (_) => onToggle?.call(),
+                      vibrationService: vibrationService,
                     ),
                   ],
                 ),

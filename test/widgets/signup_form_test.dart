@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/widgets/signup_form.dart';
 import 'package:bible_read/widgets/success_animation.dart';
+import 'package:bible_read/services/vibration_service.dart';
 import '../helpers/mock_lottie_http_client.dart';
 
 class RecordingAuth extends MockFirebaseAuth {
@@ -38,10 +39,27 @@ class FailingAuth extends MockFirebaseAuth {
   }
 }
 
+class _TestVibrationService extends VibrationService {
+  const _TestVibrationService() : super();
+
+  @override
+  Future<void> tap() async {}
+
+  @override
+  Future<void> lightImpact() async {}
+
+  @override
+  Future<void> mediumImpact() async {}
+
+  @override
+  Future<void> heavyImpact() async {}
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(setupLottieHttpOverrides);
   tearDownAll(resetHttpOverrides);
+  const vibration = _TestVibrationService();
 
   testWidgets('creates account and writes user document then calls onComplete',
       (tester) async {
@@ -56,6 +74,7 @@ void main() {
             auth: auth,
             firestore: firestore,
             onComplete: () => completed = true,
+            vibrationService: vibration,
           ),
         ),
       ),
@@ -97,6 +116,7 @@ void main() {
           body: SignupForm(
             auth: auth,
             firestore: firestore,
+            vibrationService: vibration,
           ),
         ),
       ),
@@ -123,6 +143,7 @@ void main() {
           body: SignupForm(
             auth: auth,
             firestore: firestore,
+            vibrationService: vibration,
           ),
         ),
       ),

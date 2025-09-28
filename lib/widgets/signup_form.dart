@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../services/error_logger.dart';
 import 'animated_action_button.dart';
 import 'success_animation.dart';
+import '../services/vibration_service.dart';
 
 /// Form widget used to sign up a new user with email and password.
 class SignupForm extends StatefulWidget {
@@ -17,13 +18,17 @@ class SignupForm extends StatefulWidget {
   /// Optional callback invoked when the sign up completes successfully.
   final VoidCallback? onComplete;
 
+  /// Service used for celebratory haptic feedback.
+  final VibrationService vibrationService;
+
   /// Creates a [SignupForm].
   const SignupForm({
     super.key,
     required this.auth,
     required this.firestore,
     this.onComplete,
-  });
+    VibrationService? vibrationService,
+  }) : vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<SignupForm> createState() => _SignupFormState();
@@ -70,7 +75,10 @@ class _SignupFormState extends State<SignupForm> {
         });
       }
       if (mounted) {
-        SuccessAnimation.show(context);
+        SuccessAnimation.show(
+          context,
+          vibrationService: widget.vibrationService,
+        );
         widget.onComplete?.call();
       }
     } catch (e, st) {
@@ -120,6 +128,7 @@ class _SignupFormState extends State<SignupForm> {
         AnimatedActionButton(
           onPressed: _submit,
           isLoading: _loading,
+          vibrationService: widget.vibrationService,
           child: const Text('Sign Up'),
         ),
       ],
