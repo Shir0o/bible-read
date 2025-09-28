@@ -16,6 +16,32 @@ class AppDrawer extends StatelessWidget {
     VibrationService? vibrationService,
   }) : vibrationService = vibrationService ?? const VibrationService();
 
+  Widget _buildNavItem(
+    BuildContext context, {
+    required int index,
+    required IconData icon,
+    required String label,
+  }) {
+    return CommonStyles.buildTappableCard(
+      onTap: () {
+        unawaited(vibrationService.lightImpact());
+        Navigator.pop(context);
+        onNavigate(index);
+      },
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: ListTile(
+        dense: true,
+        visualDensity: const VisualDensity(vertical: -3),
+        contentPadding: EdgeInsets.zero,
+        leading: Icon(icon),
+        title: Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -35,111 +61,60 @@ class AppDrawer extends StatelessWidget {
                 ),
               ),
             ),
-            CommonStyles.buildTappableCard(
-              onTap: () {
-                unawaited(vibrationService.lightImpact());
-                Navigator.pop(context);
-                onNavigate(3);
-              },
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: const ListTile(
-                dense: true,
-                visualDensity: VisualDensity(vertical: -3),
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.leaderboard),
-                title: Text('Leaderboard'),
-              ),
+            _buildNavItem(
+              context,
+              index: 0,
+              icon: Icons.home_outlined,
+              label: 'Home',
             ),
-            CommonStyles.buildTappableCard(
-              onTap: () {
-                unawaited(vibrationService.lightImpact());
-                Navigator.pop(context);
-                onNavigate(4);
-              },
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: const ListTile(
-                dense: true,
-                visualDensity: VisualDensity(vertical: -3),
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.people),
-                title: Text('Friends'),
-              ),
+            _buildNavItem(
+              context,
+              index: 1,
+              icon: Icons.rss_feed,
+              label: 'Feed',
             ),
-            CommonStyles.buildTappableCard(
-              onTap: () {
-                unawaited(vibrationService.lightImpact());
-                Navigator.pop(context);
-                onNavigate(5);
-              },
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: const ListTile(
-                dense: true,
-                visualDensity: VisualDensity(vertical: -3),
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.group),
-                title: Text('Groups'),
-              ),
+            _buildNavItem(
+              context,
+              index: 3,
+              icon: Icons.leaderboard,
+              label: 'Leaderboard',
             ),
-            CommonStyles.buildTappableCard(
-              onTap: () {
-                unawaited(vibrationService.lightImpact());
-                Navigator.pop(context);
-                onNavigate(2);
-              },
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: const ListTile(
-                dense: true,
-                visualDensity: VisualDensity(vertical: -3),
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.flag),
-                title: Text('Seasonal Challenges'),
-              ),
+            _buildNavItem(
+              context,
+              index: 4,
+              icon: Icons.people,
+              label: 'Friends',
             ),
-            CommonStyles.buildTappableCard(
-              onTap: () {
-                unawaited(vibrationService.lightImpact());
-                Navigator.pop(context);
-                onNavigate(6);
-              },
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: const ListTile(
-                dense: true,
-                visualDensity: VisualDensity(vertical: -3),
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.emoji_events),
-                title: Text('Achievements'),
-              ),
+            _buildNavItem(
+              context,
+              index: 5,
+              icon: Icons.group,
+              label: 'Groups',
             ),
-            CommonStyles.buildTappableCard(
-              onTap: () {
-                unawaited(vibrationService.lightImpact());
-                Navigator.pop(context);
-                onNavigate(7);
-              },
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: const ListTile(
-                dense: true,
-                visualDensity: VisualDensity(vertical: -3),
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.calendar_today),
-                title: Text('History'),
-              ),
+            _buildNavItem(
+              context,
+              index: 2,
+              icon: Icons.flag,
+              label: 'Seasonal Challenges',
+            ),
+            _buildNavItem(
+              context,
+              index: 6,
+              icon: Icons.emoji_events,
+              label: 'Achievements',
+            ),
+            _buildNavItem(
+              context,
+              index: 7,
+              icon: Icons.calendar_today,
+              label: 'History',
             ),
             const Divider(),
-            CommonStyles.buildTappableCard(
-              onTap: () {
-                unawaited(vibrationService.lightImpact());
-                Navigator.pop(context);
-                onNavigate(9);
-              },
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: const ListTile(
-                dense: true,
-                visualDensity: VisualDensity(vertical: -3),
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.person),
-                title: Text('Profile'),
-              ),
+            _buildNavItem(
+              context,
+              index: 9,
+              icon: Icons.person,
+              label: 'Profile',
             ),
           ],
         ),

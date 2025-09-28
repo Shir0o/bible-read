@@ -62,10 +62,82 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   bool _editMode = false;
   bool _isSavingName = false;
   late String _groupName;
+  final Map<String, bool> _pendingReadOverrides = <String, bool>{};
+  final Map<String, Map<int, bool>> _pendingChapterOverrides =
+      <String, Map<int, bool>>{};
+  final Map<String, int> _pendingReadOps = <String, int>{};
+  final Map<String, Map<int, int>> _pendingChapterOps =
+      <String, Map<int, int>>{};
+  int _nextPendingOpId = 0;
   // Automation Plans UI (consolidated): handled via list + dialogs.
 
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  Map<int, bool> _ensureChapterOverrideMap(String dateKey) =>
+      _pendingChapterOverrides.putIfAbsent(dateKey, () => <int, bool>{});
+
+  Map<int, int> _ensureChapterOpsMap(String dateKey) =>
+      _pendingChapterOps.putIfAbsent(dateKey, () => <int, int>{});
+
+  void _applyChapterOverride(
+      String dateKey, int chapterIndex, bool value, int opId) {
+    _ensureChapterOverrideMap(dateKey)[chapterIndex] = value;
+    _ensureChapterOpsMap(dateKey)[chapterIndex] = opId;
+  }
+
+  void _removeChapterOverride(String dateKey, int chapterIndex) {
+    final overrides = _pendingChapterOverrides[dateKey];
+    overrides?.remove(chapterIndex);
+    if (overrides != null && overrides.isEmpty) {
+      _pendingChapterOverrides.remove(dateKey);
+    }
+    final ops = _pendingChapterOps[dateKey];
+    ops?.remove(chapterIndex);
+    if (ops != null && ops.isEmpty) {
+      _pendingChapterOps.remove(dateKey);
+    }
+  }
+
+  void _scheduleChapterOverrideCleanup(
+    String dateKey,
+    int chapterIndex,
+    int opId,
+  ) {
+    Future<void>.delayed(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      if (_pendingChapterOps[dateKey]?[chapterIndex] != opId) {
+        return;
+      }
+      setState(() => _removeChapterOverride(dateKey, chapterIndex));
+    });
+  }
+
+  void _applyReadOverride(String dateKey, bool value, int opId) {
+    _pendingReadOverrides[dateKey] = value;
+    _pendingReadOps[dateKey] = opId;
+  }
+
+  void _revertReadOverride(String dateKey, bool? previousValue) {
+    if (previousValue == null) {
+      _pendingReadOverrides.remove(dateKey);
+    } else {
+      _pendingReadOverrides[dateKey] = previousValue;
+    }
+  }
+
+  void _scheduleReadOverrideCleanup(String dateKey, int opId) {
+    Future<void>.delayed(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      if (_pendingReadOps[dateKey] != opId) {
+        return;
+      }
+      setState(() {
+        _pendingReadOverrides.remove(dateKey);
+        _pendingReadOps.remove(dateKey);
+      });
+    });
+  }
 
   @override
   void initState() {
@@ -249,9 +321,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     }
   }
 
-  Future<void> _toggleMyReadForDate(DateTime date, bool read) async {
+  Future<bool> _toggleMyReadForDate(DateTime date, bool read) async {
     final user = widget.auth.currentUser;
-    if (user == null) return;
+    if (user == null) return false;
     try {
       final target = DateTime(date.year, date.month, date.day);
       final dateKey =
@@ -278,19 +350,21 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       } else {
         await progressDoc.delete();
       }
+      return true;
     } catch (e, st) {
       if (kDebugMode) debugPrint('Failed to toggle read: $e');
       ErrorLogger.log(e, st);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to update read status')));
+      return false;
     }
   }
 
-  Future<void> _toggleMyChapterForDate(
+  Future<bool> _toggleMyChapterForDate(
       DateTime date, int chapterIndex, bool read) async {
     final user = widget.auth.currentUser;
-    if (user == null) return;
+    if (user == null) return false;
     try {
       final target = DateTime(date.year, date.month, date.day);
       final dateKey =
@@ -313,8 +387,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           .doc(user.uid);
 
       await db.runTransaction((tx) async {
-        final List<DocumentSnapshot<Map<String, dynamic>>> snapshots =
-            await tx.getAll(itemDoc, base, summaryDoc);
+        final snapshots =
+            await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
+          tx.get(itemDoc),
+          tx.get(base),
+          tx.get(summaryDoc),
+        ]);
         final itemSnap = snapshots[0];
         final baseSnap = snapshots[1];
         final summarySnap = snapshots[2];
@@ -358,25 +436,27 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               summaryDoc, {'completed': newCompleted}, SetOptions(merge: true));
         }
       });
+      return true;
     } catch (e, st) {
       if (kDebugMode) debugPrint('Failed to toggle chapter: $e');
       ErrorLogger.log(e, st);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to update read status')));
+      return false;
     }
   }
 
-  Future<void> _setMyReadStatusForDate({
+  Future<bool> _setMyReadStatusForDate({
     required GroupSchedule schedule,
     required bool read,
     required Set<int> currentlyChecked,
   }) async {
     if (schedule.chapters.isEmpty) {
-      return;
+      return true;
     }
     final user = widget.auth.currentUser;
-    if (user == null) return;
+    if (user == null) return false;
     try {
       final target =
           DateTime(schedule.date.year, schedule.date.month, schedule.date.day);
@@ -399,8 +479,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           .doc(user.uid);
 
       await db.runTransaction((tx) async {
-        final List<DocumentSnapshot<Map<String, dynamic>>> snapshots =
-            await tx.getAll(entryRef, summaryRef);
+        final snapshots =
+            await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
+          tx.get(entryRef),
+          tx.get(summaryRef),
+        ]);
         final entrySnap = snapshots[0];
         final summarySnap = snapshots[1];
         final nowTs = Timestamp.now();
@@ -458,13 +541,129 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           );
         }
       });
+      return true;
     } catch (e, st) {
       if (kDebugMode) debugPrint('Failed to toggle read: $e');
       ErrorLogger.log(e, st);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to update read status')));
+      return false;
     }
+  }
+
+  void _handleChapterToggle({
+    required GroupSchedule schedule,
+    required int chapterIndex,
+    required bool read,
+  }) {
+    final dateKey = _dateKey(schedule.date);
+    final opId = _nextPendingOpId++;
+
+    setState(() {
+      _progressDate = DateTime(
+        schedule.date.year,
+        schedule.date.month,
+        schedule.date.day,
+      );
+      _applyChapterOverride(dateKey, chapterIndex, read, opId);
+    });
+
+    unawaited(() async {
+      final success =
+          await _toggleMyChapterForDate(schedule.date, chapterIndex, read);
+      if (!mounted) return;
+      if (_pendingChapterOps[dateKey]?[chapterIndex] != opId) {
+        return;
+      }
+      if (success) {
+        _scheduleChapterOverrideCleanup(dateKey, chapterIndex, opId);
+      } else {
+        setState(() => _removeChapterOverride(dateKey, chapterIndex));
+      }
+    }());
+  }
+
+  void _handleScheduleReadToggle({
+    required GroupSchedule schedule,
+    required bool read,
+    required Set<int> currentlyChecked,
+    required bool hasChapters,
+  }) {
+    final dateKey = _dateKey(schedule.date);
+    final opId = _nextPendingOpId++;
+    final previousReadOverride = _pendingReadOverrides[dateKey];
+    final previousChapterOverrides = _pendingChapterOverrides[dateKey] != null
+        ? Map<int, bool>.from(_pendingChapterOverrides[dateKey]!)
+        : null;
+    final previousChapterOps = _pendingChapterOps[dateKey] != null
+        ? Map<int, int>.from(_pendingChapterOps[dateKey]!)
+        : null;
+    final touchedChapters = <int>[];
+
+    setState(() {
+      _progressDate = DateTime(
+        schedule.date.year,
+        schedule.date.month,
+        schedule.date.day,
+      );
+      _applyReadOverride(dateKey, read, opId);
+      if (hasChapters) {
+        final overrides = _ensureChapterOverrideMap(dateKey);
+        final ops = _ensureChapterOpsMap(dateKey);
+        for (var i = 0; i < schedule.chapters.length; i++) {
+          overrides[i] = read;
+          ops[i] = opId;
+          touchedChapters.add(i);
+        }
+      }
+    });
+
+    unawaited(() async {
+      final bool success = hasChapters
+          ? await _setMyReadStatusForDate(
+              schedule: schedule,
+              read: read,
+              currentlyChecked: currentlyChecked,
+            )
+          : await _toggleMyReadForDate(schedule.date, read);
+
+      if (!mounted) return;
+      if (_pendingReadOps[dateKey] != opId) {
+        return;
+      }
+
+      if (success) {
+        _scheduleReadOverrideCleanup(dateKey, opId);
+        if (hasChapters) {
+          for (final index in touchedChapters) {
+            if (_pendingChapterOps[dateKey]?[index] == opId) {
+              _scheduleChapterOverrideCleanup(dateKey, index, opId);
+            }
+          }
+        }
+        return;
+      }
+
+      setState(() {
+        _pendingReadOps.remove(dateKey);
+        _revertReadOverride(dateKey, previousReadOverride);
+        if (hasChapters) {
+          if (previousChapterOverrides == null) {
+            _pendingChapterOverrides.remove(dateKey);
+          } else {
+            _pendingChapterOverrides[dateKey] =
+                Map<int, bool>.from(previousChapterOverrides);
+          }
+          if (previousChapterOps == null) {
+            _pendingChapterOps.remove(dateKey);
+          } else {
+            _pendingChapterOps[dateKey] =
+                Map<int, int>.from(previousChapterOps);
+          }
+        }
+      });
+    }());
   }
 
   Future<void> _editSchedule([GroupSchedule? schedule]) async {
@@ -1012,47 +1211,66 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           builder: (context, entrySnap) {
                             final entryData = entrySnap.data?.data();
                             final baseDone = entryData?['done'] == true;
-                            return StreamBuilder<
-                                QuerySnapshot<Map<String, dynamic>>>(
-                              stream: entryRef.collection('items').snapshots(),
-                              builder: (context, itemsSnap) {
-                                final checked = <int>{};
+                        return StreamBuilder<
+                            QuerySnapshot<Map<String, dynamic>>>(
+                          stream: entryRef.collection('items').snapshots(),
+                          builder: (context, itemsSnap) {
+                                final rawChecked = <int>{};
                                 for (final d
                                     in itemsSnap.data?.docs ?? const []) {
                                   final idx = int.tryParse(d.id);
-                                  if (idx != null) checked.add(idx);
+                                  if (idx != null) rawChecked.add(idx);
+                                }
+
+                                final displayChecked = Set<int>.from(rawChecked);
+                                final pendingChapterOverride =
+                                    _pendingChapterOverrides[dateKey];
+                                if (pendingChapterOverride != null) {
+                                  pendingChapterOverride
+                                      .forEach((chapterIndex, value) {
+                                    if (value) {
+                                      displayChecked.add(chapterIndex);
+                                    } else {
+                                      displayChecked.remove(chapterIndex);
+                                    }
+                                  });
                                 }
 
                                 final totalChapters = s.chapters.length;
                                 final hasChapters = totalChapters > 0;
                                 final allChecked = hasChapters &&
-                                    checked.length >= totalChapters;
+                                    displayChecked.length >= totalChapters;
+                                final pendingRead =
+                                    _pendingReadOverrides[dateKey];
 
                                 bool? currentUserRead;
                                 ValueChanged<bool>? onToggleRead;
                                 if (hasChapters) {
-                                  currentUserRead = allChecked;
+                                  currentUserRead = pendingRead ?? allChecked;
                                   onToggleRead = (value) {
-                                    if (value == allChecked) return;
-                                    setState(() {
-                                      _progressDate = DateTime(s.date.year,
-                                          s.date.month, s.date.day);
-                                    });
-                                    unawaited(_setMyReadStatusForDate(
+                                    if (value == (pendingRead ?? allChecked)) {
+                                      return;
+                                    }
+                                    _handleScheduleReadToggle(
                                       schedule: s,
                                       read: value,
-                                      currentlyChecked: Set<int>.from(checked),
-                                    ));
+                                      currentlyChecked:
+                                          Set<int>.from(rawChecked),
+                                      hasChapters: true,
+                                    );
                                   };
                                 } else {
-                                  currentUserRead = baseDone;
+                                  currentUserRead = pendingRead ?? baseDone;
                                   onToggleRead = (value) {
-                                    setState(() {
-                                      _progressDate = DateTime(s.date.year,
-                                          s.date.month, s.date.day);
-                                    });
-                                    unawaited(
-                                        _toggleMyReadForDate(s.date, value));
+                                    if (value == (pendingRead ?? baseDone)) {
+                                      return;
+                                    }
+                                    _handleScheduleReadToggle(
+                                      schedule: s,
+                                      read: value,
+                                      currentlyChecked: const <int>{},
+                                      hasChapters: false,
+                                    );
                                   };
                                 }
 
@@ -1066,14 +1284,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                       : null,
                                   currentUserRead: currentUserRead,
                                   onToggleRead: onToggleRead,
-                                  checkedChapters: checked,
+                                  checkedChapters: displayChecked,
                                   onToggleChapter: (chapterIndex, v) {
-                                    setState(() {
-                                      _progressDate = DateTime(s.date.year,
-                                          s.date.month, s.date.day);
-                                    });
-                                    _toggleMyChapterForDate(
-                                        s.date, chapterIndex, v);
+                                    if (v == displayChecked.contains(chapterIndex)) {
+                                      return;
+                                    }
+                                    _handleChapterToggle(
+                                      schedule: s,
+                                      chapterIndex: chapterIndex,
+                                      read: v,
+                                    );
                                   },
                                   onTap: !canEditSchedule
                                       ? () {
