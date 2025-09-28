@@ -67,82 +67,86 @@ class GroupJoinRequestsPage extends StatelessWidget {
             if (requests.isEmpty) {
               return const Center(child: Text('No pending requests'));
             }
-            return ListView.separated(
+            return ListView.builder(
               itemCount: requests.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, i) {
                 final d = requests[i];
                 final data = d.data();
                 final uid = data['uid'] as String? ?? d.id;
                 final name = data['name'] as String? ?? '';
-                return ListTile(
-                  title: Text(name.isEmpty ? uid : name),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.check),
-                        tooltip: 'Approve',
-                        onPressed: () async {
-                          try {
-                            await groupService.approveJoinRequest(
-                              groupId: groupId,
-                              uid: uid,
-                            );
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Request approved'),
-                                ),
+                return CommonStyles.buildTappableCard(
+                  onTap: () {},
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(name.isEmpty ? uid : name),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.check),
+                          tooltip: 'Approve',
+                          onPressed: () async {
+                            try {
+                              await groupService.approveJoinRequest(
+                                groupId: groupId,
+                                uid: uid,
                               );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Request approved'),
+                                  ),
+                                );
+                              }
+                            } catch (e, st) {
+                              if (kDebugMode) {
+                                debugPrint('Failed to approve request: $e');
+                              }
+                              ErrorLogger.log(e, st);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Failed to approve request'),
+                                  ),
+                                );
+                              }
                             }
-                          } catch (e, st) {
-                            if (kDebugMode) {
-                              debugPrint('Failed to approve request: $e');
-                            }
-                            ErrorLogger.log(e, st);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Failed to approve request'),
-                                ),
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          tooltip: 'Deny',
+                          onPressed: () async {
+                            try {
+                              await groupService.denyJoinRequest(
+                                groupId: groupId,
+                                uid: uid,
                               );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Request denied'),
+                                  ),
+                                );
+                              }
+                            } catch (e, st) {
+                              if (kDebugMode) {
+                                debugPrint('Failed to deny request: $e');
+                              }
+                              ErrorLogger.log(e, st);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Failed to deny request'),
+                                  ),
+                                );
+                              }
                             }
-                          }
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        tooltip: 'Deny',
-                        onPressed: () async {
-                          try {
-                            await groupService.denyJoinRequest(
-                              groupId: groupId,
-                              uid: uid,
-                            );
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Request denied'),
-                                ),
-                              );
-                            }
-                          } catch (e, st) {
-                            if (kDebugMode) {
-                              debugPrint('Failed to deny request: $e');
-                            }
-                            ErrorLogger.log(e, st);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Failed to deny request'),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                      ),
-                    ],
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -153,4 +157,3 @@ class GroupJoinRequestsPage extends StatelessWidget {
     );
   }
 }
-

@@ -1,4 +1,4 @@
-// Defines the global color scheme, fonts, and button styles.
+// Defines the global color scheme, fonts, spacing, and button styles.
 import 'package:flutter/material.dart';
 
 /// Provides the application's theme configuration.
@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 /// Update [colorScheme] to change primary colors and adjust [fontFamily] or
 /// [textTheme] to modify typography.
 class AppTheme {
-  static const String fontFamily = 'IBMPlexMono';
+  // Desired primary font. If the IBM Plex Sans fonts are not bundled yet,
+  // Flutter will fall back to the provided list below.
+  static const String fontFamily = 'IBMPlexSans';
   static const Color backgroundColor = Colors.black;
 
   static const RoundedRectangleBorder _buttonShape = RoundedRectangleBorder(
@@ -20,25 +22,71 @@ class AppTheme {
     brightness: Brightness.dark,
   );
 
+  // Unified typography using IBM Plex Sans with sensible fallbacks.
   static final TextTheme textTheme = TextTheme(
-    bodyLarge: const TextStyle(fontSize: 16, fontFamily: fontFamily),
-    bodyMedium: const TextStyle(fontSize: 14, fontFamily: fontFamily),
+    displaySmall: const TextStyle(
+      fontSize: 36,
+      fontWeight: FontWeight.w600,
+      fontFamily: fontFamily,
+      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
+    ),
+    headlineMedium: const TextStyle(
+      fontSize: 28,
+      fontWeight: FontWeight.w600,
+      fontFamily: fontFamily,
+      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
+    ),
+    titleLarge: const TextStyle(
+      fontSize: 22,
+      fontWeight: FontWeight.w600,
+      fontFamily: fontFamily,
+      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
+    ),
     titleMedium: const TextStyle(
-        fontSize: 18, fontFamily: fontFamily, fontWeight: FontWeight.bold),
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      fontFamily: fontFamily,
+      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
+    ),
+    bodyLarge: const TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w400,
+      fontFamily: fontFamily,
+      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
+    ),
+    bodyMedium: const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      fontFamily: fontFamily,
+      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
+    ),
+    labelLarge: const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      fontFamily: fontFamily,
+      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
+    ),
   );
 
   /// Base configuration for text and elevated buttons.
   ///
   /// Modify shape, padding, or overlay color to customize button appearance.
   static final ButtonStyle _baseButtonStyle = ButtonStyle(
-    animationDuration: const Duration(milliseconds: 200),
-    overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
-      if (states.contains(WidgetState.pressed) ||
-          states.contains(WidgetState.hovered)) {
-        return colorScheme.primary.withAlpha((0.1 * 255).round());
-      }
-      return null;
-    }),
+    animationDuration: const Duration(milliseconds: 180),
+    overlayColor: WidgetStateProperty.resolveWith<Color?>(
+      (states) {
+        if (states.contains(WidgetState.pressed)) {
+          return colorScheme.primary.withOpacity(0.16);
+        }
+        if (states.contains(WidgetState.hovered)) {
+          return colorScheme.primary.withOpacity(0.08);
+        }
+        if (states.contains(WidgetState.focused)) {
+          return colorScheme.primary.withOpacity(0.12);
+        }
+        return null;
+      },
+    ),
     shape: WidgetStateProperty.all<OutlinedBorder>(_buttonShape),
     padding: WidgetStateProperty.all<EdgeInsetsGeometry>(_buttonPadding),
   );
@@ -53,6 +101,27 @@ class AppTheme {
       }
       return 2;
     }),
+    overlayColor: WidgetStateProperty.resolveWith<Color?>(
+      (states) {
+        if (states.contains(WidgetState.pressed)) {
+          return colorScheme.primary.withOpacity(0.22);
+        }
+        if (states.contains(WidgetState.hovered)) {
+          return colorScheme.primary.withOpacity(0.12);
+        }
+        if (states.contains(WidgetState.focused)) {
+          return colorScheme.primary.withOpacity(0.16);
+        }
+        return null;
+      },
+    ),
+  );
+
+  /// Outlined button variant aligned with base style.
+  static final ButtonStyle _outlinedButtonStyle = _baseButtonStyle.copyWith(
+    side: WidgetStateProperty.all(
+      BorderSide(color: colorScheme.primary.withOpacity(0.6)),
+    ),
   );
 
   /// Complete [ThemeData] for the application.
@@ -66,8 +135,110 @@ class AppTheme {
     fontFamily: fontFamily,
     textTheme: textTheme,
     scaffoldBackgroundColor: backgroundColor,
-    appBarTheme: const AppBarTheme(backgroundColor: backgroundColor),
+    appBarTheme: AppBarTheme(
+      backgroundColor: backgroundColor,
+      titleTextStyle: textTheme.titleLarge?.copyWith(color: Colors.white),
+      elevation: 0,
+      centerTitle: false,
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: ButtonStyle(
+        overlayColor: WidgetStateProperty.resolveWith<Color?>(
+          (states) {
+            if (states.contains(WidgetState.pressed)) {
+              return colorScheme.primary.withOpacity(0.16);
+            }
+            if (states.contains(WidgetState.hovered)) {
+              return colorScheme.primary.withOpacity(0.08);
+            }
+            if (states.contains(WidgetState.focused)) {
+              return colorScheme.primary.withOpacity(0.12);
+            }
+            return null;
+          },
+        ),
+      ),
+    ),
+    listTileTheme: ListTileThemeData(
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: AppSpacing.hPadding),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      minVerticalPadding: 8,
+    ),
+    cardTheme: CardThemeData(
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.hPadding,
+        vertical: AppSpacing.vPaddingSmall,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      elevation: 1,
+    ),
+    inputDecorationTheme: const InputDecorationTheme(
+      border: OutlineInputBorder(),
+    ),
+    chipTheme: ChipThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      side: BorderSide(color: colorScheme.primary.withOpacity(0.24)),
+      selectedColor: colorScheme.primary.withOpacity(0.20),
+      backgroundColor: Colors.white10,
+      labelStyle: textTheme.bodyMedium!,
+      secondaryLabelStyle: textTheme.bodyMedium!,
+      showCheckmark: true,
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
+        if (states.contains(WidgetState.selected)) return colorScheme.primary;
+        return Colors.white70;
+      }),
+      trackColor: WidgetStateProperty.resolveWith<Color?>((states) {
+        if (states.contains(WidgetState.selected)) {
+          return colorScheme.primary.withOpacity(0.40);
+        }
+        return Colors.white24;
+      }),
+    ),
     elevatedButtonTheme: ElevatedButtonThemeData(style: _elevatedButtonStyle),
+    outlinedButtonTheme: OutlinedButtonThemeData(style: _outlinedButtonStyle),
     textButtonTheme: TextButtonThemeData(style: _baseButtonStyle),
+    navigationBarTheme: NavigationBarThemeData(
+      indicatorColor: colorScheme.primary.withOpacity(0.16),
+      backgroundColor: backgroundColor,
+      elevation: 1,
+      height: 60,
+      labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+      labelTextStyle: WidgetStateProperty.all(
+        textTheme.labelLarge?.copyWith(color: Colors.white70),
+      ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: colorScheme.primary,
+      foregroundColor: Colors.white,
+      splashColor: colorScheme.onPrimary.withOpacity(0.24),
+      hoverColor: colorScheme.onPrimary.withOpacity(0.16),
+      focusColor: colorScheme.onPrimary.withOpacity(0.20),
+    ),
+    hoverColor: colorScheme.primary.withOpacity(0.04),
+    focusColor: colorScheme.primary.withOpacity(0.08),
+    highlightColor: colorScheme.primary.withOpacity(0.10),
+    splashColor: colorScheme.primary.withOpacity(0.14),
+  );
+}
+
+/// Spacing scale for consistent layout paddings and gaps.
+class AppSpacing {
+  static const double unit = 8;
+  static const double hPadding = 16;
+  static const double vPadding = 16;
+  static const double vPaddingSmall = 8;
+
+  static const EdgeInsets screen =
+      EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding);
+  static const EdgeInsets horizontal =
+      EdgeInsets.symmetric(horizontal: hPadding);
+  static const EdgeInsets list = EdgeInsets.symmetric(
+    horizontal: hPadding,
+    vertical: vPaddingSmall,
   );
 }

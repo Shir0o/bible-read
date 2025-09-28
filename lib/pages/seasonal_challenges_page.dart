@@ -271,6 +271,7 @@ class _ChallengeProgressCard extends StatelessWidget {
           challenge: challenge,
           progress: progress,
           reward: reward,
+          onTap: () {},
           onClaim: () => _claimReward(context, progress),
         );
       },

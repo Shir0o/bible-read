@@ -29,6 +29,10 @@ class SeasonalChallengeCard extends StatelessWidget {
   /// Callback triggered when the user taps the claim button.
   final VoidCallback? onClaim;
 
+  /// Optional onTap to make the entire card tappable with an ink overlay.
+  /// If null, the card is non-tappable and uses a regular Card.
+  final VoidCallback? onTap;
+
   /// Optional custom margin for the surrounding card.
   final EdgeInsetsGeometry? margin;
 
@@ -60,6 +64,7 @@ class SeasonalChallengeCard extends StatelessWidget {
     required this.progress,
     required this.reward,
     this.onClaim,
+    this.onTap,
     this.margin,
     this.claimButtonLabel,
     this.claimedButtonLabel,
@@ -107,7 +112,16 @@ class SeasonalChallengeCard extends StatelessWidget {
     final canClaim = onClaim != null && _isComplete && !_isClaimed;
     final buttonLabel = _resolveButtonLabel(materialLocalizations);
 
-    return CommonStyles.buildCard(
+    final builder = onTap == null
+        ? CommonStyles.buildCard
+        : ({required Widget child, EdgeInsetsGeometry? margin}) =>
+            CommonStyles.buildTappableCard(
+              onTap: onTap,
+              margin: margin,
+              child: child,
+            );
+
+    return builder(
       margin: margin,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

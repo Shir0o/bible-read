@@ -243,6 +243,10 @@ class _GroupsPageState extends State<GroupsPage> {
                           return RefreshIndicator(
                             onRefresh: _refresh,
                             child: ListView.separated(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
                               physics: const AlwaysScrollableScrollPhysics(),
                               itemCount: groups.length,
                               separatorBuilder: (_, __) =>
@@ -266,34 +270,7 @@ class _GroupsPageState extends State<GroupsPage> {
                                   final count = (memberSnap.hasData && adjusted > 0)
                                       ? adjusted
                                       : g.memberCount;
-                                  return ListTile(
-                                    title: Text(g.name),
-                                    subtitle: Text(
-                                      '$count member${count == 1 ? '' : 's'}',
-                                    ),
-                                    trailing: g.ownerUid == user.uid
-                                        ? IconButton(
-                                            icon: _deletingGroupId == g.id
-                                                ? const SizedBox(
-                                                    height: 20,
-                                                    width: 20,
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                                  )
-                                                : const Icon(
-                                                    Icons.delete_outline,
-                                                    color: Colors.redAccent,
-                                                  ),
-                                            tooltip: 'Delete group',
-                                            onPressed: _deletingGroupId == g.id
-                                                ? null
-                                                : () => _confirmAndDelete(g),
-                                          )
-                                        : (pending.contains(g.id)
-                                            ? const Text('Pending')
-                                            : null),
+                                  return CommonStyles.buildTappableCard(
                                     onTap: () {
                                       unawaited(widget.vibrationService
                                           .lightImpact());
@@ -307,6 +284,37 @@ class _GroupsPageState extends State<GroupsPage> {
                                         ),
                                       );
                                     },
+                                    margin: const EdgeInsets.symmetric(vertical: 4.0),
+                                    child: ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      title: Text(g.name),
+                                      subtitle: Text(
+                                        '$count member${count == 1 ? '' : 's'}',
+                                      ),
+                                      trailing: g.ownerUid == user.uid
+                                          ? IconButton(
+                                              icon: _deletingGroupId == g.id
+                                                  ? const SizedBox(
+                                                      height: 20,
+                                                      width: 20,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                    )
+                                                  : const Icon(
+                                                      Icons.delete_outline,
+                                                      color: Colors.redAccent,
+                                                    ),
+                                              tooltip: 'Delete group',
+                                              onPressed: _deletingGroupId == g.id
+                                                  ? null
+                                                  : () => _confirmAndDelete(g),
+                                            )
+                                          : (pending.contains(g.id)
+                                              ? const Text('Pending')
+                                              : null),
+                                    ),
                                   );
                                 },
                               );

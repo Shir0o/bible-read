@@ -1078,11 +1078,15 @@ class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
               onChanged: (v) => _startTime = v.trim(),
             ),
             const SizedBox(height: 8),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _active,
-              onChanged: (v) => setState(() => _active = v),
-              title: const Text('Active'),
+            CommonStyles.buildTappableCard(
+              onTap: () => setState(() => _active = !_active),
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _active,
+                onChanged: (v) => setState(() => _active = v),
+                title: const Text('Active'),
+              ),
             ),
             DropdownButtonFormField<String>(
               value: _plan ?? '',

@@ -13,6 +13,7 @@ class CommonStyles {
 
   static const TextStyle appBarTitleText = TextStyle(
     fontFamily: AppTheme.fontFamily,
+    fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
     fontSize: 20,
     fontWeight: FontWeight.bold,
     color: Colors.white,
@@ -29,10 +30,51 @@ class CommonStyles {
       elevation: 1,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: margin ?? const EdgeInsets.symmetric(
+        horizontal: AppSpacing.hPadding,
+        vertical: AppSpacing.vPaddingSmall,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.hPadding),
         child: child,
+      ),
+    );
+  }
+
+  /// Builds a card that provides an InkWell overlay when tapped/hovered.
+  static Card buildTappableCard({
+    required Widget child,
+    EdgeInsetsGeometry? margin,
+    VoidCallback? onTap,
+  }) {
+    final radius = BorderRadius.circular(16);
+    return Card(
+      elevation: 1,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: radius),
+      margin: margin ?? const EdgeInsets.symmetric(
+        horizontal: AppSpacing.hPadding,
+        vertical: AppSpacing.vPaddingSmall,
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
+          if (states.contains(WidgetState.pressed)) {
+            return AppTheme.colorScheme.primary.withOpacity(0.12);
+          }
+          if (states.contains(WidgetState.hovered)) {
+            return AppTheme.colorScheme.primary.withOpacity(0.06);
+          }
+          if (states.contains(WidgetState.focused)) {
+            return AppTheme.colorScheme.primary.withOpacity(0.08);
+          }
+          return null;
+        }),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.hPadding),
+          child: child,
+        ),
       ),
     );
   }
@@ -70,10 +112,12 @@ class AppTextStyles {
     fontSize: 18,
     fontWeight: FontWeight.w600,
     fontFamily: AppTheme.fontFamily,
+    fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
   );
 
   static const TextStyle body = TextStyle(
     fontSize: 14,
     fontFamily: AppTheme.fontFamily,
+    fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
   );
 }

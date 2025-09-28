@@ -128,98 +128,106 @@ class _FriendsPageState extends State<FriendsPage> {
                           return ListView(
                             children: friends
                                 .map(
-                                  (f) => ListTile(
-                                    title: Text(f.name),
-                                    trailing: Builder(
-                                      builder: (context) {
-                                        final nudged = _nudgedToday.contains(
-                                          f.uid,
-                                        );
-                                        return IconButton(
-                                          icon: Icon(
-                                            nudged
-                                                ? Icons.notifications_off
-                                                : Icons.notifications_active,
-                                            color: nudged ? Colors.grey : null,
-                                          ),
-                                          onPressed: nudged
-                                              ? null
-                                              : () async {
-                                                  final messenger =
-                                                      ScaffoldMessenger.of(
-                                                    context,
-                                                  );
-                                                  setState(() {
-                                                    _nudgedToday.add(f.uid);
-                                                  });
-                                                  try {
-                                                    final result = await widget
-                                                        .friendService
-                                                        .nudgeFriend(
-                                                      currentUid: user.uid,
-                                                      friendUid: f.uid,
-                                                      currentName:
-                                                          user.displayName ??
-                                                              'You',
+                                  (f) => CommonStyles.buildTappableCard(
+                                    onTap: () {},
+                                    margin: const EdgeInsets.symmetric(vertical: 4.0),
+                                    child: ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      title: Text(f.name),
+                                      trailing: Builder(
+                                        builder: (context) {
+                                          final nudged = _nudgedToday.contains(
+                                            f.uid,
+                                          );
+                                          return IconButton(
+                                            icon: Icon(
+                                              nudged
+                                                  ? Icons.notifications_off
+                                                  : Icons.notifications_active,
+                                              color:
+                                                  nudged ? Colors.grey : null,
+                                            ),
+                                            onPressed: nudged
+                                                ? null
+                                                : () async {
+                                                    final messenger =
+                                                        ScaffoldMessenger.of(
+                                                      context,
                                                     );
-                                                    if (!mounted) return;
-                                                    switch (result) {
-                                                      case NudgeResult
-                                                            .alreadyRead:
-                                                        setState(() {
-                                                          _nudgedToday
-                                                              .remove(f.uid);
-                                                        });
-                                                        messenger.showSnackBar(
-                                                          const SnackBar(
-                                                            content: Text(
-                                                              'Friend already read today',
-                                                            ),
-                                                          ),
-                                                        );
-                                                        break;
-                                                      case NudgeResult
-                                                            .alreadySent:
-                                                        messenger.showSnackBar(
-                                                          const SnackBar(
-                                                            content: Text(
-                                                              'Nudge already sent',
-                                                            ),
-                                                          ),
-                                                        );
-                                                        break;
-                                                      case NudgeResult.sent:
-                                                        messenger.showSnackBar(
-                                                          const SnackBar(
-                                                            content: Text(
-                                                              'Nudge sent',
-                                                            ),
-                                                          ),
-                                                        );
-                                                        break;
-                                                    }
-                                                  } catch (e, st) {
-                                                    debugPrint(
-                                                      'Failed to send nudge: $e',
-                                                    );
-                                                    ErrorLogger.log(e, st);
-                                                    if (!mounted) return;
                                                     setState(() {
-                                                      _nudgedToday.remove(
-                                                        f.uid,
-                                                      );
+                                                      _nudgedToday.add(f.uid);
                                                     });
-                                                    messenger.showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text(
-                                                          'Failed to send nudge',
+                                                    try {
+                                                      final result = await widget
+                                                          .friendService
+                                                          .nudgeFriend(
+                                                        currentUid: user.uid,
+                                                        friendUid: f.uid,
+                                                        currentName:
+                                                            user.displayName ??
+                                                                'You',
+                                                      );
+                                                      if (!mounted) return;
+                                                      switch (result) {
+                                                        case NudgeResult
+                                                              .alreadyRead:
+                                                          setState(() {
+                                                            _nudgedToday
+                                                                .remove(f.uid);
+                                                          });
+                                                          messenger
+                                                              .showSnackBar(
+                                                            const SnackBar(
+                                                              content: Text(
+                                                                'Friend already read today',
+                                                              ),
+                                                            ),
+                                                          );
+                                                          break;
+                                                        case NudgeResult
+                                                              .alreadySent:
+                                                          messenger
+                                                              .showSnackBar(
+                                                            const SnackBar(
+                                                              content: Text(
+                                                                'Nudge already sent',
+                                                              ),
+                                                            ),
+                                                          );
+                                                          break;
+                                                        case NudgeResult.sent:
+                                                          messenger
+                                                              .showSnackBar(
+                                                            const SnackBar(
+                                                              content:
+                                                                  Text('Nudge sent'),
+                                                            ),
+                                                          );
+                                                          break;
+                                                      }
+                                                    } catch (e, st) {
+                                                      debugPrint(
+                                                        'Failed to send nudge: $e',
+                                                      );
+                                                      ErrorLogger.log(e, st);
+                                                      if (!mounted) return;
+                                                      setState(() {
+                                                        _nudgedToday.remove(
+                                                          f.uid,
+                                                        );
+                                                      });
+                                                      messenger.showSnackBar(
+                                                        const SnackBar(
+                                                          content: Text(
+                                                            'Failed to send nudge',
+                                                          ),
                                                         ),
-                                                      ),
-                                                    );
-                                                  }
-                                                },
-                                        );
-                                      },
+                                                      );
+                                                    }
+                                                  },
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
                                 )

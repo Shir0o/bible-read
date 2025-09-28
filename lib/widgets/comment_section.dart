@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/error_logger.dart';
+import 'common_styles.dart';
 
 import '../models/comment.dart';
 
@@ -102,9 +103,14 @@ class _CommentSectionState extends State<CommentSection> {
             itemCount: widget.comments.length,
             itemBuilder: (context, index) {
               final c = widget.comments[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text('${c.authorName}: ${c.message}'),
+              return CommonStyles.buildTappableCard(
+                onTap: () {},
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(c.authorName),
+                  subtitle: Text(c.message),
+                ),
               );
             },
           ),
@@ -115,6 +121,8 @@ class _CommentSectionState extends State<CommentSection> {
               Expanded(
                 child: TextField(
                   controller: _controller,
+                  textCapitalization: TextCapitalization.sentences,
+                  keyboardType: TextInputType.text,
                   decoration:
                       const InputDecoration(hintText: 'Add a comment...'),
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../services/error_logger.dart';
 
 import '../services/friend_service.dart';
+import 'common_styles.dart';
 
 /// Widget that lists pending friend requests with accept/decline actions.
 class FriendRequestWidget extends StatefulWidget {
@@ -81,34 +82,39 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
             final req = requests[index];
             final uid = req.uid;
             final name = req.name.isEmpty ? 'Unknown' : req.name;
-            return ListTile(
-              title: Text(name),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.check),
-                    onPressed: () => _handleAction(
-                      uid,
-                      () => widget.service.acceptFriendRequest(
-                        currentUid: widget.currentUid,
-                        currentName: widget.currentName,
-                        fromUid: uid,
-                        fromName: name,
+            return CommonStyles.buildTappableCard(
+              onTap: () {},
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(name),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.check),
+                      onPressed: () => _handleAction(
+                        uid,
+                        () => widget.service.acceptFriendRequest(
+                          currentUid: widget.currentUid,
+                          currentName: widget.currentName,
+                          fromUid: uid,
+                          fromName: name,
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => _handleAction(
-                      uid,
-                      () => widget.service.declineFriendRequest(
-                        currentUid: widget.currentUid,
-                        fromUid: uid,
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => _handleAction(
+                        uid,
+                        () => widget.service.declineFriendRequest(
+                          currentUid: widget.currentUid,
+                          fromUid: uid,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },

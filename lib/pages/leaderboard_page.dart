@@ -291,13 +291,11 @@ class _LeaderboardPageState extends State<LeaderboardPage>
         itemBuilder: (context, index) {
           final entry = data[index];
           final rank = index + 1;
-          return Card(
+          return CommonStyles.buildTappableCard(
+            onTap: () {},
             margin: const EdgeInsets.symmetric(vertical: 4.0),
-            elevation: 2.0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
             child: ListTile(
+              contentPadding: EdgeInsets.zero,
               leading: Text('$rank',
                   style: AppTextStyles.body
                       .copyWith(fontWeight: FontWeight.bold, fontSize: 16)),

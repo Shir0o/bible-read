@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../services/vibration_service.dart';
+import 'common_styles.dart';
 
 class AppDrawer extends StatelessWidget {
   final ValueChanged<int> onNavigate;
@@ -22,80 +23,123 @@ class AppDrawer extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Color(0xFF0D47A1)),
+            // Compact header without a blue background
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Text(
                 'Bible Read',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.leaderboard),
-              title: const Text('Leaderboard'),
+            CommonStyles.buildTappableCard(
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
                 onNavigate(3);
               },
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: const ListTile(
+                dense: true,
+                visualDensity: VisualDensity(vertical: -3),
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.leaderboard),
+                title: Text('Leaderboard'),
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Friends'),
+            CommonStyles.buildTappableCard(
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
                 onNavigate(4);
               },
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: const ListTile(
+                dense: true,
+                visualDensity: VisualDensity(vertical: -3),
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.people),
+                title: Text('Friends'),
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.group),
-              title: const Text('Groups'),
+            CommonStyles.buildTappableCard(
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
                 onNavigate(5);
               },
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: const ListTile(
+                dense: true,
+                visualDensity: VisualDensity(vertical: -3),
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.group),
+                title: Text('Groups'),
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.flag),
-              title: const Text('Seasonal Challenges'),
+            CommonStyles.buildTappableCard(
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
                 onNavigate(2);
               },
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: const ListTile(
+                dense: true,
+                visualDensity: VisualDensity(vertical: -3),
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.flag),
+                title: Text('Seasonal Challenges'),
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.emoji_events),
-              title: const Text('Achievements'),
+            CommonStyles.buildTappableCard(
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
                 onNavigate(6);
               },
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: const ListTile(
+                dense: true,
+                visualDensity: VisualDensity(vertical: -3),
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.emoji_events),
+                title: Text('Achievements'),
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.calendar_today),
-              title: const Text('History'),
+            CommonStyles.buildTappableCard(
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
                 onNavigate(7);
               },
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: const ListTile(
+                dense: true,
+                visualDensity: VisualDensity(vertical: -3),
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.calendar_today),
+                title: Text('History'),
+              ),
             ),
             const Divider(),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Profile'),
+            CommonStyles.buildTappableCard(
               onTap: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.pop(context);
                 onNavigate(9);
               },
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: const ListTile(
+                dense: true,
+                visualDensity: VisualDensity(vertical: -3),
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.person),
+                title: Text('Profile'),
+              ),
             ),
           ],
         ),
