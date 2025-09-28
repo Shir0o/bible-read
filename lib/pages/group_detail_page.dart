@@ -313,9 +313,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           .doc(user.uid);
 
       await db.runTransaction((tx) async {
-        final itemSnap = await tx.get(itemDoc);
-        final baseSnap = await tx.get(base);
-        final summarySnap = await tx.get(summaryDoc);
+        final List<DocumentSnapshot<Map<String, dynamic>>> snapshots =
+            await tx.getAll(itemDoc, base, summaryDoc);
+        final itemSnap = snapshots[0];
+        final baseSnap = snapshots[1];
+        final summarySnap = snapshots[2];
         final nowTs = Timestamp.now();
         final prevCompleted =
             (summarySnap.data()?['completed'] as num?)?.toInt() ?? 0;
@@ -397,8 +399,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           .doc(user.uid);
 
       await db.runTransaction((tx) async {
-        final entrySnap = await tx.get(entryRef);
-        final summarySnap = await tx.get(summaryRef);
+        final List<DocumentSnapshot<Map<String, dynamic>>> snapshots =
+            await tx.getAll(entryRef, summaryRef);
+        final entrySnap = snapshots[0];
+        final summarySnap = snapshots[1];
         final nowTs = Timestamp.now();
         final currentCount = (entrySnap.data()?['count'] as num?)?.toInt() ??
             currentlyChecked.length;
