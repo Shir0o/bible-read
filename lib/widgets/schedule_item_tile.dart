@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/group_schedule.dart';
+import 'common_styles.dart';
 
 /// List tile displaying a group's reading assignment for a single day.
 class ScheduleItemTile extends StatelessWidget {
@@ -71,14 +72,18 @@ class ScheduleItemTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListTile(
-          title: Text(dateString),
-          subtitle:
-              showPerChapter ? null : Text(schedule.chapters.join(', ')),
+        CommonStyles.buildTappableCard(
           onTap: onTap,
-          trailing: actions.isEmpty
-              ? null
-              : Row(mainAxisSize: MainAxisSize.min, children: actions),
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          child: ListTile(
+            title: Text(dateString),
+            subtitle:
+                showPerChapter ? null : Text(schedule.chapters.join(', ')),
+            contentPadding: EdgeInsets.zero,
+            trailing: actions.isEmpty
+                ? null
+                : Row(mainAxisSize: MainAxisSize.min, children: actions),
+          ),
         ),
         if (showPerChapter)
           Padding(

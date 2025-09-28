@@ -38,18 +38,16 @@ class ReadLogList extends StatelessWidget {
         final log = logs[index];
         final isLiked = log.liked;
         final isFirst = log.firstReader;
-        return Card(
+        return CommonStyles.buildTappableCard(
+          onTap: () {},
           margin: const EdgeInsets.symmetric(vertical: 8),
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ListTile(
+                  contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.check_circle, color: Colors.green),
                   title: Text(
                     '${log.name} read today!',

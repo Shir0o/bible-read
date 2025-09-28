@@ -109,18 +109,33 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             : (_prefs == null
                 ? const Center(child: Text('Please sign in'))
                 : ListView(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     children: [
                       ...NotificationType.values.map(
-                        (type) => SwitchListTile(
-                          title: Text(_label(type)),
-                          value: _prefs![type],
-                          onChanged: (val) => _toggle(type, val),
-                        ),
+                        (type) {
+                          final val = _prefs![type];
+                          return CommonStyles.buildTappableCard(
+                            onTap: () => _toggle(type, !val),
+                            margin:
+                                const EdgeInsets.symmetric(vertical: 4.0),
+                            child: SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(_label(type)),
+                              value: val,
+                              onChanged: (v) => _toggle(type, v),
+                            ),
+                          );
+                        },
                       ),
-                      SwitchListTile(
-                        title: const Text('Vibration'),
-                        value: _vibrationEnabled,
-                        onChanged: _toggleVibration,
+                      CommonStyles.buildTappableCard(
+                        onTap: () => _toggleVibration(!_vibrationEnabled),
+                        margin: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Vibration'),
+                          value: _vibrationEnabled,
+                          onChanged: _toggleVibration,
+                        ),
                       ),
                     ],
                   )),

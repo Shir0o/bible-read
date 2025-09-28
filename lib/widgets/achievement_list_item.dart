@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/achievement_definition.dart';
 import 'badge_icon.dart';
+import 'common_styles.dart';
 
 /// List item displaying an achievement badge with title and description.
 class AchievementListItem extends StatelessWidget {
@@ -20,15 +21,19 @@ class AchievementListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: BadgeIcon(
-        imageUrl: definition.imageUrl,
-        iconData: definition.icon,
-        locked: !unlocked,
-        size: 48,
+    return CommonStyles.buildTappableCard(
+      onTap: () {},
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: BadgeIcon(
+          imageUrl: definition.imageUrl,
+          iconData: definition.icon,
+          locked: !unlocked,
+          size: 48,
+        ),
+        title: Text(definition.title),
+        subtitle: Text(definition.description),
       ),
-      title: Text(definition.title),
-      subtitle: Text(definition.description),
     );
   }
 }

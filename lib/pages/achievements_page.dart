@@ -44,10 +44,9 @@ class AchievementsPage extends StatelessWidget {
                     return const Center(child: CircularProgressIndicator());
                   }
                   final unlocked = snapshot.data!;
-                  return ListView.separated(
+                  return ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     itemCount: allAchievements.length,
-                    separatorBuilder: (_, __) => const Divider(height: 0),
                     itemBuilder: (context, index) {
                       final def = allAchievements[index];
                       final isUnlocked = unlocked.contains(def.id);

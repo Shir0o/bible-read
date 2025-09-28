@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'common_styles.dart';
 
 /// Displays a group member's reading progress for the current day.
 class GroupMemberProgress extends StatelessWidget {
@@ -23,14 +24,18 @@ class GroupMemberProgress extends StatelessWidget {
     final clamped = completion.clamp(0.0, 1.0).toDouble();
     final percent = (clamped * 100).round();
 
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(name),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: LinearProgressIndicator(value: clamped),
+    return CommonStyles.buildTappableCard(
+      onTap: () {},
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(name),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: LinearProgressIndicator(value: clamped),
+        ),
+        trailing: trailing ?? Text('$percent%'),
       ),
-      trailing: trailing ?? Text('$percent%'),
     );
   }
 }

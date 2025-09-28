@@ -35,7 +35,8 @@ class ReadStatusSection extends StatelessWidget {
 
     return Column(
       children: [
-        CommonStyles.buildCard(
+        CommonStyles.buildTappableCard(
+          onTap: (!toggleLoading && !readToday) ? onToggle : null,
           child: toggleLoading
               ? const Padding(
                   padding: EdgeInsets.all(12),

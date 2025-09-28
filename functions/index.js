@@ -517,11 +517,44 @@ exports.materializeDailySchedules = functions.pubsub
         return { y: z.getUTCFullYear(), m: z.getUTCMonth() + 1, d: z.getUTCDate() };
       }
     }
-
-    const templatesSnap = await db
-      .collectionGroup('scheduleTemplates')
-      .where('active', '==', true)
-      .get();
+    // Load active templates. Prefer collection group for efficiency, but
+    // gracefully fall back to per-group queries if an index is required.
+    async function loadActiveTemplates() {
+      try {
+        const cg = await db
+          .collectionGroup('scheduleTemplates')
+          .where('active', '==', true)
+          .get();
+        return cg.docs; // Array<QueryDocumentSnapshot>
+      } catch (err) {
+        // Firestore returns FAILED_PRECONDITION (code 9) when a composite
+        // index is required. Fall back to per-group fetching to avoid hard
+        // failure in production runs.
+        functions.logger.warn(
+          'collectionGroup index unavailable; falling back to per-group scan',
+          err
+        );
+        const groups = await db.collection('groups').get();
+        const docs = [];
+        for (const g of groups.docs) {
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            const snap = await g.ref
+              .collection('scheduleTemplates')
+              .where('active', '==', true)
+              .get();
+            docs.push(...snap.docs);
+          } catch (e) {
+            functions.logger.warn('Failed loading templates for group', {
+              group: g.ref.path,
+              error: e,
+            });
+          }
+        }
+        return docs;
+      }
+    }
+    const templateDocs = await loadActiveTemplates();
 
     // Canon maps: short names and chapter counts
     const OT = [
@@ -585,7 +618,7 @@ exports.materializeDailySchedules = functions.pubsub
     }
 
     const tasks = [];
-    templatesSnap.forEach((doc) => {
+    templateDocs.forEach((doc) => {
       const data = doc.data() || {};
       const timeZone = (data.timezone || 'UTC').toString();
       const { y, m, d } = localDateParts(new Date(), timeZone);

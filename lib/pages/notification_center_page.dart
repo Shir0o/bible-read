@@ -71,10 +71,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                     itemBuilder: (context, index) {
                       final n = data[index];
                       final read = n.read || _readLocally.contains(n.id);
-                      return ListTile(
-                        leading: _icon(n.type, read),
-                        title: Text(_text(n)),
-                        subtitle: n.message != null ? Text(n.message!) : null,
+                      return CommonStyles.buildTappableCard(
                         onTap: () {
                           final uid = widget.auth.currentUser?.uid;
                           if (uid != null) {
@@ -100,6 +97,13 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                             unawaited(_navigate(context, n));
                           }
                         },
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: _icon(n.type, read),
+                          title: Text(_text(n)),
+                          subtitle:
+                              n.message != null ? Text(n.message!) : null,
+                        ),
                       );
                     },
                   );
