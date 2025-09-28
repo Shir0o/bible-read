@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Auto-schedule template configuration for a group.
 class ScheduleTemplate {
+  /// Optional display name for the template (e.g., "Morning OT").
+  final String? name;
   /// Whether automatic schedule creation is enabled.
   final bool active;
 
@@ -17,6 +19,18 @@ class ScheduleTemplate {
   /// Optional recurrence rule (RFC 5545). Defaults to daily.
   final String rrule;
 
+  /// Optional content plan identifier (e.g., 'sequential_ot').
+  final String? plan;
+
+  /// Chapters to assign per scheduled day (if [plan] is set).
+  final int? chaptersPerDay;
+
+  /// Weekday codes to schedule on (RFC-style two-letter codes, e.g., 'MO').
+  final List<String>? weekdays;
+
+  /// Starting reference for content plans, e.g., 'Gen 1'.
+  final String? startRef;
+
   /// Creates a [ScheduleTemplate].
   const ScheduleTemplate({
     required this.active,
@@ -24,11 +38,19 @@ class ScheduleTemplate {
     required this.startTimeLocal,
     this.durationMinutes,
     this.rrule = 'FREQ=DAILY;INTERVAL=1',
+    this.plan,
+    this.chaptersPerDay,
+    this.weekdays,
+    this.startRef,
+    this.name,
   });
 
   /// Default template with daily recurrence at midnight UTC.
-  factory ScheduleTemplate.defaultUtc() =>
-      const ScheduleTemplate(active: false, timezone: 'UTC', startTimeLocal: '00:00');
+  factory ScheduleTemplate.defaultUtc() => const ScheduleTemplate(
+        active: false,
+        timezone: 'UTC',
+        startTimeLocal: '00:00',
+      );
 
   /// Reads a [ScheduleTemplate] from a Firestore document.
   factory ScheduleTemplate.fromFirestore(
@@ -47,6 +69,20 @@ class ScheduleTemplate {
       rrule: (data['rrule'] as String?)?.trim().isNotEmpty == true
           ? (data['rrule'] as String)
           : 'FREQ=DAILY;INTERVAL=1',
+      plan: (data['plan'] as String?)?.trim().isNotEmpty == true
+          ? (data['plan'] as String)
+          : null,
+      chaptersPerDay: (data['chaptersPerDay'] as num?)?.toInt(),
+      weekdays: (data['weekdays'] as List?)
+          ?.whereType<String>()
+          .map((s) => s.trim().toUpperCase())
+          .toList(),
+      startRef: (data['startRef'] as String?)?.trim().isNotEmpty == true
+          ? (data['startRef'] as String)
+          : null,
+      name: (data['name'] as String?)?.trim().isNotEmpty == true
+          ? (data['name'] as String)
+          : null,
     );
   }
 
@@ -57,6 +93,11 @@ class ScheduleTemplate {
         'startTimeLocal': startTimeLocal,
         if (durationMinutes != null) 'durationMinutes': durationMinutes,
         'rrule': rrule,
+        if (plan != null) 'plan': plan,
+        if (chaptersPerDay != null) 'chaptersPerDay': chaptersPerDay,
+        if (weekdays != null) 'weekdays': weekdays,
+        if (startRef != null) 'startRef': startRef,
+        if (name != null) 'name': name,
       };
 
   ScheduleTemplate copyWith({
@@ -65,6 +106,11 @@ class ScheduleTemplate {
     String? startTimeLocal,
     int? durationMinutes,
     String? rrule,
+    String? plan,
+    int? chaptersPerDay,
+    List<String>? weekdays,
+    String? startRef,
+    String? name,
   }) =>
       ScheduleTemplate(
         active: active ?? this.active,
@@ -72,6 +118,10 @@ class ScheduleTemplate {
         startTimeLocal: startTimeLocal ?? this.startTimeLocal,
         durationMinutes: durationMinutes ?? this.durationMinutes,
         rrule: rrule ?? this.rrule,
+        plan: plan ?? this.plan,
+        chaptersPerDay: chaptersPerDay ?? this.chaptersPerDay,
+        weekdays: weekdays ?? this.weekdays,
+        startRef: startRef ?? this.startRef,
+        name: name ?? this.name,
       );
 }
-

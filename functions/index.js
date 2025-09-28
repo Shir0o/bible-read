@@ -523,6 +523,67 @@ exports.materializeDailySchedules = functions.pubsub
       .where('active', '==', true)
       .get();
 
+    // Canon maps: short names and chapter counts
+    const OT = [
+      ['Gen', 50], ['Ex', 40], ['Lev', 27], ['Num', 36], ['Deut', 34],
+      ['Josh', 24], ['Judg', 21], ['Ruth', 4], ['1Sam', 31], ['2Sam', 24],
+      ['1Kgs', 22], ['2Kgs', 25], ['1Chr', 29], ['2Chr', 36], ['Ezra', 10],
+      ['Neh', 13], ['Esth', 10], ['Job', 42], ['Psalm', 150], ['Prov', 31],
+      ['Eccl', 12], ['Song', 8], ['Isa', 66], ['Jer', 52], ['Lam', 5],
+      ['Ezek', 48], ['Dan', 12], ['Hos', 14], ['Joel', 3], ['Amos', 9],
+      ['Obad', 1], ['Jonah', 4], ['Mic', 7], ['Nah', 3], ['Hab', 3],
+      ['Zeph', 3], ['Hag', 2], ['Zech', 14], ['Mal', 4],
+    ];
+    const NT = [
+      ['Matt', 28], ['Mark', 16], ['Luke', 24], ['John', 21], ['Acts', 28],
+      ['Rom', 16], ['1Cor', 16], ['2Cor', 13], ['Gal', 6], ['Eph', 6],
+      ['Phil', 4], ['Col', 4], ['1Thess', 5], ['2Thess', 3], ['1Tim', 6],
+      ['2Tim', 4], ['Titus', 3], ['Phlm', 1], ['Heb', 13], ['Jas', 5],
+      ['1Pet', 5], ['2Pet', 3], ['1John', 5], ['2John', 1], ['3John', 1],
+      ['Jude', 1], ['Rev', 22],
+    ];
+    const PSALMS = [['Psalm', 150]];
+
+    function parseRef(ref, canon) {
+      // Expect formats like "Gen 1"
+      if (!ref || typeof ref !== 'string') return null;
+      const parts = ref.trim().split(/\s+/);
+      if (parts.length < 2) return null;
+      const book = parts[0];
+      const chap = Number(parts[1]);
+      if (!Number.isFinite(chap)) return null;
+      const idx = canon.findIndex(([name]) => name === book);
+      if (idx === -1) return null;
+      return { idx, chap };
+    }
+
+    function formatRef(idx, chap, canon) {
+      return `${canon[idx][0]} ${chap}`;
+    }
+
+    function nextChapters(startRef, count, canon) {
+      const start = parseRef(startRef, canon) || { idx: 0, chap: 1 };
+      let i = start.idx;
+      let c = start.chap;
+      const out = [];
+      for (let k = 0; k < count; k++) {
+        out.push(formatRef(i, c, canon));
+        c += 1;
+        const max = canon[i][1];
+        if (c > max) {
+          i += 1;
+          if (i >= canon.length) break; // End of canon
+          c = 1;
+        }
+      }
+      return out;
+    }
+
+    function weekdayCode(d) {
+      // JS: 0=Sun..6=Sat -> RFC: SU..SA
+      return ['SU','MO','TU','WE','TH','FR','SA'][d];
+    }
+
     const tasks = [];
     templatesSnap.forEach((doc) => {
       const data = doc.data() || {};
@@ -534,27 +595,66 @@ exports.materializeDailySchedules = functions.pubsub
       const utcMidnight = new Date(Date.UTC(y, m - 1, d));
       const groupRef = doc.ref.parent.parent; // groups/{groupId}
       if (!groupRef) return;
+      // Respect weekdays if provided (e.g., ['MO','TU','WE','TH','FR','SA'])
+      const allowedDays = Array.isArray(data.weekdays) ? data.weekdays : null;
+      if (allowedDays) {
+        const code = weekdayCode(new Date(Date.UTC(y, m - 1, d)).getUTCDay());
+        // Convert local weekday to code by recomputing in timeZone
+        try {
+          const wdFmt = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'short' });
+          const wd = wdFmt.format(new Date(Date.UTC(y, m - 1, d))).slice(0,2).toUpperCase();
+          const map = { SU:'SU', MO:'MO', TU:'TU', WE:'WE', TH:'TH', FR:'FR', SA:'SA' };
+          const localCode = map[wd] || code;
+          if (!allowedDays.includes(localCode)) return; // skip non-scheduled day
+        } catch (_) {
+          if (!allowedDays.includes(code)) return;
+        }
+      }
+      const templateRef = doc.ref;
       const scheduleRef = groupRef.collection('schedule').doc(dateKey);
-      tasks.push(
-        scheduleRef.get().then(async (snap) => {
-          if (snap.exists) return;
-          try {
-            await scheduleRef.create({
-              date: admin.firestore.Timestamp.fromDate(utcMidnight),
-              chapters: [],
-              // Marker for debugging/source tracing
-              _source: 'auto',
-            });
-          } catch (err) {
-            // Ignore ABORTED due to contention; this is idempotent
-            functions.logger.warn('Failed to create schedule', {
-              group: groupRef.path,
-              dateKey,
-              error: err,
-            });
+      tasks.push(db.runTransaction(async (tx) => {
+        const tSnap = await tx.get(templateRef);
+        const tData = tSnap.data() || {};
+        const plan = (tData.plan || '').toString();
+        const perDay = Number(tData.chaptersPerDay || 0);
+        let chapters = [];
+        if (perDay > 0 && (plan === 'sequential_ot' || plan === 'sequential_nt' || plan === 'psalms')) {
+          const canon = plan === 'sequential_nt' ? NT : (plan === 'psalms' ? PSALMS : OT);
+          // Use per-template cursorRef if present; otherwise startRef.
+          let startRef = (tData.cursorRef || tData.startRef || 'Gen 1').toString();
+          chapters = nextChapters(startRef, perDay, canon);
+          // Compute next cursor after today's assignment
+          const last = chapters[chapters.length - 1];
+          const p = parseRef(last, canon);
+          if (p) {
+            const max = canon[p.idx][1];
+            const next = p.chap < max ? formatRef(p.idx, p.chap + 1, canon)
+              : (p.idx + 1 < canon.length ? formatRef(p.idx + 1, 1, canon) : last);
+            tx.update(templateRef, { cursorRef: next });
           }
-        })
-      );
+        }
+
+        const sSnap = await tx.get(scheduleRef);
+        if (!sSnap.exists) {
+          tx.set(scheduleRef, {
+            date: admin.firestore.Timestamp.fromDate(utcMidnight),
+            chapters,
+            _source: 'auto',
+          });
+        } else if (Array.isArray(chapters) && chapters.length > 0) {
+          const existing = Array.isArray(sSnap.data().chapters)
+            ? sSnap.data().chapters : [];
+          const merged = existing.concat(chapters).filter((v, i, a) => a.indexOf(v) === i);
+          tx.update(scheduleRef, { chapters: merged });
+        }
+      }).catch((err) => {
+        functions.logger.warn('Txn failed for schedule/template', {
+          group: groupRef.path,
+          template: templateRef.path,
+          dateKey,
+          error: err,
+        });
+      }));
     });
 
     // Limit concurrency to avoid overwhelming Firestore (simple chunking)
@@ -567,6 +667,138 @@ exports.materializeDailySchedules = functions.pubsub
 
     return null;
   });
+
+/** Callable: materialize today's schedule for a group (optionally a single template). */
+exports.materializeToday = onCall({ region: 'us-central1' }, async (req) => {
+  if (!req.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+  }
+  const db = admin.firestore();
+  const { groupId, templateId } = req.data || {};
+  if (!groupId) {
+    throw new functions.https.HttpsError('invalid-argument', 'groupId required');
+  }
+  const uid = req.auth.uid;
+  const groupRef = db.collection('groups').doc(groupId);
+  const group = await groupRef.get();
+  if (!group.exists) {
+    throw new functions.https.HttpsError('not-found', 'Group not found');
+  }
+  const isOwner = group.data()?.ownerUid === uid;
+  const member = await groupRef.collection('members').doc(uid).get();
+  const role = member.data()?.role;
+  const isAdmin = role === 'admin' || role === 'owner';
+  if (!isOwner && !isAdmin) {
+    throw new functions.https.HttpsError('permission-denied', 'Owner/admin only');
+  }
+
+  let templates;
+  if (templateId) {
+    const t = await groupRef.collection('scheduleTemplates').doc(templateId).get();
+    if (!t.exists) throw new functions.https.HttpsError('not-found', 'Template not found');
+    templates = [{ ref: t.ref, data: t.data() }];
+  } else {
+    const snap = await groupRef.collection('scheduleTemplates').where('active', '==', true).get();
+    templates = snap.docs.map((d) => ({ ref: d.ref, data: d.data() }));
+  }
+
+  // Reuse logic from scheduler: local date, weekdays, canon, cursor update
+  const now = new Date();
+  function localDateParts(date, timeZone) {
+    try {
+      const fmt = new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' });
+      const parts = fmt.formatToParts(date);
+      const y = Number(parts.find((p) => p.type === 'year')?.value);
+      const m = Number(parts.find((p) => p.type === 'month')?.value);
+      const d = Number(parts.find((p) => p.type === 'day')?.value);
+      return { y, m, d };
+    } catch {
+      return { y: now.getUTCFullYear(), m: now.getUTCMonth() + 1, d: now.getUTCDate() };
+    }
+  }
+  const OT = [['Gen',50],['Ex',40],['Lev',27],['Num',36],['Deut',34],['Josh',24],['Judg',21],['Ruth',4],['1Sam',31],['2Sam',24],['1Kgs',22],['2Kgs',25],['1Chr',29],['2Chr',36],['Ezra',10],['Neh',13],['Esth',10],['Job',42],['Psalm',150],['Prov',31],['Eccl',12],['Song',8],['Isa',66],['Jer',52],['Lam',5],['Ezek',48],['Dan',12],['Hos',14],['Joel',3],['Amos',9],['Obad',1],['Jonah',4],['Mic',7],['Nah',3],['Hab',3],['Zeph',3],['Hag',2],['Zech',14],['Mal',4]];
+  const NT = [['Matt',28],['Mark',16],['Luke',24],['John',21],['Acts',28],['Rom',16],['1Cor',16],['2Cor',13],['Gal',6],['Eph',6],['Phil',4],['Col',4],['1Thess',5],['2Thess',3],['1Tim',6],['2Tim',4],['Titus',3],['Phlm',1],['Heb',13],['Jas',5],['1Pet',5],['2Pet',3],['1John',5],['2John',1],['3John',1],['Jude',1],['Rev',22]];
+  const PSALMS = [['Psalm',150]];
+  function parseRef(ref, canon){ if(!ref||typeof ref!=='string')return null; const parts=ref.trim().split(/\s+/); if(parts.length<2)return null; const book=parts[0]; const chap=Number(parts[1]); if(!Number.isFinite(chap))return null; const idx=canon.findIndex(([n])=>n===book); if(idx===-1)return null; return {idx,chap}; }
+  function formatRef(idx,chap,canon){ return `${canon[idx][0]} ${chap}`; }
+  function nextChapters(startRef,count,canon){ const start=parseRef(startRef,canon)||{idx:0,chap:1}; let i=start.idx; let c=start.chap; const out=[]; for(let k=0;k<count;k++){ out.push(formatRef(i,c,canon)); c+=1; const max=canon[i][1]; if(c>max){ i+=1; if(i>=canon.length)break; c=1; } } return out; }
+  function weekdayCode(d){ return ['SU','MO','TU','WE','TH','FR','SA'][d]; }
+
+  const results = [];
+  for (const t of templates) {
+    const data = t.data || {};
+    const tz = (data.timezone || 'UTC').toString();
+    const allowedDays = Array.isArray(data.weekdays) ? data.weekdays : null;
+    const { y, m, d } = localDateParts(now, tz);
+    // Check weekday
+    if (allowedDays) {
+      try {
+        const wdFmt = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' });
+        const wd = wdFmt.format(new Date(Date.UTC(y, m - 1, d))).slice(0,2).toUpperCase();
+        const map = { SU:'SU', MO:'MO', TU:'TU', WE:'WE', TH:'TH', FR:'FR', SA:'SA' };
+        if (!allowedDays.includes(map[wd] || wd)) continue;
+      } catch {}
+    }
+    const dateKey = `${y.toString().padStart(4,'0')}-${m.toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+    const scheduleRef = groupRef.collection('schedule').doc(dateKey);
+    const plan = (data.plan || '').toString();
+    const perDay = Number(data.chaptersPerDay || 0);
+    const canon = plan === 'sequential_nt' ? NT : (plan === 'psalms' ? PSALMS : OT);
+    let chapters = [];
+    if (perDay > 0 && (plan === 'sequential_ot' || plan === 'sequential_nt' || plan === 'psalms')) {
+      const startRef = (data.cursorRef || data.startRef || (canon[0][0] + ' 1')).toString();
+      chapters = nextChapters(startRef, perDay, canon);
+      const last = chapters[chapters.length - 1];
+      const p = parseRef(last, canon);
+      if (p) {
+        const max = canon[p.idx][1];
+        const next = p.chap < max ? formatRef(p.idx, p.chap + 1, canon)
+          : (p.idx + 1 < canon.length ? formatRef(p.idx + 1, 1, canon) : last);
+        await t.ref.set({ cursorRef: next }, { merge: true });
+      }
+    }
+    const sSnap = await scheduleRef.get();
+    if (!sSnap.exists) {
+      await scheduleRef.set({
+        date: admin.firestore.Timestamp.fromDate(new Date(Date.UTC(y, m - 1, d))),
+        chapters,
+        _source: 'auto',
+      });
+    } else if (chapters.length > 0) {
+      const existing = Array.isArray(sSnap.data().chapters) ? sSnap.data().chapters : [];
+      const merged = existing.concat(chapters).filter((v, i, a) => a.indexOf(v) === i);
+      await scheduleRef.set({ chapters: merged }, { merge: true });
+    }
+    results.push({ template: t.ref.id, dateKey });
+  }
+  return { success: true, results };
+});
+
+/** Callable: reset a plan's next chapter (cursor) to a specific ref. */
+exports.resetPlanCursor = onCall({ region: 'us-central1' }, async (req) => {
+  if (!req.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+  }
+  const { groupId, templateId, cursorRef } = req.data || {};
+  if (!groupId || !templateId || !cursorRef) {
+    throw new functions.https.HttpsError('invalid-argument', 'groupId, templateId, cursorRef required');
+  }
+  const db = admin.firestore();
+  const uid = req.auth.uid;
+  const groupRef = db.collection('groups').doc(groupId);
+  const group = await groupRef.get();
+  if (!group.exists) throw new functions.https.HttpsError('not-found', 'Group not found');
+  const isOwner = group.data()?.ownerUid === uid;
+  const member = await groupRef.collection('members').doc(uid).get();
+  const role = member.data()?.role;
+  const isAdmin = role === 'admin' || role === 'owner';
+  if (!isOwner && !isAdmin) {
+    throw new functions.https.HttpsError('permission-denied', 'Owner/admin only');
+  }
+  await groupRef.collection('scheduleTemplates').doc(templateId)
+    .set({ cursorRef: cursorRef.toString() }, { merge: true });
+  return { success: true };
+});
 
 exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
   if (!req.auth) {
