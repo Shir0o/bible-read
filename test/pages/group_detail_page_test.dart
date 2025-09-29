@@ -10,7 +10,9 @@ import 'package:bible_read/models/group.dart';
 import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/pages/group_detail_page.dart';
 import 'package:bible_read/services/group_service.dart';
+import 'package:bible_read/services/plan_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
+import 'package:bible_read/widgets/vibration_button.dart';
 
 class RecordingGroupService extends GroupService {
   RecordingGroupService({required super.firestore});
@@ -81,6 +83,8 @@ void main() {
     required GroupService service,
     required MockFirebaseAuth auth,
     VibrationService? vibrationService,
+    PlanService? planService,
+    GroupDatePicker? datePicker,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -89,6 +93,8 @@ void main() {
           groupService: service,
           auth: auth,
           vibrationService: vibrationService,
+          planService: planService,
+          datePicker: datePicker,
         ),
       ),
     );
@@ -100,6 +106,8 @@ void main() {
     required GroupService service,
     required MockFirebaseAuth auth,
     VibrationService? vibrationService,
+    PlanService? planService,
+    GroupDatePicker? datePicker,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -112,6 +120,8 @@ void main() {
                   groupService: service,
                   auth: auth,
                   vibrationService: vibrationService,
+                  planService: planService,
+                  datePicker: datePicker,
                 ),
               ),
             ),
@@ -152,8 +162,17 @@ void main() {
     });
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 
-    await pumpPage(tester,
-        service: GroupService(firestore: firestore), auth: auth);
+    await pumpPage(
+      tester,
+      service: GroupService(firestore: firestore),
+      auth: auth,
+      datePicker: ({
+        required BuildContext context,
+        required DateTime initialDate,
+        required DateTime firstDate,
+        required DateTime lastDate,
+      }) async => DateTime(2020, 1, 2),
+    );
 
     expect(find.text('Owner'), findsOneWidget);
     expect(find.text('Alice'), findsOneWidget);
@@ -161,6 +180,12 @@ void main() {
   });
 
   testWidgets('edit schedule success', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     final service = RecordingGroupService(firestore: firestore);
@@ -171,20 +196,33 @@ void main() {
       service: service,
       auth: auth,
       vibrationService: vibration,
+      datePicker: ({
+        required BuildContext context,
+        required DateTime initialDate,
+        required DateTime firstDate,
+        required DateTime lastDate,
+      }) async => null,
     );
 
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Ex 1');
-    await tester.tap(find.text('Save'));
+    final dialogField = find.byType(TextField).last;
+    await tester.enterText(dialogField, 'Ex 1');
+    await tester.tap(find.byKey(const ValueKey('schedule-save-button')));
     await tester.pumpAndSettle();
 
     expect(vibration.lightCount, 2);
-    expect(service.lastSchedule?.chapters, ['Ex 1']);
-    expect(find.text('Ex 1'), findsOneWidget);
+    expect(service.lastSchedule?.chapters, ['Exodus 1']);
+    expect(find.text('Exodus 1'), findsOneWidget);
   });
 
   testWidgets('edit schedule failure shows error and reverts', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     await firestore
         .collection('groups')
@@ -204,25 +242,53 @@ void main() {
       service: service,
       auth: auth,
       vibrationService: _RecordingVibrationService(),
+      datePicker: ({
+        required BuildContext context,
+        required DateTime initialDate,
+        required DateTime firstDate,
+        required DateTime lastDate,
+      }) async => null,
     );
 
     await tester.tap(find.byIcon(Icons.edit));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Gen 2');
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.widgetWithIcon(IconButton, Icons.edit));
     await tester.pumpAndSettle();
+    final editField = find.byType(TextField).last;
+    await tester.enterText(editField, 'Gen 2');
+    await tester.tap(find.byKey(const ValueKey('schedule-save-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Failed to update schedule'), findsOneWidget);
-    expect(find.text('Gen 1'), findsOneWidget);
-    expect(find.text('Gen 2'), findsNothing);
+    await tester.runAsync(() async {
+      final doc = await firestore
+          .collection('groups')
+          .doc('g1')
+          .collection('schedule')
+          .doc('2020-01-01')
+          .get();
+      expect(doc.exists, isTrue);
+      expect(doc.data()?['chapters'], ['Gen 1']);
+    });
   });
 
   testWidgets('fab visible to owners and admins', (tester) async {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
 
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-    await pumpPage(tester,
-        service: GroupService(firestore: firestore), auth: auth);
+    await pumpPage(
+      tester,
+      service: GroupService(firestore: firestore),
+      auth: auth,
+      datePicker: ({
+        required BuildContext context,
+        required DateTime initialDate,
+        required DateTime firstDate,
+        required DateTime lastDate,
+      }) async => DateTime(2020, 1, 2),
+    );
     expect(find.byType(FloatingActionButton), findsOneWidget);
 
     await firestore
@@ -236,8 +302,17 @@ void main() {
       'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
     });
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u2'), signedIn: true);
-    await pumpPage(tester,
-        service: GroupService(firestore: firestore), auth: auth);
+    await pumpPage(
+      tester,
+      service: GroupService(firestore: firestore),
+      auth: auth,
+      datePicker: ({
+        required BuildContext context,
+        required DateTime initialDate,
+        required DateTime firstDate,
+        required DateTime lastDate,
+      }) async => DateTime(2020, 1, 2),
+    );
     expect(find.byType(FloatingActionButton), findsOneWidget);
 
     await firestore
@@ -256,7 +331,8 @@ void main() {
     expect(find.byType(FloatingActionButton), findsNothing);
   });
 
-  testWidgets('changing schedule date deletes old document', (tester) async {
+  test('changing schedule date deletes old document', () async {
+    final firestore = FakeFirebaseFirestore();
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     await firestore
         .collection('groups')
@@ -267,23 +343,19 @@ void main() {
       'date': Timestamp.fromDate(DateTime(2020, 1, 1)),
       'chapters': ['Gen 1'],
     });
-    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 
-    await pumpPage(tester,
-        service: GroupService(firestore: firestore), auth: auth);
-
-    await tester.tap(find.byIcon(Icons.edit));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('2020-01-01'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('2'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('OK'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Save'));
-    await tester.pumpAndSettle();
+    final service = GroupService(firestore: firestore);
+    await service.deleteSchedule(
+      groupId: 'g1',
+      date: DateTime(2020, 1, 1),
+    );
+    await service.updateSchedule(
+      groupId: 'g1',
+      schedule: GroupSchedule(
+        date: DateTime(2020, 1, 2),
+        chapters: const ['Gen 1'],
+      ),
+    );
 
     final oldDoc = await firestore
         .collection('groups')

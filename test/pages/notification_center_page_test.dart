@@ -10,9 +10,19 @@ import 'package:bible_read/models/notification_preferences.dart';
 import 'package:bible_read/models/app_notification.dart';
 import 'package:bible_read/pages/notification_center_page.dart';
 import 'package:bible_read/services/notification_service.dart';
+import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/pages/achievements_page.dart';
 import 'package:bible_read/pages/friend_requests_page.dart';
 import 'package:bible_read/pages/seasonal_challenges_page.dart';
+
+class _StubVibrationService extends VibrationService {
+  int lightCalls = 0;
+
+  @override
+  Future<void> lightImpact() async {
+    lightCalls++;
+  }
+}
 
 Future<void> _renderType(WidgetTester tester, NotificationType type) async {
   final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u0'), signedIn: true);
@@ -25,7 +35,11 @@ Future<void> _renderType(WidgetTester tester, NotificationType type) async {
   final service = _SingleNotificationService(notification: notification);
   await tester.pumpWidget(
     MaterialApp(
-      home: NotificationCenterPage(service: service, auth: auth),
+      home: NotificationCenterPage(
+        service: service,
+        auth: auth,
+        vibrationService: _StubVibrationService(),
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -97,11 +111,15 @@ void main() {
       'message': 'Test nudge',
     });
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: NotificationCenterPage(service: service, auth: auth),
+  await tester.pumpWidget(
+    MaterialApp(
+      home: NotificationCenterPage(
+        service: service,
+        auth: auth,
+        vibrationService: _StubVibrationService(),
       ),
-    );
+    ),
+  );
     await tester.pumpAndSettle();
 
     expect(find.text('Test like'), findsOneWidget);
@@ -116,7 +134,11 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: NotificationCenterPage(service: service, auth: auth),
+        home: NotificationCenterPage(
+          service: service,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -137,7 +159,11 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: NotificationCenterPage(service: service, auth: auth),
+        home: NotificationCenterPage(
+          service: service,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+        ),
       ),
     );
     await tester.pump();
@@ -152,7 +178,11 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: NotificationCenterPage(service: service, auth: auth),
+        home: NotificationCenterPage(
+          service: service,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -182,7 +212,11 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: NotificationCenterPage(service: service, auth: auth),
+        home: NotificationCenterPage(
+          service: service,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -224,7 +258,11 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: NotificationCenterPage(service: service, auth: auth),
+        home: NotificationCenterPage(
+          service: service,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -278,7 +316,11 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: NotificationCenterPage(service: service, auth: auth),
+        home: NotificationCenterPage(
+          service: service,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -290,7 +332,7 @@ void main() {
   });
 
   testWidgets(
-      'tapping friend request with no pending requests shows SnackBar and does not navigate',
+      'tapping friend request with no pending requests navigates and shows empty state',
       (tester) async {
     final firestore = FakeFirebaseFirestore();
     final service = _RecordingService(firestore: firestore);
@@ -311,7 +353,11 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: NotificationCenterPage(service: service, auth: auth),
+        home: NotificationCenterPage(
+          service: service,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -320,8 +366,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
 
-    expect(find.text('No pending friend requests'), findsOneWidget);
-    expect(find.byType(FriendRequestsPage), findsNothing);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FriendRequestsPage), findsOneWidget);
+    expect(find.text('No friend requests'), findsOneWidget);
     expect(service.called, isTrue);
   });
 
@@ -347,7 +395,11 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: NotificationCenterPage(service: service, auth: auth),
+        home: NotificationCenterPage(
+          service: service,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+        ),
       ),
     );
     await tester.pumpAndSettle();

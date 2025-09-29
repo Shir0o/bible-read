@@ -7,21 +7,28 @@ import 'package:flutter/material.dart';
 
 import '../models/group.dart';
 import '../models/group_schedule.dart';
+import '../models/schedule_template.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
-import '../models/schedule_template.dart';
-import '../widgets/common_styles.dart';
+import '../services/plan_service.dart';
+import '../services/reference_parser.dart';
+import '../services/vibration_service.dart';
 import '../widgets/animated_page_route.dart';
+import '../widgets/common_styles.dart';
 import '../widgets/group_members_section.dart';
 import '../widgets/schedule_item_tile.dart';
-import '../widgets/vibration_button.dart';
-import '../services/vibration_service.dart';
 import '../widgets/section_header.dart';
-import '../services/reference_parser.dart';
-import 'read_log_page.dart';
+import '../widgets/vibration_button.dart';
 import 'group_join_requests_page.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import '../models/schedule_template.dart';
+import 'read_log_page.dart';
+
+typedef GroupDatePicker = Future<DateTime?> Function({
+  required BuildContext context,
+  required DateTime initialDate,
+  required DateTime firstDate,
+  required DateTime lastDate,
+});
 
 /// Page showing the members and schedule for a group.
 class GroupDetailPage extends StatefulWidget {
@@ -37,6 +44,12 @@ class GroupDetailPage extends StatefulWidget {
   /// Service used to trigger vibrations.
   final VibrationService vibrationService;
 
+  /// Service providing predefined reading plans.
+  final PlanService planService;
+
+  /// Picker used to choose schedule dates.
+  final GroupDatePicker datePicker;
+
   /// Creates a [GroupDetailPage].
   GroupDetailPage({
     super.key,
@@ -44,9 +57,27 @@ class GroupDetailPage extends StatefulWidget {
     GroupService? groupService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
+    PlanService? planService,
+    GroupDatePicker? datePicker,
   })  : groupService = groupService ?? GroupService(),
         auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService();
+        vibrationService = vibrationService ?? const VibrationService(),
+        planService = planService ?? const PlanService(),
+        datePicker = datePicker ?? _defaultDatePicker;
+
+  static Future<DateTime?> _defaultDatePicker({
+    required BuildContext context,
+    required DateTime initialDate,
+    required DateTime firstDate,
+    required DateTime lastDate,
+  }) {
+    return showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
+  }
 
   @override
   State<GroupDetailPage> createState() => _GroupDetailPageState();
@@ -69,6 +100,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   final Map<String, Map<int, int>> _pendingChapterOps =
       <String, Map<int, int>>{};
   int _nextPendingOpId = 0;
+  ReadingPlan? _selectedPlan;
+  bool _isApplyingPlan = false;
   // Automation Plans UI (consolidated): handled via list + dialogs.
 
   String _dateKey(DateTime date) =>
@@ -139,6 +172,173 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     });
   }
 
+  Future<void> _applySelectedPlan() async {
+    final selectedPlan = _selectedPlan;
+    if (selectedPlan == null || _isApplyingPlan) {
+      return;
+    }
+
+    final definition = widget.planService.definitionFor(selectedPlan);
+    final existing = List<GroupSchedule>.from(
+      (_scheduleOverride ?? _latestSchedule) ?? const <GroupSchedule>[],
+    )..sort((a, b) => a.date.compareTo(b.date));
+
+    DateTime startDate;
+    if (existing.isNotEmpty) {
+      final last = existing.last.date;
+      startDate = DateTime(last.year, last.month, last.day)
+          .add(const Duration(days: 1));
+    } else {
+      final now = DateTime.now();
+      startDate = DateTime(now.year, now.month, now.day);
+    }
+
+    final entries = widget.planService.createSchedule(
+      plan: selectedPlan,
+      startDate: startDate,
+    );
+
+    if (entries.isEmpty) {
+      return;
+    }
+
+    final optimistic = List<GroupSchedule>.from(existing);
+    for (final entry in entries) {
+      final key = _dateKey(entry.date);
+      final index = optimistic.indexWhere((s) => _dateKey(s.date) == key);
+      if (index >= 0) {
+        optimistic[index] = entry;
+      } else {
+        optimistic.add(entry);
+      }
+    }
+    optimistic.sort((a, b) => a.date.compareTo(b.date));
+
+    setState(() {
+      _isApplyingPlan = true;
+      _scheduleOverride = optimistic;
+    });
+
+    try {
+      for (final entry in entries) {
+        await widget.groupService.updateSchedule(
+          groupId: widget.group.id,
+          schedule: entry,
+        );
+      }
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isApplyingPlan = false;
+        _scheduleOverride = null;
+      });
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${definition.title} applied')),
+      );
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isApplyingPlan = false;
+        _scheduleOverride = null;
+      });
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to apply plan')),
+      );
+    }
+  }
+
+  Widget _buildPlanControls(List<ReadingPlanDefinition> plans) {
+    if (plans.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.only(bottom: 8),
+        child: Text('No reading plans available'),
+      );
+    }
+
+    final selectedDefinition = _selectedPlan != null
+        ? widget.planService.definitionFor(_selectedPlan!)
+        : null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Reading plan',
+                  border: OutlineInputBorder(),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<ReadingPlan>(
+                    key: const Key('plan-dropdown'),
+                    isExpanded: true,
+                    value: _selectedPlan,
+                    onChanged: _isApplyingPlan
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _selectedPlan = value;
+                            });
+                          },
+                    items: plans
+                        .map(
+                          (definition) => DropdownMenuItem<ReadingPlan>(
+                            value: definition.plan,
+                            child: Text(definition.title),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              height: 44,
+              child: ElevatedButton(
+                key: const Key('apply-plan-button'),
+                onPressed: (_selectedPlan == null || _isApplyingPlan)
+                    ? null
+                    : _applySelectedPlan,
+                child: _isApplyingPlan
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Apply Plan'),
+              ),
+            ),
+          ],
+        ),
+        if (selectedDefinition != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 12),
+            child: Text(selectedDefinition.description),
+          )
+        else
+          const SizedBox(height: 12),
+      ],
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -147,6 +347,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     _nameController = TextEditingController(text: _groupName);
     final now = DateTime.now();
     _progressDate = DateTime(now.year, now.month, now.day);
+    final plans = widget.planService.plans;
+    if (plans.isNotEmpty) {
+      _selectedPlan = plans.first.plan;
+    }
   }
 
   @override
@@ -354,7 +558,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     } catch (e, st) {
       if (kDebugMode) debugPrint('Failed to toggle read: $e');
       ErrorLogger.log(e, st);
-      if (!mounted) return;
+      if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to update read status')));
       return false;
@@ -440,7 +644,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     } catch (e, st) {
       if (kDebugMode) debugPrint('Failed to toggle chapter: $e');
       ErrorLogger.log(e, st);
-      if (!mounted) return;
+      if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to update read status')));
       return false;
@@ -545,7 +749,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     } catch (e, st) {
       if (kDebugMode) debugPrint('Failed to toggle read: $e');
       ErrorLogger.log(e, st);
-      if (!mounted) return;
+      if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to update read status')));
       return false;
@@ -672,6 +876,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         _EditScheduleDialog(
           schedule: schedule,
           vibrationService: widget.vibrationService,
+          datePicker: widget.datePicker,
         ),
       ),
     );
@@ -747,8 +952,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             .snapshots()
         : null;
 
-    // No predefined plans; manual entry only.
-
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: memberStream,
       builder: (context, membershipSnapshot) {
@@ -758,6 +961,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         final hasAdminPrivileges =
             isOwner || role == 'admin' || role == 'owner';
         final canEditSchedule = hasAdminPrivileges && _editMode;
+        final plans = widget.planService.plans;
 
         // Determine if a schedule for today already exists to control
         // whether the Save button/input should be enabled.
@@ -801,7 +1005,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ]
                 : null,
           ),
-          floatingActionButton: canEditSchedule
+          floatingActionButton: hasAdminPrivileges
               ? FloatingActionButton(
                   heroTag: 'group-detail-fab',
                   onPressed: () {
@@ -1120,43 +1324,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ),
                 ),
                 const SectionHeader('Schedule'),
-                if (canEditSchedule) ...[
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          key: const Key('today-chapters-field'),
-                          controller: _todayController,
-                          decoration: const InputDecoration(
-                            labelText: "Today's chapters (comma separated)",
-                            border: OutlineInputBorder(),
-                          ),
-                          enabled: !hasToday && !_isSavingToday,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: 56,
-                        child: ElevatedButton(
-                          key: const Key('save-today-button'),
-                          onPressed:
-                              (_isSavingToday || hasToday) ? null : _saveToday,
-                          child: _isSavingToday
-                              ? const SizedBox(
-                                  height: 16,
-                                  width: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Save'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                ],
                 StreamBuilder<List<GroupSchedule>>(
                   stream: widget.groupService.schedule(widget.group.id),
                   builder: (context, snapshot) {
@@ -1169,148 +1336,217 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     final fetched = List<GroupSchedule>.from(snapshot.data!)
                       ..sort((a, b) => a.date.compareTo(b.date));
                     _latestSchedule = fetched;
-                    final schedule = _scheduleOverride ?? _latestSchedule!;
-                    if (schedule.isEmpty) {
-                      return const Text('No schedule');
+                    final schedule = _scheduleOverride ?? fetched;
+                    final hasEntries = schedule.isNotEmpty;
+
+                    final now = DateTime.now();
+                    final todayKey = _dateKey(
+                      DateTime(now.year, now.month, now.day),
+                    );
+                    final hasToday = schedule.any(
+                      (s) => _dateKey(s.date) == todayKey,
+                    );
+
+                    final children = <Widget>[];
+
+                    if (hasAdminPrivileges) {
+                      children.add(_buildPlanControls(plans));
                     }
-                    final user = widget.auth.currentUser;
+
+                    if (canEditSchedule) {
+                      children.add(
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                key: const Key('today-chapters-field'),
+                                controller: _todayController,
+                                decoration: const InputDecoration(
+                                  labelText:
+                                      "Today's chapters (comma separated)",
+                                  border: OutlineInputBorder(),
+                                ),
+                                enabled: !hasToday && !_isSavingToday,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              height: 56,
+                              child: ElevatedButton(
+                                key: const Key('save-today-button'),
+                                onPressed: (_isSavingToday || hasToday)
+                                    ? null
+                                    : _saveToday,
+                                child: _isSavingToday
+                                    ? const SizedBox(
+                                        height: 16,
+                                        width: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text('Save'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                      children.add(const SizedBox(height: 8));
+                    }
+
+                    if (!hasEntries) {
+                      children.add(const Text('No schedule'));
+                    } else {
+                      final user = widget.auth.currentUser;
+                      children.addAll(
+                        schedule.asMap().entries.map((e) {
+                          final s = e.value;
+                          final baseTile = ScheduleItemTile(
+                            schedule: s,
+                            onEdit:
+                                canEditSchedule ? () => _editSchedule(s) : null,
+                            onDelete: canEditSchedule
+                                ? () => _deleteSchedule(s)
+                                : null,
+                            onTap: !canEditSchedule
+                                ? () {
+                                    setState(() {
+                                      _progressDate = DateTime(s.date.year,
+                                          s.date.month, s.date.day);
+                                    });
+                                  }
+                                : null,
+                          );
+                          if (user == null || canEditSchedule) {
+                            return baseTile;
+                          }
+                          final dateKey = _dateKey(s.date);
+                          final entryRef = widget.groupService.firestore
+                              .collection(GroupCollections.groups)
+                              .doc(widget.group.id)
+                              .collection('progress')
+                              .doc(dateKey)
+                              .collection('entries')
+                              .doc(user.uid);
+
+                          return StreamBuilder<
+                              DocumentSnapshot<Map<String, dynamic>>>(
+                            stream: entryRef.snapshots(),
+                            builder: (context, entrySnap) {
+                              final entryData = entrySnap.data?.data();
+                              final baseDone = entryData?['done'] == true;
+                              return StreamBuilder<
+                                  QuerySnapshot<Map<String, dynamic>>>(
+                                stream:
+                                    entryRef.collection('items').snapshots(),
+                                builder: (context, itemsSnap) {
+                                  final rawChecked = <int>{};
+                                  for (final d
+                                      in itemsSnap.data?.docs ?? const []) {
+                                    final idx = int.tryParse(d.id);
+                                    if (idx != null) rawChecked.add(idx);
+                                  }
+
+                                  final displayChecked =
+                                      Set<int>.from(rawChecked);
+                                  final pendingChapterOverride =
+                                      _pendingChapterOverrides[dateKey];
+                                  if (pendingChapterOverride != null) {
+                                    pendingChapterOverride
+                                        .forEach((chapterIndex, value) {
+                                      if (value) {
+                                        displayChecked.add(chapterIndex);
+                                      } else {
+                                        displayChecked.remove(chapterIndex);
+                                      }
+                                    });
+                                  }
+
+                                  final totalChapters = s.chapters.length;
+                                  final hasChapters = totalChapters > 0;
+                                  final allChecked = hasChapters &&
+                                      displayChecked.length >= totalChapters;
+                                  final pendingRead =
+                                      _pendingReadOverrides[dateKey];
+
+                                  bool? currentUserRead;
+                                  ValueChanged<bool>? onToggleRead;
+                                  if (hasChapters) {
+                                    currentUserRead = pendingRead ?? allChecked;
+                                    onToggleRead = (value) {
+                                      if (value ==
+                                          (pendingRead ?? allChecked)) {
+                                        return;
+                                      }
+                                      _handleScheduleReadToggle(
+                                        schedule: s,
+                                        read: value,
+                                        currentlyChecked:
+                                            Set<int>.from(rawChecked),
+                                        hasChapters: true,
+                                      );
+                                    };
+                                  } else {
+                                    currentUserRead = pendingRead ?? baseDone;
+                                    onToggleRead = (value) {
+                                      if (value == (pendingRead ?? baseDone)) {
+                                        return;
+                                      }
+                                      _handleScheduleReadToggle(
+                                        schedule: s,
+                                        read: value,
+                                        currentlyChecked: const <int>{},
+                                        hasChapters: false,
+                                      );
+                                    };
+                                  }
+
+                                  return ScheduleItemTile(
+                                    schedule: s,
+                                    onEdit: canEditSchedule
+                                        ? () => _editSchedule(s)
+                                        : null,
+                                    onDelete: canEditSchedule
+                                        ? () => _deleteSchedule(s)
+                                        : null,
+                                    currentUserRead: currentUserRead,
+                                    onToggleRead: onToggleRead,
+                                    checkedChapters: displayChecked,
+                                    onToggleChapter: (chapterIndex, v) {
+                                      if (v ==
+                                          displayChecked
+                                              .contains(chapterIndex)) {
+                                        return;
+                                      }
+                                      _handleChapterToggle(
+                                        schedule: s,
+                                        chapterIndex: chapterIndex,
+                                        read: v,
+                                      );
+                                    },
+                                    onTap: !canEditSchedule
+                                        ? () {
+                                            setState(() {
+                                              _progressDate = DateTime(
+                                                  s.date.year,
+                                                  s.date.month,
+                                                  s.date.day);
+                                            });
+                                          }
+                                        : null,
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        }),
+                      );
+                    }
+
                     return Column(
-                      children: schedule.asMap().entries.map((e) {
-                        final index = e.key;
-                        final s = e.value;
-                        final baseTile = ScheduleItemTile(
-                          schedule: s,
-                          onEdit:
-                              canEditSchedule ? () => _editSchedule(s) : null,
-                          onDelete:
-                              canEditSchedule ? () => _deleteSchedule(s) : null,
-                          onTap: !canEditSchedule
-                              ? () {
-                                  setState(() {
-                                    _progressDate = DateTime(
-                                        s.date.year, s.date.month, s.date.day);
-                                  });
-                                }
-                              : null,
-                        );
-                        if (user == null || canEditSchedule) {
-                          return baseTile;
-                        }
-                        final dateKey = _dateKey(s.date);
-                        final entryRef = widget.groupService.firestore
-                            .collection(GroupCollections.groups)
-                            .doc(widget.group.id)
-                            .collection('progress')
-                            .doc(dateKey)
-                            .collection('entries')
-                            .doc(user.uid);
-
-                        return StreamBuilder<
-                            DocumentSnapshot<Map<String, dynamic>>>(
-                          stream: entryRef.snapshots(),
-                          builder: (context, entrySnap) {
-                            final entryData = entrySnap.data?.data();
-                            final baseDone = entryData?['done'] == true;
-                        return StreamBuilder<
-                            QuerySnapshot<Map<String, dynamic>>>(
-                          stream: entryRef.collection('items').snapshots(),
-                          builder: (context, itemsSnap) {
-                                final rawChecked = <int>{};
-                                for (final d
-                                    in itemsSnap.data?.docs ?? const []) {
-                                  final idx = int.tryParse(d.id);
-                                  if (idx != null) rawChecked.add(idx);
-                                }
-
-                                final displayChecked = Set<int>.from(rawChecked);
-                                final pendingChapterOverride =
-                                    _pendingChapterOverrides[dateKey];
-                                if (pendingChapterOverride != null) {
-                                  pendingChapterOverride
-                                      .forEach((chapterIndex, value) {
-                                    if (value) {
-                                      displayChecked.add(chapterIndex);
-                                    } else {
-                                      displayChecked.remove(chapterIndex);
-                                    }
-                                  });
-                                }
-
-                                final totalChapters = s.chapters.length;
-                                final hasChapters = totalChapters > 0;
-                                final allChecked = hasChapters &&
-                                    displayChecked.length >= totalChapters;
-                                final pendingRead =
-                                    _pendingReadOverrides[dateKey];
-
-                                bool? currentUserRead;
-                                ValueChanged<bool>? onToggleRead;
-                                if (hasChapters) {
-                                  currentUserRead = pendingRead ?? allChecked;
-                                  onToggleRead = (value) {
-                                    if (value == (pendingRead ?? allChecked)) {
-                                      return;
-                                    }
-                                    _handleScheduleReadToggle(
-                                      schedule: s,
-                                      read: value,
-                                      currentlyChecked:
-                                          Set<int>.from(rawChecked),
-                                      hasChapters: true,
-                                    );
-                                  };
-                                } else {
-                                  currentUserRead = pendingRead ?? baseDone;
-                                  onToggleRead = (value) {
-                                    if (value == (pendingRead ?? baseDone)) {
-                                      return;
-                                    }
-                                    _handleScheduleReadToggle(
-                                      schedule: s,
-                                      read: value,
-                                      currentlyChecked: const <int>{},
-                                      hasChapters: false,
-                                    );
-                                  };
-                                }
-
-                                return ScheduleItemTile(
-                                  schedule: s,
-                                  onEdit: canEditSchedule
-                                      ? () => _editSchedule(s)
-                                      : null,
-                                  onDelete: canEditSchedule
-                                      ? () => _deleteSchedule(s)
-                                      : null,
-                                  currentUserRead: currentUserRead,
-                                  onToggleRead: onToggleRead,
-                                  checkedChapters: displayChecked,
-                                  onToggleChapter: (chapterIndex, v) {
-                                    if (v == displayChecked.contains(chapterIndex)) {
-                                      return;
-                                    }
-                                    _handleChapterToggle(
-                                      schedule: s,
-                                      chapterIndex: chapterIndex,
-                                      read: v,
-                                    );
-                                  },
-                                  onTap: !canEditSchedule
-                                      ? () {
-                                          setState(() {
-                                            _progressDate = DateTime(
-                                                s.date.year,
-                                                s.date.month,
-                                                s.date.day);
-                                          });
-                                        }
-                                      : null,
-                                );
-                              },
-                            );
-                          },
-                        );
-                      }).toList(),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: children,
                     );
                   },
                 ),
@@ -1324,13 +1560,15 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 }
 
 class _EditScheduleDialog extends StatefulWidget {
-  const _EditScheduleDialog({
+  _EditScheduleDialog({
     this.schedule,
     VibrationService? vibrationService,
+    required this.datePicker,
   }) : vibrationService = vibrationService ?? const VibrationService();
 
   final GroupSchedule? schedule;
   final VibrationService vibrationService;
+  final GroupDatePicker datePicker;
 
   @override
   State<_EditScheduleDialog> createState() => _EditScheduleDialogState();
@@ -1356,7 +1594,7 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
+    final picked = await widget.datePicker(
       context: context,
       initialDate: _selected,
       firstDate: DateTime(2020),
@@ -1390,6 +1628,7 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
           ),
           const SizedBox(height: 8),
           TextButton(
+            key: const ValueKey('schedule-date-button'),
             onPressed: _pickDate,
             child: Text(_selected.toIso8601String().split('T').first),
           ),
@@ -1402,6 +1641,7 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
           child: const Text('Cancel'),
         ),
         VibrationButton(
+          key: const ValueKey('schedule-save-button'),
           vibrationService: widget.vibrationService,
           onPressed: _save,
           child: const Text('Save'),

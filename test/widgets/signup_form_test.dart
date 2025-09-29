@@ -39,6 +39,30 @@ class FailingAuth extends MockFirebaseAuth {
   }
 }
 
+class NullUserCredential implements UserCredential {
+  @override
+  AdditionalUserInfo? get additionalUserInfo => null;
+
+  @override
+  AuthCredential? get credential => null;
+
+  @override
+  User? get user => null;
+
+  @override
+  String toString() => 'NullUserCredential';
+}
+
+class NullUserAuth extends MockFirebaseAuth {
+  @override
+  Future<UserCredential> createUserWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    return NullUserCredential();
+  }
+}
+
 class _TestVibrationService extends VibrationService {
   const _TestVibrationService() : super();
 
@@ -160,6 +184,33 @@ void main() {
     await tester.tap(find.text('Sign Up'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+    expect(find.text('Failed to sign up. Please try again.'), findsOneWidget);
+  });
+
+  testWidgets('shows error snackbar when auth returns null user',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = NullUserAuth();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SignupForm(
+            auth: auth,
+            firestore: firestore,
+            vibrationService: vibration,
+          ),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+        find.byKey(const Key('signupEmailField')), 'user@example.com');
+    await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
+    await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
+    await tester.tap(find.text('Sign Up'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Failed to sign up. Please try again.'), findsOneWidget);
   });
 }

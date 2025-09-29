@@ -35,10 +35,23 @@ class SignupForm extends StatefulWidget {
 }
 
 class _SignupFormState extends State<SignupForm> {
+  static const _failureSnackBar = SnackBar(
+    content: Text('Failed to sign up. Please try again.'),
+  );
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmController = TextEditingController();
   bool _loading = false;
+
+  void _handleSignupError(Object error, StackTrace stackTrace) {
+    if (kDebugMode) {
+      debugPrint('Failed to sign up: $error');
+    }
+    ErrorLogger.log(error, stackTrace);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(_failureSnackBar);
+  }
 
   @override
   void dispose() {
@@ -68,12 +81,18 @@ class _SignupFormState extends State<SignupForm> {
         password: password,
       );
       final user = credential.user;
-      if (user != null) {
-        await widget.firestore.collection('users').doc(user.uid).set({
-          'name': user.displayName ?? '',
-          'email': user.email?.toLowerCase(),
-        });
+      if (user == null) {
+        final exception = FirebaseAuthException(
+          code: 'missing-user',
+          message: 'Auth returned a null user after sign up.',
+        );
+        _handleSignupError(exception, StackTrace.current);
+        return;
       }
+      await widget.firestore.collection('users').doc(user.uid).set({
+        'name': user.displayName ?? '',
+        'email': user.email?.toLowerCase(),
+      });
       if (mounted) {
         SuccessAnimation.show(
           context,
@@ -82,15 +101,7 @@ class _SignupFormState extends State<SignupForm> {
         widget.onComplete?.call();
       }
     } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to sign up: $e');
-      }
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to sign up. Please try again.')),
-        );
-      }
+      _handleSignupError(e, st);
     } finally {
       if (mounted) {
         setState(() {

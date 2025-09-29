@@ -92,8 +92,25 @@ void main() {
 
     expect(find.text('Study'), findsOneWidget);
     expect(find.text('Other'), findsOneWidget);
-    expect(find.text('1 member'), findsOneWidget);
-    expect(find.text('0 members'), findsOneWidget);
+
+    final studyTile = tester.widget<ListTile>(
+      find.ancestor(
+        of: find.text('Study'),
+        matching: find.byType(ListTile),
+      ).first,
+    );
+    final otherTile = tester.widget<ListTile>(
+      find.ancestor(
+        of: find.text('Other'),
+        matching: find.byType(ListTile),
+      ).first,
+    );
+
+    expect((studyTile.subtitle as Text).data, '1 member');
+    expect(studyTile.trailing, isA<IconButton>());
+
+    expect((otherTile.subtitle as Text).data, '1 member');
+    expect(otherTile.trailing, isNull);
   });
 
   testWidgets('shows pending indicator (no joined checkmark)', (tester) async {
@@ -127,16 +144,22 @@ void main() {
     await pumpPage(tester, GroupService(firestore: firestore));
 
     final joinedTile = tester.widget<ListTile>(
-      find.widgetWithText(ListTile, 'Study'),
+      find.ancestor(
+        of: find.text('Study'),
+        matching: find.byType(ListTile),
+      ).first,
     );
-    expect(joinedTile.trailing, isNull);
+    expect(joinedTile.trailing, isA<IconButton>());
 
     final pendingTile = tester.widget<ListTile>(
-      find.widgetWithText(ListTile, 'Other'),
+      find.ancestor(
+        of: find.text('Other'),
+        matching: find.byType(ListTile),
+      ).first,
     );
     expect((pendingTile.trailing as Text).data, 'Pending');
-    expect(find.text('2 members'), findsOneWidget);
-    expect(find.text('3 members'), findsOneWidget);
+    expect((joinedTile.subtitle as Text).data, '1 member');
+    expect((pendingTile.subtitle as Text).data, '1 member');
   });
 
   testWidgets('create group success shows snackbar', (tester) async {

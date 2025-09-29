@@ -149,7 +149,9 @@ void main() {
   testWidgets('MainPage navigation to profile', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: MainPage(),
+        home: MainPage(
+          vibrationService: _RecordingVibrationService(),
+        ),
       ),
     );
     await tester.pump();
@@ -172,11 +174,18 @@ void main() {
   testWidgets('tapping protected drawer item when signed out has no effect', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
     final auth = MockFirebaseAuth();
     await tester.pumpWidget(
       MaterialApp(
         home: MainPage(
           auth: auth,
+          vibrationService: _RecordingVibrationService(),
         ),
       ),
     );
@@ -192,6 +201,15 @@ void main() {
     await tester.pump();
 
     await tester.pump(const Duration(milliseconds: 500));
+    final drawerScrollable = find.descendant(
+      of: find.byType(Drawer),
+      matching: find.byType(ListView),
+    ).first;
+    await tester.dragUntilVisible(
+      find.text('Friends'),
+      drawerScrollable,
+      const Offset(0, -200),
+    );
     await tester.tap(find.text('Friends'));
     await tester.pump();
 
@@ -204,6 +222,12 @@ void main() {
   });
 
   testWidgets('navigation updates selected index', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
       signedIn: true,
@@ -217,6 +241,7 @@ void main() {
             auth: auth,
             firestore: firestore,
             messaging: FakeFirebaseMessaging(null),
+            vibrationService: _RecordingVibrationService(),
           ),
         ),
       ),
@@ -251,14 +276,27 @@ void main() {
     expect(responsive.selectedIndex, 0);
 
     // Seasonal challenges via drawer menu entry
+    Future<void> tapDrawerItem(String label) async {
+      final drawerList = find.descendant(
+        of: find.byType(Drawer),
+        matching: find.byType(ListView),
+      ).first;
+      await tester.dragUntilVisible(
+        find.text(label),
+        drawerList,
+        const Offset(0, -200),
+      );
+      await tester.tap(find.text(label));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+
     responsive.scaffoldKey!.currentState!.openDrawer();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     final seasonalMenuItem = find.text('Seasonal Challenges');
     expect(seasonalMenuItem, findsOneWidget);
-    await tester.tap(seasonalMenuItem);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tapDrawerItem('Seasonal Challenges');
     expect(find.byType(SeasonalChallengesPage), findsOneWidget);
     responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
@@ -271,9 +309,7 @@ void main() {
     await tester.pump();
 
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.tap(find.text('Friends'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tapDrawerItem('Friends');
     expect(find.byType(FriendsPage), findsOneWidget);
     responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
@@ -285,9 +321,7 @@ void main() {
     await tester.pump();
 
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.tap(find.text('Achievements'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tapDrawerItem('Achievements');
     expect(find.byType(AchievementsPage), findsOneWidget);
     responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
@@ -299,9 +333,7 @@ void main() {
     await tester.pump();
 
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.tap(find.text('History'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tapDrawerItem('History');
     expect(find.byType(StreakHistoryPage), findsOneWidget);
     responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
@@ -321,6 +353,7 @@ void main() {
           auth: auth,
           firestore: firestore,
           messaging: FakeFirebaseMessaging(null),
+          vibrationService: _RecordingVibrationService(),
         ),
       ),
     );
@@ -361,6 +394,7 @@ void main() {
             auth: auth,
             firestore: firestore,
             messaging: FakeFirebaseMessaging(null),
+            vibrationService: _RecordingVibrationService(),
           ),
         ),
       ),
@@ -458,6 +492,7 @@ void main() {
           firestore: firestore,
           auth: auth,
           messaging: FakeFirebaseMessaging(null),
+          vibrationService: _RecordingVibrationService(),
           readLogPageBuilder: ({
             Key? key,
             FirebaseFirestore? firestore,
@@ -495,7 +530,9 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
-        home: MainPage(),
+        home: MainPage(
+          vibrationService: _RecordingVibrationService(),
+        ),
       ),
     );
     await tester.pump();
@@ -515,6 +552,7 @@ void main() {
           data: MediaQueryData(size: Size(800, 600)),
           child: MainPage(
             auth: auth,
+            vibrationService: _RecordingVibrationService(),
           ),
         ),
       ),
@@ -528,6 +566,7 @@ void main() {
           data: MediaQueryData(size: Size(400, 600)),
           child: MainPage(
             auth: auth,
+            vibrationService: _RecordingVibrationService(),
           ),
         ),
       ),
@@ -545,6 +584,7 @@ void main() {
           data: const MediaQueryData(size: Size(400, 600)),
           child: MainPage(
             auth: auth,
+            vibrationService: _RecordingVibrationService(),
           ),
         ),
       ),
@@ -587,6 +627,7 @@ void main() {
           auth: auth,
           firestore: fakeFirestore,
           messaging: messaging,
+          vibrationService: _RecordingVibrationService(),
         ),
       ),
     );
@@ -633,6 +674,7 @@ void main() {
           auth: auth,
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
+          vibrationService: _RecordingVibrationService(),
           sendLikeNotification: (
               {required String ownerUid, required String likerName}) async {
             wasCalled = true;
@@ -709,6 +751,7 @@ void main() {
           auth: auth,
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
+          vibrationService: _RecordingVibrationService(),
           sendCommentNotification: ({
             required String ownerUid,
             required String commenterName,
@@ -772,6 +815,7 @@ void main() {
         home: MainPage(
           auth: auth,
           appCheckFailed: true,
+          vibrationService: _RecordingVibrationService(),
         ),
       ),
     );
@@ -794,6 +838,7 @@ void main() {
         home: MainPage(
           auth: auth,
           appCheckFailed: true,
+          vibrationService: _RecordingVibrationService(),
         ),
       ),
     );
@@ -819,6 +864,12 @@ void main() {
   testWidgets('signing out returns to profile and restricts navigation', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
       signedIn: true,
@@ -835,6 +886,7 @@ void main() {
           auth: auth,
           firestore: firestore,
           messaging: FakeFirebaseMessaging(null),
+          vibrationService: _RecordingVibrationService(),
         ),
       ),
     );
@@ -856,6 +908,15 @@ void main() {
     await tester.pump();
 
     await tester.pump(const Duration(milliseconds: 500));
+    final drawerList = find.descendant(
+      of: find.byType(Drawer),
+      matching: find.byType(ListView),
+    ).first;
+    await tester.dragUntilVisible(
+      find.text('Profile'),
+      drawerList,
+      const Offset(0, -200),
+    );
     await tester.tap(find.text('Profile'));
     await tester.pump();
 
@@ -900,6 +961,7 @@ void main() {
           auth: auth,
           firestore: firestore,
           messaging: FakeFirebaseMessaging(null),
+          vibrationService: _RecordingVibrationService(),
         ),
       ),
     );

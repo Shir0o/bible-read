@@ -10,6 +10,12 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('toggling switch updates Firestore', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
     final firestore = FakeFirebaseFirestore();
     await firestore
         .collection('users')
@@ -35,15 +41,22 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(SwitchListTile),
-        findsNWidgets(NotificationType.values.length + 1));
-    expect(
-      find.widgetWithText(
-        SwitchListTile,
-        'Seasonal Challenge Notifications',
-      ),
-      findsOneWidget,
-    );
+    const labels = [
+      'Like Notifications',
+      'Nudge Notifications',
+      'Signup Alerts',
+      'Achievement Notifications',
+      'Friend Request Notifications',
+      'Comment Notifications',
+      'Group Join Request Notifications',
+      'Group Schedule Update Notifications',
+      'Seasonal Challenge Notifications',
+      'Vibration',
+    ];
+    for (final label in labels) {
+      expect(find.text(label), findsOneWidget);
+    }
+
     final likeSwitch = tester.widget<SwitchListTile>(
         find.widgetWithText(SwitchListTile, 'Like Notifications'));
     expect(likeSwitch.value, isFalse);

@@ -61,8 +61,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Alice: Hello'), findsOneWidget);
-    expect(find.text('Bob: Hi'), findsOneWidget);
+    final aliceTile = tester.widget<ListTile>(
+      find.widgetWithText(ListTile, 'Alice'),
+    );
+    final bobTile = tester.widget<ListTile>(
+      find.widgetWithText(ListTile, 'Bob'),
+    );
+    expect(aliceTile.subtitle, isA<Text>());
+    expect((aliceTile.subtitle as Text).data, 'Hello');
+    expect(bobTile.subtitle, isA<Text>());
+    expect((bobTile.subtitle as Text).data, 'Hi');
   });
 
   testWidgets('posting calls onAdd and clears field', (tester) async {
@@ -123,7 +131,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     await tester.pump();
 
-    expect(find.text('A: Hey'), findsOneWidget);
+    final tempTile = tester.widget<ListTile>(
+      find.widgetWithText(ListTile, 'A'),
+    );
+    expect(tempTile.subtitle, isA<Text>());
+    expect((tempTile.subtitle as Text).data, 'Hey');
     expect(find.byKey(const ValueKey('progress')), findsOneWidget);
     final field = tester.widget<TextField>(find.byType(TextField));
     expect(field.controller!.text, isEmpty);
