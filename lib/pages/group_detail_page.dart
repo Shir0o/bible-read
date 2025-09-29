@@ -10,7 +10,6 @@ import '../models/group_schedule.dart';
 import '../models/schedule_template.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
-import '../services/plan_service.dart';
 import '../services/reference_parser.dart';
 import '../services/vibration_service.dart';
 import '../widgets/animated_page_route.dart';
@@ -44,9 +43,6 @@ class GroupDetailPage extends StatefulWidget {
   /// Service used to trigger vibrations.
   final VibrationService vibrationService;
 
-  /// Service providing predefined reading plans.
-  final PlanService planService;
-
   /// Picker used to choose schedule dates.
   final GroupDatePicker datePicker;
 
@@ -57,12 +53,10 @@ class GroupDetailPage extends StatefulWidget {
     GroupService? groupService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-    PlanService? planService,
     GroupDatePicker? datePicker,
   })  : groupService = groupService ?? GroupService(),
         auth = auth ?? FirebaseAuth.instance,
         vibrationService = vibrationService ?? const VibrationService(),
-        planService = planService ?? const PlanService(),
         datePicker = datePicker ?? _defaultDatePicker;
 
   static Future<DateTime?> _defaultDatePicker({
@@ -100,8 +94,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   final Map<String, Map<int, int>> _pendingChapterOps =
       <String, Map<int, int>>{};
   int _nextPendingOpId = 0;
-  ReadingPlan? _selectedPlan;
-  bool _isApplyingPlan = false;
   // Automation Plans UI (consolidated): handled via list + dialogs.
 
   String _dateKey(DateTime date) =>
@@ -172,173 +164,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     });
   }
 
-  Future<void> _applySelectedPlan() async {
-    final selectedPlan = _selectedPlan;
-    if (selectedPlan == null || _isApplyingPlan) {
-      return;
-    }
-
-    final definition = widget.planService.definitionFor(selectedPlan);
-    final existing = List<GroupSchedule>.from(
-      (_scheduleOverride ?? _latestSchedule) ?? const <GroupSchedule>[],
-    )..sort((a, b) => a.date.compareTo(b.date));
-
-    DateTime startDate;
-    if (existing.isNotEmpty) {
-      final last = existing.last.date;
-      startDate = DateTime(last.year, last.month, last.day)
-          .add(const Duration(days: 1));
-    } else {
-      final now = DateTime.now();
-      startDate = DateTime(now.year, now.month, now.day);
-    }
-
-    final entries = widget.planService.createSchedule(
-      plan: selectedPlan,
-      startDate: startDate,
-    );
-
-    if (entries.isEmpty) {
-      return;
-    }
-
-    final optimistic = List<GroupSchedule>.from(existing);
-    for (final entry in entries) {
-      final key = _dateKey(entry.date);
-      final index = optimistic.indexWhere((s) => _dateKey(s.date) == key);
-      if (index >= 0) {
-        optimistic[index] = entry;
-      } else {
-        optimistic.add(entry);
-      }
-    }
-    optimistic.sort((a, b) => a.date.compareTo(b.date));
-
-    setState(() {
-      _isApplyingPlan = true;
-      _scheduleOverride = optimistic;
-    });
-
-    try {
-      for (final entry in entries) {
-        await widget.groupService.updateSchedule(
-          groupId: widget.group.id,
-          schedule: entry,
-        );
-      }
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _isApplyingPlan = false;
-        _scheduleOverride = null;
-      });
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${definition.title} applied')),
-      );
-    } catch (e, st) {
-      await ErrorLogger.log(e, st);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _isApplyingPlan = false;
-        _scheduleOverride = null;
-      });
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to apply plan')),
-      );
-    }
-  }
-
-  Widget _buildPlanControls(List<ReadingPlanDefinition> plans) {
-    if (plans.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.only(bottom: 8),
-        child: Text('No reading plans available'),
-      );
-    }
-
-    final selectedDefinition = _selectedPlan != null
-        ? widget.planService.definitionFor(_selectedPlan!)
-        : null;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Reading plan',
-                  border: OutlineInputBorder(),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<ReadingPlan>(
-                    key: const Key('plan-dropdown'),
-                    isExpanded: true,
-                    value: _selectedPlan,
-                    onChanged: _isApplyingPlan
-                        ? null
-                        : (value) {
-                            setState(() {
-                              _selectedPlan = value;
-                            });
-                          },
-                    items: plans
-                        .map(
-                          (definition) => DropdownMenuItem<ReadingPlan>(
-                            value: definition.plan,
-                            child: Text(definition.title),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            SizedBox(
-              height: 44,
-              child: ElevatedButton(
-                key: const Key('apply-plan-button'),
-                onPressed: (_selectedPlan == null || _isApplyingPlan)
-                    ? null
-                    : _applySelectedPlan,
-                child: _isApplyingPlan
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text('Apply Plan'),
-              ),
-            ),
-          ],
-        ),
-        if (selectedDefinition != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 6, bottom: 12),
-            child: Text(selectedDefinition.description),
-          )
-        else
-          const SizedBox(height: 12),
-      ],
-    );
-  }
-
   @override
   void initState() {
     super.initState();
@@ -347,10 +172,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     _nameController = TextEditingController(text: _groupName);
     final now = DateTime.now();
     _progressDate = DateTime(now.year, now.month, now.day);
-    final plans = widget.planService.plans;
-    if (plans.isNotEmpty) {
-      _selectedPlan = plans.first.plan;
-    }
   }
 
   @override
@@ -961,8 +782,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         final hasAdminPrivileges =
             isOwner || role == 'admin' || role == 'owner';
         final canEditSchedule = hasAdminPrivileges && _editMode;
-        final plans = widget.planService.plans;
-
         // Determine if a schedule for today already exists to control
         // whether the Save button/input should be enabled.
         final now = DateTime.now();
@@ -1349,10 +1168,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
                     final children = <Widget>[];
 
-                    if (hasAdminPrivileges) {
-                      children.add(_buildPlanControls(plans));
-                    }
-
                     if (canEditSchedule) {
                       children.add(
                         Row(
@@ -1671,6 +1486,7 @@ class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
   late TextEditingController _tzCtl;
   late TextEditingController _timeCtl;
   Set<String> _weekdays = <String>{};
+  String? _chaptersError;
 
   @override
   void initState() {
@@ -1744,8 +1560,15 @@ class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
                 DropdownMenuItem(
                     value: 'sequential_ot', child: Text('Sequential OT')),
               ],
-              onChanged: (v) =>
-                  setState(() => _plan = (v?.isEmpty ?? true) ? null : v),
+              onChanged: (v) {
+                setState(() {
+                  _plan = (v?.isEmpty ?? true) ? null : v;
+                  if (_plan != null && _chapters.text.trim().isEmpty) {
+                    _chapters.text = '1';
+                  }
+                  _chaptersError = null;
+                });
+              },
               decoration: const InputDecoration(labelText: 'Plan'),
             ),
             if (_plan != null) ...[
@@ -1753,8 +1576,15 @@ class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
               TextField(
                 controller: _chapters,
                 keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Chapters per day'),
+                decoration: InputDecoration(
+                  labelText: 'Chapters per day',
+                  errorText: _chaptersError,
+                ),
+                onChanged: (_) {
+                  if (_chaptersError != null) {
+                    setState(() => _chaptersError = null);
+                  }
+                },
               ),
               const SizedBox(height: 8),
               Align(
@@ -1804,13 +1634,24 @@ class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
         ),
         ElevatedButton(
           onPressed: () {
+            int? chaptersPerDay;
+            if (_plan != null) {
+              final parsed = int.tryParse(_chapters.text.trim());
+              if (parsed == null || parsed <= 0) {
+                setState(() {
+                  _chaptersError = 'Enter a value greater than 0';
+                });
+                return;
+              }
+              chaptersPerDay = parsed;
+            }
             final t = ScheduleTemplate(
               active: _active,
               timezone: _timezone,
               startTimeLocal: _startTime,
               rrule: 'FREQ=DAILY;INTERVAL=1',
               plan: _plan,
-              chaptersPerDay: int.tryParse(_chapters.text.trim()),
+              chaptersPerDay: chaptersPerDay,
               weekdays: _plan == null ? null : _weekdays.toList(),
               startRef: _plan == null ? null : _startRef.text.trim(),
               name: _name.text.trim().isEmpty ? null : _name.text.trim(),
