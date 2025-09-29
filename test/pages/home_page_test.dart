@@ -14,7 +14,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/widgets/read_switch_tile.dart';
-import 'package:bible_read/widgets/success_animation.dart';
+import 'package:bible_read/services/vibration_service.dart';
 import '../helpers/mock_lottie_http_client.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
@@ -67,6 +67,22 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
 
   @override
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
+}
+
+class _StubVibrationService extends VibrationService {
+  int lightCount = 0;
+
+  @override
+  Future<void> lightImpact() async {
+    lightCount++;
+  }
+}
+
+Future<void> _toggleRead(WidgetTester tester) async {
+  await tester.tap(find.byType(ReadSwitchTile));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.pumpAndSettle();
 }
 
 class ThrowingDocumentReference
@@ -158,6 +174,7 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
@@ -178,6 +195,7 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
@@ -198,6 +216,7 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
@@ -220,6 +239,7 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
@@ -267,22 +287,33 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(ReadSwitchTile));
-    await tester.pump();
-    await tester.pump();
-    expect(find.byType(SuccessAnimation), findsOneWidget);
-    await tester.pump(const Duration(seconds: 2));
+    await _toggleRead(tester);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
 
     final switchTile = tester.widget<ReadSwitchTile>(
       find.byType(ReadSwitchTile),
     );
     expect(switchTile.onChanged, isNull);
+
+    final summaryDoc = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('summary')
+        .doc('data')
+        .get();
+    expect(summaryDoc.exists, isTrue);
+    expect(summaryDoc.data()?['streak'], 1);
+    expect(summaryDoc.data()?['totalReadDays'], 1);
+    expect(summaryDoc.data()?['longestStreak'], 1);
   });
 
   testWidgets('toggling read status does not show progress indicator', (
@@ -299,17 +330,13 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(ReadSwitchTile));
-    await tester.pump();
-    await tester.pump();
-    expect(find.byType(SuccessAnimation), findsOneWidget);
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
+    await _toggleRead(tester);
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
@@ -328,17 +355,13 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(ReadSwitchTile));
-    await tester.pump();
-    await tester.pump();
-    expect(find.byType(SuccessAnimation), findsOneWidget);
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
+    await _toggleRead(tester);
 
     final now = DateTime.now();
     final dateKey =
@@ -386,6 +409,7 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
           markFirstReader: (
               {required String dateKey, required String uid}) async {
             called = true;
@@ -395,12 +419,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(ReadSwitchTile));
-    await tester.pump();
-    await tester.pump();
-    expect(find.byType(SuccessAnimation), findsOneWidget);
+    await _toggleRead(tester);
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
@@ -448,15 +468,13 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(ReadSwitchTile));
-    await tester.pump();
-    await tester.pump();
-    expect(find.byType(SuccessAnimation), findsOneWidget);
+    await _toggleRead(tester);
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
@@ -488,15 +506,13 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(ReadSwitchTile));
-    await tester.pump();
-    await tester.pump();
-    expect(find.byType(SuccessAnimation), findsOneWidget);
+    await _toggleRead(tester);
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
@@ -519,6 +535,7 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
@@ -581,6 +598,7 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
@@ -642,6 +660,7 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
@@ -705,6 +724,7 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
@@ -749,6 +769,7 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
@@ -780,6 +801,7 @@ void main() {
         home: HomePage(
           firestore: firestore,
           auth: auth,
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );

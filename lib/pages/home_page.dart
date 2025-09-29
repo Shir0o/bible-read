@@ -12,12 +12,12 @@ import '../models/achievement.dart';
 import '../services/achievement_service.dart';
 import '../services/notification_service.dart';
 import '../services/reading_status_service.dart';
+import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/menu_button.dart';
 import '../widgets/notification_button.dart';
 import '../widgets/read_status_section.dart';
-import '../widgets/success_animation.dart';
 import 'read_log_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
@@ -42,13 +42,18 @@ class HomePage extends StatefulWidget {
     this.functions,
     this.markFirstReader,
     ReadingStatusService? readingStatusService,
+    VibrationService? vibrationService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         readingStatusService = readingStatusService ??
-            ReadingStatusService(firestore: firestore, auth: auth);
+            ReadingStatusService(firestore: firestore, auth: auth),
+        vibrationService = vibrationService ?? const VibrationService();
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
+
+  /// Service used for read-toggle haptics.
+  final VibrationService vibrationService;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -536,6 +541,7 @@ class _HomePageState extends State<HomePage>
                 readToday: _readToday,
                 onToggle: _toggleReadStatus,
                 readDates: _readDates,
+                vibrationService: widget.vibrationService,
               ),
             ],
           ),

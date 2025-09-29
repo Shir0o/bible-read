@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bible_read/widgets/comment_drawer.dart';
+import 'package:bible_read/widgets/comment_section.dart';
 import 'package:bible_read/models/comment.dart';
 
 import 'package:bible_read/pages/read_log_page.dart';
@@ -82,9 +83,21 @@ void main() {
           auth: auth,
           onSend: ({required ownerUid, required commenterName}) async {});
 
-      expect(find.text('Alice: First'), findsOneWidget);
-      expect(find.text('Bob: Second'), findsOneWidget);
-      expect(find.text('Cat: Third'), findsOneWidget);
+      final commentSection = find.byType(CommentSection);
+      Future<void> expectTile(String author, String message) async {
+        final tileFinder = find.descendant(
+          of: commentSection,
+          matching: find.widgetWithText(ListTile, author),
+        );
+        expect(tileFinder, findsOneWidget);
+        final tile = tester.widget<ListTile>(tileFinder);
+        expect(tile.subtitle, isA<Text>());
+        expect((tile.subtitle as Text).data, message);
+      }
+
+      await expectTile('Alice', 'First');
+      await expectTile('Bob', 'Second');
+      await expectTile('Cat', 'Third');
     });
 
     testWidgets('posting comment writes to Firestore', (tester) async {
@@ -128,9 +141,16 @@ void main() {
           .get();
       expect(snap.docs.length, 1);
       expect(snap.docs.first.data()['message'], 'Nice');
-      // The comment is shown both in the page preview and in the comment
-      // drawer, so there should be two instances of the text.
-      expect(find.text('Bob: Nice'), findsNWidgets(2));
+
+      final bobTiles = find.byWidgetPredicate(
+        (widget) =>
+            widget is ListTile &&
+            widget.title is Text &&
+            (widget.title as Text).data == 'Bob' &&
+            widget.subtitle is Text &&
+            (widget.subtitle as Text).data == 'Nice',
+      );
+      expect(bobTiles, findsNWidgets(2));
     });
 
     testWidgets('adding comment notifies owner', (tester) async {
@@ -194,7 +214,15 @@ void main() {
       await tester.tap(find.byIcon(Icons.send));
       await tester.pump();
 
-      expect(find.text('Temp: Quick'), findsOneWidget);
+      final tempTile = find.byWidgetPredicate(
+        (widget) =>
+            widget is ListTile &&
+            widget.title is Text &&
+            (widget.title as Text).data == 'Temp' &&
+            widget.subtitle is Text &&
+            (widget.subtitle as Text).data == 'Quick',
+      );
+      expect(tempTile, findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(completer.isCompleted, isFalse);
     });
