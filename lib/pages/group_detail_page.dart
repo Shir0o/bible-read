@@ -824,7 +824,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ]
                 : null,
           ),
-          floatingActionButton: hasAdminPrivileges
+          floatingActionButton: hasAdminPrivileges && _editMode
               ? FloatingActionButton(
                   heroTag: 'group-detail-fab',
                   onPressed: () {
