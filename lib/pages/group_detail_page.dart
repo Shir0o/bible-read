@@ -93,6 +93,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   final Map<String, int> _pendingReadOps = <String, int>{};
   final Map<String, Map<int, int>> _pendingChapterOps =
       <String, Map<int, int>>{};
+  final Map<String, Set<int>> _latestRawCheckedSnapshots = <String, Set<int>>{};
+  final Map<String, bool> _latestBaseDoneSnapshots = <String, bool>{};
+  final Map<String, int> _latestChapterCountSnapshots = <String, int>{};
   int _nextPendingOpId = 0;
   // Automation Plans UI (consolidated): handled via list + dialogs.
 
@@ -124,18 +127,15 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     }
   }
 
-  void _scheduleChapterOverrideCleanup(
-    String dateKey,
-    int chapterIndex,
-    int opId,
-  ) {
-    Future<void>.delayed(const Duration(milliseconds: 250), () {
-      if (!mounted) return;
-      if (_pendingChapterOps[dateKey]?[chapterIndex] != opId) {
-        return;
-      }
-      setState(() => _removeChapterOverride(dateKey, chapterIndex));
-    });
+  void _scheduleChapterOverrideCleanup(String dateKey) {
+    final snapshot = _latestRawCheckedSnapshots[dateKey];
+    if (snapshot == null) {
+      return;
+    }
+    _resolvePendingChapterOverridesFromSnapshot(
+      dateKey: dateKey,
+      rawChecked: snapshot,
+    );
   }
 
   void _applyReadOverride(String dateKey, bool value, int opId) {
@@ -151,16 +151,132 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     }
   }
 
-  void _scheduleReadOverrideCleanup(String dateKey, int opId) {
-    Future<void>.delayed(const Duration(milliseconds: 250), () {
-      if (!mounted) return;
-      if (_pendingReadOps[dateKey] != opId) {
+  void _scheduleReadOverrideCleanup(String dateKey) {
+    final rawSnapshot = _latestRawCheckedSnapshots[dateKey];
+    final totalChapters = _latestChapterCountSnapshots[dateKey] ?? 0;
+    final baseDone = _latestBaseDoneSnapshots[dateKey] ?? false;
+    _resolvePendingReadOverrideFromSnapshot(
+      dateKey: dateKey,
+      hasChapters: totalChapters > 0,
+      totalChapters: totalChapters,
+      rawChecked: rawSnapshot ?? const <int>{},
+      baseDone: baseDone,
+    );
+  }
+
+  void _resolvePendingChapterOverridesFromSnapshot({
+    required String dateKey,
+    required Set<int> rawChecked,
+  }) {
+    final overrides = _pendingChapterOverrides[dateKey];
+    if (overrides == null || overrides.isEmpty) {
+      return;
+    }
+
+    final snapshotChecked = Set<int>.from(rawChecked);
+    final pendingResolutions = <({int chapterIndex, int opId, bool desired})>[];
+    overrides.forEach((chapterIndex, desired) {
+      final opId = _pendingChapterOps[dateKey]?[chapterIndex];
+      if (opId == null) {
         return;
       }
-      setState(() {
-        _pendingReadOverrides.remove(dateKey);
-        _pendingReadOps.remove(dateKey);
-      });
+      final remoteHasChapter = snapshotChecked.contains(chapterIndex);
+      if (remoteHasChapter == desired) {
+        pendingResolutions.add((
+          chapterIndex: chapterIndex,
+          opId: opId,
+          desired: desired,
+        ));
+      }
+    });
+
+    if (pendingResolutions.isEmpty) {
+      return;
+    }
+
+    final latestSnapshot = _latestRawCheckedSnapshots[dateKey];
+    final latestChecked = latestSnapshot != null
+        ? Set<int>.from(latestSnapshot)
+        : snapshotChecked;
+
+    if (!mounted) {
+      return;
+    }
+
+    final toRemove = <int>[];
+    for (final resolution in pendingResolutions) {
+      final currentOpId = _pendingChapterOps[dateKey]?[resolution.chapterIndex];
+      final currentDesired =
+          _pendingChapterOverrides[dateKey]?[resolution.chapterIndex];
+      if (currentOpId != resolution.opId ||
+          currentDesired != resolution.desired) {
+        continue;
+      }
+      final remoteHasChapter = latestChecked.contains(resolution.chapterIndex);
+      if (remoteHasChapter != resolution.desired) {
+        continue;
+      }
+      toRemove.add(resolution.chapterIndex);
+    }
+
+    if (toRemove.isEmpty || !mounted) {
+      return;
+    }
+
+    setState(() {
+      for (final chapterIndex in toRemove) {
+        _removeChapterOverride(dateKey, chapterIndex);
+      }
+    });
+  }
+
+  void _resolvePendingReadOverrideFromSnapshot({
+    required String dateKey,
+    required bool hasChapters,
+    required int totalChapters,
+    required Set<int> rawChecked,
+    required bool baseDone,
+  }) {
+    final desired = _pendingReadOverrides[dateKey];
+    final opId = _pendingReadOps[dateKey];
+    if (desired == null || opId == null) {
+      return;
+    }
+
+    final snapshotChecked = Set<int>.from(rawChecked);
+    final remoteRead = hasChapters
+        ? (totalChapters > 0 && snapshotChecked.length >= totalChapters)
+        : baseDone;
+    if (remoteRead != desired) {
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    if (_pendingReadOps[dateKey] != opId ||
+        _pendingReadOverrides[dateKey] != desired) {
+      return;
+    }
+
+    final latestRawChecked =
+        _latestRawCheckedSnapshots[dateKey] ?? snapshotChecked;
+    final latestChecked = Set<int>.from(latestRawChecked);
+    final latestTotal = _latestChapterCountSnapshots[dateKey] ?? totalChapters;
+    final latestBaseDone = _latestBaseDoneSnapshots[dateKey] ?? baseDone;
+    final latestHasChapters = latestTotal > 0;
+    final latestRemoteRead = latestHasChapters
+        ? (latestTotal > 0 && latestChecked.length >= latestTotal)
+        : latestBaseDone;
+
+    if (latestRemoteRead != desired || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _pendingReadOverrides.remove(dateKey);
+      _pendingReadOps.remove(dateKey);
     });
   }
 
@@ -602,7 +718,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         return;
       }
       if (success) {
-        _scheduleChapterOverrideCleanup(dateKey, chapterIndex, opId);
+        _scheduleChapterOverrideCleanup(dateKey);
       } else {
         setState(() => _removeChapterOverride(dateKey, chapterIndex));
       }
@@ -659,12 +775,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       }
 
       if (success) {
-        _scheduleReadOverrideCleanup(dateKey, opId);
+        _scheduleReadOverrideCleanup(dateKey);
         if (hasChapters) {
-          for (final index in touchedChapters) {
-            if (_pendingChapterOps[dateKey]?[index] == opId) {
-              _scheduleChapterOverrideCleanup(dateKey, index, opId);
-            }
+          final hasPendingForOp = touchedChapters.any(
+            (index) => _pendingChapterOps[dateKey]?[index] == opId,
+          );
+          if (hasPendingForOp) {
+            _scheduleChapterOverrideCleanup(dateKey);
           }
         }
         return;
@@ -1263,8 +1380,57 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     if (idx != null) rawChecked.add(idx);
                                   }
 
-                                  final displayChecked =
+                                  final rawCheckedSnapshot =
                                       Set<int>.from(rawChecked);
+                                  final totalChapters = s.chapters.length;
+                                  final hasChapters = totalChapters > 0;
+
+                                  _latestRawCheckedSnapshots[dateKey] =
+                                      Set<int>.from(rawCheckedSnapshot);
+                                  _latestBaseDoneSnapshots[dateKey] = baseDone;
+                                  _latestChapterCountSnapshots[dateKey] =
+                                      totalChapters;
+
+                                  final pendingReadOverrideExists =
+                                      _pendingReadOverrides
+                                          .containsKey(dateKey);
+                                  final pendingChapterOverrideExists =
+                                      (_pendingChapterOverrides[dateKey]
+                                              ?.isNotEmpty ??
+                                          false);
+
+                                  if (pendingReadOverrideExists ||
+                                      pendingChapterOverrideExists) {
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                      if (!mounted) return;
+                                      final hasPendingChapterOverride =
+                                          (_pendingChapterOverrides[dateKey]
+                                                  ?.isNotEmpty ??
+                                              false);
+                                      final hasPendingReadOverride =
+                                          _pendingReadOverrides
+                                              .containsKey(dateKey);
+                                      if (hasPendingChapterOverride) {
+                                        _resolvePendingChapterOverridesFromSnapshot(
+                                          dateKey: dateKey,
+                                          rawChecked: rawCheckedSnapshot,
+                                        );
+                                      }
+                                      if (hasPendingReadOverride) {
+                                        _resolvePendingReadOverrideFromSnapshot(
+                                          dateKey: dateKey,
+                                          hasChapters: hasChapters,
+                                          totalChapters: totalChapters,
+                                          rawChecked: rawCheckedSnapshot,
+                                          baseDone: baseDone,
+                                        );
+                                      }
+                                    });
+                                  }
+
+                                  final displayChecked =
+                                      Set<int>.from(rawCheckedSnapshot);
                                   final pendingChapterOverride =
                                       _pendingChapterOverrides[dateKey];
                                   if (pendingChapterOverride != null) {
@@ -1278,8 +1444,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     });
                                   }
 
-                                  final totalChapters = s.chapters.length;
-                                  final hasChapters = totalChapters > 0;
                                   final allChecked = hasChapters &&
                                       displayChecked.length >= totalChapters;
                                   final pendingRead =

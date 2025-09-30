@@ -59,3 +59,12 @@ Use these fields to auto‑fill chapters:
 - `startRef: string` – where to start, e.g. `"Gen 1"`, `"Matt 1"`, or `"Psalm 1"`
 
 Behavior: the job assigns the next `chaptersPerDay` chapters for the selected canon, continuing from the plan’s `cursorRef` (or `startRef` if none). It respects `weekdays` and merges output from multiple active plans into one schedule per day (no duplicates).
+
+## Manual QA
+
+To confirm optimistic updates for group chapter toggles remain visible until Firestore reports the change:
+
+1. Open a group that has a schedule with multiple chapters and join as a member.
+2. Toggle one chapter to mark it complete and watch the chip stay selected while the request is in flight.
+3. Inspect the Firestore emulator/console and wait for the corresponding `items/{index}` document to appear; the UI should clear the pending override immediately after the snapshot updates.
+4. Repeat with a bulk “Mark all done” toggle to ensure the read switch and all chapter chips remain active until the server responds, then settle without flicker once the remote state matches.
