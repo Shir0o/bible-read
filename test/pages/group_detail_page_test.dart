@@ -97,6 +97,34 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('shows FAB only in edit mode for admins', (tester) async {
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u1')
+        .set({
+      'uid': 'u1',
+      'role': 'owner',
+      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+    });
+    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+
+    await pumpPage(
+      tester,
+      service: GroupService(firestore: firestore),
+      auth: auth,
+    );
+
+    expect(find.byType(FloatingActionButton), findsNothing);
+
+    await tester.tap(find.byTooltip('Edit'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+  });
+
   Future<void> pumpAndNavigate(
     WidgetTester tester, {
     required GroupService service,
@@ -200,6 +228,8 @@ void main() {
           null,
     );
 
+    await tester.tap(find.byTooltip('Edit'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     final dialogField = find.byType(TextField).last;
@@ -247,7 +277,7 @@ void main() {
           null,
     );
 
-    await tester.tap(find.byIcon(Icons.edit));
+    await tester.tap(find.byTooltip('Edit'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithIcon(IconButton, Icons.edit));
     await tester.pumpAndSettle();
@@ -271,7 +301,7 @@ void main() {
     });
   });
 
-  testWidgets('fab visible to owners and admins', (tester) async {
+  testWidgets('fab visible to admins only while editing', (tester) async {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
 
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
@@ -287,7 +317,13 @@ void main() {
       }) async =>
           DateTime(2020, 1, 2),
     );
+    expect(find.byType(FloatingActionButton), findsNothing);
+    await tester.tap(find.byTooltip('Edit'));
+    await tester.pumpAndSettle();
     expect(find.byType(FloatingActionButton), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
 
     await firestore
         .collection('groups')
@@ -312,7 +348,13 @@ void main() {
       }) async =>
           DateTime(2020, 1, 2),
     );
+    expect(find.byType(FloatingActionButton), findsNothing);
+    await tester.tap(find.byTooltip('Edit'));
+    await tester.pumpAndSettle();
     expect(find.byType(FloatingActionButton), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
 
     await firestore
         .collection('groups')
@@ -325,9 +367,13 @@ void main() {
       'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 3)),
     });
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u3'), signedIn: true);
-    await pumpPage(tester,
-        service: GroupService(firestore: firestore), auth: auth);
+    await pumpPage(
+      tester,
+      service: GroupService(firestore: firestore),
+      auth: auth,
+    );
     expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.byTooltip('Edit'), findsNothing);
   });
 
   test('changing schedule date deletes old document', () async {
@@ -344,10 +390,7 @@ void main() {
     });
 
     final service = GroupService(firestore: firestore);
-    await service.deleteSchedule(
-      groupId: 'g1',
-      date: DateTime(2020, 1, 1),
-    );
+    await service.deleteSchedule(groupId: 'g1', date: DateTime(2020, 1, 1));
     await service.updateSchedule(
       groupId: 'g1',
       schedule: GroupSchedule(
@@ -376,7 +419,9 @@ void main() {
     group = const Group(id: 'g1', name: 'Study', ownerUid: 'u1');
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     auth = MockFirebaseAuth(
-        mockUser: MockUser(uid: 'u2', displayName: 'User'), signedIn: true);
+      mockUser: MockUser(uid: 'u2', displayName: 'User'),
+      signedIn: true,
+    );
     final service = RecordingGroupService(firestore: firestore);
 
     final vibration = _RecordingVibrationService();
@@ -402,7 +447,9 @@ void main() {
   testWidgets('join button via navigation failure shows error', (tester) async {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     auth = MockFirebaseAuth(
-        mockUser: MockUser(uid: 'u2', displayName: 'User'), signedIn: true);
+      mockUser: MockUser(uid: 'u2', displayName: 'User'),
+      signedIn: true,
+    );
     final service = RecordingGroupService(firestore: firestore)
       ..failJoin = true;
 
@@ -428,12 +475,11 @@ void main() {
         .doc('g1')
         .collection('joinRequests')
         .doc('u2')
-        .set({
-      'uid': 'u2',
-      'name': 'User',
-    });
+        .set({'uid': 'u2', 'name': 'User'});
     auth = MockFirebaseAuth(
-        mockUser: MockUser(uid: 'u2', displayName: 'User'), signedIn: true);
+      mockUser: MockUser(uid: 'u2', displayName: 'User'),
+      signedIn: true,
+    );
     final service = GroupService(firestore: firestore);
 
     await pumpPage(tester, service: service, auth: auth);
