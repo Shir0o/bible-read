@@ -1,3 +1,47 @@
+# Release 1.15.0
+
+This release launches Auto Content Plans to automate schedule generation,
+refreshes group management flows, and polishes navigation and typography
+throughout the app.
+
+## Highlights
+
+*   Auto Content Plans let admins create, edit, activate, and reset automated
+    reading schedules with built-in Old Testament, New Testament, and Psalms
+    presets.
+*   Group join requests move into a dedicated surface with tighter navigation,
+    optimistic schedule toggles, and more reliable editing.
+
+## Auto Content Plans
+
+*   Replace the legacy auto-template toggle with a full plans list supporting
+    add/edit/delete, default plan editing, active state, schedule cadence, and
+    cursor management.
+*   Extend the ScheduleTemplate model with plan types, timezone-aware start
+    references, and per-plan chapter targets.
+*   Cloud Functions now materialize Old/New Testament and Psalms content,
+    combine multiple plans into a single day, expose callable
+    `materializeToday`/`resetPlanCursor`, and fall back gracefully when Firestore
+    indexes are missing.
+
+## Groups & Notifications
+
+*   Move join requests into their own page, surface an app bar shortcut for
+    admins, and streamline navigation from notifications.
+*   Make schedule toggles optimistic, ensure transactional reads succeed, and
+    clean up the legacy plan service from the group detail page.
+*   Dedupe friend and join notifications, attach helpful messages, deep link to
+    the relevant group, and unlock the 30-day streak on refresh.
+
+## UI & Stability
+
+*   Unify typography, spacing, and ink responses across buttons, chips, drawers,
+    and list tiles for a more consistent look.
+*   Capitalize comment inputs, widen tap targets for comments and switches, and
+    tighten bottom navigation and drawer layouts.
+*   Fix signup flows that could see a transient null user and harden schedule
+    editing tests along with related widget coverage.
+
 # Release 1.14.0
 
 This release overhauls Group Details progress, adds per‑chapter tracking with
