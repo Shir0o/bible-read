@@ -199,7 +199,10 @@ void main() {
 
     expect(find.text('Owner'), findsOneWidget);
     expect(find.text('Alice'), findsOneWidget);
-    expect(find.text('Gen 1'), findsOneWidget);
+    expect(
+      find.text('2020-01-01', skipOffstage: false),
+      findsWidgets,
+    );
   });
 
   testWidgets('edit schedule success', (tester) async {

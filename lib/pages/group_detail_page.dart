@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 
 import '../models/group.dart';
 import '../models/group_schedule.dart';
-import '../models/schedule_template.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../services/reference_parser.dart';
@@ -80,12 +79,14 @@ class GroupDetailPage extends StatefulWidget {
 class _GroupDetailPageState extends State<GroupDetailPage> {
   List<GroupSchedule>? _scheduleOverride;
   List<GroupSchedule>? _latestSchedule;
+  List<GroupSchedule>? _initialSchedule;
   late final TextEditingController _todayController;
   late final TextEditingController _nameController;
   late DateTime _progressDate;
   bool _isSavingToday = false;
   bool _editMode = false;
   bool _isSavingName = false;
+  bool _isGeneratingAutoContent = false;
   late String _groupName;
   final Map<String, bool> _pendingReadOverrides = <String, bool>{};
   final Map<String, Map<int, bool>> _pendingChapterOverrides =
@@ -97,7 +98,32 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   final Map<String, bool> _latestBaseDoneSnapshots = <String, bool>{};
   final Map<String, int> _latestChapterCountSnapshots = <String, int>{};
   int _nextPendingOpId = 0;
-  // Automation Plans UI (consolidated): handled via list + dialogs.
+
+  bool _scheduleListsEqual(
+    List<GroupSchedule>? a,
+    List<GroupSchedule>? b,
+  ) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a == null || b == null || a.length != b.length) {
+      return false;
+    }
+    for (var i = 0; i < a.length; i++) {
+      final left = a[i];
+      final right = b[i];
+      if (left.date != right.date ||
+          left.chapters.length != right.chapters.length) {
+        return false;
+      }
+      for (var j = 0; j < left.chapters.length; j++) {
+        if (left.chapters[j] != right.chapters[j]) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -288,6 +314,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     _nameController = TextEditingController(text: _groupName);
     final now = DateTime.now();
     _progressDate = DateTime(now.year, now.month, now.day);
+    unawaited(_loadInitialSchedule());
   }
 
   @override
@@ -295,6 +322,20 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     _todayController.dispose();
     _nameController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadInitialSchedule() async {
+    try {
+      final value = await widget.groupService.schedule(widget.group.id).first;
+      if (!mounted || _scheduleListsEqual(_initialSchedule, value)) {
+        return;
+      }
+      setState(() {
+        _initialSchedule = value;
+      });
+    } catch (e, st) {
+      unawaited(ErrorLogger.log(e, st));
+    }
   }
 
   Future<void> _saveToday() async {
@@ -899,14 +940,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         final hasAdminPrivileges =
             isOwner || role == 'admin' || role == 'owner';
         final canEditSchedule = hasAdminPrivileges && _editMode;
-        // Determine if a schedule for today already exists to control
-        // whether the Save button/input should be enabled.
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-        final hasToday = (_scheduleOverride ?? _latestSchedule)
-                ?.any((s) => _dateKey(s.date) == _dateKey(today)) ??
-            false;
-
         return Scaffold(
           appBar: CommonStyles.buildAppBar(
             _groupName,
@@ -991,209 +1024,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const SectionHeader('Auto Content Plans'),
-                  StreamBuilder<List<(String, ScheduleTemplate)>>(
-                    stream:
-                        widget.groupService.scheduleTemplates(widget.group.id),
-                    builder: (context, listSnap) {
-                      final items = (listSnap.data ?? const []);
-                      if (items.isEmpty) {
-                        return const Text(
-                            'No plans yet. Tap Add Plan to create one.');
-                      }
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ...items.map((entry) {
-                            final id = entry.$1;
-                            final t = entry.$2;
-                            final isDefault = id == 'default';
-                            return ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(
-                                (t.name?.isNotEmpty == true)
-                                    ? t.name!
-                                    : (isDefault
-                                        ? 'Default Auto Plan'
-                                        : 'Auto Plan $id'),
-                              ),
-                              subtitle: Text(
-                                  '${t.plan ?? 'none'} · ${t.startTimeLocal} ${t.timezone}'),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined),
-                                    tooltip: 'Edit',
-                                    onPressed: () async {
-                                      final edited =
-                                          await showDialog<ScheduleTemplate>(
-                                        context: context,
-                                        builder: (_) =>
-                                            _EditAutoTemplateDialog(initial: t),
-                                      );
-                                      if (edited != null) {
-                                        try {
-                                          await widget.groupService
-                                              .updateScheduleTemplate(
-                                            groupId: widget.group.id,
-                                            templateId: id,
-                                            template: edited,
-                                          );
-                                        } catch (e, st) {
-                                          ErrorLogger.log(e, st);
-                                        }
-                                      }
-                                    },
-                                  ),
-                                  Switch(
-                                    value: t.active,
-                                    onChanged: (v) async {
-                                      try {
-                                        await widget.groupService
-                                            .updateScheduleTemplate(
-                                          groupId: widget.group.id,
-                                          templateId: id,
-                                          template: t.copyWith(active: v),
-                                        );
-                                      } catch (e, st) {
-                                        ErrorLogger.log(e, st);
-                                      }
-                                    },
-                                  ),
-                                  PopupMenuButton<String>(
-                                    onSelected: (value) async {
-                                      if (value == 'reset') {
-                                        try {
-                                          await FirebaseFunctions.instanceFor(
-                                                  region: 'us-central1')
-                                              .httpsCallable('resetPlanCursor')
-                                              .call({
-                                            'groupId': widget.group.id,
-                                            'templateId': id,
-                                            'cursorRef':
-                                                (t.startRef ?? 'Gen 1'),
-                                          });
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Plan cursor reset')),
-                                            );
-                                          }
-                                        } catch (e, st) {
-                                          ErrorLogger.log(e, st);
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Failed to reset plan')),
-                                            );
-                                          }
-                                        }
-                                      } else if (value == 'today') {
-                                        try {
-                                          await FirebaseFunctions.instanceFor(
-                                                  region: 'us-central1')
-                                              .httpsCallable('materializeToday')
-                                              .call({
-                                            'groupId': widget.group.id,
-                                            'templateId': id,
-                                          });
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Created/updated today\'s entry')),
-                                            );
-                                          }
-                                        } catch (e, st) {
-                                          ErrorLogger.log(e, st);
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Failed to create today')),
-                                            );
-                                          }
-                                        }
-                                      }
-                                    },
-                                    itemBuilder: (context) => const [
-                                      PopupMenuItem(
-                                          value: 'today',
-                                          child: Text('Create Today Now')),
-                                      PopupMenuItem(
-                                          value: 'reset',
-                                          child: Text('Reset Next to Start')),
-                                    ],
-                                  ),
-                                  if (!isDefault)
-                                    IconButton(
-                                      icon: const Icon(Icons.delete_outline),
-                                      tooltip: 'Delete',
-                                      onPressed: () async {
-                                        try {
-                                          await widget.groupService
-                                              .deleteScheduleTemplate(
-                                            groupId: widget.group.id,
-                                            templateId: id,
-                                          );
-                                        } catch (e, st) {
-                                          ErrorLogger.log(e, st);
-                                        }
-                                      },
-                                    )
-                                ],
-                              ),
-                            );
-                          }),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 44,
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Auto Plan'),
-                      onPressed: () async {
-                        final created = await showDialog<ScheduleTemplate>(
-                          context: context,
-                          builder: (_) => _EditAutoTemplateDialog(
-                            initial: ScheduleTemplate.defaultUtc().copyWith(
-                              plan: 'sequential_ot',
-                              weekdays: const [
-                                'MO',
-                                'TU',
-                                'WE',
-                                'TH',
-                                'FR',
-                                'SA'
-                              ],
-                              chaptersPerDay: 1,
-                              name: 'New Auto Plan',
-                            ),
-                          ),
-                        );
-                        if (created != null) {
-                          try {
-                            await widget.groupService.createScheduleTemplate(
-                              groupId: widget.group.id,
-                              template: created,
-                            );
-                          } catch (e, st) {
-                            ErrorLogger.log(e, st);
-                          }
-                        }
-                      },
-                    ),
-                  ),
+                ],
+                if (isOwner) ...[
+                  _buildAutomationStatusSection(),
+                  const SizedBox(height: 16),
                 ],
                 if (!isOwner && user != null && !isMember)
                   StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -1266,13 +1100,20 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     if (snapshot.hasError) {
                       return const Text('Failed to load schedule');
                     }
-                    if (!snapshot.hasData) {
+                    List<GroupSchedule>? baseSchedule;
+                    if (snapshot.hasData) {
+                      final fetched = List<GroupSchedule>.from(snapshot.data!)
+                        ..sort((a, b) => a.date.compareTo(b.date));
+                      _latestSchedule = fetched;
+                      baseSchedule = fetched;
+                    } else {
+                      baseSchedule = _latestSchedule ?? _initialSchedule;
+                    }
+
+                    final schedule = _scheduleOverride ?? baseSchedule;
+                    if (schedule == null) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    final fetched = List<GroupSchedule>.from(snapshot.data!)
-                      ..sort((a, b) => a.date.compareTo(b.date));
-                    _latestSchedule = fetched;
-                    final schedule = _scheduleOverride ?? fetched;
                     final hasEntries = schedule.isNotEmpty;
 
                     final now = DateTime.now();
@@ -1536,6 +1377,290 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       },
     );
   }
+
+  Widget _buildAutomationStatusSection() {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: widget.groupService.firestore
+          .collection(GroupCollections.groups)
+          .doc(widget.group.id)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data();
+        final lastGenerated = _extractAutomationDate(data);
+        final missedDays = _extractAutomationInt(data, const [
+          ['autoContent', 'missedDays'],
+          ['autoContent', 'missedDayCount'],
+          ['autoContent', 'pendingDays'],
+          ['automation', 'missedDays'],
+          ['automation', 'missedDayCount'],
+          ['automation', 'status', 'missedDays'],
+          ['automation', 'status', 'missedDayCount'],
+          ['automation', 'autoContent', 'missedDays'],
+          ['auto', 'missedDays'],
+          ['auto', 'missedDayCount'],
+          ['autoMissedDays'],
+          ['autoMissedDayCount'],
+          ['missedDays'],
+        ]);
+        final suggestedDays = _extractAutomationInt(data, const [
+          ['autoContent', 'suggestedCatchUpDays'],
+          ['autoContent', 'recommendedCatchUpDays'],
+          ['autoContent', 'catchUpDays'],
+          ['automation', 'suggestedCatchUpDays'],
+          ['automation', 'recommendedCatchUpDays'],
+          ['automation', 'autoContent', 'suggestedCatchUpDays'],
+          ['automation', 'status', 'suggestedCatchUpDays'],
+          ['auto', 'suggestedCatchUpDays'],
+          ['auto', 'recommendedCatchUpDays'],
+          ['autoCatchUpDays'],
+          ['autoRecommendedDays'],
+          ['catchUpDays'],
+        ]);
+
+        var defaultDays = suggestedDays ?? missedDays ?? 1;
+        if (defaultDays <= 0) {
+          defaultDays = 1;
+        }
+        var missedDisplay = missedDays ?? 0;
+        if (missedDisplay < 0) {
+          missedDisplay = 0;
+        }
+
+        final isLoading = snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData;
+
+        final children = <Widget>[
+          const SectionHeader('Auto Schedule'),
+        ];
+
+        if (snapshot.hasError) {
+          children.add(
+            const Text('Failed to load automation status'),
+          );
+        } else if (isLoading) {
+          children.add(
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: LinearProgressIndicator(),
+            ),
+          );
+        } else {
+          final dateText = lastGenerated != null
+              ? _formatAutomationDate(lastGenerated)
+              : 'Never';
+          children.add(Text('Last generated: $dateText'));
+          children.add(Text('Missed days: $missedDisplay'));
+        }
+
+        children.add(const SizedBox(height: 8));
+        final isDisabled = _isGeneratingAutoContent || isLoading;
+
+        children.add(
+          SizedBox(
+            height: 44,
+            child: OutlinedButton.icon(
+              icon: _isGeneratingAutoContent
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.auto_fix_high_outlined),
+              label: Text(
+                _isGeneratingAutoContent
+                    ? 'Generating…'
+                    : 'Generate upcoming days',
+              ),
+              onPressed: isDisabled
+                  ? null
+                  : () async {
+                      unawaited(widget.vibrationService.lightImpact());
+                      final selectedDays = await _showAutoCatchUpDialog(
+                        defaultDays: defaultDays,
+                      );
+                      if (selectedDays != null) {
+                        await _materializeAutoSchedule(selectedDays);
+                      }
+                    },
+            ),
+          ),
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
+        );
+      },
+    );
+  }
+
+  String _formatAutomationDate(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+
+  DateTime? _extractAutomationDate(Map<String, dynamic>? data) {
+    final value = _firstValueAtPath(data, const [
+      ['autoContent', 'lastGeneratedAt'],
+      ['autoContent', 'lastMaterializedAt'],
+      ['autoContent', 'lastGenerated'],
+      ['automation', 'lastGeneratedAt'],
+      ['automation', 'lastMaterializedAt'],
+      ['automation', 'status', 'lastGeneratedAt'],
+      ['automation', 'status', 'lastMaterializedAt'],
+      ['automation', 'autoContent', 'lastGeneratedAt'],
+      ['automation', 'autoContent', 'lastMaterializedAt'],
+      ['autoSchedule', 'lastGeneratedAt'],
+      ['autoSchedule', 'lastMaterializedAt'],
+      ['auto', 'lastGeneratedAt'],
+      ['auto', 'lastMaterializedAt'],
+      ['autoLastGeneratedAt'],
+      ['autoLastMaterializedAt'],
+      ['autoLastGenerated'],
+      ['lastGeneratedAt'],
+      ['lastMaterializedAt'],
+      ['lastGenerated'],
+      ['lastRunAt'],
+    ]);
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+    if (value is DateTime) {
+      return value;
+    }
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    if (value is num) {
+      return DateTime.fromMillisecondsSinceEpoch(value.toInt());
+    }
+    return null;
+  }
+
+  int? _extractAutomationInt(
+    Map<String, dynamic>? data,
+    List<List<String>> paths,
+  ) {
+    final value = _firstValueAtPath(data, paths);
+    if (value is num) {
+      return value.toInt();
+    }
+    if (value is String) {
+      return int.tryParse(value);
+    }
+    return null;
+  }
+
+  dynamic _firstValueAtPath(
+    Map<String, dynamic>? data,
+    List<List<String>> paths,
+  ) {
+    for (final path in paths) {
+      final value = _valueAtPath(data, path);
+      if (value != null) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  dynamic _valueAtPath(Map<String, dynamic>? data, List<String> path) {
+    dynamic current = data;
+    for (final segment in path) {
+      if (current is Map<String, dynamic>) {
+        current = current[segment];
+      } else {
+        return null;
+      }
+    }
+    return current;
+  }
+
+  Future<int?> _showAutoCatchUpDialog({required int defaultDays}) async {
+    final controller = TextEditingController(text: defaultDays.toString());
+    return showDialog<int>(
+      context: context,
+      builder: (context) {
+        String? error;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Generate upcoming days'),
+              content: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Days to generate',
+                  helperText:
+                      'Creates or updates assignments for the selected number of upcoming days.',
+                  errorText: error,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final value = int.tryParse(controller.text.trim());
+                    if (value == null || value <= 0) {
+                      setState(() => error = 'Enter a positive number');
+                      return;
+                    }
+                    Navigator.of(context).pop(value);
+                  },
+                  child: const Text('Generate'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _materializeAutoSchedule(int days) async {
+    setState(() {
+      _isGeneratingAutoContent = true;
+    });
+    try {
+      await FirebaseFunctions.instanceFor(region: 'us-central1')
+          .httpsCallable('materializeToday')
+          .call({
+        'groupId': widget.group.id,
+        'days': days,
+      });
+      if (!mounted) {
+        return;
+      }
+      final suffix = days == 1 ? '' : 's';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Generated schedule for the next $days day$suffix'),
+        ),
+      );
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to generate schedule: $e');
+      }
+      ErrorLogger.log(e, st);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to generate schedule'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGeneratingAutoContent = false;
+        });
+      }
+    }
+  }
 }
 
 class _EditScheduleDialog extends StatefulWidget {
@@ -1624,205 +1749,6 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
           vibrationService: widget.vibrationService,
           onPressed: _save,
           child: const Text('Save'),
-        ),
-      ],
-    );
-  }
-}
-
-class _EditAutoTemplateDialog extends StatefulWidget {
-  const _EditAutoTemplateDialog({this.initial});
-  final ScheduleTemplate? initial;
-
-  @override
-  State<_EditAutoTemplateDialog> createState() =>
-      _EditAutoTemplateDialogState();
-}
-
-class _EditAutoTemplateDialogState extends State<_EditAutoTemplateDialog> {
-  late bool _active;
-  late String _timezone;
-  late String _startTime;
-  late String? _plan;
-  late TextEditingController _name;
-  late TextEditingController _chapters;
-  late TextEditingController _startRef;
-  late TextEditingController _tzCtl;
-  late TextEditingController _timeCtl;
-  Set<String> _weekdays = <String>{};
-  String? _chaptersError;
-
-  @override
-  void initState() {
-    super.initState();
-    final t = widget.initial ?? ScheduleTemplate.defaultUtc();
-    _active = t.active;
-    _timezone = t.timezone;
-    _startTime = t.startTimeLocal;
-    _plan = t.plan;
-    _name = TextEditingController(text: t.name ?? '');
-    _chapters = TextEditingController(
-        text: t.chaptersPerDay == null ? '' : t.chaptersPerDay.toString());
-    _startRef = TextEditingController(text: t.startRef ?? 'Gen 1');
-    _weekdays = Set<String>.from(t.weekdays ?? const <String>[]);
-    _tzCtl = TextEditingController(text: _timezone);
-    _timeCtl = TextEditingController(text: _startTime);
-  }
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _chapters.dispose();
-    _startRef.dispose();
-    _tzCtl.dispose();
-    _timeCtl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('New Auto Plan'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Name'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'Timezone (IANA)',
-              ),
-              controller: _tzCtl,
-              onChanged: (v) => _timezone = v.trim(),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              decoration:
-                  const InputDecoration(labelText: 'Start time (HH:mm)'),
-              controller: _timeCtl,
-              onChanged: (v) => _startTime = v.trim(),
-            ),
-            const SizedBox(height: 8),
-            CommonStyles.buildTappableCard(
-              onTap: () => setState(() => _active = !_active),
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              child: SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: _active,
-                onChanged: (v) => setState(() => _active = v),
-                title: const Text('Active'),
-              ),
-            ),
-            DropdownButtonFormField<String>(
-              value: _plan ?? '',
-              items: const [
-                DropdownMenuItem(value: '', child: Text('None')),
-                DropdownMenuItem(
-                    value: 'sequential_ot', child: Text('Sequential OT')),
-              ],
-              onChanged: (v) {
-                setState(() {
-                  _plan = (v?.isEmpty ?? true) ? null : v;
-                  if (_plan != null && _chapters.text.trim().isEmpty) {
-                    _chapters.text = '1';
-                  }
-                  _chaptersError = null;
-                });
-              },
-              decoration: const InputDecoration(labelText: 'Plan'),
-            ),
-            if (_plan != null) ...[
-              const SizedBox(height: 8),
-              TextField(
-                controller: _chapters,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Chapters per day',
-                  errorText: _chaptersError,
-                ),
-                onChanged: (_) {
-                  if (_chaptersError != null) {
-                    setState(() => _chaptersError = null);
-                  }
-                },
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Wrap(
-                  spacing: 6,
-                  children: [
-                    for (final code in const [
-                      'SU',
-                      'MO',
-                      'TU',
-                      'WE',
-                      'TH',
-                      'FR',
-                      'SA'
-                    ])
-                      FilterChip(
-                        label: Text(code),
-                        selected: _weekdays.contains(code),
-                        onSelected: (v) {
-                          setState(() {
-                            if (v) {
-                              _weekdays.add(code);
-                            } else {
-                              _weekdays.remove(code);
-                            }
-                          });
-                        },
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _startRef,
-                decoration:
-                    const InputDecoration(labelText: 'Start at (e.g., Gen 1)'),
-              ),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            int? chaptersPerDay;
-            if (_plan != null) {
-              final parsed = int.tryParse(_chapters.text.trim());
-              if (parsed == null || parsed <= 0) {
-                setState(() {
-                  _chaptersError = 'Enter a value greater than 0';
-                });
-                return;
-              }
-              chaptersPerDay = parsed;
-            }
-            final t = ScheduleTemplate(
-              active: _active,
-              timezone: _timezone,
-              startTimeLocal: _startTime,
-              rrule: 'FREQ=DAILY;INTERVAL=1',
-              plan: _plan,
-              chaptersPerDay: chaptersPerDay,
-              weekdays: _plan == null ? null : _weekdays.toList(),
-              startRef: _plan == null ? null : _startRef.text.trim(),
-              name: _name.text.trim().isEmpty ? null : _name.text.trim(),
-            );
-            Navigator.of(context).pop(t);
-          },
-          child: const Text('Create'),
         ),
       ],
     );
