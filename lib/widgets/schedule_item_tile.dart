@@ -91,6 +91,7 @@ class ScheduleItemTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 8),
                 for (int i = 0; i < schedule.chapters.length; i++)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
