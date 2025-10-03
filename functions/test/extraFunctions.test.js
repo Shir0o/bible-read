@@ -12,6 +12,113 @@ const functionsTest = require('firebase-functions-test')({projectId: 'demo'});
 const myFunctions = require('../index');
 const utils = require('../notification-utils');
 
+class FakeDoc {
+  constructor(id, data = undefined, parent = null) {
+    this.id = id;
+    this._data = data;
+    this.parent = parent;
+    this.exists = data !== undefined;
+    this._collections = new Map();
+  }
+
+  data() {
+    return this._data;
+  }
+
+  get path() {
+    if (!this.parent) {
+      return this.id;
+    }
+    const parentDoc = this.parent.parentDoc;
+    const parentPath = parentDoc ? parentDoc.path : this.parent.name;
+    return `${parentPath}/${this.id}`;
+  }
+
+  async get() {
+    return { exists: this.exists, data: () => this._data, ref: this, id: this.id };
+  }
+
+  async set(data, options) {
+    if (options?.merge) {
+      this._data = { ...(this._data || {}), ...data };
+    } else {
+      this._data = data;
+    }
+    this.exists = true;
+  }
+
+  async update(data) {
+    this._data = { ...(this._data || {}), ...data };
+    this.exists = true;
+  }
+
+  collection(name) {
+    if (!this._collections.has(name)) {
+      this._collections.set(name, new FakeCollection(name, this));
+    }
+    return this._collections.get(name);
+  }
+}
+
+class FakeQuerySnapshot {
+  constructor(documents) {
+    this.docs = documents.map((doc) => ({
+      id: doc.id,
+      data: () => doc.data(),
+      ref: doc,
+      exists: doc.exists,
+    }));
+    this.empty = this.docs.length === 0;
+  }
+
+  forEach(cb) {
+    this.docs.forEach(cb);
+  }
+}
+
+class FakeCollection {
+  constructor(name, parentDoc = null) {
+    this.name = name;
+    this.parentDoc = parentDoc;
+    this.docs = new Map();
+  }
+
+  doc(id) {
+    if (!this.docs.has(id)) {
+      this.docs.set(id, new FakeDoc(id, undefined, this));
+    }
+    return this.docs.get(id);
+  }
+
+  where(field, op, value) {
+    const docs = Array.from(this.docs.values()).filter((doc) => {
+      const data = doc.data() || {};
+      return op === '==' ? data[field] === value : false;
+    });
+    return {
+      get: async () => new FakeQuerySnapshot(docs),
+    };
+  }
+
+  async get() {
+    const docs = Array.from(this.docs.values());
+    return new FakeQuerySnapshot(docs);
+  }
+}
+
+class FakeFirestore {
+  constructor() {
+    this.collections = new Map();
+  }
+
+  collection(name) {
+    if (!this.collections.has(name)) {
+      this.collections.set(name, new FakeCollection(name));
+    }
+    return this.collections.get(name);
+  }
+}
+
 process.env.NODE_ENV = 'test';
 process.env.ADMIN_UID = 'admin1';
 
@@ -1026,6 +1133,132 @@ describe('other cloud functions', () => {
     assert.match(captured.notification.body, /New user/);
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
     Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  });
+
+  it('generateScheduleDays creates sequential entries and advances cursor', async () => {
+    const originalFirestore = admin.firestore;
+    const Timestamp = admin.firestore.Timestamp;
+    const fakeDb = new FakeFirestore();
+    const fakeFirestore = () => fakeDb;
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    fakeFirestore.Timestamp = Timestamp;
+
+    const groupDoc = fakeDb.collection('groups').doc('group1');
+    groupDoc._data = { ownerUid: 'owner1' };
+    groupDoc.exists = true;
+    const memberDoc = groupDoc.collection('members').doc('owner1');
+    memberDoc._data = { role: 'owner' };
+    memberDoc.exists = true;
+
+    const templateDoc = groupDoc.collection('scheduleTemplates').doc('default');
+    templateDoc._data = {
+      active: true,
+      plan: 'sequential_ot',
+      chaptersPerDay: 2,
+      cursorRef: 'Gen 1',
+      lastMaterializedDate: Timestamp.fromDate(new Date(Date.UTC(2024, 0, 1))),
+      timezone: 'UTC',
+    };
+    templateDoc.exists = true;
+
+    Object.defineProperty(admin, 'firestore', {
+      value: fakeFirestore,
+      configurable: true,
+      writable: true,
+    });
+
+    try {
+      const wrapped = functionsTest.wrap(myFunctions.generateScheduleDays);
+      const result = await wrapped({
+        data: { groupId: 'group1', days: 2 },
+        auth: { uid: 'owner1' },
+      });
+
+      assert.equal(result.success, true);
+      assert.deepStrictEqual(result.dates, ['2024-01-02', '2024-01-03']);
+
+      const scheduleCol = groupDoc.collection('schedule');
+      const firstDay = scheduleCol.doc('2024-01-02');
+      const secondDay = scheduleCol.doc('2024-01-03');
+
+      assert.deepStrictEqual(firstDay._data.chapters, ['Gen 1', 'Gen 2']);
+      assert.equal(firstDay._data._source, 'auto');
+      assert.deepStrictEqual(secondDay._data.chapters, ['Gen 3', 'Gen 4']);
+
+      assert.equal(templateDoc._data.cursorRef, 'Gen 5');
+      const storedDate = templateDoc._data.lastMaterializedDate.toDate();
+      assert.deepStrictEqual(storedDate, new Date(Date.UTC(2024, 0, 3)));
+    } finally {
+      Object.defineProperty(admin, 'firestore', {
+        value: originalFirestore,
+        configurable: true,
+        writable: true,
+      });
+    }
+  });
+
+  it('generateScheduleDays skips disallowed weekdays when catching up', async () => {
+    const originalFirestore = admin.firestore;
+    const Timestamp = admin.firestore.Timestamp;
+    const fakeDb = new FakeFirestore();
+    const fakeFirestore = () => fakeDb;
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    fakeFirestore.Timestamp = Timestamp;
+
+    const groupDoc = fakeDb.collection('groups').doc('group2');
+    groupDoc._data = { ownerUid: 'owner1' };
+    groupDoc.exists = true;
+    const memberDoc = groupDoc.collection('members').doc('owner1');
+    memberDoc._data = { role: 'owner' };
+    memberDoc.exists = true;
+
+    const templateDoc = groupDoc.collection('scheduleTemplates').doc('weekday');
+    templateDoc._data = {
+      active: true,
+      plan: 'sequential_ot',
+      chaptersPerDay: 1,
+      cursorRef: 'Gen 10',
+      lastMaterializedDate: Timestamp.fromDate(new Date(Date.UTC(2024, 4, 3))),
+      timezone: 'UTC',
+      weekdays: ['MO', 'TU', 'WE', 'TH', 'FR'],
+    };
+    templateDoc.exists = true;
+
+    Object.defineProperty(admin, 'firestore', {
+      value: fakeFirestore,
+      configurable: true,
+      writable: true,
+    });
+
+    try {
+      const wrapped = functionsTest.wrap(myFunctions.generateScheduleDays);
+      const result = await wrapped({
+        data: { groupId: 'group2', days: 2 },
+        auth: { uid: 'owner1' },
+      });
+
+      assert.equal(result.success, true);
+      assert.deepStrictEqual(result.dates, ['2024-05-06', '2024-05-07']);
+
+      const scheduleCol = groupDoc.collection('schedule');
+      const mondayDoc = scheduleCol.doc('2024-05-06');
+      const tuesdayDoc = scheduleCol.doc('2024-05-07');
+      const weekendDoc = scheduleCol.doc('2024-05-04');
+
+      assert.deepStrictEqual(mondayDoc._data.chapters, ['Gen 10']);
+      assert.deepStrictEqual(tuesdayDoc._data.chapters, ['Gen 11']);
+      assert.equal(weekendDoc.exists, false);
+
+      assert.equal(templateDoc._data.cursorRef, 'Gen 12');
+      const storedDate = templateDoc._data.lastMaterializedDate.toDate();
+      assert.deepStrictEqual(storedDate, new Date(Date.UTC(2024, 4, 7)));
+    } finally {
+      Object.defineProperty(admin, 'firestore', {
+        value: originalFirestore,
+        configurable: true,
+        writable: true,
+      });
+    }
   });
 
   it('sendLikeNotification in production', async () => {
