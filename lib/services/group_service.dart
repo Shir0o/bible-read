@@ -6,8 +6,8 @@ import '../models/app_notification.dart';
 import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../models/group.dart';
+import '../models/manual_plan_progress.dart';
 import '../models/notification_preferences.dart';
-import '../models/schedule_template.dart';
 import 'error_logger.dart';
 import 'notification_service.dart';
 
@@ -27,8 +27,6 @@ class GroupCollections {
   /// Sub-collection containing join requests awaiting approval.
   static const String joinRequests = 'joinRequests';
 
-  /// Sub-collection containing auto-schedule templates.
-  static const String scheduleTemplates = 'scheduleTemplates';
 }
 
 /// Provides helper methods for managing reading groups.
@@ -600,98 +598,82 @@ class GroupService {
     });
   }
 
-  /// Stream the default schedule template for [groupId].
-  Stream<ScheduleTemplate> scheduleTemplateStream(String groupId) {
-    final ref = firestore
+  /// Stream manual plan metadata for the given [groupId].
+  Stream<ManualPlanProgress> manualPlanProgressStream(String groupId) {
+    final snaps = firestore
         .collection(GroupCollections.groups)
         .doc(groupId)
-        .collection(GroupCollections.scheduleTemplates)
-        .doc('default');
-    return ref.snapshots().map((snap) {
-      if (!snap.exists) return ScheduleTemplate.defaultUtc();
-      return ScheduleTemplate.fromFirestore(snap);
+        .snapshots()
+        .handleError((e, st) {
+      unawaited(ErrorLogger.log(e, st));
+      throw e;
+    });
+    return snaps.map((snap) {
+      if (!snap.exists) {
+        return const ManualPlanProgress.empty();
+      }
+      try {
+        return ManualPlanProgress.fromFirestore(snap);
+      } catch (e, st) {
+        unawaited(ErrorLogger.log(e, st));
+        return const ManualPlanProgress.empty();
+      }
     });
   }
 
-  /// Stream all schedule templates for [groupId].
-  Stream<List<(String id, ScheduleTemplate template)>> scheduleTemplates(
-      String groupId) {
-    final col = firestore
-        .collection(GroupCollections.groups)
-        .doc(groupId)
-        .collection(GroupCollections.scheduleTemplates);
-    return col.snapshots().map((snap) => snap.docs
-        .map((d) => (d.id, ScheduleTemplate.fromFirestore(d)))
-        .toList());
-  }
-
-  /// Create a new schedule template for [groupId] and return its id.
-  Future<String> createScheduleTemplate({
+  /// Persist manual plan metadata updates for [groupId].
+  Future<void> updateManualPlanProgress({
     required String groupId,
-    required ScheduleTemplate template,
+    String? nextChapterReference,
+    bool clearNextChapterReference = false,
+    int? defaultChaptersPerDay,
+    bool clearDefaultChaptersPerDay = false,
+    DateTime? lastMaterializedDate,
+    bool clearLastMaterializedDate = false,
   }) async {
-    try {
-      final doc = await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection(GroupCollections.scheduleTemplates)
-          .add(template.toFirestore());
-      return doc.id;
-    } catch (e, st) {
-      await ErrorLogger.log(e, st);
-      rethrow;
+    final ref = firestore.collection(GroupCollections.groups).doc(groupId);
+    final data = <String, dynamic>{};
+
+    if (nextChapterReference != null) {
+      final trimmed = nextChapterReference.trim();
+      if (trimmed.isEmpty) {
+        data['manualPlanProgress.nextChapterReference'] = FieldValue.delete();
+      } else {
+        data['manualPlanProgress.nextChapterReference'] = trimmed;
+      }
+    } else if (clearNextChapterReference) {
+      data['manualPlanProgress.nextChapterReference'] = FieldValue.delete();
     }
-  }
 
-  /// Delete an existing schedule template by [templateId].
-  Future<void> deleteScheduleTemplate({
-    required String groupId,
-    required String templateId,
-  }) async {
-    try {
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection(GroupCollections.scheduleTemplates)
-          .doc(templateId)
-          .delete();
-    } catch (e, st) {
-      await ErrorLogger.log(e, st);
-      rethrow;
+    if (defaultChaptersPerDay != null) {
+      if (defaultChaptersPerDay <= 0) {
+        data['manualPlanProgress.defaultChaptersPerDay'] = FieldValue.delete();
+      } else {
+        data['manualPlanProgress.defaultChaptersPerDay'] =
+            defaultChaptersPerDay;
+      }
+    } else if (clearDefaultChaptersPerDay) {
+      data['manualPlanProgress.defaultChaptersPerDay'] = FieldValue.delete();
     }
-  }
 
-  /// Save the default schedule template for [groupId].
-  Future<void> saveScheduleTemplate({
-    required String groupId,
-    required ScheduleTemplate template,
-  }) async {
-    try {
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection(GroupCollections.scheduleTemplates)
-          .doc('default')
-          .set(template.toFirestore(), SetOptions(merge: true));
-    } catch (e, st) {
-      await ErrorLogger.log(e, st);
-      rethrow;
+    if (lastMaterializedDate != null) {
+      data['manualPlanProgress.lastMaterializedDate'] = Timestamp.fromDate(
+        DateTime.utc(
+          lastMaterializedDate.year,
+          lastMaterializedDate.month,
+          lastMaterializedDate.day,
+        ),
+      );
+    } else if (clearLastMaterializedDate) {
+      data['manualPlanProgress.lastMaterializedDate'] = FieldValue.delete();
     }
-  }
 
-  /// Update an existing schedule template by id for [groupId].
-  Future<void> updateScheduleTemplate({
-    required String groupId,
-    required String templateId,
-    required ScheduleTemplate template,
-  }) async {
+    if (data.isEmpty) {
+      return;
+    }
+
     try {
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection(GroupCollections.scheduleTemplates)
-          .doc(templateId)
-          .set(template.toFirestore(), SetOptions(merge: true));
+      await ref.set(data, SetOptions(merge: true));
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../models/group.dart';
 import '../models/group_schedule.dart';
+import '../models/manual_plan_progress.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../services/reference_parser.dart';
@@ -87,6 +88,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   bool _editMode = false;
   bool _isSavingName = false;
   bool _isGeneratingAutoContent = false;
+  bool _isUpdatingManualPlan = false;
   late String _groupName;
   final Map<String, bool> _pendingReadOverrides = <String, bool>{};
   final Map<String, Map<int, bool>> _pendingChapterOverrides =
@@ -1026,6 +1028,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   const SizedBox(height: 16),
                 ],
                 if (isOwner) ...[
+                  _buildManualPlanProgressSection(canEdit: _editMode),
+                  const SizedBox(height: 16),
                   _buildAutomationStatusSection(),
                   const SizedBox(height: 16),
                 ],
@@ -1378,6 +1382,82 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
+  Widget _buildManualPlanProgressSection({required bool canEdit}) {
+    return StreamBuilder<ManualPlanProgress>(
+      stream: widget.groupService.manualPlanProgressStream(widget.group.id),
+      builder: (context, snapshot) {
+        final progress = snapshot.data ?? const ManualPlanProgress.empty();
+        final isLoading = snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData;
+
+        final children = <Widget>[
+          const SectionHeader('Manual Plan Progress'),
+        ];
+
+        if (snapshot.hasError) {
+          children.add(
+            const Text('Failed to load manual plan details'),
+          );
+        } else if (isLoading) {
+          children.add(
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: LinearProgressIndicator(),
+            ),
+          );
+        } else {
+          final nextRef =
+              progress.nextChapterReference?.trim().isNotEmpty == true
+                  ? progress.nextChapterReference!.trim()
+                  : 'Not set';
+          final defaultChapters = progress.defaultChaptersPerDay;
+          final defaultText = defaultChapters != null
+              ? defaultChapters.toString()
+              : 'Not set';
+          final lastMaterialized = progress.lastMaterializedDate;
+          final lastDateText = lastMaterialized != null
+              ? _formatAutomationDate(lastMaterialized)
+              : 'Never';
+
+          children.add(Text('Next chapter: $nextRef'));
+          children.add(Text('Default chapters per day: $defaultText'));
+          children.add(Text('Last materialized: $lastDateText'));
+        }
+
+        if (canEdit && !snapshot.hasError) {
+          children.add(const SizedBox(height: 8));
+          children.add(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.menu_book_outlined),
+                  label: const Text('Edit next chapter'),
+                  onPressed: _isUpdatingManualPlan || isLoading
+                      ? null
+                      : () => _editManualPlanNextChapter(progress),
+                ),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.format_list_numbered_outlined),
+                  label: const Text('Edit chapters per day'),
+                  onPressed: _isUpdatingManualPlan || isLoading
+                      ? null
+                      : () => _editManualPlanDefaultChapters(progress),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
+        );
+      },
+    );
+  }
+
   Widget _buildAutomationStatusSection() {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: widget.groupService.firestore
@@ -1492,6 +1572,166 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         );
       },
     );
+  }
+
+  Future<void> _editManualPlanNextChapter(ManualPlanProgress progress) async {
+    final controller = TextEditingController(
+      text: progress.nextChapterReference ?? '',
+    );
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Next chapter reference'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: 'e.g. Gen 1',
+            ),
+            autofocus: true,
+          ),
+          actions: [
+            VibrationButton(
+              vibrationService: widget.vibrationService,
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            VibrationButton(
+              vibrationService: widget.vibrationService,
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    final trimmed = result.trim();
+    await _updateManualPlanProgress(
+      nextChapterReference: trimmed,
+      clearNextChapterReference: trimmed.isEmpty,
+      successMessage: trimmed.isEmpty
+          ? 'Cleared next chapter reference'
+          : 'Updated next chapter reference',
+    );
+  }
+
+  Future<void> _editManualPlanDefaultChapters(
+      ManualPlanProgress progress) async {
+    final controller = TextEditingController(
+      text: progress.defaultChaptersPerDay?.toString() ?? '',
+    );
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Default chapters per day'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: 'Enter a positive number or leave blank',
+            ),
+            keyboardType: TextInputType.number,
+            autofocus: true,
+          ),
+          actions: [
+            VibrationButton(
+              vibrationService: widget.vibrationService,
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            VibrationButton(
+              vibrationService: widget.vibrationService,
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    final trimmed = result.trim();
+    if (trimmed.isEmpty) {
+      await _updateManualPlanProgress(
+        clearDefaultChaptersPerDay: true,
+        successMessage: 'Cleared default chapters per day',
+      );
+      return;
+    }
+
+    final parsed = int.tryParse(trimmed);
+    if (parsed == null || parsed <= 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid positive number')),
+      );
+      return;
+    }
+
+    await _updateManualPlanProgress(
+      defaultChaptersPerDay: parsed,
+      successMessage: 'Updated default chapters per day',
+    );
+  }
+
+  Future<void> _updateManualPlanProgress({
+    String? nextChapterReference,
+    bool clearNextChapterReference = false,
+    int? defaultChaptersPerDay,
+    bool clearDefaultChaptersPerDay = false,
+    DateTime? lastMaterializedDate,
+    bool clearLastMaterializedDate = false,
+    String? successMessage,
+  }) async {
+    if (_isUpdatingManualPlan) {
+      return;
+    }
+    setState(() {
+      _isUpdatingManualPlan = true;
+    });
+    try {
+      await widget.groupService.updateManualPlanProgress(
+        groupId: widget.group.id,
+        nextChapterReference: nextChapterReference,
+        clearNextChapterReference: clearNextChapterReference,
+        defaultChaptersPerDay: defaultChaptersPerDay,
+        clearDefaultChaptersPerDay: clearDefaultChaptersPerDay,
+        lastMaterializedDate: lastMaterializedDate,
+        clearLastMaterializedDate: clearLastMaterializedDate,
+      );
+      if (!mounted) {
+        return;
+      }
+      if (successMessage != null && successMessage.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(successMessage)),
+        );
+      }
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to update manual plan progress: $e');
+      }
+      await ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update manual plan')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingManualPlan = false;
+        });
+      }
+    }
   }
 
   String _formatAutomationDate(DateTime date) =>
