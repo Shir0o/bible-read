@@ -11,12 +11,14 @@ Users can create a group from the app. All groups are visible and listed on the 
 - `groups/{groupId}` – group document containing fields:
   - `name`: display name of the group
   - `ownerUid`: UID of the user who created the group
+  - `manualPlanProgress`: optional map storing manual generator metadata
+    - `nextChapterReference`: string reference for the next manual chapter
+    - `defaultChaptersPerDay`: number of chapters to schedule per day when generating manually
+    - `lastMaterializedDate`: date (timestamp) when manual content was last produced
 - `groups/{groupId}/members/{uid}` – membership documents for each user
 - `groups/{groupId}/schedule/{date}` – daily schedule entries storing a list of chapter references for the given date
-- `groups/{groupId}/schedule/{date}` – daily schedule entries storing a list of chapter references for the given date
 - `groups/{groupId}/scheduleTemplates/{templateId}` – auto content plans (the `default` plan is the built‑in one)
-- `groups/{groupId}/progress/{date}/entries/{uid}` – per-group completion state for a given date. Presence of an `entries/{uid}` document indicates the member has completed that group's assignment for the date. This is independent from the global daily read log under `read_logs/`.
-- `groups/{groupId}/progress/{date}/entries/{uid}` – per-group completion state for a given date, with optional `items/{index}` for per‑chapter checks and a `count` field reflecting checked items that day.
+- `groups/{groupId}/progress/{date}/entries/{uid}` – per-group completion state for a given date, with optional `items/{index}` for per‑chapter checks and a `count` field reflecting checked items that day. Presence of an `entries/{uid}` document indicates the member has completed that group's assignment for the date. This is independent from the global daily read log under `read_logs/`.
 - `groups/{groupId}/progressSummary/data/entries/{uid}` – cached per‑member aggregate for the group, with `completed` storing the total number of checked chapters across all dates. This is updated on each check/uncheck and used for fast overall progress.
 
 Each schedule document stores its date (usually in `YYYY-MM-DD` format) and an array of chapter strings.
