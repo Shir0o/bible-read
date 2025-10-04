@@ -920,8 +920,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                if (isOwner) ...[
-                  _buildManualPlanProgressSection(canEdit: _editMode),
+                if (_editMode && isOwner) ...[
+                  _buildManualPlanProgressSection(canEdit: true),
                   const SizedBox(height: 16),
                   _buildAutomationStatusSection(),
                   const SizedBox(height: 16),
@@ -1254,9 +1254,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ? progress.nextChapterReference!.trim()
                   : 'Not set';
           final defaultChapters = progress.defaultChaptersPerDay;
-          final defaultText = defaultChapters != null
-              ? defaultChapters.toString()
-              : 'Not set';
+          final defaultText =
+              defaultChapters != null ? defaultChapters.toString() : 'Not set';
           final lastMaterialized = progress.lastMaterializedDate;
           final lastDateText = lastMaterialized != null
               ? _formatAutomationDate(lastMaterialized)
