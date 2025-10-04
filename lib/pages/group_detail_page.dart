@@ -80,11 +80,8 @@ class GroupDetailPage extends StatefulWidget {
 class _GroupDetailPageState extends State<GroupDetailPage> {
   List<GroupSchedule>? _scheduleOverride;
   List<GroupSchedule>? _latestSchedule;
-  List<GroupSchedule>? _initialSchedule;
-  late final TextEditingController _todayController;
   late final TextEditingController _nameController;
   late DateTime _progressDate;
-  bool _isSavingToday = false;
   bool _editMode = false;
   bool _isSavingName = false;
   bool _isGeneratingAutoContent = false;
@@ -100,32 +97,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   final Map<String, bool> _latestBaseDoneSnapshots = <String, bool>{};
   final Map<String, int> _latestChapterCountSnapshots = <String, int>{};
   int _nextPendingOpId = 0;
-
-  bool _scheduleListsEqual(
-    List<GroupSchedule>? a,
-    List<GroupSchedule>? b,
-  ) {
-    if (identical(a, b)) {
-      return true;
-    }
-    if (a == null || b == null || a.length != b.length) {
-      return false;
-    }
-    for (var i = 0; i < a.length; i++) {
-      final left = a[i];
-      final right = b[i];
-      if (left.date != right.date ||
-          left.chapters.length != right.chapters.length) {
-        return false;
-      }
-      for (var j = 0; j < left.chapters.length; j++) {
-        if (left.chapters[j] != right.chapters[j]) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
 
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -311,94 +282,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   @override
   void initState() {
     super.initState();
-    _todayController = TextEditingController();
     _groupName = widget.group.name;
     _nameController = TextEditingController(text: _groupName);
     final now = DateTime.now();
     _progressDate = DateTime(now.year, now.month, now.day);
-    unawaited(_loadInitialSchedule());
   }
 
   @override
   void dispose() {
-    _todayController.dispose();
     _nameController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadInitialSchedule() async {
-    try {
-      final value = await widget.groupService.schedule(widget.group.id).first;
-      if (!mounted || _scheduleListsEqual(_initialSchedule, value)) {
-        return;
-      }
-      setState(() {
-        _initialSchedule = value;
-      });
-    } catch (e, st) {
-      unawaited(ErrorLogger.log(e, st));
-    }
-  }
-
-  Future<void> _saveToday() async {
-    if (_isSavingToday) return;
-    final text = _todayController.text.trim();
-    final chapters = ReferenceParser.parseChaptersList(text);
-    if (chapters.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter at least one chapter')),
-      );
-      return;
-    }
-
-    unawaited(widget.vibrationService.lightImpact());
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final schedule = GroupSchedule(date: today, chapters: chapters);
-
-    // Optimistic UI update
-    final previous = _scheduleOverride ?? _latestSchedule;
-    final updated = List<GroupSchedule>.from(previous ?? <GroupSchedule>[]);
-    final idx = updated.indexWhere((s) => _dateKey(s.date) == _dateKey(today));
-    if (idx >= 0) {
-      updated[idx] = schedule;
-    } else {
-      updated.add(schedule);
-    }
-    updated.sort((a, b) => a.date.compareTo(b.date));
-
-    if (mounted) {
-      setState(() {
-        _isSavingToday = true;
-        _scheduleOverride = updated;
-      });
-    }
-
-    try {
-      await widget.groupService
-          .updateSchedule(groupId: widget.group.id, schedule: schedule);
-      if (!mounted) return;
-      setState(() {
-        _isSavingToday = false;
-        _scheduleOverride = null;
-        _latestSchedule = updated;
-      });
-      _todayController.clear();
-      FocusScope.of(context).unfocus();
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Saved today\'s reading')));
-    } catch (e, st) {
-      if (kDebugMode) debugPrint('Failed to save today: $e');
-      ErrorLogger.log(e, st);
-      if (!mounted) return;
-      setState(() {
-        _isSavingToday = false;
-        _scheduleOverride = previous;
-      });
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Failed to save')));
-    }
   }
 
   Future<void> _deleteSchedule(GroupSchedule schedule) async {
@@ -1111,7 +1004,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       _latestSchedule = fetched;
                       baseSchedule = fetched;
                     } else {
-                      baseSchedule = _latestSchedule ?? _initialSchedule;
+                      baseSchedule = _latestSchedule;
                     }
 
                     final schedule = _scheduleOverride ?? baseSchedule;
@@ -1120,57 +1013,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     }
                     final hasEntries = schedule.isNotEmpty;
 
-                    final now = DateTime.now();
-                    final todayKey = _dateKey(
-                      DateTime(now.year, now.month, now.day),
-                    );
-                    final hasToday = schedule.any(
-                      (s) => _dateKey(s.date) == todayKey,
-                    );
-
                     final children = <Widget>[];
-
-                    if (canEditSchedule) {
-                      children.add(
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                key: const Key('today-chapters-field'),
-                                controller: _todayController,
-                                decoration: const InputDecoration(
-                                  labelText:
-                                      "Today's chapters (comma separated)",
-                                  border: OutlineInputBorder(),
-                                ),
-                                enabled: !hasToday && !_isSavingToday,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              height: 56,
-                              child: ElevatedButton(
-                                key: const Key('save-today-button'),
-                                onPressed: (_isSavingToday || hasToday)
-                                    ? null
-                                    : _saveToday,
-                                child: _isSavingToday
-                                    ? const SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : const Text('Save'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                      children.add(const SizedBox(height: 8));
-                    }
 
                     if (!hasEntries) {
                       children.add(const Text('No schedule'));
