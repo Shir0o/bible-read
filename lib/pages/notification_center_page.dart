@@ -45,12 +45,67 @@ class NotificationCenterPage extends StatefulWidget {
 
 class _NotificationCenterPageState extends State<NotificationCenterPage> {
   final _readLocally = <String>{};
+  bool _isClearing = false;
+  bool _hasNotifications = false;
+
+  Future<void> _clearNotifications() async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null || _isClearing || !_hasNotifications) {
+      return;
+    }
+
+    setState(() => _isClearing = true);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      unawaited(widget.vibrationService.mediumImpact());
+      await widget.service.clearNotifications(uid);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _readLocally.clear();
+      });
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Notifications cleared')),
+      );
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Failed to clear notifications')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isClearing = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
+    final actions = user == null
+        ? null
+        : <Widget>[
+            IconButton(
+              tooltip: 'Clear all',
+              onPressed: (!_hasNotifications || _isClearing)
+                  ? null
+                  : _clearNotifications,
+              icon: _isClearing
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.clear_all),
+            ),
+          ];
     return Scaffold(
-      appBar: CommonStyles.buildAppBar('Notifications'),
+      appBar: CommonStyles.buildAppBar('Notifications', actions: actions),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
         child: user == null
@@ -63,6 +118,15 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   final data = snapshot.data ?? [];
+                  final hasNotifications = data.isNotEmpty;
+                  if (hasNotifications != _hasNotifications) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!mounted) {
+                        return;
+                      }
+                      setState(() => _hasNotifications = hasNotifications);
+                    });
+                  }
                   if (data.isEmpty) {
                     return const Center(child: Text('No notifications'));
                   }
@@ -101,8 +165,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                           contentPadding: EdgeInsets.zero,
                           leading: _icon(n.type, read),
                           title: Text(_text(n)),
-                          subtitle:
-                              n.message != null ? Text(n.message!) : null,
+                          subtitle: n.message != null ? Text(n.message!) : null,
                         ),
                       );
                     },

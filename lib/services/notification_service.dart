@@ -54,4 +54,23 @@ class NotificationService {
         .doc(n.id)
         .set(n.toFirestore());
   }
+
+  /// Deletes every notification for [uid].
+  Future<void> clearNotifications(String uid) async {
+    final query = await firestore
+        .collection(NotificationCollections.users)
+        .doc(uid)
+        .collection(NotificationCollections.notifications)
+        .get();
+
+    if (query.docs.isEmpty) {
+      return;
+    }
+
+    final batch = firestore.batch();
+    for (final doc in query.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
 }
