@@ -121,11 +121,23 @@ service cloud.firestore {
         );
       }
 
+      function manualPlanMapValid(field) {
+        return request.resource.data[field] == null ||
+          request.resource.data[field] is map;
+      }
+
+      function manualPlanMetadataValid() {
+        return manualPlanMapValid('manualPlanProgress') &&
+          manualPlanMapValid('manualPlan') &&
+          manualPlanMapValid('manual');
+      }
+
       allow read: if request.auth != null;
       // Allow any signed-in user to create a new group document.
-      allow create: if request.auth != null;
+      allow create: if request.auth != null && manualPlanMetadataValid();
       // Restrict modifications and deletes to owner/admins of existing groups.
-      allow update, delete: if isOwnerOrAdmin();
+      allow update: if isOwnerOrAdmin() && manualPlanMetadataValid();
+      allow delete: if isOwnerOrAdmin();
 
       match /members/{uid} {
         allow read: if request.auth != null;
@@ -148,12 +160,6 @@ service cloud.firestore {
 
       match /schedule/{date} {
         allow read: if request.auth != null;
-        allow write: if isOwnerOrAdmin();
-      }
-
-      // Auto-schedule templates
-      match /scheduleTemplates/{templateId} {
-        allow read: if isMember() || isOwnerOrAdmin();
         allow write: if isOwnerOrAdmin();
       }
 
