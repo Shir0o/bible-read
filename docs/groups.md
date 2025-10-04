@@ -15,9 +15,12 @@ Users can create a group from the app. All groups are visible and listed on the 
     - `nextChapterReference`: string reference for the next manual chapter
     - `defaultChaptersPerDay`: number of chapters to schedule per day when generating manually
     - `lastMaterializedDate`: date (timestamp) when manual content was last produced
+  - `autoContent`: optional status map surfaced in the UI's manual scheduler section
+    - `lastGeneratedAt`: timestamp/ISO string noting when the manual generator last ran
+    - `missedDays`: number of upcoming days that still need assignments
+    - `suggestedCatchUpDays`: optional override for the catch-up prompt (falls back to `missedDays`)
 - `groups/{groupId}/members/{uid}` – membership documents for each user
 - `groups/{groupId}/schedule/{date}` – daily schedule entries storing a list of chapter references for the given date
-- `groups/{groupId}/scheduleTemplates/{templateId}` – auto content plans (the `default` plan is the built‑in one)
 - `groups/{groupId}/progress/{date}/entries/{uid}` – per-group completion state for a given date, with optional `items/{index}` for per‑chapter checks and a `count` field reflecting checked items that day. Presence of an `entries/{uid}` document indicates the member has completed that group's assignment for the date. This is independent from the global daily read log under `read_logs/`.
 - `groups/{groupId}/progressSummary/data/entries/{uid}` – cached per‑member aggregate for the group, with `completed` storing the total number of checked chapters across all dates. This is updated on each check/uncheck and used for fast overall progress.
 
@@ -40,27 +43,26 @@ The group completion checkboxes on the Group Details page now store state under 
 
 The app includes a `GroupsPage` listing all available groups (`lib/pages/groups_page.dart`). Selecting a group opens a `GroupDetailPage` (`lib/pages/group_detail_page.dart`) showing the member list and reading schedule. Any user can view a group's details and submit a join request, while group owners can add or edit schedule entries from this page.
 
-## Auto Content Plans
+## Manual Schedule Generation
 
-Group owners/admins can manage automated reading plans on the Group Details page (Edit mode) under “Auto Content Plans”. Each plan is stored under `groups/{groupId}/scheduleTemplates/{templateId}`. The built‑in plan lives at `default` and can be edited just like others. Plans support these fields:
+Group owners (and any admins a group may have) are responsible for keeping the shared schedule stocked. The Group Details page exposes two ways to do that while in edit mode:
 
-- `active: bool` – whether auto materialization is enabled
-- `timezone: string` – IANA timezone, e.g., `UTC` or `America/Los_Angeles`
-- `startTimeLocal: string` – HH:mm in the group's local time (informational in MVP)
-- `rrule: string` – recurrence rule, defaults to `FREQ=DAILY;INTERVAL=1`
+1. **Manual editing** – owners can open a specific day and type the references that should be read.
+2. **Generate upcoming days** – an owner can press the *Generate upcoming days* button to request that Firestore fill in the next N days using the manual plan metadata described below.
 
-When a plan is active, a Cloud Function runs daily and creates or updates the schedule document for the current local date if one does not exist yet. This is idempotent and safe to rerun. By default (plan = `none`) chapters are empty, but selecting a plan type generates content automatically.
+The generator dialog suggests how many days to create by looking at `autoContent.suggestedCatchUpDays` and `autoContent.missedDays`. If neither value exists the UI falls back to `1`. After each successful run the backend should update:
 
-### Plan types
+- `autoContent.lastGeneratedAt` with the date that was just materialized. This is what the UI surfaces as “Last generated”.
+- `autoContent.missedDays` with the number of days that still lack assignments after the run. This becomes the default catch‑up value the next time the dialog opens (unless `suggestedCatchUpDays` is provided to override it).
+- `manualPlanProgress.lastMaterializedDate` with the latest scheduled date so contributors can see when content was last produced manually.
 
-Use these fields to auto‑fill chapters:
+The `manualPlanProgress` map tracks defaults for future runs:
 
-- `plan: 'none' | 'sequential_ot' | 'sequential_nt' | 'psalms'`
-- `chaptersPerDay: number` – how many chapters to assign per scheduled day
-- `weekdays: string[]` – RFC weekday codes like `['MO','TU','WE','TH','FR','SA']`
-- `startRef: string` – where to start, e.g. `"Gen 1"`, `"Matt 1"`, or `"Psalm 1"`
+- `nextChapterReference` stores the starting reference the generator should use when filling the next batch of days. The UI exposes a shortcut to edit this field.
+- `defaultChaptersPerDay` is used when the dialog is opened before a user has typed a value. Owners should keep this aligned with the plan they are following.
+- `lastMaterializedDate` provides a coarse record of when the plan was last extended; this is distinct from `autoContent.lastGeneratedAt`, which is only for the status banner.
 
-Behavior: the job assigns the next `chaptersPerDay` chapters for the selected canon, continuing from the plan’s `cursorRef` (or `startRef` if none). It respects `weekdays` and merges output from multiple active plans into one schedule per day (no duplicates).
+Because the process is manual, owners are expected to review the generated assignments and adjust them as needed. If a group pauses or wants to restart a reading sequence, update `nextChapterReference` (and optionally `defaultChaptersPerDay`) before running the generator again so the new schedule begins in the right place.
 
 ## Manual QA
 
