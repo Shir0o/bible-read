@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/app_notification.dart';
 import '../models/group_member_progress.dart';
@@ -26,7 +27,6 @@ class GroupCollections {
 
   /// Sub-collection containing join requests awaiting approval.
   static const String joinRequests = 'joinRequests';
-
 }
 
 /// Provides helper methods for managing reading groups.
@@ -142,9 +142,8 @@ class GroupService {
           fromUid: uid,
           senderUid: uid,
           groupId: groupId,
-          message: name.isNotEmpty
-              ? '$name requested to join your group'
-              : null,
+          message:
+              name.isNotEmpty ? '$name requested to join your group' : null,
           timestamp: DateTime.now(),
           read: false,
         );
@@ -425,10 +424,7 @@ class GroupService {
       final groupRef =
           firestore.collection(GroupCollections.groups).doc(groupId);
       // Delete schedule doc
-      await groupRef
-          .collection(GroupCollections.schedule)
-          .doc(docId)
-          .delete();
+      await groupRef.collection(GroupCollections.schedule).doc(docId).delete();
 
       // Cleanup any progress entries for this date and update summaries.
       final dateRef = groupRef.collection('progress').doc(docId);
@@ -673,6 +669,12 @@ class GroupService {
     }
 
     try {
+      if (kDebugMode) {
+        debugPrint('Firestore write manualPlanProgress for ' +
+            groupId +
+            ' -> ' +
+            data.toString());
+      }
       await ref.set(data, SetOptions(merge: true));
     } catch (e, st) {
       await ErrorLogger.log(e, st);
@@ -793,9 +795,8 @@ class GroupService {
                 providedNames[uid] = name;
               }
             }
-            final resolved = await _fetchUserNames(order
-                .where((uid) => !providedNames.containsKey(uid))
-                .toList());
+            final resolved = await _fetchUserNames(
+                order.where((uid) => !providedNames.containsKey(uid)).toList());
             controller.add([
               for (final uid in order)
                 GroupMemberProgressData(
@@ -841,7 +842,8 @@ class GroupService {
 
       controller
         ..onListen = () {
-          if (latestMembers != null && (latestProgress != null || progressDenied)) {
+          if (latestMembers != null &&
+              (latestProgress != null || progressDenied)) {
             unawaited(emit());
           }
         }
@@ -896,7 +898,9 @@ class GroupService {
       QuerySnapshot<Map<String, dynamic>>? latestEntries;
 
       Future<void> emit() async {
-        if (latestMembers == null || latestSchedule == null || latestEntries == null) {
+        if (latestMembers == null ||
+            latestSchedule == null ||
+            latestEntries == null) {
           return;
         }
         try {
@@ -924,7 +928,9 @@ class GroupService {
                 .doc(groupId)
                 .get();
             final ownerUid = groupSnap.data()?['ownerUid'] as String?;
-            if (ownerUid != null && ownerUid.isNotEmpty && !order.contains(ownerUid)) {
+            if (ownerUid != null &&
+                ownerUid.isNotEmpty &&
+                !order.contains(ownerUid)) {
               order.add(ownerUid);
               missingUids.add(ownerUid);
             }
@@ -932,7 +938,9 @@ class GroupService {
             await ErrorLogger.log(e, st);
           }
 
-          if (includeUid != null && includeUid.isNotEmpty && !order.contains(includeUid)) {
+          if (includeUid != null &&
+              includeUid.isNotEmpty &&
+              !order.contains(includeUid)) {
             order.add(includeUid);
             missingUids.add(includeUid);
           }
@@ -1032,10 +1040,14 @@ class GroupService {
     // Always include the group owner in the member list even if no
     // membership document exists (for older data).
     try {
-      final groupSnap =
-          await firestore.collection(GroupCollections.groups).doc(groupId).get();
+      final groupSnap = await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .get();
       final ownerUid = groupSnap.data()?['ownerUid'] as String?;
-      if (ownerUid != null && ownerUid.isNotEmpty && !order.contains(ownerUid)) {
+      if (ownerUid != null &&
+          ownerUid.isNotEmpty &&
+          !order.contains(ownerUid)) {
         order.add(ownerUid);
         missingUids.add(ownerUid);
       }
@@ -1208,8 +1220,7 @@ class GroupService {
       }
 
       // Delete members
-      final members =
-          await groupRef.collection(GroupCollections.members).get();
+      final members = await groupRef.collection(GroupCollections.members).get();
       for (final doc in members.docs) {
         try {
           await doc.reference.delete();
@@ -1264,25 +1275,23 @@ class GroupService {
     required String uid,
   }) async {
     try {
-      final groupRef = firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupRef =
+          firestore.collection(GroupCollections.groups).doc(groupId);
       final groupSnap = await groupRef.get();
       if (!groupSnap.exists) return;
       final ownerUid = groupSnap.data()?['ownerUid'] as String?;
       final isOwner = ownerUid == uid;
 
       // Ensure user is a member or owner before proceeding.
-      final memberSnap = await groupRef
-          .collection(GroupCollections.members)
-          .doc(uid)
-          .get();
+      final memberSnap =
+          await groupRef.collection(GroupCollections.members).doc(uid).get();
       if (!memberSnap.exists && !isOwner) return;
 
       final progressDates = await groupRef.collection('progress').get();
       int total = 0;
       for (final dateDoc in progressDates.docs) {
         try {
-          final entryRef =
-              dateDoc.reference.collection('entries').doc(uid);
+          final entryRef = dateDoc.reference.collection('entries').doc(uid);
           final entrySnap = await entryRef.get();
           if (!entrySnap.exists) continue;
           int? count = (entrySnap.data()?['count'] as num?)?.toInt();

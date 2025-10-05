@@ -378,6 +378,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
   Future<void> _toggleMyRead(bool read) async {
     final user = widget.auth.currentUser;
+    if (kDebugMode) {
+      debugPrint(
+          'GroupDetailPage build -> userUid=${user?.uid}, groupOwner=${widget.group.ownerUid}');
+    }
     if (user == null) return;
     try {
       final now = DateTime.now();
@@ -1582,6 +1586,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       _isUpdatingManualPlan = true;
     });
     try {
+      if (kDebugMode) {
+        debugPrint(
+            'Updating manual plan -> user=${widget.auth.currentUser?.uid}, group=${widget.group.id}, nextChapter=$nextChapterReference, clearNext=$clearNextChapterReference, defaultPerDay=$defaultChaptersPerDay, clearDefault=$clearDefaultChaptersPerDay, lastDate=$lastMaterializedDate, clearLast=$clearLastMaterializedDate');
+      }
       await widget.groupService.updateManualPlanProgress(
         groupId: widget.group.id,
         nextChapterReference: nextChapterReference,
@@ -1605,6 +1613,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       }
       await ErrorLogger.log(e, st);
       if (mounted) {
+        if (kDebugMode) {
+          debugPrint(
+              'Update manual plan failed for user=${widget.auth.currentUser?.uid}: $e');
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to update manual plan')),
         );
@@ -1614,6 +1626,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         setState(() {
           _isUpdatingManualPlan = false;
         });
+      } else {
+        _isUpdatingManualPlan = false;
       }
     }
   }

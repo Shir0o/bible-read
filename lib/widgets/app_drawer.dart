@@ -45,8 +45,9 @@ class AppDrawer extends StatelessWidget {
     final theme = Theme.of(context);
     final navigationTextStyle = theme.textTheme.bodyLarge?.copyWith(
           fontWeight: FontWeight.w600,
+          fontSize: (theme.textTheme.bodyLarge?.fontSize ?? 16) - 1,
         ) ??
-        const TextStyle(fontSize: 16, fontWeight: FontWeight.w600);
+        const TextStyle(fontSize: 15, fontWeight: FontWeight.w600);
 
     final drawerTitleStyle = theme.textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.w600,
