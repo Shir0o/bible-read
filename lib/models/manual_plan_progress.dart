@@ -191,11 +191,12 @@ class ManualPlanProgress {
   static DateTime? _parseDate(dynamic value) {
     if (value == null) return null;
     if (value is Timestamp) {
-      final date = value.toDate();
+      final date = value.toDate().toUtc();
       return DateTime.utc(date.year, date.month, date.day);
     }
     if (value is DateTime) {
-      return DateTime.utc(value.year, value.month, value.day);
+      final date = value.toUtc();
+      return DateTime.utc(date.year, date.month, date.day);
     }
     if (value is String) {
       final trimmed = value.trim();

@@ -127,9 +127,7 @@ service cloud.firestore {
       }
 
       function manualPlanMetadataValid() {
-        return manualPlanMapValid('manualPlanProgress') &&
-          manualPlanMapValid('manualPlan') &&
-          manualPlanMapValid('manual');
+        return manualPlanMapValid('manualPlanProgress');
       }
 
       allow read: if request.auth != null;

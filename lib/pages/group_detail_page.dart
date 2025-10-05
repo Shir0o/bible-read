@@ -19,7 +19,6 @@ import '../widgets/schedule_item_tile.dart';
 import '../widgets/section_header.dart';
 import '../widgets/vibration_button.dart';
 import 'group_join_requests_page.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'read_log_page.dart';
 
 typedef GroupDatePicker = Future<DateTime?> Function({
@@ -87,6 +86,27 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   bool _isGeneratingAutoContent = false;
   bool _isUpdatingManualPlan = false;
   late String _groupName;
+  ManualPlanProgress? _manualPlanProgress;
+  Set<int> _skipWeekdaysPreference = {DateTime.sunday};
+  static const Map<int, String> _weekdayLabels = {
+    DateTime.monday: 'Mon',
+    DateTime.tuesday: 'Tue',
+    DateTime.wednesday: 'Wed',
+    DateTime.thursday: 'Thu',
+    DateTime.friday: 'Fri',
+    DateTime.saturday: 'Sat',
+    DateTime.sunday: 'Sun',
+  };
+
+  static const List<int> _orderedWeekdays = <int>[
+    DateTime.monday,
+    DateTime.tuesday,
+    DateTime.wednesday,
+    DateTime.thursday,
+    DateTime.friday,
+    DateTime.saturday,
+    DateTime.sunday,
+  ];
   final Map<String, bool> _pendingReadOverrides = <String, bool>{};
   final Map<String, Map<int, bool>> _pendingChapterOverrides =
       <String, Map<int, bool>>{};
@@ -921,6 +941,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   const SizedBox(height: 16),
                 ],
                 if (_editMode && isOwner) ...[
+                  const SectionHeader('Plan Scheduling'),
                   _buildManualPlanProgressSection(canEdit: true),
                   const SizedBox(height: 16),
                   _buildAutomationStatusSection(),
@@ -1230,11 +1251,18 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       stream: widget.groupService.manualPlanProgressStream(widget.group.id),
       builder: (context, snapshot) {
         final progress = snapshot.data ?? const ManualPlanProgress.empty();
+        _manualPlanProgress = progress;
         final isLoading = snapshot.connectionState == ConnectionState.waiting &&
             !snapshot.hasData;
 
+        final theme = Theme.of(context);
+        final headingStyle = theme.textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        );
+
         final children = <Widget>[
-          const SectionHeader('Manual Plan Progress'),
+          Text('Manual plan', style: headingStyle),
+          const SizedBox(height: 8),
         ];
 
         if (snapshot.hasError) {
@@ -1351,8 +1379,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         final isLoading = snapshot.connectionState == ConnectionState.waiting &&
             !snapshot.hasData;
 
+        final theme = Theme.of(context);
+        final headingStyle = theme.textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        );
+
         final children = <Widget>[
-          const SectionHeader('Auto Schedule'),
+          Text('Auto schedule', style: headingStyle),
+          const SizedBox(height: 8),
         ];
 
         if (snapshot.hasError) {
@@ -1397,11 +1431,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ? null
                   : () async {
                       unawaited(widget.vibrationService.lightImpact());
-                      final selectedDays = await _showAutoCatchUpDialog(
+                      final config = await _showAutoCatchUpDialog(
                         defaultDays: defaultDays,
                       );
-                      if (selectedDays != null) {
-                        await _materializeAutoSchedule(selectedDays);
+                      if (config != null) {
+                        await _materializeAutoSchedule(
+                          config.days,
+                          skipWeekdays: config.skipWeekdays,
+                        );
                       }
                     },
             ),
@@ -1417,8 +1454,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Future<void> _editManualPlanNextChapter(ManualPlanProgress progress) async {
+    final inferredNextChapter =
+        progress.nextChapterReference?.trim().isNotEmpty == true
+            ? progress.nextChapterReference!.trim()
+            : _inferNextChapterFromSchedule();
+
     final controller = TextEditingController(
-      text: progress.nextChapterReference ?? '',
+      text: inferredNextChapter ?? '',
     );
     final result = await showDialog<String?>(
       context: context,
@@ -1576,6 +1618,30 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     }
   }
 
+  String? _inferNextChapterFromSchedule() {
+    final schedules = _scheduleOverride ?? _latestSchedule;
+    if (schedules == null || schedules.isEmpty) {
+      return null;
+    }
+
+    for (final schedule in schedules.reversed) {
+      if (schedule.chapters.isEmpty) {
+        continue;
+      }
+      final normalized = ReferenceParser.normalizeList(schedule.chapters);
+      if (normalized.isEmpty) {
+        continue;
+      }
+      final lastChapter = normalized.last;
+      final next = ReferenceParser.nextChapter(lastChapter);
+      if (next != null) {
+        return next;
+      }
+    }
+
+    return null;
+  }
+
   String _formatAutomationDate(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-'
       '${date.month.toString().padLeft(2, '0')}-'
@@ -1658,25 +1724,85 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     return current;
   }
 
-  Future<int?> _showAutoCatchUpDialog({required int defaultDays}) async {
+  Future<({int days, Set<int> skipWeekdays})?> _showAutoCatchUpDialog({
+    required int defaultDays,
+  }) async {
     final controller = TextEditingController(text: defaultDays.toString());
-    return showDialog<int>(
+    final initialSkip = Set<int>.from(_skipWeekdaysPreference);
+    return showDialog<({int days, Set<int> skipWeekdays})>(
       context: context,
       builder: (context) {
-        String? error;
+        String? daysError;
+        String? skipError;
+        final localSkip = Set<int>.from(initialSkip);
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
               title: const Text('Generate upcoming days'),
-              content: TextField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Days to generate',
-                  helperText:
-                      'Creates or updates assignments for the selected number of upcoming days.',
-                  errorText: error,
-                ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Days to generate',
+                      helperText:
+                          'Creates or updates assignments for the selected number of upcoming days.',
+                      errorText: daysError,
+                    ),
+                    onChanged: (_) {
+                      if (daysError != null) {
+                        setState(() => daysError = null);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Skip weekdays',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: _orderedWeekdays.map((day) {
+                      final selected = localSkip.contains(day);
+                      return FilterChip(
+                        label: Text(_weekdayLabels[day] ?? day.toString()),
+                        selected: selected,
+                        onSelected: (value) {
+                          setState(() {
+                            if (value) {
+                              localSkip.add(day);
+                            } else {
+                              localSkip.remove(day);
+                            }
+                            skipError = localSkip.length >= DateTime.daysPerWeek
+                                ? 'Select at least one weekday to schedule.'
+                                : null;
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    localSkip.isEmpty
+                        ? 'All weekdays will receive schedule entries.'
+                        : 'Skipping ${_formatSkippedDays(localSkip)}.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  if (skipError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      skipError!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.error),
+                    ),
+                  ],
+                ],
               ),
               actions: [
                 TextButton(
@@ -1687,10 +1813,18 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   onPressed: () {
                     final value = int.tryParse(controller.text.trim());
                     if (value == null || value <= 0) {
-                      setState(() => error = 'Enter a positive number');
+                      setState(() => daysError = 'Enter a positive number');
                       return;
                     }
-                    Navigator.of(context).pop(value);
+                    if (localSkip.length >= DateTime.daysPerWeek) {
+                      setState(() => skipError =
+                          'Select at least one weekday to schedule.');
+                      return;
+                    }
+                    Navigator.of(context).pop((
+                      days: value,
+                      skipWeekdays: Set<int>.from(localSkip),
+                    ));
                   },
                   child: const Text('Generate'),
                 ),
@@ -1702,46 +1836,206 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
-  Future<void> _materializeAutoSchedule(int days) async {
+  Future<void> _materializeAutoSchedule(int days,
+      {Set<int>? skipWeekdays}) async {
+    if (days <= 0) {
+      return;
+    }
+
+    final skip = skipWeekdays == null
+        ? _skipWeekdaysPreference
+        : Set<int>.from(skipWeekdays);
+    if (skip.length >= DateTime.daysPerWeek) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Select at least one weekday to schedule.'),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isGeneratingAutoContent = true;
     });
+
     try {
-      await FirebaseFunctions.instanceFor(region: 'us-central1')
-          .httpsCallable('materializeToday')
-          .call({
-        'groupId': widget.group.id,
-        'days': days,
-      });
-      if (!mounted) {
+      final progress = _manualPlanProgress ?? const ManualPlanProgress.empty();
+      final baseSchedules =
+          List<GroupSchedule>.from(_scheduleOverride ?? _latestSchedule ?? []);
+      baseSchedules.sort((a, b) => a.date.compareTo(b.date));
+
+      final today = DateUtils.dateOnly(DateTime.now());
+      DateTime nextDate = today;
+
+      if (progress.lastMaterializedDate != null) {
+        final nextFromProgress =
+            DateUtils.dateOnly(progress.lastMaterializedDate!)
+                .add(const Duration(days: 1));
+        if (nextFromProgress.isAfter(nextDate)) {
+          nextDate = nextFromProgress;
+        }
+      }
+
+      if (baseSchedules.isNotEmpty) {
+        final lastScheduledDate = DateUtils.dateOnly(baseSchedules.last.date)
+            .add(const Duration(days: 1));
+        if (lastScheduledDate.isAfter(nextDate)) {
+          nextDate = lastScheduledDate;
+        }
+      }
+
+      if (nextDate.isBefore(today)) {
+        nextDate = today;
+      }
+
+      var chaptersPerDay = progress.defaultChaptersPerDay ?? 1;
+      if (chaptersPerDay <= 0) {
+        chaptersPerDay = 1;
+      } else if (chaptersPerDay > 50) {
+        chaptersPerDay = 50;
+      }
+
+      String? chapterCursor;
+      final configuredNext = progress.nextChapterReference?.trim();
+      if (configuredNext != null && configuredNext.isNotEmpty) {
+        chapterCursor = ReferenceParser.normalizeOne(configuredNext).trim();
+      }
+      chapterCursor ??= _inferNextChapterFromSchedule();
+      chapterCursor ??= 'Genesis 1';
+      if (chapterCursor.trim().isEmpty) {
+        chapterCursor = 'Genesis 1';
+      }
+
+      final generated = <GroupSchedule>[];
+      final updatedSchedules = List<GroupSchedule>.from(baseSchedules);
+
+      int safetyCounter = 0;
+      while (generated.length < days) {
+        if (skip.contains(nextDate.weekday)) {
+          nextDate = nextDate.add(const Duration(days: 1));
+          safetyCounter++;
+          if (safetyCounter > DateTime.daysPerWeek * days) {
+            break;
+          }
+          continue;
+        }
+
+        final chapters = <String>[];
+        var localCursor = chapterCursor;
+        for (var i = 0; i < chaptersPerDay; i++) {
+          if (localCursor == null || localCursor.trim().isEmpty) {
+            break;
+          }
+          chapters.add(localCursor);
+          localCursor = ReferenceParser.nextChapter(localCursor);
+        }
+
+        if (chapters.isEmpty) {
+          break;
+        }
+
+        final schedule = GroupSchedule(date: nextDate, chapters: chapters);
+        await widget.groupService.updateSchedule(
+          groupId: widget.group.id,
+          schedule: schedule,
+        );
+
+        final existingIndex = updatedSchedules.indexWhere(
+          (s) => DateUtils.isSameDay(s.date, schedule.date),
+        );
+        if (existingIndex >= 0) {
+          updatedSchedules[existingIndex] = schedule;
+        } else {
+          updatedSchedules.add(schedule);
+        }
+
+        generated.add(schedule);
+        chapterCursor = localCursor;
+        nextDate = nextDate.add(const Duration(days: 1));
+        safetyCounter = 0;
+      }
+
+      if (generated.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'No new schedule generated. Update the next chapter or chapters per day.'),
+          ),
+        );
         return;
       }
-      final suffix = days == 1 ? '' : 's';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Generated schedule for the next $days day$suffix'),
-        ),
+
+      updatedSchedules.sort((a, b) => a.date.compareTo(b.date));
+
+      final lastDate = generated.last.date;
+      try {
+        await widget.groupService.updateManualPlanProgress(
+          groupId: widget.group.id,
+          nextChapterReference: chapterCursor,
+          clearNextChapterReference: chapterCursor == null,
+          lastMaterializedDate: lastDate,
+        );
+      } catch (e, st) {
+        if (kDebugMode) {
+          debugPrint('Failed to update manual plan progress: $e');
+        }
+        await ErrorLogger.log(e, st);
+      }
+
+      _manualPlanProgress = ManualPlanProgress(
+        nextChapterReference: chapterCursor,
+        defaultChaptersPerDay: progress.defaultChaptersPerDay,
+        lastMaterializedDate: lastDate,
       );
+      _skipWeekdaysPreference = Set<int>.from(skip);
+
+      if (mounted) {
+        setState(() {
+          _scheduleOverride = updatedSchedules;
+          _latestSchedule = updatedSchedules;
+        });
+
+        final skippedDescription =
+            skip.isEmpty ? '' : ' (skipped ${_formatSkippedDays(skip)})';
+        final suffix = generated.length == 1 ? '' : 's';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Generated ${generated.length} day$suffix$skippedDescription.'),
+          ),
+        );
+      }
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to generate schedule: $e');
       }
-      ErrorLogger.log(e, st);
-      if (!mounted) {
-        return;
+      await ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to generate schedule'),
+          ),
+        );
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to generate schedule'),
-        ),
-      );
     } finally {
       if (mounted) {
         setState(() {
           _isGeneratingAutoContent = false;
         });
+      } else {
+        _isGeneratingAutoContent = false;
       }
     }
+  }
+
+  String _formatSkippedDays(Set<int> skip) {
+    final selectedLabels = _orderedWeekdays
+        .where(skip.contains)
+        .map((day) => _weekdayLabels[day] ?? day.toString())
+        .toList();
+    return selectedLabels.join(', ');
   }
 }
 

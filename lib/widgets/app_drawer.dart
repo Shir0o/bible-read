@@ -21,6 +21,7 @@ class AppDrawer extends StatelessWidget {
     required int index,
     required IconData icon,
     required String label,
+    required TextStyle textStyle,
   }) {
     return CommonStyles.buildTappableCard(
       onTap: () {
@@ -34,80 +35,94 @@ class AppDrawer extends StatelessWidget {
         visualDensity: const VisualDensity(vertical: -3),
         contentPadding: EdgeInsets.zero,
         leading: Icon(icon),
-        title: Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
+        title: Text(label, style: textStyle),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final navigationTextStyle = theme.textTheme.bodyLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+        ) ??
+        const TextStyle(fontSize: 16, fontWeight: FontWeight.w600);
+
+    final drawerTitleStyle = theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurface,
+        ) ??
+        const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        );
+
     return Drawer(
       child: SafeArea(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             // Compact header without a blue background
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Text(
-                'Bible Read',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Text('Bible Read', style: drawerTitleStyle),
             ),
             _buildNavItem(
               context,
               index: 0,
               icon: Icons.home_outlined,
               label: 'Home',
+              textStyle: navigationTextStyle,
             ),
             _buildNavItem(
               context,
               index: 1,
               icon: Icons.rss_feed,
               label: 'Feed',
+              textStyle: navigationTextStyle,
             ),
             _buildNavItem(
               context,
               index: 3,
               icon: Icons.leaderboard,
               label: 'Leaderboard',
+              textStyle: navigationTextStyle,
             ),
             _buildNavItem(
               context,
               index: 4,
               icon: Icons.people,
               label: 'Friends',
+              textStyle: navigationTextStyle,
             ),
             _buildNavItem(
               context,
               index: 5,
               icon: Icons.group,
               label: 'Groups',
+              textStyle: navigationTextStyle,
             ),
             _buildNavItem(
               context,
               index: 2,
               icon: Icons.flag,
               label: 'Seasonal Challenges',
+              textStyle: navigationTextStyle,
             ),
             _buildNavItem(
               context,
               index: 6,
               icon: Icons.emoji_events,
               label: 'Achievements',
+              textStyle: navigationTextStyle,
             ),
             _buildNavItem(
               context,
               index: 7,
               icon: Icons.calendar_today,
               label: 'History',
+              textStyle: navigationTextStyle,
             ),
             const Divider(),
             _buildNavItem(
@@ -115,6 +130,7 @@ class AppDrawer extends StatelessWidget {
               index: 9,
               icon: Icons.person,
               label: 'Profile',
+              textStyle: navigationTextStyle,
             ),
           ],
         ),

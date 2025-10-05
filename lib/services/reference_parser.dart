@@ -287,6 +287,44 @@ class ReferenceParser {
     return out;
   }
 
+  /// Returns the next sequential chapter after [reference], or `null` if the
+  /// input cannot be parsed or already points to the final chapter in the
+  /// canon.
+  static String? nextChapter(String reference) {
+    final normalized = normalizeOne(reference).trim();
+    if (normalized.isEmpty) {
+      return null;
+    }
+
+    final match = RegExp(r'^(.*\S)\s+(\d+)$').firstMatch(normalized);
+    if (match == null) {
+      return null;
+    }
+
+    final book = match.group(1)!;
+    final chapter = int.tryParse(match.group(2)!);
+    if (chapter == null) {
+      return null;
+    }
+
+    final totalChapters = _chapters[book];
+    if (totalChapters == null) {
+      return null;
+    }
+
+    if (chapter < totalChapters) {
+      return '$book ${chapter + 1}';
+    }
+
+    final index = _bookOrder.indexOf(book);
+    if (index == -1 || index + 1 >= _bookOrder.length) {
+      return null;
+    }
+
+    final nextBook = _bookOrder[index + 1];
+    return '$nextBook 1';
+  }
+
   /// Parses a free-form input (commas/semicolons allowed, ranges with '-', '–', '—', 'to')
   /// and returns an expanded list of canonical chapter references.
   static List<String> parseChaptersList(String input) {
