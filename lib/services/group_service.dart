@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 
 import '../models/app_notification.dart';
 import '../models/group_member_progress.dart';
@@ -999,7 +998,6 @@ class GroupService {
 
     // Compute completion as itemsChecked / totalItems.
     // Backwards compatibility: if an entry exists but has no items, treat as 100%.
-    final entryUids = <String>{for (final d in progressSnap.docs) d.id};
     final futures = <Future<double>>[];
     for (final uid in order) {
       futures.add(() async {
