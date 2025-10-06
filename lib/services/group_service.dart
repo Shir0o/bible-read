@@ -1,13 +1,11 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 
 import '../models/app_notification.dart';
 import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../models/group.dart';
-import '../models/manual_plan_progress.dart';
 import '../models/notification_preferences.dart';
 import 'error_logger.dart';
 import 'notification_service.dart';
@@ -594,94 +592,6 @@ class GroupService {
     });
   }
 
-  /// Stream manual plan metadata for the given [groupId].
-  Stream<ManualPlanProgress> manualPlanProgressStream(String groupId) {
-    final snaps = firestore
-        .collection(GroupCollections.groups)
-        .doc(groupId)
-        .snapshots()
-        .handleError((e, st) {
-      unawaited(ErrorLogger.log(e, st));
-      throw e;
-    });
-    return snaps.map((snap) {
-      if (!snap.exists) {
-        return const ManualPlanProgress.empty();
-      }
-      try {
-        return ManualPlanProgress.fromFirestore(snap);
-      } catch (e, st) {
-        unawaited(ErrorLogger.log(e, st));
-        return const ManualPlanProgress.empty();
-      }
-    });
-  }
-
-  /// Persist manual plan metadata updates for [groupId].
-  Future<void> updateManualPlanProgress({
-    required String groupId,
-    String? nextChapterReference,
-    bool clearNextChapterReference = false,
-    int? defaultChaptersPerDay,
-    bool clearDefaultChaptersPerDay = false,
-    DateTime? lastMaterializedDate,
-    bool clearLastMaterializedDate = false,
-  }) async {
-    final ref = firestore.collection(GroupCollections.groups).doc(groupId);
-    final data = <String, dynamic>{};
-
-    if (nextChapterReference != null) {
-      final trimmed = nextChapterReference.trim();
-      if (trimmed.isEmpty) {
-        data['manualPlanProgress.nextChapterReference'] = FieldValue.delete();
-      } else {
-        data['manualPlanProgress.nextChapterReference'] = trimmed;
-      }
-    } else if (clearNextChapterReference) {
-      data['manualPlanProgress.nextChapterReference'] = FieldValue.delete();
-    }
-
-    if (defaultChaptersPerDay != null) {
-      if (defaultChaptersPerDay <= 0) {
-        data['manualPlanProgress.defaultChaptersPerDay'] = FieldValue.delete();
-      } else {
-        data['manualPlanProgress.defaultChaptersPerDay'] =
-            defaultChaptersPerDay;
-      }
-    } else if (clearDefaultChaptersPerDay) {
-      data['manualPlanProgress.defaultChaptersPerDay'] = FieldValue.delete();
-    }
-
-    if (lastMaterializedDate != null) {
-      data['manualPlanProgress.lastMaterializedDate'] = Timestamp.fromDate(
-        DateTime.utc(
-          lastMaterializedDate.year,
-          lastMaterializedDate.month,
-          lastMaterializedDate.day,
-        ),
-      );
-    } else if (clearLastMaterializedDate) {
-      data['manualPlanProgress.lastMaterializedDate'] = FieldValue.delete();
-    }
-
-    if (data.isEmpty) {
-      return;
-    }
-
-    try {
-      if (kDebugMode) {
-        debugPrint('Firestore write manualPlanProgress for ' +
-            groupId +
-            ' -> ' +
-            data.toString());
-      }
-      await ref.set(data, SetOptions(merge: true));
-    } catch (e, st) {
-      await ErrorLogger.log(e, st);
-      rethrow;
-    }
-  }
-
   /// Stream of member display names for [groupId].
   Stream<List<String>> memberNames(String groupId) {
     final snaps = firestore
@@ -1088,7 +998,6 @@ class GroupService {
 
     // Compute completion as itemsChecked / totalItems.
     // Backwards compatibility: if an entry exists but has no items, treat as 100%.
-    final entryUids = <String>{for (final d in progressSnap.docs) d.id};
     final futures = <Future<double>>[];
     for (final uid in order) {
       futures.add(() async {
