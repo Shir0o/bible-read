@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 
 import '../models/group.dart';
 import '../models/group_schedule.dart';
-import '../models/manual_plan_progress.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../services/reference_parser.dart';
@@ -21,12 +20,13 @@ import '../widgets/vibration_button.dart';
 import 'group_join_requests_page.dart';
 import 'read_log_page.dart';
 
-typedef GroupDatePicker = Future<DateTime?> Function({
-  required BuildContext context,
-  required DateTime initialDate,
-  required DateTime firstDate,
-  required DateTime lastDate,
-});
+typedef GroupDatePicker =
+    Future<DateTime?> Function({
+      required BuildContext context,
+      required DateTime initialDate,
+      required DateTime firstDate,
+      required DateTime lastDate,
+    });
 
 /// Page showing the members and schedule for a group.
 class GroupDetailPage extends StatefulWidget {
@@ -53,10 +53,10 @@ class GroupDetailPage extends StatefulWidget {
     FirebaseAuth? auth,
     VibrationService? vibrationService,
     GroupDatePicker? datePicker,
-  })  : groupService = groupService ?? GroupService(),
-        auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService(),
-        datePicker = datePicker ?? _defaultDatePicker;
+  }) : groupService = groupService ?? GroupService(),
+       auth = auth ?? FirebaseAuth.instance,
+       vibrationService = vibrationService ?? const VibrationService(),
+       datePicker = datePicker ?? _defaultDatePicker;
 
   static Future<DateTime?> _defaultDatePicker({
     required BuildContext context,
@@ -83,30 +83,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   late DateTime _progressDate;
   bool _editMode = false;
   bool _isSavingName = false;
-  bool _isGeneratingAutoContent = false;
-  bool _isUpdatingManualPlan = false;
   late String _groupName;
-  ManualPlanProgress? _manualPlanProgress;
-  Set<int> _skipWeekdaysPreference = {DateTime.sunday};
-  static const Map<int, String> _weekdayLabels = {
-    DateTime.monday: 'Mon',
-    DateTime.tuesday: 'Tue',
-    DateTime.wednesday: 'Wed',
-    DateTime.thursday: 'Thu',
-    DateTime.friday: 'Fri',
-    DateTime.saturday: 'Sat',
-    DateTime.sunday: 'Sun',
-  };
-
-  static const List<int> _orderedWeekdays = <int>[
-    DateTime.monday,
-    DateTime.tuesday,
-    DateTime.wednesday,
-    DateTime.thursday,
-    DateTime.friday,
-    DateTime.saturday,
-    DateTime.sunday,
-  ];
   final Map<String, bool> _pendingReadOverrides = <String, bool>{};
   final Map<String, Map<int, bool>> _pendingChapterOverrides =
       <String, Map<int, bool>>{};
@@ -128,7 +105,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       _pendingChapterOps.putIfAbsent(dateKey, () => <int, int>{});
 
   void _applyChapterOverride(
-      String dateKey, int chapterIndex, bool value, int opId) {
+    String dateKey,
+    int chapterIndex,
+    bool value,
+    int opId,
+  ) {
     _ensureChapterOverrideMap(dateKey)[chapterIndex] = value;
     _ensureChapterOpsMap(dateKey)[chapterIndex] = opId;
   }
@@ -335,8 +316,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           _scheduleOverride = null;
         });
         // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Entry deleted')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Entry deleted')));
       }
     } catch (e, st) {
       if (kDebugMode) debugPrint('Failed to delete schedule: $e');
@@ -346,8 +328,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           _scheduleOverride = previous;
         });
         // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Delete failed')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Delete failed')));
       }
     }
   }
@@ -357,22 +340,26 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     if (newName.isEmpty || newName == _groupName || _isSavingName) return;
     setState(() => _isSavingName = true);
     try {
-      await widget.groupService
-          .updateGroupName(groupId: widget.group.id, name: newName);
+      await widget.groupService.updateGroupName(
+        groupId: widget.group.id,
+        name: newName,
+      );
       if (!mounted) return;
       setState(() {
         _groupName = newName;
         _isSavingName = false;
       });
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Group name updated')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Group name updated')));
     } catch (e, st) {
       if (kDebugMode) debugPrint('Failed to update group name: $e');
       ErrorLogger.log(e, st);
       if (!mounted) return;
       setState(() => _isSavingName = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Failed to update name')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to update name')));
     }
   }
 
@@ -380,7 +367,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final user = widget.auth.currentUser;
     if (kDebugMode) {
       debugPrint(
-          'GroupDetailPage build -> userUid=${user?.uid}, groupOwner=${widget.group.ownerUid}');
+        'GroupDetailPage build -> userUid=${user?.uid}, groupOwner=${widget.group.ownerUid}',
+      );
     }
     if (user == null) return;
     try {
@@ -418,7 +406,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       ErrorLogger.log(e, st);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update read status')));
+        const SnackBar(content: Text('Failed to update read status')),
+      );
     }
   }
 
@@ -438,16 +427,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           .collection('entries')
           .doc(user.uid);
       if (read) {
-        await progressDoc.set(
-          {
-            'done': true,
-            'ts': Timestamp.now(),
-            'uid': user.uid,
-            'groupId': widget.group.id,
-            'dateId': dateKey,
-          },
-          SetOptions(merge: true),
-        );
+        await progressDoc.set({
+          'done': true,
+          'ts': Timestamp.now(),
+          'uid': user.uid,
+          'groupId': widget.group.id,
+          'dateId': dateKey,
+        }, SetOptions(merge: true));
       } else {
         await progressDoc.delete();
       }
@@ -457,13 +443,17 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       ErrorLogger.log(e, st);
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update read status')));
+        const SnackBar(content: Text('Failed to update read status')),
+      );
       return false;
     }
   }
 
   Future<bool> _toggleMyChapterForDate(
-      DateTime date, int chapterIndex, bool read) async {
+    DateTime date,
+    int chapterIndex,
+    bool read,
+  ) async {
     final user = widget.auth.currentUser;
     if (user == null) return false;
     try {
@@ -490,10 +480,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       await db.runTransaction((tx) async {
         final snapshots =
             await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-          tx.get(itemDoc),
-          tx.get(base),
-          tx.get(summaryDoc),
-        ]);
+              tx.get(itemDoc),
+              tx.get(base),
+              tx.get(summaryDoc),
+            ]);
         final itemSnap = snapshots[0];
         final baseSnap = snapshots[1];
         final summarySnap = snapshots[2];
@@ -518,8 +508,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           } else {
             tx.set(base, baseData);
           }
-          tx.set(summaryDoc, {'completed': prevCompleted + 1},
-              SetOptions(merge: true));
+          tx.set(summaryDoc, {
+            'completed': prevCompleted + 1,
+          }, SetOptions(merge: true));
         } else {
           if (!itemSnap.exists) return; // already unchecked
           tx.delete(itemDoc);
@@ -533,8 +524,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             }
           }
           final newCompleted = prevCompleted > 0 ? prevCompleted - 1 : 0;
-          tx.set(
-              summaryDoc, {'completed': newCompleted}, SetOptions(merge: true));
+          tx.set(summaryDoc, {
+            'completed': newCompleted,
+          }, SetOptions(merge: true));
         }
       });
       return true;
@@ -543,7 +535,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       ErrorLogger.log(e, st);
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update read status')));
+        const SnackBar(content: Text('Failed to update read status')),
+      );
       return false;
     }
   }
@@ -559,8 +552,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final user = widget.auth.currentUser;
     if (user == null) return false;
     try {
-      final target =
-          DateTime(schedule.date.year, schedule.date.month, schedule.date.day);
+      final target = DateTime(
+        schedule.date.year,
+        schedule.date.month,
+        schedule.date.day,
+      );
       final dateKey =
           '${target.year}-${target.month.toString().padLeft(2, '0')}-${target.day.toString().padLeft(2, '0')}';
       final db = widget.groupService.firestore;
@@ -582,13 +578,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       await db.runTransaction((tx) async {
         final snapshots =
             await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-          tx.get(entryRef),
-          tx.get(summaryRef),
-        ]);
+              tx.get(entryRef),
+              tx.get(summaryRef),
+            ]);
         final entrySnap = snapshots[0];
         final summarySnap = snapshots[1];
         final nowTs = Timestamp.now();
-        final currentCount = (entrySnap.data()?['count'] as num?)?.toInt() ??
+        final currentCount =
+            (entrySnap.data()?['count'] as num?)?.toInt() ??
             currentlyChecked.length;
         final desiredCount = read ? schedule.chapters.length : 0;
         final delta = desiredCount - currentCount;
@@ -599,23 +596,19 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         if (read) {
           for (var i = 0; i < schedule.chapters.length; i++) {
             if (currentlyChecked.contains(i)) continue;
-            tx.set(
-              itemsCollection.doc(i.toString()),
-              {'done': true, 'ts': nowTs},
-            );
-          }
-          tx.set(
-            entryRef,
-            {
+            tx.set(itemsCollection.doc(i.toString()), {
               'done': true,
               'ts': nowTs,
-              'uid': user.uid,
-              'groupId': widget.group.id,
-              'dateId': dateKey,
-              'count': desiredCount,
-            },
-            SetOptions(merge: true),
-          );
+            });
+          }
+          tx.set(entryRef, {
+            'done': true,
+            'ts': nowTs,
+            'uid': user.uid,
+            'groupId': widget.group.id,
+            'dateId': dateKey,
+            'count': desiredCount,
+          }, SetOptions(merge: true));
         } else {
           if (currentlyChecked.isNotEmpty) {
             for (final idx in currentlyChecked) {
@@ -633,13 +626,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
         if (delta != 0) {
           final updatedCompleted = prevCompleted + delta;
-          tx.set(
-            summaryRef,
-            {
-              'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
-            },
-            SetOptions(merge: true),
-          );
+          tx.set(summaryRef, {
+            'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
+          }, SetOptions(merge: true));
         }
       });
       return true;
@@ -648,7 +637,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       ErrorLogger.log(e, st);
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update read status')));
+        const SnackBar(content: Text('Failed to update read status')),
+      );
       return false;
     }
   }
@@ -671,8 +661,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     });
 
     unawaited(() async {
-      final success =
-          await _toggleMyChapterForDate(schedule.date, chapterIndex, read);
+      final success = await _toggleMyChapterForDate(
+        schedule.date,
+        chapterIndex,
+        read,
+      );
       if (!mounted) return;
       if (_pendingChapterOps[dateKey]?[chapterIndex] != opId) {
         return;
@@ -754,14 +747,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           if (previousChapterOverrides == null) {
             _pendingChapterOverrides.remove(dateKey);
           } else {
-            _pendingChapterOverrides[dateKey] =
-                Map<int, bool>.from(previousChapterOverrides);
+            _pendingChapterOverrides[dateKey] = Map<int, bool>.from(
+              previousChapterOverrides,
+            );
           }
           if (previousChapterOps == null) {
             _pendingChapterOps.remove(dateKey);
           } else {
-            _pendingChapterOps[dateKey] =
-                Map<int, int>.from(previousChapterOps);
+            _pendingChapterOps[dateKey] = Map<int, int>.from(
+              previousChapterOps,
+            );
           }
         }
       });
@@ -809,8 +804,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               date: schedule.date,
             );
           }
-          await widget.groupService
-              .updateSchedule(groupId: widget.group.id, schedule: result);
+          await widget.groupService.updateSchedule(
+            groupId: widget.group.id,
+            schedule: result,
+          );
           if (mounted) {
             setState(() {
               _scheduleOverride = null;
@@ -843,11 +840,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final isOwner = userUid != null && userUid == widget.group.ownerUid;
     final memberStream = user != null
         ? widget.groupService.firestore
-            .collection(GroupCollections.groups)
-            .doc(widget.group.id)
-            .collection(GroupCollections.members)
-            .doc(user.uid)
-            .snapshots()
+              .collection(GroupCollections.groups)
+              .doc(widget.group.id)
+              .collection(GroupCollections.members)
+              .doc(user.uid)
+              .snapshots()
         : null;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -889,7 +886,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           _editMode = !_editMode;
                         });
                       },
-                    )
+                    ),
                   ]
                 : null,
           ),
@@ -942,13 +939,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                ],
-                if (_editMode && isOwner) ...[
-                  const SectionHeader('Plan Scheduling'),
-                  _buildManualPlanProgressSection(canEdit: true),
-                  const SizedBox(height: 16),
-                  _buildAutomationStatusSection(),
                   const SizedBox(height: 16),
                 ],
                 if (!isOwner && user != null && !isMember)
@@ -1049,16 +1039,20 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           final s = e.value;
                           final baseTile = ScheduleItemTile(
                             schedule: s,
-                            onEdit:
-                                canEditSchedule ? () => _editSchedule(s) : null,
+                            onEdit: canEditSchedule
+                                ? () => _editSchedule(s)
+                                : null,
                             onDelete: canEditSchedule
                                 ? () => _deleteSchedule(s)
                                 : null,
                             onTap: !canEditSchedule
                                 ? () {
                                     setState(() {
-                                      _progressDate = DateTime(s.date.year,
-                                          s.date.month, s.date.day);
+                                      _progressDate = DateTime(
+                                        s.date.year,
+                                        s.date.month,
+                                        s.date.day,
+                                      );
                                     });
                                   }
                                 : null,
@@ -1076,15 +1070,18 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                               .doc(user.uid);
 
                           return StreamBuilder<
-                              DocumentSnapshot<Map<String, dynamic>>>(
+                            DocumentSnapshot<Map<String, dynamic>>
+                          >(
                             stream: entryRef.snapshots(),
                             builder: (context, entrySnap) {
                               final entryData = entrySnap.data?.data();
                               final baseDone = entryData?['done'] == true;
                               return StreamBuilder<
-                                  QuerySnapshot<Map<String, dynamic>>>(
-                                stream:
-                                    entryRef.collection('items').snapshots(),
+                                QuerySnapshot<Map<String, dynamic>>
+                              >(
+                                stream: entryRef
+                                    .collection('items')
+                                    .snapshots(),
                                 builder: (context, itemsSnap) {
                                   final rawChecked = <int>{};
                                   for (final d
@@ -1093,8 +1090,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     if (idx != null) rawChecked.add(idx);
                                   }
 
-                                  final rawCheckedSnapshot =
-                                      Set<int>.from(rawChecked);
+                                  final rawCheckedSnapshot = Set<int>.from(
+                                    rawChecked,
+                                  );
                                   final totalChapters = s.chapters.length;
                                   final hasChapters = totalChapters > 0;
 
@@ -1105,25 +1103,28 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                       totalChapters;
 
                                   final pendingReadOverrideExists =
-                                      _pendingReadOverrides
-                                          .containsKey(dateKey);
+                                      _pendingReadOverrides.containsKey(
+                                        dateKey,
+                                      );
                                   final pendingChapterOverrideExists =
                                       (_pendingChapterOverrides[dateKey]
-                                              ?.isNotEmpty ??
-                                          false);
+                                          ?.isNotEmpty ??
+                                      false);
 
                                   if (pendingReadOverrideExists ||
                                       pendingChapterOverrideExists) {
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) {
+                                    WidgetsBinding.instance.addPostFrameCallback((
+                                      _,
+                                    ) {
                                       if (!mounted) return;
                                       final hasPendingChapterOverride =
                                           (_pendingChapterOverrides[dateKey]
-                                                  ?.isNotEmpty ??
-                                              false);
+                                              ?.isNotEmpty ??
+                                          false);
                                       final hasPendingReadOverride =
-                                          _pendingReadOverrides
-                                              .containsKey(dateKey);
+                                          _pendingReadOverrides.containsKey(
+                                            dateKey,
+                                          );
                                       if (hasPendingChapterOverride) {
                                         _resolvePendingChapterOverridesFromSnapshot(
                                           dateKey: dateKey,
@@ -1142,13 +1143,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     });
                                   }
 
-                                  final displayChecked =
-                                      Set<int>.from(rawCheckedSnapshot);
+                                  final displayChecked = Set<int>.from(
+                                    rawCheckedSnapshot,
+                                  );
                                   final pendingChapterOverride =
                                       _pendingChapterOverrides[dateKey];
                                   if (pendingChapterOverride != null) {
-                                    pendingChapterOverride
-                                        .forEach((chapterIndex, value) {
+                                    pendingChapterOverride.forEach((
+                                      chapterIndex,
+                                      value,
+                                    ) {
                                       if (value) {
                                         displayChecked.add(chapterIndex);
                                       } else {
@@ -1157,7 +1161,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     });
                                   }
 
-                                  final allChecked = hasChapters &&
+                                  final allChecked =
+                                      hasChapters &&
                                       displayChecked.length >= totalChapters;
                                   final pendingRead =
                                       _pendingReadOverrides[dateKey];
@@ -1174,8 +1179,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                       _handleScheduleReadToggle(
                                         schedule: s,
                                         read: value,
-                                        currentlyChecked:
-                                            Set<int>.from(rawChecked),
+                                        currentlyChecked: Set<int>.from(
+                                          rawChecked,
+                                        ),
                                         hasChapters: true,
                                       );
                                     };
@@ -1207,8 +1213,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     checkedChapters: displayChecked,
                                     onToggleChapter: (chapterIndex, v) {
                                       if (v ==
-                                          displayChecked
-                                              .contains(chapterIndex)) {
+                                          displayChecked.contains(
+                                            chapterIndex,
+                                          )) {
                                         return;
                                       }
                                       _handleChapterToggle(
@@ -1221,9 +1228,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                         ? () {
                                             setState(() {
                                               _progressDate = DateTime(
-                                                  s.date.year,
-                                                  s.date.month,
-                                                  s.date.day);
+                                                s.date.year,
+                                                s.date.month,
+                                                s.date.day,
+                                              );
                                             });
                                           }
                                         : null,
@@ -1248,808 +1256,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         );
       },
     );
-  }
-
-  Widget _buildManualPlanProgressSection({required bool canEdit}) {
-    return StreamBuilder<ManualPlanProgress>(
-      stream: widget.groupService.manualPlanProgressStream(widget.group.id),
-      builder: (context, snapshot) {
-        final progress = snapshot.data ?? const ManualPlanProgress.empty();
-        _manualPlanProgress = progress;
-        final isLoading = snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData;
-
-        final theme = Theme.of(context);
-        final headingStyle = theme.textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        );
-
-        final children = <Widget>[
-          Text('Manual plan', style: headingStyle),
-          const SizedBox(height: 8),
-        ];
-
-        if (snapshot.hasError) {
-          children.add(
-            const Text('Failed to load manual plan details'),
-          );
-        } else if (isLoading) {
-          children.add(
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: LinearProgressIndicator(),
-            ),
-          );
-        } else {
-          final nextRef =
-              progress.nextChapterReference?.trim().isNotEmpty == true
-                  ? progress.nextChapterReference!.trim()
-                  : 'Not set';
-          final defaultChapters = progress.defaultChaptersPerDay;
-          final defaultText =
-              defaultChapters != null ? defaultChapters.toString() : 'Not set';
-          final lastMaterialized = progress.lastMaterializedDate;
-          final lastDateText = lastMaterialized != null
-              ? _formatAutomationDate(lastMaterialized)
-              : 'Never';
-
-          children.add(Text('Next chapter: $nextRef'));
-          children.add(Text('Default chapters per day: $defaultText'));
-          children.add(Text('Last materialized: $lastDateText'));
-        }
-
-        if (canEdit && !snapshot.hasError) {
-          children.add(const SizedBox(height: 8));
-          children.add(
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.menu_book_outlined),
-                  label: const Text('Edit next chapter'),
-                  onPressed: _isUpdatingManualPlan || isLoading
-                      ? null
-                      : () => _editManualPlanNextChapter(progress),
-                ),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.format_list_numbered_outlined),
-                  label: const Text('Edit chapters per day'),
-                  onPressed: _isUpdatingManualPlan || isLoading
-                      ? null
-                      : () => _editManualPlanDefaultChapters(progress),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: children,
-        );
-      },
-    );
-  }
-
-  Widget _buildAutomationStatusSection() {
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: widget.groupService.firestore
-          .collection(GroupCollections.groups)
-          .doc(widget.group.id)
-          .snapshots(),
-      builder: (context, snapshot) {
-        final data = snapshot.data?.data();
-        final lastGenerated = _extractAutomationDate(data);
-        final missedDays = _extractAutomationInt(data, const [
-          ['autoContent', 'missedDays'],
-          ['autoContent', 'missedDayCount'],
-          ['autoContent', 'pendingDays'],
-          ['automation', 'missedDays'],
-          ['automation', 'missedDayCount'],
-          ['automation', 'status', 'missedDays'],
-          ['automation', 'status', 'missedDayCount'],
-          ['automation', 'autoContent', 'missedDays'],
-          ['auto', 'missedDays'],
-          ['auto', 'missedDayCount'],
-          ['autoMissedDays'],
-          ['autoMissedDayCount'],
-          ['missedDays'],
-        ]);
-        final suggestedDays = _extractAutomationInt(data, const [
-          ['autoContent', 'suggestedCatchUpDays'],
-          ['autoContent', 'recommendedCatchUpDays'],
-          ['autoContent', 'catchUpDays'],
-          ['automation', 'suggestedCatchUpDays'],
-          ['automation', 'recommendedCatchUpDays'],
-          ['automation', 'autoContent', 'suggestedCatchUpDays'],
-          ['automation', 'status', 'suggestedCatchUpDays'],
-          ['auto', 'suggestedCatchUpDays'],
-          ['auto', 'recommendedCatchUpDays'],
-          ['autoCatchUpDays'],
-          ['autoRecommendedDays'],
-          ['catchUpDays'],
-        ]);
-
-        var defaultDays = suggestedDays ?? missedDays ?? 1;
-        if (defaultDays <= 0) {
-          defaultDays = 1;
-        }
-        var missedDisplay = missedDays ?? 0;
-        if (missedDisplay < 0) {
-          missedDisplay = 0;
-        }
-
-        final isLoading = snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData;
-
-        final theme = Theme.of(context);
-        final headingStyle = theme.textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        );
-
-        final children = <Widget>[
-          Text('Auto schedule', style: headingStyle),
-          const SizedBox(height: 8),
-        ];
-
-        if (snapshot.hasError) {
-          children.add(
-            const Text('Failed to load automation status'),
-          );
-        } else if (isLoading) {
-          children.add(
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: LinearProgressIndicator(),
-            ),
-          );
-        } else {
-          final dateText = lastGenerated != null
-              ? _formatAutomationDate(lastGenerated)
-              : 'Never';
-          children.add(Text('Last generated: $dateText'));
-          children.add(Text('Missed days: $missedDisplay'));
-        }
-
-        children.add(const SizedBox(height: 8));
-        final isDisabled = _isGeneratingAutoContent || isLoading;
-
-        children.add(
-          SizedBox(
-            height: 44,
-            child: OutlinedButton.icon(
-              icon: _isGeneratingAutoContent
-                  ? const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.auto_fix_high_outlined),
-              label: Text(
-                _isGeneratingAutoContent
-                    ? 'Generating…'
-                    : 'Generate upcoming days',
-              ),
-              onPressed: isDisabled
-                  ? null
-                  : () async {
-                      unawaited(widget.vibrationService.lightImpact());
-                      final config = await _showAutoCatchUpDialog(
-                        defaultDays: defaultDays,
-                      );
-                      if (config != null) {
-                        await _materializeAutoSchedule(
-                          config.days,
-                          skipWeekdays: config.skipWeekdays,
-                        );
-                      }
-                    },
-            ),
-          ),
-        );
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: children,
-        );
-      },
-    );
-  }
-
-  Future<void> _editManualPlanNextChapter(ManualPlanProgress progress) async {
-    final inferredNextChapter =
-        progress.nextChapterReference?.trim().isNotEmpty == true
-            ? progress.nextChapterReference!.trim()
-            : _inferNextChapterFromSchedule();
-
-    final controller = TextEditingController(
-      text: inferredNextChapter ?? '',
-    );
-    final result = await showDialog<String?>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Next chapter reference'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'e.g. Gen 1',
-            ),
-            autofocus: true,
-          ),
-          actions: [
-            VibrationButton(
-              vibrationService: widget.vibrationService,
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            VibrationButton(
-              vibrationService: widget.vibrationService,
-              onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (result == null) {
-      return;
-    }
-
-    final trimmed = result.trim();
-    await _updateManualPlanProgress(
-      nextChapterReference: trimmed,
-      clearNextChapterReference: trimmed.isEmpty,
-      successMessage: trimmed.isEmpty
-          ? 'Cleared next chapter reference'
-          : 'Updated next chapter reference',
-    );
-  }
-
-  Future<void> _editManualPlanDefaultChapters(
-      ManualPlanProgress progress) async {
-    final controller = TextEditingController(
-      text: progress.defaultChaptersPerDay?.toString() ?? '',
-    );
-    final result = await showDialog<String?>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Default chapters per day'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'Enter a positive number or leave blank',
-            ),
-            keyboardType: TextInputType.number,
-            autofocus: true,
-          ),
-          actions: [
-            VibrationButton(
-              vibrationService: widget.vibrationService,
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            VibrationButton(
-              vibrationService: widget.vibrationService,
-              onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (result == null) {
-      return;
-    }
-
-    final trimmed = result.trim();
-    if (trimmed.isEmpty) {
-      await _updateManualPlanProgress(
-        clearDefaultChaptersPerDay: true,
-        successMessage: 'Cleared default chapters per day',
-      );
-      return;
-    }
-
-    final parsed = int.tryParse(trimmed);
-    if (parsed == null || parsed <= 0) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid positive number')),
-      );
-      return;
-    }
-
-    await _updateManualPlanProgress(
-      defaultChaptersPerDay: parsed,
-      successMessage: 'Updated default chapters per day',
-    );
-  }
-
-  Future<void> _updateManualPlanProgress({
-    String? nextChapterReference,
-    bool clearNextChapterReference = false,
-    int? defaultChaptersPerDay,
-    bool clearDefaultChaptersPerDay = false,
-    DateTime? lastMaterializedDate,
-    bool clearLastMaterializedDate = false,
-    String? successMessage,
-  }) async {
-    if (_isUpdatingManualPlan) {
-      return;
-    }
-    setState(() {
-      _isUpdatingManualPlan = true;
-    });
-    try {
-      if (kDebugMode) {
-        debugPrint(
-            'Updating manual plan -> user=${widget.auth.currentUser?.uid}, group=${widget.group.id}, nextChapter=$nextChapterReference, clearNext=$clearNextChapterReference, defaultPerDay=$defaultChaptersPerDay, clearDefault=$clearDefaultChaptersPerDay, lastDate=$lastMaterializedDate, clearLast=$clearLastMaterializedDate');
-      }
-      await widget.groupService.updateManualPlanProgress(
-        groupId: widget.group.id,
-        nextChapterReference: nextChapterReference,
-        clearNextChapterReference: clearNextChapterReference,
-        defaultChaptersPerDay: defaultChaptersPerDay,
-        clearDefaultChaptersPerDay: clearDefaultChaptersPerDay,
-        lastMaterializedDate: lastMaterializedDate,
-        clearLastMaterializedDate: clearLastMaterializedDate,
-      );
-      if (!mounted) {
-        return;
-      }
-      if (successMessage != null && successMessage.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(successMessage)),
-        );
-      }
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to update manual plan progress: $e');
-      }
-      await ErrorLogger.log(e, st);
-      if (mounted) {
-        if (kDebugMode) {
-          debugPrint(
-              'Update manual plan failed for user=${widget.auth.currentUser?.uid}: $e');
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update manual plan')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUpdatingManualPlan = false;
-        });
-      } else {
-        _isUpdatingManualPlan = false;
-      }
-    }
-  }
-
-  String? _inferNextChapterFromSchedule() {
-    final schedules = _scheduleOverride ?? _latestSchedule;
-    if (schedules == null || schedules.isEmpty) {
-      return null;
-    }
-
-    for (final schedule in schedules.reversed) {
-      if (schedule.chapters.isEmpty) {
-        continue;
-      }
-      final normalized = ReferenceParser.normalizeList(schedule.chapters);
-      if (normalized.isEmpty) {
-        continue;
-      }
-      final lastChapter = normalized.last;
-      final next = ReferenceParser.nextChapter(lastChapter);
-      if (next != null) {
-        return next;
-      }
-    }
-
-    return null;
-  }
-
-  String _formatAutomationDate(DateTime date) =>
-      '${date.year.toString().padLeft(4, '0')}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
-
-  DateTime? _extractAutomationDate(Map<String, dynamic>? data) {
-    final value = _firstValueAtPath(data, const [
-      ['autoContent', 'lastGeneratedAt'],
-      ['autoContent', 'lastMaterializedAt'],
-      ['autoContent', 'lastGenerated'],
-      ['automation', 'lastGeneratedAt'],
-      ['automation', 'lastMaterializedAt'],
-      ['automation', 'status', 'lastGeneratedAt'],
-      ['automation', 'status', 'lastMaterializedAt'],
-      ['automation', 'autoContent', 'lastGeneratedAt'],
-      ['automation', 'autoContent', 'lastMaterializedAt'],
-      ['autoSchedule', 'lastGeneratedAt'],
-      ['autoSchedule', 'lastMaterializedAt'],
-      ['auto', 'lastGeneratedAt'],
-      ['auto', 'lastMaterializedAt'],
-      ['autoLastGeneratedAt'],
-      ['autoLastMaterializedAt'],
-      ['autoLastGenerated'],
-      ['lastGeneratedAt'],
-      ['lastMaterializedAt'],
-      ['lastGenerated'],
-      ['lastRunAt'],
-    ]);
-    if (value is Timestamp) {
-      return value.toDate();
-    }
-    if (value is DateTime) {
-      return value;
-    }
-    if (value is String) {
-      return DateTime.tryParse(value);
-    }
-    if (value is num) {
-      return DateTime.fromMillisecondsSinceEpoch(value.toInt());
-    }
-    return null;
-  }
-
-  int? _extractAutomationInt(
-    Map<String, dynamic>? data,
-    List<List<String>> paths,
-  ) {
-    final value = _firstValueAtPath(data, paths);
-    if (value is num) {
-      return value.toInt();
-    }
-    if (value is String) {
-      return int.tryParse(value);
-    }
-    return null;
-  }
-
-  dynamic _firstValueAtPath(
-    Map<String, dynamic>? data,
-    List<List<String>> paths,
-  ) {
-    for (final path in paths) {
-      final value = _valueAtPath(data, path);
-      if (value != null) {
-        return value;
-      }
-    }
-    return null;
-  }
-
-  dynamic _valueAtPath(Map<String, dynamic>? data, List<String> path) {
-    dynamic current = data;
-    for (final segment in path) {
-      if (current is Map<String, dynamic>) {
-        current = current[segment];
-      } else {
-        return null;
-      }
-    }
-    return current;
-  }
-
-  Future<({int days, Set<int> skipWeekdays})?> _showAutoCatchUpDialog({
-    required int defaultDays,
-  }) async {
-    final controller = TextEditingController(text: defaultDays.toString());
-    final initialSkip = Set<int>.from(_skipWeekdaysPreference);
-    return showDialog<({int days, Set<int> skipWeekdays})>(
-      context: context,
-      builder: (context) {
-        String? daysError;
-        String? skipError;
-        final localSkip = Set<int>.from(initialSkip);
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Generate upcoming days'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: controller,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'Days to generate',
-                      helperText:
-                          'Creates or updates assignments for the selected number of upcoming days.',
-                      errorText: daysError,
-                    ),
-                    onChanged: (_) {
-                      if (daysError != null) {
-                        setState(() => daysError = null);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Skip weekdays',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: _orderedWeekdays.map((day) {
-                      final selected = localSkip.contains(day);
-                      return FilterChip(
-                        label: Text(_weekdayLabels[day] ?? day.toString()),
-                        selected: selected,
-                        onSelected: (value) {
-                          setState(() {
-                            if (value) {
-                              localSkip.add(day);
-                            } else {
-                              localSkip.remove(day);
-                            }
-                            skipError = localSkip.length >= DateTime.daysPerWeek
-                                ? 'Select at least one weekday to schedule.'
-                                : null;
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    localSkip.isEmpty
-                        ? 'All weekdays will receive schedule entries.'
-                        : 'Skipping ${_formatSkippedDays(localSkip)}.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  if (skipError != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      skipError!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.error),
-                    ),
-                  ],
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    final value = int.tryParse(controller.text.trim());
-                    if (value == null || value <= 0) {
-                      setState(() => daysError = 'Enter a positive number');
-                      return;
-                    }
-                    if (localSkip.length >= DateTime.daysPerWeek) {
-                      setState(() => skipError =
-                          'Select at least one weekday to schedule.');
-                      return;
-                    }
-                    Navigator.of(context).pop((
-                      days: value,
-                      skipWeekdays: Set<int>.from(localSkip),
-                    ));
-                  },
-                  child: const Text('Generate'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _materializeAutoSchedule(int days,
-      {Set<int>? skipWeekdays}) async {
-    if (days <= 0) {
-      return;
-    }
-
-    final skip = skipWeekdays == null
-        ? _skipWeekdaysPreference
-        : Set<int>.from(skipWeekdays);
-    if (skip.length >= DateTime.daysPerWeek) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Select at least one weekday to schedule.'),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isGeneratingAutoContent = true;
-    });
-
-    try {
-      final progress = _manualPlanProgress ?? const ManualPlanProgress.empty();
-      final baseSchedules =
-          List<GroupSchedule>.from(_scheduleOverride ?? _latestSchedule ?? []);
-      baseSchedules.sort((a, b) => a.date.compareTo(b.date));
-
-      final today = DateUtils.dateOnly(DateTime.now());
-      DateTime nextDate = today;
-
-      if (progress.lastMaterializedDate != null) {
-        final nextFromProgress =
-            DateUtils.dateOnly(progress.lastMaterializedDate!)
-                .add(const Duration(days: 1));
-        if (nextFromProgress.isAfter(nextDate)) {
-          nextDate = nextFromProgress;
-        }
-      }
-
-      if (baseSchedules.isNotEmpty) {
-        final lastScheduledDate = DateUtils.dateOnly(baseSchedules.last.date)
-            .add(const Duration(days: 1));
-        if (lastScheduledDate.isAfter(nextDate)) {
-          nextDate = lastScheduledDate;
-        }
-      }
-
-      if (nextDate.isBefore(today)) {
-        nextDate = today;
-      }
-
-      var chaptersPerDay = progress.defaultChaptersPerDay ?? 1;
-      if (chaptersPerDay <= 0) {
-        chaptersPerDay = 1;
-      } else if (chaptersPerDay > 50) {
-        chaptersPerDay = 50;
-      }
-
-      String? chapterCursor;
-      final configuredNext = progress.nextChapterReference?.trim();
-      if (configuredNext != null && configuredNext.isNotEmpty) {
-        chapterCursor = ReferenceParser.normalizeOne(configuredNext).trim();
-      }
-      chapterCursor ??= _inferNextChapterFromSchedule();
-      chapterCursor ??= 'Genesis 1';
-      if (chapterCursor.trim().isEmpty) {
-        chapterCursor = 'Genesis 1';
-      }
-
-      final generated = <GroupSchedule>[];
-      final updatedSchedules = List<GroupSchedule>.from(baseSchedules);
-
-      int safetyCounter = 0;
-      while (generated.length < days) {
-        if (skip.contains(nextDate.weekday)) {
-          nextDate = nextDate.add(const Duration(days: 1));
-          safetyCounter++;
-          if (safetyCounter > DateTime.daysPerWeek * days) {
-            break;
-          }
-          continue;
-        }
-
-        final chapters = <String>[];
-        var localCursor = chapterCursor;
-        for (var i = 0; i < chaptersPerDay; i++) {
-          if (localCursor == null || localCursor.trim().isEmpty) {
-            break;
-          }
-          chapters.add(localCursor);
-          localCursor = ReferenceParser.nextChapter(localCursor);
-        }
-
-        if (chapters.isEmpty) {
-          break;
-        }
-
-        final schedule = GroupSchedule(date: nextDate, chapters: chapters);
-        await widget.groupService.updateSchedule(
-          groupId: widget.group.id,
-          schedule: schedule,
-        );
-
-        final existingIndex = updatedSchedules.indexWhere(
-          (s) => DateUtils.isSameDay(s.date, schedule.date),
-        );
-        if (existingIndex >= 0) {
-          updatedSchedules[existingIndex] = schedule;
-        } else {
-          updatedSchedules.add(schedule);
-        }
-
-        generated.add(schedule);
-        chapterCursor = localCursor;
-        nextDate = nextDate.add(const Duration(days: 1));
-        safetyCounter = 0;
-      }
-
-      if (generated.isEmpty) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'No new schedule generated. Update the next chapter or chapters per day.'),
-          ),
-        );
-        return;
-      }
-
-      updatedSchedules.sort((a, b) => a.date.compareTo(b.date));
-
-      final lastDate = generated.last.date;
-      try {
-        await widget.groupService.updateManualPlanProgress(
-          groupId: widget.group.id,
-          nextChapterReference: chapterCursor,
-          clearNextChapterReference: chapterCursor == null,
-          lastMaterializedDate: lastDate,
-        );
-      } catch (e, st) {
-        if (kDebugMode) {
-          debugPrint('Failed to update manual plan progress: $e');
-        }
-        await ErrorLogger.log(e, st);
-      }
-
-      _manualPlanProgress = ManualPlanProgress(
-        nextChapterReference: chapterCursor,
-        defaultChaptersPerDay: progress.defaultChaptersPerDay,
-        lastMaterializedDate: lastDate,
-      );
-      _skipWeekdaysPreference = Set<int>.from(skip);
-
-      if (mounted) {
-        setState(() {
-          _scheduleOverride = updatedSchedules;
-          _latestSchedule = updatedSchedules;
-        });
-
-        final skippedDescription =
-            skip.isEmpty ? '' : ' (skipped ${_formatSkippedDays(skip)})';
-        final suffix = generated.length == 1 ? '' : 's';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Generated ${generated.length} day$suffix$skippedDescription.'),
-          ),
-        );
-      }
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to generate schedule: $e');
-      }
-      await ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to generate schedule'),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isGeneratingAutoContent = false;
-        });
-      } else {
-        _isGeneratingAutoContent = false;
-      }
-    }
-  }
-
-  String _formatSkippedDays(Set<int> skip) {
-    final selectedLabels = _orderedWeekdays
-        .where(skip.contains)
-        .map((day) => _weekdayLabels[day] ?? day.toString())
-        .toList();
-    return selectedLabels.join(', ');
   }
 }
 
@@ -2103,8 +1309,9 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
 
   void _save() {
     final chapters = ReferenceParser.parseChaptersList(_controller.text);
-    Navigator.of(context)
-        .pop(GroupSchedule(date: _selected, chapters: chapters));
+    Navigator.of(
+      context,
+    ).pop(GroupSchedule(date: _selected, chapters: chapters));
   }
 
   @override

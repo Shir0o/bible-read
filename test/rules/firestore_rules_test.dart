@@ -33,12 +33,6 @@ void main() {
       expect(rulesText.contains('allow write: if isOwnerOrAdmin();'), isTrue);
     });
 
-    test('guards manual plan metadata on groups', () {
-      expect(rulesText.contains('manualPlanMetadataValid()'), isTrue);
-      expect(rulesText.contains("manualPlanMapValid('manualPlanProgress')"),
-          isTrue);
-    });
-
     test('includes seasonal challenge rules', () {
       expect(rulesText.contains('match /seasons/{seasonId}'), isTrue);
       expect(rulesText.contains('match /challenges/{challengeId}'), isTrue);
