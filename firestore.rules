@@ -121,20 +121,11 @@ service cloud.firestore {
         );
       }
 
-      function manualPlanMapValid(field) {
-        return request.resource.data[field] == null ||
-          request.resource.data[field] is map;
-      }
-
-      function manualPlanMetadataValid() {
-        return manualPlanMapValid('manualPlanProgress');
-      }
-
       allow read: if request.auth != null;
       // Allow any signed-in user to create a new group document.
-      allow create: if request.auth != null && manualPlanMetadataValid();
+      allow create: if request.auth != null;
       // Restrict modifications and deletes to owner/admins of existing groups.
-      allow update: if isOwnerOrAdmin() && manualPlanMetadataValid();
+      allow update: if isOwnerOrAdmin();
       allow delete: if isOwnerOrAdmin();
 
       match /members/{uid} {
