@@ -282,12 +282,14 @@ void main() {
     );
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
+    final vibrationService = _StubVibrationService();
+
     await tester.pumpWidget(
       MaterialApp(
         home: HomePage(
           firestore: firestore,
           auth: auth,
-          vibrationService: _StubVibrationService(),
+          vibrationService: vibrationService,
         ),
       ),
     );
@@ -303,10 +305,26 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
 
+    expect(vibrationService.lightCount, 1);
+
     final switchTile = tester.widget<ReadSwitchTile>(
       find.byType(ReadSwitchTile),
     );
-    expect(switchTile.onChanged, isNull);
+    expect(switchTile.onChanged, isNotNull);
+
+    final snackFinder =
+        find.text('Already marked today. Come back tomorrow!');
+    expect(snackFinder, findsNothing);
+
+    await tester.tap(find.byType(ReadSwitchTile));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(snackFinder, findsOneWidget);
+    expect(
+      tester.widget<ReadSwitchTile>(find.byType(ReadSwitchTile)).value,
+      isTrue,
+    );
 
     final summaryDoc = await tester.runAsync(() async {
       final docRef = firestore
