@@ -51,6 +51,7 @@ app.*.map.json
 
 coverage/
 functions/serviceAccount.json
+functions/node_modules/
 ios/GoogleService-Info.plist
 google-services.json
 
