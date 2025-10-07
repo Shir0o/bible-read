@@ -193,30 +193,13 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 500));
 
-    // Attempt to navigate to a protected page via the drawer.
-    final responsive = tester.widget<ResponsiveScaffold>(
-      find.byType(ResponsiveScaffold),
-    );
-    responsive.scaffoldKey!.currentState!.openDrawer();
+    // Attempt to navigate to a protected page via the menu API.
+    final state = tester.state(find.byType(MainPage)) as dynamic;
+    state.navigateFromMenu(4); // Friends index.
     await tester.pump();
-
-    await tester.pump(const Duration(milliseconds: 500));
-    final drawerScrollable = find.descendant(
-      of: find.byType(Drawer),
-      matching: find.byType(ListView),
-    ).first;
-    await tester.dragUntilVisible(
-      find.text('Friends'),
-      drawerScrollable,
-      const Offset(0, -200),
-    );
-    await tester.tap(find.text('Friends'));
-    await tester.pump();
-
     await tester.pump(const Duration(milliseconds: 500));
 
     // The profile page should remain visible and navigation index unchanged.
-    final state = tester.state(find.byType(MainPage)) as dynamic;
     expect(state.selectedIndex, 0);
     expect(find.text('Sign in with Google'), findsOneWidget);
   });
@@ -252,7 +235,7 @@ void main() {
     );
     expect(responsive.contentIndex, 0);
     final labels = responsive.destinations.map((d) => d.label).toList();
-    expect(labels, ['Home', 'Feed']);
+    expect(labels, ['Home', 'Feed', 'Menu']);
     expect(responsive.selectedIndex, 0);
 
     await tester.tap(find.byIcon(Icons.feed));
@@ -265,7 +248,7 @@ void main() {
     expect(responsive.contentIndex, 1);
     expect(responsive.selectedIndex, 1);
 
-    // Return home before opening drawer destinations
+    // Return home before opening menu destinations
     await tester.tap(find.byIcon(Icons.home));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
@@ -275,70 +258,23 @@ void main() {
     expect(responsive.contentIndex, 0);
     expect(responsive.selectedIndex, 0);
 
-    // Seasonal challenges via drawer menu entry
-    Future<void> tapDrawerItem(String label) async {
-      final drawerList = find.descendant(
-        of: find.byType(Drawer),
-        matching: find.byType(ListView),
-      ).first;
-      await tester.dragUntilVisible(
-        find.text(label),
-        drawerList,
-        const Offset(0, -200),
-      );
-      await tester.tap(find.text(label));
+    Future<void> selectMenuItem(String label, int expectedIndex) async {
+      final state = tester.state(find.byType(MainPage)) as dynamic;
+      state.navigateFromMenu(expectedIndex);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text(label), findsWidgets);
+      responsive = tester.widget<ResponsiveScaffold>(
+        find.byType(ResponsiveScaffold),
+      );
+      expect(responsive.contentIndex, expectedIndex);
+      expect(responsive.selectedIndex, 0);
     }
 
-    responsive.scaffoldKey!.currentState!.openDrawer();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    final seasonalMenuItem = find.text('Seasonal Challenges');
-    expect(seasonalMenuItem, findsOneWidget);
-    await tapDrawerItem('Seasonal Challenges');
-    expect(find.byType(SeasonalChallengesPage), findsOneWidget);
-    responsive = tester.widget<ResponsiveScaffold>(
-      find.byType(ResponsiveScaffold),
-    );
-    expect(responsive.contentIndex, 2);
-    expect(responsive.selectedIndex, 0);
-
-    // Friends navigation via drawer
-    responsive.scaffoldKey!.currentState!.openDrawer();
-    await tester.pump();
-
-    await tester.pump(const Duration(milliseconds: 500));
-    await tapDrawerItem('Friends');
-    expect(find.byType(FriendsPage), findsOneWidget);
-    responsive = tester.widget<ResponsiveScaffold>(
-      find.byType(ResponsiveScaffold),
-    );
-    expect(responsive.contentIndex, 4);
-
-    // Achievements navigation via drawer
-    responsive.scaffoldKey!.currentState!.openDrawer();
-    await tester.pump();
-
-    await tester.pump(const Duration(milliseconds: 500));
-    await tapDrawerItem('Achievements');
-    expect(find.byType(AchievementsPage), findsOneWidget);
-    responsive = tester.widget<ResponsiveScaffold>(
-      find.byType(ResponsiveScaffold),
-    );
-    expect(responsive.contentIndex, 6);
-
-    // History navigation via drawer
-    responsive.scaffoldKey!.currentState!.openDrawer();
-    await tester.pump();
-
-    await tester.pump(const Duration(milliseconds: 500));
-    await tapDrawerItem('History');
-    expect(find.byType(StreakHistoryPage), findsOneWidget);
-    responsive = tester.widget<ResponsiveScaffold>(
-      find.byType(ResponsiveScaffold),
-    );
-    expect(responsive.contentIndex, 7);
+    await selectMenuItem('Seasonal Challenges', 2);
+    await selectMenuItem('Friends', 4);
+    await selectMenuItem('Achievements', 6);
+    await selectMenuItem('History', 7);
   });
 
   testWidgets('bottom navigation visible on non-core pages', (tester) async {
@@ -893,6 +829,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
+    final state = tester.state(find.byType(MainPage)) as dynamic;
+
     // Navigate to a different page first
     await tester.tap(find.byIcon(Icons.feed));
     await tester.pump();
@@ -900,25 +838,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(ReadLogPage), findsOneWidget);
 
-    // Go to profile and sign out
-    final responsive = tester.widget<ResponsiveScaffold>(
-      find.byType(ResponsiveScaffold),
-    );
-    responsive.scaffoldKey!.currentState!.openDrawer();
+    // Go to profile through the menu and sign out
+    state.navigateFromMenu(9);
     await tester.pump();
-
     await tester.pump(const Duration(milliseconds: 500));
-    final drawerList = find.descendant(
-      of: find.byType(Drawer),
-      matching: find.byType(ListView),
-    ).first;
-    await tester.dragUntilVisible(
-      find.text('Profile'),
-      drawerList,
-      const Offset(0, -200),
-    );
-    await tester.tap(find.text('Profile'));
-    await tester.pump();
+    expect(find.text('Sign Out'), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.text('Sign Out'));
@@ -933,13 +857,17 @@ void main() {
       find.byType(ResponsiveScaffold),
     );
     expect(scaffold.destinations.length, 0);
-    expect(find.byIcon(Icons.home), findsNothing);
-    expect(find.byIcon(Icons.feed), findsNothing);
-    expect(find.byIcon(Icons.leaderboard), findsNothing);
-    expect(find.byIcon(Icons.people), findsNothing);
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(NavigationRail), findsNothing);
 
-    scaffold.onDestinationSelected(1);
+    state.onItemTapped(1);
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Attempt to use the menu to go elsewhere should be blocked
+    state.navigateFromMenu(4);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Sign in with Google'), findsOneWidget);
   });

@@ -9,9 +9,6 @@ import '../services/achievement_service.dart';
 import '../models/achievement.dart';
 
 import '../widgets/common_styles.dart';
-import '../widgets/notification_button.dart';
-import '../services/notification_service.dart';
-import '../widgets/menu_button.dart';
 import '../models/comment.dart';
 import '../widgets/read_log_list.dart';
 import '../models/read_log.dart';
@@ -342,15 +339,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         "Today's Readers",
-        leading: const MenuButton(),
         automaticallyImplyLeading: false,
-        actions: [
-          if (widget.auth.currentUser != null)
-            NotificationButton(
-              service: NotificationService(firestore: widget.firestore),
-              auth: widget.auth,
-            ),
-        ],
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,

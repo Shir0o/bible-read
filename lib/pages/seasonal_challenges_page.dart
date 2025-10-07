@@ -8,7 +8,6 @@ import '../models/seasonal_reward.dart';
 import '../services/error_logger.dart';
 import '../services/seasonal_challenge_service.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/menu_button.dart';
 import '../widgets/seasonal_challenge_card.dart';
 
 class SeasonalChallengesPage extends StatefulWidget {
@@ -59,7 +58,6 @@ class _SeasonalChallengesPageState extends State<SeasonalChallengesPage> {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         'Seasonal Challenges',
-        leading: const MenuButton(),
         automaticallyImplyLeading: false,
       ),
       body: Container(

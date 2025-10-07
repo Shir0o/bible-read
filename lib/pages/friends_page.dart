@@ -5,12 +5,9 @@ import 'dart:async';
 import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/notification_button.dart';
-import '../services/notification_service.dart';
 import '../services/error_logger.dart';
 import 'add_friend_page.dart';
 import 'friend_requests_page.dart';
-import '../widgets/menu_button.dart';
 
 /// Page that lists current friends and allows sending friend requests by email.
 class FriendsPage extends StatefulWidget {
@@ -73,10 +70,9 @@ class _FriendsPageState extends State<FriendsPage> {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         'Friends',
-        leading: const MenuButton(),
         automaticallyImplyLeading: false,
         actions: [
-          if (user != null) ...[
+          if (user != null)
             IconButton(
               icon: const Icon(Icons.person_add),
               onPressed: () {
@@ -91,13 +87,6 @@ class _FriendsPageState extends State<FriendsPage> {
                 );
               },
             ),
-            NotificationButton(
-              service: NotificationService(
-                firestore: widget.friendService.firestore,
-              ),
-              auth: widget.auth,
-            ),
-          ],
         ],
       ),
       body: Container(
@@ -130,7 +119,8 @@ class _FriendsPageState extends State<FriendsPage> {
                                 .map(
                                   (f) => CommonStyles.buildTappableCard(
                                     onTap: () {},
-                                    margin: const EdgeInsets.symmetric(vertical: 4.0),
+                                    margin: const EdgeInsets.symmetric(
+                                        vertical: 4.0),
                                     child: ListTile(
                                       contentPadding: EdgeInsets.zero,
                                       title: Text(f.name),
@@ -158,9 +148,10 @@ class _FriendsPageState extends State<FriendsPage> {
                                                       _nudgedToday.add(f.uid);
                                                     });
                                                     try {
-                                                      final result = await widget
-                                                          .friendService
-                                                          .nudgeFriend(
+                                                      final result =
+                                                          await widget
+                                                              .friendService
+                                                              .nudgeFriend(
                                                         currentUid: user.uid,
                                                         friendUid: f.uid,
                                                         currentName:
@@ -199,8 +190,8 @@ class _FriendsPageState extends State<FriendsPage> {
                                                           messenger
                                                               .showSnackBar(
                                                             const SnackBar(
-                                                              content:
-                                                                  Text('Nudge sent'),
+                                                              content: Text(
+                                                                  'Nudge sent'),
                                                             ),
                                                           );
                                                           break;

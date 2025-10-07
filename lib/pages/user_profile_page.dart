@@ -6,8 +6,6 @@ import '../services/error_logger.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/common_styles.dart';
-import '../widgets/notification_button.dart';
-import '../services/notification_service.dart';
 import '../services/friend_service.dart';
 import '../widgets/achievement_summary.dart';
 import 'notification_settings_page.dart';
@@ -16,7 +14,6 @@ import 'login_page.dart';
 import 'signup_page.dart';
 import '../widgets/animated_action_button.dart';
 import '../widgets/animated_page_route.dart';
-import '../widgets/menu_button.dart';
 import '../widgets/vibration_button.dart';
 import '../services/vibration_service.dart';
 
@@ -159,15 +156,7 @@ class UserProfilePageState extends State<UserProfilePage> {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         'Profile',
-        leading: const MenuButton(),
         automaticallyImplyLeading: false,
-        actions: [
-          if (widget.auth.currentUser != null)
-            NotificationButton(
-              service: NotificationService(firestore: widget.firestore),
-              auth: widget.auth,
-            ),
-        ],
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,

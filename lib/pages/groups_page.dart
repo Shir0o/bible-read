@@ -10,7 +10,6 @@ import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import 'group_detail_page.dart';
-import '../widgets/menu_button.dart';
 
 /// Page that lists all groups.
 class GroupsPage extends StatefulWidget {
@@ -39,7 +38,6 @@ class GroupsPage extends StatefulWidget {
 
 class _GroupsPageState extends State<GroupsPage> {
   bool _inProgress = false;
-  String? _deletingGroupId;
   int _refreshTick = 0;
 
   Future<void> _refresh() async {
@@ -119,44 +117,22 @@ class _GroupsPageState extends State<GroupsPage> {
     }
   }
 
-  Future<void> _confirmAndDelete(Group g) async {
-    final user = widget.auth.currentUser;
-    if (user == null || user.uid != g.ownerUid) return;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Group'),
-        content: Text(
-            'Are you sure you want to delete "${g.name}"? This cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
+  Future<void> _openGroup(Group group) async {
+    unawaited(widget.vibrationService.lightImpact());
+    final deleted = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => GroupDetailPage(
+          group: group,
+          groupService: widget.groupService,
+          auth: widget.auth,
+        ),
       ),
     );
-    if (confirm != true) return;
-
-    setState(() => _deletingGroupId = g.id);
-    try {
-      await widget.groupService.deleteGroup(groupId: g.id, ownerUid: user.uid);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Group deleted')));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to delete group')),
-      );
-    } finally {
-      if (mounted) setState(() => _deletingGroupId = null);
+    if (!mounted || deleted != true) {
+      return;
     }
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Group deleted')));
   }
 
   @override
@@ -165,7 +141,6 @@ class _GroupsPageState extends State<GroupsPage> {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         'Groups',
-        leading: const MenuButton(),
         automaticallyImplyLeading: false,
       ),
       body: Container(
@@ -252,75 +227,49 @@ class _GroupsPageState extends State<GroupsPage> {
                               separatorBuilder: (_, __) =>
                                   const Divider(height: 0),
                               itemBuilder: (context, index) {
-                              final g = groups[index];
-                              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                                stream: widget.groupService.firestore
-                                    .collection(GroupCollections.groups)
-                                    .doc(g.id)
-                                    .collection(GroupCollections.members)
-                                    .snapshots(),
-                                builder: (context, memberSnap) {
-                                  final docs = memberSnap.data?.docs ?? const [];
-                                  final liveCount = docs.length;
-                                  // Ensure the owner appears in count even if their member doc is missing.
-                                  final hasOwner = docs.any((d) =>
-                                      d.id == g.ownerUid ||
-                                      (d.data()['uid'] as String?) == g.ownerUid);
-                                  final adjusted = hasOwner ? liveCount : liveCount + 1;
-                                  final count = (memberSnap.hasData && adjusted > 0)
-                                      ? adjusted
-                                      : g.memberCount;
-                                  return CommonStyles.buildTappableCard(
-                                    onTap: () {
-                                      unawaited(widget.vibrationService
-                                          .lightImpact());
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) => GroupDetailPage(
-                                            group: g,
-                                            groupService: widget.groupService,
-                                            auth: widget.auth,
-                                          ),
+                                final g = groups[index];
+                                return StreamBuilder<
+                                    QuerySnapshot<Map<String, dynamic>>>(
+                                  stream: widget.groupService.firestore
+                                      .collection(GroupCollections.groups)
+                                      .doc(g.id)
+                                      .collection(GroupCollections.members)
+                                      .snapshots(),
+                                  builder: (context, memberSnap) {
+                                    final docs =
+                                        memberSnap.data?.docs ?? const [];
+                                    final liveCount = docs.length;
+                                    // Ensure the owner appears in count even if their member doc is missing.
+                                    final hasOwner = docs.any((d) =>
+                                        d.id == g.ownerUid ||
+                                        (d.data()['uid'] as String?) ==
+                                            g.ownerUid);
+                                    final adjusted =
+                                        hasOwner ? liveCount : liveCount + 1;
+                                    final count =
+                                        (memberSnap.hasData && adjusted > 0)
+                                            ? adjusted
+                                            : g.memberCount;
+                                    return CommonStyles.buildTappableCard(
+                                      onTap: () => _openGroup(g),
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 4.0),
+                                      child: ListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        title: Text(g.name),
+                                        subtitle: Text(
+                                          '$count member${count == 1 ? '' : 's'}',
                                         ),
-                                      );
-                                    },
-                                    margin: const EdgeInsets.symmetric(vertical: 4.0),
-                                    child: ListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      title: Text(g.name),
-                                      subtitle: Text(
-                                        '$count member${count == 1 ? '' : 's'}',
+                                        trailing: pending.contains(g.id)
+                                            ? const Text('Pending')
+                                            : null,
                                       ),
-                                      trailing: g.ownerUid == user.uid
-                                          ? IconButton(
-                                              icon: _deletingGroupId == g.id
-                                                  ? const SizedBox(
-                                                      height: 20,
-                                                      width: 20,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                        strokeWidth: 2,
-                                                      ),
-                                                    )
-                                                  : const Icon(
-                                                      Icons.delete_outline,
-                                                      color: Colors.redAccent,
-                                                    ),
-                                              tooltip: 'Delete group',
-                                              onPressed: _deletingGroupId == g.id
-                                                  ? null
-                                                  : () => _confirmAndDelete(g),
-                                            )
-                                          : (pending.contains(g.id)
-                                              ? const Text('Pending')
-                                              : null),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        );
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          );
                         },
                       );
                     },

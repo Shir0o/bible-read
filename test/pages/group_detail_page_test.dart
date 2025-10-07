@@ -50,6 +50,26 @@ class RecordingGroupService extends GroupService {
   }
 }
 
+class RecordingDeleteGroupService extends GroupService {
+  RecordingDeleteGroupService({required super.firestore});
+
+  String? deletedGroupId;
+  String? deletedOwnerUid;
+  bool failDelete = false;
+
+  @override
+  Future<void> deleteGroup({
+    required String groupId,
+    required String ownerUid,
+  }) async {
+    deletedGroupId = groupId;
+    deletedOwnerUid = ownerUid;
+    if (failDelete) {
+      throw Exception('delete failed');
+    }
+  }
+}
+
 class _RecordingVibrationService extends VibrationService {
   int lightCount = 0;
 
@@ -437,7 +457,8 @@ void main() {
     );
 
     await tester.tap(find.text('Join Group'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(service.joinedGroupId, 'g1');
     expect(service.joinedUid, 'u2');
@@ -464,7 +485,8 @@ void main() {
     );
 
     await tester.tap(find.text('Join Group'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(service.joinedGroupId, 'g1');
     expect(find.text('Failed to join group'), findsOneWidget);
@@ -492,5 +514,106 @@ void main() {
 
     expect(find.text('Join Group'), findsNothing);
     expect(find.text('Join request pending'), findsOneWidget);
+  });
+
+  testWidgets('owner can delete group from edit mode', (tester) async {
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u1')
+        .set({
+      'uid': 'u1',
+      'role': 'owner',
+      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+    });
+    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final service = RecordingDeleteGroupService(firestore: firestore);
+
+    await pumpAndNavigate(
+      tester,
+      service: service,
+      auth: auth,
+    );
+
+    await tester.tap(find.byTooltip('Edit'));
+    await tester.pumpAndSettle();
+
+    final deleteFinder = find.byKey(const Key('delete-group-button'));
+    expect(deleteFinder, findsOneWidget);
+
+    await tester.tap(deleteFinder);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(service.deletedGroupId, 'g1');
+    expect(service.deletedOwnerUid, 'u1');
+    expect(find.byType(GroupDetailPage), findsNothing);
+    expect(find.text('open'), findsOneWidget);
+  });
+
+  testWidgets('delete failure shows snackbar and keeps page open',
+      (tester) async {
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u1')
+        .set({
+      'uid': 'u1',
+      'role': 'owner',
+      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+    });
+    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final service = RecordingDeleteGroupService(firestore: firestore)
+      ..failDelete = true;
+
+    await pumpAndNavigate(
+      tester,
+      service: service,
+      auth: auth,
+    );
+
+    await tester.tap(find.byTooltip('Edit'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('delete-group-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(service.deletedGroupId, 'g1');
+    expect(find.text('Failed to delete group'), findsOneWidget);
+    expect(find.byType(GroupDetailPage), findsOneWidget);
+  });
+
+  testWidgets('admins who are not owners cannot delete group', (tester) async {
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u2')
+        .set({
+      'uid': 'u2',
+      'role': 'admin',
+      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+    });
+    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u2'), signedIn: true);
+    final service = RecordingDeleteGroupService(firestore: firestore);
+
+    await pumpAndNavigate(
+      tester,
+      service: service,
+      auth: auth,
+    );
+
+    await tester.tap(find.byTooltip('Edit'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('delete-group-button')), findsNothing);
   });
 }

@@ -111,15 +111,15 @@ void main() {
       'message': 'Test nudge',
     });
 
-  await tester.pumpWidget(
-    MaterialApp(
-      home: NotificationCenterPage(
-        service: service,
-        auth: auth,
-        vibrationService: _StubVibrationService(),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NotificationCenterPage(
+          service: service,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+        ),
       ),
-    ),
-  );
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Test like'), findsOneWidget);

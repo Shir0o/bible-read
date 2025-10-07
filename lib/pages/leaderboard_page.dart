@@ -4,9 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../services/error_logger.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/notification_button.dart';
-import '../services/notification_service.dart';
-import '../widgets/menu_button.dart';
 import '../services/friend_service.dart';
 import '../models/leaderboard_entry.dart';
 import '../theme/app_theme.dart';
@@ -230,16 +227,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
         appBar: AppBar(
           title: const Text('Leaderboard', style: CommonStyles.appBarTitleText),
           backgroundColor: AppTheme.backgroundColor,
-          leading: const MenuButton(),
           automaticallyImplyLeading: false,
-          actions: [
-            if (user != null)
-              NotificationButton(
-                service: NotificationService(
-                    firestore: widget.friendService.firestore),
-                auth: widget.auth,
-              ),
-          ],
           bottom:
               const TabBar(tabs: [Tab(text: 'Public'), Tab(text: 'Friends')]),
         ),

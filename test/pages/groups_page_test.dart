@@ -94,20 +94,24 @@ void main() {
     expect(find.text('Other'), findsOneWidget);
 
     final studyTile = tester.widget<ListTile>(
-      find.ancestor(
-        of: find.text('Study'),
-        matching: find.byType(ListTile),
-      ).first,
+      find
+          .ancestor(
+            of: find.text('Study'),
+            matching: find.byType(ListTile),
+          )
+          .first,
     );
     final otherTile = tester.widget<ListTile>(
-      find.ancestor(
-        of: find.text('Other'),
-        matching: find.byType(ListTile),
-      ).first,
+      find
+          .ancestor(
+            of: find.text('Other'),
+            matching: find.byType(ListTile),
+          )
+          .first,
     );
 
     expect((studyTile.subtitle as Text).data, '1 member');
-    expect(studyTile.trailing, isA<IconButton>());
+    expect(studyTile.trailing, isNull);
 
     expect((otherTile.subtitle as Text).data, '1 member');
     expect(otherTile.trailing, isNull);
@@ -144,18 +148,22 @@ void main() {
     await pumpPage(tester, GroupService(firestore: firestore));
 
     final joinedTile = tester.widget<ListTile>(
-      find.ancestor(
-        of: find.text('Study'),
-        matching: find.byType(ListTile),
-      ).first,
+      find
+          .ancestor(
+            of: find.text('Study'),
+            matching: find.byType(ListTile),
+          )
+          .first,
     );
-    expect(joinedTile.trailing, isA<IconButton>());
+    expect(joinedTile.trailing, isNull);
 
     final pendingTile = tester.widget<ListTile>(
-      find.ancestor(
-        of: find.text('Other'),
-        matching: find.byType(ListTile),
-      ).first,
+      find
+          .ancestor(
+            of: find.text('Other'),
+            matching: find.byType(ListTile),
+          )
+          .first,
     );
     expect((pendingTile.trailing as Text).data, 'Pending');
     expect((joinedTile.subtitle as Text).data, '1 member');

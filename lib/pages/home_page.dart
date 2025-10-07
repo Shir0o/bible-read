@@ -10,13 +10,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../models/achievement.dart';
 import '../services/achievement_service.dart';
-import '../services/notification_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/menu_button.dart';
-import '../widgets/notification_button.dart';
 import '../widgets/read_status_section.dart';
 import 'read_log_page.dart';
 
@@ -457,19 +454,11 @@ class _HomePageState extends State<HomePage>
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Bible Reading Challenge',
+          'Reading Hub',
           style: CommonStyles.appBarTitleText,
         ),
         backgroundColor: AppTheme.backgroundColor,
-        leading: const MenuButton(),
         automaticallyImplyLeading: false,
-        actions: [
-          if (widget.auth.currentUser != null)
-            NotificationButton(
-              service: NotificationService(firestore: widget.firestore),
-              auth: widget.auth,
-            ),
-        ],
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,

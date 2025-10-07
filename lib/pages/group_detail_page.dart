@@ -20,13 +20,12 @@ import '../widgets/vibration_button.dart';
 import 'group_join_requests_page.dart';
 import 'read_log_page.dart';
 
-typedef GroupDatePicker =
-    Future<DateTime?> Function({
-      required BuildContext context,
-      required DateTime initialDate,
-      required DateTime firstDate,
-      required DateTime lastDate,
-    });
+typedef GroupDatePicker = Future<DateTime?> Function({
+  required BuildContext context,
+  required DateTime initialDate,
+  required DateTime firstDate,
+  required DateTime lastDate,
+});
 
 /// Page showing the members and schedule for a group.
 class GroupDetailPage extends StatefulWidget {
@@ -53,10 +52,10 @@ class GroupDetailPage extends StatefulWidget {
     FirebaseAuth? auth,
     VibrationService? vibrationService,
     GroupDatePicker? datePicker,
-  }) : groupService = groupService ?? GroupService(),
-       auth = auth ?? FirebaseAuth.instance,
-       vibrationService = vibrationService ?? const VibrationService(),
-       datePicker = datePicker ?? _defaultDatePicker;
+  })  : groupService = groupService ?? GroupService(),
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService(),
+        datePicker = datePicker ?? _defaultDatePicker;
 
   static Future<DateTime?> _defaultDatePicker({
     required BuildContext context,
@@ -94,6 +93,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   final Map<String, bool> _latestBaseDoneSnapshots = <String, bool>{};
   final Map<String, int> _latestChapterCountSnapshots = <String, int>{};
   int _nextPendingOpId = 0;
+  bool _isDeleting = false;
 
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -162,6 +162,65 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       rawChecked: rawSnapshot ?? const <int>{},
       baseDone: baseDone,
     );
+  }
+
+  Future<void> _confirmDeleteGroup() async {
+    final user = widget.auth.currentUser;
+    if (user == null || user.uid != widget.group.ownerUid) {
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Group'),
+        content: Text(
+          'Are you sure you want to delete "${widget.group.name}"? This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) {
+      return;
+    }
+
+    unawaited(widget.vibrationService.lightImpact());
+    setState(() => _isDeleting = true);
+
+    bool success = false;
+    try {
+      await widget.groupService.deleteGroup(
+        groupId: widget.group.id,
+        ownerUid: user.uid,
+      );
+      success = true;
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete group')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDeleting = false);
+      }
+    }
+
+    if (success && mounted) {
+      Navigator.of(context).pop(true);
+    }
   }
 
   void _resolvePendingChapterOverridesFromSnapshot({
@@ -480,10 +539,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       await db.runTransaction((tx) async {
         final snapshots =
             await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-              tx.get(itemDoc),
-              tx.get(base),
-              tx.get(summaryDoc),
-            ]);
+          tx.get(itemDoc),
+          tx.get(base),
+          tx.get(summaryDoc),
+        ]);
         final itemSnap = snapshots[0];
         final baseSnap = snapshots[1];
         final summarySnap = snapshots[2];
@@ -508,9 +567,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           } else {
             tx.set(base, baseData);
           }
-          tx.set(summaryDoc, {
-            'completed': prevCompleted + 1,
-          }, SetOptions(merge: true));
+          tx.set(
+              summaryDoc,
+              {
+                'completed': prevCompleted + 1,
+              },
+              SetOptions(merge: true));
         } else {
           if (!itemSnap.exists) return; // already unchecked
           tx.delete(itemDoc);
@@ -524,9 +586,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             }
           }
           final newCompleted = prevCompleted > 0 ? prevCompleted - 1 : 0;
-          tx.set(summaryDoc, {
-            'completed': newCompleted,
-          }, SetOptions(merge: true));
+          tx.set(
+              summaryDoc,
+              {
+                'completed': newCompleted,
+              },
+              SetOptions(merge: true));
         }
       });
       return true;
@@ -578,14 +643,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       await db.runTransaction((tx) async {
         final snapshots =
             await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-              tx.get(entryRef),
-              tx.get(summaryRef),
-            ]);
+          tx.get(entryRef),
+          tx.get(summaryRef),
+        ]);
         final entrySnap = snapshots[0];
         final summarySnap = snapshots[1];
         final nowTs = Timestamp.now();
-        final currentCount =
-            (entrySnap.data()?['count'] as num?)?.toInt() ??
+        final currentCount = (entrySnap.data()?['count'] as num?)?.toInt() ??
             currentlyChecked.length;
         final desiredCount = read ? schedule.chapters.length : 0;
         final delta = desiredCount - currentCount;
@@ -601,14 +665,17 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               'ts': nowTs,
             });
           }
-          tx.set(entryRef, {
-            'done': true,
-            'ts': nowTs,
-            'uid': user.uid,
-            'groupId': widget.group.id,
-            'dateId': dateKey,
-            'count': desiredCount,
-          }, SetOptions(merge: true));
+          tx.set(
+              entryRef,
+              {
+                'done': true,
+                'ts': nowTs,
+                'uid': user.uid,
+                'groupId': widget.group.id,
+                'dateId': dateKey,
+                'count': desiredCount,
+              },
+              SetOptions(merge: true));
         } else {
           if (currentlyChecked.isNotEmpty) {
             for (final idx in currentlyChecked) {
@@ -626,9 +693,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
         if (delta != 0) {
           final updatedCompleted = prevCompleted + delta;
-          tx.set(summaryRef, {
-            'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
-          }, SetOptions(merge: true));
+          tx.set(
+              summaryRef,
+              {
+                'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
+              },
+              SetOptions(merge: true));
         }
       });
       return true;
@@ -840,11 +910,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final isOwner = userUid != null && userUid == widget.group.ownerUid;
     final memberStream = user != null
         ? widget.groupService.firestore
-              .collection(GroupCollections.groups)
-              .doc(widget.group.id)
-              .collection(GroupCollections.members)
-              .doc(user.uid)
-              .snapshots()
+            .collection(GroupCollections.groups)
+            .doc(widget.group.id)
+            .collection(GroupCollections.members)
+            .doc(user.uid)
+            .snapshots()
         : null;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -940,6 +1010,26 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
+                  if (isOwner) ...[
+                    FilledButton(
+                      key: const Key('delete-group-button'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                        foregroundColor: Theme.of(context).colorScheme.onError,
+                      ),
+                      onPressed: _isDeleting ? null : _confirmDeleteGroup,
+                      child: _isDeleting
+                          ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text('Delete group'),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ],
                 if (!isOwner && user != null && !isMember)
                   StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -1039,9 +1129,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           final s = e.value;
                           final baseTile = ScheduleItemTile(
                             schedule: s,
-                            onEdit: canEditSchedule
-                                ? () => _editSchedule(s)
-                                : null,
+                            onEdit:
+                                canEditSchedule ? () => _editSchedule(s) : null,
                             onDelete: canEditSchedule
                                 ? () => _deleteSchedule(s)
                                 : null,
@@ -1070,18 +1159,15 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                               .doc(user.uid);
 
                           return StreamBuilder<
-                            DocumentSnapshot<Map<String, dynamic>>
-                          >(
+                              DocumentSnapshot<Map<String, dynamic>>>(
                             stream: entryRef.snapshots(),
                             builder: (context, entrySnap) {
                               final entryData = entrySnap.data?.data();
                               final baseDone = entryData?['done'] == true;
                               return StreamBuilder<
-                                QuerySnapshot<Map<String, dynamic>>
-                              >(
-                                stream: entryRef
-                                    .collection('items')
-                                    .snapshots(),
+                                  QuerySnapshot<Map<String, dynamic>>>(
+                                stream:
+                                    entryRef.collection('items').snapshots(),
                                 builder: (context, itemsSnap) {
                                   final rawChecked = <int>{};
                                   for (final d
@@ -1104,27 +1190,28 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
                                   final pendingReadOverrideExists =
                                       _pendingReadOverrides.containsKey(
-                                        dateKey,
-                                      );
+                                    dateKey,
+                                  );
                                   final pendingChapterOverrideExists =
                                       (_pendingChapterOverrides[dateKey]
-                                          ?.isNotEmpty ??
-                                      false);
+                                              ?.isNotEmpty ??
+                                          false);
 
                                   if (pendingReadOverrideExists ||
                                       pendingChapterOverrideExists) {
-                                    WidgetsBinding.instance.addPostFrameCallback((
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((
                                       _,
                                     ) {
                                       if (!mounted) return;
                                       final hasPendingChapterOverride =
                                           (_pendingChapterOverrides[dateKey]
-                                              ?.isNotEmpty ??
-                                          false);
+                                                  ?.isNotEmpty ??
+                                              false);
                                       final hasPendingReadOverride =
                                           _pendingReadOverrides.containsKey(
-                                            dateKey,
-                                          );
+                                        dateKey,
+                                      );
                                       if (hasPendingChapterOverride) {
                                         _resolvePendingChapterOverridesFromSnapshot(
                                           dateKey: dateKey,
@@ -1161,8 +1248,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     });
                                   }
 
-                                  final allChecked =
-                                      hasChapters &&
+                                  final allChecked = hasChapters &&
                                       displayChecked.length >= totalChapters;
                                   final pendingRead =
                                       _pendingReadOverrides[dateKey];

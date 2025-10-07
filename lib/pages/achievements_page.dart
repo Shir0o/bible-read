@@ -6,7 +6,6 @@ import '../services/achievement_service.dart';
 import '../models/achievement_definition.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/achievement_list_item.dart';
-import '../widgets/menu_button.dart';
 
 class AchievementsPage extends StatelessWidget {
   final FirebaseFirestore firestore;
@@ -23,7 +22,6 @@ class AchievementsPage extends StatelessWidget {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         'Achievements',
-        leading: const MenuButton(),
         automaticallyImplyLeading: false,
       ),
       body: Container(

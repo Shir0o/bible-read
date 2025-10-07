@@ -116,8 +116,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                           final val = _prefs![type];
                           return CommonStyles.buildTappableCard(
                             onTap: () => _toggle(type, !val),
-                            margin:
-                                const EdgeInsets.symmetric(vertical: 4.0),
+                            margin: const EdgeInsets.symmetric(vertical: 4.0),
                             child: SwitchListTile(
                               contentPadding: EdgeInsets.zero,
                               title: Text(_label(type)),

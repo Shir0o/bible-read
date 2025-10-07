@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/common_styles.dart';
-import '../widgets/menu_button.dart';
 import '../widgets/streak_stats_box.dart';
 import '../widgets/week_streak_calendar.dart';
 import '../widgets/month_streak_calendar.dart';
@@ -248,7 +247,6 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         'History',
-        leading: const MenuButton(),
         automaticallyImplyLeading: false,
       ),
       body: Container(

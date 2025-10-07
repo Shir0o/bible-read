@@ -96,6 +96,7 @@ class ResponsiveScaffold extends StatelessWidget {
           : NavigationBar(
               selectedIndex: safeSelected,
               onDestinationSelected: onDestinationSelected,
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
               destinations: animatedDestinations,
             ),
     );

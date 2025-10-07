@@ -13,9 +13,11 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: WeekStreakCalendar(
-          readDates: <DateTime>{},
-          sunday: fixedSunday,
+        home: Material(
+          child: WeekStreakCalendar(
+            readDates: <DateTime>{},
+            sunday: fixedSunday,
+          ),
         ),
       ),
     );
@@ -33,10 +35,12 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: WeekStreakCalendar(
-          readDates: <DateTime>{},
-          sunday: fixedSunday,
-          showNavigation: false,
+        home: Material(
+          child: WeekStreakCalendar(
+            readDates: <DateTime>{},
+            sunday: fixedSunday,
+            showNavigation: false,
+          ),
         ),
       ),
     );
@@ -50,9 +54,11 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: MonthStreakCalendar(
-          readDates: <DateTime>{},
-          month: fixedMonth,
+        home: Material(
+          child: MonthStreakCalendar(
+            readDates: <DateTime>{},
+            month: fixedMonth,
+          ),
         ),
       ),
     );
@@ -70,10 +76,12 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: MonthStreakCalendar(
-          readDates: <DateTime>{},
-          month: fixedMonth,
-          showNavigation: false,
+        home: Material(
+          child: MonthStreakCalendar(
+            readDates: <DateTime>{},
+            month: fixedMonth,
+            showNavigation: false,
+          ),
         ),
       ),
     );
@@ -91,9 +99,11 @@ void main() {
     };
     await tester.pumpWidget(
       MaterialApp(
-        home: WeekStreakCalendar(
-          readDates: readDates,
-          sunday: fixedSunday,
+        home: Material(
+          child: WeekStreakCalendar(
+            readDates: readDates,
+            sunday: fixedSunday,
+          ),
         ),
       ),
     );
@@ -109,9 +119,11 @@ void main() {
     };
     await tester.pumpWidget(
       MaterialApp(
-        home: MonthStreakCalendar(
-          readDates: readDates,
-          month: fixedMonth,
+        home: Material(
+          child: MonthStreakCalendar(
+            readDates: readDates,
+            month: fixedMonth,
+          ),
         ),
       ),
     );

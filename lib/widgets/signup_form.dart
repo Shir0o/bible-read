@@ -82,11 +82,13 @@ class _SignupFormState extends State<SignupForm> {
       );
       final user = credential.user;
       if (user == null) {
-        final exception = FirebaseAuthException(
-          code: 'missing-user',
-          message: 'Auth returned a null user after sign up.',
+        _handleSignupError(
+          FirebaseAuthException(
+            code: 'missing-user',
+            message: 'Auth returned a null user after sign up.',
+          ),
+          StackTrace.current,
         );
-        _handleSignupError(exception, StackTrace.current);
         return;
       }
       await widget.firestore.collection('users').doc(user.uid).set({
