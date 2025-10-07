@@ -6,6 +6,16 @@ import 'package:bible_read/models/app_notification.dart';
 import 'package:bible_read/models/notification_preferences.dart';
 import 'package:bible_read/services/notification_service.dart';
 
+class _TrackingFakeFirebaseFirestore extends FakeFirebaseFirestore {
+  bool batchRequested = false;
+
+  @override
+  WriteBatch batch() {
+    batchRequested = true;
+    return super.batch();
+  }
+}
+
 void main() {
   group('NotificationService', () {
     late FakeFirebaseFirestore firestore;
@@ -87,6 +97,37 @@ void main() {
       expect(stored.fromUid, n.fromUid);
       expect(stored.message, n.message);
       expect(stored.read, n.read);
+    });
+
+    test('clearNotifications deletes all notifications', () async {
+      final uid = 'user1';
+      final collection = firestore
+          .collection(NotificationCollections.users)
+          .doc(uid)
+          .collection(NotificationCollections.notifications);
+
+      await collection.doc('n1').set({
+        'type': NotificationType.like.name,
+        'timestamp': Timestamp.fromMillisecondsSinceEpoch(1),
+      });
+      await collection.doc('n2').set({
+        'type': NotificationType.nudge.name,
+        'timestamp': Timestamp.fromMillisecondsSinceEpoch(2),
+      });
+
+      await service.clearNotifications(uid);
+
+      final snapshot = await collection.get();
+      expect(snapshot.docs, isEmpty);
+    });
+
+    test('clearNotifications returns early when nothing to delete', () async {
+      final trackingFirestore = _TrackingFakeFirebaseFirestore();
+      final trackingService = NotificationService(firestore: trackingFirestore);
+
+      await trackingService.clearNotifications('empty-user');
+
+      expect(trackingFirestore.batchRequested, isFalse);
     });
   });
 }
