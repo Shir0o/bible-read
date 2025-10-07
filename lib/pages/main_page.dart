@@ -6,11 +6,13 @@ import 'package:bible_read/pages/groups_page.dart';
 import 'package:bible_read/pages/friend_requests_page.dart';
 import 'package:bible_read/pages/streak_history_page.dart';
 import 'package:bible_read/pages/seasonal_challenges_page.dart';
+import 'package:bible_read/widgets/navigation_menu_scope.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
-import 'package:bible_read/widgets/app_drawer.dart';
+import 'package:bible_read/widgets/app_menu_sheet.dart';
 import '../services/friend_service.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
+import '../services/notification_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -27,6 +29,7 @@ import 'dart:async';
 import 'home_page.dart';
 import 'read_log_page.dart';
 import 'app_check_error_page.dart';
+import 'notification_center_page.dart';
 
 typedef SendLikeNotification = Future<void> Function({
   required String ownerUid,
@@ -100,6 +103,7 @@ class _MainPageState extends State<MainPage> {
   static const int _readLogIndex = 1;
   static const int _leaderboardIndex = 3;
   static const int _profileIndex = 9;
+  static const int _notificationsIndex = 10;
   static const List<int> _bottomNavIndices = <int>[
     _homeIndex,
     _readLogIndex,
@@ -208,7 +212,18 @@ class _MainPageState extends State<MainPage> {
         firestore: widget.firestore,
         friendService: _friendService,
       ),
+      NotificationCenterPage(
+        service: NotificationService(firestore: widget.firestore),
+        auth: widget.auth,
+        vibrationService: widget.vibrationService,
+      ),
     ];
+    assert(_pages.length > _notificationsIndex,
+        '_notificationsIndex must remain within _pages bounds.');
+    assert(
+      _pages[_notificationsIndex] is NotificationCenterPage,
+      'NotificationCenterPage must stay at _notificationsIndex.',
+    );
     _attemptSilentSignIn();
   }
 
@@ -360,13 +375,15 @@ class _MainPageState extends State<MainPage> {
     }
 
     final bool signedIn = widget.auth.currentUser != null;
-    final List<Widget> pages = signedIn ? _pages : [_pages.last];
+    final List<Widget> pages =
+        signedIn ? _pages : <Widget>[_pages[_profileIndex]];
     final bool showBottomNav = signedIn;
 
     final destinations = showBottomNav
         ? const [
             NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
             NavigationDestination(icon: Icon(Icons.feed), label: 'Feed'),
+            NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Menu'),
           ]
         : const <NavigationDestination>[];
     int navIndex = 0;
@@ -378,18 +395,43 @@ class _MainPageState extends State<MainPage> {
     // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: _onWillPop,
-      child: ResponsiveScaffold(
-        scaffoldKey: _scaffoldKey,
-        drawer: AppDrawer(
-          onNavigate: _navigateFromMenu,
-          vibrationService: widget.vibrationService,
+      child: NavigationMenuScope(
+        onNavigate: _navigateFromMenu,
+        vibrationService: widget.vibrationService,
+        child: ResponsiveScaffold(
+          scaffoldKey: _scaffoldKey,
+          selectedIndex: navIndex,
+          contentIndex: _selectedIndex,
+          onDestinationSelected: _handleNavigationDestinationSelected,
+          pages: pages,
+          destinations: destinations,
         ),
-        selectedIndex: navIndex,
-        contentIndex: _selectedIndex,
-        onDestinationSelected: _onItemTapped,
-        pages: pages,
-        destinations: destinations,
       ),
+    );
+  }
+
+  void _handleNavigationDestinationSelected(int destinationIndex) {
+    if (destinationIndex >= _bottomNavIndices.length) {
+      _showNavigationMenu();
+      return;
+    }
+    final int pageIndex = _bottomNavIndices[destinationIndex];
+    _onItemTapped(pageIndex);
+  }
+
+  void _showNavigationMenu() {
+    unawaited(widget.vibrationService.lightImpact());
+    final BuildContext? scopeContext = _scaffoldKey.currentContext;
+    final BuildContext fallbackContext = scopeContext ?? context;
+    final scope = NavigationMenuScope.maybeOf(fallbackContext);
+    if (scope != null) {
+      scope.showMenu(fallbackContext);
+      return;
+    }
+    AppMenuSheet.show(
+      context: fallbackContext,
+      onNavigate: _navigateFromMenu,
+      vibrationService: widget.vibrationService,
     );
   }
 }

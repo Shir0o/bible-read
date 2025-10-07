@@ -203,9 +203,8 @@ class FriendService {
       type: NotificationType.friendRequest,
       fromUid: fromUid,
       senderUid: fromUid,
-      message: fromName.isNotEmpty
-          ? '$fromName sent you a friend request'
-          : null,
+      message:
+          fromName.isNotEmpty ? '$fromName sent you a friend request' : null,
       timestamp: DateTime.now(),
       read: false,
     );

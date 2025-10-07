@@ -34,6 +34,9 @@ migrate_working_dir/
 .pub/
 /build/
 /flutter/
+.config/
+.dart-tool/
+.dartServer/
 
 # Symbolication related
 app.*.symbols

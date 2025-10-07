@@ -30,10 +30,11 @@ class CommonStyles {
       elevation: 1,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: margin ?? const EdgeInsets.symmetric(
-        horizontal: AppSpacing.hPadding,
-        vertical: AppSpacing.vPaddingSmall,
-      ),
+      margin: margin ??
+          const EdgeInsets.symmetric(
+            horizontal: AppSpacing.hPadding,
+            vertical: AppSpacing.vPaddingSmall,
+          ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.hPadding),
         child: child,
@@ -52,10 +53,11 @@ class CommonStyles {
       elevation: 1,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: radius),
-      margin: margin ?? const EdgeInsets.symmetric(
-        horizontal: AppSpacing.hPadding,
-        vertical: AppSpacing.vPaddingSmall,
-      ),
+      margin: margin ??
+          const EdgeInsets.symmetric(
+            horizontal: AppSpacing.hPadding,
+            vertical: AppSpacing.vPaddingSmall,
+          ),
       child: InkWell(
         onTap: onTap,
         borderRadius: radius,

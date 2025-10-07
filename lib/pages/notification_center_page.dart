@@ -87,6 +87,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
   @override
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
+    final bool showBack = Navigator.of(context).canPop();
     final actions = user == null
         ? null
         : <Widget>[
@@ -105,7 +106,11 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
             ),
           ];
     return Scaffold(
-      appBar: CommonStyles.buildAppBar('Notifications', actions: actions),
+      appBar: CommonStyles.buildAppBar(
+        'Notifications',
+        actions: actions,
+        automaticallyImplyLeading: showBack,
+      ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
         child: user == null

@@ -87,17 +87,17 @@ Checklist with rough runtimes:
 
 - `dart format --fix lib test` (~5s) – keep code style consistent; skip for docs-only work.
 - `flutter analyze` (~15s) – must be clean before committing.
-- `flutter test --no-pub` (~1–2 min) – run the full suite when feasible or target only the impacted tests when time-constrained.
+- `flutter test --no-pub --fail-fast` (~1–2 min) – run the full suite when feasible or target only the impacted tests when time-constrained.
 
 Run the following commands to format the code, analyze it, and execute all tests:
 
 ```bash
 dart format --fix lib test
 flutter analyze
-flutter test --no-pub
+flutter test --no-pub --fail-fast
 ```
 
-Only commit changes once `flutter analyze` reports no issues.
+Only commit changes once `flutter analyze` reports no issues, every relevant test suite passes, and `flutter test --no-pub --fail-fast` completes without failures. Ensure that sufficient automated tests covering the modified behaviour are present or updated before committing.
 
 If you modify Cloud Functions code in `functions/`, run `npm run lint` and `npm test` in that directory to verify linting and tests as well.
 

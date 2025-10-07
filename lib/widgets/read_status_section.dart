@@ -38,30 +38,46 @@ class ReadStatusSection extends StatelessWidget {
     final sunday = now.subtract(Duration(days: now.weekday % 7));
     final month = DateTime(now.year, now.month);
 
+    final bool canToggle = !toggleLoading && !readToday && onToggle != null;
+
     return Column(
       children: [
         CommonStyles.buildTappableCard(
-          onTap: (!toggleLoading && !readToday) ? onToggle : null,
-          child: toggleLoading
-              ? const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Mark today as read'),
-                    ReadSwitchTile(
-                      value: readToday,
-                      onChanged: readToday ? null : (_) => onToggle?.call(),
-                      vibrationService: vibrationService,
+          onTap: toggleLoading
+              ? null
+              : (canToggle ? onToggle : () => _showLockedSnackBar(context)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: SizedBox(
+              width: double.infinity,
+              child: toggleLoading
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(left: 12),
+                          child: Text('Mark today as read'),
+                        ),
+                        const SizedBox(width: 12),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: ReadSwitchTile(
+                            value: readToday,
+                            onChanged: (readToday || onToggle == null)
+                                ? (_) => _showLockedSnackBar(context)
+                                : (_) => onToggle?.call(),
+                            vibrationService: vibrationService,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+            ),
+          ),
         ),
         const SizedBox(height: 16),
         IgnorePointer(
@@ -80,6 +96,19 @@ class ReadStatusSection extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  static void _showLockedSnackBar(BuildContext context) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) {
+      return;
+    }
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Already marked today. Come back tomorrow!'),
+      ),
     );
   }
 }

@@ -180,7 +180,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Bible Reading Challenge'), findsOneWidget);
+    expect(find.text('Reading Hub'), findsOneWidget);
     expect(find.byType(ReadSwitchTile), findsOneWidget);
   });
 
@@ -294,6 +294,10 @@ void main() {
     await tester.pumpAndSettle();
 
     await _toggleRead(tester);
+
+    // Allow the asynchronous writes and summary recomputation to settle.
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle(const Duration(milliseconds: 100));
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 1));
@@ -304,16 +308,18 @@ void main() {
     );
     expect(switchTile.onChanged, isNull);
 
-    final summaryDoc = await firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('summary')
-        .doc('data')
-        .get();
-    expect(summaryDoc.exists, isTrue);
-    expect(summaryDoc.data()?['streak'], 1);
-    expect(summaryDoc.data()?['totalReadDays'], 1);
-    expect(summaryDoc.data()?['longestStreak'], 1);
+    final summaryDoc = await tester.runAsync(() async {
+      final docRef = firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('summary')
+          .doc('data');
+      return await docRef.snapshots().firstWhere((snap) => snap.exists);
+    });
+    final data = summaryDoc?.data();
+    expect(data?['streak'], 1);
+    expect(data?['totalReadDays'], 1);
+    expect(data?['longestStreak'], 1);
   });
 
   testWidgets('toggling read status does not show progress indicator', (
