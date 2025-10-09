@@ -1410,7 +1410,9 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
           TextField(
             controller: _controller,
             decoration: const InputDecoration(
-              labelText: 'Chapters (comma separated)',
+              labelText: 'Chapters to read',
+              helperText:
+                  'Separate with commas, semicolons, or ranges (e.g., John 3-4; Psalm 23)',
             ),
           ),
           const SizedBox(height: 8),
