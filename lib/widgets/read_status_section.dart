@@ -48,15 +48,17 @@ class ReadStatusSection extends StatelessWidget {
               : (canToggle ? onToggle : () => _showLockedSnackBar(context)),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            child: SizedBox(
-              width: double.infinity,
-              child: toggleLoading
-                  ? const SizedBox(
+            child: toggleLoading
+                ? const Center(
+                    child: SizedBox(
                       height: 24,
                       width: 24,
                       child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Row(
+                    ),
+                  )
+                : SizedBox(
+                    width: double.infinity,
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Padding(
@@ -76,7 +78,7 @@ class ReadStatusSection extends StatelessWidget {
                         ),
                       ],
                     ),
-            ),
+                  ),
           ),
         ),
         const SizedBox(height: 16),
