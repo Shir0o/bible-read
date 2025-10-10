@@ -34,16 +34,16 @@ class AppMenuSheet extends StatelessWidget {
   }
 
   static const List<_MenuItem> _menuItems = [
-    _MenuItem(index: 0, icon: Icons.home_outlined, label: 'Home'),
+    _MenuItem(index: 6, icon: Icons.emoji_events, label: 'Achievements'),
     _MenuItem(index: 1, icon: Icons.feed, label: 'Feed'),
-    _MenuItem(index: 3, icon: Icons.leaderboard, label: 'Leaderboard'),
     _MenuItem(index: 4, icon: Icons.people, label: 'Friends'),
     _MenuItem(index: 5, icon: Icons.group, label: 'Groups'),
-    _MenuItem(index: 2, icon: Icons.flag, label: 'Seasonal Challenges'),
-    _MenuItem(index: 6, icon: Icons.emoji_events, label: 'Achievements'),
     _MenuItem(index: 7, icon: Icons.calendar_today, label: 'History'),
+    _MenuItem(index: 0, icon: Icons.home_outlined, label: 'Home'),
+    _MenuItem(index: 3, icon: Icons.leaderboard, label: 'Leaderboard'),
     _MenuItem(index: 10, icon: Icons.notifications, label: 'Notifications'),
     _MenuItem(index: 9, icon: Icons.person, label: 'Profile'),
+    _MenuItem(index: 2, icon: Icons.flag, label: 'Seasonal Challenges'),
   ];
 
   @override
