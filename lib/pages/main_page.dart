@@ -11,8 +11,9 @@ import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:bible_read/widgets/app_menu_sheet.dart';
 import '../services/friend_service.dart';
 import '../services/group_service.dart';
-import '../services/vibration_service.dart';
+import '../services/google_sign_in_factory.dart';
 import '../services/notification_service.dart';
+import '../services/vibration_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -89,7 +90,7 @@ class MainPage extends StatefulWidget {
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         messaging = messaging ?? FirebaseMessaging.instance,
-        googleSignInProvider = googleSignInProvider ?? GoogleSignIn.new,
+        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
         vibrationService = vibrationService ?? const VibrationService(),
         leaderboardPageBuilder = leaderboardPageBuilder ?? LeaderboardPage.new,
         readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
@@ -144,6 +145,7 @@ class _MainPageState extends State<MainPage> {
         firestore: widget.firestore,
         auth: widget.auth,
         functions: FirebaseFunctions.instance,
+        googleSignInProvider: widget.googleSignInProvider,
       ),
       widget.readLogPageBuilder(
         key: _readLogKey,

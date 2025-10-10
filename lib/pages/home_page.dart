@@ -1,15 +1,16 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import '../services/error_logger.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../models/achievement.dart';
 import '../services/achievement_service.dart';
+import '../services/error_logger.dart';
+import '../services/google_sign_in_factory.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
@@ -22,6 +23,7 @@ import 'read_log_page.dart';
 class HomePage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final GoogleSignIn Function() googleSignInProvider;
 
   /// Cloud Functions instance used for first reader checks.
   final FirebaseFunctions? functions;
@@ -40,11 +42,13 @@ class HomePage extends StatefulWidget {
     this.markFirstReader,
     ReadingStatusService? readingStatusService,
     VibrationService? vibrationService,
+    GoogleSignIn Function()? googleSignInProvider,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         readingStatusService = readingStatusService ??
             ReadingStatusService(firestore: firestore, auth: auth),
-        vibrationService = vibrationService ?? const VibrationService();
+        vibrationService = vibrationService ?? const VibrationService(),
+        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn;
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -488,7 +492,8 @@ class _HomePageState extends State<HomePage>
       onRefresh: () async {
         try {
           await widget.auth.currentUser?.reload();
-          final googleAccount = await GoogleSignIn().signInSilently();
+          final googleSignIn = widget.googleSignInProvider();
+          final googleAccount = await googleSignIn.signInSilently();
           final firebaseUser = widget.auth.currentUser;
           if (googleAccount != null && firebaseUser != null) {
             await firebaseUser.updateDisplayName(googleAccount.displayName);

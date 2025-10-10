@@ -1,21 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import '../services/error_logger.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/material.dart';
 
-import '../widgets/common_styles.dart';
+import '../services/error_logger.dart';
 import '../services/friend_service.dart';
+import '../services/google_sign_in_factory.dart';
+import '../services/vibration_service.dart';
 import '../widgets/achievement_summary.dart';
-import 'notification_settings_page.dart';
-import 'main_page.dart';
-import 'login_page.dart';
-import 'signup_page.dart';
 import '../widgets/animated_action_button.dart';
 import '../widgets/animated_page_route.dart';
+import '../widgets/common_styles.dart';
 import '../widgets/vibration_button.dart';
-import '../services/vibration_service.dart';
+import 'login_page.dart';
+import 'main_page.dart';
+import 'notification_settings_page.dart';
+import 'signup_page.dart';
 
 class UserProfilePage extends StatefulWidget {
   final GoogleSignInAccount? user;
@@ -38,7 +39,7 @@ class UserProfilePage extends StatefulWidget {
     return UserProfilePage._(
       key: key,
       user: user,
-      googleSignInProvider: googleSignInProvider ?? GoogleSignIn.new,
+      googleSignInProvider: googleSignInProvider ?? createGoogleSignIn,
       auth: auth ?? FirebaseAuth.instance,
       firestore: fs,
       friendService: friendService ?? FriendService(firestore: fs),

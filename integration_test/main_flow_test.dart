@@ -10,6 +10,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:integration_test/integration_test.dart';
 
 import 'package:bible_read/pages/main_page.dart';
+import 'package:bible_read/services/google_sign_in_factory.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -84,7 +85,7 @@ void main() {
         home: MainPage(
           firestore: firestore,
           auth: auth,
-          googleSignInProvider: GoogleSignIn.new,
+          googleSignInProvider: createGoogleSignIn,
         ),
       ),
     );
