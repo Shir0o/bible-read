@@ -1105,7 +1105,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     List<GroupSchedule>? baseSchedule;
                     if (snapshot.hasData) {
                       final fetched = List<GroupSchedule>.from(snapshot.data!)
-                        ..sort((a, b) => a.date.compareTo(b.date));
+                        ..sort((a, b) => b.date.compareTo(a.date));
                       _latestSchedule = fetched;
                       baseSchedule = fetched;
                     } else {
