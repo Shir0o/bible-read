@@ -105,13 +105,13 @@ class _MainPageState extends State<MainPage> {
   static const int _leaderboardIndex = 3;
   static const int _profileIndex = 9;
   static const int _notificationsIndex = 10;
+  static const int _menuDestinationIndex = 2;
   static const List<int> _bottomNavIndices = <int>[
     _homeIndex,
     _readLogIndex,
   ];
 
   int _selectedIndex = _homeIndex;
-  int _currentBottomNavIndex = _homeIndex;
   final List<int> _navHistory = [_homeIndex];
 
   VibrationService get vibrationService => widget.vibrationService;
@@ -350,9 +350,6 @@ class _MainPageState extends State<MainPage> {
       if (_navHistory.last != index) {
         _navHistory.add(index);
       }
-      if (_bottomNavIndices.contains(index)) {
-        _currentBottomNavIndex = index;
-      }
     });
   }
 
@@ -361,9 +358,6 @@ class _MainPageState extends State<MainPage> {
       setState(() {
         _navHistory.removeLast();
         _selectedIndex = _navHistory.last;
-        if (_bottomNavIndices.contains(_selectedIndex)) {
-          _currentBottomNavIndex = _selectedIndex;
-        }
       });
       return false;
     }
@@ -390,8 +384,14 @@ class _MainPageState extends State<MainPage> {
         : const <NavigationDestination>[];
     int navIndex = 0;
     if (destinations.isNotEmpty) {
-      final int index = _bottomNavIndices.indexOf(_currentBottomNavIndex);
-      navIndex = index >= 0 && index < destinations.length ? index : 0;
+      final int bottomNavIndex = _bottomNavIndices.indexOf(_selectedIndex);
+      if (bottomNavIndex != -1) {
+        navIndex = bottomNavIndex;
+      } else if (_menuDestinationIndex < destinations.length) {
+        navIndex = _menuDestinationIndex;
+      } else {
+        navIndex = destinations.length - 1;
+      }
     }
 
     // ignore: deprecated_member_use
