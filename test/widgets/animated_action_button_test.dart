@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -32,15 +30,13 @@ void main() {
     final state = tester.state<State<AnimatedActionButton>>(
       find.byType(AnimatedActionButton),
     ) as dynamic;
-    final detector = tester.widget<GestureDetector>(
-      find.byKey(const Key('animated_action_button_detector')),
-    );
-    detector.onTapDown!(TapDownDetails(kind: PointerDeviceKind.touch));
+    final gesture =
+        await tester.startGesture(tester.getCenter(find.byType(FilledButton)));
     await tester.pumpAndSettle();
 
-    expect(state.animation.value, closeTo(0.95, 0.01));
+    expect(state.animation.value, closeTo(0.96, 0.02));
 
-    detector.onTapUp!(TapUpDetails(kind: PointerDeviceKind.touch));
+    await gesture.up();
     await tester.pumpAndSettle();
 
     expect(state.animation.value, 1.0);
@@ -57,12 +53,11 @@ void main() {
         ),
       ),
     );
-    final detector = tester.widget<GestureDetector>(
-      find.byKey(const Key('animated_action_button_detector')),
-    );
-    detector.onTapDown!(TapDownDetails(kind: PointerDeviceKind.touch));
+    final gesture =
+        await tester.startGesture(tester.getCenter(find.byType(FilledButton)));
     await tester.pump();
     expect(service.tapCount, 1);
+    await gesture.up();
   });
 
   testWidgets('does not vibrate when disabled', (tester) async {
@@ -77,12 +72,11 @@ void main() {
         ),
       ),
     );
-    final detector = tester.widget<GestureDetector>(
-      find.byKey(const Key('animated_action_button_detector')),
-    );
-    detector.onTapDown!(TapDownDetails(kind: PointerDeviceKind.touch));
+    final gesture =
+        await tester.startGesture(tester.getCenter(find.byType(FilledButton)));
     await tester.pump();
     expect(service.tapCount, 0);
+    await gesture.up();
   });
 
   testWidgets('shows loading indicator and disables onPressed', (tester) async {
@@ -102,10 +96,10 @@ void main() {
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+    final button = tester.widget<FilledButton>(find.byType(FilledButton));
     expect(button.onPressed, isNull);
 
-    await tester.tap(find.byType(ElevatedButton));
+    await tester.tap(find.byType(FilledButton));
     await tester.pump();
 
     expect(pressed, isFalse);

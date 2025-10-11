@@ -12,7 +12,7 @@ class AppTheme {
   static const Color backgroundColor = Colors.black;
 
   static const RoundedRectangleBorder _buttonShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(8)));
+      borderRadius: BorderRadius.all(Radius.circular(14)));
 
   static const EdgeInsetsGeometry _buttonPadding =
       EdgeInsets.symmetric(horizontal: 16, vertical: 12);
@@ -76,13 +76,13 @@ class AppTheme {
     overlayColor: WidgetStateProperty.resolveWith<Color?>(
       (states) {
         if (states.contains(WidgetState.pressed)) {
-          return colorScheme.primary.withOpacity(0.16);
+          return colorScheme.primary.withValues(alpha: 0.16);
         }
         if (states.contains(WidgetState.hovered)) {
-          return colorScheme.primary.withOpacity(0.08);
+          return colorScheme.primary.withValues(alpha: 0.08);
         }
         if (states.contains(WidgetState.focused)) {
-          return colorScheme.primary.withOpacity(0.12);
+          return colorScheme.primary.withValues(alpha: 0.12);
         }
         return null;
       },
@@ -104,13 +104,13 @@ class AppTheme {
     overlayColor: WidgetStateProperty.resolveWith<Color?>(
       (states) {
         if (states.contains(WidgetState.pressed)) {
-          return colorScheme.primary.withOpacity(0.22);
+          return colorScheme.primary.withValues(alpha: 0.22);
         }
         if (states.contains(WidgetState.hovered)) {
-          return colorScheme.primary.withOpacity(0.12);
+          return colorScheme.primary.withValues(alpha: 0.12);
         }
         if (states.contains(WidgetState.focused)) {
-          return colorScheme.primary.withOpacity(0.16);
+          return colorScheme.primary.withValues(alpha: 0.16);
         }
         return null;
       },
@@ -120,8 +120,46 @@ class AppTheme {
   /// Outlined button variant aligned with base style.
   static final ButtonStyle _outlinedButtonStyle = _baseButtonStyle.copyWith(
     side: WidgetStateProperty.all(
-      BorderSide(color: colorScheme.primary.withOpacity(0.6)),
+      BorderSide(color: colorScheme.primary.withValues(alpha: 0.6)),
     ),
+  );
+
+  /// Filled button variant tuned for Material 3 visual language.
+  static final ButtonStyle _filledButtonStyle = _baseButtonStyle.copyWith(
+    backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+      if (states.contains(WidgetState.disabled)) {
+        return colorScheme.onSurface.withValues(alpha: 0.12);
+      }
+      if (states.contains(WidgetState.pressed)) {
+        return colorScheme.primaryContainer;
+      }
+      if (states.contains(WidgetState.hovered) ||
+          states.contains(WidgetState.focused)) {
+        return colorScheme.primary.withValues(alpha: 0.92);
+      }
+      return colorScheme.primary;
+    }),
+    foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+      if (states.contains(WidgetState.disabled)) {
+        return colorScheme.onSurface.withValues(alpha: 0.38);
+      }
+      if (states.contains(WidgetState.pressed)) {
+        return colorScheme.onPrimaryContainer;
+      }
+      return colorScheme.onPrimary;
+    }),
+    shadowColor:
+        WidgetStateProperty.all(colorScheme.primary.withValues(alpha: 0.45)),
+    surfaceTintColor: WidgetStateProperty.all(colorScheme.primary),
+    elevation: WidgetStateProperty.resolveWith<double?>((states) {
+      if (states.contains(WidgetState.disabled)) return 0;
+      if (states.contains(WidgetState.pressed)) return 1.5;
+      if (states.contains(WidgetState.hovered) ||
+          states.contains(WidgetState.focused)) {
+        return 4.5;
+      }
+      return 3;
+    }),
   );
 
   /// Complete [ThemeData] for the application.
@@ -146,13 +184,13 @@ class AppTheme {
         overlayColor: WidgetStateProperty.resolveWith<Color?>(
           (states) {
             if (states.contains(WidgetState.pressed)) {
-              return colorScheme.primary.withOpacity(0.16);
+              return colorScheme.primary.withValues(alpha: 0.16);
             }
             if (states.contains(WidgetState.hovered)) {
-              return colorScheme.primary.withOpacity(0.08);
+              return colorScheme.primary.withValues(alpha: 0.08);
             }
             if (states.contains(WidgetState.focused)) {
-              return colorScheme.primary.withOpacity(0.12);
+              return colorScheme.primary.withValues(alpha: 0.12);
             }
             return null;
           },
@@ -180,8 +218,8 @@ class AppTheme {
     ),
     chipTheme: ChipThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      side: BorderSide(color: colorScheme.primary.withOpacity(0.24)),
-      selectedColor: colorScheme.primary.withOpacity(0.20),
+      side: BorderSide(color: colorScheme.primary.withValues(alpha: 0.24)),
+      selectedColor: colorScheme.primary.withValues(alpha: 0.20),
       backgroundColor: Colors.white10,
       labelStyle: textTheme.bodyMedium!,
       secondaryLabelStyle: textTheme.bodyMedium!,
@@ -194,16 +232,17 @@ class AppTheme {
       }),
       trackColor: WidgetStateProperty.resolveWith<Color?>((states) {
         if (states.contains(WidgetState.selected)) {
-          return colorScheme.primary.withOpacity(0.40);
+          return colorScheme.primary.withValues(alpha: 0.40);
         }
         return Colors.white24;
       }),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(style: _elevatedButtonStyle),
+    filledButtonTheme: FilledButtonThemeData(style: _filledButtonStyle),
     outlinedButtonTheme: OutlinedButtonThemeData(style: _outlinedButtonStyle),
     textButtonTheme: TextButtonThemeData(style: _baseButtonStyle),
     navigationBarTheme: NavigationBarThemeData(
-      indicatorColor: colorScheme.primary.withOpacity(0.16),
+      indicatorColor: colorScheme.primary.withValues(alpha: 0.16),
       backgroundColor: backgroundColor,
       elevation: 1,
       height: 60,
@@ -215,14 +254,15 @@ class AppTheme {
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: colorScheme.primary,
       foregroundColor: Colors.white,
-      splashColor: colorScheme.onPrimary.withOpacity(0.24),
-      hoverColor: colorScheme.onPrimary.withOpacity(0.16),
-      focusColor: colorScheme.onPrimary.withOpacity(0.20),
+      splashColor: colorScheme.onPrimary.withValues(alpha: 0.24),
+      hoverColor: colorScheme.onPrimary.withValues(alpha: 0.16),
+      focusColor: colorScheme.onPrimary.withValues(alpha: 0.20),
     ),
-    hoverColor: colorScheme.primary.withOpacity(0.04),
-    focusColor: colorScheme.primary.withOpacity(0.08),
-    highlightColor: colorScheme.primary.withOpacity(0.10),
-    splashColor: colorScheme.primary.withOpacity(0.14),
+    hoverColor: colorScheme.primary.withValues(alpha: 0.04),
+    focusColor: colorScheme.primary.withValues(alpha: 0.08),
+    highlightColor: colorScheme.primary.withValues(alpha: 0.10),
+    splashColor: colorScheme.primary.withValues(alpha: 0.14),
+    splashFactory: InkSparkle.splashFactory,
   );
 }
 
