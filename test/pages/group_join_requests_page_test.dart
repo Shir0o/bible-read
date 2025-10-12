@@ -5,7 +5,6 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 
 import 'package:bible_read/pages/group_join_requests_page.dart';
 import 'package:bible_read/services/group_service.dart';
@@ -45,14 +44,6 @@ class _StubVibrationService extends VibrationService {
   }
 }
 
-class _MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
-
-class _MockCollectionReference extends Mock
-    implements CollectionReference<Map<String, dynamic>> {}
-
-class _MockDocumentReference extends Mock
-    implements DocumentReference<Map<String, dynamic>> {}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -70,14 +61,17 @@ void main() {
     WidgetTester tester, {
     GroupService? groupService,
     required String groupId,
+    Stream<QuerySnapshot<Map<String, dynamic>>>? joinRequestsStream,
   }) async {
+    final resolvedService = groupService ?? GroupService(firestore: firestore);
     await tester.pumpWidget(
       MaterialApp(
         home: GroupJoinRequestsPage(
           groupId: groupId,
-          groupService: groupService,
+          groupService: resolvedService,
           auth: auth,
           vibrationService: vibration,
+          joinRequestsStream: joinRequestsStream,
         ),
       ),
     );
@@ -118,26 +112,14 @@ void main() {
   });
 
   testWidgets('shows error UI when stream emits error', (tester) async {
-    final mockFirestore = _MockFirebaseFirestore();
-    final groupsCollection = _MockCollectionReference();
-    final groupDocument = _MockDocumentReference();
-    final joinRequestsCollection = _MockCollectionReference();
     final controller =
         StreamController<QuerySnapshot<Map<String, dynamic>>>.broadcast();
     addTearDown(controller.close);
 
-    when(() => mockFirestore.collection(GroupCollections.groups))
-        .thenReturn(groupsCollection);
-    when(() => groupsCollection.doc('g-error')).thenReturn(groupDocument);
-    when(() => groupDocument.collection(GroupCollections.joinRequests))
-        .thenReturn(joinRequestsCollection);
-    when(() => joinRequestsCollection.snapshots())
-        .thenAnswer((_) => controller.stream);
-
     await pumpPage(
       tester,
       groupId: 'g-error',
-      groupService: GroupService(firestore: mockFirestore),
+      joinRequestsStream: controller.stream,
     );
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);

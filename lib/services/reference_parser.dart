@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Normalizes user-entered Bible chapter references into a consistent
 /// "Book Chapter" format (e.g. "John 3").
 class ReferenceParser {
@@ -272,8 +270,13 @@ class ReferenceParser {
     if (base == 'Psalms') base = 'Psalm';
 
     // Apply ordinal if applicable
-    final needsOrdinal = ordinal != null && _ordinalBooks.contains(base);
-    final display = needsOrdinal ? '${ordinal!} $base' : base;
+    String display;
+    if (ordinal != null && _ordinalBooks.contains(base)) {
+      final ordinalValue = ordinal;
+      display = '$ordinalValue $base';
+    } else {
+      display = base;
+    }
     return '$display $chapter';
   }
 
@@ -390,8 +393,12 @@ class ReferenceParser {
     if (m == 0) return n;
     if (n == 0) return m;
     final dp = List.generate(m + 1, (_) => List<int>.filled(n + 1, 0));
-    for (var i = 0; i <= m; i++) dp[i][0] = i;
-    for (var j = 0; j <= n; j++) dp[0][j] = j;
+    for (var i = 0; i <= m; i++) {
+      dp[i][0] = i;
+    }
+    for (var j = 0; j <= n; j++) {
+      dp[0][j] = j;
+    }
     for (var i = 1; i <= m; i++) {
       for (var j = 1; j <= n; j++) {
         final cost = a[i - 1] == b[j - 1] ? 0 : 1;
@@ -417,8 +424,13 @@ class ReferenceParser {
     final bookKey = _canonKey(rawBook);
     var base = _resolveBookName(bookKey) ?? _titleCase(rawBook);
     if (base == 'Psalms') base = 'Psalm';
-    final needsOrdinal = ordinal != null && _ordinalBooks.contains(base);
-    final displayBook = needsOrdinal ? '${ordinal!} $base' : base;
+    String displayBook;
+    if (ordinal != null && _ordinalBooks.contains(base)) {
+      final ordinalValue = ordinal;
+      displayBook = '$ordinalValue $base';
+    } else {
+      displayBook = base;
+    }
     final chapters = _chapters[displayBook];
     if (chapters == null) return null;
     int chapter;

@@ -201,8 +201,6 @@ class _GroupsPageState extends State<GroupsPage> {
                     key: ValueKey('my-groups-$_refreshTick'),
                     stream: widget.groupService.groupsForUser(user.uid),
                     builder: (context, mySnap) {
-                      final joined =
-                          mySnap.data?.map((g) => g.id).toSet() ?? <String>{};
                       return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                         stream: widget.groupService.firestore
                             .collectionGroup(GroupCollections.joinRequests)

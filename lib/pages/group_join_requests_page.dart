@@ -24,9 +24,13 @@ class GroupJoinRequestsPage extends StatelessWidget {
   /// Optional vibration service for haptics.
   final VibrationService vibrationService;
 
+  /// Optional override for the underlying join request stream, primarily used in tests.
+  final Stream<QuerySnapshot<Map<String, dynamic>>>? joinRequestsStream;
+
   GroupJoinRequestsPage({
     super.key,
     required this.groupId,
+    this.joinRequestsStream,
     GroupService? groupService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
@@ -51,11 +55,12 @@ class GroupJoinRequestsPage extends StatelessWidget {
         decoration: CommonStyles.backgroundGradient,
         padding: const EdgeInsets.all(16),
         child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: groupService.firestore
-              .collection(GroupCollections.groups)
-              .doc(groupId)
-              .collection(GroupCollections.joinRequests)
-              .snapshots(),
+          stream: joinRequestsStream ??
+              groupService.firestore
+                  .collection(GroupCollections.groups)
+                  .doc(groupId)
+                  .collection(GroupCollections.joinRequests)
+                  .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return const Center(child: Text('Failed to load join requests'));

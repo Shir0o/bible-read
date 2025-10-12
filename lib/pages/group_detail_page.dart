@@ -18,7 +18,6 @@ import '../widgets/schedule_item_tile.dart';
 import '../widgets/section_header.dart';
 import '../widgets/vibration_button.dart';
 import 'group_join_requests_page.dart';
-import 'read_log_page.dart';
 
 typedef GroupDatePicker = Future<DateTime?> Function({
   required BuildContext context,
@@ -79,7 +78,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   List<GroupSchedule>? _scheduleOverride;
   List<GroupSchedule>? _latestSchedule;
   late final TextEditingController _nameController;
-  late DateTime _progressDate;
   bool _editMode = false;
   bool _isSavingName = false;
   late String _groupName;
@@ -344,8 +342,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     super.initState();
     _groupName = widget.group.name;
     _nameController = TextEditingController(text: _groupName);
-    final now = DateTime.now();
-    _progressDate = DateTime(now.year, now.month, now.day);
   }
 
   @override
@@ -419,54 +415,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Failed to update name')));
-    }
-  }
-
-  Future<void> _toggleMyRead(bool read) async {
-    final user = widget.auth.currentUser;
-    if (kDebugMode) {
-      debugPrint(
-        'GroupDetailPage build -> userUid=${user?.uid}, groupOwner=${widget.group.ownerUid}',
-      );
-    }
-    if (user == null) return;
-    try {
-      final now = DateTime.now();
-      final dateKey =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-      if (read) {
-        await ReadLogPage.writeReadLogEntry(
-          user,
-          firestore: widget.groupService.firestore,
-          dateProvider: () => now,
-        );
-        await widget.groupService.firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('reading')
-            .doc(dateKey)
-            .set({'read': true}, SetOptions(merge: true));
-      } else {
-        await widget.groupService.firestore
-            .collection('read_logs')
-            .doc(dateKey)
-            .collection('entries')
-            .doc(user.uid)
-            .delete();
-        await widget.groupService.firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('reading')
-            .doc(dateKey)
-            .set({'read': false}, SetOptions(merge: true));
-      }
-    } catch (e, st) {
-      if (kDebugMode) debugPrint('Failed to toggle read: $e');
-      ErrorLogger.log(e, st);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update read status')),
-      );
     }
   }
 
@@ -722,11 +670,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final opId = _nextPendingOpId++;
 
     setState(() {
-      _progressDate = DateTime(
-        schedule.date.year,
-        schedule.date.month,
-        schedule.date.day,
-      );
       _applyChapterOverride(dateKey, chapterIndex, read, opId);
     });
 
@@ -766,11 +709,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final touchedChapters = <int>[];
 
     setState(() {
-      _progressDate = DateTime(
-        schedule.date.year,
-        schedule.date.month,
-        schedule.date.day,
-      );
       _applyReadOverride(dateKey, read, opId);
       if (hasChapters) {
         final overrides = _ensureChapterOverrideMap(dateKey);
@@ -1134,17 +1072,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                             onDelete: canEditSchedule
                                 ? () => _deleteSchedule(s)
                                 : null,
-                            onTap: !canEditSchedule
-                                ? () {
-                                    setState(() {
-                                      _progressDate = DateTime(
-                                        s.date.year,
-                                        s.date.month,
-                                        s.date.day,
-                                      );
-                                    });
-                                  }
-                                : null,
                           );
                           if (user == null || canEditSchedule) {
                             return baseTile;
@@ -1310,17 +1237,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                         read: v,
                                       );
                                     },
-                                    onTap: !canEditSchedule
-                                        ? () {
-                                            setState(() {
-                                              _progressDate = DateTime(
-                                                s.date.year,
-                                                s.date.month,
-                                                s.date.day,
-                                              );
-                                            });
-                                          }
-                                        : null,
                                   );
                                 },
                               );
@@ -1346,11 +1262,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 }
 
 class _EditScheduleDialog extends StatefulWidget {
-  _EditScheduleDialog({
+  const _EditScheduleDialog({
     this.schedule,
-    VibrationService? vibrationService,
+    this.vibrationService = const VibrationService(),
     required this.datePicker,
-  }) : vibrationService = vibrationService ?? const VibrationService();
+  });
 
   final GroupSchedule? schedule;
   final VibrationService vibrationService;

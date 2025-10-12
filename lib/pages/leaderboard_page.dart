@@ -220,7 +220,6 @@ class _LeaderboardPageState extends State<LeaderboardPage>
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.auth.currentUser;
     return DefaultTabController(
       length: 2,
       child: Scaffold(

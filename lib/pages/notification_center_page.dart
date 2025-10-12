@@ -299,6 +299,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
               .collection('groups')
               .doc(gid)
               .get();
+          if (!context.mounted) return;
           if (!snap.exists) {
             final messenger = ScaffoldMessenger.of(context);
             messenger.showSnackBar(

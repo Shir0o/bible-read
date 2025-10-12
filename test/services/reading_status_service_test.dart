@@ -55,7 +55,7 @@ class _FakeFirebasePlatform extends FirebasePlatform {
 }
 
 class _FakeFirebaseApp extends FirebaseAppPlatform {
-  _FakeFirebaseApp(String name, FirebaseOptions options) : super(name, options);
+  _FakeFirebaseApp(super.name, super.options);
 
   bool _automaticDataCollectionEnabled = true;
 
@@ -221,7 +221,7 @@ void main() {
       addTearDown(() {
         Firebase.delegatePackingProperty = originalDelegate;
         if (originalCrashlytics != null) {
-          ErrorLogger.crashlytics = originalCrashlytics!;
+          ErrorLogger.crashlytics = originalCrashlytics;
         }
       });
 

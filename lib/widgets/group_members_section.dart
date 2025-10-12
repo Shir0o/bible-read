@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/group_member_progress.dart';
-import 'common_styles.dart';
 import 'section_header.dart';
 import 'group_member_progress.dart';
 

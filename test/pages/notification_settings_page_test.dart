@@ -2,7 +2,6 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bible_read/models/notification_preferences.dart';
 import 'package:bible_read/pages/notification_settings_page.dart';
 import 'package:bible_read/services/notification_preferences_service.dart';
 

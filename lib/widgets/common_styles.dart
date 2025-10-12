@@ -63,13 +63,13 @@ class CommonStyles {
         borderRadius: radius,
         overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.pressed)) {
-            return AppTheme.colorScheme.primary.withOpacity(0.12);
+            return AppTheme.colorScheme.primary.withValues(alpha: 0.12);
           }
           if (states.contains(WidgetState.hovered)) {
-            return AppTheme.colorScheme.primary.withOpacity(0.06);
+            return AppTheme.colorScheme.primary.withValues(alpha: 0.06);
           }
           if (states.contains(WidgetState.focused)) {
-            return AppTheme.colorScheme.primary.withOpacity(0.08);
+            return AppTheme.colorScheme.primary.withValues(alpha: 0.08);
           }
           return null;
         }),

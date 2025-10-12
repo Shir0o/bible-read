@@ -197,7 +197,7 @@ class FriendService {
     await batch.commit();
 
     // Use a deterministic ID to avoid duplicate notifications per sender.
-    final deterministicId = 'friendRequest_${fromUid}';
+    final deterministicId = 'friendRequest_$fromUid';
     final notification = AppNotification(
       id: deterministicId,
       type: NotificationType.friendRequest,
