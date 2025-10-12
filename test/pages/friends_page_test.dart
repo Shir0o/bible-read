@@ -162,11 +162,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(
         find.byKey(const Key('addFriendEmailField')), 'x@example.com');
-    await tester.tap(find.text('Send'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Send'));
     await tester.pumpAndSettle();
 
-    final button = tester
-        .widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Send'));
+    final button =
+        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Send'));
     expect(button.onPressed, isNotNull);
   });
 

@@ -265,7 +265,7 @@ void main() {
         find.byType(ResponsiveScaffold),
       );
       expect(responsive.contentIndex, expectedIndex);
-      expect(responsive.selectedIndex, 0);
+      expect(responsive.selectedIndex, 2);
     }
 
     await selectMenuItem('Seasonal Challenges', 2);
@@ -903,7 +903,7 @@ void main() {
     final responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
-    expect(responsive.selectedIndex, 0);
+    expect(responsive.selectedIndex, 2);
     expect(responsive.contentIndex, 5);
   });
 }
