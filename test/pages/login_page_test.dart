@@ -43,7 +43,7 @@ void main() {
     await tester.enterText(
         find.byKey(const Key('loginEmailField')), 'user@example.com');
     await tester.enterText(find.byKey(const Key('loginPasswordField')), 'pw');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Sign In'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign In'));
     await tester.pumpAndSettle();
 
     expect(auth.signInCalled, isTrue);

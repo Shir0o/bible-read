@@ -353,6 +353,17 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
+  int? _currentDestinationIndex(int destinationCount) {
+    final int bottomNavIndex = _bottomNavIndices.indexOf(_selectedIndex);
+    if (bottomNavIndex != -1) {
+      return bottomNavIndex;
+    }
+    if (_menuDestinationIndex < destinationCount) {
+      return _menuDestinationIndex;
+    }
+    return null;
+  }
+
   Future<bool> _onWillPop() async {
     if (_navHistory.length > 1) {
       setState(() {
@@ -382,17 +393,7 @@ class _MainPageState extends State<MainPage> {
             NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Menu'),
           ]
         : const <NavigationDestination>[];
-    int navIndex = 0;
-    if (destinations.isNotEmpty) {
-      final int bottomNavIndex = _bottomNavIndices.indexOf(_selectedIndex);
-      if (bottomNavIndex != -1) {
-        navIndex = bottomNavIndex;
-      } else if (_menuDestinationIndex < destinations.length) {
-        navIndex = _menuDestinationIndex;
-      } else {
-        navIndex = destinations.length - 1;
-      }
-    }
+    final int navIndex = _currentDestinationIndex(destinations.length) ?? 0;
 
     // ignore: deprecated_member_use
     return WillPopScope(
