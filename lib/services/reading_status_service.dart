@@ -35,8 +35,23 @@ class SummaryStats {
   /// Total number of days the user has read.
   final int totalReadDays;
 
+  /// Number of grace credits remaining for the active month.
+  final int graceCreditsAvailable;
+
+  /// Number of grace credits consumed for the active month.
+  final int graceCreditsUsed;
+
+  /// Identifier of the month the grace credit counters apply to.
+  final String graceCreditsMonth;
+
   /// Creates [SummaryStats].
-  const SummaryStats({required this.streak, required this.totalReadDays});
+  const SummaryStats({
+    required this.streak,
+    required this.totalReadDays,
+    required this.graceCreditsAvailable,
+    required this.graceCreditsUsed,
+    required this.graceCreditsMonth,
+  });
 }
 
 /// Service responsible for reading status and summary calculations.
@@ -208,7 +223,16 @@ class ReadingStatusService {
   Future<SummaryStats> updateSummary() async {
     final user = auth.currentUser;
     if (user == null) {
-      return const SummaryStats(streak: 0, totalReadDays: 0);
+      final today = DateTime.now();
+      final monthKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}';
+      return SummaryStats(
+        streak: 0,
+        totalReadDays: 0,
+        graceCreditsAvailable: 2,
+        graceCreditsUsed: 0,
+        graceCreditsMonth: monthKey,
+      );
     }
 
     try {
@@ -218,6 +242,8 @@ class ReadingStatusService {
       final today = DateTime.now();
       String formatDate(DateTime d) =>
           '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      String formatMonth(DateTime d) =>
+          '${d.year}-${d.month.toString().padLeft(2, '0')}';
 
       // Query recent reading documents to rebuild cached arrays.
       final weekStatus = await _getReadStatusForRange(user.uid, 7);
@@ -262,19 +288,47 @@ class ReadingStatusService {
 
       final totalReadDays = readDateSet.length;
 
-      // Recalculate current streak based on most recent consecutive reads.
-      int streak = 0;
-      var cursor = DateTime(today.year, today.month, today.day);
-      while (readDateSet.contains(formatDate(cursor))) {
-        streak += 1;
-        cursor = cursor.subtract(const Duration(days: 1));
+      final sortedDates = readDateSet.map(DateTime.parse).toList()..sort();
+
+      final monthCredits = <String, _MonthCreditState>{};
+      _MonthCreditState ensureMonth(DateTime date) {
+        final key = formatMonth(date);
+        return monthCredits.putIfAbsent(key, () => _MonthCreditState());
       }
+
+      // Recalculate current streak based on most recent consecutive reads while
+      // allowing grace credits to cover occasional misses.
+      int streak = 0;
+      if (sortedDates.isNotEmpty) {
+        final earliestRead = sortedDates.first;
+        final latestRead = sortedDates.last;
+        var cursor =
+            DateTime(latestRead.year, latestRead.month, latestRead.day);
+        while (!cursor.isBefore(earliestRead)) {
+          final dateKey = formatDate(cursor);
+          final month = ensureMonth(cursor);
+          if (readDateSet.contains(dateKey)) {
+            streak += 1;
+            if (streak % 15 == 0) {
+              month.bonus += 1;
+            }
+          } else {
+            if (month.available <= 0) {
+              break;
+            }
+            month.used += 1;
+          }
+          cursor = cursor.subtract(const Duration(days: 1));
+        }
+      }
+
+      final currentMonthKey = formatMonth(today);
+      final currentMonthCredits =
+          monthCredits[currentMonthKey] ?? _MonthCreditState();
 
       // Determine the longest streak across all recorded reads.
       int longestStreak = 0;
       if (readDateSet.isNotEmpty) {
-        final sortedDates = readDateSet.map((d) => DateTime.parse(d)).toList()
-          ..sort();
         int current = 1;
         longestStreak = 1;
         for (int i = 1; i < sortedDates.length; i++) {
@@ -295,9 +349,18 @@ class ReadingStatusService {
         'pastMonthReadDates': pastMonthReadDates,
         'totalReadDays': totalReadDays,
         'longestStreak': longestStreak,
+        'graceCreditsMonth': currentMonthKey,
+        'graceCreditsAvailable': currentMonthCredits.available,
+        'graceCreditsUsed': currentMonthCredits.used,
       }, SetOptions(merge: true));
 
-      return SummaryStats(streak: streak, totalReadDays: totalReadDays);
+      return SummaryStats(
+        streak: streak,
+        totalReadDays: totalReadDays,
+        graceCreditsAvailable: currentMonthCredits.available,
+        graceCreditsUsed: currentMonthCredits.used,
+        graceCreditsMonth: currentMonthKey,
+      );
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to update summary: $e');
@@ -359,5 +422,20 @@ class ReadingStatusService {
     }
 
     return status;
+  }
+}
+
+class _MonthCreditState {
+  _MonthCreditState();
+
+  final int base = 2;
+  int bonus = 0;
+  int used = 0;
+
+  int get total => base + bonus;
+
+  int get available {
+    final remaining = total - used;
+    return remaining < 0 ? 0 : remaining;
   }
 }

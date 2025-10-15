@@ -16,6 +16,7 @@ void main() {
             totalReadDays: 40,
             periodCount: 5,
             periodLabel: 'This week',
+            remainingGraceCredits: 2,
           ),
         ),
       ),
@@ -25,5 +26,6 @@ void main() {
     expect(find.text('Longest streak: 10'), findsOneWidget);
     expect(find.text('Total read days: 40'), findsOneWidget);
     expect(find.text('This week: 5'), findsOneWidget);
+    expect(find.text('Grace credits remaining: 2'), findsOneWidget);
   });
 }
