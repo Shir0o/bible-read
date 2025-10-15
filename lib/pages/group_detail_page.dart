@@ -795,14 +795,15 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           updated.add(result);
         }
       }
-      updated.sort((a, b) => a.date.compareTo(b.date));
+      updated.sort((a, b) => b.date.compareTo(a.date));
       if (mounted) {
         setState(() {
           _scheduleOverride = updated;
         });
       }
       final dateChanged = schedule != null && schedule.date != result.date;
-      final newSchedule = List<GroupSchedule>.from(updated);
+      final newSchedule = List<GroupSchedule>.from(updated)
+        ..sort((a, b) => b.date.compareTo(a.date));
 
       unawaited(() async {
         try {
