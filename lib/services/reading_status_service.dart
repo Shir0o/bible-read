@@ -301,13 +301,12 @@ class ReadingStatusService {
       int streak = 0;
       if (sortedDates.isNotEmpty) {
         final earliestRead = sortedDates.first;
-        final latestRead = sortedDates.last;
-        var cursor =
-            DateTime(latestRead.year, latestRead.month, latestRead.day);
-        while (!cursor.isBefore(earliestRead)) {
+        var cursor = DateTime(today.year, today.month, today.day);
+        while (true) {
           final dateKey = formatDate(cursor);
           final month = ensureMonth(cursor);
-          if (readDateSet.contains(dateKey)) {
+          final hasRead = readDateSet.contains(dateKey);
+          if (hasRead) {
             streak += 1;
             if (streak % 15 == 0) {
               month.bonus += 1;
@@ -318,6 +317,11 @@ class ReadingStatusService {
             }
             month.used += 1;
           }
+
+          if (cursor.isAtSameMomentAs(earliestRead)) {
+            break;
+          }
+
           cursor = cursor.subtract(const Duration(days: 1));
         }
       }
