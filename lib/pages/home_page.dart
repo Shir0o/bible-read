@@ -256,11 +256,34 @@ class _HomePageState extends State<HomePage>
       final yesterdayDoc =
           await userDocRef.collection('reading').doc(yesterdayDateKey).get();
 
+      final currentMonthKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}';
+      final storedMonth = data['graceCreditsMonth'];
+      int graceCreditsAvailable = (data['graceCreditsAvailable'] is int)
+          ? data['graceCreditsAvailable']
+          : 2;
+      int graceCreditsUsed =
+          (data['graceCreditsUsed'] is int) ? data['graceCreditsUsed'] : 0;
+      if (storedMonth != currentMonthKey) {
+        graceCreditsAvailable = 2;
+        graceCreditsUsed = 0;
+      }
+
       int streak = (data['streak'] is int) ? data['streak'] : 0;
       if (yesterdayDoc.exists && yesterdayDoc.data()?['read'] == true) {
         streak += 1;
       } else {
-        streak = 1; // Reset streak if yesterday was missed
+        if (streak > 0 && graceCreditsAvailable > 0) {
+          graceCreditsAvailable -= 1;
+          graceCreditsUsed += 1;
+          streak += 1;
+        } else {
+          streak = 1; // Reset streak if yesterday was missed and no credit
+        }
+      }
+
+      if (streak > 0 && streak % 15 == 0) {
+        graceCreditsAvailable += 1;
       }
 
       final dateKey =
@@ -320,6 +343,9 @@ class _HomePageState extends State<HomePage>
         'pastMonthReadDates': pastMonthReadDates,
         'totalReadDays': totalReadDays,
         'longestStreak': longestStreak,
+        'graceCreditsMonth': currentMonthKey,
+        'graceCreditsAvailable': graceCreditsAvailable,
+        'graceCreditsUsed': graceCreditsUsed,
       }, SetOptions(merge: true)); // Persist updated summary.
 
       await _checkAchievements(user.uid, streak, totalReadDays);

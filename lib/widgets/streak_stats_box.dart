@@ -19,6 +19,9 @@ class StreakStatsBox extends StatelessWidget {
   /// Label for the selected period, e.g. "This week".
   final String periodLabel;
 
+  /// Remaining grace credits available for the current month, if known.
+  final int? remainingGraceCredits;
+
   const StreakStatsBox({
     super.key,
     required this.currentStreak,
@@ -26,6 +29,7 @@ class StreakStatsBox extends StatelessWidget {
     required this.totalReadDays,
     required this.periodCount,
     required this.periodLabel,
+    this.remainingGraceCredits,
   });
 
   @override
@@ -38,6 +42,11 @@ class StreakStatsBox extends StatelessWidget {
           Text('Longest streak: $longestStreak', style: AppTextStyles.body),
           Text('Total read days: $totalReadDays', style: AppTextStyles.body),
           Text('$periodLabel: $periodCount', style: AppTextStyles.body),
+          if (remainingGraceCredits != null)
+            Text(
+              'Grace credits remaining: $remainingGraceCredits',
+              style: AppTextStyles.body,
+            ),
         ],
       ),
     );

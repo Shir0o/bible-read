@@ -35,6 +35,7 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
   int _longestStreak = 0;
   int _totalReadDays = 0;
   int _periodCount = 0;
+  int? _remainingGraceCredits;
   Set<DateTime> _readDates = {};
 
   @override
@@ -95,6 +96,8 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
       final data = summaryDoc.data() ?? {};
 
       final now = DateTime.now();
+      final currentMonthKey =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}';
       final bool isCurrentWeek =
           _period == _Period.week && _periodStart == _startOfWeek(now);
       final bool isCurrentMonth = _period == _Period.month &&
@@ -106,6 +109,12 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
       int totalReadDays = data['totalReadDays'] ?? 0;
       int periodCount = 0;
       Set<DateTime> readDates = {};
+      int? remainingGraceCredits;
+
+      if (data['graceCreditsMonth'] == currentMonthKey &&
+          data['graceCreditsAvailable'] is int) {
+        remainingGraceCredits = data['graceCreditsAvailable'] as int;
+      }
 
       if (isCurrentWeek) {
         final end = _periodStart.add(const Duration(days: 6));
@@ -181,6 +190,7 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
         _totalReadDays = totalReadDays;
         _periodCount = periodCount;
         _readDates = readDates;
+        _remainingGraceCredits = remainingGraceCredits;
       });
     } catch (e, st) {
       ErrorLogger.log(e, st);
@@ -273,6 +283,7 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
               totalReadDays: _totalReadDays,
               periodCount: _periodCount,
               periodLabel: periodLabel,
+              remainingGraceCredits: _remainingGraceCredits,
             ),
             const SizedBox(height: 16),
             if (_period == _Period.week)
