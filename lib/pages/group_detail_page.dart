@@ -77,6 +77,7 @@ class GroupDetailPage extends StatefulWidget {
 class _GroupDetailPageState extends State<GroupDetailPage> {
   List<GroupSchedule>? _scheduleOverride;
   List<GroupSchedule>? _latestSchedule;
+  List<GroupSchedule>? _lastFetchedSchedule;
   late final TextEditingController _nameController;
   bool _editMode = false;
   bool _isSavingName = false;
@@ -92,9 +93,33 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   final Map<String, int> _latestChapterCountSnapshots = <String, int>{};
   int _nextPendingOpId = 0;
   bool _isDeleting = false;
+  bool _pendingScheduleSync = false;
 
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  bool _schedulesMatch(
+    List<GroupSchedule> a,
+    List<GroupSchedule> b,
+  ) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a.length != b.length) {
+      return false;
+    }
+    for (var i = 0; i < a.length; i++) {
+      final first = a[i];
+      final second = b[i];
+      if (_dateKey(first.date) != _dateKey(second.date)) {
+        return false;
+      }
+      if (!listEquals(first.chapters, second.chapters)) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   Map<int, bool> _ensureChapterOverrideMap(String dateKey) =>
       _pendingChapterOverrides.putIfAbsent(dateKey, () => <int, bool>{});
@@ -368,6 +393,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       if (mounted) {
         setState(() {
           _latestSchedule = updated;
+          _pendingScheduleSync = true;
           _scheduleOverride = null;
         });
         // ignore: use_build_context_synchronously
@@ -819,8 +845,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           );
           if (mounted) {
             setState(() {
-              _scheduleOverride = null;
               _latestSchedule = newSchedule;
+              _pendingScheduleSync = true;
+              _scheduleOverride = null;
             });
           }
         } catch (e, st) {
@@ -1045,8 +1072,43 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     if (snapshot.hasData) {
                       final fetched = List<GroupSchedule>.from(snapshot.data!)
                         ..sort((a, b) => b.date.compareTo(a.date));
-                      _latestSchedule = fetched;
-                      baseSchedule = fetched;
+                      final previousFetched = _lastFetchedSchedule;
+                      if (_pendingScheduleSync) {
+                        final latest = _latestSchedule;
+                        final matchesLatest = latest != null &&
+                            _schedulesMatch(fetched, latest);
+                        final matchesPrevious = previousFetched != null &&
+                            _schedulesMatch(fetched, previousFetched);
+                        if (matchesLatest) {
+                          _latestSchedule = fetched;
+                          baseSchedule = fetched;
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted || !_pendingScheduleSync) {
+                              return;
+                            }
+                            setState(() {
+                              _pendingScheduleSync = false;
+                            });
+                          });
+                        } else if (!matchesPrevious) {
+                          _latestSchedule = fetched;
+                          baseSchedule = fetched;
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted || !_pendingScheduleSync) {
+                              return;
+                            }
+                            setState(() {
+                              _pendingScheduleSync = false;
+                            });
+                          });
+                        } else {
+                          baseSchedule = latest ?? fetched;
+                        }
+                      } else {
+                        _latestSchedule = fetched;
+                        baseSchedule = fetched;
+                      }
+                      _lastFetchedSchedule = fetched;
                     } else {
                       baseSchedule = _latestSchedule;
                     }
