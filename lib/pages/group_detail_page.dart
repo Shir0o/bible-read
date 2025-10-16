@@ -77,6 +77,7 @@ class GroupDetailPage extends StatefulWidget {
 class _GroupDetailPageState extends State<GroupDetailPage> {
   List<GroupSchedule>? _scheduleOverride;
   List<GroupSchedule>? _latestSchedule;
+  List<GroupSchedule>? _lastFetchedSchedule;
   late final TextEditingController _nameController;
   bool _editMode = false;
   bool _isSavingName = false;
@@ -1071,10 +1072,25 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     if (snapshot.hasData) {
                       final fetched = List<GroupSchedule>.from(snapshot.data!)
                         ..sort((a, b) => b.date.compareTo(a.date));
+                      final previousFetched = _lastFetchedSchedule;
                       if (_pendingScheduleSync) {
                         final latest = _latestSchedule;
-                        if (latest != null &&
-                            _schedulesMatch(fetched, latest)) {
+                        final matchesLatest = latest != null &&
+                            _schedulesMatch(fetched, latest);
+                        final matchesPrevious = previousFetched != null &&
+                            _schedulesMatch(fetched, previousFetched);
+                        if (matchesLatest) {
+                          _latestSchedule = fetched;
+                          baseSchedule = fetched;
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted || !_pendingScheduleSync) {
+                              return;
+                            }
+                            setState(() {
+                              _pendingScheduleSync = false;
+                            });
+                          });
+                        } else if (!matchesPrevious) {
                           _latestSchedule = fetched;
                           baseSchedule = fetched;
                           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1092,6 +1108,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         _latestSchedule = fetched;
                         baseSchedule = fetched;
                       }
+                      _lastFetchedSchedule = fetched;
                     } else {
                       baseSchedule = _latestSchedule;
                     }
