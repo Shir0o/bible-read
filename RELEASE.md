@@ -1,3 +1,34 @@
+# Release 1.16.0
+
+This release introduces monthly grace credits to cushion streaks, streamlines group scheduling tooling, and refreshes navigation and notifications throughout the app.
+
+## Highlights
+
+*   Monthly grace credits automatically cover up to two missed days per month (plus bonuses for long streaks) and surface the remaining balance in streak history.
+*   Navigation now uses a modal menu sheet with consistent bottom navigation highlights and refreshed animated action button motion.
+*   Notification center adds a clear-all action, and Google Sign-In is configured with platform client IDs for smoother authentication.
+
+## Streaks & Reading
+
+*   Rebuilt the reading summary to track grace credits per month, granting bonus credits every 15 consecutive days while preserving streaks.
+*   Streak history shows remaining grace credits alongside current, longest, and period totals, falling back to reading docs when cached data is incomplete.
+*   Fixed streak reconstruction to include today's progress when recalculating summaries.
+
+## Group Scheduling
+
+*   Group schedules now list the newest entries first and reconcile pending sync flags after local edits to avoid duplicate rows.
+*   Plan management tools are limited to group owners, and the deprecated manual plan service, models, and Firestore rules have been removed to simplify maintenance.
+
+## Navigation & UI
+
+*   Replaced the app drawer with a modal menu sheet, alphabetized navigation destinations, and aligned the highlighted tab with the active content.
+*   Tweaked common styles, home interactions, and button haptics to keep the experience responsive.
+
+## Notifications & Auth
+
+*   Added a `Clear all` control to the Notification Center along with coverage to verify the new behavior.
+*   Provided platform-specific Google Sign-In client IDs so Android and Apple platforms negotiate the correct OAuth flow.
+
 # Release 1.15.1
 
 Release notes forthcoming.
