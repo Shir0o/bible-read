@@ -313,7 +313,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${CI:-}\" != \"true\" ] && [ -z \"${XCODE_CLOUD:-}\" ]; then\n  exit 0\nfi\nBOOTSTRAP=\"${PROJECT_DIR}/../ci_scripts/ci_post_clone.sh\"\nif [ ! -x \"${BOOTSTRAP}\" ]; then\n  echo \"warning: Flutter bootstrap script ${BOOTSTRAP} is missing or not executable.\" >&2\n  exit 0\nfi\nif [ -f \"${PROJECT_DIR}/Flutter/Generated.xcconfig\" ] && [ -f \"${PROJECT_DIR}/Pods/Target Support Files/Pods-Runner/Pods-Runner-frameworks-Debug-input-files.xcfilelist\" ]; then\n  echo \"Skipping Flutter bootstrap: dependencies already prepared.\"\n  exit 0\nfi\nset -x\n( cd \"${PROJECT_DIR}/..\" && bash \"${BOOTSTRAP}\" )\n";
+			shellScript = "if [ -z \"${CI:-}\" ] && [ -z \"${XCODE_CLOUD:-}\" ]; then\n  exit 0\nfi\nBOOTSTRAP=\"${PROJECT_DIR}/../ci_scripts/ci_post_clone.sh\"\nif [ ! -x \"${BOOTSTRAP}\" ]; then\n  echo \"warning: Flutter bootstrap script ${BOOTSTRAP} is missing or not executable.\" >&2\n  exit 0\nfi\nif [ -f \"${PROJECT_DIR}/Flutter/Generated.xcconfig\" ] && [ -f \"${PROJECT_DIR}/Pods/Target Support Files/Pods-Runner/Pods-Runner-frameworks-Debug-input-files.xcfilelist\" ]; then\n  echo \"Skipping Flutter bootstrap: dependencies already prepared.\"\n  exit 0\nfi\nset -x\n( cd \"${PROJECT_DIR}/..\" && bash \"${BOOTSTRAP}\" )\n";
 		};
 		3B06AD1E1E4923F5004D2608 /* Thin Binary */ = {
 			isa = PBXShellScriptBuildPhase;
