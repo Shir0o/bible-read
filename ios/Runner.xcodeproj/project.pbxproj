@@ -193,6 +193,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
+				D7690AD99B9244DEB87AFBC4 /* [CI] Bootstrap Flutter */,
 				E3CC0B0ADA53814C8E4778BA /* [CP] Check Pods Manifest.lock */,
 				9740EEB61CF901F6004384FC /* Run Script */,
 				97C146EA1CF9000F007C117D /* Sources */,
@@ -295,6 +296,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/FirebaseCrashlytics/run\"\n";
+		};
+		D7690AD99B9244DEB87AFBC4 /* [CI] Bootstrap Flutter */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[CI] Bootstrap Flutter";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CI:-}\" != \"true\" ] && [ -z \"${XCODE_CLOUD:-}\" ]; then\n  exit 0\nfi\nBOOTSTRAP=\"${PROJECT_DIR}/../ci_scripts/ci_post_clone.sh\"\nif [ ! -x \"${BOOTSTRAP}\" ]; then\n  echo \"warning: Flutter bootstrap script ${BOOTSTRAP} is missing or not executable.\" >&2\n  exit 0\nfi\nif [ -f \"${PROJECT_DIR}/Flutter/Generated.xcconfig\" ] && [ -f \"${PROJECT_DIR}/Pods/Target Support Files/Pods-Runner/Pods-Runner-frameworks-Debug-input-files.xcfilelist\" ]; then\n  echo \"Skipping Flutter bootstrap: dependencies already prepared.\"\n  exit 0\nfi\nset -x\n( cd \"${PROJECT_DIR}/..\" && bash \"${BOOTSTRAP}\" )\n";
 		};
 		3B06AD1E1E4923F5004D2608 /* Thin Binary */ = {
 			isa = PBXShellScriptBuildPhase;
