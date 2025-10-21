@@ -26,13 +26,18 @@ dart --version
 # ====== Flutter deps ======
 flutter pub get
 
+# ====== Generate iOS build configs (without full build) ======
+flutter build ios --debug --no-codesign --simulator --config-only
+
 # ====== iOS deps (CocoaPods) ======
 pushd ios
 
 # Avoid slow Pod repo updates unless needed; fallback if first install fails
-if ! pod install; then
-  pod repo update
-  pod install
+if [ ! -f "Pods/Target Support Files/Pods-Runner/Pods-Runner-frameworks-Debug-input-files.xcfilelist" ]; then
+  if ! pod install; then
+    pod repo update
+    pod install
+  fi
 fi
 
 popd
