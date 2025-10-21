@@ -1,14 +1,23 @@
-#!/bin/sh
+#!/bin/bash
 set -euxo pipefail
 
 # ====== Config ======
 FLUTTER_VERSION=3.24.3
+FLUTTER_REPO=https://github.com/flutter/flutter.git
+
+# Use a repo-local pub cache so dependencies persist across steps
+export PUB_CACHE="${PUB_CACHE:-$PWD/.pub-cache}"
 
 # ====== Install Flutter (cached per build machine, fresh per new VM) ======
 if [ ! -d "$PWD/flutter" ]; then
-  git clone -b $FLUTTER_VERSION https://github.com/flutter/flutter.git --depth 1
+  git clone --depth 1 --branch "$FLUTTER_VERSION" "$FLUTTER_REPO" flutter
 fi
 export PATH="$PWD/flutter/bin:$PATH"
+
+# Disable analytics in CI and prefetch iOS artifacts up front
+flutter config --no-analytics
+dart --disable-analytics || true
+flutter precache --ios
 
 # Show versions for logs
 flutter --version
@@ -18,10 +27,12 @@ dart --version
 flutter pub get
 
 # ====== iOS deps (CocoaPods) ======
-cd ios
+pushd ios
 
 # Avoid slow Pod repo updates unless needed; fallback if first install fails
 if ! pod install; then
   pod repo update
   pod install
 fi
+
+popd
