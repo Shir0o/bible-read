@@ -4,7 +4,7 @@ set -euxo pipefail
 echo "=== ci_post_clone: starting bootstrap ==="
 
 # ====== Config ======
-FLUTTER_VERSION=3.35.6
+FLUTTER_VERSION=3.35.6 # Flutter stable (Dart >=3.9)
 FLUTTER_REPO=https://github.com/flutter/flutter.git
 
 # Use a repo-local pub cache so dependencies persist across steps
