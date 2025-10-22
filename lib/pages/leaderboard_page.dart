@@ -354,20 +354,68 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           final rank = index + 1;
           final isCurrentUser = entry.uid == user.uid;
           final displayName = _entryDisplayName(entry);
-          String? subtitle;
+          final colorScheme = Theme.of(context).colorScheme;
+          Widget? friendStatusIcon;
+          final canSendRequest = showFriendActions &&
+              !isCurrentUser &&
+              !_friendIds.contains(entry.uid) &&
+              !_sentRequestIds.contains(entry.uid) &&
+              !_receivedRequestIds.contains(entry.uid);
+
           if (showFriendActions && !isCurrentUser) {
             if (_friendIds.contains(entry.uid)) {
-              subtitle = "You're already friends.";
+              friendStatusIcon = Tooltip(
+                message: "You're already friends.",
+                child: Semantics(
+                  label: "You're already friends.",
+                  child: Icon(
+                    Icons.check_circle,
+                    color: colorScheme.primary,
+                    size: 18,
+                  ),
+                ),
+              );
             } else if (_sentRequestIds.contains(entry.uid)) {
-              subtitle = 'Friend request sent.';
+              friendStatusIcon = Tooltip(
+                message: 'Friend request sent.',
+                child: Semantics(
+                  label: 'Friend request sent.',
+                  child: Icon(
+                    Icons.schedule_send,
+                    color: colorScheme.secondary,
+                    size: 18,
+                  ),
+                ),
+              );
             } else if (_receivedRequestIds.contains(entry.uid)) {
-              subtitle = 'This user sent you a friend request.';
+              friendStatusIcon = Tooltip(
+                message: 'This user sent you a friend request.',
+                child: Semantics(
+                  label: 'This user sent you a friend request.',
+                  child: Icon(
+                    Icons.mark_email_unread,
+                    color: colorScheme.tertiary,
+                    size: 18,
+                  ),
+                ),
+              );
             } else {
-              subtitle = 'Tap to send a friend request.';
+              friendStatusIcon = Tooltip(
+                message: 'Tap to send a friend request.',
+                child: Semantics(
+                  button: true,
+                  label: 'Tap to send a friend request.',
+                  child: Icon(
+                    Icons.person_add_alt_1,
+                    color: colorScheme.primary,
+                    size: 18,
+                  ),
+                ),
+              );
             }
           }
           return CommonStyles.buildTappableCard(
-            onTap: showFriendActions ? () => _handleEntryTap(entry) : null,
+            onTap: canSendRequest ? () => _handleEntryTap(entry) : null,
             margin: const EdgeInsets.symmetric(vertical: 4.0),
             child: ListTile(
               contentPadding: EdgeInsets.zero,
@@ -379,13 +427,13 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 ),
               ),
               title: Text(displayName),
-              subtitle: subtitle == null
+              subtitle: friendStatusIcon == null
                   ? null
-                  : Text(
-                      subtitle,
-                      style: AppTextStyles.body.copyWith(
-                        color: Colors.white70,
-                        fontSize: 12,
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: friendStatusIcon,
                       ),
                     ),
               trailing: Text(
