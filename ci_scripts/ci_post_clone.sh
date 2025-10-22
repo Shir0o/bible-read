@@ -13,6 +13,18 @@ export PUB_CACHE="${PUB_CACHE:-$PWD/.pub-cache}"
 # ====== Install Flutter (cached per build machine, fresh per new VM) ======
 if [ ! -d "$PWD/flutter" ]; then
   git clone --depth 1 --branch "$FLUTTER_VERSION" "$FLUTTER_REPO" flutter
+else
+  echo "=== ci_post_clone: Flutter cache detected, ensuring tag $FLUTTER_VERSION is checked out ==="
+  pushd flutter
+  CURRENT_TAG=$(git describe --tags --exact-match 2>/dev/null || true)
+  if [ "$CURRENT_TAG" != "$FLUTTER_VERSION" ]; then
+    echo "=== ci_post_clone: updating cached Flutter checkout to $FLUTTER_VERSION ==="
+    git fetch --depth 1 origin "refs/tags/$FLUTTER_VERSION"
+    git checkout --force "$FLUTTER_VERSION"
+    git reset --hard
+    git clean -fdx
+  fi
+  popd
 fi
 echo "=== ci_post_clone: ensuring Flutter SDK ($FLUTTER_VERSION) is available ==="
 export PATH="$PWD/flutter/bin:$PATH"
