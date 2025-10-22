@@ -18,10 +18,11 @@ class LeaderboardPage extends StatefulWidget {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     FriendService? friendService,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        friendService = friendService ??
-            FriendService(firestore: firestore ?? FirebaseFirestore.instance);
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       friendService =
+           friendService ??
+           FriendService(firestore: firestore ?? FirebaseFirestore.instance);
 
   @override
   State<LeaderboardPage> createState() => _LeaderboardPageState();
@@ -33,12 +34,16 @@ class _LeaderboardPageState extends State<LeaderboardPage>
   List<LeaderboardEntry> _friendsData = [];
   bool _loadingPublic = true;
   bool _loadingFriends = true;
+  Set<String> _friendIds = {};
+  Set<String> _sentRequestIds = {};
+  Set<String> _receivedRequestIds = {};
 
   @override
   void initState() {
     super.initState();
     _loadPublicLeaderboard();
     _loadFriendsLeaderboard();
+    _loadFriendRequestStatus();
   }
 
   Future<void> _loadPublicLeaderboard() async {
@@ -69,8 +74,9 @@ class _LeaderboardPageState extends State<LeaderboardPage>
             .get();
 
         final data = doc.data();
-        final streak =
-            summaryDoc.exists ? (summaryDoc.data()?['streak'] ?? 0) : 0;
+        final streak = summaryDoc.exists
+            ? (summaryDoc.data()?['streak'] ?? 0)
+            : 0;
         leaderboard.add(
           LeaderboardEntry(
             uid: doc.id,
@@ -98,8 +104,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                  content:
-                      Text('Failed to load leaderboard. Please try again.')),
+                content: Text('Failed to load leaderboard. Please try again.'),
+              ),
             );
           }
         });
@@ -118,6 +124,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     if (user == null) {
       setState(() {
         _loadingFriends = false;
+        _friendIds = {};
       });
       return;
     }
@@ -130,10 +137,14 @@ class _LeaderboardPageState extends State<LeaderboardPage>
 
     try {
       final friendList = await widget.friendService.friends(user.uid).first;
+      final friendIds = <String>{};
       final entries = <LeaderboardEntry>[];
       for (final friend in friendList) {
-        final userDoc =
-            await widget.firestore.collection('users').doc(friend.uid).get();
+        friendIds.add(friend.uid);
+        final userDoc = await widget.firestore
+            .collection('users')
+            .doc(friend.uid)
+            .get();
         if (!userDoc.exists) continue;
         final summaryDoc = await widget.firestore
             .collection('users')
@@ -143,8 +154,9 @@ class _LeaderboardPageState extends State<LeaderboardPage>
             .get();
 
         final data = userDoc.data()!;
-        final streak =
-            summaryDoc.exists ? (summaryDoc.data()?['streak'] ?? 0) : 0;
+        final streak = summaryDoc.exists
+            ? (summaryDoc.data()?['streak'] ?? 0)
+            : 0;
         entries.add(
           LeaderboardEntry(
             uid: friend.uid,
@@ -156,8 +168,10 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       }
 
       // Include the signed-in user's own data
-      final userDoc =
-          await widget.firestore.collection('users').doc(user.uid).get();
+      final userDoc = await widget.firestore
+          .collection('users')
+          .doc(user.uid)
+          .get();
       if (userDoc.exists) {
         final summaryDoc = await widget.firestore
             .collection('users')
@@ -166,8 +180,9 @@ class _LeaderboardPageState extends State<LeaderboardPage>
             .doc('data')
             .get();
         final data = userDoc.data()!;
-        final streak =
-            summaryDoc.exists ? (summaryDoc.data()?['streak'] ?? 0) : 0;
+        final streak = summaryDoc.exists
+            ? (summaryDoc.data()?['streak'] ?? 0)
+            : 0;
         entries.add(
           LeaderboardEntry(
             uid: user.uid,
@@ -183,6 +198,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       if (mounted) {
         setState(() {
           _friendsData = entries;
+          _friendIds = friendIds;
         });
       }
     } catch (e, st) {
@@ -195,8 +211,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                  content:
-                      Text('Failed to load leaderboard. Please try again.')),
+                content: Text('Failed to load leaderboard. Please try again.'),
+              ),
             );
           }
         });
@@ -210,11 +226,59 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     }
   }
 
+  Future<void> _loadFriendRequestStatus() async {
+    final user = widget.auth.currentUser;
+    if (user == null) {
+      if (mounted) {
+        setState(() {
+          _sentRequestIds = {};
+          _receivedRequestIds = {};
+        });
+      }
+      return;
+    }
+
+    try {
+      final sentSnapshot = await widget.firestore
+          .collection(FriendCollections.users)
+          .doc(user.uid)
+          .collection(FriendCollections.sentRequests)
+          .get();
+      final receivedSnapshot = await widget.firestore
+          .collection(FriendCollections.users)
+          .doc(user.uid)
+          .collection(FriendCollections.receivedRequests)
+          .get();
+
+      final sentIds = <String>{
+        for (final doc in sentSnapshot.docs)
+          if (doc.id != 'init') doc.id,
+      };
+      final receivedIds = <String>{
+        for (final doc in receivedSnapshot.docs)
+          if (doc.id != 'init') doc.id,
+      };
+
+      if (mounted) {
+        setState(() {
+          _sentRequestIds = sentIds;
+          _receivedRequestIds = receivedIds;
+        });
+      }
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Error loading friend request status: $e');
+      }
+      ErrorLogger.log(e, st);
+    }
+  }
+
   /// Reloads leaderboard data.
   Future<void> refresh() async {
     await Future.wait([
       _loadPublicLeaderboard(),
       _loadFriendsLeaderboard(),
+      _loadFriendRequestStatus(),
     ]);
   }
 
@@ -227,8 +291,12 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           title: const Text('Leaderboard', style: CommonStyles.appBarTitleText),
           backgroundColor: AppTheme.backgroundColor,
           automaticallyImplyLeading: false,
-          bottom:
-              const TabBar(tabs: [Tab(text: 'Public'), Tab(text: 'Friends')]),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Public'),
+              Tab(text: 'Friends'),
+            ],
+          ),
         ),
         body: Container(
           decoration: CommonStyles.backgroundGradient,
@@ -237,6 +305,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
               _buildLeaderboard(
                 loading: _loadingPublic,
                 data: _publicData,
+                showFriendActions: true,
               ),
               _buildLeaderboard(
                 loading: _loadingFriends,
@@ -254,6 +323,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     required bool loading,
     required List<LeaderboardEntry> data,
     String emptyMessage = 'No one is on the leaderboard yet.',
+    bool showFriendActions = false,
   }) {
     final user = widget.auth.currentUser;
     if (loading) {
@@ -271,34 +341,156 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       return Center(child: Text(emptyMessage));
     }
     return Padding(
-      padding:
-          const EdgeInsets.only(top: 16.0, bottom: 48.0, left: 16, right: 16),
+      padding: const EdgeInsets.only(
+        top: 16.0,
+        bottom: 48.0,
+        left: 16,
+        right: 16,
+      ),
       child: ListView.builder(
         itemCount: data.length,
         itemBuilder: (context, index) {
           final entry = data[index];
           final rank = index + 1;
+          final isCurrentUser = entry.uid == user.uid;
+          final displayName = _entryDisplayName(entry);
+          String? subtitle;
+          if (showFriendActions && !isCurrentUser) {
+            if (_friendIds.contains(entry.uid)) {
+              subtitle = "You're already friends.";
+            } else if (_sentRequestIds.contains(entry.uid)) {
+              subtitle = 'Friend request sent.';
+            } else if (_receivedRequestIds.contains(entry.uid)) {
+              subtitle = 'This user sent you a friend request.';
+            } else {
+              subtitle = 'Tap to send a friend request.';
+            }
+          }
           return CommonStyles.buildTappableCard(
-            onTap: () {},
+            onTap: showFriendActions ? () => _handleEntryTap(entry) : null,
             margin: const EdgeInsets.symmetric(vertical: 4.0),
             child: ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Text('$rank',
-                  style: AppTextStyles.body
-                      .copyWith(fontWeight: FontWeight.bold, fontSize: 16)),
-              title: Text(
-                entry.name.isEmpty || entry.name == 'No Name'
-                    ? 'Unknown'
-                    : entry.name.split(' ').first,
+              leading: Text(
+                '$rank',
+                style: AppTextStyles.body.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
-              trailing: Text('${entry.streak} days',
-                  style: AppTextStyles.body
-                      .copyWith(fontWeight: FontWeight.bold, fontSize: 16)),
+              title: Text(displayName),
+              subtitle: subtitle == null
+                  ? null
+                  : Text(
+                      subtitle,
+                      style: AppTextStyles.body.copyWith(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+              trailing: Text(
+                '${entry.streak} days',
+                style: AppTextStyles.body.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
             ),
           );
         },
       ),
     );
+  }
+
+  Future<void> _handleEntryTap(LeaderboardEntry entry) async {
+    final user = widget.auth.currentUser;
+    if (user == null) {
+      return;
+    }
+    if (entry.uid == user.uid ||
+        _friendIds.contains(entry.uid) ||
+        _sentRequestIds.contains(entry.uid) ||
+        _receivedRequestIds.contains(entry.uid)) {
+      return;
+    }
+    final confirmed = await _confirmSendFriendRequest(entry);
+    if (confirmed != true) {
+      return;
+    }
+    await _sendFriendRequest(entry);
+  }
+
+  Future<bool?> _confirmSendFriendRequest(LeaderboardEntry entry) {
+    final context = this.context;
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Send friend request'),
+          content: Text(
+            'Send a friend request to ${_entryDisplayName(entry)}?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Send'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _sendFriendRequest(LeaderboardEntry entry) async {
+    final user = widget.auth.currentUser;
+    if (user == null) {
+      return;
+    }
+    try {
+      final userDoc = await widget.firestore
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      final fromName = userDoc.data()?['name'] as String? ?? '';
+      await widget.friendService.sendFriendRequest(
+        fromUid: user.uid,
+        fromName: fromName,
+        toUid: entry.uid,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _sentRequestIds = {..._sentRequestIds, entry.uid};
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Friend request sent.')));
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to send friend request: $e');
+      }
+      ErrorLogger.log(e, st);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to send friend request. Please try again.'),
+        ),
+      );
+    }
+  }
+
+  String _entryDisplayName(LeaderboardEntry entry) {
+    if (entry.name.isEmpty || entry.name == 'No Name') {
+      return 'Unknown';
+    }
+    return entry.name.split(' ').first;
   }
 }
 
