@@ -51,15 +51,18 @@ void main() {
   testWidgets('displays message when no data', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: true);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(
+      MaterialApp(
         home: LeaderboardPage(
-      firestore: firestore,
-      auth: auth,
-      friendService: FriendService(
-        firestore: firestore,
-        notificationService: NotificationService(firestore: firestore),
+          firestore: firestore,
+          auth: auth,
+          friendService: FriendService(
+            firestore: firestore,
+            notificationService: NotificationService(firestore: firestore),
+          ),
+        ),
       ),
-    )));
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('No one is on the leaderboard yet.'), findsOneWidget);
@@ -69,19 +72,24 @@ void main() {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: false);
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(
+      MaterialApp(
         home: LeaderboardPage(
-      firestore: firestore,
-      auth: auth,
-      friendService: FriendService(
-        firestore: firestore,
-        notificationService: NotificationService(firestore: firestore),
+          firestore: firestore,
+          auth: auth,
+          friendService: FriendService(
+            firestore: firestore,
+            notificationService: NotificationService(firestore: firestore),
+          ),
+        ),
       ),
-    )));
+    );
     await tester.pumpAndSettle();
 
     expect(
-        find.text('Please sign in to view the leaderboard.'), findsOneWidget);
+      find.text('Please sign in to view the leaderboard.'),
+      findsOneWidget,
+    );
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
@@ -89,34 +97,42 @@ void main() {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth();
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(
+      MaterialApp(
         home: LeaderboardPage(
-      firestore: firestore,
-      auth: auth,
-      friendService: FriendService(
-        firestore: firestore,
-        notificationService: NotificationService(firestore: firestore),
+          firestore: firestore,
+          auth: auth,
+          friendService: FriendService(
+            firestore: firestore,
+            notificationService: NotificationService(firestore: firestore),
+          ),
+        ),
       ),
-    )));
+    );
     await tester.pumpAndSettle();
 
     expect(
-        find.text('Please sign in to view the leaderboard.'), findsOneWidget);
+      find.text('Please sign in to view the leaderboard.'),
+      findsOneWidget,
+    );
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
   testWidgets('tabs are present', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: true);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(
+      MaterialApp(
         home: LeaderboardPage(
-      firestore: firestore,
-      auth: auth,
-      friendService: FriendService(
-        firestore: firestore,
-        notificationService: NotificationService(firestore: firestore),
+          firestore: firestore,
+          auth: auth,
+          friendService: FriendService(
+            firestore: firestore,
+            notificationService: NotificationService(firestore: firestore),
+          ),
+        ),
       ),
-    )));
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Public'), findsOneWidget);
@@ -141,15 +157,18 @@ void main() {
         .doc('data')
         .set({'streak': 5});
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(
+      MaterialApp(
         home: LeaderboardPage(
-      firestore: firestore,
-      auth: auth,
-      friendService: FriendService(
-        firestore: firestore,
-        notificationService: NotificationService(firestore: firestore),
+          firestore: firestore,
+          auth: auth,
+          friendService: FriendService(
+            firestore: firestore,
+            notificationService: NotificationService(firestore: firestore),
+          ),
+        ),
       ),
-    )));
+    );
     await tester.pumpAndSettle();
 
     final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
@@ -162,10 +181,9 @@ void main() {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(signedIn: true);
     // Create a user without a name field but with a streak so it appears
-    await firestore
-        .collection('users')
-        .doc('u1')
-        .set({'email': 'u1@example.com'});
+    await firestore.collection('users').doc('u1').set({
+      'email': 'u1@example.com',
+    });
     await firestore
         .collection('users')
         .doc('u1')
@@ -173,15 +191,18 @@ void main() {
         .doc('data')
         .set({'streak': 1});
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(
+      MaterialApp(
         home: LeaderboardPage(
-      firestore: firestore,
-      auth: auth,
-      friendService: FriendService(
-        firestore: firestore,
-        notificationService: NotificationService(firestore: firestore),
+          firestore: firestore,
+          auth: auth,
+          friendService: FriendService(
+            firestore: firestore,
+            notificationService: NotificationService(firestore: firestore),
+          ),
+        ),
       ),
-    )));
+    );
     await tester.pumpAndSettle();
 
     final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
@@ -191,8 +212,10 @@ void main() {
 
   testWidgets('friends tab shows friend and user entries', (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'me'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'me'),
+      signedIn: true,
+    );
     await firestore.collection('users').doc('me').set({'name': 'Me'});
     await firestore.collection('users').doc('f1').set({'name': 'Friend'});
     await firestore.collection('users').doc('u2').set({'name': 'Other'});
@@ -217,15 +240,18 @@ void main() {
         .doc('f1')
         .set({'name': 'Friend'});
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(
+      MaterialApp(
         home: LeaderboardPage(
-      firestore: firestore,
-      auth: auth,
-      friendService: FriendService(
-        firestore: firestore,
-        notificationService: NotificationService(firestore: firestore),
+          firestore: firestore,
+          auth: auth,
+          friendService: FriendService(
+            firestore: firestore,
+            notificationService: NotificationService(firestore: firestore),
+          ),
+        ),
       ),
-    )));
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Friends'));
@@ -237,11 +263,14 @@ void main() {
     expect((tiles[1].title as Text).data, 'Me');
   });
 
-  testWidgets('friends tab includes user entry sorted by streak',
-      (tester) async {
+  testWidgets('friends tab includes user entry sorted by streak', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'me'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'me'),
+      signedIn: true,
+    );
     await firestore.collection('users').doc('me').set({'name': 'Me'});
     await firestore.collection('users').doc('f1').set({'name': 'Friend'});
 
@@ -265,15 +294,18 @@ void main() {
         .doc('f1')
         .set({'name': 'Friend'});
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(
+      MaterialApp(
         home: LeaderboardPage(
-      firestore: firestore,
-      auth: auth,
-      friendService: FriendService(
-        firestore: firestore,
-        notificationService: NotificationService(firestore: firestore),
+          firestore: firestore,
+          auth: auth,
+          friendService: FriendService(
+            firestore: firestore,
+            notificationService: NotificationService(firestore: firestore),
+          ),
+        ),
       ),
-    )));
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Friends'));
@@ -285,19 +317,101 @@ void main() {
     expect((tiles[1].title as Text).data, 'Me');
   });
 
+  testWidgets('public leaderboard allows sending friend requests', (
+    tester,
+  ) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'me'),
+      signedIn: true,
+    );
+
+    await firestore.collection('users').doc('me').set({'name': 'Me Person'});
+    await firestore
+        .collection('users')
+        .doc('me')
+        .collection('summary')
+        .doc('data')
+        .set({'streak': 2});
+
+    await firestore.collection('users').doc('other').set({
+      'name': 'Other Person',
+    });
+    await firestore
+        .collection('users')
+        .doc('other')
+        .collection('summary')
+        .doc('data')
+        .set({'streak': 5});
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LeaderboardPage(
+          firestore: firestore,
+          auth: auth,
+          friendService: FriendService(
+            firestore: firestore,
+            notificationService: NotificationService(firestore: firestore),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final initialTiles = tester
+        .widgetList<ListTile>(find.byType(ListTile))
+        .toList();
+    final otherTileBefore = initialTiles.firstWhere(
+      (tile) => (tile.title as Text).data == 'Other',
+    );
+    expect(
+      (otherTileBefore.subtitle as Text).data,
+      'Tap to send a friend request.',
+    );
+
+    await tester.tap(find.text('Tap to send a friend request.'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Send friend request'), findsOneWidget);
+
+    await tester.tap(find.text('Send'));
+    await tester.pumpAndSettle();
+
+    final sentDoc = await firestore
+        .collection(FriendCollections.users)
+        .doc('me')
+        .collection(FriendCollections.sentRequests)
+        .doc('other')
+        .get();
+    expect(sentDoc.exists, isTrue);
+
+    final updatedTiles = tester
+        .widgetList<ListTile>(find.byType(ListTile))
+        .toList();
+    final otherTileAfter = updatedTiles.firstWhere(
+      (tile) => (tile.title as Text).data == 'Other',
+    );
+    expect((otherTileAfter.subtitle as Text).data, 'Friend request sent.');
+  });
+
   testWidgets('failure hides loading indicator', (tester) async {
     final firestore = ThrowingFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-    await tester.pumpWidget(MaterialApp(
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
         home: LeaderboardPage(
-      firestore: firestore,
-      auth: auth,
-      friendService: FriendService(
-        firestore: firestore,
-        notificationService: NotificationService(firestore: firestore),
+          firestore: firestore,
+          auth: auth,
+          friendService: FriendService(
+            firestore: firestore,
+            notificationService: NotificationService(firestore: firestore),
+          ),
+        ),
       ),
-    )));
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
