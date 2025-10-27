@@ -55,6 +55,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(StreakStatsBox), findsOneWidget);
+    expect(
+      find.text(
+        'Each month includes two automatic grace credits to freeze a missed day. '
+        'Every 15-day streak earns one extra credit.',
+      ),
+      findsOneWidget,
+    );
 
     final weekCal = find.byType(WeekStreakCalendar);
     expect(weekCal, findsOneWidget);

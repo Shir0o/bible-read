@@ -22,6 +22,9 @@ class StreakStatsBox extends StatelessWidget {
   /// Remaining grace credits available for the current month, if known.
   final int? remainingGraceCredits;
 
+  /// Optional description explaining how streak tracking works.
+  final Widget? description;
+
   const StreakStatsBox({
     super.key,
     required this.currentStreak,
@@ -30,6 +33,7 @@ class StreakStatsBox extends StatelessWidget {
     required this.periodCount,
     required this.periodLabel,
     this.remainingGraceCredits,
+    this.description,
   });
 
   @override
@@ -47,6 +51,10 @@ class StreakStatsBox extends StatelessWidget {
               'Grace credits remaining: $remainingGraceCredits',
               style: AppTextStyles.body,
             ),
+          if (description != null) ...[
+            const SizedBox(height: 8),
+            description!,
+          ],
         ],
       ),
     );
