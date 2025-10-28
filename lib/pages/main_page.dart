@@ -311,7 +311,6 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _onItemTapped(int index) {
-    unawaited(vibrationService.lightImpact());
     if (widget.appCheckFailed) {
       return;
     }
@@ -320,6 +319,10 @@ class _MainPageState extends State<MainPage> {
     if (!signedIn && index != profileIndex) {
       return;
     }
+    if (_selectedIndex == index) {
+      return;
+    }
+    unawaited(vibrationService.lightImpact());
     _setSelectedIndex(index);
     if (index == _readLogIndex) {
       _readLogKey.currentState?.refresh();
