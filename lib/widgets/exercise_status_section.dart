@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -179,6 +178,8 @@ class _ExerciseChallengeCard extends StatelessWidget {
     final goalMet = summary.goalMetToday;
     final progress = _progressValue();
     final quickAdds = _quickAddOptions();
+    final loggingEnabled = onRecordAmount != null && !summary.goalMetToday;
+    final hasRecorder = onRecordAmount != null;
     final totalTarget = challenge.totalTarget;
     final totalRemaining =
         totalTarget != null ? (totalTarget - summary.totalRecorded) : null;
@@ -247,8 +248,7 @@ class _ExerciseChallengeCard extends StatelessWidget {
                         '${challenge.unit}',
                 style: theme.textTheme.bodySmall,
               ),
-          ]
-          else ...[
+          ] else ...[
             const SizedBox(height: 12),
             Text(
               'Lifetime total: ${_formatAmount(summary.totalRecorded)} '
@@ -263,20 +263,22 @@ class _ExerciseChallengeCard extends StatelessWidget {
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
-          if (onRecordAmount != null && quickAdds.isNotEmpty)
+          if (loggingEnabled && quickAdds.isNotEmpty)
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 for (final amount in quickAdds)
                   FilledButton.tonalIcon(
-                    onPressed: () => unawaited(
-                      onRecordAmount!(
-                        challenge,
-                        amount,
-                        replace: false,
-                      ),
-                    ),
+                    onPressed: loggingEnabled
+                        ? () => unawaited(
+                              onRecordAmount!(
+                                challenge,
+                                amount,
+                                replace: false,
+                              ),
+                            )
+                        : null,
                     icon: const Icon(Icons.add),
                     label: Text(
                       '+${_formatAmount(amount)}'
@@ -284,15 +286,23 @@ class _ExerciseChallengeCard extends StatelessWidget {
                     ),
                   ),
                 OutlinedButton.icon(
-                  onPressed: () => _showCustomAmountDialog(context),
+                  onPressed: loggingEnabled
+                      ? () => _showCustomAmountDialog(context)
+                      : null,
                   icon: const Icon(Icons.edit),
                   label: const Text('Log custom total'),
                 ),
               ],
             )
-          else if (onRecordAmount != null)
+          else if (loggingEnabled)
             OutlinedButton.icon(
               onPressed: () => _showCustomAmountDialog(context),
+              icon: const Icon(Icons.edit),
+              label: const Text('Log custom total'),
+            )
+          else if (hasRecorder)
+            OutlinedButton.icon(
+              onPressed: null,
               icon: const Icon(Icons.edit),
               label: const Text('Log custom total'),
             ),
@@ -372,8 +382,8 @@ class _ExerciseChallengeCard extends StatelessWidget {
       if (normalized <= 0) {
         return;
       }
-      final exists = options.any((element) =>
-          (element - normalized).abs() < 0.001);
+      final exists =
+          options.any((element) => (element - normalized).abs() < 0.001);
       if (!exists) {
         options.add(normalized);
       }
@@ -393,12 +403,9 @@ class _ExerciseChallengeCard extends StatelessWidget {
     if (onRecordAmount == null) {
       return;
     }
-    final controller = TextEditingController(
-      text: summary.todayTotal > 0
-          ? _formatAmount(summary.todayTotal)
-          : '',
-    );
     final formKey = GlobalKey<FormState>();
+    String? formValue =
+        summary.todayTotal > 0 ? _formatAmount(summary.todayTotal) : '';
 
     final double? result = await showDialog<double>(
       context: context,
@@ -408,13 +415,15 @@ class _ExerciseChallengeCard extends StatelessWidget {
           content: Form(
             key: formKey,
             child: TextFormField(
-              controller: controller,
+              initialValue: formValue,
               autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'Total for today'
                     '${challenge.unit.isNotEmpty ? ' (${challenge.unit})' : ''}',
               ),
+              onSaved: (value) => formValue = value?.trim() ?? '',
               validator: (value) {
                 final text = value?.trim() ?? '';
                 if (text.isEmpty) {
@@ -441,7 +450,8 @@ class _ExerciseChallengeCard extends StatelessWidget {
                 if (!formKey.currentState!.validate()) {
                   return;
                 }
-                final text = controller.text.trim();
+                formKey.currentState!.save();
+                final text = formValue ?? '';
                 final parsed = double.tryParse(text) ?? 0;
                 Navigator.of(dialogContext).pop(parsed);
               },
@@ -451,7 +461,6 @@ class _ExerciseChallengeCard extends StatelessWidget {
         );
       },
     );
-    controller.dispose();
 
     if (result != null) {
       await onRecordAmount!(challenge, result, replace: true);
@@ -486,9 +495,8 @@ class _ExerciseChallengeCard extends StatelessWidget {
           children: displayEntries.map((entry) {
             final date = DateTime.tryParse(entry.key);
             final amount = entry.value;
-            final formattedDate = date != null
-                ? localizations.formatMediumDate(date)
-                : entry.key;
+            final formattedDate =
+                date != null ? localizations.formatMediumDate(date) : entry.key;
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
