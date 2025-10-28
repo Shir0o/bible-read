@@ -411,6 +411,33 @@ void main() {
     expect(state.selectedIndex, 0);
   });
 
+  testWidgets('_onItemTapped exits without vibration when blocked', (tester) async {
+    final vibration = _RecordingVibrationService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          appCheckFailed: true,
+          firestore: FakeFirebaseFirestore(),
+          auth: MockFirebaseAuth(),
+          vibrationService: vibration,
+          messaging: FakeFirebaseMessaging(null),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final state = tester.state(find.byType(MainPage)) as dynamic;
+    vibration.getIndex = () => state.selectedIndex;
+
+    state.onItemTapped(1);
+    await tester.pump();
+
+    expect(vibration.lightCount, 0);
+    expect(state.selectedIndex, 0);
+  });
+
   testWidgets('onItemTapped refreshes read log page', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
