@@ -43,6 +43,7 @@ class AppMenuSheet extends StatelessWidget {
     _MenuItem(index: 3, icon: Icons.leaderboard, label: 'Leaderboard'),
     _MenuItem(index: 10, icon: Icons.notifications, label: 'Notifications'),
     _MenuItem(index: 9, icon: Icons.person, label: 'Profile'),
+    _MenuItem(index: 11, icon: Icons.fitness_center, label: 'Exercise Challenges'),
     _MenuItem(index: 2, icon: Icons.flag, label: 'Seasonal Challenges'),
   ];
 

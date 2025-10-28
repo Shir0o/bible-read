@@ -1,3 +1,4 @@
+import 'package:bible_read/pages/exercise_challenges_page.dart';
 import 'package:bible_read/pages/leaderboard_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/pages/friends_page.dart';
@@ -12,6 +13,7 @@ import 'package:bible_read/widgets/app_menu_sheet.dart';
 import '../services/friend_service.dart';
 import '../services/group_service.dart';
 import '../services/google_sign_in_factory.dart';
+import '../services/exercise_tracker_service.dart';
 import '../services/notification_service.dart';
 import '../services/vibration_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -217,6 +219,13 @@ class _MainPageState extends State<MainPage> {
       NotificationCenterPage(
         service: NotificationService(firestore: widget.firestore),
         auth: widget.auth,
+        vibrationService: widget.vibrationService,
+      ),
+      ExerciseChallengesPage(
+        trackerService: ExerciseTrackerService(
+          firestore: widget.firestore,
+          auth: widget.auth,
+        ),
         vibrationService: widget.vibrationService,
       ),
     ];
