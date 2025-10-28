@@ -32,6 +32,9 @@ class ExerciseChallenge {
   /// Target evaluation applied to [dailyGoal].
   final ExerciseTargetType targetType;
 
+  /// Optional overall target that tracks lifetime progress.
+  final double? totalTarget;
+
   /// Optional categories used to group challenges in the UI.
   final List<String> categories;
 
@@ -52,6 +55,7 @@ class ExerciseChallenge {
     required this.unit,
     required this.dailyGoal,
     this.targetType = ExerciseTargetType.atLeast,
+    this.totalTarget,
     List<String>? categories,
     this.archived = false,
     this.createdAt,
@@ -70,6 +74,9 @@ class ExerciseChallenge {
       unit: data['unit'] as String? ?? '',
       dailyGoal: _asDouble(data['dailyGoal']),
       targetType: _parseTargetType(data['targetType']),
+      totalTarget: data.containsKey('totalTarget')
+          ? _asDouble(data['totalTarget'])
+          : null,
       categories: _parseCategories(data['categories']),
       archived: data['archived'] as bool? ?? false,
       createdAt: _parseDate(data['createdAt']),
@@ -85,12 +92,47 @@ class ExerciseChallenge {
       'unit': unit,
       'dailyGoal': dailyGoal,
       'targetType': targetType.name,
+      if (totalTarget != null) 'totalTarget': totalTarget,
       'categories': categories,
       'archived': archived,
       if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt!),
       if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
     };
   }
+
+  /// Creates a copy of this challenge with updated fields.
+  ExerciseChallenge copyWith({
+    String? id,
+    String? uid,
+    String? name,
+    String? unit,
+    double? dailyGoal,
+    ExerciseTargetType? targetType,
+    Object? totalTarget = _noTotalTarget,
+    List<String>? categories,
+    bool? archived,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    final resolvedTotalTarget = identical(totalTarget, _noTotalTarget)
+        ? this.totalTarget
+        : totalTarget as double?;
+    return ExerciseChallenge(
+      id: id ?? this.id,
+      uid: uid ?? this.uid,
+      name: name ?? this.name,
+      unit: unit ?? this.unit,
+      dailyGoal: dailyGoal ?? this.dailyGoal,
+      targetType: targetType ?? this.targetType,
+      totalTarget: resolvedTotalTarget,
+      categories: categories ?? this.categories,
+      archived: archived ?? this.archived,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  static const Object _noTotalTarget = Object();
 
   static double _asDouble(Object? value) {
     if (value is double) {

@@ -133,6 +133,7 @@ class ExerciseTrackerService {
         unit: challenge.unit,
         dailyGoal: challenge.dailyGoal,
         targetType: challenge.targetType,
+        totalTarget: challenge.totalTarget,
         categories: challenge.categories,
         archived: challenge.archived,
         createdAt: challenge.createdAt ?? now,
