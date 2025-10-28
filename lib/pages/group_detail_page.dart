@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/group.dart';
+import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
@@ -82,6 +83,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   bool _editMode = false;
   bool _isSavingName = false;
   late String _groupName;
+  late Stream<List<GroupMemberProgressData>> _memberOverallStream;
   final Map<String, bool> _pendingReadOverrides = <String, bool>{};
   final Map<String, Map<int, bool>> _pendingChapterOverrides =
       <String, Map<int, bool>>{};
@@ -367,6 +369,25 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     super.initState();
     _groupName = widget.group.name;
     _nameController = TextEditingController(text: _groupName);
+    _memberOverallStream = widget.groupService.memberOverallCompletion(
+      widget.group.id,
+      includeUid: widget.auth.currentUser?.uid,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant GroupDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final previousUid = oldWidget.auth.currentUser?.uid;
+    final currentUid = widget.auth.currentUser?.uid;
+    if (oldWidget.group.id != widget.group.id || previousUid != currentUid) {
+      setState(() {
+        _memberOverallStream = widget.groupService.memberOverallCompletion(
+          widget.group.id,
+          includeUid: currentUid,
+        );
+      });
+    }
   }
 
   @override
@@ -1056,10 +1077,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 // Join requests moved to a dedicated page via the app bar action.
                 GroupMembersSection(
                   title: 'Members',
-                  membersStream: widget.groupService.memberOverallCompletion(
-                    widget.group.id,
-                    includeUid: userUid,
-                  ),
+                  membersStream: _memberOverallStream,
                 ),
                 const SectionHeader('Schedule'),
                 StreamBuilder<List<GroupSchedule>>(
