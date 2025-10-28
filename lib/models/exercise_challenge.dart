@@ -108,7 +108,7 @@ class ExerciseChallenge {
     String? unit,
     double? dailyGoal,
     ExerciseTargetType? targetType,
-    double? totalTarget = _noTotalTarget,
+    Object? totalTarget = _noTotalTarget,
     List<String>? categories,
     bool? archived,
     DateTime? createdAt,
@@ -116,7 +116,7 @@ class ExerciseChallenge {
   }) {
     final resolvedTotalTarget = identical(totalTarget, _noTotalTarget)
         ? this.totalTarget
-        : totalTarget;
+        : totalTarget as double?;
     return ExerciseChallenge(
       id: id ?? this.id,
       uid: uid ?? this.uid,
