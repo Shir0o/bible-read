@@ -6,6 +6,8 @@ import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/widgets/app_menu_sheet.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 
 class _StubVibrationService extends VibrationService {
   int calls = 0;
@@ -18,6 +20,11 @@ class _StubVibrationService extends VibrationService {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setupFirebaseCoreMocks();
+
+  setUpAll(() async {
+    await Firebase.initializeApp();
+  });
 
   testWidgets('selecting menu item notifies listener and closes sheet',
       (tester) async {

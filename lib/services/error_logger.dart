@@ -8,9 +8,14 @@ class ErrorLogger {
 
   /// Crashlytics instance used by [log].
   ///
-  /// This is exposed for testing so a mock can be injected.
+  /// This is exposed for testing so a mock can be injected. The instance is
+  /// created lazily so tests that do not initialise Firebase can still import
+  /// this file without throwing a `[core/no-app]` exception.
   @visibleForTesting
-  static FirebaseCrashlytics crashlytics = FirebaseCrashlytics.instance;
+  static FirebaseCrashlytics? crashlytics;
+
+  static FirebaseCrashlytics _ensureCrashlytics() =>
+      crashlytics ??= FirebaseCrashlytics.instance;
 
   /// Records [error] and optional [stack] to Crashlytics.
   static Future<void> log(Object error, [StackTrace? stack]) async {
@@ -19,7 +24,7 @@ class ErrorLogger {
     }
     if (Firebase.apps.isEmpty) return;
     try {
-      await crashlytics.recordError(error, stack, fatal: false);
+      await _ensureCrashlytics().recordError(error, stack, fatal: false);
     } catch (_) {
       // ignore errors if Crashlytics is unavailable
     }

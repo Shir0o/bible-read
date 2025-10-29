@@ -358,18 +358,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final initialTiles = tester
-        .widgetList<ListTile>(find.byType(ListTile))
-        .toList();
+    final initialTiles =
+        tester.widgetList<ListTile>(find.byType(ListTile)).toList();
     final otherTileBefore = initialTiles.firstWhere(
       (tile) => (tile.title as Text).data == 'Other',
     );
-    expect(
-      (otherTileBefore.subtitle as Text).data,
-      'Tap to send a friend request.',
-    );
+    final beforeSubtitle = otherTileBefore.subtitle as Padding;
+    final beforeTooltip =
+        (beforeSubtitle.child as Align).child as Tooltip;
+    expect(beforeTooltip.message, 'Tap to send a friend request.');
 
-    await tester.tap(find.text('Tap to send a friend request.'));
+    await tester.tap(find.text('Other'));
     await tester.pumpAndSettle();
 
     expect(find.text('Send friend request'), findsOneWidget);
@@ -385,13 +384,15 @@ void main() {
         .get();
     expect(sentDoc.exists, isTrue);
 
-    final updatedTiles = tester
-        .widgetList<ListTile>(find.byType(ListTile))
-        .toList();
+    final updatedTiles =
+        tester.widgetList<ListTile>(find.byType(ListTile)).toList();
     final otherTileAfter = updatedTiles.firstWhere(
       (tile) => (tile.title as Text).data == 'Other',
     );
-    expect((otherTileAfter.subtitle as Text).data, 'Friend request sent.');
+    final afterSubtitle = otherTileAfter.subtitle as Padding;
+    final afterTooltip =
+        (afterSubtitle.child as Align).child as Tooltip;
+    expect(afterTooltip.message, 'Friend request sent.');
   });
 
   testWidgets('failure hides loading indicator', (tester) async {

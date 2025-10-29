@@ -13,6 +13,8 @@ This release separates exercise tracking from the Reading Hub, hardens Firestore
 *   Introduced `ExerciseDashboardPage` with the existing summary cards, retry handling, and challenge management actions.
 *   Shared the `ExerciseTrackerService` instance across exercise surfaces to avoid redundant initialisation and haptic wiring.
 *   Updated the navigation menu with distinct entries for Daily Exercise and Exercise Challenges.
+*   Added inline logging controls with haptic feedback, success snackbars, and automatic refresh after recording progress or returning from challenge management.
+*   Hardened empty and error states so signed-out users see a neutral dashboard, failures surface guidance, and Crashlytics receives full context.
 
 ## Stability
 

@@ -299,7 +299,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       final state = tester.state(find.byType(MainPage)) as dynamic;
-      state.navigateFromMenu(11);
+      state.navigateFromMenu(12);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       await tester.pump(const Duration(milliseconds: 500));

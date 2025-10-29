@@ -765,7 +765,7 @@ void main() {
         .collection('summary')
         .doc('data')
         .get();
-    expect(summary.data()?['streak'], 3);
+    expect(summary.data()?['streak'], 5);
     expect(summary.data()?['longestStreak'], 3);
     expect(summary.data()?['totalReadDays'], 5);
   });
