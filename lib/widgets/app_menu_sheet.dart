@@ -2,24 +2,33 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
+import 'animated_page_route.dart';
+import '../pages/feedback_page.dart';
 
 class AppMenuSheet extends StatelessWidget {
   const AppMenuSheet({
     super.key,
     required this.onNavigate,
     required this.vibrationService,
+    required this.parentContext,
+    required this.feedbackService,
   });
 
   final ValueChanged<int> onNavigate;
   final VibrationService vibrationService;
+  final BuildContext parentContext;
+  final FeedbackService feedbackService;
 
   static Future<void> show({
     required BuildContext context,
     required ValueChanged<int> onNavigate,
     VibrationService? vibrationService,
+    FeedbackService? feedbackService,
   }) {
     final service = vibrationService ?? const VibrationService();
+    final feedback = feedbackService ?? FeedbackService();
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -28,24 +37,45 @@ class AppMenuSheet extends StatelessWidget {
         return AppMenuSheet(
           onNavigate: onNavigate,
           vibrationService: service,
+          parentContext: context,
+          feedbackService: feedback,
         );
       },
     );
   }
 
-  static const List<_MenuItem> _menuItems = [
-    _MenuItem(index: 6, icon: Icons.emoji_events, label: 'Achievements'),
-    _MenuItem(index: 1, icon: Icons.feed, label: 'Feed'),
-    _MenuItem(index: 4, icon: Icons.people, label: 'Friends'),
-    _MenuItem(index: 5, icon: Icons.group, label: 'Groups'),
-    _MenuItem(index: 7, icon: Icons.calendar_today, label: 'History'),
-    _MenuItem(index: 0, icon: Icons.home_outlined, label: 'Home'),
-    _MenuItem(index: 3, icon: Icons.leaderboard, label: 'Leaderboard'),
-    _MenuItem(index: 10, icon: Icons.notifications, label: 'Notifications'),
-    _MenuItem(index: 9, icon: Icons.person, label: 'Profile'),
-    _MenuItem(index: 11, icon: Icons.fitness_center, label: 'Exercise Challenges'),
-    _MenuItem(index: 2, icon: Icons.flag, label: 'Seasonal Challenges'),
-  ];
+  List<_MenuItem> get _menuItems => [
+        _MenuItem(index: 6, icon: Icons.emoji_events, label: 'Achievements'),
+        _MenuItem(index: 1, icon: Icons.feed, label: 'Feed'),
+        _MenuItem(index: 4, icon: Icons.people, label: 'Friends'),
+        _MenuItem(index: 5, icon: Icons.group, label: 'Groups'),
+        _MenuItem(index: 7, icon: Icons.calendar_today, label: 'History'),
+        _MenuItem(index: 0, icon: Icons.home_outlined, label: 'Home'),
+        _MenuItem(index: 3, icon: Icons.leaderboard, label: 'Leaderboard'),
+        _MenuItem(index: 10, icon: Icons.notifications, label: 'Notifications'),
+        _MenuItem(index: 9, icon: Icons.person, label: 'Profile'),
+        _MenuItem(
+            index: 11,
+            icon: Icons.fitness_center,
+            label: 'Exercise Challenges'),
+        _MenuItem(index: 2, icon: Icons.flag, label: 'Seasonal Challenges'),
+        _MenuItem(
+          icon: Icons.feedback,
+          label: 'Feedback',
+          onTap: (context) {
+        Navigator.of(context).push(
+          animatedPageRoute(
+            FeedbackPage(
+              initialTab: FeedbackTab.feature,
+              feedbackService: feedbackService,
+              vibrationService: vibrationService,
+              parentMessenger: ScaffoldMessenger.of(context),
+            ),
+          ),
+        );
+          },
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +150,7 @@ class AppMenuSheet extends StatelessWidget {
                               onNavigate: onNavigate,
                               vibrationService: vibrationService,
                               textStyle: textStyle,
+                              parentContext: parentContext,
                             ),
                           ),
                         )
@@ -142,12 +173,14 @@ class _MenuActionButton extends StatelessWidget {
     required this.onNavigate,
     required this.vibrationService,
     required this.textStyle,
+    required this.parentContext,
   });
 
   final _MenuItem item;
   final ValueChanged<int> onNavigate;
   final VibrationService vibrationService;
   final TextStyle textStyle;
+  final BuildContext parentContext;
 
   @override
   Widget build(BuildContext context) {
@@ -163,7 +196,11 @@ class _MenuActionButton extends StatelessWidget {
       onPressed: () {
         unawaited(vibrationService.lightImpact());
         Navigator.of(context).pop();
-        onNavigate(item.index);
+        if (item.onTap != null) {
+          item.onTap!(parentContext);
+        } else if (item.index != null) {
+          onNavigate(item.index!);
+        }
       },
       icon: Icon(item.icon),
       label: Text(
@@ -179,12 +216,15 @@ class _MenuActionButton extends StatelessWidget {
 
 class _MenuItem {
   const _MenuItem({
-    required this.index,
+    this.index,
     required this.icon,
     required this.label,
-  });
+    this.onTap,
+  }) : assert(index != null || onTap != null,
+            'Either index or onTap must be provided.');
 
-  final int index;
+  final int? index;
   final IconData icon;
   final String label;
+  final void Function(BuildContext context)? onTap;
 }

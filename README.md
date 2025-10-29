@@ -24,6 +24,7 @@ A Flutter application designed to help individuals and groups track their daily 
     home dashboard, and visit the Seasonal tab to claim exclusive rewards before the
     season ends.
 *   **Achievements:** Unlock evergreen badges such as being the first reader of the day and view them from the Achievements page.
+*   **Feedback:** Report bugs or request new features directly from the profile screen or the navigation menu.
 ### Posting Comments
 
 Each entry in the reading feed includes a comment field labeled "Add a comment..." with a **Post** button so you can reply to others. Comments appear above the field after posting.
