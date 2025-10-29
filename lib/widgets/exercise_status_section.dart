@@ -178,7 +178,7 @@ class _ExerciseChallengeCard extends StatelessWidget {
     final goalMet = summary.goalMetToday;
     final progress = _progressValue();
     final quickAdds = _quickAddOptions();
-    final loggingEnabled = onRecordAmount != null && !summary.goalMetToday;
+    final loggingEnabled = onRecordAmount != null && !_shouldDisableLogging();
     final hasRecorder = onRecordAmount != null;
     final totalTarget = challenge.totalTarget;
     final totalRemaining =
@@ -311,6 +311,23 @@ class _ExerciseChallengeCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  bool _shouldDisableLogging() {
+    if (onRecordAmount == null) {
+      return true;
+    }
+    switch (challenge.targetType) {
+      case ExerciseTargetType.atMost:
+        final limit = challenge.dailyGoal;
+        if (limit <= 0) {
+          return false;
+        }
+        return summary.todayTotal > limit;
+      case ExerciseTargetType.atLeast:
+      case ExerciseTargetType.exactly:
+        return summary.goalMetToday;
+    }
   }
 
   double? _progressValue() {
