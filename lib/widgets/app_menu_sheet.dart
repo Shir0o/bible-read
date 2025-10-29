@@ -13,13 +13,13 @@ class AppMenuSheet extends StatelessWidget {
     required this.onNavigate,
     required this.vibrationService,
     required this.parentContext,
-    required this.feedbackService,
+    this.feedbackService,
   });
 
   final ValueChanged<int> onNavigate;
   final VibrationService vibrationService;
   final BuildContext parentContext;
-  final FeedbackService feedbackService;
+  final FeedbackService? feedbackService;
 
   static Future<void> show({
     required BuildContext context,
@@ -28,7 +28,6 @@ class AppMenuSheet extends StatelessWidget {
     FeedbackService? feedbackService,
   }) {
     final service = vibrationService ?? const VibrationService();
-    final feedback = feedbackService ?? FeedbackService();
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -38,7 +37,7 @@ class AppMenuSheet extends StatelessWidget {
           onNavigate: onNavigate,
           vibrationService: service,
           parentContext: context,
-          feedbackService: feedback,
+          feedbackService: feedbackService,
         );
       },
     );
@@ -63,16 +62,17 @@ class AppMenuSheet extends StatelessWidget {
           icon: Icons.feedback,
           label: 'Feedback',
           onTap: (context) {
-        Navigator.of(context).push(
-          animatedPageRoute(
-            FeedbackPage(
-              initialTab: FeedbackTab.feature,
-              feedbackService: feedbackService,
-              vibrationService: vibrationService,
-              parentMessenger: ScaffoldMessenger.of(context),
-            ),
-          ),
-        );
+            final feedback = feedbackService ?? FeedbackService();
+            Navigator.of(context).push(
+              animatedPageRoute(
+                FeedbackPage(
+                  initialTab: FeedbackTab.feature,
+                  feedbackService: feedback,
+                  vibrationService: vibrationService,
+                  parentMessenger: ScaffoldMessenger.of(context),
+                ),
+              ),
+            );
           },
         ),
       ];
