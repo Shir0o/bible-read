@@ -103,5 +103,15 @@ void main() {
     await tester.tap(find.byIcon(Icons.person));
     await tester.pumpAndSettle();
     expect(find.text('Profile'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.home));
+    await tester.pumpAndSettle();
+    expect(find.text('Daily Exercise'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Exercise Challenges'));
+    await tester.pumpAndSettle();
+    expect(find.text('Exercise Challenges'), findsOneWidget);
   });
 }
