@@ -91,68 +91,79 @@ class _CommentSectionState extends State<CommentSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Flexible(
-          fit: FlexFit.loose,
-          child: ListView.builder(
-            controller: widget.scrollController,
-            shrinkWrap: true,
-            itemCount: widget.comments.length,
-            itemBuilder: (context, index) {
-              final c = widget.comments[index];
-              return CommonStyles.buildTappableCard(
-                onTap: () {},
-                margin: const EdgeInsets.symmetric(vertical: 4),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(c.authorName),
-                  subtitle: Text(c.message),
-                ),
-              );
-            },
-          ),
-        ),
-        if (widget.showInput)
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  textCapitalization: TextCapitalization.sentences,
-                  keyboardType: TextInputType.text,
-                  decoration:
-                      const InputDecoration(hintText: 'Add a comment...'),
-                ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final hasBoundedHeight = constraints.maxHeight.isFinite;
+        final listView = ListView.builder(
+          controller: widget.scrollController,
+          shrinkWrap: !hasBoundedHeight,
+          physics: hasBoundedHeight
+              ? const BouncingScrollPhysics()
+              : const NeverScrollableScrollPhysics(),
+          itemCount: widget.comments.length,
+          itemBuilder: (context, index) {
+            final c = widget.comments[index];
+            return CommonStyles.buildTappableCard(
+              onTap: () {},
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(c.authorName),
+                subtitle: Text(c.message),
               ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: _sending
-                    ? null
-                    : () {
-                        _submit();
-                      },
-                icon: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: _sending && widget.showSendProgress
-                      ? const SizedBox(
-                          key: ValueKey('progress'),
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(
-                          Icons.send,
-                          key: ValueKey('send'),
-                        ),
-                ),
-                label: const Text('Post'),
+            );
+          },
+        );
+
+        final listChild = hasBoundedHeight
+            ? Flexible(fit: FlexFit.loose, child: listView)
+            : listView;
+
+        return Column(
+          mainAxisSize: hasBoundedHeight ? MainAxisSize.max : MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            listChild,
+            if (widget.showInput)
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      textCapitalization: TextCapitalization.sentences,
+                      keyboardType: TextInputType.text,
+                      decoration:
+                          const InputDecoration(hintText: 'Add a comment...'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    onPressed: _sending
+                        ? null
+                        : () {
+                            _submit();
+                          },
+                    icon: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: _sending && widget.showSendProgress
+                          ? const SizedBox(
+                              key: ValueKey('progress'),
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(
+                              Icons.send,
+                              key: ValueKey('send'),
+                            ),
+                    ),
+                    label: const Text('Post'),
+                  ),
+                ],
               ),
-            ],
-          ),
-      ],
+          ],
+        );
+      },
     );
   }
 }

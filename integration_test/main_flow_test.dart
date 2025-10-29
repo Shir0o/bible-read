@@ -106,6 +106,12 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.home));
     await tester.pumpAndSettle();
+    expect(find.text('Reading Hub'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Daily Exercise'));
+    await tester.pumpAndSettle();
     expect(find.text('Daily Exercise'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.more_horiz));

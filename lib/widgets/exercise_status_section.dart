@@ -216,7 +216,7 @@ class _ExerciseChallengeCard extends StatelessWidget {
                 label: Text(goalMet ? 'Goal met' : 'Keep going'),
                 backgroundColor: goalMet
                     ? theme.colorScheme.secondaryContainer
-                    : theme.colorScheme.surfaceVariant,
+                    : theme.colorScheme.surfaceContainerHighest,
               ),
             ],
           ),

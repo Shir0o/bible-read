@@ -342,7 +342,7 @@ class _ChallengeCard extends StatelessWidget {
                 ),
                 backgroundColor: summary.goalMetToday
                     ? theme.colorScheme.secondaryContainer
-                    : theme.colorScheme.surfaceVariant,
+                    : theme.colorScheme.surfaceContainerHighest,
               ),
             ],
           ),
@@ -410,7 +410,7 @@ class _ChallengeCard extends StatelessWidget {
               }).toList(),
             ),
           const SizedBox(height: 16),
-          ButtonBar(
+          OverflowBar(
             alignment: MainAxisAlignment.spaceBetween,
             children: [
               TextButton.icon(
@@ -568,7 +568,7 @@ class _ExerciseChallengeFormState extends State<_ExerciseChallengeForm> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _useCustomUnit ? 'custom' : _selectedUnit,
+                  initialValue: _useCustomUnit ? 'custom' : _selectedUnit,
                   decoration: const InputDecoration(labelText: 'Unit'),
                   items: [
                     for (final option in _unitOptions)
@@ -616,7 +616,7 @@ class _ExerciseChallengeFormState extends State<_ExerciseChallengeForm> {
                 ],
                 const SizedBox(height: 16),
                 DropdownButtonFormField<ExerciseTargetType>(
-                  value: _targetType,
+                  initialValue: _targetType,
                   decoration: const InputDecoration(labelText: 'Daily target type'),
                   items: ExerciseTargetType.values
                       .map(

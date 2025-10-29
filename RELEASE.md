@@ -1,3 +1,23 @@
+# Release 1.17.0
+
+This release separates exercise tracking from the Reading Hub, hardens Firestore permissions, and refreshes navigation to surface the new flow.
+
+## Highlights
+
+*   Daily exercise moves into its own dashboard page with dedicated refresh, logging, and challenge shortcuts.
+*   Reading Hub now focuses solely on streak context while still linking into the exercise experience when needed.
+*   Firestore security rules now allow signed-in users to manage their own `exerciseChallenges` and `exerciseProgress` documents, resolving permission-denied crashes.
+
+## Exercise Tracking
+
+*   Introduced `ExerciseDashboardPage` with the existing summary cards, retry handling, and challenge management actions.
+*   Shared the `ExerciseTrackerService` instance across exercise surfaces to avoid redundant initialisation and haptic wiring.
+*   Updated the navigation menu with distinct entries for Daily Exercise and Exercise Challenges.
+
+## Stability
+
+*   Fixed Crashlytics permission errors triggered when loading exercise summaries by aligning Firestore rules with the app collections.
+
 # Release 1.16.0
 
 This release introduces monthly grace credits to cushion streaks, streamlines group scheduling tooling, and refreshes navigation and notifications throughout the app.

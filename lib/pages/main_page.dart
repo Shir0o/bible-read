@@ -33,6 +33,7 @@ import 'home_page.dart';
 import 'read_log_page.dart';
 import 'app_check_error_page.dart';
 import 'notification_center_page.dart';
+import 'exercise_dashboard_page.dart';
 
 typedef SendLikeNotification = Future<void> Function({
   required String ownerUid,
@@ -132,6 +133,7 @@ class _MainPageState extends State<MainPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late final FriendService _friendService;
   late final GroupService _groupService;
+  late final ExerciseTrackerService _exerciseTrackerService;
   final GlobalKey<ReadLogPageState> _readLogKey = GlobalKey<ReadLogPageState>();
   final GlobalKey<LeaderboardPageState> _leaderboardKey =
       GlobalKey<LeaderboardPageState>();
@@ -142,6 +144,10 @@ class _MainPageState extends State<MainPage> {
     super.initState();
     _friendService = FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
+    _exerciseTrackerService = ExerciseTrackerService(
+      firestore: widget.firestore,
+      auth: widget.auth,
+    );
     _pages = [
       HomePage(
         firestore: widget.firestore,
@@ -221,11 +227,13 @@ class _MainPageState extends State<MainPage> {
         auth: widget.auth,
         vibrationService: widget.vibrationService,
       ),
+      ExerciseDashboardPage(
+        auth: widget.auth,
+        trackerService: _exerciseTrackerService,
+        vibrationService: widget.vibrationService,
+      ),
       ExerciseChallengesPage(
-        trackerService: ExerciseTrackerService(
-          firestore: widget.firestore,
-          auth: widget.auth,
-        ),
+        trackerService: _exerciseTrackerService,
         vibrationService: widget.vibrationService,
       ),
     ];

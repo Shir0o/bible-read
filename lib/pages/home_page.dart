@@ -8,18 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../models/achievement.dart';
-import '../models/exercise_challenge.dart';
 import '../services/achievement_service.dart';
 import '../services/error_logger.dart';
 import '../services/google_sign_in_factory.dart';
-import '../services/exercise_tracker_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/read_status_section.dart';
-import '../widgets/exercise_status_section.dart';
-import 'exercise_challenges_page.dart';
 import 'read_log_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
@@ -44,14 +40,11 @@ class HomePage extends StatefulWidget {
     FirebaseAuth? auth,
     this.functions,
     this.markFirstReader,
-    ExerciseTrackerService? exerciseTrackerService,
     ReadingStatusService? readingStatusService,
     VibrationService? vibrationService,
     GoogleSignIn Function()? googleSignInProvider,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
-        exerciseTrackerService = exerciseTrackerService ??
-            ExerciseTrackerService(firestore: firestore, auth: auth),
         readingStatusService = readingStatusService ??
             ReadingStatusService(firestore: firestore, auth: auth),
         vibrationService = vibrationService ?? const VibrationService(),
@@ -59,9 +52,6 @@ class HomePage extends StatefulWidget {
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
-
-  /// Service for managing exercise challenges and progress.
-  final ExerciseTrackerService exerciseTrackerService;
 
   /// Service used for read-toggle haptics.
   final VibrationService vibrationService;
@@ -80,15 +70,11 @@ class _HomePageState extends State<HomePage>
   List<bool> _pastWeek = [];
   List<bool> _pastMonth = [];
   Set<DateTime> _readDates = {};
-  bool _exerciseLoading = true;
-  List<ExerciseChallengeSummary> _exerciseSummaries = const [];
-  String? _exerciseError;
 
   @override
   void initState() {
     super.initState();
     _loadReadStatus();
-    unawaited(_loadExerciseSummaries());
   }
 
   @override
@@ -96,10 +82,6 @@ class _HomePageState extends State<HomePage>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.auth != widget.auth) {
       unawaited(_loadReadStatus());
-      unawaited(_loadExerciseSummaries());
-    } else if (oldWidget.exerciseTrackerService !=
-        widget.exerciseTrackerService) {
-      unawaited(_loadExerciseSummaries());
     }
   }
 
@@ -133,64 +115,6 @@ class _HomePageState extends State<HomePage>
         });
       }
     }
-  }
-
-  Future<bool> _loadExerciseSummaries({bool setLoading = true}) async {
-    final user = widget.auth.currentUser;
-    if (user == null) {
-      if (!_disposed && mounted) {
-        setState(() {
-          _exerciseSummaries = const [];
-          _exerciseError = null;
-          _exerciseLoading = false;
-        });
-      }
-      return true;
-    }
-
-    if (!_disposed && mounted) {
-      setState(() {
-        if (setLoading) {
-          _exerciseLoading = true;
-        }
-        _exerciseError = null;
-      });
-    }
-
-    var success = false;
-
-    try {
-      final summaries =
-          await widget.exerciseTrackerService.fetchChallengeSummaries(
-        uid: user.uid,
-      );
-      if (!_disposed && mounted) {
-        setState(() {
-          _exerciseSummaries = summaries;
-          _exerciseError = null;
-        });
-      }
-      success = true;
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to load exercise summaries: $e');
-      }
-      await ErrorLogger.log(e, st);
-      if (!_disposed && mounted) {
-        setState(() {
-          _exerciseError =
-              'Failed to load exercise progress. Please try again.';
-        });
-      }
-    } finally {
-      if (!_disposed && mounted) {
-        setState(() {
-          _exerciseLoading = false;
-        });
-      }
-    }
-
-    return success;
   }
 
   /// Cleans and updates the cached summary document without scanning the entire
@@ -554,87 +478,6 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  Future<void> _recordExerciseAmount(
-    ExerciseChallenge challenge,
-    double amount, {
-    bool replace = false,
-  }) async {
-    if (amount.isNaN || amount.isInfinite) {
-      return;
-    }
-    try {
-      await widget.exerciseTrackerService.recordDailyAmount(
-        challenge: challenge,
-        amount: amount,
-        replace: replace,
-      );
-      await _loadExerciseSummaries(setLoading: false);
-      if (_disposed || !mounted) {
-        return;
-      }
-      unawaited(widget.vibrationService.mediumImpact());
-      final messenger = ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar();
-      final label = _formatExerciseAmount(amount, challenge.unit);
-      final message = replace
-          ? 'Logged $label for ${challenge.name}.'
-          : 'Added $label to ${challenge.name}.';
-      messenger.showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to record exercise amount: $e');
-      }
-      await ErrorLogger.log(e, st);
-      if (_disposed || !mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(
-            content:
-                Text('Failed to record exercise progress. Please try again.'),
-          ),
-        );
-    }
-  }
-
-  Future<void> _openExerciseChallenges() async {
-    if (!mounted) {
-      return;
-    }
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => ExerciseChallengesPage(
-          trackerService: widget.exerciseTrackerService,
-          vibrationService: widget.vibrationService,
-        ),
-      ),
-    );
-    if (_disposed || !mounted) {
-      return;
-    }
-    await _loadExerciseSummaries();
-  }
-
-  void _retryExerciseSummaries() {
-    unawaited(_loadExerciseSummaries());
-  }
-
-  String _formatExerciseAmount(double value, String unit) {
-    final fixed = value.toStringAsFixed(2);
-    final trimmed = fixed
-        .replaceFirst(RegExp(r'\.0+\$'), '')
-        .replaceFirst(RegExp(r'(\.\d*?[1-9])0+\$'), r'\1');
-    final amount = trimmed.isEmpty ? '0' : trimmed;
-    if (unit.isEmpty) {
-      return amount;
-    }
-    return '$amount $unit';
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -683,26 +526,13 @@ class _HomePageState extends State<HomePage>
             await firebaseUser.reload();
           }
           await _updateSummary();
-          final readFuture = _loadReadStatus();
-          final exerciseFuture = _loadExerciseSummaries();
-          await Future.wait([readFuture, exerciseFuture]);
+          await _loadReadStatus();
           if (!mounted) return;
-          final messenger = ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar();
-          final exerciseSuccess = await exerciseFuture;
-          if (exerciseSuccess) {
-            messenger.showSnackBar(
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
               const SnackBar(content: Text('Refreshed successfully')),
             );
-          } else {
-            messenger.showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Reading refreshed. Exercise data may be out of date.',
-                ),
-              ),
-            );
-          }
         } catch (e, st) {
           if (kDebugMode) {
             debugPrint('Refresh failed: \$e');
@@ -734,15 +564,6 @@ class _HomePageState extends State<HomePage>
                 onToggle: _toggleReadStatus,
                 readDates: _readDates,
                 vibrationService: widget.vibrationService,
-              ),
-              ExerciseStatusSection(
-                loading: _exerciseLoading,
-                summaries: _exerciseSummaries,
-                error: _exerciseError,
-                onRecordAmount: _recordExerciseAmount,
-                onOpenChallenges: _openExerciseChallenges,
-                onCreateChallenge: _openExerciseChallenges,
-                onRetry: _retryExerciseSummaries,
               ),
             ],
           ),

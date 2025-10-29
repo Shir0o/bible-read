@@ -44,20 +44,22 @@ class AppMenuSheet extends StatelessWidget {
   }
 
   List<_MenuItem> get _menuItems => [
-        _MenuItem(index: 6, icon: Icons.emoji_events, label: 'Achievements'),
-        _MenuItem(index: 1, icon: Icons.feed, label: 'Feed'),
-        _MenuItem(index: 4, icon: Icons.people, label: 'Friends'),
-        _MenuItem(index: 5, icon: Icons.group, label: 'Groups'),
-        _MenuItem(index: 7, icon: Icons.calendar_today, label: 'History'),
-        _MenuItem(index: 0, icon: Icons.home_outlined, label: 'Home'),
-        _MenuItem(index: 3, icon: Icons.leaderboard, label: 'Leaderboard'),
-        _MenuItem(index: 10, icon: Icons.notifications, label: 'Notifications'),
-        _MenuItem(index: 9, icon: Icons.person, label: 'Profile'),
-        _MenuItem(
-            index: 11,
-            icon: Icons.fitness_center,
-            label: 'Exercise Challenges'),
-        _MenuItem(index: 2, icon: Icons.flag, label: 'Seasonal Challenges'),
+        const _MenuItem(index: 6, icon: Icons.emoji_events, label: 'Achievements'),
+        const _MenuItem(index: 1, icon: Icons.feed, label: 'Feed'),
+        const _MenuItem(index: 4, icon: Icons.people, label: 'Friends'),
+        const _MenuItem(index: 5, icon: Icons.group, label: 'Groups'),
+        const _MenuItem(index: 7, icon: Icons.calendar_today, label: 'History'),
+        const _MenuItem(index: 0, icon: Icons.home_outlined, label: 'Home'),
+        const _MenuItem(index: 3, icon: Icons.leaderboard, label: 'Leaderboard'),
+        const _MenuItem(index: 10, icon: Icons.notifications, label: 'Notifications'),
+        const _MenuItem(index: 9, icon: Icons.person, label: 'Profile'),
+        const _MenuItem(index: 11, icon: Icons.fitness_center, label: 'Daily Exercise'),
+        const _MenuItem(
+          index: 12,
+          icon: Icons.manage_search,
+          label: 'Exercise Challenges',
+        ),
+        const _MenuItem(index: 2, icon: Icons.flag, label: 'Seasonal Challenges'),
         _MenuItem(
           icon: Icons.feedback,
           label: 'Feedback',
