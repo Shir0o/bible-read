@@ -57,3 +57,5 @@ ios/GoogleService-Info.plist
 google-services.json
 
 android/.kotlin/
+
+key.properties
