@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bible_read/widgets/app_menu_sheet.dart';
+import 'package:bible_read/services/feedback_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
+import 'package:bible_read/widgets/app_menu_sheet.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 
 class _StubVibrationService extends VibrationService {
   int calls = 0;
@@ -33,6 +36,10 @@ void main() {
                       context: context,
                       onNavigate: (index) => lastIndex = index,
                       vibrationService: vibrationService,
+                      feedbackService: FeedbackService(
+                        firestore: FakeFirebaseFirestore(),
+                        auth: MockFirebaseAuth(),
+                      ),
                     );
                   },
                   child: const Text('Open menu'),

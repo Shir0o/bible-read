@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 
 import '../services/error_logger.dart';
+import '../services/feedback_service.dart';
 import '../services/friend_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/vibration_service.dart';
@@ -13,6 +14,7 @@ import '../widgets/animated_action_button.dart';
 import '../widgets/animated_page_route.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/vibration_button.dart';
+import 'feedback_page.dart';
 import 'login_page.dart';
 import 'main_page.dart';
 import 'notification_settings_page.dart';
@@ -25,6 +27,7 @@ class UserProfilePage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FriendService friendService;
   final VibrationService vibrationService;
+  final FeedbackService feedbackService;
 
   factory UserProfilePage({
     Key? key,
@@ -34,16 +37,20 @@ class UserProfilePage extends StatefulWidget {
     FirebaseFirestore? firestore,
     FriendService? friendService,
     VibrationService? vibrationService,
+    FeedbackService? feedbackService,
   }) {
+    final authInstance = auth ?? FirebaseAuth.instance;
     final fs = firestore ?? FirebaseFirestore.instance;
     return UserProfilePage._(
       key: key,
       user: user,
       googleSignInProvider: googleSignInProvider ?? createGoogleSignIn,
-      auth: auth ?? FirebaseAuth.instance,
+      auth: authInstance,
       firestore: fs,
       friendService: friendService ?? FriendService(firestore: fs),
       vibrationService: vibrationService ?? const VibrationService(),
+      feedbackService:
+          feedbackService ?? FeedbackService(firestore: fs, auth: authInstance),
     );
   }
 
@@ -55,6 +62,7 @@ class UserProfilePage extends StatefulWidget {
     required this.firestore,
     required this.friendService,
     required this.vibrationService,
+    required this.feedbackService,
   });
 
   @override
@@ -254,6 +262,42 @@ class UserProfilePageState extends State<UserProfilePage> {
                                 );
                               },
                               child: const Text('Notification Settings'),
+                            ),
+                            const SizedBox(height: 8),
+                            VibrationButton(
+                              vibrationService: widget.vibrationService,
+                              onPressed: () {
+                                final messenger = ScaffoldMessenger.of(context);
+                                Navigator.of(context).push(
+                                  animatedPageRoute(
+                                    FeedbackPage(
+                                      initialTab: FeedbackTab.bug,
+                                      feedbackService: widget.feedbackService,
+                                      vibrationService: widget.vibrationService,
+                                      parentMessenger: messenger,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: const Text('Report a Bug'),
+                            ),
+                            const SizedBox(height: 8),
+                            VibrationButton(
+                              vibrationService: widget.vibrationService,
+                              onPressed: () {
+                                final messenger = ScaffoldMessenger.of(context);
+                                Navigator.of(context).push(
+                                  animatedPageRoute(
+                                    FeedbackPage(
+                                      initialTab: FeedbackTab.feature,
+                                      feedbackService: widget.feedbackService,
+                                      vibrationService: widget.vibrationService,
+                                      parentMessenger: messenger,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: const Text('Request a Feature'),
                             ),
                           ],
                         );
