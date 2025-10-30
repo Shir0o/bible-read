@@ -18,12 +18,20 @@ class ReadingStatus {
   /// Set of all dates currently loaded as read.
   final Set<DateTime> readDates;
 
+  /// Remaining grace credits available for the current summary month.
+  final int graceCreditsAvailable;
+
+  /// Identifier of the month associated with [graceCreditsAvailable].
+  final String graceCreditsMonth;
+
   /// Creates a [ReadingStatus].
   const ReadingStatus({
     required this.readToday,
     required this.pastWeek,
     required this.pastMonth,
     required this.readDates,
+    required this.graceCreditsAvailable,
+    required this.graceCreditsMonth,
   });
 }
 
@@ -72,16 +80,23 @@ class ReadingStatusService {
   Future<ReadingStatus> fetchStatus() async {
     final user = auth.currentUser;
     if (user == null) {
-      return const ReadingStatus(
+      final today = DateTime.now();
+      final defaultMonthKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}';
+      return ReadingStatus(
         readToday: false,
         pastWeek: [],
         pastMonth: [],
         readDates: {},
+        graceCreditsAvailable: 0,
+        graceCreditsMonth: defaultMonthKey,
       );
     }
 
     try {
       final today = DateTime.now();
+      final defaultMonthKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}';
       final dateKey =
           '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
@@ -133,6 +148,14 @@ class ReadingStatusService {
 
       // Load calendar data from summary doc.
       final data = summaryDoc.data() ?? {};
+      final graceCreditsRaw = data['graceCreditsAvailable'];
+      final graceCreditsAvailable = graceCreditsRaw is int
+          ? graceCreditsRaw
+          : graceCreditsRaw is num
+              ? graceCreditsRaw.toInt()
+              : 0;
+      final graceCreditsMonth =
+          (data['graceCreditsMonth'] as String?) ?? defaultMonthKey;
       var weekDates = List<String>.from(data['pastWeekReadDates'] ?? []);
       weekDates = weekDates.where((d) {
         final parsed = DateTime.tryParse(d);
@@ -208,6 +231,8 @@ class ReadingStatusService {
         pastWeek: savedWeek,
         pastMonth: savedMonth,
         readDates: readDates,
+        graceCreditsAvailable: graceCreditsAvailable,
+        graceCreditsMonth: graceCreditsMonth,
       );
     } catch (e, st) {
       if (kDebugMode) {
