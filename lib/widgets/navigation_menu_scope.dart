@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/admin_role_service.dart';
 import '../services/vibration_service.dart';
 import 'app_menu_sheet.dart';
 
@@ -10,6 +11,7 @@ class NavigationMenuScope extends InheritedWidget {
     required super.child,
     required this.onNavigate,
     this.vibrationService = const VibrationService(),
+    this.adminRoleService,
   });
 
   /// Invoked when a menu item is selected.
@@ -17,6 +19,9 @@ class NavigationMenuScope extends InheritedWidget {
 
   /// Vibration service used when opening or interacting with the menu.
   final VibrationService vibrationService;
+
+  /// Service used to determine whether the current user should see admin items.
+  final AdminRoleService? adminRoleService;
 
   /// Retrieves the nearest [NavigationMenuScope] above [context], if any.
   static NavigationMenuScope? maybeOf(BuildContext context) {
@@ -38,12 +43,14 @@ class NavigationMenuScope extends InheritedWidget {
       context: context,
       onNavigate: onNavigate,
       vibrationService: vibrationService,
+      adminRoleService: adminRoleService,
     );
   }
 
   @override
   bool updateShouldNotify(NavigationMenuScope oldWidget) {
     return onNavigate != oldWidget.onNavigate ||
-        vibrationService != oldWidget.vibrationService;
+        vibrationService != oldWidget.vibrationService ||
+        adminRoleService != oldWidget.adminRoleService;
   }
 }

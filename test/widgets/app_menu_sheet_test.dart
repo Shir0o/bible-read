@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:bible_read/pages/admin/feedback_admin_page.dart';
+import 'package:bible_read/services/admin_role_service.dart';
 import 'package:bible_read/services/feedback_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/widgets/app_menu_sheet.dart';
@@ -16,6 +18,22 @@ class _StubVibrationService extends VibrationService {
   Future<void> lightImpact() async {
     calls++;
   }
+}
+
+class _AlwaysAdminService extends AdminRoleService {
+  _AlwaysAdminService()
+      : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
+
+  @override
+  Future<bool> isAdmin() async => true;
+}
+
+class _NeverAdminService extends AdminRoleService {
+  _NeverAdminService()
+      : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
+
+  @override
+  Future<bool> isAdmin() async => false;
 }
 
 void main() {
@@ -47,6 +65,7 @@ void main() {
                         firestore: FakeFirebaseFirestore(),
                         auth: MockFirebaseAuth(),
                       ),
+                      adminRoleService: _NeverAdminService(),
                     );
                   },
                   child: const Text('Open menu'),
@@ -97,5 +116,45 @@ void main() {
 
     await openMenu();
     await select('Profile', 9);
+  });
+
+  testWidgets('shows Feedback Inbox entry for admin users', (tester) async {
+    final fakeFirestore = FakeFirebaseFirestore();
+    final mockAuth = MockFirebaseAuth();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              return ElevatedButton(
+                onPressed: () {
+                  AppMenuSheet.show(
+                    context: context,
+                    onNavigate: (_) {},
+                    vibrationService: const VibrationService(),
+                    feedbackService: FeedbackService(
+                      firestore: fakeFirestore,
+                      auth: mockAuth,
+                    ),
+                    adminRoleService: _AlwaysAdminService(),
+                  );
+                },
+                child: const Text('Open'),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Feedback Inbox'), findsOneWidget);
+
+    await tester.tap(find.text('Feedback Inbox'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FeedbackAdminPage), findsOneWidget);
   });
 }

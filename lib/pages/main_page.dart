@@ -10,10 +10,11 @@ import 'package:bible_read/pages/seasonal_challenges_page.dart';
 import 'package:bible_read/widgets/navigation_menu_scope.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:bible_read/widgets/app_menu_sheet.dart';
-import '../services/friend_service.dart';
-import '../services/group_service.dart';
-import '../services/google_sign_in_factory.dart';
+import '../services/admin_role_service.dart';
 import '../services/exercise_tracker_service.dart';
+import '../services/friend_service.dart';
+import '../services/google_sign_in_factory.dart';
+import '../services/group_service.dart';
 import '../services/notification_service.dart';
 import '../services/vibration_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -119,6 +120,8 @@ class _MainPageState extends State<MainPage> {
 
   VibrationService get vibrationService => widget.vibrationService;
 
+  late final AdminRoleService _adminRoleService;
+
   /// Current navigation index, exposed for tests.
   @visibleForTesting
   int get selectedIndex => _selectedIndex;
@@ -145,6 +148,10 @@ class _MainPageState extends State<MainPage> {
     _friendService = FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
     _exerciseTrackerService = ExerciseTrackerService(
+      firestore: widget.firestore,
+      auth: widget.auth,
+    );
+    _adminRoleService = AdminRoleService(
       firestore: widget.firestore,
       auth: widget.auth,
     );
@@ -421,6 +428,7 @@ class _MainPageState extends State<MainPage> {
       child: NavigationMenuScope(
         onNavigate: _navigateFromMenu,
         vibrationService: widget.vibrationService,
+        adminRoleService: _adminRoleService,
         child: ResponsiveScaffold(
           scaffoldKey: _scaffoldKey,
           selectedIndex: navIndex,
@@ -455,6 +463,7 @@ class _MainPageState extends State<MainPage> {
       context: fallbackContext,
       onNavigate: _navigateFromMenu,
       vibrationService: widget.vibrationService,
+      adminRoleService: _adminRoleService,
     );
   }
 }
