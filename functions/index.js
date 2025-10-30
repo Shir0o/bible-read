@@ -8,9 +8,11 @@
  */
 
 const { onCall } = require("firebase-functions/v2/https");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
+const sgMail = require("@sendgrid/mail");
 const {
   getFcmToken,
   isNotificationEnabled,
@@ -18,6 +20,148 @@ const {
 } = require("./notification-utils");
 
 admin.initializeApp();
+
+let configuredSendgridKey;
+
+const getSendgridSettings = () => {
+  let config = {};
+  if (typeof functions.config === 'function') {
+    try {
+      config = functions.config();
+    } catch (err) {
+      functions.logger.debug('Failed to read functions config', err);
+    }
+  }
+  const sendgridConfig = config.sendgrid || {};
+  return {
+    apiKey: sendgridConfig.apikey || process.env.SENDGRID_API_KEY || '',
+    from: sendgridConfig.from || process.env.SENDGRID_FROM || '',
+    to: sendgridConfig.to || process.env.SENDGRID_TO || '',
+  };
+};
+
+const ensureSendgridConfigured = (apiKey) => {
+  if (!apiKey) {
+    return false;
+  }
+
+  if (configuredSendgridKey === apiKey) {
+    return true;
+  }
+
+  sgMail.setApiKey(apiKey);
+  configuredSendgridKey = apiKey;
+  return true;
+};
+
+const sendFeedbackEmail = async (type, snapshot, params) => {
+  if (!snapshot) {
+    functions.logger.error('Feedback email aborted: missing snapshot');
+    return;
+  }
+
+  const data = typeof snapshot.data === 'function' ? snapshot.data() || {} : {};
+  const normalizeText = (value, fallback) => {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : fallback;
+    }
+    if (value !== undefined && value !== null) {
+      const stringified = String(value).trim();
+      return stringified.length > 0 ? stringified : fallback;
+    }
+    return fallback;
+  };
+
+  const title = normalizeText(data.title, 'No title provided');
+  const description = normalizeText(data.description, 'No description provided');
+  const reporterName = normalizeText(data.reporterName || data.reporter?.name, 'Unknown reporter');
+  const reporterEmail = normalizeText(data.reporterEmail || data.reporter?.email, 'Unknown email');
+  const docPath = snapshot?.ref?.path || '';
+
+  const { apiKey, from, to } = getSendgridSettings();
+  const isConfigured = ensureSendgridConfigured(apiKey);
+  const recipients = Array.isArray(to)
+    ? to.filter(Boolean)
+    : String(to || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+  if (!isConfigured || !from || recipients.length === 0) {
+    functions.logger.error('SendGrid configuration incomplete; skipping email', {
+      type,
+      fromConfigured: Boolean(from),
+      recipientsCount: recipients.length,
+    });
+    return;
+  }
+
+  const subject = `[Feedback] ${type}: ${title}`;
+  const text = [
+    `A new ${type.toLowerCase()} was submitted.`,
+    '',
+    `Title: ${title}`,
+    `Description: ${description}`,
+    `Reporter: ${reporterName} <${reporterEmail}>`,
+    `Document Path: ${docPath}`,
+    params ? `Parameters: ${JSON.stringify(params)}` : undefined,
+  ].filter(Boolean).join('\n');
+
+  const htmlLines = [
+    `<p>A new ${type.toLowerCase()} was submitted.</p>`,
+    `<p><strong>Title:</strong> ${title}</p>`,
+    `<p><strong>Description:</strong><br>${description.replace(/\n/g, '<br>')}</p>`,
+    `<p><strong>Reporter:</strong> ${reporterName} &lt;${reporterEmail}&gt;</p>`,
+    docPath ? `<p><strong>Document Path:</strong> ${docPath}</p>` : '',
+  ].filter(Boolean);
+
+  const msg = {
+    to: recipients,
+    from,
+    subject,
+    text,
+    html: htmlLines.join('\n'),
+  };
+
+  try {
+    await sgMail.send(msg);
+    functions.logger.info('Feedback email sent', { type, docPath, recipients });
+  } catch (err) {
+    functions.logger.error('Failed to send feedback email', err);
+    try {
+      const db = typeof admin.firestore === 'function' ? admin.firestore() : null;
+      if (db?.collection) {
+        await db.collection('feedbackEmailErrors').add({
+          type,
+          docPath,
+          error: err instanceof Error ? err.message : String(err),
+          occurredAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (logErr) {
+      functions.logger.error('Failed to record feedback email error', logErr);
+    }
+  }
+};
+
+exports.onBugReportCreated = onDocumentCreated('bugReports/{reportId}', async (event) => {
+  if (!event?.data) {
+    functions.logger.error('Bug report creation event missing data');
+    return;
+  }
+
+  await sendFeedbackEmail('Bug Report', event.data, event.params);
+});
+
+exports.onFeatureRequestCreated = onDocumentCreated('featureRequests/{requestId}', async (event) => {
+  if (!event?.data) {
+    functions.logger.error('Feature request creation event missing data');
+    return;
+  }
+
+  await sendFeedbackEmail('Feature Request', event.data, event.params);
+});
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
