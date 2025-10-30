@@ -121,6 +121,11 @@ class _ExerciseDashboardPageState extends State<ExerciseDashboardPage>
     return success;
   }
 
+  /// Reloads the exercise summaries and ensures a loading state is shown.
+  Future<void> refreshSummaries() async {
+    await _loadSummaries(setLoading: true);
+  }
+
   Future<void> _recordAmount(
     ExerciseChallenge challenge,
     double amount, {
@@ -171,8 +176,8 @@ class _ExerciseDashboardPageState extends State<ExerciseDashboardPage>
     if (!mounted) {
       return;
     }
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    final shouldRefresh = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
         builder: (context) => ExerciseChallengesPage(
           trackerService: widget.trackerService,
           vibrationService: widget.vibrationService,
@@ -182,7 +187,9 @@ class _ExerciseDashboardPageState extends State<ExerciseDashboardPage>
     if (_disposed || !mounted) {
       return;
     }
-    await _loadSummaries();
+    if (shouldRefresh ?? true) {
+      await refreshSummaries();
+    }
   }
 
   void _retrySummaries() {
@@ -285,3 +292,5 @@ class _ExerciseDashboardPageState extends State<ExerciseDashboardPage>
   @override
   bool get wantKeepAlive => true;
 }
+
+typedef ExerciseDashboardPageState = _ExerciseDashboardPageState;

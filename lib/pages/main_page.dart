@@ -109,6 +109,7 @@ class _MainPageState extends State<MainPage> {
   static const int _leaderboardIndex = 3;
   static const int _profileIndex = 9;
   static const int _notificationsIndex = 10;
+  static const int _exerciseDashboardIndex = 11;
   static const int _menuDestinationIndex = 2;
   static const List<int> _bottomNavIndices = <int>[
     _homeIndex,
@@ -140,6 +141,8 @@ class _MainPageState extends State<MainPage> {
   final GlobalKey<ReadLogPageState> _readLogKey = GlobalKey<ReadLogPageState>();
   final GlobalKey<LeaderboardPageState> _leaderboardKey =
       GlobalKey<LeaderboardPageState>();
+  final GlobalKey<ExerciseDashboardPageState> _exerciseDashboardKey =
+      GlobalKey<ExerciseDashboardPageState>();
   late final List<Widget> _pages;
 
   @override
@@ -235,6 +238,7 @@ class _MainPageState extends State<MainPage> {
         vibrationService: widget.vibrationService,
       ),
       ExerciseDashboardPage(
+        key: _exerciseDashboardKey,
         auth: widget.auth,
         trackerService: _exerciseTrackerService,
         vibrationService: widget.vibrationService,
@@ -352,6 +356,11 @@ class _MainPageState extends State<MainPage> {
       _readLogKey.currentState?.refresh();
     } else if (index == _leaderboardIndex) {
       _leaderboardKey.currentState?.refresh();
+    } else if (index == _exerciseDashboardIndex) {
+      unawaited(
+        _exerciseDashboardKey.currentState?.refreshSummaries() ??
+            Future.value(),
+      );
     }
   }
 
@@ -368,6 +377,11 @@ class _MainPageState extends State<MainPage> {
       _readLogKey.currentState?.refresh();
     } else if (index == _leaderboardIndex) {
       _leaderboardKey.currentState?.refresh();
+    } else if (index == _exerciseDashboardIndex) {
+      unawaited(
+        _exerciseDashboardKey.currentState?.refreshSummaries() ??
+            Future.value(),
+      );
     }
   }
 
