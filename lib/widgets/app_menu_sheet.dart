@@ -2,30 +2,35 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../pages/admin/feedback_admin_page.dart';
+import '../pages/feedback_page.dart';
+import '../services/admin_role_service.dart';
 import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
 import 'animated_page_route.dart';
-import '../pages/feedback_page.dart';
 
-class AppMenuSheet extends StatelessWidget {
+class AppMenuSheet extends StatefulWidget {
   const AppMenuSheet({
     super.key,
     required this.onNavigate,
     required this.vibrationService,
     required this.parentContext,
     this.feedbackService,
+    this.adminRoleService,
   });
 
   final ValueChanged<int> onNavigate;
   final VibrationService vibrationService;
   final BuildContext parentContext;
   final FeedbackService? feedbackService;
+  final AdminRoleService? adminRoleService;
 
   static Future<void> show({
     required BuildContext context,
     required ValueChanged<int> onNavigate,
     VibrationService? vibrationService,
     FeedbackService? feedbackService,
+    AdminRoleService? adminRoleService,
   }) {
     final service = vibrationService ?? const VibrationService();
     return showModalBottomSheet<void>(
@@ -38,46 +43,117 @@ class AppMenuSheet extends StatelessWidget {
           vibrationService: service,
           parentContext: context,
           feedbackService: feedbackService,
+          adminRoleService: adminRoleService,
         );
       },
     );
   }
 
-  List<_MenuItem> get _menuItems => [
-        const _MenuItem(index: 6, icon: Icons.emoji_events, label: 'Achievements'),
-        const _MenuItem(index: 1, icon: Icons.feed, label: 'Feed'),
-        const _MenuItem(index: 4, icon: Icons.people, label: 'Friends'),
-        const _MenuItem(index: 5, icon: Icons.group, label: 'Groups'),
-        const _MenuItem(index: 7, icon: Icons.calendar_today, label: 'History'),
-        const _MenuItem(index: 0, icon: Icons.home_outlined, label: 'Home'),
-        const _MenuItem(index: 3, icon: Icons.leaderboard, label: 'Leaderboard'),
-        const _MenuItem(index: 10, icon: Icons.notifications, label: 'Notifications'),
-        const _MenuItem(index: 9, icon: Icons.person, label: 'Profile'),
-        const _MenuItem(index: 11, icon: Icons.fitness_center, label: 'Daily Exercise'),
-        const _MenuItem(
-          index: 12,
-          icon: Icons.manage_search,
-          label: 'Exercise Challenges',
-        ),
-        const _MenuItem(index: 2, icon: Icons.flag, label: 'Seasonal Challenges'),
+  @override
+  State<AppMenuSheet> createState() => _AppMenuSheetState();
+}
+
+class _AppMenuSheetState extends State<AppMenuSheet> {
+  late final Future<bool> _isAdminFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _isAdminFuture =
+        widget.adminRoleService?.isAdmin() ?? Future<bool>.value(false);
+  }
+
+  List<_MenuItem> _menuItems(bool isAdmin) {
+    final items = [
+      const _MenuItem(
+          index: 6, icon: Icons.emoji_events, label: 'Achievements'),
+      const _MenuItem(index: 1, icon: Icons.feed, label: 'Feed'),
+      const _MenuItem(index: 4, icon: Icons.people, label: 'Friends'),
+      const _MenuItem(index: 5, icon: Icons.group, label: 'Groups'),
+      const _MenuItem(index: 7, icon: Icons.calendar_today, label: 'History'),
+      const _MenuItem(index: 0, icon: Icons.home_outlined, label: 'Home'),
+      const _MenuItem(index: 3, icon: Icons.leaderboard, label: 'Leaderboard'),
+      const _MenuItem(
+          index: 10, icon: Icons.notifications, label: 'Notifications'),
+      const _MenuItem(index: 9, icon: Icons.person, label: 'Profile'),
+      const _MenuItem(
+          index: 11, icon: Icons.fitness_center, label: 'Daily Exercise'),
+      const _MenuItem(
+        index: 12,
+        icon: Icons.manage_search,
+        label: 'Exercise Challenges',
+      ),
+      const _MenuItem(index: 2, icon: Icons.flag, label: 'Seasonal Challenges'),
+      _MenuItem(
+        icon: Icons.feedback,
+        label: 'Feedback',
+        onTap: (context) {
+          final feedback = widget.feedbackService ?? FeedbackService();
+          Navigator.of(context).push(
+            animatedPageRoute(
+              FeedbackPage(
+                initialTab: FeedbackTab.feature,
+                feedbackService: feedback,
+                vibrationService: widget.vibrationService,
+                parentMessenger: ScaffoldMessenger.of(context),
+              ),
+            ),
+          );
+        },
+      ),
+    ];
+
+    if (isAdmin) {
+      items.add(
         _MenuItem(
-          icon: Icons.feedback,
-          label: 'Feedback',
+          icon: Icons.inventory_2,
+          label: 'Feedback Inbox',
           onTap: (context) {
-            final feedback = feedbackService ?? FeedbackService();
             Navigator.of(context).push(
               animatedPageRoute(
-                FeedbackPage(
-                  initialTab: FeedbackTab.feature,
-                  feedbackService: feedback,
-                  vibrationService: vibrationService,
-                  parentMessenger: ScaffoldMessenger.of(context),
+                FeedbackAdminPage(
+                  firestore: widget.feedbackService?.firestore,
+                  auth: widget.feedbackService?.auth,
+                  adminRoleService: widget.adminRoleService,
                 ),
               ),
             );
           },
         ),
-      ];
+      );
+    }
+    return items;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _isAdminFuture,
+      builder: (context, snapshot) {
+        final isAdmin = snapshot.data ?? false;
+        return _MenuContents(
+          items: _menuItems(isAdmin),
+          vibrationService: widget.vibrationService,
+          onNavigate: widget.onNavigate,
+          parentContext: widget.parentContext,
+        );
+      },
+    );
+  }
+}
+
+class _MenuContents extends StatelessWidget {
+  const _MenuContents({
+    required this.items,
+    required this.vibrationService,
+    required this.onNavigate,
+    required this.parentContext,
+  });
+
+  final List<_MenuItem> items;
+  final VibrationService vibrationService;
+  final ValueChanged<int> onNavigate;
+  final BuildContext parentContext;
 
   @override
   Widget build(BuildContext context) {
@@ -143,7 +219,7 @@ class AppMenuSheet extends StatelessWidget {
                     alignment: compact
                         ? WrapAlignment.center
                         : WrapAlignment.spaceBetween,
-                    children: _menuItems
+                    children: items
                         .map(
                           (item) => SizedBox(
                             width: buttonWidth,
