@@ -31,20 +31,11 @@ class ExerciseChallengeSummary {
   /// Whether today's total meets the configured goal.
   final bool goalMetToday;
 
-  /// Consecutive days with the goal met up to today, accounting for grace credits.
+  /// Consecutive days with the goal met up to today.
   final int currentStreak;
 
   /// Total number of days the goal has been met.
   final int completedDays;
-
-  /// Number of grace credits remaining for the active month.
-  final int graceCreditsAvailable;
-
-  /// Number of grace credits used for the active month.
-  final int graceCreditsUsed;
-
-  /// Month identifier (yyyy-MM) the grace credit counters apply to.
-  final String graceCreditsMonth;
 
   /// Aggregated total amount recorded across all time.
   final double totalRecorded;
@@ -59,9 +50,6 @@ class ExerciseChallengeSummary {
     required this.goalMetToday,
     required this.currentStreak,
     required this.completedDays,
-    required this.graceCreditsAvailable,
-    required this.graceCreditsUsed,
-    required this.graceCreditsMonth,
     required this.totalRecorded,
     required this.recentTotals,
   });
@@ -279,7 +267,10 @@ class ExerciseTrackerService {
 
       return challenges.map((challenge) {
         final completions = completionsByChallenge[challenge.id] ?? {};
-        final stats = _calculateStreak(completions: completions, today: today);
+        final streak = _calculateStreak(
+          completions: completions,
+          today: today,
+        );
         final todayTotal =
             progressByDay[todayKey]?.totalForChallenge(challenge.id) ?? 0;
         final goalMetToday =
@@ -302,11 +293,8 @@ class ExerciseTrackerService {
           challenge: challenge,
           todayTotal: todayTotal,
           goalMetToday: goalMetToday,
-          currentStreak: stats.streak,
+          currentStreak: streak,
           completedDays: completedDays,
-          graceCreditsAvailable: stats.available,
-          graceCreditsUsed: stats.used,
-          graceCreditsMonth: stats.monthKey,
           totalRecorded: totalsByChallenge[challenge.id] ?? 0,
           recentTotals: Map.unmodifiable(recentTotals),
         );
@@ -375,14 +363,12 @@ class ExerciseTrackerService {
     }
   }
 
-  _StreakStats _calculateStreak({
+  int _calculateStreak({
     required Map<String, bool> completions,
     required DateTime today,
   }) {
     String formatDate(DateTime d) =>
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-    String formatMonth(DateTime d) =>
-        '${d.year}-${d.month.toString().padLeft(2, '0')}';
 
     final completionKeys = completions.keys.toList()
       ..sort((a, b) => a.compareTo(b));
@@ -391,82 +377,27 @@ class ExerciseTrackerService {
       earliestDate = DateTime.tryParse(completionKeys.first);
     }
 
-    final successDates = completions.entries
-        .where((entry) => entry.value)
-        .map((entry) => entry.key)
-        .toSet();
-
-    final monthCredits = <String, _MonthCreditState>{};
-    _MonthCreditState ensureMonth(DateTime date) {
-      final key = formatMonth(date);
-      return monthCredits.putIfAbsent(key, () => _MonthCreditState());
+    if (earliestDate == null) {
+      return 0;
     }
 
     int streak = 0;
-    if (earliestDate != null) {
-      var cursor = today;
-      while (!cursor.isBefore(earliestDate)) {
-        final dateKey = formatDate(cursor);
-        final month = ensureMonth(cursor);
-        final metGoal = successDates.contains(dateKey);
-        if (metGoal) {
-          streak += 1;
-          if (streak % 15 == 0) {
-            month.bonus += 1;
-          }
-        } else {
-          if (month.available <= 0) {
-            break;
-          }
-          month.used += 1;
-        }
-
-        if (cursor.isAtSameMomentAs(earliestDate)) {
-          break;
-        }
-
-        cursor = cursor.subtract(const Duration(days: 1));
+    var cursor = today;
+    while (!cursor.isBefore(earliestDate)) {
+      final dateKey = formatDate(cursor);
+      final metGoal = completions[dateKey] ?? false;
+      if (!metGoal) {
+        break;
       }
+
+      streak += 1;
+      if (cursor.isAtSameMomentAs(earliestDate)) {
+        break;
+      }
+
+      cursor = cursor.subtract(const Duration(days: 1));
     }
 
-    final currentMonthKey = formatMonth(today);
-    final currentMonthCredits =
-        monthCredits[currentMonthKey] ?? _MonthCreditState();
-
-    return _StreakStats(
-      streak: streak,
-      available: currentMonthCredits.available,
-      used: currentMonthCredits.used,
-      monthKey: currentMonthKey,
-    );
-  }
-}
-
-class _StreakStats {
-  _StreakStats({
-    required this.streak,
-    required this.available,
-    required this.used,
-    required this.monthKey,
-  });
-
-  final int streak;
-  final int available;
-  final int used;
-  final String monthKey;
-}
-
-class _MonthCreditState {
-  _MonthCreditState();
-
-  final int base = 2;
-  int bonus = 0;
-  int used = 0;
-
-  int get total => base + bonus;
-
-  int get available {
-    final remaining = total - used;
-    return remaining < 0 ? 0 : remaining;
+    return streak;
   }
 }

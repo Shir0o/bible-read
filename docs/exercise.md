@@ -20,5 +20,5 @@ authenticated user's document.
   - `totals` (`map<string, number>`): Totals recorded for each challenge keyed by challenge id.
   - `updatedAt` (`timestamp`): Time when the progress document was last changed.
 
-`ExerciseTrackerService` automatically computes streaks by scanning the recent `exerciseProgress` documents. The streak logic
-mirrors `ReadingStatusService`, including the two monthly grace credits that allow short gaps without resetting the streak.
+`ExerciseTrackerService` automatically computes streaks by scanning the recent `exerciseProgress` documents. The streak resets
+as soon as a day is missed, so challenges no longer include monthly grace credits.

@@ -112,8 +112,7 @@ void main() {
       expect(summary.recentTotals[dayKey(now)], 35);
     });
 
-    test('fetchChallengeSummaries resets streak when grace credits exhausted',
-        () async {
+    test('fetchChallengeSummaries resets streak when day missed', () async {
       final challenge = await service.upsertChallenge(
         ExerciseChallenge(
           id: '',
@@ -143,8 +142,6 @@ void main() {
       final summary = summaries.first;
       expect(summary.goalMetToday, isFalse);
       expect(summary.currentStreak, 0);
-      expect(summary.graceCreditsAvailable, 0);
-      expect(summary.graceCreditsUsed, 2);
       expect(summary.recentTotals[dayKey(fiveDaysAgo)], 5);
       expect(summary.recentTotals[dayKey(fourDaysAgo)], 5);
     });
