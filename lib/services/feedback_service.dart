@@ -24,8 +24,8 @@ class FeedbackService {
   /// Creates a [FeedbackService] using the default Firebase instances when none
   /// are provided.
   FeedbackService({FirebaseFirestore? firestore, FirebaseAuth? auth})
-      : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance;
+    : firestore = firestore ?? FirebaseFirestore.instance,
+      auth = auth ?? FirebaseAuth.instance;
 
   /// Submits a bug report with the provided [title], [description], and optional
   /// [reproductionSteps].
@@ -63,6 +63,7 @@ class FeedbackService {
     String? reproductionSteps,
   }) async {
     final user = auth.currentUser;
+    final now = Timestamp.now();
     final data = <String, Object?>{
       'uid': user?.uid,
       'email': user?.email,
@@ -70,7 +71,11 @@ class FeedbackService {
       'title': title.trim(),
       'description': description.trim(),
       'platform': _currentPlatform(),
-      'timestamp': Timestamp.now(),
+      'timestamp': now,
+      'updatedAt': now,
+      'status': 'open',
+      'resolvedAt': null,
+      'resolutionNotes': null,
     };
     final normalizedSteps = reproductionSteps?.trim();
     if (normalizedSteps != null && normalizedSteps.isNotEmpty) {
