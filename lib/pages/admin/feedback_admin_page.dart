@@ -331,6 +331,9 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
       if (!mounted) {
         return;
       }
+      setState(() {
+        _optimisticOverrides.remove(path);
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Feedback status updated.')),
       );
