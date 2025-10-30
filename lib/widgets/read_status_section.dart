@@ -23,12 +23,16 @@ class ReadStatusSection extends StatelessWidget {
   /// Service used for toggle vibrations.
   final VibrationService vibrationService;
 
+  /// Remaining streak freezes (grace credits) for the current month.
+  final int? streakFreezesLeft;
+
   const ReadStatusSection({
     super.key,
     required this.toggleLoading,
     required this.readToday,
     this.onToggle,
     required this.readDates,
+    this.streakFreezesLeft,
     VibrationService? vibrationService,
   }) : vibrationService = vibrationService ?? const VibrationService();
 
@@ -81,6 +85,19 @@ class ReadStatusSection extends StatelessWidget {
                   ),
           ),
         ),
+        if (streakFreezesLeft != null) ...[
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Streak freezes left: $streakFreezesLeft',
+                style: AppTextStyles.body,
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 16),
         IgnorePointer(
           child: WeekStreakCalendar(

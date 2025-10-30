@@ -42,6 +42,7 @@ void main() {
             onToggle: () {
               called = true;
             },
+            streakFreezesLeft: 3,
             vibrationService: vibration,
           ),
         ),
@@ -51,5 +52,22 @@ void main() {
     await tester.tap(find.byType(ReadSwitchTile));
     await tester.pump();
     expect(called, isTrue);
+  });
+
+  testWidgets('shows streak freezes label when provided', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ReadStatusSection(
+            toggleLoading: false,
+            readToday: false,
+            readDates: {},
+            streakFreezesLeft: 2,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Streak freezes left: 2'), findsOneWidget);
   });
 }

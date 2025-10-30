@@ -102,11 +102,17 @@ void main() {
     });
 
     test('fetchStatus creates user document when missing', () async {
-      await service.fetchStatus();
+      final status = await service.fetchStatus();
 
       final doc = await firestore.collection('users').doc(user.uid).get();
       expect(doc.exists, isTrue);
       expect(doc.data()?['email'], user.email?.toLowerCase());
+      expect(status.graceCreditsAvailable, 0);
+      final today = DateTime.now();
+      expect(
+        status.graceCreditsMonth,
+        '${today.year}-${today.month.toString().padLeft(2, '0')}',
+      );
     });
 
     test('fetchStatus backfills partial week and month data', () async {
@@ -120,6 +126,9 @@ void main() {
       await userDoc.collection('summary').doc('data').set({
         'pastWeekReadDates': [formatDate(now)],
         'pastMonthReadDates': [formatDate(now)],
+        'graceCreditsAvailable': 5,
+        'graceCreditsMonth':
+            '${now.year}-${now.month.toString().padLeft(2, '0')}',
       });
 
       final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
@@ -139,6 +148,7 @@ void main() {
       expect(status.pastMonth.length, daysInMonth);
       final expectedMonthTrue = DateTime.now().day;
       expect(status.pastMonth.where((e) => e).length, expectedMonthTrue);
+      expect(status.graceCreditsAvailable, 5);
     });
 
     test('updateSummary computes streak, longest streak, and totals', () async {

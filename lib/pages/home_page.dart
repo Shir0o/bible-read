@@ -70,6 +70,7 @@ class _HomePageState extends State<HomePage>
   List<bool> _pastWeek = [];
   List<bool> _pastMonth = [];
   Set<DateTime> _readDates = {};
+  int? _streakFreezesLeft;
 
   @override
   void initState() {
@@ -101,6 +102,7 @@ class _HomePageState extends State<HomePage>
           _pastWeek = status.pastWeek;
           _pastMonth = status.pastMonth;
           _readDates = status.readDates;
+          _streakFreezesLeft = status.graceCreditsAvailable;
         });
       }
     } catch (e, st) {
@@ -563,6 +565,7 @@ class _HomePageState extends State<HomePage>
                 readToday: _readToday,
                 onToggle: _toggleReadStatus,
                 readDates: _readDates,
+                streakFreezesLeft: _streakFreezesLeft,
                 vibrationService: widget.vibrationService,
               ),
             ],
