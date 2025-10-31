@@ -53,16 +53,28 @@ async function isNotificationEnabled(uid, type) {
 /**
  * Sends an FCM notification.
  * @param {string} token FCM token.
- * @param {{title: string, body: string}} payload Notification content.
+ * @param {{title: string, body: string, data?: Record<string, any>}} payload Notification content.
  * @returns {Promise<string>} messaging ID.
  */
-function sendNotification(token, { title, body }) {
+function sendNotification(token, { title, body, data }) {
+  const normalizedData = {};
+  if (data && typeof data === 'object') {
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        normalizedData[String(key)] = String(value);
+      }
+    });
+  }
+
   const message = {
     token,
     notification: { title, body },
     android: { priority: 'high' },
     apns: { payload: { aps: { sound: 'default' } } },
   };
+  if (Object.keys(normalizedData).length > 0) {
+    message.data = normalizedData;
+  }
   return admin.messaging().send(message);
 }
 

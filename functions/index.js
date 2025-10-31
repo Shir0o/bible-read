@@ -184,6 +184,7 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
     throw new Error("unauthenticated: The function must be called while authenticated.");
   }
 
+  const actorUid = req.auth.uid;
   const { ownerUid, likerName } = req.data;
 
   if (!ownerUid || !likerName) {
@@ -206,6 +207,11 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
     return await sendNotification(token, {
       title: "📖 New Like on Your Reading!",
       body: `${likerName} liked your reading log.`,
+      data: {
+        type: 'like',
+        ownerUid,
+        fromUid: actorUid,
+      },
     });
   } catch (err) {
     functions.logger.error('Failed to send like notification', err);
@@ -225,6 +231,7 @@ exports.sendCommentNotification = onCall({ region: 'us-central1' }, async (req) 
     );
   }
 
+  const actorUid = req.auth.uid;
   const { ownerUid, commenterName } = req.data;
   if (!ownerUid || !commenterName) {
     throw new functions.https.HttpsError('invalid-argument', 'Missing data');
@@ -246,6 +253,11 @@ exports.sendCommentNotification = onCall({ region: 'us-central1' }, async (req) 
     return await sendNotification(token, {
       title: '📖 New Comment',
       body: `${commenterName} commented on your reading.`,
+      data: {
+        type: 'comment',
+        ownerUid,
+        fromUid: actorUid,
+      },
     });
   } catch (err) {
     functions.logger.error('Failed to send comment notification', err);
@@ -374,7 +386,15 @@ exports.claimSeasonalChallengeReward = onCall({ region: 'us-central1' }, async (
       ? `You completed "${challengeData.title}".`
       : 'Your seasonal challenge reward is ready!';
     try {
-      await sendNotification(token, { title, body });
+      await sendNotification(token, {
+        title,
+        body,
+        data: {
+          type: 'seasonalChallenge',
+          seasonId,
+          challengeId,
+        },
+      });
     } catch (err) {
       functions.logger.error(
         'Failed to send seasonal challenge notification',
@@ -451,6 +471,11 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
     await sendNotification(token, {
       title: "📖 Time to Read!",
       body: `${fromName} nudged you to read today.`,
+      data: {
+        type: 'nudge',
+        fromUid,
+        toUid,
+      },
     });
   } catch (err) {
     functions.logger.error('Failed to send nudge notification', err);
@@ -616,6 +641,10 @@ exports.sendSignupNotification = functions.auth.user().onCreate(async (user) => 
     await sendNotification(token, {
       title: 'New Signup',
       body: `${name} just signed up.`,
+      data: {
+        type: 'signup',
+        fromUid: user.uid,
+      },
     });
   } catch (err) {
     functions.logger.error('Failed to send signup notification', err);
