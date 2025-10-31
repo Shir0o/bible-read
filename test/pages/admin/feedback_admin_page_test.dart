@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:matcher/matcher.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
 
 class _AdminRoleStub extends AdminRoleService {
