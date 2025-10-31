@@ -101,6 +101,18 @@ Future<void> _setupMessaging() async {
     },
   );
 
+  final notificationLaunchDetails =
+      await _localNotificationsPlugin.getNotificationAppLaunchDetails();
+  final launchPayload = notificationLaunchDetails?.notificationResponse?.payload;
+  if ((notificationLaunchDetails?.didNotificationLaunchApp ?? false) &&
+      launchPayload != null &&
+      launchPayload.isNotEmpty) {
+    final binding = WidgetsBinding.instance;
+    binding.addPostFrameCallback((_) {
+      unawaited(_handleNotificationPayload(launchPayload));
+    });
+  }
+
   FirebaseMessaging.onMessage.listen((message) async {
     final notification = message.notification;
     if (notification != null) {
