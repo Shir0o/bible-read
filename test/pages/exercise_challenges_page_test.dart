@@ -159,6 +159,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      expect(
+        find.textContaining('For bodily exercise is profitable for a little'),
+        findsOneWidget,
+      );
+      expect(find.text('1 Timothy 4:8'), findsOneWidget);
       expect(find.text('No exercise challenges yet.'), findsOneWidget);
 
       await tester.tap(find.byType(FloatingActionButton));
@@ -219,6 +224,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      expect(
+        find.textContaining('For bodily exercise is profitable for a little'),
+        findsOneWidget,
+      );
+      expect(find.text('1 Timothy 4:8'), findsOneWidget);
       expect(find.text('Morning Run'), findsOneWidget);
 
       await tester.tap(
@@ -306,6 +316,11 @@ void main() {
 
       expect(find.text('Exercise Challenges'), findsOneWidget);
       expect(find.text('No exercise challenges yet.'), findsOneWidget);
+      expect(
+        find.textContaining('For bodily exercise is profitable for a little'),
+        findsOneWidget,
+      );
+      expect(find.text('1 Timothy 4:8'), findsOneWidget);
     });
   });
 }

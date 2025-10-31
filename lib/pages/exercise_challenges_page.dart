@@ -198,98 +198,123 @@ class _ExerciseChallengesPageState extends State<ExerciseChallengesPage> {
   }
 
   Widget _buildList(BuildContext context) {
-    if (_loading) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        children: [
-          CommonStyles.buildCard(
-            margin: EdgeInsets.zero,
-            child: const Center(
-              child: SizedBox(
-                height: 32,
-                width: 32,
-                child: CircularProgressIndicator(),
+    final children = <Widget>[
+      CommonStyles.buildCard(
+        margin: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'For bodily exercise is profitable for a little, but godliness is'
+              ' profitable for all things, having promise of the present life'
+              ' and of that which is to come.',
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '1 Timothy 4:8',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
-          ),
-        ],
-      );
+          ],
+        ),
+      ),
+    ];
+
+    void addSpacing() {
+      if (children.isNotEmpty) {
+        children.add(const SizedBox(height: 16));
+      }
     }
 
-    if (_error != null) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        children: [
-          CommonStyles.buildCard(
-            margin: EdgeInsets.zero,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _error!,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: () => unawaited(_loadData()),
-                  child: const Text('Retry'),
-                ),
-              ],
+    if (_loading) {
+      addSpacing();
+      children.add(
+        CommonStyles.buildCard(
+          margin: EdgeInsets.zero,
+          child: const Center(
+            child: SizedBox(
+              height: 32,
+              width: 32,
+              child: CircularProgressIndicator(),
             ),
           ),
-        ],
+        ),
       );
-    }
-
-    if (_summaries.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        children: [
-          CommonStyles.buildCard(
-            margin: EdgeInsets.zero,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'No exercise challenges yet.',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Create your first challenge to track daily activity goals.',
-                ),
-                const SizedBox(height: 16),
-                FilledButton.icon(
-                  onPressed: () => unawaited(_createChallenge()),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Create challenge'),
-                ),
-              ],
-            ),
+    } else if (_error != null) {
+      addSpacing();
+      children.add(
+        CommonStyles.buildCard(
+          margin: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _error!,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: () => unawaited(_loadData()),
+                child: const Text('Retry'),
+              ),
+            ],
           ),
-        ],
+        ),
       );
-    }
-
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      itemCount: _summaries.length,
-      itemBuilder: (context, index) {
-        final summary = _summaries[index];
-        return Padding(
-          padding:
-              EdgeInsets.only(bottom: index == _summaries.length - 1 ? 0 : 16),
-          child: _ChallengeCard(
-            summary: summary,
-            onEdit: () => unawaited(_editChallenge(summary.challenge)),
-            onArchive: () => unawaited(_archiveChallenge(summary.challenge)),
+    } else if (_summaries.isEmpty) {
+      addSpacing();
+      children.add(
+        CommonStyles.buildCard(
+          margin: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'No exercise challenges yet.',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Create your first challenge to track daily activity goals.',
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () => unawaited(_createChallenge()),
+                icon: const Icon(Icons.add),
+                label: const Text('Create challenge'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      addSpacing();
+      for (var i = 0; i < _summaries.length; i++) {
+        final summary = _summaries[i];
+        children.add(
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: i == _summaries.length - 1 ? 0 : 16,
+            ),
+            child: _ChallengeCard(
+              summary: summary,
+              onEdit: () => unawaited(_editChallenge(summary.challenge)),
+              onArchive: () => unawaited(_archiveChallenge(summary.challenge)),
+            ),
           ),
         );
-      },
+      }
+    }
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      children: children,
     );
   }
 }
