@@ -69,6 +69,31 @@ void main() {
       },
     );
 
+    test('deleteChallenge removes the stored document', () async {
+      final created = await service.upsertChallenge(
+        ExerciseChallenge(
+          id: '',
+          uid: '',
+          name: 'Evening Swim',
+          unit: 'minutes',
+          dailyGoal: 45,
+          targetType: ExerciseTargetType.atLeast,
+        ),
+      );
+
+      final docRef = firestore
+          .collection(ExerciseTrackerPaths.users)
+          .doc(user.uid)
+          .collection(ExerciseTrackerPaths.challenges)
+          .doc(created.id);
+
+      expect((await docRef.get()).exists, isTrue);
+
+      await service.deleteChallenge(created);
+
+      expect((await docRef.get()).exists, isFalse);
+    });
+
     test(
       'recordDailyAmount increments totals and reports goal completion',
       () async {

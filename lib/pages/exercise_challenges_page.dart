@@ -171,6 +171,60 @@ class _ExerciseChallengesPageState extends State<ExerciseChallengesPage> {
     }
   }
 
+  Future<void> _deleteChallenge(ExerciseChallenge challenge) async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) {
+            return AlertDialog(
+              title: const Text('Delete challenge?'),
+              content: Text(
+                'This will permanently remove ${challenge.name}. '
+                'This action cannot be undone.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Delete'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await widget.trackerService.deleteChallenge(challenge);
+      if (!_disposed && mounted) {
+        unawaited(widget.vibrationService.lightImpact());
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text('${challenge.name} deleted.')),
+          );
+      }
+      await _loadData();
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      if (!_disposed && mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Failed to delete challenge. Please try again.'),
+            ),
+          );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = widget.trackerService.auth.currentUser;
@@ -305,6 +359,7 @@ class _ExerciseChallengesPageState extends State<ExerciseChallengesPage> {
               summary: summary,
               onEdit: () => unawaited(_editChallenge(summary.challenge)),
               onArchive: () => unawaited(_archiveChallenge(summary.challenge)),
+              onDelete: () => unawaited(_deleteChallenge(summary.challenge)),
             ),
           ),
         );
@@ -324,11 +379,13 @@ class _ChallengeCard extends StatelessWidget {
     required this.summary,
     required this.onEdit,
     required this.onArchive,
+    required this.onDelete,
   });
 
   final ExerciseChallengeSummary summary;
   final VoidCallback onEdit;
   final VoidCallback onArchive;
+  final VoidCallback onDelete;
 
   ExerciseChallenge get challenge => summary.challenge;
 
@@ -445,6 +502,14 @@ class _ChallengeCard extends StatelessWidget {
                 onPressed: onArchive,
                 icon: const Icon(Icons.archive_outlined),
                 label: const Text('Archive'),
+              ),
+              TextButton.icon(
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Delete'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                ),
               ),
             ],
           ),
