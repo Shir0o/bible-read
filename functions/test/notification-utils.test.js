@@ -163,9 +163,14 @@ describe('notification-utils', () => {
       writable: true,
       configurable: true,
     });
-    const id = await utils.sendNotification('tok', { title: 't', body: 'b' });
+    const id = await utils.sendNotification('tok', {
+      title: 't',
+      body: 'b',
+      data: { type: 'sample', fromUid: 123, skip: undefined },
+    });
     assert.equal(id, 'id1');
     assert.equal(captured.token, 'tok');
     assert.equal(captured.notification.title, 't');
+    assert.deepEqual(captured.data, { type: 'sample', fromUid: '123' });
   });
 });
