@@ -277,6 +277,7 @@ class _ExerciseDashboardPageState extends State<ExerciseDashboardPage>
             onOpenChallenges: _openExerciseChallenges,
             onCreateChallenge: _openExerciseChallenges,
             onRetry: _retrySummaries,
+            showHeader: false,
           ),
         ),
       ),

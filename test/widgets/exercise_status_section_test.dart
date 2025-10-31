@@ -96,6 +96,22 @@ void main() {
       expect(find.byIcon(Icons.add), findsWidgets);
     });
 
+    testWidgets('can hide the section header when requested', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ExerciseStatusSection(
+              loading: false,
+              summaries: [buildSummary()],
+              showHeader: false,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Daily Exercise'), findsNothing);
+    });
+
     testWidgets('disables logging actions when the goal is met',
         (tester) async {
       final challenge = buildChallenge();
