@@ -375,6 +375,7 @@ class ReadingStatusService {
               break;
             }
             month.used += 1;
+            streak += 1;
           }
 
           if (cursor.isAtSameMomentAs(earliestRead)) {
