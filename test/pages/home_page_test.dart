@@ -85,6 +85,87 @@ Future<void> _toggleRead(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+String _formatDate(DateTime date) =>
+    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+class _TestMonthCreditState {
+  int bonus = 0;
+  int used = 0;
+
+  int get _base => 2;
+
+  int get available => (_base + bonus) - used;
+}
+
+class _SummaryExpectation {
+  const _SummaryExpectation({
+    required this.streak,
+    required this.available,
+    required this.used,
+  });
+
+  final int streak;
+  final int available;
+  final int used;
+}
+
+_SummaryExpectation _computeExpectedSummary(
+  Set<String> readDates,
+  DateTime today,
+) {
+  if (readDates.isEmpty) {
+    return const _SummaryExpectation(streak: 0, available: 2, used: 0);
+  }
+
+  final sortedDates = readDates.map(DateTime.parse).toList()..sort();
+  final earliestRead = sortedDates.first;
+  final monthCredits = <String, _TestMonthCreditState>{};
+
+  String formatMonth(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}';
+
+  _TestMonthCreditState ensureMonth(DateTime date) => monthCredits.putIfAbsent(
+        formatMonth(date),
+        () => _TestMonthCreditState(),
+      );
+
+  int streak = 0;
+  var cursor = DateTime(today.year, today.month, today.day);
+
+  while (true) {
+    final key = _formatDate(cursor);
+    final monthState = ensureMonth(cursor);
+    final hasRead = readDates.contains(key);
+
+    if (hasRead) {
+      streak += 1;
+      if (streak % 15 == 0) {
+        monthState.bonus += 1;
+      }
+    } else {
+      if (monthState.available <= 0) {
+        break;
+      }
+      monthState.used += 1;
+    }
+
+    if (cursor.isAtSameMomentAs(earliestRead)) {
+      break;
+    }
+
+    cursor = cursor.subtract(const Duration(days: 1));
+  }
+
+  final currentMonthKey = formatMonth(today);
+  final currentMonth = monthCredits[currentMonthKey] ?? _TestMonthCreditState();
+
+  return _SummaryExpectation(
+    streak: streak,
+    available: currentMonth.available,
+    used: currentMonth.used,
+  );
+}
+
 class ThrowingDocumentReference
     extends MockDocumentReference<Map<String, dynamic>> {
   ThrowingDocumentReference(
@@ -312,8 +393,7 @@ void main() {
     );
     expect(switchTile.onChanged, isNotNull);
 
-    final snackFinder =
-        find.text('Already marked today. Come back tomorrow!');
+    final snackFinder = find.text('Already marked today. Come back tomorrow!');
     expect(snackFinder, findsNothing);
 
     await tester.tap(find.byType(ReadSwitchTile));
@@ -418,6 +498,99 @@ void main() {
     expect(summaryDoc.data()?['longestStreak'], 1);
   });
 
+  testWidgets('consumes grace credits after skipping multiple days', (
+    tester,
+  ) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(
+      uid: 'u-grace',
+      displayName: 'Grace Hopper',
+      email: 'grace@example.com',
+    );
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final userDoc = firestore.collection('users').doc(user.uid);
+    await userDoc.set({
+      'name': user.displayName ?? '',
+      'email': user.email?.toLowerCase() ?? '',
+    });
+
+    final previousReadDates = [
+      today.subtract(const Duration(days: 3)),
+      today.subtract(const Duration(days: 4)),
+      today.subtract(const Duration(days: 5)),
+    ];
+
+    for (final date in previousReadDates) {
+      await userDoc.collection('reading').doc(_formatDate(date)).set({
+        'read': true,
+      });
+    }
+
+    await userDoc.collection('summary').doc('data').set({
+      'streak': 5,
+      'totalReadDays': previousReadDates.length,
+      'longestStreak': previousReadDates.length,
+      'graceCreditsAvailable': 2,
+      'graceCreditsUsed': 0,
+      'graceCreditsMonth':
+          '${today.year}-${today.month.toString().padLeft(2, '0')}',
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await _toggleRead(tester);
+
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle(const Duration(milliseconds: 200));
+
+    final summarySnap = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('summary')
+        .doc('data')
+        .get();
+    final summaryData = summarySnap.data();
+    expect(summaryData, isNotNull);
+
+    final readingSnapshot = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading')
+        .get();
+
+    final readDates = <String>{};
+    for (final doc in readingSnapshot.docs) {
+      final data = doc.data();
+      if (data['read'] == true) {
+        readDates.add(doc.id);
+      }
+    }
+
+    final expectation = _computeExpectedSummary(readDates, today);
+
+    expect(summaryData?['streak'], expectation.streak);
+    expect(summaryData?['graceCreditsAvailable'], expectation.available);
+    expect(summaryData?['graceCreditsUsed'], expectation.used);
+    expect(summaryData?['totalReadDays'], readDates.length);
+
+    final skippedDays = today.difference(previousReadDates.first).inDays - 1;
+    expect(skippedDays >= 2, isTrue);
+    expect(expectation.used >= 1, isTrue);
+  });
+
   testWidgets('markRead unlocks firstReader when first of day', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(
@@ -473,6 +646,15 @@ void main() {
     final yesterdayKey =
         '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
 
+    // Seed six consecutive reading days so the recomputed streak reaches the
+    // threshold once today is marked.
+    final readingRef =
+        firestore.collection('users').doc(user.uid).collection('reading');
+    for (int i = 1; i <= 6; i++) {
+      final date = DateTime.now().subtract(Duration(days: i));
+      await readingRef.doc(_formatDate(date)).set({'read': true});
+    }
+
     await firestore
         .collection('users')
         .doc(user.uid)
@@ -517,6 +699,13 @@ void main() {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u-days');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    final readingRef =
+        firestore.collection('users').doc(user.uid).collection('reading');
+    for (int i = 1; i <= 29; i++) {
+      final date = DateTime.now().subtract(Duration(days: i));
+      await readingRef.doc(_formatDate(date)).set({'read': true});
+    }
 
     await firestore
         .collection('users')
@@ -643,8 +832,9 @@ void main() {
     expect(summary.data()?['streak'], 0);
   });
 
-  testWidgets('refresh rebuilds summary arrays from reading data',
-      (tester) async {
+  testWidgets('refresh rebuilds summary arrays from reading data', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u4');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
@@ -701,12 +891,19 @@ void main() {
         .collection('summary')
         .doc('data')
         .get();
-    expect(summary.data()?['pastWeekReadDates'], [todayKey, twoDaysKey]);
-    expect(summary.data()?['pastMonthReadDates'], [todayKey, twoDaysKey]);
+    expect(
+      summary.data()?['pastWeekReadDates'],
+      unorderedEquals([todayKey, twoDaysKey]),
+    );
+    expect(
+      summary.data()?['pastMonthReadDates'],
+      unorderedEquals([todayKey, twoDaysKey]),
+    );
   });
 
-  testWidgets('refresh rebuilds summary counters from reading data',
-      (tester) async {
+  testWidgets('refresh rebuilds summary counters from reading data', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u5');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);

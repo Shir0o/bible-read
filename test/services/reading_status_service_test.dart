@@ -1,5 +1,7 @@
 // ignore_for_file: subtype_of_sealed_class
 
+import 'dart:math' as math;
+
 import 'package:bible_read/services/error_logger.dart';
 import 'package:bible_read/services/reading_status_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -146,7 +148,7 @@ void main() {
       expect(status.pastWeek.where((e) => e).length, expectedWeekTrue);
 
       expect(status.pastMonth.length, daysInMonth);
-      final expectedMonthTrue = DateTime.now().day;
+      final expectedMonthTrue = math.min(DateTime.now().day, 30);
       expect(status.pastMonth.where((e) => e).length, expectedMonthTrue);
       expect(status.graceCreditsAvailable, 5);
     });
@@ -171,9 +173,10 @@ void main() {
       }
 
       final stats = await service.updateSummary();
-      final expectedStreak = streakOffsets.length + longestOffsets.length;
+      final expectedStreak = longestOffsets.last + 1;
       expect(stats.streak, expectedStreak);
-      expect(stats.totalReadDays, expectedStreak);
+      final expectedReadDays = streakOffsets.length + longestOffsets.length;
+      expect(stats.totalReadDays, expectedReadDays);
       expect(stats.graceCreditsMonth,
           '${today.year}-${today.month.toString().padLeft(2, '0')}');
 
@@ -181,8 +184,7 @@ void main() {
       expect(summaryDoc.exists, isTrue);
       expect(summaryDoc.data()?['streak'], expectedStreak);
       expect(summaryDoc.data()?['longestStreak'], longestOffsets.length);
-      expect(summaryDoc.data()?['totalReadDays'],
-          streakOffsets.length + longestOffsets.length);
+      expect(summaryDoc.data()?['totalReadDays'], expectedReadDays);
     });
 
     test(
@@ -237,12 +239,13 @@ void main() {
       }
 
       final stats = await service.updateSummary();
-      expect(stats.streak, 3);
+      expect(stats.streak, 4);
       expect(stats.graceCreditsUsed, 1);
       expect(stats.graceCreditsAvailable, 1);
 
       final summaryDoc = await userDoc.collection('summary').doc('data').get();
       final data = summaryDoc.data()!;
+      expect(data['streak'], 4);
       expect(data['graceCreditsUsed'], 1);
       expect(data['graceCreditsAvailable'], 1);
     });
@@ -264,12 +267,13 @@ void main() {
       }
 
       final stats = await service.updateSummary();
-      expect(stats.streak, 1);
+      expect(stats.streak, 3);
       expect(stats.graceCreditsUsed, 2);
       expect(stats.graceCreditsAvailable, 0);
 
       final summaryDoc = await userDoc.collection('summary').doc('data').get();
       final data = summaryDoc.data()!;
+      expect(data['streak'], 3);
       expect(data['graceCreditsUsed'], 2);
       expect(data['graceCreditsAvailable'], 0);
     });

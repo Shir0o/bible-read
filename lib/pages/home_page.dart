@@ -239,120 +239,16 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Lightweight summary update for today's read. Updates streak and cached
-  /// read-date arrays without recomputing historical data.
+  /// Recomputes summary data after marking today as read. Delegates to the
+  /// shared summary updater so streaks and grace credits reflect the complete
+  /// reading history.
   Future<void> _updateSummaryWithToday() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
     try {
-      final userDocRef = widget.firestore.collection('users').doc(user.uid);
-      final summaryDocRef = userDocRef.collection('summary').doc('data');
-      // Load existing summary values to increment cached fields.
-      final doc = await summaryDocRef.get();
-      final data = doc.data() ?? {};
-
-      final today = DateTime.now();
-      final yesterday = today.subtract(const Duration(days: 1));
-      final yesterdayDateKey =
-          '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
-
-      final yesterdayDoc =
-          await userDocRef.collection('reading').doc(yesterdayDateKey).get();
-
-      final currentMonthKey =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}';
-      final storedMonth = data['graceCreditsMonth'];
-      int graceCreditsAvailable = (data['graceCreditsAvailable'] is int)
-          ? data['graceCreditsAvailable']
-          : 2;
-      int graceCreditsUsed =
-          (data['graceCreditsUsed'] is int) ? data['graceCreditsUsed'] : 0;
-      if (storedMonth != currentMonthKey) {
-        graceCreditsAvailable = 2;
-        graceCreditsUsed = 0;
-      }
-
-      int streak = (data['streak'] is int) ? data['streak'] : 0;
-      if (yesterdayDoc.exists && yesterdayDoc.data()?['read'] == true) {
-        streak += 1;
-      } else {
-        if (streak > 0 && graceCreditsAvailable > 0) {
-          graceCreditsAvailable -= 1;
-          graceCreditsUsed += 1;
-          streak += 1;
-        } else {
-          streak = 1; // Reset streak if yesterday was missed and no credit
-        }
-      }
-
-      if (streak > 0 && streak % 15 == 0) {
-        graceCreditsAvailable += 1;
-      }
-
-      final dateKey =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-
-      var pastWeekReadDates = List<String>.from(
-        data['pastWeekReadDates'] ?? [],
-      );
-      pastWeekReadDates = pastWeekReadDates
-          .where((d) {
-            final parsed = DateTime.tryParse(d);
-            if (parsed == null) return false;
-            final diff = today.difference(parsed).inDays;
-            return diff >= 0 && diff < 7;
-          })
-          .toSet()
-          .toList();
-      pastWeekReadDates.add(dateKey);
-      pastWeekReadDates = pastWeekReadDates.toSet().toList();
-      if (pastWeekReadDates.length > 7) {
-        pastWeekReadDates =
-            pastWeekReadDates.sublist(pastWeekReadDates.length - 7);
-      }
-
-      var pastMonthReadDates = List<String>.from(
-        data['pastMonthReadDates'] ?? [],
-      );
-      pastMonthReadDates = pastMonthReadDates
-          .where((d) {
-            final parsed = DateTime.tryParse(d);
-            if (parsed == null) return false;
-            final diff = today.difference(parsed).inDays;
-            return diff >= 0 && diff < 30;
-          })
-          .toSet()
-          .toList();
-      pastMonthReadDates.add(dateKey);
-      pastMonthReadDates = pastMonthReadDates.toSet().toList();
-      if (pastMonthReadDates.length > 30) {
-        pastMonthReadDates =
-            pastMonthReadDates.sublist(pastMonthReadDates.length - 30);
-      }
-
-      int totalReadDays =
-          (data['totalReadDays'] is int) ? data['totalReadDays'] : 0;
-      totalReadDays += 1;
-
-      int longestStreak =
-          (data['longestStreak'] is int) ? data['longestStreak'] : streak;
-      if (streak > longestStreak) {
-        longestStreak = streak;
-      }
-
-      await summaryDocRef.set({
-        'streak': streak,
-        'pastWeekReadDates': pastWeekReadDates,
-        'pastMonthReadDates': pastMonthReadDates,
-        'totalReadDays': totalReadDays,
-        'longestStreak': longestStreak,
-        'graceCreditsMonth': currentMonthKey,
-        'graceCreditsAvailable': graceCreditsAvailable,
-        'graceCreditsUsed': graceCreditsUsed,
-      }, SetOptions(merge: true)); // Persist updated summary.
-
-      await _checkAchievements(user.uid, streak, totalReadDays);
+      final stats = await widget.readingStatusService.updateSummary();
+      await _checkAchievements(user.uid, stats.streak, stats.totalReadDays);
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to update summary with today: \$e');
@@ -487,10 +383,7 @@ class _HomePageState extends State<HomePage>
     super.build(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Reading Hub',
-          style: CommonStyles.appBarTitleText,
-        ),
+        title: const Text('Reading Hub', style: CommonStyles.appBarTitleText),
         backgroundColor: AppTheme.backgroundColor,
         automaticallyImplyLeading: false,
         actions: [
