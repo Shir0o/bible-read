@@ -77,7 +77,7 @@ class ExerciseStatusSection extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             SizedBox(width: 16),
-            Flexible(
+            const Flexible(
               child: Text(
                 'Loading exercise challenges...',
                 softWrap: true,
