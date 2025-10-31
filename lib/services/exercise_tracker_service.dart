@@ -70,9 +70,9 @@ class ExerciseTrackerService {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     DateTime Function()? clock,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       _clock = clock ?? DateTime.now;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        _clock = clock ?? DateTime.now;
 
   /// Streams active challenge definitions for the current user.
   Stream<List<ExerciseChallenge>> streamActiveChallenges({String? uid}) async* {
@@ -85,17 +85,16 @@ class ExerciseTrackerService {
               snapshot.docs.map(ExerciseChallenge.fromFirestore).toList(),
         )
         .handleError((Object error, StackTrace stackTrace) {
-          ErrorLogger.log(error, stackTrace);
-        });
+      ErrorLogger.log(error, stackTrace);
+    });
   }
 
   /// Fetches the active challenge definitions for the user.
   Future<List<ExerciseChallenge>> fetchActiveChallenges({String? uid}) async {
     try {
       final collection = await _resolveChallengesCollection(uid);
-      final snapshot = await collection
-          .where('archived', isEqualTo: false)
-          .get();
+      final snapshot =
+          await collection.where('archived', isEqualTo: false).get();
       return snapshot.docs.map(ExerciseChallenge.fromFirestore).toList();
     } catch (e, st) {
       await ErrorLogger.log(e, st);
@@ -132,6 +131,24 @@ class ExerciseTrackerService {
       );
       await docRef.set(updatedChallenge.toFirestore());
       return updatedChallenge;
+    } catch (e, st) {
+      await ErrorLogger.log(e, st);
+      rethrow;
+    }
+  }
+
+  /// Permanently removes a challenge definition.
+  Future<void> deleteChallenge(ExerciseChallenge challenge) async {
+    try {
+      final resolvedUid = await _resolveUid(
+        challenge.uid.isEmpty ? null : challenge.uid,
+      );
+      final docRef = firestore
+          .collection(ExerciseTrackerPaths.users)
+          .doc(resolvedUid)
+          .collection(ExerciseTrackerPaths.challenges)
+          .doc(challenge.id);
+      await docRef.delete();
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       rethrow;
@@ -264,42 +281,40 @@ class ExerciseTrackerService {
       final todayKey = _formatDay(today);
       final startRecent = today.subtract(Duration(days: recentDays - 1));
 
-      return challenges
-          .map((challenge) {
-            final completions = completionsByChallenge[challenge.id] ?? {};
-            final streak = _calculateStreak(
-              completions: completions,
-              today: today,
-            );
-            final todayTotal =
-                progressByDay[todayKey]?.totalForChallenge(challenge.id) ?? 0;
-            final goalMetToday =
-                completions[todayKey] ?? _meetsGoal(challenge, todayTotal);
+      return challenges.map((challenge) {
+        final completions = completionsByChallenge[challenge.id] ?? {};
+        final streak = _calculateStreak(
+          completions: completions,
+          today: today,
+        );
+        final todayTotal =
+            progressByDay[todayKey]?.totalForChallenge(challenge.id) ?? 0;
+        final goalMetToday =
+            completions[todayKey] ?? _meetsGoal(challenge, todayTotal);
 
-            final recentTotals = <String, double>{};
-            for (int i = 0; i < recentDays; i++) {
-              final date = startRecent.add(Duration(days: i));
-              final key = _formatDay(date);
-              final total =
-                  progressByDay[key]?.totalForChallenge(challenge.id) ?? 0;
-              if (total > 0) {
-                recentTotals[key] = total;
-              }
-            }
+        final recentTotals = <String, double>{};
+        for (int i = 0; i < recentDays; i++) {
+          final date = startRecent.add(Duration(days: i));
+          final key = _formatDay(date);
+          final total =
+              progressByDay[key]?.totalForChallenge(challenge.id) ?? 0;
+          if (total > 0) {
+            recentTotals[key] = total;
+          }
+        }
 
-            final completedDays = completions.values.where((met) => met).length;
+        final completedDays = completions.values.where((met) => met).length;
 
-            return ExerciseChallengeSummary(
-              challenge: challenge,
-              todayTotal: todayTotal,
-              goalMetToday: goalMetToday,
-              currentStreak: streak,
-              completedDays: completedDays,
-              totalRecorded: totalsByChallenge[challenge.id] ?? 0,
-              recentTotals: Map.unmodifiable(recentTotals),
-            );
-          })
-          .toList(growable: false);
+        return ExerciseChallengeSummary(
+          challenge: challenge,
+          todayTotal: todayTotal,
+          goalMetToday: goalMetToday,
+          currentStreak: streak,
+          completedDays: completedDays,
+          totalRecorded: totalsByChallenge[challenge.id] ?? 0,
+          recentTotals: Map.unmodifiable(recentTotals),
+        );
+      }).toList(growable: false);
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to load exercise challenge summaries: $e');
@@ -310,7 +325,7 @@ class ExerciseTrackerService {
   }
 
   Future<CollectionReference<Map<String, dynamic>>>
-  _resolveChallengesCollection(String? uid) async {
+      _resolveChallengesCollection(String? uid) async {
     final resolvedUid = await _resolveUid(uid);
     return firestore
         .collection(ExerciseTrackerPaths.users)

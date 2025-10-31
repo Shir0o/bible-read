@@ -271,6 +271,60 @@ void main() {
       );
       expect(vibration.mediumCount, 1);
     });
+
+    testWidgets('deleting a challenge requires confirmation and refreshes list',
+        (tester) async {
+      final challenge = await service.upsertChallenge(
+        ExerciseChallenge(
+          id: '',
+          uid: '',
+          name: 'Morning Yoga',
+          unit: 'minutes',
+          dailyGoal: 20,
+          targetType: ExerciseTargetType.atLeast,
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ExerciseChallengesPage(
+            trackerService: service,
+            vibrationService: vibration,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Morning Yoga'), findsOneWidget);
+
+      await tester.tap(
+        find.ancestor(
+          of: find.text('Delete'),
+          matching:
+              find.byWidgetPredicate((widget) => widget is ButtonStyleButton),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete challenge?'), findsOneWidget);
+      expect(find.textContaining('Morning Yoga'), findsWidgets);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Morning Yoga'), findsNothing);
+      expect(find.text('Morning Yoga deleted.'), findsOneWidget);
+      expect(vibration.lightCount, 1);
+
+      final doc = await service.firestore
+          .collection(ExerciseTrackerPaths.users)
+          .doc(challenge.uid)
+          .collection(ExerciseTrackerPaths.challenges)
+          .doc(challenge.id)
+          .get();
+      expect(doc.exists, isFalse);
+    });
   });
 
   group('MainPage navigation', () {
