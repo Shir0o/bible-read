@@ -11,10 +11,12 @@ import '../models/achievement.dart';
 import '../services/achievement_service.dart';
 import '../services/error_logger.dart';
 import '../services/google_sign_in_factory.dart';
+import '../services/notification_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/notification_button.dart';
 import '../widgets/read_status_section.dart';
 import 'read_log_page.dart';
 
@@ -491,6 +493,13 @@ class _HomePageState extends State<HomePage>
         ),
         backgroundColor: AppTheme.backgroundColor,
         automaticallyImplyLeading: false,
+        actions: [
+          NotificationButton(
+            service: NotificationService(firestore: widget.firestore),
+            auth: widget.auth,
+            vibrationService: widget.vibrationService,
+          ),
+        ],
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
