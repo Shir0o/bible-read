@@ -258,8 +258,7 @@ class _ExerciseChallengeCard extends StatelessWidget {
           ],
           const SizedBox(height: 12),
           Text(
-            'Streak: ${summary.currentStreak} days · '
-            '${summary.graceCreditsAvailable} grace credits left',
+            'Streak: ${summary.currentStreak} days',
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 12),

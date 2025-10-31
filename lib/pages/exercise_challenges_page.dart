@@ -281,7 +281,8 @@ class _ExerciseChallengesPageState extends State<ExerciseChallengesPage> {
       itemBuilder: (context, index) {
         final summary = _summaries[index];
         return Padding(
-          padding: EdgeInsets.only(bottom: index == _summaries.length - 1 ? 0 : 16),
+          padding:
+              EdgeInsets.only(bottom: index == _summaries.length - 1 ? 0 : 16),
           child: _ChallengeCard(
             summary: summary,
             onEdit: () => unawaited(_editChallenge(summary.challenge)),
@@ -359,10 +360,6 @@ class _ChallengeCard extends StatelessWidget {
                 'Streak: ${summary.currentStreak} days',
                 style: theme.textTheme.bodyMedium,
               ),
-              Text(
-                'Grace credits left: ${summary.graceCreditsAvailable}',
-                style: theme.textTheme.bodyMedium,
-              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -395,8 +392,9 @@ class _ChallengeCard extends StatelessWidget {
             Column(
               children: history.map((entry) {
                 final date = DateTime.tryParse(entry.key);
-                final dateLabel =
-                    date != null ? localizations.formatMediumDate(date) : entry.key;
+                final dateLabel = date != null
+                    ? localizations.formatMediumDate(date)
+                    : entry.key;
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(
@@ -455,7 +453,6 @@ class _ChallengeCard extends StatelessWidget {
   }
 }
 
-
 class _ExerciseChallengeForm extends StatefulWidget {
   const _ExerciseChallengeForm({
     this.initial,
@@ -504,9 +501,8 @@ class _ExerciseChallengeFormState extends State<_ExerciseChallengeForm> {
     _targetType = initial?.targetType ?? ExerciseTargetType.atLeast;
     final unit = initial?.unit ?? '';
     _useCustomUnit = unit.isNotEmpty && !_unitOptions.contains(unit);
-    _selectedUnit = _useCustomUnit
-        ? 'custom'
-        : (unit.isEmpty ? _unitOptions.first : unit);
+    _selectedUnit =
+        _useCustomUnit ? 'custom' : (unit.isEmpty ? _unitOptions.first : unit);
     _customUnitController = TextEditingController(
       text: _useCustomUnit ? unit : '',
     );
@@ -617,7 +613,8 @@ class _ExerciseChallengeFormState extends State<_ExerciseChallengeForm> {
                 const SizedBox(height: 16),
                 DropdownButtonFormField<ExerciseTargetType>(
                   initialValue: _targetType,
-                  decoration: const InputDecoration(labelText: 'Daily target type'),
+                  decoration:
+                      const InputDecoration(labelText: 'Daily target type'),
                   items: ExerciseTargetType.values
                       .map(
                         (type) => DropdownMenuItem<ExerciseTargetType>(
@@ -642,7 +639,8 @@ class _ExerciseChallengeFormState extends State<_ExerciseChallengeForm> {
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
                     labelText: 'Daily goal',
-                    helperText: 'Use decimals for partial units (e.g., 0.5 hours)',
+                    helperText:
+                        'Use decimals for partial units (e.g., 0.5 hours)',
                   ),
                   validator: (value) {
                     final text = value?.trim() ?? '';
@@ -666,7 +664,8 @@ class _ExerciseChallengeFormState extends State<_ExerciseChallengeForm> {
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
                     labelText: 'Total target (optional)',
-                    helperText: 'Leave blank to track lifetime totals without a cap',
+                    helperText:
+                        'Leave blank to track lifetime totals without a cap',
                   ),
                   validator: (value) {
                     final text = value?.trim() ?? '';
@@ -716,14 +715,14 @@ class _ExerciseChallengeFormState extends State<_ExerciseChallengeForm> {
     final dailyText = _dailyGoalController.text.trim();
     final totalText = _totalTargetController.text.trim();
     final dailyGoal = double.parse(dailyText);
-    final double? totalTarget = totalText.isEmpty ? null : double.parse(totalText);
+    final double? totalTarget =
+        totalText.isEmpty ? null : double.parse(totalText);
 
     final initial = widget.initial;
     final challenge = ExerciseChallenge(
       id: initial?.id ?? '',
-      uid: (initial?.uid.isNotEmpty ?? false)
-          ? initial!.uid
-          : widget.defaultUid,
+      uid:
+          (initial?.uid.isNotEmpty ?? false) ? initial!.uid : widget.defaultUid,
       name: _nameController.text.trim(),
       unit: unit,
       dailyGoal: dailyGoal,

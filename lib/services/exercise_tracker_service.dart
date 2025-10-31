@@ -31,20 +31,11 @@ class ExerciseChallengeSummary {
   /// Whether today's total meets the configured goal.
   final bool goalMetToday;
 
-  /// Consecutive days with the goal met up to today, accounting for grace credits.
+  /// Consecutive days with the goal met up to today.
   final int currentStreak;
 
   /// Total number of days the goal has been met.
   final int completedDays;
-
-  /// Number of grace credits remaining for the active month.
-  final int graceCreditsAvailable;
-
-  /// Number of grace credits used for the active month.
-  final int graceCreditsUsed;
-
-  /// Month identifier (yyyy-MM) the grace credit counters apply to.
-  final String graceCreditsMonth;
 
   /// Aggregated total amount recorded across all time.
   final double totalRecorded;
@@ -59,9 +50,6 @@ class ExerciseChallengeSummary {
     required this.goalMetToday,
     required this.currentStreak,
     required this.completedDays,
-    required this.graceCreditsAvailable,
-    required this.graceCreditsUsed,
-    required this.graceCreditsMonth,
     required this.totalRecorded,
     required this.recentTotals,
   });
@@ -82,9 +70,9 @@ class ExerciseTrackerService {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     DateTime Function()? clock,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        _clock = clock ?? DateTime.now;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       _clock = clock ?? DateTime.now;
 
   /// Streams active challenge definitions for the current user.
   Stream<List<ExerciseChallenge>> streamActiveChallenges({String? uid}) async* {
@@ -92,19 +80,22 @@ class ExerciseTrackerService {
     yield* collection
         .where('archived', isEqualTo: false)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map(ExerciseChallenge.fromFirestore).toList())
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(ExerciseChallenge.fromFirestore).toList(),
+        )
         .handleError((Object error, StackTrace stackTrace) {
-      ErrorLogger.log(error, stackTrace);
-    });
+          ErrorLogger.log(error, stackTrace);
+        });
   }
 
   /// Fetches the active challenge definitions for the user.
   Future<List<ExerciseChallenge>> fetchActiveChallenges({String? uid}) async {
     try {
       final collection = await _resolveChallengesCollection(uid);
-      final snapshot =
-          await collection.where('archived', isEqualTo: false).get();
+      final snapshot = await collection
+          .where('archived', isEqualTo: false)
+          .get();
       return snapshot.docs.map(ExerciseChallenge.fromFirestore).toList();
     } catch (e, st) {
       await ErrorLogger.log(e, st);
@@ -165,11 +156,7 @@ class ExerciseTrackerService {
         final docRef = _progressCollection(resolvedUid).doc(_formatDay(day));
         final snapshot = await docRef.get();
         if (!snapshot.exists) {
-          return ExerciseProgress(
-            id: docRef.id,
-            uid: resolvedUid,
-            date: day,
-          );
+          return ExerciseProgress(id: docRef.id, uid: resolvedUid, date: day);
         }
         return ExerciseProgress.fromFirestore(snapshot);
       }
@@ -277,40 +264,42 @@ class ExerciseTrackerService {
       final todayKey = _formatDay(today);
       final startRecent = today.subtract(Duration(days: recentDays - 1));
 
-      return challenges.map((challenge) {
-        final completions = completionsByChallenge[challenge.id] ?? {};
-        final stats = _calculateStreak(completions: completions, today: today);
-        final todayTotal =
-            progressByDay[todayKey]?.totalForChallenge(challenge.id) ?? 0;
-        final goalMetToday =
-            completions[todayKey] ?? _meetsGoal(challenge, todayTotal);
+      return challenges
+          .map((challenge) {
+            final completions = completionsByChallenge[challenge.id] ?? {};
+            final streak = _calculateStreak(
+              completions: completions,
+              today: today,
+            );
+            final todayTotal =
+                progressByDay[todayKey]?.totalForChallenge(challenge.id) ?? 0;
+            final goalMetToday =
+                completions[todayKey] ?? _meetsGoal(challenge, todayTotal);
 
-        final recentTotals = <String, double>{};
-        for (int i = 0; i < recentDays; i++) {
-          final date = startRecent.add(Duration(days: i));
-          final key = _formatDay(date);
-          final total =
-              progressByDay[key]?.totalForChallenge(challenge.id) ?? 0;
-          if (total > 0) {
-            recentTotals[key] = total;
-          }
-        }
+            final recentTotals = <String, double>{};
+            for (int i = 0; i < recentDays; i++) {
+              final date = startRecent.add(Duration(days: i));
+              final key = _formatDay(date);
+              final total =
+                  progressByDay[key]?.totalForChallenge(challenge.id) ?? 0;
+              if (total > 0) {
+                recentTotals[key] = total;
+              }
+            }
 
-        final completedDays = completions.values.where((met) => met).length;
+            final completedDays = completions.values.where((met) => met).length;
 
-        return ExerciseChallengeSummary(
-          challenge: challenge,
-          todayTotal: todayTotal,
-          goalMetToday: goalMetToday,
-          currentStreak: stats.streak,
-          completedDays: completedDays,
-          graceCreditsAvailable: stats.available,
-          graceCreditsUsed: stats.used,
-          graceCreditsMonth: stats.monthKey,
-          totalRecorded: totalsByChallenge[challenge.id] ?? 0,
-          recentTotals: Map.unmodifiable(recentTotals),
-        );
-      }).toList(growable: false);
+            return ExerciseChallengeSummary(
+              challenge: challenge,
+              todayTotal: todayTotal,
+              goalMetToday: goalMetToday,
+              currentStreak: streak,
+              completedDays: completedDays,
+              totalRecorded: totalsByChallenge[challenge.id] ?? 0,
+              recentTotals: Map.unmodifiable(recentTotals),
+            );
+          })
+          .toList(growable: false);
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to load exercise challenge summaries: $e');
@@ -321,7 +310,7 @@ class ExerciseTrackerService {
   }
 
   Future<CollectionReference<Map<String, dynamic>>>
-      _resolveChallengesCollection(String? uid) async {
+  _resolveChallengesCollection(String? uid) async {
     final resolvedUid = await _resolveUid(uid);
     return firestore
         .collection(ExerciseTrackerPaths.users)
@@ -375,98 +364,48 @@ class ExerciseTrackerService {
     }
   }
 
-  _StreakStats _calculateStreak({
+  int _calculateStreak({
     required Map<String, bool> completions,
     required DateTime today,
   }) {
-    String formatDate(DateTime d) =>
-        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-    String formatMonth(DateTime d) =>
-        '${d.year}-${d.month.toString().padLeft(2, '0')}';
+    DateTime? latestRecordedDay;
+    final normalizedToday = _normalizeDate(today);
 
-    final completionKeys = completions.keys.toList()
-      ..sort((a, b) => a.compareTo(b));
-    DateTime? earliestDate;
-    if (completionKeys.isNotEmpty) {
-      earliestDate = DateTime.tryParse(completionKeys.first);
-    }
-
-    final successDates = completions.entries
-        .where((entry) => entry.value)
-        .map((entry) => entry.key)
-        .toSet();
-
-    final monthCredits = <String, _MonthCreditState>{};
-    _MonthCreditState ensureMonth(DateTime date) {
-      final key = formatMonth(date);
-      return monthCredits.putIfAbsent(key, () => _MonthCreditState());
-    }
-
-    int streak = 0;
-    if (earliestDate != null) {
-      var cursor = today;
-      while (!cursor.isBefore(earliestDate)) {
-        final dateKey = formatDate(cursor);
-        final month = ensureMonth(cursor);
-        final metGoal = successDates.contains(dateKey);
-        if (metGoal) {
-          streak += 1;
-          if (streak % 15 == 0) {
-            month.bonus += 1;
-          }
-        } else {
-          if (month.available <= 0) {
-            break;
-          }
-          month.used += 1;
-        }
-
-        if (cursor.isAtSameMomentAs(earliestDate)) {
-          break;
-        }
-
-        cursor = cursor.subtract(const Duration(days: 1));
+    for (final entry in completions.entries) {
+      final parsed = DateTime.tryParse(entry.key);
+      if (parsed == null) {
+        continue;
+      }
+      final normalized = _normalizeDate(parsed);
+      if (normalized.isAfter(normalizedToday)) {
+        continue;
+      }
+      if (latestRecordedDay == null || normalized.isAfter(latestRecordedDay)) {
+        latestRecordedDay = normalized;
       }
     }
 
-    final currentMonthKey = formatMonth(today);
-    final currentMonthCredits =
-        monthCredits[currentMonthKey] ?? _MonthCreditState();
+    if (latestRecordedDay == null) {
+      return 0;
+    }
 
-    return _StreakStats(
-      streak: streak,
-      available: currentMonthCredits.available,
-      used: currentMonthCredits.used,
-      monthKey: currentMonthKey,
-    );
-  }
-}
+    if (normalizedToday.difference(latestRecordedDay).inDays > 1) {
+      return 0;
+    }
 
-class _StreakStats {
-  _StreakStats({
-    required this.streak,
-    required this.available,
-    required this.used,
-    required this.monthKey,
-  });
+    int streak = 0;
+    var cursor = latestRecordedDay;
+    while (true) {
+      final dateKey = _formatDay(cursor);
+      final metGoal = completions[dateKey] ?? false;
+      if (!metGoal) {
+        break;
+      }
 
-  final int streak;
-  final int available;
-  final int used;
-  final String monthKey;
-}
+      streak += 1;
+      cursor = cursor.subtract(const Duration(days: 1));
+    }
 
-class _MonthCreditState {
-  _MonthCreditState();
-
-  final int base = 2;
-  int bonus = 0;
-  int used = 0;
-
-  int get total => base + bonus;
-
-  int get available {
-    final remaining = total - used;
-    return remaining < 0 ? 0 : remaining;
+    return streak;
   }
 }

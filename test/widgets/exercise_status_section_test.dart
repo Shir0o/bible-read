@@ -32,8 +32,6 @@ void main() {
       double todayTotal = 15,
       bool goalMetToday = false,
       int streak = 3,
-      int graceAvailable = 1,
-      int graceUsed = 1,
       double totalRecorded = 150,
       Map<String, double>? recentTotals,
     }) {
@@ -44,9 +42,6 @@ void main() {
         goalMetToday: goalMetToday,
         currentStreak: streak,
         completedDays: 12,
-        graceCreditsAvailable: graceAvailable,
-        graceCreditsUsed: graceUsed,
-        graceCreditsMonth: '2024-05',
         totalRecorded: totalRecorded,
         recentTotals: Map.unmodifiable(
           recentTotals ?? const {'2024-05-09': 15.0, '2024-05-08': 30.0},
@@ -84,8 +79,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('Logged today: 15'), findsOneWidget);
-      expect(
-          find.text('Streak: 3 days · 1 grace credits left'), findsOneWidget);
+      expect(find.text('Streak: 3 days'), findsOneWidget);
       expect(find.text('Manage challenges'), findsOneWidget);
 
       final progressFinder = find.byType(LinearProgressIndicator);
