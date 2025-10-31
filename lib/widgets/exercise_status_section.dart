@@ -25,6 +25,7 @@ class ExerciseStatusSection extends StatelessWidget {
     this.onOpenChallenges,
     this.onCreateChallenge,
     this.onRetry,
+    this.showHeader = true,
   });
 
   /// Whether challenge summaries are currently loading.
@@ -48,14 +49,19 @@ class ExerciseStatusSection extends StatelessWidget {
   /// Invoked when the user retries after an error.
   final VoidCallback? onRetry;
 
+  /// Whether to render the "Daily Exercise" section header.
+  final bool showHeader;
+
   @override
   Widget build(BuildContext context) {
+    final children = <Widget>[
+      if (showHeader) const SectionHeader('Daily Exercise'),
+      if (loading) _buildLoadingCard() else _buildContent(context),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SectionHeader('Daily Exercise'),
-        if (loading) _buildLoadingCard() else _buildContent(context),
-      ],
+      children: children,
     );
   }
 
