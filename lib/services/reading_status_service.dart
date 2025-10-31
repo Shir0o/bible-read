@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -176,24 +178,23 @@ class ReadingStatusService {
         savedWeek[i] = weekDates.contains(key);
       }
 
-      final savedMonth = <bool>[];
+      final daysInMonth = DateTime(today.year, today.month + 1, 0).day;
       var monthDates = List<String>.from(data['pastMonthReadDates'] ?? []);
       monthDates = monthDates.where((d) {
         final parsed = DateTime.tryParse(d);
         if (parsed == null) return false;
-        final diff = today.difference(parsed).inDays;
-        return diff >= 0 && diff < 30;
+        return parsed.year == today.year && parsed.month == today.month;
       }).toList();
-      final daysInMonth = DateTime(today.year, today.month + 1, 0).day;
-      for (int i = 1; i <= daysInMonth; i++) {
-        final key =
-            '${today.year}-${today.month.toString().padLeft(2, '0')}-${i.toString().padLeft(2, '0')}';
-        savedMonth.add(monthDates.contains(key));
+
+      final monthStatus = <String, bool>{};
+      for (final key in monthDates) {
+        monthStatus[key] = true;
       }
 
       if (weekDates.length < 7) {
         // Backfill the past week by querying reading documents directly.
-        final weekStatus = await _getReadStatusForRange(user.uid, 7);
+        final weekStatus =
+            await _getReadStatusForRange(user.uid, 7, referenceDate: today);
         savedWeek.clear();
         for (int i = 0; i < 7; i++) {
           final date = sunday.add(Duration(days: i));
@@ -202,14 +203,32 @@ class ReadingStatusService {
           savedWeek.add(weekStatus[key] ?? false);
         }
       }
-      if (monthDates.length < 30) {
+      if (monthDates.length < daysInMonth) {
         // Backfill the past month similarly.
-        final monthStatus = await _getReadStatusForRange(user.uid, 30);
-        savedMonth.clear();
-        for (int i = 1; i <= daysInMonth; i++) {
-          final key =
-              '${today.year}-${today.month.toString().padLeft(2, '0')}-${i.toString().padLeft(2, '0')}';
-          savedMonth.add(monthStatus[key] ?? false);
+        final backfillStatus = await _getReadStatusForRange(
+          user.uid,
+          daysInMonth,
+          referenceDate: today,
+        );
+        monthStatus.addAll(backfillStatus);
+      }
+
+      final savedMonth =
+          List<bool>.filled(daysInMonth, false, growable: true);
+      for (final entry in monthStatus.entries) {
+        if (entry.value != true) {
+          continue;
+        }
+        final parsed = DateTime.tryParse(entry.key);
+        if (parsed == null) {
+          continue;
+        }
+        if (parsed.year != today.year || parsed.month != today.month) {
+          continue;
+        }
+        final dayIndex = parsed.day - 1;
+        if (dayIndex >= 0 && dayIndex < savedMonth.length) {
+          savedMonth[dayIndex] = true;
         }
       }
 
@@ -271,13 +290,28 @@ class ReadingStatusService {
           '${d.year}-${d.month.toString().padLeft(2, '0')}';
 
       // Query recent reading documents to rebuild cached arrays.
-      final weekStatus = await _getReadStatusForRange(user.uid, 7);
-      final monthStatus = await _getReadStatusForRange(user.uid, 30);
+      final weekStatus =
+          await _getReadStatusForRange(user.uid, 7, referenceDate: today);
+      final daysInMonth = DateTime(today.year, today.month + 1, 0).day;
+      final monthStatus = await _getReadStatusForRange(
+        user.uid,
+        daysInMonth,
+        referenceDate: today,
+      );
 
       final pastWeekReadDates =
           weekStatus.entries.where((e) => e.value).map((e) => e.key).toList();
-      final pastMonthReadDates =
-          monthStatus.entries.where((e) => e.value).map((e) => e.key).toList();
+      final pastMonthReadDates = monthStatus.entries
+          .where((e) {
+            if (!e.value) return false;
+            final parsed = DateTime.tryParse(e.key);
+            if (parsed == null) {
+              return false;
+            }
+            return parsed.year == today.year && parsed.month == today.month;
+          })
+          .map((e) => e.key)
+          .toList();
 
       // Fetch all reading entries to recompute aggregate counters.
       final readingSnapshot = await userDocRef.collection('reading').get();
@@ -399,12 +433,13 @@ class ReadingStatusService {
     }
   }
 
-  Future<Map<String, bool>> _getReadStatusForRange(
-      String uid, int daysBack) async {
+  Future<Map<String, bool>> _getReadStatusForRange(String uid, int daysBack,
+      {DateTime? referenceDate}) async {
     final userDocRef = firestore.collection('users').doc(uid);
     final readingCollection = userDocRef.collection('reading');
 
-    final now = DateTime.now();
+    final base = referenceDate ?? DateTime.now();
+    final now = DateTime(base.year, base.month, base.day);
     String formatDate(DateTime d) =>
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -417,7 +452,7 @@ class ReadingStatusService {
             isGreaterThanOrEqualTo: startId, isLessThanOrEqualTo: endId)
         .get();
 
-    final status = <String, bool>{};
+    final status = SplayTreeMap<String, bool>();
     for (int i = 0; i < daysBack; i++) {
       final date = now.subtract(Duration(days: i));
       status[formatDate(date)] = false;
