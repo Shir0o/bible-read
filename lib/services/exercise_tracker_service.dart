@@ -70,9 +70,9 @@ class ExerciseTrackerService {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     DateTime Function()? clock,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        _clock = clock ?? DateTime.now;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       _clock = clock ?? DateTime.now;
 
   /// Streams active challenge definitions for the current user.
   Stream<List<ExerciseChallenge>> streamActiveChallenges({String? uid}) async* {
@@ -80,19 +80,22 @@ class ExerciseTrackerService {
     yield* collection
         .where('archived', isEqualTo: false)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map(ExerciseChallenge.fromFirestore).toList())
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(ExerciseChallenge.fromFirestore).toList(),
+        )
         .handleError((Object error, StackTrace stackTrace) {
-      ErrorLogger.log(error, stackTrace);
-    });
+          ErrorLogger.log(error, stackTrace);
+        });
   }
 
   /// Fetches the active challenge definitions for the user.
   Future<List<ExerciseChallenge>> fetchActiveChallenges({String? uid}) async {
     try {
       final collection = await _resolveChallengesCollection(uid);
-      final snapshot =
-          await collection.where('archived', isEqualTo: false).get();
+      final snapshot = await collection
+          .where('archived', isEqualTo: false)
+          .get();
       return snapshot.docs.map(ExerciseChallenge.fromFirestore).toList();
     } catch (e, st) {
       await ErrorLogger.log(e, st);
@@ -153,11 +156,7 @@ class ExerciseTrackerService {
         final docRef = _progressCollection(resolvedUid).doc(_formatDay(day));
         final snapshot = await docRef.get();
         if (!snapshot.exists) {
-          return ExerciseProgress(
-            id: docRef.id,
-            uid: resolvedUid,
-            date: day,
-          );
+          return ExerciseProgress(id: docRef.id, uid: resolvedUid, date: day);
         }
         return ExerciseProgress.fromFirestore(snapshot);
       }
@@ -265,40 +264,42 @@ class ExerciseTrackerService {
       final todayKey = _formatDay(today);
       final startRecent = today.subtract(Duration(days: recentDays - 1));
 
-      return challenges.map((challenge) {
-        final completions = completionsByChallenge[challenge.id] ?? {};
-        final streak = _calculateStreak(
-          completions: completions,
-          today: today,
-        );
-        final todayTotal =
-            progressByDay[todayKey]?.totalForChallenge(challenge.id) ?? 0;
-        final goalMetToday =
-            completions[todayKey] ?? _meetsGoal(challenge, todayTotal);
+      return challenges
+          .map((challenge) {
+            final completions = completionsByChallenge[challenge.id] ?? {};
+            final streak = _calculateStreak(
+              completions: completions,
+              today: today,
+            );
+            final todayTotal =
+                progressByDay[todayKey]?.totalForChallenge(challenge.id) ?? 0;
+            final goalMetToday =
+                completions[todayKey] ?? _meetsGoal(challenge, todayTotal);
 
-        final recentTotals = <String, double>{};
-        for (int i = 0; i < recentDays; i++) {
-          final date = startRecent.add(Duration(days: i));
-          final key = _formatDay(date);
-          final total =
-              progressByDay[key]?.totalForChallenge(challenge.id) ?? 0;
-          if (total > 0) {
-            recentTotals[key] = total;
-          }
-        }
+            final recentTotals = <String, double>{};
+            for (int i = 0; i < recentDays; i++) {
+              final date = startRecent.add(Duration(days: i));
+              final key = _formatDay(date);
+              final total =
+                  progressByDay[key]?.totalForChallenge(challenge.id) ?? 0;
+              if (total > 0) {
+                recentTotals[key] = total;
+              }
+            }
 
-        final completedDays = completions.values.where((met) => met).length;
+            final completedDays = completions.values.where((met) => met).length;
 
-        return ExerciseChallengeSummary(
-          challenge: challenge,
-          todayTotal: todayTotal,
-          goalMetToday: goalMetToday,
-          currentStreak: streak,
-          completedDays: completedDays,
-          totalRecorded: totalsByChallenge[challenge.id] ?? 0,
-          recentTotals: Map.unmodifiable(recentTotals),
-        );
-      }).toList(growable: false);
+            return ExerciseChallengeSummary(
+              challenge: challenge,
+              todayTotal: todayTotal,
+              goalMetToday: goalMetToday,
+              currentStreak: streak,
+              completedDays: completedDays,
+              totalRecorded: totalsByChallenge[challenge.id] ?? 0,
+              recentTotals: Map.unmodifiable(recentTotals),
+            );
+          })
+          .toList(growable: false);
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to load exercise challenge summaries: $e');
@@ -309,7 +310,7 @@ class ExerciseTrackerService {
   }
 
   Future<CollectionReference<Map<String, dynamic>>>
-      _resolveChallengesCollection(String? uid) async {
+  _resolveChallengesCollection(String? uid) async {
     final resolvedUid = await _resolveUid(uid);
     return firestore
         .collection(ExerciseTrackerPaths.users)
@@ -367,34 +368,41 @@ class ExerciseTrackerService {
     required Map<String, bool> completions,
     required DateTime today,
   }) {
-    String formatDate(DateTime d) =>
-        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    DateTime? latestRecordedDay;
+    final normalizedToday = _normalizeDate(today);
 
-    final completionKeys = completions.keys.toList()
-      ..sort((a, b) => a.compareTo(b));
-    DateTime? earliestDate;
-    if (completionKeys.isNotEmpty) {
-      earliestDate = DateTime.tryParse(completionKeys.first);
+    for (final entry in completions.entries) {
+      final parsed = DateTime.tryParse(entry.key);
+      if (parsed == null) {
+        continue;
+      }
+      final normalized = _normalizeDate(parsed);
+      if (normalized.isAfter(normalizedToday)) {
+        continue;
+      }
+      if (latestRecordedDay == null || normalized.isAfter(latestRecordedDay)) {
+        latestRecordedDay = normalized;
+      }
     }
 
-    if (earliestDate == null) {
+    if (latestRecordedDay == null) {
+      return 0;
+    }
+
+    if (normalizedToday.difference(latestRecordedDay).inDays > 1) {
       return 0;
     }
 
     int streak = 0;
-    var cursor = today;
-    while (!cursor.isBefore(earliestDate)) {
-      final dateKey = formatDate(cursor);
+    var cursor = latestRecordedDay;
+    while (true) {
+      final dateKey = _formatDay(cursor);
       final metGoal = completions[dateKey] ?? false;
       if (!metGoal) {
         break;
       }
 
       streak += 1;
-      if (cursor.isAtSameMomentAs(earliestDate)) {
-        break;
-      }
-
       cursor = cursor.subtract(const Duration(days: 1));
     }
 
