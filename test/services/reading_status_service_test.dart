@@ -49,7 +49,9 @@ class _FakeFirebasePlatform extends FirebasePlatform {
     FirebaseOptions? options,
   }) async {
     final app = _FakeFirebaseApp(
-        name ?? defaultFirebaseAppName, options ?? _defaultOptions);
+      name ?? defaultFirebaseAppName,
+      options ?? _defaultOptions,
+    );
     _apps.removeWhere((existing) => existing.name == app.name);
     _apps.add(app);
     return app;
@@ -136,10 +138,9 @@ void main() {
       final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
       for (int i = 0; i < 30; i++) {
         final date = now.subtract(Duration(days: i));
-        await userDoc
-            .collection('reading')
-            .doc(formatDate(date))
-            .set({'read': true});
+        await userDoc.collection('reading').doc(formatDate(date)).set({
+          'read': true,
+        });
       }
 
       final status = await service.fetchStatus();
@@ -166,10 +167,9 @@ void main() {
 
       for (final offset in [...streakOffsets, ...longestOffsets]) {
         final date = today.subtract(Duration(days: offset));
-        await userDoc
-            .collection('reading')
-            .doc(formatDate(date))
-            .set({'read': true});
+        await userDoc.collection('reading').doc(formatDate(date)).set({
+          'read': true,
+        });
       }
 
       final stats = await service.updateSummary();
@@ -177,8 +177,10 @@ void main() {
       expect(stats.streak, expectedStreak);
       final expectedReadDays = streakOffsets.length + longestOffsets.length;
       expect(stats.totalReadDays, expectedReadDays);
-      expect(stats.graceCreditsMonth,
-          '${today.year}-${today.month.toString().padLeft(2, '0')}');
+      expect(
+        stats.graceCreditsMonth,
+        '${today.year}-${today.month.toString().padLeft(2, '0')}',
+      );
 
       final summaryDoc = await userDoc.collection('summary').doc('data').get();
       expect(summaryDoc.exists, isTrue);
@@ -188,39 +190,40 @@ void main() {
     });
 
     test(
-        'updateSummary backfills data from read_logs when reading docs missing',
-        () async {
-      final date = DateTime.now();
-      String formatDate(DateTime d) =>
-          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      'updateSummary backfills data from read_logs when reading docs missing',
+      () async {
+        final date = DateTime.now();
+        String formatDate(DateTime d) =>
+            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
-      await firestore
-          .collection('read_logs')
-          .doc(formatDate(date))
-          .collection('entries')
-          .doc(user.uid)
-          .set({'read': true});
+        await firestore
+            .collection('read_logs')
+            .doc(formatDate(date))
+            .collection('entries')
+            .doc(user.uid)
+            .set({'read': true});
 
-      final stats = await service.updateSummary();
-      expect(stats.streak, 1);
-      expect(stats.totalReadDays, 1);
-      expect(stats.graceCreditsAvailable, 2);
-      expect(stats.graceCreditsUsed, 0);
+        final stats = await service.updateSummary();
+        expect(stats.streak, 1);
+        expect(stats.totalReadDays, 1);
+        expect(stats.graceCreditsAvailable, 2);
+        expect(stats.graceCreditsUsed, 0);
 
-      final summaryDoc = await firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('summary')
-          .doc('data')
-          .get();
-      expect(summaryDoc.exists, isTrue);
-      final data = summaryDoc.data()!;
-      expect(data['streak'], 1);
-      expect(data['totalReadDays'], 1);
-      expect(data['pastWeekReadDates'], contains(formatDate(date)));
-      expect(data['graceCreditsAvailable'], 2);
-      expect(data['graceCreditsUsed'], 0);
-    });
+        final summaryDoc = await firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('summary')
+            .doc('data')
+            .get();
+        expect(summaryDoc.exists, isTrue);
+        final data = summaryDoc.data()!;
+        expect(data['streak'], 1);
+        expect(data['totalReadDays'], 1);
+        expect(data['pastWeekReadDates'], contains(formatDate(date)));
+        expect(data['graceCreditsAvailable'], 2);
+        expect(data['graceCreditsUsed'], 0);
+      },
+    );
 
     test('updateSummary uses grace credits to preserve streak', () async {
       final userDoc = firestore.collection('users').doc(user.uid);
@@ -232,10 +235,9 @@ void main() {
       final today = DateTime.now();
       for (final offset in [0, 2, 3]) {
         final date = today.subtract(Duration(days: offset));
-        await userDoc
-            .collection('reading')
-            .doc(formatDate(date))
-            .set({'read': true});
+        await userDoc.collection('reading').doc(formatDate(date)).set({
+          'read': true,
+        });
       }
 
       final stats = await service.updateSummary();
@@ -260,20 +262,19 @@ void main() {
       final today = DateTime.now();
       for (final offset in [0, 4, 5]) {
         final date = today.subtract(Duration(days: offset));
-        await userDoc
-            .collection('reading')
-            .doc(formatDate(date))
-            .set({'read': true});
+        await userDoc.collection('reading').doc(formatDate(date)).set({
+          'read': true,
+        });
       }
 
       final stats = await service.updateSummary();
-      expect(stats.streak, 3);
+      expect(stats.streak, 1);
       expect(stats.graceCreditsUsed, 2);
       expect(stats.graceCreditsAvailable, 0);
 
       final summaryDoc = await userDoc.collection('summary').doc('data').get();
       final data = summaryDoc.data()!;
-      expect(data['streak'], 3);
+      expect(data['streak'], 1);
       expect(data['graceCreditsUsed'], 2);
       expect(data['graceCreditsAvailable'], 0);
     });
@@ -288,10 +289,9 @@ void main() {
       final today = DateTime.now();
       for (int i = 0; i < 15; i++) {
         final date = today.subtract(Duration(days: i));
-        await userDoc
-            .collection('reading')
-            .doc(formatDate(date))
-            .set({'read': true});
+        await userDoc.collection('reading').doc(formatDate(date)).set({
+          'read': true,
+        });
       }
 
       final stats = await service.updateSummary();
@@ -305,44 +305,147 @@ void main() {
       expect(data['graceCreditsUsed'], 0);
     });
 
-    test('updateSummary logs and rethrows when Firestore operations fail',
-        () async {
-      final throwingFirestore = ThrowingFirestore();
-      service = ReadingStatusService(firestore: throwingFirestore, auth: auth);
+    test(
+      'updateSummary does not forgive misses that occur before a credit is earned',
+      () async {
+        final fixedToday = DateTime(2024, 6, 30);
+        service = ReadingStatusService(
+          firestore: firestore,
+          auth: auth,
+          dateProvider: () => fixedToday,
+        );
 
-      final originalDelegate = Firebase.delegatePackingProperty;
-      Firebase.delegatePackingProperty = _FakeFirebasePlatform();
-      final crashlytics = MockFirebaseCrashlytics();
-      FirebaseCrashlytics? originalCrashlytics;
-      try {
-        originalCrashlytics = ErrorLogger.crashlytics;
-      } catch (_) {
-        originalCrashlytics = null;
-      }
-      ErrorLogger.crashlytics = crashlytics;
-      addTearDown(() {
-        Firebase.delegatePackingProperty = originalDelegate;
-        if (originalCrashlytics != null) {
-          ErrorLogger.crashlytics = originalCrashlytics;
+        final userDoc = firestore.collection('users').doc(user.uid);
+        await userDoc.set({'email': user.email});
+
+        String formatDate(DateTime d) =>
+            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+        final today = DateTime(
+          fixedToday.year,
+          fixedToday.month,
+          fixedToday.day,
+        );
+        DateTime dayFor(int daysAgo) => today.subtract(Duration(days: daysAgo));
+
+        Future<void> markRead(int daysAgo) async {
+          final date = dayFor(daysAgo);
+          await userDoc.collection('reading').doc(formatDate(date)).set({
+            'read': true,
+          });
         }
-      });
 
-      when(() =>
-              crashlytics.recordError(any(), any(), fatal: any(named: 'fatal')))
-          .thenAnswer((_) async {});
+        final readDaysAgo = <int>[30, ...List.generate(27, (i) => 26 - i)];
+        for (final daysAgo in readDaysAgo) {
+          await markRead(daysAgo);
+        }
 
-      final future = service.updateSummary();
-      await expectLater(
-        future,
-        throwsA(isA<FirebaseException>()
-            .having((e) => e.message, 'message', contains('forced failure'))),
+        final monthKey =
+            '${today.year}-${today.month.toString().padLeft(2, '0')}';
+        final stats = await service.updateSummary();
+        expect(stats.streak, 27);
+        expect(stats.graceCreditsMonth, monthKey);
+        expect(stats.graceCreditsUsed, 2);
+        expect(stats.graceCreditsAvailable, 1);
+
+        final summaryDoc =
+            await userDoc.collection('summary').doc('data').get();
+        expect(summaryDoc.data()?['graceCreditsUsed'], 2);
+        expect(summaryDoc.data()?['graceCreditsAvailable'], 1);
+      },
+    );
+
+    test('updateSummary spends earned credits on later misses', () async {
+      final fixedToday = DateTime(2024, 6, 30);
+      service = ReadingStatusService(
+        firestore: firestore,
+        auth: auth,
+        dateProvider: () => fixedToday,
       );
 
-      verify(() => crashlytics.recordError(
+      final userDoc = firestore.collection('users').doc(user.uid);
+      await userDoc.set({'email': user.email});
+
+      String formatDate(DateTime d) =>
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      final today = DateTime(fixedToday.year, fixedToday.month, fixedToday.day);
+      DateTime dayFor(int daysAgo) => today.subtract(Duration(days: daysAgo));
+
+      Future<void> markRead(int daysAgo) async {
+        final date = dayFor(daysAgo);
+        await userDoc.collection('reading').doc(formatDate(date)).set({
+          'read': true,
+        });
+      }
+
+      final readDaysAgo = <int>[25, ...List.generate(22, (i) => 22 - i)];
+      for (final daysAgo in readDaysAgo) {
+        await markRead(daysAgo);
+      }
+
+      final monthKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}';
+      final stats = await service.updateSummary();
+      expect(stats.streak, 26);
+      expect(stats.graceCreditsMonth, monthKey);
+      expect(stats.graceCreditsUsed, 3);
+      expect(stats.graceCreditsAvailable, 0);
+
+      final summaryDoc = await userDoc.collection('summary').doc('data').get();
+      expect(summaryDoc.data()?['graceCreditsUsed'], 3);
+      expect(summaryDoc.data()?['graceCreditsAvailable'], 0);
+    });
+
+    test(
+      'updateSummary logs and rethrows when Firestore operations fail',
+      () async {
+        final throwingFirestore = ThrowingFirestore();
+        service = ReadingStatusService(
+          firestore: throwingFirestore,
+          auth: auth,
+        );
+
+        final originalDelegate = Firebase.delegatePackingProperty;
+        Firebase.delegatePackingProperty = _FakeFirebasePlatform();
+        final crashlytics = MockFirebaseCrashlytics();
+        FirebaseCrashlytics? originalCrashlytics;
+        try {
+          originalCrashlytics = ErrorLogger.crashlytics;
+        } catch (_) {
+          originalCrashlytics = null;
+        }
+        ErrorLogger.crashlytics = crashlytics;
+        addTearDown(() {
+          Firebase.delegatePackingProperty = originalDelegate;
+          if (originalCrashlytics != null) {
+            ErrorLogger.crashlytics = originalCrashlytics;
+          }
+        });
+
+        when(
+          () =>
+              crashlytics.recordError(any(), any(), fatal: any(named: 'fatal')),
+        ).thenAnswer((_) async {});
+
+        final future = service.updateSummary();
+        await expectLater(
+          future,
+          throwsA(
+            isA<FirebaseException>().having(
+              (e) => e.message,
+              'message',
+              contains('forced failure'),
+            ),
+          ),
+        );
+
+        verify(
+          () => crashlytics.recordError(
             any(that: isA<FirebaseException>()),
             any(),
             fatal: false,
-          )).called(1);
-    });
+          ),
+        ).called(1);
+      },
+    );
   });
 }

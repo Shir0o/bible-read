@@ -34,7 +34,8 @@ class HomePage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })? markFirstReader;
+  })?
+  markFirstReader;
 
   HomePage({
     super.key,
@@ -45,12 +46,13 @@ class HomePage extends StatefulWidget {
     ReadingStatusService? readingStatusService,
     VibrationService? vibrationService,
     GoogleSignIn Function()? googleSignInProvider,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        readingStatusService = readingStatusService ??
-            ReadingStatusService(firestore: firestore, auth: auth),
-        vibrationService = vibrationService ?? const VibrationService(),
-        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       readingStatusService =
+           readingStatusService ??
+           ReadingStatusService(firestore: firestore, auth: auth),
+       vibrationService = vibrationService ?? const VibrationService(),
+       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn;
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -208,8 +210,8 @@ class _HomePageState extends State<HomePage>
           .collection('reading')
           .doc(dateKey)
           .set({
-        'read': true,
-      }, SetOptions(merge: true)); // Mark read in Firestore.
+            'read': true,
+          }, SetOptions(merge: true)); // Mark read in Firestore.
 
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
@@ -239,9 +241,9 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Recomputes summary data after marking today as read. Delegates to the
-  /// shared summary updater so streaks and grace credits reflect the complete
-  /// reading history.
+  /// Recomputes summary data after marking today as read. Delegates to
+  /// [ReadingStatusService.updateSummary], which applies the shared
+  /// chronological grace-credit accounting used across the app.
   Future<void> _updateSummaryWithToday() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
