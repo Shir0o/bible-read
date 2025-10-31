@@ -11,9 +11,8 @@ import '../services/seasonal_challenge_service.dart';
 import 'achievements_page.dart';
 import 'friend_requests_page.dart';
 import 'seasonal_challenges_page.dart';
-import '../models/group.dart';
 import '../services/group_service.dart';
-import 'group_detail_page.dart';
+import 'group_join_requests_page.dart';
 import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
@@ -35,9 +34,9 @@ class NotificationCenterPage extends StatefulWidget {
     NotificationService? service,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-  })  : service = service ?? NotificationService(),
-        auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService();
+  }) : service = service ?? NotificationService(),
+       auth = auth ?? FirebaseAuth.instance,
+       vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<NotificationCenterPage> createState() => _NotificationCenterPageState();
@@ -116,8 +115,9 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
         child: user == null
             ? const Center(child: Text('Please sign in'))
             : StreamBuilder<List<AppNotification>>(
-                stream:
-                    widget.service.notifications(user.uid).asBroadcastStream(),
+                stream: widget.service
+                    .notifications(user.uid)
+                    .asBroadcastStream(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -146,21 +146,24 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                           if (uid != null) {
                             final messenger = ScaffoldMessenger.of(context);
                             setState(() => _readLocally.add(n.id));
-                            unawaited(widget.service
-                                .markRead(uid, n.id)
-                                .catchError((e, st) {
-                              ErrorLogger.log(e, st);
-                              if (mounted) {
-                                setState(() => _readLocally.remove(n.id));
-                                messenger.showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Failed to mark notification as read.',
+                            unawaited(
+                              widget.service.markRead(uid, n.id).catchError((
+                                e,
+                                st,
+                              ) {
+                                ErrorLogger.log(e, st);
+                                if (mounted) {
+                                  setState(() => _readLocally.remove(n.id));
+                                  messenger.showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Failed to mark notification as read.',
+                                      ),
                                     ),
-                                  ),
-                                );
-                              }
-                            }));
+                                  );
+                                }
+                              }),
+                            );
                           }
                           if (context.mounted) {
                             unawaited(_navigate(context, n));
@@ -283,7 +286,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
       case NotificationType.groupScheduleUpdate:
         break;
       case NotificationType.groupJoinRequest:
-        // Navigate to the specific group’s detail page when possible.
+        // Navigate to the join requests view for the group when possible.
         try {
           final gid = n.groupId;
           if (gid == null) {
@@ -307,14 +310,16 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
             );
             break;
           }
-          final group = Group.fromFirestore(snap);
           if (!context.mounted) return;
           unawaited(widget.vibrationService.lightImpact());
           await Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => GroupDetailPage(
-                group: group,
-                groupService: GroupService(firestore: widget.service.firestore),
+              builder: (_) => GroupJoinRequestsPage(
+                groupId: gid,
+                groupService: GroupService(
+                  firestore: widget.service.firestore,
+                  notificationService: widget.service,
+                ),
                 auth: widget.auth,
               ),
             ),

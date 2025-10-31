@@ -14,6 +14,7 @@ import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/pages/achievements_page.dart';
 import 'package:bible_read/pages/friend_requests_page.dart';
 import 'package:bible_read/pages/seasonal_challenges_page.dart';
+import 'package:bible_read/pages/group_join_requests_page.dart';
 
 class _StubVibrationService extends VibrationService {
   int lightCalls = 0;
@@ -92,24 +93,24 @@ void main() {
         .collection('notifications')
         .doc('n1')
         .set({
-      'type': NotificationType.like.name,
-      'timestamp': Timestamp.now(),
-      'read': false,
-      'senderUid': 'u2',
-      'message': 'Test like',
-    });
+          'type': NotificationType.like.name,
+          'timestamp': Timestamp.now(),
+          'read': false,
+          'senderUid': 'u2',
+          'message': 'Test like',
+        });
     await firestore
         .collection('users')
         .doc(user.uid)
         .collection('notifications')
         .doc('n2')
         .set({
-      'type': NotificationType.nudge.name,
-      'timestamp': Timestamp.now(),
-      'read': true,
-      'senderUid': 'u3',
-      'message': 'Test nudge',
-    });
+          'type': NotificationType.nudge.name,
+          'timestamp': Timestamp.now(),
+          'read': true,
+          'senderUid': 'u3',
+          'message': 'Test nudge',
+        });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -129,8 +130,10 @@ void main() {
   testWidgets('shows message when no notifications', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final service = NotificationService(firestore: firestore);
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u2'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u2'),
+      signedIn: true,
+    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -146,16 +149,19 @@ void main() {
     expect(find.text('No notifications'), findsOneWidget);
   });
 
-  testWidgets('shows loading indicator before notifications arrive',
-      (tester) async {
+  testWidgets('shows loading indicator before notifications arrive', (
+    tester,
+  ) async {
     final controller = StreamController<List<AppNotification>>();
     addTearDown(controller.close);
     final service = _StreamNotificationsService(
       stream: controller.stream,
       firestore: FakeFirebaseFirestore(),
     );
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u5'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u5'),
+      signedIn: true,
+    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -191,8 +197,9 @@ void main() {
     expect(service.subscribed, isFalse);
   });
 
-  testWidgets('tapping achievement marks read and opens achievements',
-      (tester) async {
+  testWidgets('tapping achievement marks read and opens achievements', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final service = _RecordingService(firestore: firestore);
     final user = MockUser(uid: 'u3');
@@ -204,11 +211,11 @@ void main() {
         .collection('notifications')
         .doc('n1')
         .set({
-      'type': NotificationType.achievement.name,
-      'timestamp': Timestamp.now(),
-      'read': false,
-      'senderUid': 'u4',
-    });
+          'type': NotificationType.achievement.name,
+          'timestamp': Timestamp.now(),
+          'read': false,
+          'senderUid': 'u4',
+        });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -230,8 +237,9 @@ void main() {
     expect(find.byType(AchievementsPage), findsOneWidget);
   });
 
-  testWidgets('tapping friend request marks read and opens friend requests',
-      (tester) async {
+  testWidgets('tapping friend request marks read and opens friend requests', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final service = _RecordingService(firestore: firestore);
     final user = MockUser(uid: 'u6');
@@ -243,11 +251,11 @@ void main() {
         .collection('notifications')
         .doc('n1')
         .set({
-      'type': NotificationType.friendRequest.name,
-      'timestamp': Timestamp.now(),
-      'read': false,
-      'senderUid': 'u7',
-    });
+          'type': NotificationType.friendRequest.name,
+          'timestamp': Timestamp.now(),
+          'read': false,
+          'senderUid': 'u7',
+        });
 
     await firestore
         .collection('users')
@@ -276,8 +284,50 @@ void main() {
     expect(find.byType(FriendRequestsPage), findsOneWidget);
   });
 
-  testWidgets('tapping seasonal challenge opens seasonal challenges',
-      (tester) async {
+  testWidgets('tapping group join request opens join requests page', (
+    tester,
+  ) async {
+    final firestore = FakeFirebaseFirestore();
+    final service = _RecordingService(firestore: firestore);
+    final user = MockUser(uid: 'u11');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    await firestore.collection('groups').doc('g1').set({'name': 'Group'});
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('notifications')
+        .doc('n1')
+        .set({
+          'type': NotificationType.groupJoinRequest.name,
+          'timestamp': Timestamp.now(),
+          'read': false,
+          'groupId': 'g1',
+        });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NotificationCenterPage(
+          service: service,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(ListTile));
+    await tester.pumpAndSettle();
+
+    expect(service.called, isTrue);
+    expect(service.uid, user.uid);
+    expect(service.id, 'n1');
+    expect(find.byType(GroupJoinRequestsPage), findsOneWidget);
+  });
+
+  testWidgets('tapping seasonal challenge opens seasonal challenges', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final service = _RecordingService(firestore: firestore);
     final user = MockUser(uid: 'u10');
@@ -296,12 +346,12 @@ void main() {
         .collection('challenges')
         .doc('challenge')
         .set({
-      'seasonId': 'season',
-      'title': 'Complete readings',
-      'description': 'Finish readings',
-      'metric': 'chapters',
-      'goal': 1,
-    });
+          'seasonId': 'season',
+          'title': 'Complete readings',
+          'description': 'Finish readings',
+          'metric': 'chapters',
+          'goal': 1,
+        });
 
     await firestore
         .collection('users')
@@ -309,10 +359,10 @@ void main() {
         .collection('notifications')
         .doc('n1')
         .set({
-      'type': NotificationType.seasonalChallenge.name,
-      'timestamp': Timestamp.now(),
-      'read': false,
-    });
+          'type': NotificationType.seasonalChallenge.name,
+          'timestamp': Timestamp.now(),
+          'read': false,
+        });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -332,94 +382,93 @@ void main() {
   });
 
   testWidgets(
-      'tapping friend request with no pending requests navigates and shows empty state',
-      (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final service = _RecordingService(firestore: firestore);
-    final user = MockUser(uid: 'u8');
-    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+    'tapping friend request with no pending requests navigates and shows empty state',
+    (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final service = _RecordingService(firestore: firestore);
+      final user = MockUser(uid: 'u8');
+      final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
-    await firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('notifications')
-        .doc('n1')
-        .set({
-      'type': NotificationType.friendRequest.name,
-      'timestamp': Timestamp.now(),
-      'read': false,
-      'senderUid': 'u9',
-    });
+      await firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('notifications')
+          .doc('n1')
+          .set({
+            'type': NotificationType.friendRequest.name,
+            'timestamp': Timestamp.now(),
+            'read': false,
+            'senderUid': 'u9',
+          });
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: NotificationCenterPage(
-          service: service,
-          auth: auth,
-          vibrationService: _StubVibrationService(),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: NotificationCenterPage(
+            service: service,
+            auth: auth,
+            vibrationService: _StubVibrationService(),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(ListTile));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.byType(ListTile));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    expect(find.byType(FriendRequestsPage), findsOneWidget);
-    expect(find.text('No friend requests'), findsOneWidget);
-    expect(service.called, isTrue);
-  });
+      expect(find.byType(FriendRequestsPage), findsOneWidget);
+      expect(find.text('No friend requests'), findsOneWidget);
+      expect(service.called, isTrue);
+    },
+  );
 
   testWidgets(
-      'shows SnackBar and keeps notification unread on markRead failure',
-      (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final service = _FailingService(firestore: firestore);
-    final user = MockUser(uid: 'u4');
-    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+    'shows SnackBar and keeps notification unread on markRead failure',
+    (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final service = _FailingService(firestore: firestore);
+      final user = MockUser(uid: 'u4');
+      final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
-    await firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('notifications')
-        .doc('n1')
-        .set({
-      'type': NotificationType.like.name,
-      'timestamp': Timestamp.now(),
-      'read': false,
-      'senderUid': 'u5',
-    });
+      await firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('notifications')
+          .doc('n1')
+          .set({
+            'type': NotificationType.like.name,
+            'timestamp': Timestamp.now(),
+            'read': false,
+            'senderUid': 'u5',
+          });
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: NotificationCenterPage(
-          service: service,
-          auth: auth,
-          vibrationService: _StubVibrationService(),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: NotificationCenterPage(
+            service: service,
+            auth: auth,
+            vibrationService: _StubVibrationService(),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(ListTile));
-    await tester.pump();
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.byType(ListTile));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
 
-    expect(find.text('Failed to mark notification as read.'), findsOneWidget);
-    final icon = tester.widget<Icon>(find.byIcon(Icons.thumb_up));
-    expect(icon.color, Colors.blue);
-  });
+      expect(find.text('Failed to mark notification as read.'), findsOneWidget);
+      final icon = tester.widget<Icon>(find.byIcon(Icons.thumb_up));
+      expect(icon.color, Colors.blue);
+    },
+  );
 }
 
 class _StreamNotificationsService extends NotificationService {
-  _StreamNotificationsService({
-    required this.stream,
-    required super.firestore,
-  });
+  _StreamNotificationsService({required this.stream, required super.firestore});
 
   final Stream<List<AppNotification>> stream;
 
@@ -465,7 +514,7 @@ class _FailingService extends NotificationService {
 
 class _SingleNotificationService extends NotificationService {
   _SingleNotificationService({required this.notification})
-      : super(firestore: FakeFirebaseFirestore());
+    : super(firestore: FakeFirebaseFirestore());
 
   final AppNotification notification;
 
