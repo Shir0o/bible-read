@@ -258,6 +258,41 @@ void main() {
       expect(data['graceCreditsAvailable'], 1);
     });
 
+    test(
+        'updateSummary leaves new month credits untouched when streak already reset',
+        () async {
+      final userDoc = firestore.collection('users').doc(user.uid);
+      await userDoc.set({'email': user.email});
+
+      String formatDate(DateTime d) =>
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+      fixedNow = DateTime(2024, 7, 2);
+
+      // User read on the first two days of June and then missed enough days to
+      // exhaust June's grace credits, resetting the streak before July.
+      for (final date in [
+        DateTime(2024, 6, 1),
+        DateTime(2024, 6, 2),
+      ]) {
+        await userDoc.collection('reading').doc(formatDate(date)).set({
+          'read': true,
+        });
+      }
+
+      final stats = await service.updateSummary();
+      expect(stats.graceCreditsMonth, '2024-07');
+      expect(stats.streak, 0);
+      expect(stats.graceCreditsUsed, 0);
+      expect(stats.graceCreditsAvailable, 2);
+
+      final summaryDoc = await userDoc.collection('summary').doc('data').get();
+      final data = summaryDoc.data()!;
+      expect(data['graceCreditsMonth'], '2024-07');
+      expect(data['graceCreditsUsed'], 0);
+      expect(data['graceCreditsAvailable'], 2);
+    });
+
     test('updateSummary breaks streak when credits exhausted', () async {
       final userDoc = firestore.collection('users').doc(user.uid);
       await userDoc.set({'email': user.email});
