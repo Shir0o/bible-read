@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -47,9 +49,12 @@ class _SeasonalChallengesPageState extends State<SeasonalChallengesPage> {
         }
       }
       return activeSeason;
-    }).handleError((Object error, StackTrace stackTrace) {
-      ErrorLogger.log(error, stackTrace);
-    });
+    }).transform(StreamTransformer.fromHandlers(
+      handleError: (error, stackTrace, sink) {
+        unawaited(ErrorLogger.log(error, stackTrace));
+        sink.addError(error, stackTrace);
+      },
+    ));
   }
 
   @override
