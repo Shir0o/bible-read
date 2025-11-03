@@ -142,11 +142,11 @@ _SummaryExpectation _computeExpectedSummary(
       if (streak % 15 == 0) {
         monthState.bonus += 1;
       }
-    } else {
-      if (monthState.available <= 0) {
-        break;
-      }
+    } else if (streak > 0 && monthState.available > 0) {
       monthState.used += 1;
+      streak += 1;
+    } else {
+      break;
     }
 
     if (cursor.isAtSameMomentAs(earliestRead)) {
@@ -962,7 +962,9 @@ void main() {
         .collection('summary')
         .doc('data')
         .get();
-    expect(summary.data()?['streak'], 5);
+    // Grace credits bridge the two skipped days, so the streak spans the full
+    // seven-day window even though only five actual reads are recorded.
+    expect(summary.data()?['streak'], 7);
     expect(summary.data()?['longestStreak'], 3);
     expect(summary.data()?['totalReadDays'], 5);
   });
