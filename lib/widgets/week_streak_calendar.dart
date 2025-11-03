@@ -31,10 +31,18 @@ class WeekStreakCalendar extends StatelessWidget {
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
+  DateTime _normalize(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
+
   bool _isCurrentWeek() {
     final now = DateTime.now();
-    final currentSunday = now.subtract(Duration(days: now.weekday % 7));
-    return _isSameDay(sunday, currentSunday);
+    final normalizedNow = _normalize(now);
+    final currentSunday = DateTime(
+      normalizedNow.year,
+      normalizedNow.month,
+      normalizedNow.day - (normalizedNow.weekday % 7),
+    );
+    return _isSameDay(_normalize(sunday), currentSunday);
   }
 
   String get _weekLabel => '${sunday.month}/${sunday.day}';
@@ -70,7 +78,11 @@ class WeekStreakCalendar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(7, (i) {
-              final date = sunday.add(Duration(days: i));
+              final date = DateTime(
+                sunday.year,
+                sunday.month,
+                sunday.day + i,
+              );
               final filled = readDates.any((d) => _isSameDay(d, date));
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),

@@ -46,11 +46,13 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
   }
 
   DateTime _startOfWeek(DateTime date) {
+    final normalized = DateTime(date.year, date.month, date.day);
+    final weekdayOffset = normalized.weekday % 7;
     return DateTime(
-      date.year,
-      date.month,
-      date.day,
-    ).subtract(Duration(days: date.weekday % 7));
+      normalized.year,
+      normalized.month,
+      normalized.day - weekdayOffset,
+    );
   }
 
   DateTime _startOfMonth(DateTime date) => DateTime(date.year, date.month, 1);
@@ -69,7 +71,11 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
   void _changePeriod(int delta) {
     setState(() {
       if (_period == _Period.week) {
-        _periodStart = _periodStart.add(Duration(days: 7 * delta));
+        _periodStart = DateTime(
+          _periodStart.year,
+          _periodStart.month,
+          _periodStart.day + (7 * delta),
+        );
       } else {
         _periodStart = DateTime(_periodStart.year, _periodStart.month + delta);
       }
@@ -117,7 +123,11 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
       }
 
       if (isCurrentWeek) {
-        final end = _periodStart.add(const Duration(days: 6));
+        final end = DateTime(
+          _periodStart.year,
+          _periodStart.month,
+          _periodStart.day + 6,
+        );
         var dates = List<String>.from(data['pastWeekReadDates'] ?? []);
         // Keep only dates within the selected week. The summary cache may
         // contain stale entries so we filter them out first.
@@ -132,7 +142,11 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
           // week, so we can trust it without hitting Firestore.
           final set = dates.toSet();
           for (int i = 0; i < 7; i++) {
-            final day = _periodStart.add(Duration(days: i));
+            final day = DateTime(
+              _periodStart.year,
+              _periodStart.month,
+              _periodStart.day + i,
+            );
             final key =
                 '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
             if (set.contains(key)) {
@@ -161,7 +175,11 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
           // The summary has an entry for every day of the month.
           final set = dates.toSet();
           for (int i = 0; i < daysInMonth; i++) {
-            final day = _periodStart.add(Duration(days: i));
+            final day = DateTime(
+              _periodStart.year,
+              _periodStart.month,
+              _periodStart.day + i,
+            );
             final key =
                 '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
             if (set.contains(key)) {
@@ -177,7 +195,11 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
         }
       } else {
         final end = _period == _Period.week
-            ? _periodStart.add(const Duration(days: 6))
+            ? DateTime(
+                _periodStart.year,
+                _periodStart.month,
+                _periodStart.day + 6,
+              )
             : DateTime(_periodStart.year, _periodStart.month + 1, 0);
         readDates = await _queryRange(userDocRef, _periodStart, end);
         periodCount = readDates.length;
@@ -206,9 +228,9 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
     final futures = <Future<DocumentSnapshot<Map<String, dynamic>>>>[];
     final dates = <DateTime>[];
     final keys = <String>[];
-    for (DateTime day = start;
-        !day.isAfter(end);
-        day = day.add(const Duration(days: 1))) {
+    final totalDays = end.difference(start).inDays;
+    for (int offset = 0; offset <= totalDays; offset++) {
+      final day = DateTime(start.year, start.month, start.day + offset);
       final key =
           '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
       futures.add(readingCollection.doc(key).get());

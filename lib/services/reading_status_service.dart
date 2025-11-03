@@ -177,11 +177,9 @@ class ReadingStatusService {
       final savedWeek = List<bool>.filled(7, false, growable: true);
       // Compute this week's Sunday (calendar week: Sunday to Saturday)
       final currentWeekday = today.weekday; // 1 = Mon, ..., 7 = Sun
-      final sunday = today.subtract(
-        Duration(days: currentWeekday % 7),
-      ); // get this week's Sunday
+      final sunday = _shiftDate(today, -(currentWeekday % 7));
       for (int i = 0; i < 7; i++) {
-        final date = sunday.add(Duration(days: i)); // Sunday to Saturday
+        final date = _shiftDate(sunday, i); // Sunday to Saturday
         final key =
             '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
         savedWeek[i] = weekDates.contains(key);
@@ -209,7 +207,7 @@ class ReadingStatusService {
         );
         savedWeek.clear();
         for (int i = 0; i < 7; i++) {
-          final date = sunday.add(Duration(days: i));
+          final date = _shiftDate(sunday, i);
           final key =
               '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
           savedWeek.add(weekStatus[key] ?? false);
@@ -246,7 +244,7 @@ class ReadingStatusService {
       final readDates = <DateTime>{};
       for (int i = 0; i < savedWeek.length; i++) {
         if (savedWeek[i]) {
-          final date = sunday.add(Duration(days: i));
+          final date = _shiftDate(sunday, i);
           readDates.add(DateTime(date.year, date.month, date.day));
         }
       }
@@ -314,6 +312,10 @@ class ReadingStatusService {
 
       final pastWeekReadDates =
           weekStatus.entries.where((e) => e.value).map((e) => e.key).toList();
+      if (kDebugMode) {
+        debugPrint('weekStatus=${weekStatus.entries.toList()}');
+        debugPrint('pastWeekReadDates=$pastWeekReadDates');
+      }
       final pastMonthReadDates = monthStatus.entries
           .where((e) {
             if (!e.value) return false;
@@ -335,15 +337,14 @@ class ReadingStatusService {
           readDateSet.add(readDoc.id);
         }
       }
+      if (kDebugMode) {
+        debugPrint('readDateSet=$readDateSet');
+      }
 
       // Backfill from read_logs for recent history where user/reading docs are missing.
       // This helps avoid showing a 1-day streak when users only posted to the feed.
       for (int i = 0; i < 90; i++) {
-        final d = DateTime(
-          today.year,
-          today.month,
-          today.day,
-        ).subtract(Duration(days: i));
+        final d = _shiftDate(today, -i);
         final key = formatDate(d);
         if (readDateSet.contains(key)) continue;
         try {
@@ -451,7 +452,7 @@ class ReadingStatusService {
     String formatDate(DateTime d) =>
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
-    final startDate = now.subtract(Duration(days: daysBack - 1));
+    final startDate = _shiftDate(now, -(daysBack - 1));
     final startId = formatDate(startDate);
     final endId = formatDate(now);
 
@@ -465,7 +466,7 @@ class ReadingStatusService {
 
     final status = SplayTreeMap<String, bool>();
     for (int i = 0; i < daysBack; i++) {
-      final date = now.subtract(Duration(days: i));
+      final date = _shiftDate(now, -i);
       status[formatDate(date)] = false;
     }
 
@@ -478,7 +479,7 @@ class ReadingStatusService {
 
     // Fill gaps from read_logs where per-user reading docs are missing.
     for (int i = 0; i < daysBack; i++) {
-      final date = now.subtract(Duration(days: i));
+      final date = _shiftDate(now, -i);
       final id = formatDate(date);
       if (status[id] == true) continue;
       try {
@@ -511,8 +512,13 @@ class ReadingStatusService {
       return _SummaryComputation(streak: 0, monthLedgers: monthLedgers);
     }
 
-    final start = sortedDates.first;
-    var current = start;
+    final start = _dateOnly(sortedDates.first);
+    final end = _dateOnly(today);
+    if (start.isAfter(end)) {
+      return _SummaryComputation(streak: 0, monthLedgers: monthLedgers);
+    }
+
+    final totalDays = end.difference(start).inDays;
     var currentStreak = 0;
 
     _MonthlyCreditLedger ensureLedger(DateTime date) {
@@ -526,22 +532,24 @@ class ReadingStatusService {
       );
     }
 
-    while (!current.isAfter(today)) {
-      final ledger = ensureLedger(current);
-      final key = formatDate(current);
+    for (int offset = 0; offset <= totalDays; offset++) {
+      final currentDate = _shiftDate(start, offset);
+      final ledger = ensureLedger(currentDate);
+      final key = formatDate(currentDate);
       if (readDateSet.contains(key)) {
         currentStreak += 1;
         if (currentStreak % 15 == 0) {
-          ledger.addBonusCredit(current);
+          ledger.addBonusCredit(currentDate);
         }
       } else {
-        if (ledger.trySpend(current)) {
-          currentStreak += 1;
+        if (ledger.trySpend(currentDate)) {
+          // Spending a grace credit should preserve the current streak length
+          // but not inflate it. Credits freeze missed days rather than counting
+          // as new progress.
         } else {
           currentStreak = 0;
         }
       }
-      current = current.add(const Duration(days: 1));
     }
 
     return _SummaryComputation(
@@ -553,6 +561,11 @@ class ReadingStatusService {
 
 DateTime _dateOnly(DateTime value) =>
     DateTime(value.year, value.month, value.day);
+
+DateTime _shiftDate(DateTime value, int days) {
+  final normalized = _dateOnly(value);
+  return DateTime(normalized.year, normalized.month, normalized.day + days);
+}
 
 class _SummaryComputation {
   const _SummaryComputation({required this.streak, required this.monthLedgers});
