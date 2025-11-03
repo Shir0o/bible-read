@@ -86,9 +86,12 @@ class SeasonalChallengeService {
       return snapshot.docs
           .map((doc) => SeasonalChallenge.fromFirestore(seasonId, doc))
           .toList();
-    }).handleError((Object error, StackTrace stackTrace) {
-      ErrorLogger.log(error, stackTrace);
-    });
+    }).transform(StreamTransformer.fromHandlers(
+      handleError: (error, stackTrace, sink) {
+        unawaited(ErrorLogger.log(error, stackTrace));
+        sink.addError(error, stackTrace);
+      },
+    ));
   }
 
   /// Streams a user's progress for [challengeId] within [seasonId].
@@ -103,9 +106,12 @@ class SeasonalChallengeService {
         return null;
       }
       return SeasonalChallengeProgress.fromFirestore(snapshot);
-    }).handleError((Object error, StackTrace stackTrace) {
-      ErrorLogger.log(error, stackTrace);
-    });
+    }).transform(StreamTransformer.fromHandlers(
+      handleError: (error, stackTrace, sink) {
+        unawaited(ErrorLogger.log(error, stackTrace));
+        sink.addError(error, stackTrace);
+      },
+    ));
   }
 
   /// Increments the daily progress for [challenge] by [amount].
