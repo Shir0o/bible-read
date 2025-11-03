@@ -93,6 +93,7 @@ void main() {
     late MockFirebaseAuth auth;
     late ReadingStatusService service;
     late MockUser user;
+    late DateTime fixedNow;
 
     setUp(() {
       user = MockUser(
@@ -102,7 +103,12 @@ void main() {
       );
       auth = MockFirebaseAuth(mockUser: user, signedIn: true);
       firestore = FakeFirebaseFirestore();
-      service = ReadingStatusService(firestore: firestore, auth: auth);
+      fixedNow = DateTime(2024, 7, 30);
+      service = ReadingStatusService(
+        firestore: firestore,
+        auth: auth,
+        nowProvider: () => fixedNow,
+      );
     });
 
     test('fetchStatus creates user document when missing', () async {
@@ -112,7 +118,7 @@ void main() {
       expect(doc.exists, isTrue);
       expect(doc.data()?['email'], user.email?.toLowerCase());
       expect(status.graceCreditsAvailable, 0);
-      final today = DateTime.now();
+      final today = fixedNow;
       expect(
         status.graceCreditsMonth,
         '${today.year}-${today.month.toString().padLeft(2, '0')}',
@@ -123,7 +129,7 @@ void main() {
       final userDoc = firestore.collection('users').doc(user.uid);
       await userDoc.set({'name': 'User One', 'email': user.email});
 
-      final now = DateTime.now();
+      final now = fixedNow;
       String formatDate(DateTime d) =>
           '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -145,11 +151,11 @@ void main() {
 
       final status = await service.fetchStatus();
       expect(status.pastWeek.length, 7);
-      final expectedWeekTrue = DateTime.now().weekday % 7 + 1;
+      final expectedWeekTrue = fixedNow.weekday % 7 + 1;
       expect(status.pastWeek.where((e) => e).length, expectedWeekTrue);
 
       expect(status.pastMonth.length, daysInMonth);
-      final expectedMonthTrue = math.min(DateTime.now().day, 30);
+      final expectedMonthTrue = math.min(fixedNow.day, 30);
       expect(status.pastMonth.where((e) => e).length, expectedMonthTrue);
       expect(status.graceCreditsAvailable, 5);
     });
@@ -161,7 +167,7 @@ void main() {
       String formatDate(DateTime d) =>
           '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
-      final today = DateTime.now();
+      final today = fixedNow;
       final streakOffsets = [0, 1, 2];
       final longestOffsets = [5, 6, 7, 8, 9, 10];
 
@@ -192,7 +198,7 @@ void main() {
     test(
       'updateSummary backfills data from read_logs when reading docs missing',
       () async {
-        final date = DateTime.now();
+        final date = fixedNow;
         String formatDate(DateTime d) =>
             '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -232,7 +238,7 @@ void main() {
       String formatDate(DateTime d) =>
           '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
-      final today = DateTime.now();
+      final today = fixedNow;
       for (final offset in [0, 2, 3]) {
         final date = today.subtract(Duration(days: offset));
         await userDoc.collection('reading').doc(formatDate(date)).set({
@@ -259,7 +265,7 @@ void main() {
       String formatDate(DateTime d) =>
           '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
-      final today = DateTime.now();
+      final today = fixedNow;
       for (final offset in [0, 4, 5]) {
         final date = today.subtract(Duration(days: offset));
         await userDoc.collection('reading').doc(formatDate(date)).set({
@@ -286,7 +292,7 @@ void main() {
       String formatDate(DateTime d) =>
           '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
-      final today = DateTime.now();
+      final today = fixedNow;
       for (int i = 0; i < 15; i++) {
         final date = today.subtract(Duration(days: i));
         await userDoc.collection('reading').doc(formatDate(date)).set({
@@ -312,7 +318,7 @@ void main() {
         service = ReadingStatusService(
           firestore: firestore,
           auth: auth,
-          dateProvider: () => fixedToday,
+          nowProvider: () => fixedToday,
         );
 
         final userDoc = firestore.collection('users').doc(user.uid);
@@ -320,11 +326,7 @@ void main() {
 
         String formatDate(DateTime d) =>
             '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-        final today = DateTime(
-          fixedToday.year,
-          fixedToday.month,
-          fixedToday.day,
-        );
+        final today = fixedToday;
         DateTime dayFor(int daysAgo) => today.subtract(Duration(days: daysAgo));
 
         Future<void> markRead(int daysAgo) async {
@@ -359,7 +361,7 @@ void main() {
       service = ReadingStatusService(
         firestore: firestore,
         auth: auth,
-        dateProvider: () => fixedToday,
+        nowProvider: () => fixedToday,
       );
 
       final userDoc = firestore.collection('users').doc(user.uid);
@@ -367,7 +369,7 @@ void main() {
 
       String formatDate(DateTime d) =>
           '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-      final today = DateTime(fixedToday.year, fixedToday.month, fixedToday.day);
+      final today = fixedToday;
       DateTime dayFor(int daysAgo) => today.subtract(Duration(days: daysAgo));
 
       Future<void> markRead(int daysAgo) async {
@@ -402,6 +404,7 @@ void main() {
         service = ReadingStatusService(
           firestore: throwingFirestore,
           auth: auth,
+          nowProvider: () => fixedNow,
         );
 
         final originalDelegate = Firebase.delegatePackingProperty;
