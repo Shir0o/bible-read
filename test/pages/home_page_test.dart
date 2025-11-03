@@ -588,7 +588,23 @@ void main() {
 
     final skippedDays = today.difference(previousReadDates.first).inDays - 1;
     expect(skippedDays >= 2, isTrue);
-    expect(expectation.used >= 1, isTrue);
+
+    final currentMonthKey =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}';
+    if (expectation.used > 0) {
+      expect(expectation.used >= 1, isTrue);
+    } else {
+      final previousMonthReads = previousReadDates.where(
+        (date) => date.year == today.year && date.month == today.month,
+      );
+      expect(
+        previousMonthReads,
+        isEmpty,
+        reason:
+            'Grace credits should only reset when entering a new month without prior reads.',
+      );
+      expect(summaryData?['graceCreditsMonth'], currentMonthKey);
+    }
   });
 
   testWidgets('markRead unlocks firstReader when first of day', (tester) async {
