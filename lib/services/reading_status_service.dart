@@ -536,20 +536,21 @@ class ReadingStatusService {
       final currentDate = _shiftDate(start, offset);
       final ledger = ensureLedger(currentDate);
       final key = formatDate(currentDate);
-      if (readDateSet.contains(key)) {
+      final readToday = readDateSet.contains(key);
+      final usedGraceCredit =
+          !readToday && currentStreak > 0 && ledger.trySpend(currentDate);
+      // Grace credits cover skipped days so the streak advances just like an
+      // actual read, while bonus credits remain tied to real read activity.
+
+      if (readToday || usedGraceCredit) {
         currentStreak += 1;
-        if (currentStreak % 15 == 0) {
+        if (readToday && currentStreak % 15 == 0) {
           ledger.addBonusCredit(currentDate);
         }
       } else {
-        final spentCredit = currentStreak > 0 && ledger.trySpend(currentDate);
-        if (spentCredit) {
-          // Treat the missed day as covered by a grace credit so the streak
-          // continues counting consecutive days.
-          currentStreak += 1;
-        } else {
-          currentStreak = 0;
-        }
+        // When neither a real read nor a grace credit covers the day, the
+        // streak ends and a fresh count starts from the next actual read.
+        currentStreak = 0;
       }
     }
 
