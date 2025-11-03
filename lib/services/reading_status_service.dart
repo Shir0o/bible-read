@@ -542,10 +542,11 @@ class ReadingStatusService {
           ledger.addBonusCredit(currentDate);
         }
       } else {
-        if (ledger.trySpend(currentDate)) {
-          // Spending a grace credit should preserve the current streak length
-          // but not inflate it. Credits freeze missed days rather than counting
-          // as new progress.
+        final spentCredit = currentStreak > 0 && ledger.trySpend(currentDate);
+        if (spentCredit) {
+          // Treat the missed day as covered by a grace credit so the streak
+          // continues counting consecutive days.
+          currentStreak += 1;
         } else {
           currentStreak = 0;
         }
