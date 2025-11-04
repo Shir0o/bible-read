@@ -343,22 +343,30 @@ class ReadingStatusService {
 
       // Backfill from read_logs for recent history where user/reading docs are missing.
       // This helps avoid showing a 1-day streak when users only posted to the feed.
-      for (int i = 0; i < 90; i++) {
-        final d = _shiftDate(today, -i);
-        final key = formatDate(d);
-        if (readDateSet.contains(key)) continue;
-        try {
-          final entry = await firestore
-              .collection('read_logs')
-              .doc(key)
-              .collection('entries')
-              .doc(user.uid)
-              .get();
-          if (entry.exists) {
-            readDateSet.add(key);
+      const recentHistoryDays = 90;
+      final missingReadLogDates = <String>[];
+      for (int i = 0; i < recentHistoryDays; i++) {
+        final date = _shiftDate(today, -i);
+        final key = formatDate(date);
+        if (!readDateSet.contains(key)) {
+          missingReadLogDates.add(key);
+        }
+      }
+      if (missingReadLogDates.isNotEmpty) {
+        final readLogsCollection = firestore.collection('read_logs');
+        for (final key in missingReadLogDates) {
+          try {
+            final entry = await readLogsCollection
+                .doc(key)
+                .collection('entries')
+                .doc(user.uid)
+                .get();
+            if (entry.exists) {
+              readDateSet.add(key);
+            }
+          } catch (_) {
+            // Ignore failures; best-effort backfill.
           }
-        } catch (_) {
-          // Ignore failures; best-effort backfill.
         }
       }
 
