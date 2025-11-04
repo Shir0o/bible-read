@@ -962,62 +962,75 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             padding: const EdgeInsets.all(16),
             child: ListView(
               children: [
-                if (_editMode && hasAdminPrivileges) ...[
-                  const SectionHeader('Group'),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          key: const Key('group-name-field'),
-                          controller: _nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Group name',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: 56,
-                        child: ElevatedButton(
-                          key: const Key('save-group-name-button'),
-                          onPressed: _isSavingName ? null : _saveGroupName,
-                          child: _isSavingName
-                              ? const SizedBox(
-                                  height: 16,
-                                  width: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: _editMode && hasAdminPrivileges
+                      ? Column(
+                          key: const ValueKey('admin-controls'),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SectionHeader('Group'),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    key: const Key('group-name-field'),
+                                    controller: _nameController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Group name',
+                                      border: OutlineInputBorder(),
+                                    ),
                                   ),
-                                )
-                              : const Text('Save'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  if (isOwner) ...[
-                    FilledButton(
-                      key: const Key('delete-group-button'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.error,
-                        foregroundColor: Theme.of(context).colorScheme.onError,
-                      ),
-                      onPressed: _isDeleting ? null : _confirmDeleteGroup,
-                      child: _isDeleting
-                          ? const SizedBox(
-                              height: 16,
-                              width: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                                ),
+                                const SizedBox(width: 8),
+                                SizedBox(
+                                  height: 56,
+                                  child: ElevatedButton(
+                                    key: const Key('save-group-name-button'),
+                                    onPressed:
+                                        _isSavingName ? null : _saveGroupName,
+                                    child: _isSavingName
+                                        ? const SizedBox(
+                                            height: 16,
+                                            width: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Text('Save'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            if (isOwner) ...[
+                              FilledButton(
+                                key: const Key('delete-group-button'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.error,
+                                  foregroundColor:
+                                      Theme.of(context).colorScheme.onError,
+                                ),
+                                onPressed:
+                                    _isDeleting ? null : _confirmDeleteGroup,
+                                child: _isDeleting
+                                    ? const SizedBox(
+                                        height: 16,
+                                        width: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text('Delete group'),
                               ),
-                            )
-                          : const Text('Delete group'),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ],
+                              const SizedBox(height: 16),
+                            ],
+                          ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
                 if (!isOwner && user != null && !isMember)
                   StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                     stream: widget.groupService.firestore
@@ -1076,6 +1089,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ),
                 // Join requests moved to a dedicated page via the app bar action.
                 GroupMembersSection(
+                  key: const ValueKey('group-members-section'),
                   title: 'Members',
                   membersStream: _memberOverallStream,
                 ),
@@ -1093,8 +1107,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       final previousFetched = _lastFetchedSchedule;
                       if (_pendingScheduleSync) {
                         final latest = _latestSchedule;
-                        final matchesLatest = latest != null &&
-                            _schedulesMatch(fetched, latest);
+                        final matchesLatest =
+                            latest != null && _schedulesMatch(fetched, latest);
                         final matchesPrevious = previousFetched != null &&
                             _schedulesMatch(fetched, previousFetched);
                         if (matchesLatest) {
