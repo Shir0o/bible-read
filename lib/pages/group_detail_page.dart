@@ -84,6 +84,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   bool _isSavingName = false;
   late String _groupName;
   late Stream<List<GroupMemberProgressData>> _memberOverallStream;
+  late Stream<List<GroupSchedule>> _scheduleStream;
   final Map<String, bool> _pendingReadOverrides = <String, bool>{};
   final Map<String, Map<int, bool>> _pendingChapterOverrides =
       <String, Map<int, bool>>{};
@@ -373,6 +374,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       widget.group.id,
       includeUid: widget.auth.currentUser?.uid,
     );
+    _scheduleStream = widget.groupService.schedule(widget.group.id);
   }
 
   @override
@@ -380,8 +382,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     super.didUpdateWidget(oldWidget);
     final previousUid = oldWidget.auth.currentUser?.uid;
     final currentUid = widget.auth.currentUser?.uid;
-    if (oldWidget.group.id != widget.group.id || previousUid != currentUid) {
+    final groupChanged = oldWidget.group.id != widget.group.id;
+    final uidChanged = previousUid != currentUid;
+    if (groupChanged || uidChanged) {
       setState(() {
+        if (groupChanged) {
+          _scheduleStream = widget.groupService.schedule(widget.group.id);
+        }
         _memberOverallStream = widget.groupService.memberOverallCompletion(
           widget.group.id,
           includeUid: currentUid,
@@ -1095,7 +1102,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 ),
                 const SectionHeader('Schedule'),
                 StreamBuilder<List<GroupSchedule>>(
-                  stream: widget.groupService.schedule(widget.group.id),
+                  stream: _scheduleStream,
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
                       return const Text('Failed to load schedule');
