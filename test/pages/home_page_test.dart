@@ -527,8 +527,8 @@ void main() {
     String formatMonth(DateTime date) =>
         '${date.year}-${date.month.toString().padLeft(2, '0')}';
     final currentMonthKey = formatMonth(today);
-    final previousMonthDate = DateTime(today.year, today.month, 1)
-        .subtract(const Duration(days: 1));
+    final previousMonthDate =
+        DateTime(today.year, today.month, 1).subtract(const Duration(days: 1));
     final previousMonthKey = formatMonth(previousMonthDate);
 
     final seededSummaryMonth = previousReadDates.any(
