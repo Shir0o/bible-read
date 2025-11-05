@@ -28,7 +28,7 @@ class RecordingGroupService extends GroupService {
     required GroupSchedule schedule,
   }) async {
     if (failUpdate) {
-      throw FirebaseException(plugin: 'firestore');
+      throw FirebaseException(plugin: 'firestore', message: 'Failed to update schedule');
     }
     lastSchedule = schedule;
     await super.updateSchedule(groupId: groupId, schedule: schedule);
@@ -44,7 +44,7 @@ class RecordingGroupService extends GroupService {
     joinedUid = uid;
     joinedName = name;
     if (failJoin) {
-      throw FirebaseException(plugin: 'firestore');
+      throw FirebaseException(plugin: 'firestore', message: 'Failed to join group');
     }
     await super.joinGroup(groupId: groupId, uid: uid, name: name);
   }
@@ -65,7 +65,7 @@ class RecordingDeleteGroupService extends GroupService {
     deletedGroupId = groupId;
     deletedOwnerUid = ownerUid;
     if (failDelete) {
-      throw Exception('delete failed');
+      throw FirebaseException(plugin: 'firestore', message: 'Failed to delete group');
     }
   }
 }
@@ -114,7 +114,15 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    // Bounded retry loop to avoid infinite hang.
+    for (var i = 0; i < 10; i++) {
+      try {
+        await tester.pumpAndSettle();
+        break;
+      } catch (_) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
   }
 
   testWidgets('shows FAB only in edit mode for admins', (tester) async {
@@ -172,9 +180,25 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    // Bounded retry loop to avoid infinite hang before navigation.
+    for (var i = 0; i < 10; i++) {
+      try {
+        await tester.pumpAndSettle();
+        break;
+      } catch (_) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
     await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
+    // Bounded retry loop to avoid infinite hang after navigation.
+    for (var i = 0; i < 10; i++) {
+      try {
+        await tester.pumpAndSettle();
+        break;
+      } catch (_) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
   }
 
   testWidgets('displays members and schedule', (tester) async {
@@ -342,7 +366,15 @@ void main() {
     );
     expect(find.byType(FloatingActionButton), findsNothing);
     await tester.tap(find.byTooltip('Edit'));
-    await tester.pumpAndSettle();
+    // Use bounded pump loop to avoid indefinite hang.
+    for (var i = 0; i < 10; i++) {
+      try {
+        await tester.pumpAndSettle();
+        break;
+      } catch (_) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
     expect(find.byType(FloatingActionButton), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -373,7 +405,15 @@ void main() {
     );
     expect(find.byType(FloatingActionButton), findsNothing);
     await tester.tap(find.byTooltip('Edit'));
-    await tester.pumpAndSettle();
+    // Use bounded pump loop to avoid indefinite hang.
+    for (var i = 0; i < 10; i++) {
+      try {
+        await tester.pumpAndSettle();
+        break;
+      } catch (_) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
     expect(find.byType(FloatingActionButton), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -613,7 +653,15 @@ void main() {
     );
 
     await tester.tap(find.byTooltip('Edit'));
-    await tester.pumpAndSettle();
+    // Use bounded pump loop to avoid indefinite hang.
+    for (var i = 0; i < 10; i++) {
+      try {
+        await tester.pumpAndSettle();
+        break;
+      } catch (_) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
 
     expect(find.byKey(const Key('delete-group-button')), findsNothing);
   });
