@@ -2,10 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../services/achievement_service.dart';
 import '../models/achievement_definition.dart';
-import '../widgets/common_styles.dart';
+import '../services/achievement_service.dart';
 import '../widgets/achievement_list_item.dart';
+import '../widgets/common_styles.dart';
 
 class AchievementsPage extends StatelessWidget {
   final FirebaseFirestore firestore;
@@ -41,22 +41,90 @@ class AchievementsPage extends StatelessWidget {
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
+
                   final unlocked = snapshot.data!;
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: allAchievements.length,
-                    itemBuilder: (context, index) {
-                      final def = allAchievements[index];
-                      final isUnlocked = unlocked.contains(def.id);
-                      return AchievementListItem(
-                        definition: def,
-                        unlocked: isUnlocked,
-                      );
-                    },
+                  final categories = AchievementCategory.values;
+                  final colorScheme = Theme.of(context).colorScheme;
+                  final tabLabelColor = colorScheme.onPrimary;
+                  final unselectedTabLabelColor =
+                      tabLabelColor.withValues(alpha: 0.7);
+                  final definitionsByCategory = {
+                    for (final category in categories)
+                      category: achievementsForCategory(category),
+                  };
+
+                  return DefaultTabController(
+                    length: categories.length,
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 8),
+                        Material(
+                          color: Colors.transparent,
+                          child: TabBar(
+                            labelColor: tabLabelColor,
+                            unselectedLabelColor: unselectedTabLabelColor,
+                            indicatorColor: tabLabelColor,
+                            tabs: [
+                              for (final category in categories)
+                                Tab(text: category.label),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              for (final category in categories)
+                                _AchievementCategoryList(
+                                  category: category,
+                                  definitions:
+                                      definitionsByCategory[category] ??
+                                          const <AchievementDefinition>[],
+                                  unlocked: unlocked,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
       ),
+    );
+  }
+}
+
+class _AchievementCategoryList extends StatelessWidget {
+  const _AchievementCategoryList({
+    required this.category,
+    required this.definitions,
+    required this.unlocked,
+  });
+
+  final AchievementCategory category;
+  final List<AchievementDefinition> definitions;
+  final Set<String> unlocked;
+
+  @override
+  Widget build(BuildContext context) {
+    if (definitions.isEmpty) {
+      return const Center(
+        child: Text('No achievements in this category yet.'),
+      );
+    }
+
+    return ListView.builder(
+      key: ValueKey('achievementsList_${category.name}'),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: definitions.length,
+      itemBuilder: (context, index) {
+        final def = definitions[index];
+        return AchievementListItem(
+          definition: def,
+          unlocked: unlocked.contains(def.id),
+        );
+      },
     );
   }
 }

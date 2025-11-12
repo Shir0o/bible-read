@@ -13,6 +13,7 @@ void main() {
           description: 'desc',
           imageUrl: 'https://example.com/badge.png',
           icon: FontAwesomeIcons.award,
+          category: AchievementCategory.featured,
         ),
         throwsAssertionError,
       );
@@ -25,6 +26,7 @@ void main() {
           title: 'URL',
           description: 'uses image url',
           imageUrl: 'https://example.com/badge.png',
+          category: AchievementCategory.featured,
         ),
         returnsNormally,
       );
@@ -35,6 +37,7 @@ void main() {
           title: 'Icon',
           description: 'uses icon',
           icon: FontAwesomeIcons.award,
+          category: AchievementCategory.featured,
         ),
         returnsNormally,
       );
@@ -47,6 +50,7 @@ void main() {
           description: 'uses asset path',
           // ignore: deprecated_member_use_from_same_package
           assetPath: 'assets/badge.png',
+          category: AchievementCategory.featured,
         ),
         returnsNormally,
       );

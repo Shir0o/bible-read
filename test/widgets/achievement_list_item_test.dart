@@ -13,6 +13,7 @@ void main() {
     title: 'Testing',
     description: 'Earned by testing.',
     icon: FontAwesomeIcons.star,
+    category: AchievementCategory.featured,
   );
 
   testWidgets('shows lock icon and text when locked', (tester) async {
