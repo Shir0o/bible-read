@@ -5,10 +5,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../models/achievement.dart';
+import '../models/achievement_definition.dart';
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
+import '../services/achievement_service.dart';
 import '../services/error_logger.dart';
+import '../services/group_book_achievement_service.dart';
 import '../services/group_service.dart';
 import '../services/reference_parser.dart';
 import '../services/vibration_service.dart';
@@ -44,18 +48,54 @@ class GroupDetailPage extends StatefulWidget {
   /// Picker used to choose schedule dates.
   final GroupDatePicker datePicker;
 
+  /// Service used for achievement operations.
+  final AchievementService achievementService;
+
+  /// Aggregates completed chapters across joined groups.
+  final GroupBookAchievementService groupBookAchievementService;
+
   /// Creates a [GroupDetailPage].
-  GroupDetailPage({
-    super.key,
-    required this.group,
+  factory GroupDetailPage({
+    Key? key,
+    required Group group,
     GroupService? groupService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
     GroupDatePicker? datePicker,
-  })  : groupService = groupService ?? GroupService(),
-        auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService(),
-        datePicker = datePicker ?? _defaultDatePicker;
+    AchievementService? achievementService,
+    GroupBookAchievementService? groupBookAchievementService,
+  }) {
+    final resolvedGroupService = groupService ?? GroupService();
+    final resolvedAchievementService = achievementService ??
+        AchievementService(firestore: resolvedGroupService.firestore);
+    final resolvedGroupBookAchievementService = groupBookAchievementService ??
+        GroupBookAchievementService(
+          firestore: resolvedGroupService.firestore,
+          groupService: resolvedGroupService,
+        );
+
+    return GroupDetailPage._(
+      key: key,
+      group: group,
+      groupService: resolvedGroupService,
+      auth: auth ?? FirebaseAuth.instance,
+      vibrationService: vibrationService ?? const VibrationService(),
+      datePicker: datePicker ?? _defaultDatePicker,
+      achievementService: resolvedAchievementService,
+      groupBookAchievementService: resolvedGroupBookAchievementService,
+    );
+  }
+
+  const GroupDetailPage._({
+    super.key,
+    required this.group,
+    required this.groupService,
+    required this.auth,
+    required this.vibrationService,
+    required this.datePicker,
+    required this.achievementService,
+    required this.groupBookAchievementService,
+  });
 
   static Future<DateTime?> _defaultDatePicker({
     required BuildContext context,
@@ -97,6 +137,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   int _nextPendingOpId = 0;
   bool _isDeleting = false;
   bool _pendingScheduleSync = false;
+  StreamSubscription<Set<String>>? _achievementSubscription;
+  Set<String> _unlockedAchievementIds = <String>{};
+  final Set<String> _pendingAchievementUnlocks = <String>{};
 
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -188,6 +231,132 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       rawChecked: rawSnapshot ?? const <int>{},
       baseDone: baseDone,
     );
+  }
+
+  void _refreshAchievementSubscription() {
+    _achievementSubscription?.cancel();
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) {
+      _pendingAchievementUnlocks.clear();
+      _unlockedAchievementIds = <String>{};
+      return;
+    }
+
+    _achievementSubscription =
+        widget.achievementService.unlockedAchievementIds(uid).listen(
+      (ids) {
+        if (!mounted) return;
+        setState(() {
+          _unlockedAchievementIds = ids;
+        });
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (kDebugMode) {
+          debugPrint('Failed to load achievements: $error');
+        }
+        ErrorLogger.log(error, stackTrace);
+      },
+    );
+  }
+
+  String _bookAchievementId(String book) {
+    final slug = book
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+    return 'book_$slug';
+  }
+
+  AchievementDefinition? _findAchievementDefinition(String id) {
+    for (final definition in allAchievements) {
+      if (definition.id == id) {
+        return definition;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _refreshBookAchievements({
+    required DateTime completionTimestamp,
+  }) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) {
+      return;
+    }
+
+    Map<String, Set<int>> completedByBook;
+    try {
+      completedByBook =
+          await widget.groupBookAchievementService.completedChaptersByBook(uid);
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('Failed to aggregate book progress: $error');
+      }
+      ErrorLogger.log(error, stackTrace);
+      return;
+    }
+
+    if (completedByBook.isEmpty) {
+      return;
+    }
+
+    for (final entry in completedByBook.entries) {
+      final book = entry.key;
+      final chapters = entry.value;
+      final totalChapters = ReferenceParser.chapterCount(book);
+      if (totalChapters == null || chapters.length < totalChapters) {
+        continue;
+      }
+
+      final achievementId = _bookAchievementId(book);
+      if (_unlockedAchievementIds.contains(achievementId) ||
+          _pendingAchievementUnlocks.contains(achievementId)) {
+        continue;
+      }
+
+      try {
+        final existingSnap = await widget.achievementService.firestore
+            .collection('users')
+            .doc(uid)
+            .collection(AchievementService.achievementsCollection)
+            .doc(achievementId)
+            .get();
+        if (existingSnap.exists) {
+          _unlockedAchievementIds = {
+            ..._unlockedAchievementIds,
+            achievementId,
+          };
+          continue;
+        }
+      } catch (error, stackTrace) {
+        if (kDebugMode) {
+          debugPrint('Failed to check achievement $achievementId: $error');
+        }
+        ErrorLogger.log(error, stackTrace);
+        continue;
+      }
+
+      final definition = _findAchievementDefinition(achievementId);
+      final achievement = Achievement(
+        id: achievementId,
+        title: definition?.title ?? 'Complete $book',
+        type: 'book',
+        dateUnlocked: completionTimestamp,
+      );
+
+      _pendingAchievementUnlocks.add(achievementId);
+      try {
+        await widget.achievementService.unlockAchievement(uid, achievement);
+      } catch (error, stackTrace) {
+        if (kDebugMode) {
+          debugPrint('Failed to unlock $achievementId: $error');
+        }
+        ErrorLogger.log(error, stackTrace);
+      } finally {
+        _pendingAchievementUnlocks.remove(achievementId);
+      }
+    }
   }
 
   Future<void> _confirmDeleteGroup() async {
@@ -375,6 +544,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       includeUid: widget.auth.currentUser?.uid,
     );
     _scheduleStream = widget.groupService.schedule(widget.group.id);
+    _refreshAchievementSubscription();
   }
 
   @override
@@ -384,6 +554,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final currentUid = widget.auth.currentUser?.uid;
     final groupChanged = oldWidget.group.id != widget.group.id;
     final uidChanged = previousUid != currentUid;
+    final achievementServiceChanged =
+        oldWidget.achievementService != widget.achievementService;
     if (groupChanged || uidChanged) {
       setState(() {
         if (groupChanged) {
@@ -395,10 +567,15 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         );
       });
     }
+    if (uidChanged || achievementServiceChanged) {
+      _pendingAchievementUnlocks.clear();
+      _refreshAchievementSubscription();
+    }
   }
 
   @override
   void dispose() {
+    _achievementSubscription?.cancel();
     _nameController.dispose();
     super.dispose();
   }
@@ -739,6 +916,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       }
       if (success) {
         _scheduleChapterOverrideCleanup(dateKey);
+        if (read) {
+          await _refreshBookAchievements(
+            completionTimestamp: DateTime.now(),
+          );
+        }
       } else {
         setState(() => _removeChapterOverride(dateKey, chapterIndex));
       }
@@ -798,6 +980,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           if (hasPendingForOp) {
             _scheduleChapterOverrideCleanup(dateKey);
           }
+        }
+        if (hasChapters && read) {
+          await _refreshBookAchievements(
+            completionTimestamp: DateTime.now(),
+          );
         }
         return;
       }
