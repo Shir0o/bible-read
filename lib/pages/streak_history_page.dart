@@ -36,6 +36,7 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
   int _totalReadDays = 0;
   int _periodCount = 0;
   int? _remainingGraceCredits;
+  int? _friendsTopStreak;
   Set<DateTime> _readDates = {};
 
   @override
@@ -100,6 +101,7 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
       final summaryDoc =
           await userDocRef.collection('summary').doc('data').get();
       final data = summaryDoc.data() ?? {};
+      final friendsStreakFuture = _fetchFriendsTopStreak(uid);
 
       final now = DateTime.now();
       final currentMonthKey =
@@ -205,6 +207,7 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
         periodCount = readDates.length;
       }
 
+      final friendsTopStreak = await friendsStreakFuture;
       if (!mounted) return;
       setState(() {
         _currentStreak = currentStreak;
@@ -213,9 +216,53 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
         _periodCount = periodCount;
         _readDates = readDates;
         _remainingGraceCredits = remainingGraceCredits;
+        _friendsTopStreak = friendsTopStreak;
       });
     } catch (e, st) {
       ErrorLogger.log(e, st);
+    }
+  }
+
+  Future<int?> _fetchFriendsTopStreak(String uid) async {
+    try {
+      final friendsSnapshot = await widget.firestore
+          .collection('users')
+          .doc(uid)
+          .collection('friends')
+          .get();
+      final friendIds = friendsSnapshot.docs
+          .where((doc) => doc.id != 'init')
+          .map((doc) => doc.id)
+          .toList();
+      if (friendIds.isEmpty) return null;
+
+      final summaryFutures = friendIds.map((friendId) => widget.firestore
+          .collection('users')
+          .doc(friendId)
+          .collection('summary')
+          .doc('data')
+          .get());
+      final summaries = await Future.wait(summaryFutures);
+
+      int? topStreak;
+      for (final summary in summaries) {
+        final data = summary.data();
+        if (data == null) continue;
+        final raw = data['streak'];
+        final streak = raw is int
+            ? raw
+            : raw is num
+                ? raw.toInt()
+                : null;
+        if (streak == null) continue;
+        if (topStreak == null || streak > topStreak) {
+          topStreak = streak;
+        }
+      }
+      return topStreak;
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      return null;
     }
   }
 
@@ -306,6 +353,7 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
               periodCount: _periodCount,
               periodLabel: periodLabel,
               remainingGraceCredits: _remainingGraceCredits,
+              friendsStreak: _friendsTopStreak,
               description: const Text(
                 'Each month includes two automatic grace credits to freeze a missed day. '
                 'Every 15-day streak earns one extra credit.',

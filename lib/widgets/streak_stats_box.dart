@@ -22,6 +22,12 @@ class StreakStatsBox extends StatelessWidget {
   /// Remaining grace credits available for the current month, if known.
   final int? remainingGraceCredits;
 
+  /// Highest streak among the user's friends, if provided.
+  final int? friendsStreak;
+
+  /// Label describing the [friendsStreak] metric.
+  final String friendsStreakLabel;
+
   /// Optional description explaining how streak tracking works.
   final Widget? description;
 
@@ -33,6 +39,8 @@ class StreakStatsBox extends StatelessWidget {
     required this.periodCount,
     required this.periodLabel,
     this.remainingGraceCredits,
+    this.friendsStreak,
+    this.friendsStreakLabel = 'Friendly streak',
     this.description,
   });
 
@@ -49,6 +57,11 @@ class StreakStatsBox extends StatelessWidget {
           if (remainingGraceCredits != null)
             Text(
               'Grace credits remaining: $remainingGraceCredits',
+              style: AppTextStyles.body,
+            ),
+          if (friendsStreak != null)
+            Text(
+              '$friendsStreakLabel: $friendsStreak',
               style: AppTextStyles.body,
             ),
           if (description != null) ...[

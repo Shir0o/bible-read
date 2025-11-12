@@ -95,6 +95,53 @@ void main() {
     expect(monthCells, findsNWidgets(daysInMonth));
   });
 
+  testWidgets('displays friendly streak when friends have data',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+
+    await firestore.collection('users').doc('u1').set({'name': 'User'});
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('summary')
+        .doc('data')
+        .set({
+      'streak': 2,
+      'longestStreak': 5,
+      'totalReadDays': 10,
+      'pastWeekReadDates': <String>[],
+      'pastMonthReadDates': <String>[],
+    });
+
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('friends')
+        .doc('friend')
+        .set({'name': 'Friend'});
+
+    await firestore.collection('users').doc('friend').set({'name': 'Friend'});
+    await firestore
+        .collection('users')
+        .doc('friend')
+        .collection('summary')
+        .doc('data')
+        .set({'streak': 7});
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StreakHistoryPage(firestore: firestore, auth: auth),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Friendly streak: 7'), findsOneWidget);
+  });
+
   testWidgets('period navigation updates calendar and stats', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
