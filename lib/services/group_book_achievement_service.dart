@@ -10,8 +10,8 @@ class GroupBookAchievementService {
     FirebaseFirestore? firestore,
     GroupService? groupService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
-        groupService =
-            groupService ?? GroupService(firestore: firestore ?? FirebaseFirestore.instance);
+        groupService = groupService ??
+            GroupService(firestore: firestore ?? FirebaseFirestore.instance);
 
   /// Firestore instance used for reads.
   final FirebaseFirestore firestore;
@@ -38,9 +38,8 @@ class GroupBookAchievementService {
         if (schedule.chapters.isEmpty) {
           continue;
         }
-        final dateId = scheduleDoc.id.isNotEmpty
-            ? scheduleDoc.id
-            : _dateId(schedule.date);
+        final dateId =
+            scheduleDoc.id.isNotEmpty ? scheduleDoc.id : _dateId(schedule.date);
         final entryRef = groupRef
             .collection('progress')
             .doc(dateId)

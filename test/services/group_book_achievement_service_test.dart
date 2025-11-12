@@ -36,7 +36,8 @@ void main() {
       final groupRef = firestore.collection('groups').doc(groupId);
       final dateId = _dateId(date);
       await groupRef.collection('schedule').doc(dateId).set({
-        'date': Timestamp.fromDate(DateTime.utc(date.year, date.month, date.day)),
+        'date':
+            Timestamp.fromDate(DateTime.utc(date.year, date.month, date.day)),
         'chapters': chapters,
       });
       if (completed.isEmpty && doneOverride != true) {
@@ -52,7 +53,8 @@ void main() {
         'uid': userId,
         'groupId': groupId,
         'dateId': dateId,
-        'done': doneOverride ?? (chapters.isNotEmpty && count == chapters.length),
+        'done':
+            doneOverride ?? (chapters.isNotEmpty && count == chapters.length),
         'count': count,
       });
       for (final idx in completed) {
@@ -100,7 +102,11 @@ void main() {
 
       final result = await service.completedChaptersByBook(userId);
 
-      expect(result, equals({'John': {1}}));
+      expect(
+          result,
+          equals({
+            'John': {1}
+          }));
     });
 
     test('handles full book completion including legacy done flag', () async {
