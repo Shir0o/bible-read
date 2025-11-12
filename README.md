@@ -37,7 +37,7 @@ Firestore permissions allow any signed-in user to read comments, authors to crea
 
 ## Achievements
 
-The app currently offers the following achievements. Badge icons are provided by the [Font Awesome](https://fontawesome.com) library via [`font_awesome_flutter`](https://pub.dev/packages/font_awesome_flutter).
+The app currently offers the following achievements. Badge icons are provided by the [Font Awesome](https://fontawesome.com) library via [`font_awesome_flutter`](https://pub.dev/packages/font_awesome_flutter). Scripture badges are generated for every book in the Bible using the canonical ordering from `ReferenceParser.allBooks`, ensuring the list is deterministic from Genesis through Revelation.
 
 | Icon | ID | Description |
 | ---- | -- | ----------- |
@@ -45,6 +45,7 @@ The app currently offers the following achievements. Badge icons are provided by
 | ![fire](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/fire.svg) | `streak7` | Read the Bible seven days in a row. |
 | ![calendar-check](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/calendar-check.svg) | `days30` | Log 30 days of reading. |
 | ![fire-flame-curved](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/fire-flame-curved.svg) | `streak30` | Read every day for a full month. |
+| ![book](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/book.svg) | `book_*` | Complete every chapter of a specific book (e.g., `book_genesis`). |
 
 In addition to these evergreen achievements, rotating seasonal challenges provide
 time-boxed goals with bespoke rewards. Each season defines its own set of

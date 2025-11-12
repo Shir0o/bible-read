@@ -21,10 +21,27 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // All achievements should display a lock icon
-    expect(find.byIcon(Icons.lock), findsNWidgets(allAchievements.length));
-    expect(find.byType(AchievementListItem),
-        findsNWidgets(allAchievements.length));
+    final listFinder = find.byType(ListView);
+    final listView = tester.widget<ListView>(listFinder);
+    final delegate = listView.childrenDelegate as SliverChildBuilderDelegate;
+    expect(delegate.estimatedChildCount, allAchievements.length);
+
+    expect(find.byIcon(Icons.lock), findsWidgets);
+
+    await tester.dragUntilVisible(
+      find.text('Complete Genesis'),
+      listFinder,
+      const Offset(0, -400),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.widgetWithText(AchievementListItem, 'Complete Genesis'),
+        matching: find.byIcon(Icons.lock),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('unlocked achievements omit lock icon', (tester) async {
@@ -48,9 +65,30 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.lock), findsNWidgets(allAchievements.length - 1));
-    expect(find.byType(AchievementListItem),
-        findsNWidgets(allAchievements.length));
-    expect(find.text('First Reader'), findsOneWidget);
+    final listFinder = find.byType(ListView);
+    final firstReaderItem =
+        find.widgetWithText(AchievementListItem, 'First Reader');
+    expect(
+      find.descendant(
+        of: firstReaderItem,
+        matching: find.byIcon(Icons.lock),
+      ),
+      findsNothing,
+    );
+
+    await tester.dragUntilVisible(
+      find.text('Complete Genesis'),
+      listFinder,
+      const Offset(0, -400),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.widgetWithText(AchievementListItem, 'Complete Genesis'),
+        matching: find.byIcon(Icons.lock),
+      ),
+      findsOneWidget,
+    );
   });
 }
