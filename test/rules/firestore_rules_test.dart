@@ -46,5 +46,9 @@ void main() {
       expect(
           rulesText.contains('request.resource.data.claimed == false'), isTrue);
     });
+
+    test('includes cache collection rules', () {
+      expect(rulesText.contains('match /cache/{docId}'), isTrue);
+    });
   });
 }

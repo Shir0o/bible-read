@@ -11,7 +11,7 @@ import 'package:bible_read/widgets/achievement_list_item.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('shows locked achievements when none unlocked', (tester) async {
+  testWidgets('shows locked achievements grouped by category', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
@@ -21,16 +21,25 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final listFinder = find.byType(ListView);
-    final listView = tester.widget<ListView>(listFinder);
-    final delegate = listView.childrenDelegate as SliverChildBuilderDelegate;
-    expect(delegate.estimatedChildCount, allAchievements.length);
+    final featuredListFinder =
+        find.byKey(const ValueKey('achievementsList_featured'));
+    final featuredListView = tester.widget<ListView>(featuredListFinder);
+    final featuredDelegate =
+        featuredListView.childrenDelegate as SliverChildBuilderDelegate;
+    expect(
+      featuredDelegate.estimatedChildCount,
+      achievementsForCategory(AchievementCategory.featured).length,
+    );
 
     expect(find.byIcon(Icons.lock), findsWidgets);
 
+    await tester.tap(find.text(AchievementCategory.book.label));
+    await tester.pumpAndSettle();
+
+    final bookListFinder = find.byKey(const ValueKey('achievementsList_book'));
     await tester.dragUntilVisible(
       find.text('Complete Genesis'),
-      listFinder,
+      bookListFinder,
       const Offset(0, -400),
     );
     await tester.pumpAndSettle();
@@ -65,7 +74,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final listFinder = find.byType(ListView);
     final firstReaderItem =
         find.widgetWithText(AchievementListItem, 'First Reader');
     expect(
@@ -76,9 +84,13 @@ void main() {
       findsNothing,
     );
 
+    await tester.tap(find.text(AchievementCategory.book.label));
+    await tester.pumpAndSettle();
+
+    final bookListFinder = find.byKey(const ValueKey('achievementsList_book'));
     await tester.dragUntilVisible(
       find.text('Complete Genesis'),
-      listFinder,
+      bookListFinder,
       const Offset(0, -400),
     );
     await tester.pumpAndSettle();

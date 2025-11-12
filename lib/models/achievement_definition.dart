@@ -3,6 +3,26 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:bible_read/services/reference_parser.dart';
 
+/// Available groupings for achievements shown in the UI.
+enum AchievementCategory {
+  /// Core achievements such as streaks and milestones.
+  featured,
+
+  /// Individual book completion achievements.
+  book,
+}
+
+extension AchievementCategoryDisplayName on AchievementCategory {
+  String get label {
+    switch (this) {
+      case AchievementCategory.featured:
+        return 'Featured';
+      case AchievementCategory.book:
+        return 'Books';
+    }
+  }
+}
+
 class AchievementDefinition {
   /// Unique id of the achievement.
   final String id;
@@ -24,12 +44,16 @@ class AchievementDefinition {
   @Deprecated('Use imageUrl or icon instead.')
   final String? assetPath;
 
+  /// Category the achievement belongs to.
+  final AchievementCategory category;
+
   /// Creates an [AchievementDefinition]. Provide exactly one of [imageUrl],
   /// [icon], or [assetPath].
   const AchievementDefinition({
     required this.id,
     required this.title,
     required this.description,
+    required this.category,
     this.imageUrl,
     this.icon,
     @Deprecated('Use imageUrl or icon instead.') this.assetPath,
@@ -51,24 +75,28 @@ const List<AchievementDefinition> _coreAchievements = [
     title: 'First Reader',
     description: 'Be the first person to log reading for the day.',
     icon: FontAwesomeIcons.bookOpenReader,
+    category: AchievementCategory.featured,
   ),
   AchievementDefinition(
     id: 'streak7',
     title: '7-Day Streak',
     description: 'Read the Bible seven days in a row.',
     icon: FontAwesomeIcons.fire,
+    category: AchievementCategory.featured,
   ),
   AchievementDefinition(
     id: 'days30',
     title: '30 Days Read',
     description: 'Log 30 days of reading.',
     icon: FontAwesomeIcons.calendarCheck,
+    category: AchievementCategory.featured,
   ),
   AchievementDefinition(
     id: 'streak30',
     title: '30-Day Streak',
     description: 'Read every day for a full month.',
     icon: FontAwesomeIcons.fireFlameCurved,
+    category: AchievementCategory.featured,
   ),
 ];
 
@@ -89,8 +117,18 @@ List<AchievementDefinition> _buildScriptureAchievements() {
       title: 'Complete $book',
       description: 'Log all $chapters $chapterLabel of $book.',
       icon: FontAwesomeIcons.book,
+      category: AchievementCategory.book,
     );
   }).toList(growable: false);
+}
+
+/// Returns an unmodifiable list of achievements belonging to [category].
+List<AchievementDefinition> achievementsForCategory(
+  AchievementCategory category,
+) {
+  return List<AchievementDefinition>.unmodifiable(
+    allAchievements.where((achievement) => achievement.category == category),
+  );
 }
 
 String _slugify(String input) {

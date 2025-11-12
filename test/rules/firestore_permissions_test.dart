@@ -39,6 +39,7 @@ void main() {
           _findMatchBlock(usersBlock, '/seasonChallenges/{docId}');
       final rewardsBlock =
           _findMatchBlock(usersBlock, '/seasonRewards/{docId}');
+      final cacheBlock = _findMatchBlock(usersBlock, '/cache/{docId}');
 
       expect(
         _normalizeWhitespace(_extractAllowExpression(progressBlock, 'read')),
@@ -57,6 +58,14 @@ void main() {
       expect(
         _normalizeWhitespace(_extractAllowExpression(rewardsBlock, 'write')),
         equals('false'),
+      );
+      expect(
+        _normalizeWhitespace(_extractAllowExpression(cacheBlock, 'read')),
+        equals('request.auth != null && request.auth.uid == userId'),
+      );
+      expect(
+        _normalizeWhitespace(_extractAllowExpression(cacheBlock, 'write')),
+        equals('request.auth != null && request.auth.uid == userId'),
       );
     });
   });
@@ -143,6 +152,29 @@ void main() {
       );
     });
   });
+
+  group('User cache behaviour', () {
+    test('owner can read cache', () {
+      expect(
+        _canReadUserCache(authUid: 'alice', userId: 'alice'),
+        isTrue,
+      );
+    });
+
+    test('owner can write cache', () {
+      expect(
+        _canWriteUserCache(authUid: 'alice', userId: 'alice'),
+        isTrue,
+      );
+    });
+
+    test('other user cannot write cache', () {
+      expect(
+        _canWriteUserCache(authUid: 'bob', userId: 'alice'),
+        isFalse,
+      );
+    });
+  });
 }
 
 String _findMatchBlock(String source, String path) {
@@ -216,4 +248,12 @@ bool _canReadSeasonReward({required String? authUid, required String userId}) {
 
 bool _canWriteSeasonReward({required String? authUid, required String userId}) {
   return false;
+}
+
+bool _canReadUserCache({required String? authUid, required String userId}) {
+  return authUid != null && authUid == userId;
+}
+
+bool _canWriteUserCache({required String? authUid, required String userId}) {
+  return authUid != null && authUid == userId;
 }
