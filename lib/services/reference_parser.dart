@@ -241,6 +241,21 @@ class ReferenceParser {
     'Revelation': 22,
   };
 
+  static final List<String> _allBooks = List.unmodifiable(_bookOrder);
+
+  /// Returns the canonical list of books in Genesis-to-Revelation order.
+  static List<String> get allBooks => _allBooks;
+
+  /// Looks up the number of chapters in [book]. Returns `null` when the book
+  /// cannot be resolved to a known entry.
+  static int? chapterCount(String book) {
+    final ref = _parseEndpoint(book.trim());
+    if (ref == null) {
+      return null;
+    }
+    return _chapters[ref.book];
+  }
+
   /// Normalizes a single reference (e.g. "jn 3:16" -> "John 3"). Returns the
   /// trimmed input if parsing fails.
   static String normalizeOne(String input) {

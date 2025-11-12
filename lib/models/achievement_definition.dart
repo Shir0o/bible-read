@@ -1,5 +1,7 @@
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/widgets.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+import 'package:bible_read/services/reference_parser.dart';
 
 class AchievementDefinition {
   /// Unique id of the achievement.
@@ -41,7 +43,9 @@ class AchievementDefinition {
 }
 
 /// All achievements that can be unlocked in the app.
-const List<AchievementDefinition> allAchievements = [
+final List<AchievementDefinition> allAchievements = _buildAllAchievements();
+
+const List<AchievementDefinition> _coreAchievements = [
   AchievementDefinition(
     id: 'firstReader',
     title: 'First Reader',
@@ -67,3 +71,33 @@ const List<AchievementDefinition> allAchievements = [
     icon: FontAwesomeIcons.fireFlameCurved,
   ),
 ];
+
+List<AchievementDefinition> _buildAllAchievements() {
+  final achievements = <AchievementDefinition>[
+    ..._coreAchievements,
+    ..._buildScriptureAchievements(),
+  ];
+  return List.unmodifiable(achievements);
+}
+
+List<AchievementDefinition> _buildScriptureAchievements() {
+  return ReferenceParser.allBooks.map((book) {
+    final chapters = ReferenceParser.chapterCount(book)!;
+    final chapterLabel = chapters == 1 ? 'chapter' : 'chapters';
+    return AchievementDefinition(
+      id: 'book_${_slugify(book)}',
+      title: 'Complete $book',
+      description: 'Log all $chapters $chapterLabel of $book.',
+      icon: FontAwesomeIcons.book,
+    );
+  }).toList(growable: false);
+}
+
+String _slugify(String input) {
+  final slug = input
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'_+'), '_')
+      .replaceAll(RegExp(r'^_|_$'), '');
+  return slug;
+}

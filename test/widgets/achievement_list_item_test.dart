@@ -50,4 +50,26 @@ void main() {
     expect(find.text(def.description), findsOneWidget);
     expect(find.byIcon(Icons.lock), findsNothing);
   });
+
+  testWidgets('renders scripture badge icon for book achievements',
+      (tester) async {
+    final bookAchievement =
+        allAchievements.firstWhere((a) => a.id == 'book_genesis');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AchievementListItem(
+            definition: bookAchievement,
+            unlocked: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(bookAchievement.title), findsOneWidget);
+    expect(find.text(bookAchievement.description), findsOneWidget);
+    expect(find.byIcon(bookAchievement.icon!), findsOneWidget);
+  });
 }

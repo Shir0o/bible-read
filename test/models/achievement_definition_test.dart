@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
 import 'package:bible_read/models/achievement_definition.dart';
+import 'package:bible_read/services/reference_parser.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 void main() {
   group('AchievementDefinition', () {
@@ -70,5 +70,40 @@ void main() {
             reason: 'Duplicate id ${achievement.id}');
       }
     });
+
+    test('includes scripture achievements for each canonical book in order',
+        () {
+      final bookAchievements =
+          allAchievements.where((a) => a.id.startsWith('book_')).toList();
+      final expectedBooks = ReferenceParser.allBooks;
+      expect(bookAchievements.length, expectedBooks.length);
+      for (var i = 0; i < expectedBooks.length; i++) {
+        final book = expectedBooks[i];
+        final achievement = bookAchievements[i];
+        final chapters = ReferenceParser.chapterCount(book)!;
+        expect(achievement.title, 'Complete $book');
+        expect(
+          achievement.description,
+          'Log all $chapters ${chapters == 1 ? 'chapter' : 'chapters'} of $book.',
+        );
+        expect(achievement.icon, FontAwesomeIcons.book);
+      }
+
+      final expectedIds = expectedBooks
+          .map((book) => 'book_${_testSlugify(book)}')
+          .toList(growable: false);
+      expect(
+        bookAchievements.map((a) => a.id).toList(growable: false),
+        expectedIds,
+      );
+    });
   });
+}
+
+String _testSlugify(String input) {
+  return input
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'_+'), '_')
+      .replaceAll(RegExp(r'^_|_$'), '');
 }
