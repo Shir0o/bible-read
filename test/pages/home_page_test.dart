@@ -12,10 +12,14 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'package:bible_read/models/achievement.dart';
 import 'package:bible_read/pages/home_page.dart';
-import 'package:bible_read/widgets/read_switch_tile.dart';
+import 'package:bible_read/services/achievement_service.dart';
 import 'package:bible_read/services/friendly_streak_service.dart';
+import 'package:bible_read/services/group_book_achievement_service.dart';
+import 'package:bible_read/services/reading_status_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
+import 'package:bible_read/widgets/read_switch_tile.dart';
 import '../helpers/mock_lottie_http_client.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
@@ -63,7 +67,8 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Future<bool> canAccessScopes(
     List<String> scopes, {
     String? accessToken,
-  }) async => true;
+  }) async =>
+      true;
 
   @override
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
@@ -80,12 +85,146 @@ class _StubVibrationService extends VibrationService {
 
 class _StubFriendlyStreakService extends FriendlyStreakService {
   _StubFriendlyStreakService(this._result)
-    : super(firestore: FakeFirebaseFirestore());
+      : super(firestore: FakeFirebaseFirestore());
 
   final int? _result;
 
   @override
   Future<int?> fetchTopStreak(String uid) async => _result;
+}
+
+class _FakeAchievementService extends AchievementService {
+  _FakeAchievementService(FirebaseFirestore firestore)
+      : super(firestore: firestore);
+
+  final List<Achievement> unlocks = <Achievement>[];
+  final List<String> requestedUids = <String>[];
+
+  List<String> get unlockedIds => unlocks.map((a) => a.id).toList();
+
+  @override
+  Future<void> unlockAchievement(String uid, Achievement achievement) async {
+    requestedUids.add(uid);
+    unlocks.add(achievement);
+  }
+}
+
+class _FakeGroupBookAchievementService extends GroupBookAchievementService {
+  _FakeGroupBookAchievementService({
+    required FirebaseFirestore firestore,
+    required this.completed,
+  }) : super(firestore: firestore);
+
+  final Map<String, Set<int>> completed;
+  int completedCalls = 0;
+
+  @override
+  Future<Map<String, Set<int>>> completedChaptersByBook(String uid) async {
+    completedCalls++;
+    return completed;
+  }
+}
+
+class _ThrowingGroupBookAchievementService extends GroupBookAchievementService {
+  _ThrowingGroupBookAchievementService()
+      : super(firestore: FakeFirebaseFirestore());
+
+  @override
+  Future<Map<String, Set<int>>> completedChaptersByBook(String uid) async {
+    throw StateError('refresh failure');
+  }
+}
+
+class _FakeReadingStatusService extends ReadingStatusService {
+  _FakeReadingStatusService({
+    required this.fixedStatus,
+    required this.summaryResult,
+  }) : super(
+          firestore: FakeFirebaseFirestore(),
+          auth: MockFirebaseAuth(
+            mockUser: MockUser(uid: 'reading'),
+            signedIn: true,
+          ),
+        );
+
+  final ReadingStatus fixedStatus;
+  final SummaryStats summaryResult;
+  Completer<ReadingStatus>? _nextFetchCompleter;
+  int fetchStatusCalls = 0;
+  int updateSummaryCalls = 0;
+  bool shouldThrowOnSummaryUpdate = false;
+
+  void holdNextFetch(Completer<ReadingStatus> completer) {
+    _nextFetchCompleter = completer;
+  }
+
+  @override
+  Future<ReadingStatus> fetchStatus() {
+    fetchStatusCalls++;
+    final pending = _nextFetchCompleter;
+    if (pending != null) {
+      _nextFetchCompleter = null;
+      return pending.future;
+    }
+    return Future.value(fixedStatus);
+  }
+
+  @override
+  Future<SummaryStats> updateSummary() async {
+    updateSummaryCalls++;
+    if (shouldThrowOnSummaryUpdate) {
+      throw StateError('summary failure');
+    }
+    return summaryResult;
+  }
+}
+
+ReadingStatus _createEmptyStatus() {
+  final today = DateTime.now();
+  final daysInMonth = DateTime(today.year, today.month + 1, 0).day;
+  return ReadingStatus(
+    readToday: false,
+    pastWeek: List<bool>.filled(7, false),
+    pastMonth: List<bool>.filled(daysInMonth, false),
+    readDates: <DateTime>{},
+    graceCreditsAvailable: 0,
+    graceCreditsMonth:
+        '${today.year}-${today.month.toString().padLeft(2, '0')}',
+  );
+}
+
+const SummaryStats _defaultSummaryStats = SummaryStats(
+  streak: 0,
+  totalReadDays: 0,
+  graceCreditsAvailable: 0,
+  graceCreditsUsed: 0,
+  graceCreditsMonth: 'default',
+);
+
+class _RecordingScaffoldMessenger extends ScaffoldMessenger {
+  const _RecordingScaffoldMessenger({
+    super.key,
+    required Widget child,
+  }) : super(child: child);
+
+  @override
+  ScaffoldMessengerState createState() => _RecordingScaffoldMessengerState();
+}
+
+class _RecordingScaffoldMessengerState extends ScaffoldMessengerState {
+  final List<SnackBar> shownSnackBars = <SnackBar>[];
+
+  @override
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showSnackBar(
+    SnackBar snackBar, {
+    AnimationStyle? snackBarAnimationStyle,
+  }) {
+    shownSnackBars.add(snackBar);
+    return super.showSnackBar(
+      snackBar,
+      snackBarAnimationStyle: snackBarAnimationStyle,
+    );
+  }
 }
 
 Future<void> _toggleRead(WidgetTester tester) async {
@@ -135,9 +274,9 @@ _SummaryExpectation _computeExpectedSummary(
       '${date.year}-${date.month.toString().padLeft(2, '0')}';
 
   _TestMonthCreditState ensureMonth(DateTime date) => monthCredits.putIfAbsent(
-    formatMonth(date),
-    () => _TestMonthCreditState(),
-  );
+        formatMonth(date),
+        () => _TestMonthCreditState(),
+      );
 
   int streak = 0;
   var cursor = DateTime(today.year, today.month, today.day);
@@ -187,15 +326,15 @@ class ThrowingDocumentReference
     Map<String, dynamic> rootParent,
     Map<String, dynamic> snapshotStreamControllerRoot,
   ) : super(
-        firestore,
-        path,
-        id,
-        root,
-        docsData,
-        rootParent,
-        snapshotStreamControllerRoot,
-        null,
-      );
+          firestore,
+          path,
+          id,
+          root,
+          docsData,
+          rootParent,
+          snapshotStreamControllerRoot,
+          null,
+        );
 
   @override
   Future<DocumentSnapshot<Map<String, dynamic>>> get([
@@ -570,10 +709,9 @@ void main() {
     ).subtract(const Duration(days: 1));
     final previousMonthKey = formatMonth(previousMonthDate);
 
-    final seededSummaryMonth =
-        previousReadDates.any(
-          (date) => date.year == today.year && date.month == today.month,
-        )
+    final seededSummaryMonth = previousReadDates.any(
+      (date) => date.year == today.year && date.month == today.month,
+    )
         ? currentMonthKey
         : previousMonthKey;
 
@@ -685,11 +823,11 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          markFirstReader:
-              ({required String dateKey, required String uid}) async {
-                called = true;
-                return {'first': true};
-              },
+          markFirstReader: (
+              {required String dateKey, required String uid}) async {
+            called = true;
+            return {'first': true};
+          },
         ),
       ),
     );
@@ -726,10 +864,8 @@ void main() {
 
     // Seed six consecutive reading days so the recomputed streak reaches the
     // threshold once today is marked.
-    final readingRef = firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('reading');
+    final readingRef =
+        firestore.collection('users').doc(user.uid).collection('reading');
     for (int i = 1; i <= 6; i++) {
       final date = DateTime.now().subtract(Duration(days: i));
       await readingRef.doc(_formatDate(date)).set({'read': true});
@@ -780,10 +916,8 @@ void main() {
     final user = MockUser(uid: 'u-days');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
-    final readingRef = firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('reading');
+    final readingRef =
+        firestore.collection('users').doc(user.uid).collection('reading');
     for (int i = 1; i <= 29; i++) {
       final date = DateTime.now().subtract(Duration(days: i));
       await readingRef.doc(_formatDate(date)).set({'read': true});
@@ -881,12 +1015,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-          'streak': 5,
-          'pastWeekReadDates': [oldKey],
-          'pastMonthReadDates': [oldKey],
-          'totalReadDays': 5,
-          'longestStreak': 5,
-        });
+      'streak': 5,
+      'pastWeekReadDates': [oldKey],
+      'pastMonthReadDates': [oldKey],
+      'totalReadDays': 5,
+      'longestStreak': 5,
+    });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -932,10 +1066,8 @@ void main() {
     final twoDaysKey = keyFor(twoDaysAgo);
 
     // Create reading documents for today and two days ago.
-    final readingRef = firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('reading');
+    final readingRef =
+        firestore.collection('users').doc(user.uid).collection('reading');
     await readingRef.doc(todayKey).set({'read': true});
     await readingRef.doc(twoDaysKey).set({'read': true});
 
@@ -946,12 +1078,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-          'streak': 0,
-          'pastWeekReadDates': [],
-          'pastMonthReadDates': ['bad'],
-          'totalReadDays': 0,
-          'longestStreak': 0,
-        });
+      'streak': 0,
+      'pastWeekReadDates': [],
+      'pastMonthReadDates': ['bad'],
+      'totalReadDays': 0,
+      'longestStreak': 0,
+    });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -1003,10 +1135,8 @@ void main() {
     final fiveDaysAgo = today.subtract(const Duration(days: 5));
     final sixDaysAgo = today.subtract(const Duration(days: 6));
 
-    final readingRef = firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('reading');
+    final readingRef =
+        firestore.collection('users').doc(user.uid).collection('reading');
     await readingRef.doc(keyFor(today)).set({'read': true});
     await readingRef.doc(keyFor(yesterday)).set({'read': true});
     await readingRef.doc(keyFor(twoDaysAgo)).set({'read': true});
@@ -1019,12 +1149,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-          'streak': 0,
-          'longestStreak': 0,
-          'totalReadDays': 0,
-          'pastWeekReadDates': [],
-          'pastMonthReadDates': [],
-        });
+      'streak': 0,
+      'longestStreak': 0,
+      'totalReadDays': 0,
+      'pastWeekReadDates': [],
+      'pastMonthReadDates': [],
+    });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -1066,10 +1196,8 @@ void main() {
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
     final today = DateTime.now();
-    final readingRef = firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('reading');
+    final readingRef =
+        firestore.collection('users').doc(user.uid).collection('reading');
     for (int i = 0; i < 7; i++) {
       final date = today.subtract(Duration(days: i));
       await readingRef.doc(keyFor(date)).set({'read': true});
@@ -1098,6 +1226,105 @@ void main() {
         .doc('streak7')
         .get();
     expect(achievementDoc.exists, isTrue);
+  });
+
+  testWidgets('refresh unlocks completed book achievements', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'book-user'),
+      signedIn: true,
+    );
+    final googlePlatform = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = googlePlatform;
+
+    final readingStatusService = _FakeReadingStatusService(
+      fixedStatus: _createEmptyStatus(),
+      summaryResult: _defaultSummaryStats,
+    );
+    final achievementService = _FakeAchievementService(firestore);
+    final groupBookAchievementService = _FakeGroupBookAchievementService(
+      firestore: firestore,
+      completed: <String, Set<int>>{
+        'Obadiah': {1},
+      },
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+          readingStatusService: readingStatusService,
+          friendlyStreakService: _StubFriendlyStreakService(null),
+          achievementService: achievementService,
+          groupBookAchievementService: groupBookAchievementService,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
+
+    expect(groupBookAchievementService.completedCalls, greaterThan(0));
+    expect(achievementService.unlockedIds, contains('book_obadiah'));
+    expect(achievementService.requestedUids, contains('book-user'));
+  });
+
+  testWidgets('book achievement refresh failures show snack bar',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'snack-user'),
+      signedIn: true,
+    );
+    final googlePlatform = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = googlePlatform;
+
+    final readingStatusService = _FakeReadingStatusService(
+      fixedStatus: _createEmptyStatus(),
+      summaryResult: _defaultSummaryStats,
+    );
+    final achievementService = _FakeAchievementService(firestore);
+    final groupBookAchievementService = _ThrowingGroupBookAchievementService();
+    final messengerKey = GlobalKey<_RecordingScaffoldMessengerState>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: _RecordingScaffoldMessenger(
+          key: messengerKey,
+          child: HomePage(
+            firestore: firestore,
+            auth: auth,
+            vibrationService: _StubVibrationService(),
+            readingStatusService: readingStatusService,
+            friendlyStreakService: _StubFriendlyStreakService(null),
+            achievementService: achievementService,
+            groupBookAchievementService: groupBookAchievementService,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    final failureShown = messengerKey.currentState!.shownSnackBars.any(
+      (snackBar) {
+        final content = snackBar.content;
+        return content is Text &&
+            content.data == 'Failed to refresh achievements. Please try again.';
+      },
+    );
+
+    expect(failureShown, isTrue);
+
+    expect(achievementService.unlockedIds, isEmpty);
   });
 
   testWidgets('load failure hides progress indicator', (tester) async {
