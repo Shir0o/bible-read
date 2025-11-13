@@ -14,6 +14,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/widgets/read_switch_tile.dart';
+import 'package:bible_read/services/friendly_streak_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import '../helpers/mock_lottie_http_client.dart';
 
@@ -62,8 +63,7 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Future<bool> canAccessScopes(
     List<String> scopes, {
     String? accessToken,
-  }) async =>
-      true;
+  }) async => true;
 
   @override
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
@@ -76,6 +76,16 @@ class _StubVibrationService extends VibrationService {
   Future<void> lightImpact() async {
     lightCount++;
   }
+}
+
+class _StubFriendlyStreakService extends FriendlyStreakService {
+  _StubFriendlyStreakService(this._result)
+    : super(firestore: FakeFirebaseFirestore());
+
+  final int? _result;
+
+  @override
+  Future<int?> fetchTopStreak(String uid) async => _result;
 }
 
 Future<void> _toggleRead(WidgetTester tester) async {
@@ -125,9 +135,9 @@ _SummaryExpectation _computeExpectedSummary(
       '${date.year}-${date.month.toString().padLeft(2, '0')}';
 
   _TestMonthCreditState ensureMonth(DateTime date) => monthCredits.putIfAbsent(
-        formatMonth(date),
-        () => _TestMonthCreditState(),
-      );
+    formatMonth(date),
+    () => _TestMonthCreditState(),
+  );
 
   int streak = 0;
   var cursor = DateTime(today.year, today.month, today.day);
@@ -177,15 +187,15 @@ class ThrowingDocumentReference
     Map<String, dynamic> rootParent,
     Map<String, dynamic> snapshotStreamControllerRoot,
   ) : super(
-          firestore,
-          path,
-          id,
-          root,
-          docsData,
-          rootParent,
-          snapshotStreamControllerRoot,
-          null,
-        );
+        firestore,
+        path,
+        id,
+        root,
+        docsData,
+        rootParent,
+        snapshotStreamControllerRoot,
+        null,
+      );
 
   @override
   Future<DocumentSnapshot<Map<String, dynamic>>> get([
@@ -263,6 +273,32 @@ void main() {
 
     expect(find.text('Reading Hub'), findsOneWidget);
     expect(find.byType(ReadSwitchTile), findsOneWidget);
+  });
+
+  testWidgets('shows friendly streak banner when data is available', (
+    tester,
+  ) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'user'),
+      signedIn: true,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+          friendlyStreakService: _StubFriendlyStreakService(12),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Friendly streak leader'), findsOneWidget);
+    expect(find.text('12 days in a row'), findsOneWidget);
   });
 
   testWidgets('shows "User not signed in" when not authenticated', (
@@ -527,13 +563,17 @@ void main() {
     String formatMonth(DateTime date) =>
         '${date.year}-${date.month.toString().padLeft(2, '0')}';
     final currentMonthKey = formatMonth(today);
-    final previousMonthDate =
-        DateTime(today.year, today.month, 1).subtract(const Duration(days: 1));
+    final previousMonthDate = DateTime(
+      today.year,
+      today.month,
+      1,
+    ).subtract(const Duration(days: 1));
     final previousMonthKey = formatMonth(previousMonthDate);
 
-    final seededSummaryMonth = previousReadDates.any(
-      (date) => date.year == today.year && date.month == today.month,
-    )
+    final seededSummaryMonth =
+        previousReadDates.any(
+          (date) => date.year == today.year && date.month == today.month,
+        )
         ? currentMonthKey
         : previousMonthKey;
 
@@ -594,9 +634,12 @@ void main() {
     final expectation = _computeExpectedSummary(readDates, today);
 
     expect(summaryData?['streak'], lessThanOrEqualTo(expectation.streak));
-    expect(summaryData?['streak'], anyOf(6, expectation.streak),
-        reason:
-            'Grace credits are limited to 2 per month, so streak may stop early.');
+    expect(
+      summaryData?['streak'],
+      anyOf(6, expectation.streak),
+      reason:
+          'Grace credits are limited to 2 per month, so streak may stop early.',
+    );
     expect(summaryData?['graceCreditsAvailable'], expectation.available);
     expect(summaryData?['graceCreditsUsed'], expectation.used);
     expect(summaryData?['totalReadDays'], readDates.length);
@@ -642,11 +685,11 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          markFirstReader: (
-              {required String dateKey, required String uid}) async {
-            called = true;
-            return {'first': true};
-          },
+          markFirstReader:
+              ({required String dateKey, required String uid}) async {
+                called = true;
+                return {'first': true};
+              },
         ),
       ),
     );
@@ -683,8 +726,10 @@ void main() {
 
     // Seed six consecutive reading days so the recomputed streak reaches the
     // threshold once today is marked.
-    final readingRef =
-        firestore.collection('users').doc(user.uid).collection('reading');
+    final readingRef = firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading');
     for (int i = 1; i <= 6; i++) {
       final date = DateTime.now().subtract(Duration(days: i));
       await readingRef.doc(_formatDate(date)).set({'read': true});
@@ -735,8 +780,10 @@ void main() {
     final user = MockUser(uid: 'u-days');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
-    final readingRef =
-        firestore.collection('users').doc(user.uid).collection('reading');
+    final readingRef = firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading');
     for (int i = 1; i <= 29; i++) {
       final date = DateTime.now().subtract(Duration(days: i));
       await readingRef.doc(_formatDate(date)).set({'read': true});
@@ -834,12 +881,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 5,
-      'pastWeekReadDates': [oldKey],
-      'pastMonthReadDates': [oldKey],
-      'totalReadDays': 5,
-      'longestStreak': 5,
-    });
+          'streak': 5,
+          'pastWeekReadDates': [oldKey],
+          'pastMonthReadDates': [oldKey],
+          'totalReadDays': 5,
+          'longestStreak': 5,
+        });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -885,8 +932,10 @@ void main() {
     final twoDaysKey = keyFor(twoDaysAgo);
 
     // Create reading documents for today and two days ago.
-    final readingRef =
-        firestore.collection('users').doc(user.uid).collection('reading');
+    final readingRef = firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading');
     await readingRef.doc(todayKey).set({'read': true});
     await readingRef.doc(twoDaysKey).set({'read': true});
 
@@ -897,12 +946,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 0,
-      'pastWeekReadDates': [],
-      'pastMonthReadDates': ['bad'],
-      'totalReadDays': 0,
-      'longestStreak': 0,
-    });
+          'streak': 0,
+          'pastWeekReadDates': [],
+          'pastMonthReadDates': ['bad'],
+          'totalReadDays': 0,
+          'longestStreak': 0,
+        });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -954,8 +1003,10 @@ void main() {
     final fiveDaysAgo = today.subtract(const Duration(days: 5));
     final sixDaysAgo = today.subtract(const Duration(days: 6));
 
-    final readingRef =
-        firestore.collection('users').doc(user.uid).collection('reading');
+    final readingRef = firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading');
     await readingRef.doc(keyFor(today)).set({'read': true});
     await readingRef.doc(keyFor(yesterday)).set({'read': true});
     await readingRef.doc(keyFor(twoDaysAgo)).set({'read': true});
@@ -968,12 +1019,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 0,
-      'longestStreak': 0,
-      'totalReadDays': 0,
-      'pastWeekReadDates': [],
-      'pastMonthReadDates': [],
-    });
+          'streak': 0,
+          'longestStreak': 0,
+          'totalReadDays': 0,
+          'pastWeekReadDates': [],
+          'pastMonthReadDates': [],
+        });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -1015,8 +1066,10 @@ void main() {
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
     final today = DateTime.now();
-    final readingRef =
-        firestore.collection('users').doc(user.uid).collection('reading');
+    final readingRef = firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading');
     for (int i = 0; i < 7; i++) {
       final date = today.subtract(Duration(days: i));
       await readingRef.doc(keyFor(date)).set({'read': true});
