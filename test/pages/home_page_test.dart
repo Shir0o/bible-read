@@ -204,8 +204,8 @@ const SummaryStats _defaultSummaryStats = SummaryStats(
 class _RecordingScaffoldMessenger extends ScaffoldMessenger {
   const _RecordingScaffoldMessenger({
     super.key,
-    required Widget child,
-  }) : super(child: child);
+    required super.child,
+  });
 
   @override
   ScaffoldMessengerState createState() => _RecordingScaffoldMessengerState();

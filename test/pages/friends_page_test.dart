@@ -8,6 +8,12 @@ import 'package:bible_read/pages/add_friend_page.dart';
 import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/notification_service.dart';
+import 'package:bible_read/services/vibration_service.dart';
+
+class _NoSemanticsBinding extends AutomatedTestWidgetsFlutterBinding {
+  @override
+  bool get semanticsEnabled => false;
+}
 
 class RecordingFriendService extends FriendService {
   RecordingFriendService({required FakeFirebaseFirestore firestore})
@@ -70,8 +76,21 @@ class AlreadySentFriendService extends RecordingFriendService {
   }
 }
 
+class StubVibrationService extends VibrationService {
+  const StubVibrationService();
+
+  @override
+  Future<void> lightImpact() async {}
+
+  @override
+  Future<void> mediumImpact() async {}
+
+  @override
+  Future<void> tap() async {}
+}
+
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  _NoSemanticsBinding();
   late FakeFirebaseFirestore firestore;
   late RecordingFriendService service;
   late MockFirebaseAuth auth;
@@ -85,11 +104,24 @@ void main() {
     );
   });
 
+  Future<void> settle(WidgetTester tester) async {
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+
   Future<void> pumpPage(WidgetTester tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: FriendsPage(friendService: service, auth: auth)),
+      MaterialApp(
+        home: FriendsPage(
+          friendService: service,
+          auth: auth,
+          vibrationService: const StubVibrationService(),
+        ),
+      ),
     );
-    await tester.pumpAndSettle();
+    await settle(tester);
   }
 
   testWidgets('fab navigates to AddFriendPage', (tester) async {
@@ -97,7 +129,7 @@ void main() {
 
     expect(find.byType(FloatingActionButton), findsOneWidget);
     await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     expect(find.byType(AddFriendPage), findsOneWidget);
   });
@@ -126,7 +158,7 @@ void main() {
     await pumpPage(tester);
 
     await tester.tap(find.byIcon(Icons.notifications_active));
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     expect(service.nudged, isTrue);
   });
@@ -142,7 +174,7 @@ void main() {
     await pumpPage(tester);
 
     await tester.tap(find.byIcon(Icons.notifications_active));
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     final button = tester.widget<IconButton>(find.ancestor(
       of: find.byIcon(Icons.notifications_off),
@@ -154,16 +186,22 @@ void main() {
   testWidgets('failed request leaves send button enabled', (tester) async {
     final failing = FailingFriendService(firestore: firestore);
     await tester.pumpWidget(
-      MaterialApp(home: FriendsPage(friendService: failing, auth: auth)),
+      MaterialApp(
+        home: FriendsPage(
+          friendService: failing,
+          auth: auth,
+          vibrationService: const StubVibrationService(),
+        ),
+      ),
     );
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
+    await settle(tester);
     await tester.enterText(
         find.byKey(const Key('addFriendEmailField')), 'x@example.com');
     await tester.tap(find.widgetWithText(FilledButton, 'Send'));
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     final button =
         tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Send'));
@@ -180,12 +218,18 @@ void main() {
         .set({'name': 'Alice'});
 
     await tester.pumpWidget(
-      MaterialApp(home: FriendsPage(friendService: already, auth: auth)),
+      MaterialApp(
+        home: FriendsPage(
+          friendService: already,
+          auth: auth,
+          vibrationService: const StubVibrationService(),
+        ),
+      ),
     );
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     await tester.tap(find.byIcon(Icons.notifications_active));
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     final button = tester.widget<IconButton>(find.ancestor(
       of: find.byIcon(Icons.notifications_off),
@@ -220,5 +264,94 @@ void main() {
       matching: find.byType(IconButton),
     ));
     expect(button.onPressed, isNull);
+  });
+
+  testWidgets('streak invite button disabled when limit reached',
+      (tester) async {
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('friends')
+        .doc('f1')
+        .set({'name': 'Alice'});
+    for (var i = 0; i < FriendService.maxActiveStreakLinks; i++) {
+      await firestore
+          .collection('users')
+          .doc('u1')
+          .collection(FriendCollections.friendStreakLinks)
+          .doc('friend$i')
+          .set({
+        'partnerUid': 'friend$i',
+        'partnerName': 'Friend $i',
+        'initiatedBy': 'u1',
+        'status': 'active',
+        'currentStreak': 1,
+        'createdAt': Timestamp.now(),
+        'updatedAt': Timestamp.now(),
+      });
+    }
+
+    await pumpPage(tester);
+
+    final buttonFinder = find.byKey(const Key('streakInviteButton_f1'));
+    final button = tester.widget<FilledButton>(buttonFinder);
+    expect(button.onPressed, isNull);
+    expect(find.textContaining('Streak links:'), findsOneWidget);
+  });
+
+  testWidgets('shows pending label for outgoing streak invite', (tester) async {
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('friends')
+        .doc('f1')
+        .set({'name': 'Alice'});
+    await firestore
+        .collection('users')
+        .doc('f1')
+        .collection('friends')
+        .doc('u1')
+        .set({'name': 'Test User'});
+
+    await service.sendStreakInvite(
+      fromUid: 'u1',
+      fromName: 'Test User',
+      toUid: 'f1',
+      toName: 'Alice',
+    );
+
+    await pumpPage(tester);
+
+    expect(
+      find.byKey(const Key('streakInvitePendingLabel_f1')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('shows respond button for incoming streak invite',
+      (tester) async {
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('friends')
+        .doc('f1')
+        .set({'name': 'Alice'});
+    await firestore
+        .collection('users')
+        .doc('f1')
+        .collection('friends')
+        .doc('u1')
+        .set({'name': 'Test User'});
+
+    await service.sendStreakInvite(
+      fromUid: 'f1',
+      fromName: 'Alice',
+      toUid: 'u1',
+      toName: 'Test User',
+    );
+
+    await pumpPage(tester);
+
+    expect(find.widgetWithText(FilledButton, 'Respond'), findsOneWidget);
   });
 }
