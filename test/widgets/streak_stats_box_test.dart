@@ -17,6 +17,8 @@ void main() {
             periodCount: 5,
             periodLabel: 'This week',
             remainingGraceCredits: 2,
+            friendsStreak: 4,
+            friendsStreakLabel: 'Friendly streak',
           ),
         ),
       ),
@@ -27,5 +29,6 @@ void main() {
     expect(find.text('Total read days: 40'), findsOneWidget);
     expect(find.text('This week: 5'), findsOneWidget);
     expect(find.text('Grace credits remaining: 2'), findsOneWidget);
+    expect(find.text('Friendly streak: 4'), findsOneWidget);
   });
 }
