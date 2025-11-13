@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'package:bible_read/models/friend_streak_link.dart';
 import 'package:bible_read/pages/friend_requests_page.dart';
 import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/notification_service.dart';
@@ -16,6 +17,7 @@ void main() {
   late MockFirebaseAuth auth;
   late bool acceptCalled;
   late bool deleteCalled;
+  late Future<void> Function() seedFriendship;
 
   setUp(() {
     firestore = FakeFirebaseFirestore();
@@ -79,6 +81,21 @@ void main() {
       mockUser: MockUser(uid: 'b', displayName: 'Bob'),
       signedIn: true,
     );
+
+    seedFriendship = () async {
+      await firestore
+          .collection(FriendCollections.users)
+          .doc('a')
+          .collection(FriendCollections.friends)
+          .doc('b')
+          .set({'name': 'Bob'});
+      await firestore
+          .collection(FriendCollections.users)
+          .doc('b')
+          .collection(FriendCollections.friends)
+          .doc('a')
+          .set({'name': 'Alice'});
+    };
   });
 
   Future<void> pumpPage(WidgetTester tester) async {
@@ -197,5 +214,46 @@ void main() {
     expect(friendDocA.exists, isFalse);
     expect(find.text('Alice'), findsNothing);
     expect(deleteCalled, isTrue);
+  });
+
+  testWidgets('shows streak invites section with actionable items',
+      (tester) async {
+    await seedFriendship();
+    await service.sendStreakInvite(
+      fromUid: 'a',
+      fromName: 'Alice',
+      toUid: 'b',
+      toName: 'Bob',
+    );
+
+    await pumpPage(tester);
+
+    expect(find.text('Streak invites'), findsOneWidget);
+    expect(find.text('Alice'), findsWidgets);
+    expect(find.widgetWithText(FilledButton, 'Accept'), findsOneWidget);
+  });
+
+  testWidgets('accepting streak invite updates Firestore', (tester) async {
+    await seedFriendship();
+    await service.sendStreakInvite(
+      fromUid: 'a',
+      fromName: 'Alice',
+      toUid: 'b',
+      toName: 'Bob',
+    );
+
+    await pumpPage(tester);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Accept'));
+    await tester.pumpAndSettle();
+
+    final linkDoc = await firestore
+        .collection(FriendCollections.users)
+        .doc('b')
+        .collection(FriendCollections.friendStreakLinks)
+        .doc('a')
+        .get();
+    expect(linkDoc.exists, isTrue);
+    expect(linkDoc.data()?['status'], FriendStreakStatus.active.name);
   });
 }
