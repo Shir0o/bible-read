@@ -9,9 +9,11 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../models/achievement.dart';
 import '../services/achievement_service.dart';
+import '../services/book_achievement_refresher.dart';
 import '../services/error_logger.dart';
 import '../services/friendly_streak_service.dart';
 import '../services/google_sign_in_factory.dart';
+import '../services/group_book_achievement_service.dart';
 import '../services/notification_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
@@ -50,6 +52,8 @@ class HomePage extends StatefulWidget {
     VibrationService? vibrationService,
     GoogleSignIn Function()? googleSignInProvider,
     FriendlyStreakService? friendlyStreakService,
+    AchievementService? achievementService,
+    GroupBookAchievementService? groupBookAchievementService,
   }) : firestore = firestore ?? FirebaseFirestore.instance,
        auth = auth ?? FirebaseAuth.instance,
        readingStatusService =
@@ -58,7 +62,12 @@ class HomePage extends StatefulWidget {
        vibrationService = vibrationService ?? const VibrationService(),
        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
        friendlyStreakService =
-           friendlyStreakService ?? FriendlyStreakService(firestore: firestore);
+           friendlyStreakService ?? FriendlyStreakService(firestore: firestore),
+       achievementService =
+           achievementService ?? AchievementService(firestore: firestore),
+       groupBookAchievementService =
+           groupBookAchievementService ??
+           GroupBookAchievementService(firestore: firestore);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -68,6 +77,12 @@ class HomePage extends StatefulWidget {
 
   /// Service responsible for loading friends' streaks.
   final FriendlyStreakService friendlyStreakService;
+
+  /// Service responsible for unlocking achievements.
+  final AchievementService achievementService;
+
+  /// Aggregates reading progress across groups for book badges.
+  final GroupBookAchievementService groupBookAchievementService;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -86,10 +101,15 @@ class _HomePageState extends State<HomePage>
   int? _streakFreezesLeft;
   int? _friendsTopStreak;
   bool _friendStreakLoading = false;
+  late BookAchievementRefresher _bookAchievementRefresher;
 
   @override
   void initState() {
     super.initState();
+    _bookAchievementRefresher = BookAchievementRefresher(
+      achievementService: widget.achievementService,
+      groupBookAchievementService: widget.groupBookAchievementService,
+    );
     _loadReadStatus();
     _loadFriendlyStreak();
   }
@@ -100,6 +120,14 @@ class _HomePageState extends State<HomePage>
     if (oldWidget.auth != widget.auth) {
       unawaited(_loadReadStatus());
       unawaited(_loadFriendlyStreak());
+    }
+    if (oldWidget.achievementService != widget.achievementService ||
+        oldWidget.groupBookAchievementService !=
+            widget.groupBookAchievementService) {
+      _bookAchievementRefresher = BookAchievementRefresher(
+        achievementService: widget.achievementService,
+        groupBookAchievementService: widget.groupBookAchievementService,
+      );
     }
   }
 
@@ -255,6 +283,7 @@ class _HomePageState extends State<HomePage>
 
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
+      await _refreshBookAchievementsForUser();
 
       // Removed success animation after backend success to reduce noise.
 
@@ -303,6 +332,32 @@ class _HomePageState extends State<HomePage>
           ),
         );
         unawaited(_loadReadStatus(showLoading: false));
+      }
+    }
+  }
+
+  Future<void> _refreshBookAchievementsForUser() async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) {
+      return;
+    }
+
+    try {
+      await _bookAchievementRefresher.refresh(
+        uid: uid,
+        completionTimestamp: DateTime.now(),
+      );
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to refresh book achievements: $e');
+      }
+      ErrorLogger.log(e, st);
+      if (!_disposed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to refresh achievements. Please try again.'),
+          ),
+        );
       }
     }
   }
@@ -473,6 +528,7 @@ class _HomePageState extends State<HomePage>
             await firebaseUser.reload();
           }
           await _updateSummary();
+          await _refreshBookAchievementsForUser();
           await _loadReadStatus();
           await _loadFriendlyStreak(showLoading: false);
           if (!mounted) return;

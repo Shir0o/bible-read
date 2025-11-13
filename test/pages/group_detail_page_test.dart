@@ -100,6 +100,21 @@ void main() {
     group = const Group(id: 'g1', name: 'Study', ownerUid: 'u1');
   });
 
+  Future<void> pumpUntilSettled(
+    WidgetTester tester, {
+    Duration step = const Duration(milliseconds: 50),
+    int maxSteps = 200,
+  }) async {
+    final binding = tester.binding;
+    for (var i = 0; i < maxSteps; i++) {
+      await tester.pump(step);
+      if (!binding.hasScheduledFrame && binding.transientCallbackCount == 0) {
+        return;
+      }
+    }
+    await tester.pump();
+  }
+
   Future<void> pumpPage(
     WidgetTester tester, {
     required GroupService service,
@@ -118,15 +133,7 @@ void main() {
         ),
       ),
     );
-    // Bounded retry loop to avoid infinite hang.
-    for (var i = 0; i < 10; i++) {
-      try {
-        await tester.pumpAndSettle();
-        break;
-      } catch (_) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-    }
+    await pumpUntilSettled(tester);
   }
 
   testWidgets('shows FAB only in edit mode for admins', (tester) async {
@@ -152,7 +159,7 @@ void main() {
     expect(find.byType(FloatingActionButton), findsNothing);
 
     await tester.tap(find.byTooltip('Edit'));
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
 
     expect(find.byType(FloatingActionButton), findsOneWidget);
   });
@@ -184,25 +191,9 @@ void main() {
         ),
       ),
     );
-    // Bounded retry loop to avoid infinite hang before navigation.
-    for (var i = 0; i < 10; i++) {
-      try {
-        await tester.pumpAndSettle();
-        break;
-      } catch (_) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-    }
+    await pumpUntilSettled(tester);
     await tester.tap(find.text('open'));
-    // Bounded retry loop to avoid infinite hang after navigation.
-    for (var i = 0; i < 10; i++) {
-      try {
-        await tester.pumpAndSettle();
-        break;
-      } catch (_) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-    }
+    await pumpUntilSettled(tester);
   }
 
   testWidgets('displays members and schedule', (tester) async {
@@ -280,13 +271,13 @@ void main() {
     );
 
     await tester.tap(find.byTooltip('Edit'));
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
     await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
     final dialogField = find.byType(TextField).last;
     await tester.enterText(dialogField, 'Ex 1');
     await tester.tap(find.byKey(const ValueKey('schedule-save-button')));
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
 
     expect(vibration.lightCount, 2);
     expect(service.lastSchedule?.chapters, ['Exodus 1']);
@@ -329,15 +320,15 @@ void main() {
     );
 
     await tester.tap(find.byTooltip('Edit'));
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
     await tester.tap(find.widgetWithIcon(IconButton, Icons.edit));
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
     final editField = find.byType(TextField).last;
     await tester.enterText(editField, 'Gen 2');
     await tester.tap(find.byKey(const ValueKey('schedule-save-button')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
     await tester.pump(const Duration(milliseconds: 500));
 
     await tester.runAsync(() async {
@@ -370,19 +361,11 @@ void main() {
     );
     expect(find.byType(FloatingActionButton), findsNothing);
     await tester.tap(find.byTooltip('Edit'));
-    // Use bounded pump loop to avoid indefinite hang.
-    for (var i = 0; i < 10; i++) {
-      try {
-        await tester.pumpAndSettle();
-        break;
-      } catch (_) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-    }
+    await pumpUntilSettled(tester);
     expect(find.byType(FloatingActionButton), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
 
     await firestore
         .collection('groups')
@@ -409,19 +392,11 @@ void main() {
     );
     expect(find.byType(FloatingActionButton), findsNothing);
     await tester.tap(find.byTooltip('Edit'));
-    // Use bounded pump loop to avoid indefinite hang.
-    for (var i = 0; i < 10; i++) {
-      try {
-        await tester.pumpAndSettle();
-        break;
-      } catch (_) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-    }
+    await pumpUntilSettled(tester);
     expect(find.byType(FloatingActionButton), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
 
     await firestore
         .collection('groups')
@@ -554,7 +529,7 @@ void main() {
 
     await pumpPage(tester, service: service, auth: auth);
     await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
     await pumpPage(tester, service: service, auth: auth);
 
     expect(find.text('Join Group'), findsNothing);
@@ -583,15 +558,15 @@ void main() {
     );
 
     await tester.tap(find.byTooltip('Edit'));
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
 
     final deleteFinder = find.byKey(const Key('delete-group-button'));
     expect(deleteFinder, findsOneWidget);
 
     await tester.tap(deleteFinder);
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
     await tester.tap(find.widgetWithText(TextButton, 'Delete'));
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
 
     expect(service.deletedGroupId, 'g1');
     expect(service.deletedOwnerUid, 'u1');
@@ -623,12 +598,12 @@ void main() {
     );
 
     await tester.tap(find.byTooltip('Edit'));
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
 
     await tester.tap(find.byKey(const Key('delete-group-button')));
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
     await tester.tap(find.widgetWithText(TextButton, 'Delete'));
-    await tester.pumpAndSettle();
+    await pumpUntilSettled(tester);
 
     expect(service.deletedGroupId, 'g1');
     expect(find.text('Failed to delete group'), findsOneWidget);
@@ -657,15 +632,7 @@ void main() {
     );
 
     await tester.tap(find.byTooltip('Edit'));
-    // Use bounded pump loop to avoid indefinite hang.
-    for (var i = 0; i < 10; i++) {
-      try {
-        await tester.pumpAndSettle();
-        break;
-      } catch (_) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-    }
+    await pumpUntilSettled(tester);
 
     expect(find.byKey(const Key('delete-group-button')), findsNothing);
   });
@@ -746,14 +713,7 @@ void main() {
 
     await tester.tap(chipFinder);
     await tester.pump();
-    for (var i = 0; i < 10; i++) {
-      try {
-        await tester.pumpAndSettle();
-        break;
-      } catch (_) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-    }
+    await pumpUntilSettled(tester);
 
     final achievementSnap = await achievementsCollection.doc('book_ruth').get();
     expect(achievementSnap.exists, isTrue);
