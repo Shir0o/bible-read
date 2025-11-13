@@ -7,6 +7,7 @@ import '../widgets/streak_stats_box.dart';
 import '../widgets/week_streak_calendar.dart';
 import '../widgets/month_streak_calendar.dart';
 import '../services/error_logger.dart';
+import '../services/friendly_streak_service.dart';
 
 /// Displays the user's reading streak history.
 class StreakHistoryPage extends StatefulWidget {
@@ -18,8 +19,8 @@ class StreakHistoryPage extends StatefulWidget {
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<StreakHistoryPage> createState() => _StreakHistoryPageState();
@@ -98,17 +99,22 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
 
     try {
       final userDocRef = widget.firestore.collection('users').doc(uid);
-      final summaryDoc =
-          await userDocRef.collection('summary').doc('data').get();
+      final summaryDoc = await userDocRef
+          .collection('summary')
+          .doc('data')
+          .get();
       final data = summaryDoc.data() ?? {};
-      final friendsStreakFuture = _fetchFriendsTopStreak(uid);
+      final friendsStreakFuture = FriendlyStreakService(
+        firestore: widget.firestore,
+      ).fetchTopStreak(uid);
 
       final now = DateTime.now();
       final currentMonthKey =
           '${now.year}-${now.month.toString().padLeft(2, '0')}';
       final bool isCurrentWeek =
           _period == _Period.week && _periodStart == _startOfWeek(now);
-      final bool isCurrentMonth = _period == _Period.month &&
+      final bool isCurrentMonth =
+          _period == _Period.month &&
           _periodStart.year == now.year &&
           _periodStart.month == now.month;
 
@@ -223,49 +229,6 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
     }
   }
 
-  Future<int?> _fetchFriendsTopStreak(String uid) async {
-    try {
-      final friendsSnapshot = await widget.firestore
-          .collection('users')
-          .doc(uid)
-          .collection('friends')
-          .get();
-      final friendIds = friendsSnapshot.docs
-          .where((doc) => doc.id != 'init')
-          .map((doc) => doc.id)
-          .toList();
-      if (friendIds.isEmpty) return null;
-
-      final summaryFutures = friendIds.map((friendId) => widget.firestore
-          .collection('users')
-          .doc(friendId)
-          .collection('summary')
-          .doc('data')
-          .get());
-      final summaries = await Future.wait(summaryFutures);
-
-      int? topStreak;
-      for (final summary in summaries) {
-        final data = summary.data();
-        if (data == null) continue;
-        final raw = data['streak'];
-        final streak = raw is int
-            ? raw
-            : raw is num
-                ? raw.toInt()
-                : null;
-        if (streak == null) continue;
-        if (topStreak == null || streak > topStreak) {
-          topStreak = streak;
-        }
-      }
-      return topStreak;
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      return null;
-    }
-  }
-
   Future<Set<DateTime>> _queryRange(
     DocumentReference<Map<String, dynamic>> userDocRef,
     DateTime start,
@@ -299,12 +262,14 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
     final fallbackIdx = <int>[];
     for (int i = 0; i < dates.length; i++) {
       if (!result.contains(dates[i])) {
-        fallbacks.add(widget.firestore
-            .collection('read_logs')
-            .doc(keys[i])
-            .collection('entries')
-            .doc(uid)
-            .get());
+        fallbacks.add(
+          widget.firestore
+              .collection('read_logs')
+              .doc(keys[i])
+              .collection('entries')
+              .doc(uid)
+              .get(),
+        );
         fallbackIdx.add(i);
       }
     }

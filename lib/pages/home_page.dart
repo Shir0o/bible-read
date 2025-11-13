@@ -10,15 +10,18 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../models/achievement.dart';
 import '../services/achievement_service.dart';
 import '../services/error_logger.dart';
+import '../services/friendly_streak_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/notification_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/friendly_streak_banner.dart';
 import '../widgets/notification_button.dart';
 import '../widgets/read_status_section.dart';
 import 'read_log_page.dart';
+import 'streak_history_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
 /// Firestore when the app starts.
@@ -46,19 +49,25 @@ class HomePage extends StatefulWidget {
     ReadingStatusService? readingStatusService,
     VibrationService? vibrationService,
     GoogleSignIn Function()? googleSignInProvider,
+    FriendlyStreakService? friendlyStreakService,
   }) : firestore = firestore ?? FirebaseFirestore.instance,
        auth = auth ?? FirebaseAuth.instance,
        readingStatusService =
            readingStatusService ??
            ReadingStatusService(firestore: firestore, auth: auth),
        vibrationService = vibrationService ?? const VibrationService(),
-       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn;
+       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+       friendlyStreakService =
+           friendlyStreakService ?? FriendlyStreakService(firestore: firestore);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
 
   /// Service used for read-toggle haptics.
   final VibrationService vibrationService;
+
+  /// Service responsible for loading friends' streaks.
+  final FriendlyStreakService friendlyStreakService;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -75,11 +84,14 @@ class _HomePageState extends State<HomePage>
   List<bool> _pastMonth = [];
   Set<DateTime> _readDates = {};
   int? _streakFreezesLeft;
+  int? _friendsTopStreak;
+  bool _friendStreakLoading = false;
 
   @override
   void initState() {
     super.initState();
     _loadReadStatus();
+    _loadFriendlyStreak();
   }
 
   @override
@@ -87,6 +99,7 @@ class _HomePageState extends State<HomePage>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.auth != widget.auth) {
       unawaited(_loadReadStatus());
+      unawaited(_loadFriendlyStreak());
     }
   }
 
@@ -120,6 +133,33 @@ class _HomePageState extends State<HomePage>
           _toggleLoading = false; // Always stop loading.
         });
       }
+    }
+  }
+
+  Future<void> _loadFriendlyStreak({bool showLoading = true}) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) {
+      if (!_disposed && mounted) {
+        setState(() {
+          _friendsTopStreak = null;
+          _friendStreakLoading = false;
+        });
+      }
+      return;
+    }
+
+    if (showLoading && !_disposed && mounted) {
+      setState(() {
+        _friendStreakLoading = true;
+      });
+    }
+
+    final streak = await widget.friendlyStreakService.fetchTopStreak(uid);
+    if (!_disposed && mounted) {
+      setState(() {
+        _friendsTopStreak = streak;
+        _friendStreakLoading = false;
+      });
     }
   }
 
@@ -402,7 +442,7 @@ class _HomePageState extends State<HomePage>
           builder: (context, constraints) {
             return ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: _buildMainContent(),
+              child: _buildMainContent(context),
             );
           },
         ),
@@ -410,7 +450,7 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Widget _buildMainContent() {
+  Widget _buildMainContent(BuildContext context) {
     if (widget.auth.currentUser == null) {
       return Center(
         child: Text(
@@ -422,6 +462,7 @@ class _HomePageState extends State<HomePage>
 
     return RefreshIndicator(
       onRefresh: () async {
+        final messenger = ScaffoldMessenger.of(context);
         try {
           await widget.auth.currentUser?.reload();
           final googleSignIn = widget.googleSignInProvider();
@@ -433,8 +474,9 @@ class _HomePageState extends State<HomePage>
           }
           await _updateSummary();
           await _loadReadStatus();
+          await _loadFriendlyStreak(showLoading: false);
           if (!mounted) return;
-          ScaffoldMessenger.of(context)
+          messenger
             ..hideCurrentSnackBar()
             ..showSnackBar(
               const SnackBar(content: Text('Refreshed successfully')),
@@ -445,7 +487,7 @@ class _HomePageState extends State<HomePage>
           }
           ErrorLogger.log(e, st);
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             const SnackBar(
               content: Text('Failed to refresh data. Please try again.'),
             ),
@@ -472,6 +514,21 @@ class _HomePageState extends State<HomePage>
                 streakFreezesLeft: _streakFreezesLeft,
                 vibrationService: widget.vibrationService,
               ),
+              if (_friendStreakLoading || _friendsTopStreak != null)
+                FriendlyStreakBanner(
+                  streak: _friendsTopStreak,
+                  isLoading: _friendStreakLoading,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StreakHistoryPage(
+                          firestore: widget.firestore,
+                          auth: widget.auth,
+                        ),
+                      ),
+                    );
+                  },
+                ),
             ],
           ),
         ),
