@@ -5,12 +5,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../models/achievement.dart';
-import '../models/achievement_definition.dart';
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../services/achievement_service.dart';
+import '../services/book_achievement_refresher.dart';
 import '../services/error_logger.dart';
 import '../services/group_book_achievement_service.dart';
 import '../services/group_service.dart';
@@ -139,15 +138,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   bool _pendingScheduleSync = false;
   StreamSubscription<Set<String>>? _achievementSubscription;
   Set<String> _unlockedAchievementIds = <String>{};
-  final Set<String> _pendingAchievementUnlocks = <String>{};
+  late BookAchievementRefresher _bookAchievementRefresher;
 
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-  bool _schedulesMatch(
-    List<GroupSchedule> a,
-    List<GroupSchedule> b,
-  ) {
+  bool _schedulesMatch(List<GroupSchedule> a, List<GroupSchedule> b) {
     if (identical(a, b)) {
       return true;
     }
@@ -237,7 +233,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     _achievementSubscription?.cancel();
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) {
-      _pendingAchievementUnlocks.clear();
       _unlockedAchievementIds = <String>{};
       return;
     }
@@ -259,24 +254,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
-  String _bookAchievementId(String book) {
-    final slug = book
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-        .replaceAll(RegExp(r'_+'), '_')
-        .replaceAll(RegExp(r'^_|_$'), '');
-    return 'book_$slug';
-  }
-
-  AchievementDefinition? _findAchievementDefinition(String id) {
-    for (final definition in allAchievements) {
-      if (definition.id == id) {
-        return definition;
-      }
-    }
-    return null;
-  }
-
   Future<void> _refreshBookAchievements({
     required DateTime completionTimestamp,
   }) async {
@@ -285,77 +262,25 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       return;
     }
 
-    Map<String, Set<int>> completedByBook;
     try {
-      completedByBook =
-          await widget.groupBookAchievementService.completedChaptersByBook(uid);
-    } catch (error, stackTrace) {
-      if (kDebugMode) {
-        debugPrint('Failed to aggregate book progress: $error');
-      }
-      ErrorLogger.log(error, stackTrace);
-      return;
-    }
-
-    if (completedByBook.isEmpty) {
-      return;
-    }
-
-    for (final entry in completedByBook.entries) {
-      final book = entry.key;
-      final chapters = entry.value;
-      final totalChapters = ReferenceParser.chapterCount(book);
-      if (totalChapters == null || chapters.length < totalChapters) {
-        continue;
-      }
-
-      final achievementId = _bookAchievementId(book);
-      if (_unlockedAchievementIds.contains(achievementId) ||
-          _pendingAchievementUnlocks.contains(achievementId)) {
-        continue;
-      }
-
-      try {
-        final existingSnap = await widget.achievementService.firestore
-            .collection('users')
-            .doc(uid)
-            .collection(AchievementService.achievementsCollection)
-            .doc(achievementId)
-            .get();
-        if (existingSnap.exists) {
+      final result = await _bookAchievementRefresher.refresh(
+        uid: uid,
+        completionTimestamp: completionTimestamp,
+        skipAchievementIds: _unlockedAchievementIds,
+      );
+      if (result.alreadyUnlockedAchievementIds.isNotEmpty && mounted) {
+        setState(() {
           _unlockedAchievementIds = {
             ..._unlockedAchievementIds,
-            achievementId,
+            ...result.alreadyUnlockedAchievementIds,
           };
-          continue;
-        }
-      } catch (error, stackTrace) {
-        if (kDebugMode) {
-          debugPrint('Failed to check achievement $achievementId: $error');
-        }
-        ErrorLogger.log(error, stackTrace);
-        continue;
+        });
       }
-
-      final definition = _findAchievementDefinition(achievementId);
-      final achievement = Achievement(
-        id: achievementId,
-        title: definition?.title ?? 'Complete $book',
-        type: 'book',
-        dateUnlocked: completionTimestamp,
-      );
-
-      _pendingAchievementUnlocks.add(achievementId);
-      try {
-        await widget.achievementService.unlockAchievement(uid, achievement);
-      } catch (error, stackTrace) {
-        if (kDebugMode) {
-          debugPrint('Failed to unlock $achievementId: $error');
-        }
-        ErrorLogger.log(error, stackTrace);
-      } finally {
-        _pendingAchievementUnlocks.remove(achievementId);
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('Failed to refresh book achievements: $error');
       }
+      ErrorLogger.log(error, stackTrace);
     }
   }
 
@@ -403,9 +328,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     } catch (e, st) {
       await ErrorLogger.log(e, st);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to delete group')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to delete group')));
       }
     } finally {
       if (mounted) {
@@ -537,6 +462,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   @override
   void initState() {
     super.initState();
+    _bookAchievementRefresher = BookAchievementRefresher(
+      achievementService: widget.achievementService,
+      groupBookAchievementService: widget.groupBookAchievementService,
+    );
     _groupName = widget.group.name;
     _nameController = TextEditingController(text: _groupName);
     _memberOverallStream = widget.groupService.memberOverallCompletion(
@@ -556,6 +485,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final uidChanged = previousUid != currentUid;
     final achievementServiceChanged =
         oldWidget.achievementService != widget.achievementService;
+    final groupBookServiceChanged = oldWidget.groupBookAchievementService !=
+        widget.groupBookAchievementService;
     if (groupChanged || uidChanged) {
       setState(() {
         if (groupChanged) {
@@ -568,8 +499,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       });
     }
     if (uidChanged || achievementServiceChanged) {
-      _pendingAchievementUnlocks.clear();
       _refreshAchievementSubscription();
+    }
+    if (achievementServiceChanged || groupBookServiceChanged) {
+      _bookAchievementRefresher = BookAchievementRefresher(
+        achievementService: widget.achievementService,
+        groupBookAchievementService: widget.groupBookAchievementService,
+      );
     }
   }
 
@@ -917,9 +853,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       if (success) {
         _scheduleChapterOverrideCleanup(dateKey);
         if (read) {
-          await _refreshBookAchievements(
-            completionTimestamp: DateTime.now(),
-          );
+          await _refreshBookAchievements(completionTimestamp: DateTime.now());
         }
       } else {
         setState(() => _removeChapterOverride(dateKey, chapterIndex));
@@ -982,9 +916,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           }
         }
         if (hasChapters && read) {
-          await _refreshBookAchievements(
-            completionTimestamp: DateTime.now(),
-          );
+          await _refreshBookAchievements(completionTimestamp: DateTime.now());
         }
         return;
       }
@@ -1202,10 +1134,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                               FilledButton(
                                 key: const Key('delete-group-button'),
                                 style: FilledButton.styleFrom(
-                                  backgroundColor:
-                                      Theme.of(context).colorScheme.error,
-                                  foregroundColor:
-                                      Theme.of(context).colorScheme.onError,
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.error,
+                                  foregroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.onError,
                                 ),
                                 onPressed:
                                     _isDeleting ? null : _confirmDeleteGroup,
