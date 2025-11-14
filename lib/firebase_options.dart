@@ -60,20 +60,24 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyB9H29Y0JdIx60fDxo96Gtp_KDUuOs8Sx0',
-    appId: '1:82330382748:ios:5d0198ab7a64471eb09859',
+    appId: '1:82330382748:ios:33ef61927485ef91b09859',
     messagingSenderId: '82330382748',
     projectId: 'bible-read-39389',
     storageBucket: 'bible-read-39389.firebasestorage.app',
-    iosBundleId: 'com.example.bibleRead',
+    androidClientId: '82330382748-2p05l088d3gb3c2verqp961i8s4pic3o.apps.googleusercontent.com',
+    iosClientId: '82330382748-kv8cr6ehdtjglo5v2iqa6e8ge038kh0s.apps.googleusercontent.com',
+    iosBundleId: 'com.bibleread.challenge',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyB9H29Y0JdIx60fDxo96Gtp_KDUuOs8Sx0',
-    appId: '1:82330382748:ios:5d0198ab7a64471eb09859',
+    appId: '1:82330382748:ios:0022eaa7adf2d642b09859',
     messagingSenderId: '82330382748',
     projectId: 'bible-read-39389',
     storageBucket: 'bible-read-39389.firebasestorage.app',
-    iosBundleId: 'com.example.bibleRead',
+    androidClientId: '82330382748-2p05l088d3gb3c2verqp961i8s4pic3o.apps.googleusercontent.com',
+    iosClientId: '82330382748-p6nddo8u50pf2295h70lqdrtlvhjsfih.apps.googleusercontent.com',
+    iosBundleId: 'com.bibleread.bibleRead',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
@@ -85,4 +89,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'bible-read-39389.firebasestorage.app',
     measurementId: 'G-SSR7836PWC',
   );
+
 }
