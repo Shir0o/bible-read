@@ -1,3 +1,30 @@
+# Release 1.18.0
+
+This release debuts Friendly Streaks with a dedicated management page, home banner, and invite workflow updates while tightening Firestore rules and coverage around the new flow.
+
+## Highlights
+
+*   Friendly Streak data is now surfaced on the Home page and has its own navigation destination without leaving the main shell.
+*   Friends and Requests pages now support sending, accepting, and declining streak invites with enforcement of the five-partner limit.
+*   Firestore rules and automated tests guard the new cross-user writes plus the updated UI states to keep streaks stable.
+
+## Friendly Streaks
+
+*   Added `FriendlyStreakService` and the `FriendStreakLink` model to fetch and sort active partners and pending invites with graceful fallbacks.
+*   Introduced `FriendlyStreakPage` alongside the new `FriendlyStreakBanner`, complete with pull-to-refresh, empty/error states, and Navigation Menu integration so tapping the banner keeps MainPage in place.
+*   Extended the navigation scope and menu sheet with a Friendly Streaks destination, ensuring deep links land inside the main tab stack.
+
+## Friends & Invites
+
+*   Expanded `FriendService`, `FriendsPage`, and `FriendRequestsPage` with start-streak actions, respond controls, busy state handling, and snackbars that surface invite success or limit violations.
+*   Added `FriendStreakInviteList` so actionable invites stream into the Requests inbox, and empty states clearly communicate when no invites remain.
+*   Updated Firestore security rules to allow either participant to create, update, or delete `friendStreakInvites` and `friendStreakLinks`, unblocking cross-user writes for the new service APIs.
+
+## Stability & Coverage
+
+*   Hardened the friendly streak experience with widget, service, and integration tests that cover navigation, banner rendering, error states, and invite acceptance/decline paths.
+*   Added additional coverage around book achievement refreshes to ensure Home page refreshes continue triggering the expected background work.
+
 # Release 1.17.0
 
 This release separates exercise tracking from the Reading Hub, hardens Firestore permissions, and refreshes navigation to surface the new flow.
