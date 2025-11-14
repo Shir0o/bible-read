@@ -11,6 +11,7 @@ import '../models/achievement.dart';
 import '../services/achievement_service.dart';
 import '../services/book_achievement_refresher.dart';
 import '../services/error_logger.dart';
+import '../services/friend_streak_link_service.dart';
 import '../services/friendly_streak_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/group_book_achievement_service.dart';
@@ -39,8 +40,7 @@ class HomePage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })?
-  markFirstReader;
+  })? markFirstReader;
 
   HomePage({
     super.key,
@@ -54,20 +54,21 @@ class HomePage extends StatefulWidget {
     FriendlyStreakService? friendlyStreakService,
     AchievementService? achievementService,
     GroupBookAchievementService? groupBookAchievementService,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       readingStatusService =
-           readingStatusService ??
-           ReadingStatusService(firestore: firestore, auth: auth),
-       vibrationService = vibrationService ?? const VibrationService(),
-       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-       friendlyStreakService =
-           friendlyStreakService ?? FriendlyStreakService(firestore: firestore),
-       achievementService =
-           achievementService ?? AchievementService(firestore: firestore),
-       groupBookAchievementService =
-           groupBookAchievementService ??
-           GroupBookAchievementService(firestore: firestore);
+    FriendStreakLinkService? friendStreakLinkService,
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        readingStatusService = readingStatusService ??
+            ReadingStatusService(firestore: firestore, auth: auth),
+        vibrationService = vibrationService ?? const VibrationService(),
+        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+        friendlyStreakService = friendlyStreakService ??
+            FriendlyStreakService(firestore: firestore),
+        achievementService =
+            achievementService ?? AchievementService(firestore: firestore),
+        groupBookAchievementService = groupBookAchievementService ??
+            GroupBookAchievementService(firestore: firestore),
+        friendStreakLinkService = friendStreakLinkService ??
+            FriendStreakLinkService(firestore: firestore);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -83,6 +84,9 @@ class HomePage extends StatefulWidget {
 
   /// Aggregates reading progress across groups for book badges.
   final GroupBookAchievementService groupBookAchievementService;
+
+  /// Service that fans read coverage events out to friend streak links.
+  final FriendStreakLinkService friendStreakLinkService;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -278,11 +282,18 @@ class _HomePageState extends State<HomePage>
           .collection('reading')
           .doc(dateKey)
           .set({
-            'read': true,
-          }, SetOptions(merge: true)); // Mark read in Firestore.
+        'read': true,
+      }, SetOptions(merge: true)); // Mark read in Firestore.
 
       // Update summary collection (lightweight update)
-      await _updateSummaryWithToday();
+      final summary = await _updateSummaryWithToday();
+      if (summary != null) {
+        await widget.friendStreakLinkService.recordCoverage(
+          user.uid,
+          summary.coveredDate,
+          summary.coveredViaGrace,
+        );
+      }
       await _refreshBookAchievementsForUser();
 
       // Removed success animation after backend success to reduce noise.
@@ -313,16 +324,17 @@ class _HomePageState extends State<HomePage>
   /// Recomputes summary data after marking today as read. Delegates to
   /// [ReadingStatusService.updateSummary], which applies the shared
   /// chronological grace-credit accounting used across the app.
-  Future<void> _updateSummaryWithToday() async {
+  Future<SummaryStats?> _updateSummaryWithToday() async {
     final user = widget.auth.currentUser;
-    if (user == null) return;
+    if (user == null) return null;
 
     try {
       final stats = await widget.readingStatusService.updateSummary();
       await _checkAchievements(user.uid, stats.streak, stats.totalReadDays);
+      return stats;
     } catch (e, st) {
       if (kDebugMode) {
-        debugPrint('Failed to update summary with today: \$e');
+        debugPrint('Failed to update summary with today: $e');
       }
       ErrorLogger.log(e, st);
       if (!_disposed && mounted) {
@@ -333,6 +345,7 @@ class _HomePageState extends State<HomePage>
         );
         unawaited(_loadReadStatus(showLoading: false));
       }
+      return null;
     }
   }
 

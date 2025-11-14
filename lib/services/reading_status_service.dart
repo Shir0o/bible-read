@@ -54,6 +54,12 @@ class SummaryStats {
   /// Identifier of the month the grace credit counters apply to.
   final String graceCreditsMonth;
 
+  /// Date that was just counted toward the streak when the summary ran.
+  final DateTime? coveredDate;
+
+  /// Whether [coveredDate] was satisfied by a grace credit instead of a read.
+  final bool coveredViaGrace;
+
   /// Creates [SummaryStats].
   const SummaryStats({
     required this.streak,
@@ -61,6 +67,8 @@ class SummaryStats {
     required this.graceCreditsAvailable,
     required this.graceCreditsUsed,
     required this.graceCreditsMonth,
+    required this.coveredDate,
+    required this.coveredViaGrace,
   });
 }
 
@@ -285,6 +293,8 @@ class ReadingStatusService {
         graceCreditsAvailable: 2,
         graceCreditsUsed: 0,
         graceCreditsMonth: monthKey,
+        coveredDate: null,
+        coveredViaGrace: false,
       );
     }
 
@@ -391,6 +401,8 @@ class ReadingStatusService {
                   monthStart: DateTime(today.year, today.month, 1),
                 ),
               },
+              coveredDate: null,
+              coveredViaGrace: false,
             );
 
       final currentMonthCredits =
@@ -435,6 +447,8 @@ class ReadingStatusService {
         graceCreditsAvailable: currentMonthCredits.available(today),
         graceCreditsUsed: currentMonthCredits.used,
         graceCreditsMonth: currentMonthKey,
+        coveredDate: summaryComputation.coveredDate,
+        coveredViaGrace: summaryComputation.coveredViaGrace,
       );
     } catch (e, st) {
       if (kDebugMode) {
@@ -517,17 +531,29 @@ class ReadingStatusService {
   }) {
     final monthLedgers = <String, _MonthlyCreditLedger>{};
     if (sortedDates.isEmpty) {
-      return _SummaryComputation(streak: 0, monthLedgers: monthLedgers);
+      return _SummaryComputation(
+        streak: 0,
+        monthLedgers: monthLedgers,
+        coveredDate: null,
+        coveredViaGrace: false,
+      );
     }
 
     final start = _dateOnly(sortedDates.first);
     final end = _dateOnly(today);
     if (start.isAfter(end)) {
-      return _SummaryComputation(streak: 0, monthLedgers: monthLedgers);
+      return _SummaryComputation(
+        streak: 0,
+        monthLedgers: monthLedgers,
+        coveredDate: null,
+        coveredViaGrace: false,
+      );
     }
 
     final totalDays = end.difference(start).inDays;
     var currentStreak = 0;
+    DateTime? lastCoveredDate;
+    var lastCoverageUsedGrace = false;
 
     _MonthlyCreditLedger ensureLedger(DateTime date) {
       final key = formatMonth(date);
@@ -552,6 +578,8 @@ class ReadingStatusService {
 
       if (readToday || usedGraceCredit) {
         currentStreak += 1;
+        lastCoveredDate = currentDate;
+        lastCoverageUsedGrace = !readToday && usedGraceCredit;
         if (readToday && currentStreak % 15 == 0) {
           ledger.addBonusCredit(currentDate);
         }
@@ -565,6 +593,8 @@ class ReadingStatusService {
     return _SummaryComputation(
       streak: currentStreak,
       monthLedgers: monthLedgers,
+      coveredDate: lastCoveredDate,
+      coveredViaGrace: lastCoverageUsedGrace,
     );
   }
 }
@@ -578,10 +608,17 @@ DateTime _shiftDate(DateTime value, int days) {
 }
 
 class _SummaryComputation {
-  const _SummaryComputation({required this.streak, required this.monthLedgers});
+  const _SummaryComputation({
+    required this.streak,
+    required this.monthLedgers,
+    required this.coveredDate,
+    required this.coveredViaGrace,
+  });
 
   final int streak;
   final Map<String, _MonthlyCreditLedger> monthLedgers;
+  final DateTime? coveredDate;
+  final bool coveredViaGrace;
 }
 
 class _MonthlyCreditLedger {
