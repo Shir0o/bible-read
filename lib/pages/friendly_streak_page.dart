@@ -6,6 +6,7 @@ import '../models/friend_streak_link.dart';
 import '../services/error_logger.dart';
 import '../services/friendly_streak_service.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/navigation_menu_scope.dart';
 import 'friends_page.dart';
 
 /// Dedicated page for managing friendly streak partners.
@@ -122,6 +123,11 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
   }
 
   void _openFriendsPage() {
+    final scope = NavigationMenuScope.maybeOf(context);
+    if (scope != null) {
+      scope.onNavigate(scope.friendsIndex);
+      return;
+    }
     Navigator.of(context, rootNavigator: false).push(
       MaterialPageRoute(
         builder: (_) => FriendsPage(auth: widget.auth),
