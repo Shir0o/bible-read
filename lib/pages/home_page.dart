@@ -40,7 +40,8 @@ class HomePage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })? markFirstReader;
+  })?
+  markFirstReader;
 
   HomePage({
     super.key,
@@ -55,20 +56,23 @@ class HomePage extends StatefulWidget {
     AchievementService? achievementService,
     GroupBookAchievementService? groupBookAchievementService,
     FriendStreakLinkService? friendStreakLinkService,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        readingStatusService = readingStatusService ??
-            ReadingStatusService(firestore: firestore, auth: auth),
-        vibrationService = vibrationService ?? const VibrationService(),
-        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-        friendlyStreakService = friendlyStreakService ??
-            FriendlyStreakService(firestore: firestore),
-        achievementService =
-            achievementService ?? AchievementService(firestore: firestore),
-        groupBookAchievementService = groupBookAchievementService ??
-            GroupBookAchievementService(firestore: firestore),
-        friendStreakLinkService = friendStreakLinkService ??
-            FriendStreakLinkService(firestore: firestore);
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       readingStatusService =
+           readingStatusService ??
+           ReadingStatusService(firestore: firestore, auth: auth),
+       vibrationService = vibrationService ?? const VibrationService(),
+       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+       friendlyStreakService =
+           friendlyStreakService ?? FriendlyStreakService(firestore: firestore),
+       achievementService =
+           achievementService ?? AchievementService(firestore: firestore),
+       groupBookAchievementService =
+           groupBookAchievementService ??
+           GroupBookAchievementService(firestore: firestore),
+       friendStreakLinkService =
+           friendStreakLinkService ??
+           FriendStreakLinkService(firestore: firestore);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -103,7 +107,7 @@ class _HomePageState extends State<HomePage>
   List<bool> _pastMonth = [];
   Set<DateTime> _readDates = {};
   int? _streakFreezesLeft;
-  int? _friendsTopStreak;
+  FriendlyStreakLinksSummary? _friendStreaks;
   bool _friendStreakLoading = false;
   late BookAchievementRefresher _bookAchievementRefresher;
 
@@ -173,7 +177,7 @@ class _HomePageState extends State<HomePage>
     if (uid == null) {
       if (!_disposed && mounted) {
         setState(() {
-          _friendsTopStreak = null;
+          _friendStreaks = null;
           _friendStreakLoading = false;
         });
       }
@@ -186,10 +190,10 @@ class _HomePageState extends State<HomePage>
       });
     }
 
-    final streak = await widget.friendlyStreakService.fetchTopStreak(uid);
+    final summary = await widget.friendlyStreakService.fetchLinks(uid);
     if (!_disposed && mounted) {
       setState(() {
-        _friendsTopStreak = streak;
+        _friendStreaks = summary;
         _friendStreakLoading = false;
       });
     }
@@ -282,8 +286,8 @@ class _HomePageState extends State<HomePage>
           .collection('reading')
           .doc(dateKey)
           .set({
-        'read': true,
-      }, SetOptions(merge: true)); // Mark read in Firestore.
+            'read': true,
+          }, SetOptions(merge: true)); // Mark read in Firestore.
 
       // Update summary collection (lightweight update)
       final summary = await _updateSummaryWithToday();
@@ -583,9 +587,9 @@ class _HomePageState extends State<HomePage>
                 streakFreezesLeft: _streakFreezesLeft,
                 vibrationService: widget.vibrationService,
               ),
-              if (_friendStreakLoading || _friendsTopStreak != null)
+              if (_friendStreakLoading || _friendStreaks != null)
                 FriendlyStreakBanner(
-                  streak: _friendsTopStreak,
+                  summary: _friendStreaks ?? FriendlyStreakLinksSummary.empty,
                   isLoading: _friendStreakLoading,
                   onTap: () {
                     Navigator.of(context).push(

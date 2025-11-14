@@ -8,19 +8,26 @@ import '../widgets/week_streak_calendar.dart';
 import '../widgets/month_streak_calendar.dart';
 import '../services/error_logger.dart';
 import '../services/friendly_streak_service.dart';
+import 'friends_page.dart';
 
 /// Displays the user's reading streak history.
 class StreakHistoryPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
 
+  /// Service for loading paired streak partners.
+  final FriendlyStreakService friendlyStreakService;
+
   /// Creates a [StreakHistoryPage].
   StreakHistoryPage({
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance;
+    FriendlyStreakService? friendlyStreakService,
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        friendlyStreakService = friendlyStreakService ??
+            FriendlyStreakService(firestore: firestore);
 
   @override
   State<StreakHistoryPage> createState() => _StreakHistoryPageState();
@@ -37,7 +44,8 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
   int _totalReadDays = 0;
   int _periodCount = 0;
   int? _remainingGraceCredits;
-  int? _friendsTopStreak;
+  FriendlyStreakLinksSummary _friendSummary = FriendlyStreakLinksSummary.empty;
+  String? _selectedPartnerId;
   Set<DateTime> _readDates = {};
 
   @override
@@ -99,22 +107,17 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
 
     try {
       final userDocRef = widget.firestore.collection('users').doc(uid);
-      final summaryDoc = await userDocRef
-          .collection('summary')
-          .doc('data')
-          .get();
+      final summaryDoc =
+          await userDocRef.collection('summary').doc('data').get();
       final data = summaryDoc.data() ?? {};
-      final friendsStreakFuture = FriendlyStreakService(
-        firestore: widget.firestore,
-      ).fetchTopStreak(uid);
+      final friendsStreakFuture = widget.friendlyStreakService.fetchLinks(uid);
 
       final now = DateTime.now();
       final currentMonthKey =
           '${now.year}-${now.month.toString().padLeft(2, '0')}';
       final bool isCurrentWeek =
           _period == _Period.week && _periodStart == _startOfWeek(now);
-      final bool isCurrentMonth =
-          _period == _Period.month &&
+      final bool isCurrentMonth = _period == _Period.month &&
           _periodStart.year == now.year &&
           _periodStart.month == now.month;
 
@@ -213,7 +216,8 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
         periodCount = readDates.length;
       }
 
-      final friendsTopStreak = await friendsStreakFuture;
+      final friendSummary = await friendsStreakFuture;
+      final nextSelected = _resolveSelectedPartner(friendSummary);
       if (!mounted) return;
       setState(() {
         _currentStreak = currentStreak;
@@ -222,11 +226,25 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
         _periodCount = periodCount;
         _readDates = readDates;
         _remainingGraceCredits = remainingGraceCredits;
-        _friendsTopStreak = friendsTopStreak;
+        _friendSummary = friendSummary;
+        _selectedPartnerId = nextSelected;
       });
     } catch (e, st) {
       ErrorLogger.log(e, st);
     }
+  }
+
+  String? _resolveSelectedPartner(FriendlyStreakLinksSummary summary) {
+    if (_selectedPartnerId != null &&
+        summary.activeLinks.any(
+          (link) => link.partnerUid == _selectedPartnerId,
+        )) {
+      return _selectedPartnerId;
+    }
+    if (summary.activeLinks.isNotEmpty) {
+      return summary.activeLinks.first.partnerUid;
+    }
+    return null;
   }
 
   Future<Set<DateTime>> _queryRange(
@@ -284,6 +302,12 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
     return result;
   }
 
+  void _openFriendsPage() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => FriendsPage(auth: widget.auth)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final periodLabel = _period == _Period.week ? 'Week reads' : 'Month reads';
@@ -295,52 +319,63 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SegmentedButton<_Period>(
-                  segments: const [
-                    ButtonSegment(value: _Period.week, label: Text('Week')),
-                    ButtonSegment(value: _Period.month, label: Text('Month')),
-                  ],
-                  selected: {_period},
-                  onSelectionChanged: _onPeriodChanged,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SegmentedButton<_Period>(
+                    segments: const [
+                      ButtonSegment(value: _Period.week, label: Text('Week')),
+                      ButtonSegment(value: _Period.month, label: Text('Month')),
+                    ],
+                    selected: {_period},
+                    onSelectionChanged: _onPeriodChanged,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              StreakStatsBox(
+                currentStreak: _currentStreak,
+                longestStreak: _longestStreak,
+                totalReadDays: _totalReadDays,
+                periodCount: _periodCount,
+                periodLabel: periodLabel,
+                remainingGraceCredits: _remainingGraceCredits,
+                friendSummary: _friendSummary,
+                selectedPartnerId: _selectedPartnerId,
+                onPartnerSelected: (value) {
+                  setState(() {
+                    _selectedPartnerId = value;
+                  });
+                },
+                onInviteFriend: _openFriendsPage,
+                description: const Text(
+                  'Each month includes two automatic grace credits to freeze a missed day. '
+                  'Every 15-day streak earns one extra credit.',
+                  style: AppTextStyles.body,
                 ),
-              ],
-            ),
-            StreakStatsBox(
-              currentStreak: _currentStreak,
-              longestStreak: _longestStreak,
-              totalReadDays: _totalReadDays,
-              periodCount: _periodCount,
-              periodLabel: periodLabel,
-              remainingGraceCredits: _remainingGraceCredits,
-              friendsStreak: _friendsTopStreak,
-              description: const Text(
-                'Each month includes two automatic grace credits to freeze a missed day. '
-                'Every 15-day streak earns one extra credit.',
-                style: AppTextStyles.body,
               ),
-            ),
-            const SizedBox(height: 16),
-            if (_period == _Period.week)
-              WeekStreakCalendar(
-                readDates: _readDates,
-                sunday: _periodStart,
-                onPrevious: () => _changePeriod(-1),
-                onNext: () => _changePeriod(1),
-              )
-            else
-              MonthStreakCalendar(
-                readDates: _readDates,
-                month: _periodStart,
-                onPrevious: () => _changePeriod(-1),
-                onNext: () => _changePeriod(1),
-              ),
-          ],
+              const SizedBox(height: 16),
+              if (_period == _Period.week)
+                WeekStreakCalendar(
+                  readDates: _readDates,
+                  sunday: _periodStart,
+                  onPrevious: () => _changePeriod(-1),
+                  onNext: () => _changePeriod(1),
+                )
+              else
+                MonthStreakCalendar(
+                  readDates: _readDates,
+                  month: _periodStart,
+                  onPrevious: () => _changePeriod(-1),
+                  onNext: () => _changePeriod(1),
+                ),
+            ],
+          ),
         ),
       ),
     );

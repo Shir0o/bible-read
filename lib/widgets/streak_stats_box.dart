@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../models/friend_streak_link.dart';
+import '../services/friend_service.dart';
+import '../services/friendly_streak_service.dart';
 import 'common_styles.dart';
 
 /// Displays streak statistics in a card.
@@ -22,11 +25,17 @@ class StreakStatsBox extends StatelessWidget {
   /// Remaining grace credits available for the current month, if known.
   final int? remainingGraceCredits;
 
-  /// Highest streak among the user's friends, if provided.
-  final int? friendsStreak;
+  /// Summary of paired streak links.
+  final FriendlyStreakLinksSummary friendSummary;
 
-  /// Label describing the [friendsStreak] metric.
-  final String friendsStreakLabel;
+  /// Partner currently selected by the user.
+  final String? selectedPartnerId;
+
+  /// Called when the selected partner changes.
+  final ValueChanged<String?>? onPartnerSelected;
+
+  /// Optional callback prompting users to invite a friend.
+  final VoidCallback? onInviteFriend;
 
   /// Optional description explaining how streak tracking works.
   final Widget? description;
@@ -39,13 +48,24 @@ class StreakStatsBox extends StatelessWidget {
     required this.periodCount,
     required this.periodLabel,
     this.remainingGraceCredits,
-    this.friendsStreak,
-    this.friendsStreakLabel = 'Friendly streak',
+    this.friendSummary = FriendlyStreakLinksSummary.empty,
+    this.selectedPartnerId,
+    this.onPartnerSelected,
+    this.onInviteFriend,
     this.description,
   });
 
   @override
   Widget build(BuildContext context) {
+    final selectedLink = _selectedPartner();
+    final bestLink = friendSummary.activeLinks.isNotEmpty
+        ? friendSummary.activeLinks.first
+        : null;
+    final dropdownNeeded =
+        friendSummary.activeLinks.length > 1 && onPartnerSelected != null;
+    final reachedLimit =
+        friendSummary.activeLinks.length >= FriendService.maxActiveStreakLinks;
+
     return CommonStyles.buildCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,17 +79,92 @@ class StreakStatsBox extends StatelessWidget {
               'Grace credits remaining: $remainingGraceCredits',
               style: AppTextStyles.body,
             ),
-          if (friendsStreak != null)
+          if (friendSummary.activeLinks.isNotEmpty)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  selectedLink != null
+                      ? 'Streak with ${_displayName(selectedLink)}: ${selectedLink.currentStreak} day${selectedLink.currentStreak == 1 ? '' : 's'}'
+                      : 'Best partner streak: ${bestLink?.currentStreak ?? 0} day${bestLink?.currentStreak == 1 ? '' : 's'} with ${bestLink == null ? 'a friend' : _displayName(bestLink)}',
+                  style: AppTextStyles.body,
+                ),
+                if (dropdownNeeded) ...[
+                  const SizedBox(height: 8),
+                  DropdownButton<String>(
+                    isExpanded: true,
+                    value: selectedLink?.partnerUid ?? bestLink?.partnerUid,
+                    onChanged: onPartnerSelected,
+                    items: friendSummary.activeLinks
+                        .map(
+                          (link) => DropdownMenuItem(
+                            value: link.partnerUid,
+                            child: Text(_displayName(link)),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ],
+            )
+          else if (friendSummary.pendingLinks.isNotEmpty)
             Text(
-              '$friendsStreakLabel: $friendsStreak',
+              friendSummary.pendingLinks.length == 1
+                  ? 'Pending invite: ${_displayName(friendSummary.pendingLinks.first)}'
+                  : 'Pending invites: ${friendSummary.pendingLinks.length}',
               style: AppTextStyles.body,
+            )
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'No streak partners yet. Invite a friend to share progress.',
+                  style: AppTextStyles.body,
+                ),
+                if (onInviteFriend != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: OutlinedButton(
+                      onPressed: onInviteFriend,
+                      child: const Text('Invite a friend'),
+                    ),
+                  ),
+              ],
             ),
-          if (description != null) ...[
-            const SizedBox(height: 8),
-            description!,
-          ],
+          if (reachedLimit)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'You reached the limit of ${FriendService.maxActiveStreakLinks} active partners.',
+                style: AppTextStyles.body,
+              ),
+            ),
+          if (description != null) ...[const SizedBox(height: 8), description!],
         ],
       ),
     );
+  }
+
+  FriendStreakLink? _selectedPartner() {
+    if (selectedPartnerId == null) {
+      return friendSummary.activeLinks.isNotEmpty
+          ? friendSummary.activeLinks.first
+          : null;
+    }
+    for (final link in friendSummary.activeLinks) {
+      if (link.partnerUid == selectedPartnerId) {
+        return link;
+      }
+    }
+    return friendSummary.activeLinks.isNotEmpty
+        ? friendSummary.activeLinks.first
+        : null;
+  }
+
+  String _displayName(FriendStreakLink link) {
+    return link.partnerName?.trim().isEmpty ?? true
+        ? 'Friend'
+        : link.partnerName!;
   }
 }
