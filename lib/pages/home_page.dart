@@ -21,6 +21,7 @@ import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/friendly_streak_banner.dart';
+import '../widgets/navigation_menu_scope.dart';
 import '../widgets/notification_button.dart';
 import '../widgets/read_status_section.dart';
 import 'read_log_page.dart';
@@ -588,6 +589,11 @@ class _HomePageState extends State<HomePage>
                   summary: _friendStreaks ?? FriendlyStreakLinksSummary.empty,
                   isLoading: _friendStreakLoading,
                   onTap: () {
+                    final scope = NavigationMenuScope.maybeOf(context);
+                    if (scope != null) {
+                      scope.onNavigate(scope.friendlyStreakIndex);
+                      return;
+                    }
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => FriendlyStreakPage(

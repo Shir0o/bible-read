@@ -28,6 +28,7 @@ void main() {
       MaterialApp(
         home: NavigationMenuScope(
           onNavigate: (index) => lastIndex = index,
+          friendlyStreakIndex: 8,
           vibrationService: menuService,
           child: Scaffold(
             appBar: AppBar(

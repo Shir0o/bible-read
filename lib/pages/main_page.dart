@@ -459,6 +459,7 @@ class _MainPageState extends State<MainPage> {
       onWillPop: _onWillPop,
       child: NavigationMenuScope(
         onNavigate: _navigateFromMenu,
+        friendlyStreakIndex: _friendlyStreakIndex,
         vibrationService: widget.vibrationService,
         adminRoleService: _adminRoleService,
         child: ResponsiveScaffold(
