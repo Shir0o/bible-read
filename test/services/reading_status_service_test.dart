@@ -183,6 +183,8 @@ void main() {
       expect(stats.streak, expectedStreak);
       final expectedReadDays = streakOffsets.length + longestOffsets.length;
       expect(stats.totalReadDays, expectedReadDays);
+      expect(stats.coveredDate, today);
+      expect(stats.coveredViaGrace, isFalse);
       expect(
         stats.graceCreditsMonth,
         '${today.year}-${today.month.toString().padLeft(2, '0')}',
@@ -250,12 +252,33 @@ void main() {
       expect(stats.streak, 4);
       expect(stats.graceCreditsUsed, 1);
       expect(stats.graceCreditsAvailable, 1);
+      expect(stats.coveredViaGrace, isFalse);
 
       final summaryDoc = await userDoc.collection('summary').doc('data').get();
       final data = summaryDoc.data()!;
       expect(data['streak'], 4);
       expect(data['graceCreditsUsed'], 1);
       expect(data['graceCreditsAvailable'], 1);
+    });
+
+    test('updateSummary reports when today was covered by a grace credit',
+        () async {
+      final userDoc = firestore.collection('users').doc(user.uid);
+      await userDoc.set({'email': user.email});
+
+      String formatDate(DateTime d) =>
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+      final today = fixedNow;
+      final yesterday = today.subtract(const Duration(days: 1));
+      await userDoc.collection('reading').doc(formatDate(yesterday)).set({
+        'read': true,
+      });
+
+      final stats = await service.updateSummary();
+      expect(stats.streak, 2);
+      expect(stats.coveredDate, today);
+      expect(stats.coveredViaGrace, isTrue);
     });
 
     test(
@@ -312,6 +335,7 @@ void main() {
       expect(stats.streak, 1);
       expect(stats.graceCreditsUsed, 2);
       expect(stats.graceCreditsAvailable, 0);
+      expect(stats.coveredViaGrace, isFalse);
 
       final summaryDoc = await userDoc.collection('summary').doc('data').get();
       final data = summaryDoc.data()!;

@@ -15,6 +15,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:bible_read/models/achievement.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/services/achievement_service.dart';
+import 'package:bible_read/services/friend_streak_link_service.dart';
 import 'package:bible_read/services/friendly_streak_service.dart';
 import 'package:bible_read/services/group_book_achievement_service.dart';
 import 'package:bible_read/services/reading_status_service.dart';
@@ -91,6 +92,28 @@ class _StubFriendlyStreakService extends FriendlyStreakService {
 
   @override
   Future<int?> fetchTopStreak(String uid) async => _result;
+}
+
+class _RecordingFriendStreakLinkService extends FriendStreakLinkService {
+  _RecordingFriendStreakLinkService()
+      : super(firestore: FakeFirebaseFirestore());
+
+  int recordCalls = 0;
+  String? lastUid;
+  DateTime? lastDate;
+  bool? lastViaGrace;
+
+  @override
+  Future<void> recordCoverage(
+    String uid,
+    DateTime? coveredDate,
+    bool coveredViaGrace,
+  ) async {
+    recordCalls += 1;
+    lastUid = uid;
+    lastDate = coveredDate;
+    lastViaGrace = coveredViaGrace;
+  }
 }
 
 class _FakeAchievementService extends AchievementService {
@@ -199,6 +222,8 @@ const SummaryStats _defaultSummaryStats = SummaryStats(
   graceCreditsAvailable: 0,
   graceCreditsUsed: 0,
   graceCreditsMonth: 'default',
+  coveredDate: null,
+  coveredViaGrace: false,
 );
 
 class _RecordingScaffoldMessenger extends ScaffoldMessenger {
@@ -671,6 +696,53 @@ void main() {
     expect(summaryDoc.data()?['streak'], 1);
     expect(summaryDoc.data()?['totalReadDays'], 1);
     expect(summaryDoc.data()?['longestStreak'], 1);
+  });
+
+  testWidgets('toggling read status fans coverage updates to friend links',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(
+      uid: 'u-friend',
+      displayName: 'Paired Reader',
+      email: 'pair@example.com',
+    );
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+    final summaryDate = DateTime(2024, 2, 2);
+
+    final readingStatusService = _FakeReadingStatusService(
+      fixedStatus: _createEmptyStatus(),
+      summaryResult: SummaryStats(
+        streak: 1,
+        totalReadDays: 1,
+        graceCreditsAvailable: 2,
+        graceCreditsUsed: 0,
+        graceCreditsMonth: '2024-02',
+        coveredDate: summaryDate,
+        coveredViaGrace: false,
+      ),
+    );
+    final friendService = _RecordingFriendStreakLinkService();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          readingStatusService: readingStatusService,
+          friendStreakLinkService: friendService,
+          vibrationService: _StubVibrationService(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await _toggleRead(tester);
+    await tester.pumpAndSettle(const Duration(milliseconds: 300));
+
+    expect(friendService.recordCalls, 1);
+    expect(friendService.lastUid, user.uid);
+    expect(friendService.lastDate, summaryDate);
+    expect(friendService.lastViaGrace, isFalse);
   });
 
   testWidgets('consumes grace credits after skipping multiple days', (
