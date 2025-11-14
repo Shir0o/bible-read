@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:bible_read/models/friend_streak_link.dart';
+import 'package:bible_read/services/friendly_streak_service.dart';
 import 'package:bible_read/widgets/streak_stats_box.dart';
 
 void main() {
@@ -8,7 +10,7 @@ void main() {
 
   testWidgets('renders streak and period statistics', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Scaffold(
           body: StreakStatsBox(
             currentStreak: 3,
@@ -17,8 +19,24 @@ void main() {
             periodCount: 5,
             periodLabel: 'This week',
             remainingGraceCredits: 2,
-            friendsStreak: 4,
-            friendsStreakLabel: 'Friendly streak',
+            friendSummary: FriendlyStreakLinksSummary(
+              activeLinks: [
+                FriendStreakLink(
+                  partnerUid: 'p1',
+                  partnerName: 'Alice',
+                  initiatedBy: 'user',
+                  status: FriendStreakStatus.active,
+                  currentStreak: 4,
+                  lastUserCovered: null,
+                  lastPartnerCovered: null,
+                  createdAt: DateTime(2024),
+                  updatedAt: DateTime(2024),
+                  ownerUid: 'user',
+                ),
+              ],
+              pendingLinks: const [],
+            ),
+            selectedPartnerId: 'p1',
           ),
         ),
       ),
@@ -29,6 +47,6 @@ void main() {
     expect(find.text('Total read days: 40'), findsOneWidget);
     expect(find.text('This week: 5'), findsOneWidget);
     expect(find.text('Grace credits remaining: 2'), findsOneWidget);
-    expect(find.text('Friendly streak: 4'), findsOneWidget);
+    expect(find.text('Streak with Alice: 4 days'), findsOneWidget);
   });
 }

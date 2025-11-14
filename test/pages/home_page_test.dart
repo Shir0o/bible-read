@@ -13,6 +13,7 @@ import 'package:google_sign_in_platform_interface/google_sign_in_platform_interf
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'package:bible_read/models/achievement.dart';
+import 'package:bible_read/models/friend_streak_link.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/services/achievement_service.dart';
 import 'package:bible_read/services/friend_streak_link_service.dart';
@@ -68,8 +69,7 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Future<bool> canAccessScopes(
     List<String> scopes, {
     String? accessToken,
-  }) async =>
-      true;
+  }) async => true;
 
   @override
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
@@ -86,17 +86,40 @@ class _StubVibrationService extends VibrationService {
 
 class _StubFriendlyStreakService extends FriendlyStreakService {
   _StubFriendlyStreakService(this._result)
-      : super(firestore: FakeFirebaseFirestore());
+    : super(firestore: FakeFirebaseFirestore());
 
-  final int? _result;
+  final FriendlyStreakLinksSummary? _result;
 
   @override
-  Future<int?> fetchTopStreak(String uid) async => _result;
+  Future<FriendlyStreakLinksSummary> fetchLinks(String uid) async {
+    return _result ?? FriendlyStreakLinksSummary.empty;
+  }
+}
+
+FriendStreakLink _buildLink({
+  required String uid,
+  required FriendStreakStatus status,
+  int streak = 0,
+  String? name,
+}) {
+  final now = DateTime(2024);
+  return FriendStreakLink(
+    partnerUid: uid,
+    partnerName: name,
+    initiatedBy: 'user',
+    status: status,
+    currentStreak: streak,
+    lastUserCovered: now,
+    lastPartnerCovered: now,
+    createdAt: now,
+    updatedAt: now,
+    ownerUid: 'user',
+  );
 }
 
 class _RecordingFriendStreakLinkService extends FriendStreakLinkService {
   _RecordingFriendStreakLinkService()
-      : super(firestore: FakeFirebaseFirestore());
+    : super(firestore: FakeFirebaseFirestore());
 
   int recordCalls = 0;
   String? lastUid;
@@ -118,7 +141,7 @@ class _RecordingFriendStreakLinkService extends FriendStreakLinkService {
 
 class _FakeAchievementService extends AchievementService {
   _FakeAchievementService(FirebaseFirestore firestore)
-      : super(firestore: firestore);
+    : super(firestore: firestore);
 
   final List<Achievement> unlocks = <Achievement>[];
   final List<String> requestedUids = <String>[];
@@ -150,7 +173,7 @@ class _FakeGroupBookAchievementService extends GroupBookAchievementService {
 
 class _ThrowingGroupBookAchievementService extends GroupBookAchievementService {
   _ThrowingGroupBookAchievementService()
-      : super(firestore: FakeFirebaseFirestore());
+    : super(firestore: FakeFirebaseFirestore());
 
   @override
   Future<Map<String, Set<int>>> completedChaptersByBook(String uid) async {
@@ -163,12 +186,12 @@ class _FakeReadingStatusService extends ReadingStatusService {
     required this.fixedStatus,
     required this.summaryResult,
   }) : super(
-          firestore: FakeFirebaseFirestore(),
-          auth: MockFirebaseAuth(
-            mockUser: MockUser(uid: 'reading'),
-            signedIn: true,
-          ),
-        );
+         firestore: FakeFirebaseFirestore(),
+         auth: MockFirebaseAuth(
+           mockUser: MockUser(uid: 'reading'),
+           signedIn: true,
+         ),
+       );
 
   final ReadingStatus fixedStatus;
   final SummaryStats summaryResult;
@@ -227,10 +250,7 @@ const SummaryStats _defaultSummaryStats = SummaryStats(
 );
 
 class _RecordingScaffoldMessenger extends ScaffoldMessenger {
-  const _RecordingScaffoldMessenger({
-    super.key,
-    required super.child,
-  });
+  const _RecordingScaffoldMessenger({super.key, required super.child});
 
   @override
   ScaffoldMessengerState createState() => _RecordingScaffoldMessengerState();
@@ -299,9 +319,9 @@ _SummaryExpectation _computeExpectedSummary(
       '${date.year}-${date.month.toString().padLeft(2, '0')}';
 
   _TestMonthCreditState ensureMonth(DateTime date) => monthCredits.putIfAbsent(
-        formatMonth(date),
-        () => _TestMonthCreditState(),
-      );
+    formatMonth(date),
+    () => _TestMonthCreditState(),
+  );
 
   int streak = 0;
   var cursor = DateTime(today.year, today.month, today.day);
@@ -351,15 +371,15 @@ class ThrowingDocumentReference
     Map<String, dynamic> rootParent,
     Map<String, dynamic> snapshotStreamControllerRoot,
   ) : super(
-          firestore,
-          path,
-          id,
-          root,
-          docsData,
-          rootParent,
-          snapshotStreamControllerRoot,
-          null,
-        );
+        firestore,
+        path,
+        id,
+        root,
+        docsData,
+        rootParent,
+        snapshotStreamControllerRoot,
+        null,
+      );
 
   @override
   Future<DocumentSnapshot<Map<String, dynamic>>> get([
@@ -447,6 +467,29 @@ void main() {
       mockUser: MockUser(uid: 'user'),
       signedIn: true,
     );
+    final summary = FriendlyStreakLinksSummary(
+      activeLinks: [
+        _buildLink(
+          uid: 'friend-1',
+          name: 'Alice',
+          status: FriendStreakStatus.active,
+          streak: 12,
+        ),
+        _buildLink(
+          uid: 'friend-2',
+          name: 'Bob',
+          status: FriendStreakStatus.active,
+          streak: 4,
+        ),
+      ],
+      pendingLinks: [
+        _buildLink(
+          uid: 'friend-3',
+          name: 'Cara',
+          status: FriendStreakStatus.pending,
+        ),
+      ],
+    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -454,15 +497,17 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          friendlyStreakService: _StubFriendlyStreakService(12),
+          friendlyStreakService: _StubFriendlyStreakService(summary),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Friendly streak leader'), findsOneWidget);
-    expect(find.text('12 days in a row'), findsOneWidget);
+    expect(find.text('Friendly streaks'), findsOneWidget);
+    expect(find.text('Active partners (2/5)'), findsOneWidget);
+    expect(find.textContaining('Alice'), findsOneWidget);
+    expect(find.text('Pending invites (1)'), findsOneWidget);
   });
 
   testWidgets('shows "User not signed in" when not authenticated', (
@@ -698,8 +743,9 @@ void main() {
     expect(summaryDoc.data()?['longestStreak'], 1);
   });
 
-  testWidgets('toggling read status fans coverage updates to friend links',
-      (tester) async {
+  testWidgets('toggling read status fans coverage updates to friend links', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(
       uid: 'u-friend',
@@ -781,9 +827,10 @@ void main() {
     ).subtract(const Duration(days: 1));
     final previousMonthKey = formatMonth(previousMonthDate);
 
-    final seededSummaryMonth = previousReadDates.any(
-      (date) => date.year == today.year && date.month == today.month,
-    )
+    final seededSummaryMonth =
+        previousReadDates.any(
+          (date) => date.year == today.year && date.month == today.month,
+        )
         ? currentMonthKey
         : previousMonthKey;
 
@@ -895,11 +942,11 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          markFirstReader: (
-              {required String dateKey, required String uid}) async {
-            called = true;
-            return {'first': true};
-          },
+          markFirstReader:
+              ({required String dateKey, required String uid}) async {
+                called = true;
+                return {'first': true};
+              },
         ),
       ),
     );
@@ -936,8 +983,10 @@ void main() {
 
     // Seed six consecutive reading days so the recomputed streak reaches the
     // threshold once today is marked.
-    final readingRef =
-        firestore.collection('users').doc(user.uid).collection('reading');
+    final readingRef = firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading');
     for (int i = 1; i <= 6; i++) {
       final date = DateTime.now().subtract(Duration(days: i));
       await readingRef.doc(_formatDate(date)).set({'read': true});
@@ -988,8 +1037,10 @@ void main() {
     final user = MockUser(uid: 'u-days');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
-    final readingRef =
-        firestore.collection('users').doc(user.uid).collection('reading');
+    final readingRef = firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading');
     for (int i = 1; i <= 29; i++) {
       final date = DateTime.now().subtract(Duration(days: i));
       await readingRef.doc(_formatDate(date)).set({'read': true});
@@ -1087,12 +1138,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 5,
-      'pastWeekReadDates': [oldKey],
-      'pastMonthReadDates': [oldKey],
-      'totalReadDays': 5,
-      'longestStreak': 5,
-    });
+          'streak': 5,
+          'pastWeekReadDates': [oldKey],
+          'pastMonthReadDates': [oldKey],
+          'totalReadDays': 5,
+          'longestStreak': 5,
+        });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -1138,8 +1189,10 @@ void main() {
     final twoDaysKey = keyFor(twoDaysAgo);
 
     // Create reading documents for today and two days ago.
-    final readingRef =
-        firestore.collection('users').doc(user.uid).collection('reading');
+    final readingRef = firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading');
     await readingRef.doc(todayKey).set({'read': true});
     await readingRef.doc(twoDaysKey).set({'read': true});
 
@@ -1150,12 +1203,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 0,
-      'pastWeekReadDates': [],
-      'pastMonthReadDates': ['bad'],
-      'totalReadDays': 0,
-      'longestStreak': 0,
-    });
+          'streak': 0,
+          'pastWeekReadDates': [],
+          'pastMonthReadDates': ['bad'],
+          'totalReadDays': 0,
+          'longestStreak': 0,
+        });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -1207,8 +1260,10 @@ void main() {
     final fiveDaysAgo = today.subtract(const Duration(days: 5));
     final sixDaysAgo = today.subtract(const Duration(days: 6));
 
-    final readingRef =
-        firestore.collection('users').doc(user.uid).collection('reading');
+    final readingRef = firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading');
     await readingRef.doc(keyFor(today)).set({'read': true});
     await readingRef.doc(keyFor(yesterday)).set({'read': true});
     await readingRef.doc(keyFor(twoDaysAgo)).set({'read': true});
@@ -1221,12 +1276,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 0,
-      'longestStreak': 0,
-      'totalReadDays': 0,
-      'pastWeekReadDates': [],
-      'pastMonthReadDates': [],
-    });
+          'streak': 0,
+          'longestStreak': 0,
+          'totalReadDays': 0,
+          'pastWeekReadDates': [],
+          'pastMonthReadDates': [],
+        });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -1268,8 +1323,10 @@ void main() {
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
     final today = DateTime.now();
-    final readingRef =
-        firestore.collection('users').doc(user.uid).collection('reading');
+    final readingRef = firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('reading');
     for (int i = 0; i < 7; i++) {
       final date = today.subtract(Duration(days: i));
       await readingRef.doc(keyFor(date)).set({'read': true});
@@ -1346,8 +1403,9 @@ void main() {
     expect(achievementService.requestedUids, contains('book-user'));
   });
 
-  testWidgets('book achievement refresh failures show snack bar',
-      (tester) async {
+  testWidgets('book achievement refresh failures show snack bar', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'snack-user'),
@@ -1386,13 +1444,13 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    final failureShown = messengerKey.currentState!.shownSnackBars.any(
-      (snackBar) {
-        final content = snackBar.content;
-        return content is Text &&
-            content.data == 'Failed to refresh achievements. Please try again.';
-      },
-    );
+    final failureShown = messengerKey.currentState!.shownSnackBars.any((
+      snackBar,
+    ) {
+      final content = snackBar.content;
+      return content is Text &&
+          content.data == 'Failed to refresh achievements. Please try again.';
+    });
 
     expect(failureShown, isTrue);
 

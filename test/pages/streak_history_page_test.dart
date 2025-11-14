@@ -3,7 +3,9 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:bible_read/models/friend_streak_link.dart';
 import 'package:bible_read/pages/streak_history_page.dart';
+import 'package:bible_read/services/friendly_streak_service.dart';
 import 'package:bible_read/widgets/week_streak_calendar.dart';
 import 'package:bible_read/widgets/month_streak_calendar.dart';
 import 'package:bible_read/widgets/streak_stats_box.dart';
@@ -12,19 +14,19 @@ String _fmt(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
 String _monthName(int month) => const [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ][month - 1];
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+][month - 1];
 
 void main() {
   testWidgets('week and month views render correct day cells', (tester) async {
@@ -33,6 +35,9 @@ void main() {
       mockUser: MockUser(uid: 'u1'),
       signedIn: true,
     );
+    final streakService = _StubFriendlyStreakService(
+      FriendlyStreakLinksSummary.empty,
+    );
 
     await firestore
         .collection('users')
@@ -40,16 +45,20 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 0,
-      'longestStreak': 0,
-      'totalReadDays': 0,
-      'pastWeekReadDates': <String>[],
-      'pastMonthReadDates': <String>[],
-    });
+          'streak': 0,
+          'longestStreak': 0,
+          'totalReadDays': 0,
+          'pastWeekReadDates': <String>[],
+          'pastMonthReadDates': <String>[],
+        });
 
     await tester.pumpWidget(
       MaterialApp(
-        home: StreakHistoryPage(firestore: firestore, auth: auth),
+        home: StreakHistoryPage(
+          firestore: firestore,
+          auth: auth,
+          friendlyStreakService: streakService,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -95,12 +104,26 @@ void main() {
     expect(monthCells, findsNWidgets(daysInMonth));
   });
 
-  testWidgets('displays friendly streak when friends have data',
-      (tester) async {
+  testWidgets('displays friendly streak when friends have data', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
       signedIn: true,
+    );
+    final streakService = _StubFriendlyStreakService(
+      FriendlyStreakLinksSummary(
+        activeLinks: [
+          _testLink(
+            uid: 'friend',
+            name: 'Friend',
+            status: FriendStreakStatus.active,
+            streak: 7,
+          ),
+        ],
+        pendingLinks: const [],
+      ),
     );
 
     await firestore.collection('users').doc('u1').set({'name': 'User'});
@@ -110,12 +133,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 2,
-      'longestStreak': 5,
-      'totalReadDays': 10,
-      'pastWeekReadDates': <String>[],
-      'pastMonthReadDates': <String>[],
-    });
+          'streak': 2,
+          'longestStreak': 5,
+          'totalReadDays': 10,
+          'pastWeekReadDates': <String>[],
+          'pastMonthReadDates': <String>[],
+        });
 
     await firestore
         .collection('users')
@@ -134,12 +157,16 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: StreakHistoryPage(firestore: firestore, auth: auth),
+        home: StreakHistoryPage(
+          firestore: firestore,
+          auth: auth,
+          friendlyStreakService: streakService,
+        ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Friendly streak: 7'), findsOneWidget);
+    expect(find.text('Streak with Friend: 7 days'), findsOneWidget);
   });
 
   testWidgets('period navigation updates calendar and stats', (tester) async {
@@ -159,15 +186,15 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 0,
-      'longestStreak': 0,
-      'totalReadDays': 0,
-      'pastWeekReadDates': [
-        _fmt(currentWeekStart),
-        _fmt(currentWeekStart.add(const Duration(days: 1))),
-      ],
-      'pastMonthReadDates': <String>[],
-    });
+          'streak': 0,
+          'longestStreak': 0,
+          'totalReadDays': 0,
+          'pastWeekReadDates': [
+            _fmt(currentWeekStart),
+            _fmt(currentWeekStart.add(const Duration(days: 1))),
+          ],
+          'pastMonthReadDates': <String>[],
+        });
 
     for (int i = 0; i < 2; i++) {
       final day = currentWeekStart.add(Duration(days: i));
@@ -193,7 +220,13 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: StreakHistoryPage(firestore: firestore, auth: auth),
+        home: StreakHistoryPage(
+          firestore: firestore,
+          auth: auth,
+          friendlyStreakService: _StubFriendlyStreakService(
+            FriendlyStreakLinksSummary.empty,
+          ),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -263,12 +296,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 0,
-      'longestStreak': 0,
-      'totalReadDays': 0,
-      'pastWeekReadDates': <String>[],
-      'pastMonthReadDates': <String>[],
-    });
+          'streak': 0,
+          'longestStreak': 0,
+          'totalReadDays': 0,
+          'pastWeekReadDates': <String>[],
+          'pastMonthReadDates': <String>[],
+        });
 
     for (int i = 0; i < 2; i++) {
       final day = prevMonthStart.add(Duration(days: i));
@@ -331,4 +364,37 @@ void main() {
       findsNothing,
     );
   });
+}
+
+class _StubFriendlyStreakService extends FriendlyStreakService {
+  _StubFriendlyStreakService(this.summary)
+    : super(firestore: FakeFirebaseFirestore());
+
+  final FriendlyStreakLinksSummary summary;
+
+  @override
+  Future<FriendlyStreakLinksSummary> fetchLinks(String uid) async {
+    return summary;
+  }
+}
+
+FriendStreakLink _testLink({
+  required String uid,
+  required FriendStreakStatus status,
+  required int streak,
+  String? name,
+}) {
+  final now = DateTime(2024);
+  return FriendStreakLink(
+    partnerUid: uid,
+    partnerName: name,
+    initiatedBy: 'user',
+    status: status,
+    currentStreak: streak,
+    lastUserCovered: now,
+    lastPartnerCovered: now,
+    createdAt: now,
+    updatedAt: now,
+    ownerUid: 'user',
+  );
 }
