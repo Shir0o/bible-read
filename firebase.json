@@ -1,1 +1,60 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"bible-read-39389","appId":"1:82330382748:android:128708aa4357a7f7b09859","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"bible-read-39389","appId":"1:82330382748:ios:33ef61927485ef91b09859","uploadDebugSymbols":true,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"macos":{"default":{"projectId":"bible-read-39389","appId":"1:82330382748:ios:0022eaa7adf2d642b09859","uploadDebugSymbols":true,"fileOutput":"macos/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"bible-read-39389","configurations":{"android":"1:82330382748:android:128708aa4357a7f7b09859","ios":"1:82330382748:ios:33ef61927485ef91b09859","macos":"1:82330382748:ios:0022eaa7adf2d642b09859","web":"1:82330382748:web:dd517ccb503b6dbdb09859","windows":"1:82330382748:web:0bb77bed2f47c317b09859"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "bible-read-39389",
+          "appId": "1:82330382748:android:128708aa4357a7f7b09859",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "bible-read-39389",
+          "appId": "1:82330382748:ios:33ef61927485ef91b09859",
+          "uploadDebugSymbols": true,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "bible-read-39389",
+          "appId": "1:82330382748:ios:0022eaa7adf2d642b09859",
+          "uploadDebugSymbols": true,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "bible-read-39389",
+          "configurations": {
+            "android": "1:82330382748:android:128708aa4357a7f7b09859",
+            "ios": "1:82330382748:ios:33ef61927485ef91b09859",
+            "macos": "1:82330382748:ios:0022eaa7adf2d642b09859",
+            "web": "1:82330382748:web:dd517ccb503b6dbdb09859",
+            "windows": "1:82330382748:web:0bb77bed2f47c317b09859"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
+  "firestore": {
+    "database": "(default)",
+    "location": "nam5",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

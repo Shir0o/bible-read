@@ -27,21 +27,6 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  await FirebaseCrashlytics.instance
-      .setCrashlyticsCollectionEnabled(!kDebugMode);
-
-  FlutterError.onError = (details) {
-    if (kDebugMode) {
-      FlutterError.dumpErrorToConsole(details);
-    }
-    ErrorLogger.log(details.exception, details.stack);
-  };
-  PlatformDispatcher.instance.onError = (error, stack) {
-    ErrorLogger.log(error, stack);
-    return true;
-  };
-  // Wait for FirebaseAuth to be ready before activating App Check.
-  await FirebaseAuth.instance.authStateChanges().first;
   bool appCheckFailed = false;
   try {
     if (kDebugMode) {
@@ -60,7 +45,6 @@ void main() async {
       debugPrint('AppCheck activation failed: $e\n$st');
     }
     ErrorLogger.log(e, st);
-
     try {
       await FirebaseFirestore.instance.collection('app_check_errors').add({
         'timestamp': Timestamp.now(),
@@ -70,13 +54,26 @@ void main() async {
       });
     } catch (firestoreError, st) {
       if (kDebugMode) {
-        debugPrint(
-            'Failed to log AppCheck error to Firestore: $firestoreError');
+        debugPrint('Failed to log AppCheck error to Firestore: $firestoreError');
       }
       ErrorLogger.log(firestoreError, st);
     }
     appCheckFailed = true;
   }
+  await FirebaseCrashlytics.instance
+      .setCrashlyticsCollectionEnabled(!kDebugMode);
+
+  FlutterError.onError = (details) {
+    if (kDebugMode) {
+      FlutterError.dumpErrorToConsole(details);
+    }
+    ErrorLogger.log(details.exception, details.stack);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    ErrorLogger.log(error, stack);
+    return true;
+  };
+
   await _setupMessaging();
   runApp(MyApp(appCheckFailed: appCheckFailed));
 }

@@ -132,7 +132,13 @@ service cloud.firestore {
             (request.auth.uid == userId || request.auth.uid == partnerUid);
         }
 
-        allow read: if request.auth != null && request.auth.uid == userId;
+        function isOwnerOrFriend() {
+          return request.auth != null &&
+            (request.auth.uid == userId ||
+              exists(/databases/$(database)/documents/users/$(userId)/friends/$(request.auth.uid)));
+        }
+
+        allow read: if isOwnerOrFriend();
         allow create, update: if isOwnerOrPartner() &&
           request.resource.data.keys().hasOnly([
             'partnerUid',
