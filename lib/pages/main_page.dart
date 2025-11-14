@@ -109,6 +109,7 @@ class _MainPageState extends State<MainPage> {
   static const int _homeIndex = 0;
   static const int _readLogIndex = 1;
   static const int _leaderboardIndex = 3;
+  static const int _friendsIndex = 4;
   static const int _friendlyStreakIndex = 8;
   static const int _profileIndex = 10;
   static const int _notificationsIndex = 11;
@@ -260,6 +261,14 @@ class _MainPageState extends State<MainPage> {
         vibrationService: widget.vibrationService,
       ),
     ];
+    assert(
+      _pages.length > _friendsIndex,
+      '_friendsIndex must remain within _pages bounds.',
+    );
+    assert(
+      _pages[_friendsIndex] is FriendsPage,
+      'FriendsPage must stay at _friendsIndex.',
+    );
     assert(_pages.length > _friendlyStreakIndex,
         '_friendlyStreakIndex must remain within _pages bounds.');
     assert(
@@ -460,6 +469,7 @@ class _MainPageState extends State<MainPage> {
       child: NavigationMenuScope(
         onNavigate: _navigateFromMenu,
         friendlyStreakIndex: _friendlyStreakIndex,
+        friendsIndex: _friendsIndex,
         vibrationService: widget.vibrationService,
         adminRoleService: _adminRoleService,
         child: ResponsiveScaffold(

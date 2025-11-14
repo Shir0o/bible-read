@@ -29,6 +29,7 @@ void main() {
         home: NavigationMenuScope(
           onNavigate: (index) => lastIndex = index,
           friendlyStreakIndex: 8,
+          friendsIndex: 4,
           vibrationService: menuService,
           child: Scaffold(
             appBar: AppBar(

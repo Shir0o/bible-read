@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/models/friend_streak_link.dart';
 import 'package:bible_read/pages/friendly_streak_page.dart';
 import 'package:bible_read/services/friendly_streak_service.dart';
+import 'package:bible_read/widgets/navigation_menu_scope.dart';
 
 void main() {
   testWidgets('renders summary banner and partner lists', (tester) async {
@@ -120,6 +121,42 @@ void main() {
     expect(find.text('Invite a friend'), findsWidgets);
   });
 
+  testWidgets('Invite a friend uses NavigationMenuScope when available',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+    await _writeSummaryDoc(firestore);
+    final observer = _RecordingNavigatorObserver();
+    int? lastNavigateIndex;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorObservers: [observer],
+        home: NavigationMenuScope(
+          onNavigate: (index) => lastNavigateIndex = index,
+          friendlyStreakIndex: 8,
+          friendsIndex: 4,
+          child: FriendlyStreakPage(
+            firestore: firestore,
+            auth: auth,
+            friendlyStreakService:
+                _StubFriendlyStreakService(FriendlyStreakLinksSummary.empty),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Invite a friend').first);
+    await tester.pumpAndSettle();
+
+    expect(lastNavigateIndex, 4);
+    expect(observer.pushCount, 0);
+  });
+
   testWidgets('shows error notice when friendly streak load fails',
       (tester) async {
     final firestore = FakeFirebaseFirestore();
@@ -181,6 +218,18 @@ class _ThrowingFriendlyStreakService extends FriendlyStreakService {
   @override
   Future<FriendlyStreakLinksSummary> fetchLinks(String uid) async {
     throw Exception('network error');
+  }
+}
+
+class _RecordingNavigatorObserver extends NavigatorObserver {
+  int pushCount = 0;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (previousRoute != null) {
+      pushCount++;
+    }
+    super.didPush(route, previousRoute);
   }
 }
 
