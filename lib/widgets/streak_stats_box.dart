@@ -25,8 +25,8 @@ class StreakStatsBox extends StatelessWidget {
   /// Remaining grace credits available for the current month, if known.
   final int? remainingGraceCredits;
 
-  /// Summary of paired streak links.
-  final FriendlyStreakLinksSummary friendSummary;
+  /// Summary of paired streak links, if available.
+  final FriendlyStreakLinksSummary? friendSummary;
 
   /// Partner currently selected by the user.
   final String? selectedPartnerId;
@@ -48,7 +48,7 @@ class StreakStatsBox extends StatelessWidget {
     required this.periodCount,
     required this.periodLabel,
     this.remainingGraceCredits,
-    this.friendSummary = FriendlyStreakLinksSummary.empty,
+    this.friendSummary,
     this.selectedPartnerId,
     this.onPartnerSelected,
     this.onInviteFriend,
@@ -57,14 +57,15 @@ class StreakStatsBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedLink = _selectedPartner();
-    final bestLink = friendSummary.activeLinks.isNotEmpty
-        ? friendSummary.activeLinks.first
-        : null;
+    final summary = friendSummary ?? FriendlyStreakLinksSummary.empty;
+    final showFriendSummary = friendSummary != null;
+    final selectedLink = _selectedPartner(summary);
+    final bestLink =
+        summary.activeLinks.isNotEmpty ? summary.activeLinks.first : null;
     final dropdownNeeded =
-        friendSummary.activeLinks.length > 1 && onPartnerSelected != null;
+        summary.activeLinks.length > 1 && onPartnerSelected != null;
     final reachedLimit =
-        friendSummary.activeLinks.length >= FriendService.maxActiveStreakLinks;
+        summary.activeLinks.length >= FriendService.maxActiveStreakLinks;
 
     return CommonStyles.buildCard(
       child: Column(
@@ -79,7 +80,7 @@ class StreakStatsBox extends StatelessWidget {
               'Grace credits remaining: $remainingGraceCredits',
               style: AppTextStyles.body,
             ),
-          if (friendSummary.activeLinks.isNotEmpty)
+          if (showFriendSummary && summary.activeLinks.isNotEmpty)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -95,7 +96,7 @@ class StreakStatsBox extends StatelessWidget {
                     isExpanded: true,
                     value: selectedLink?.partnerUid ?? bestLink?.partnerUid,
                     onChanged: onPartnerSelected,
-                    items: friendSummary.activeLinks
+                    items: summary.activeLinks
                         .map(
                           (link) => DropdownMenuItem(
                             value: link.partnerUid,
@@ -107,14 +108,14 @@ class StreakStatsBox extends StatelessWidget {
                 ],
               ],
             )
-          else if (friendSummary.pendingLinks.isNotEmpty)
+          else if (showFriendSummary && summary.pendingLinks.isNotEmpty)
             Text(
-              friendSummary.pendingLinks.length == 1
-                  ? 'Pending invite: ${_displayName(friendSummary.pendingLinks.first)}'
-                  : 'Pending invites: ${friendSummary.pendingLinks.length}',
+              summary.pendingLinks.length == 1
+                  ? 'Pending invite: ${_displayName(summary.pendingLinks.first)}'
+                  : 'Pending invites: ${summary.pendingLinks.length}',
               style: AppTextStyles.body,
             )
-          else
+          else if (showFriendSummary)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -132,7 +133,7 @@ class StreakStatsBox extends StatelessWidget {
                   ),
               ],
             ),
-          if (reachedLimit)
+          if (showFriendSummary && reachedLimit)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
@@ -146,20 +147,16 @@ class StreakStatsBox extends StatelessWidget {
     );
   }
 
-  FriendStreakLink? _selectedPartner() {
+  FriendStreakLink? _selectedPartner(FriendlyStreakLinksSummary summary) {
     if (selectedPartnerId == null) {
-      return friendSummary.activeLinks.isNotEmpty
-          ? friendSummary.activeLinks.first
-          : null;
+      return summary.activeLinks.isNotEmpty ? summary.activeLinks.first : null;
     }
-    for (final link in friendSummary.activeLinks) {
+    for (final link in summary.activeLinks) {
       if (link.partnerUid == selectedPartnerId) {
         return link;
       }
     }
-    return friendSummary.activeLinks.isNotEmpty
-        ? friendSummary.activeLinks.first
-        : null;
+    return summary.activeLinks.isNotEmpty ? summary.activeLinks.first : null;
   }
 
   String _displayName(FriendStreakLink link) {

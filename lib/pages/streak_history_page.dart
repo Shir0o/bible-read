@@ -7,27 +7,19 @@ import '../widgets/streak_stats_box.dart';
 import '../widgets/week_streak_calendar.dart';
 import '../widgets/month_streak_calendar.dart';
 import '../services/error_logger.dart';
-import '../services/friendly_streak_service.dart';
-import 'friends_page.dart';
 
 /// Displays the user's reading streak history.
 class StreakHistoryPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
 
-  /// Service for loading paired streak partners.
-  final FriendlyStreakService friendlyStreakService;
-
   /// Creates a [StreakHistoryPage].
   StreakHistoryPage({
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-    FriendlyStreakService? friendlyStreakService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        friendlyStreakService = friendlyStreakService ??
-            FriendlyStreakService(firestore: firestore);
+        auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<StreakHistoryPage> createState() => _StreakHistoryPageState();
@@ -44,8 +36,6 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
   int _totalReadDays = 0;
   int _periodCount = 0;
   int? _remainingGraceCredits;
-  FriendlyStreakLinksSummary _friendSummary = FriendlyStreakLinksSummary.empty;
-  String? _selectedPartnerId;
   Set<DateTime> _readDates = {};
 
   @override
@@ -110,8 +100,6 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
       final summaryDoc =
           await userDocRef.collection('summary').doc('data').get();
       final data = summaryDoc.data() ?? {};
-      final friendsStreakFuture = widget.friendlyStreakService.fetchLinks(uid);
-
       final now = DateTime.now();
       final currentMonthKey =
           '${now.year}-${now.month.toString().padLeft(2, '0')}';
@@ -216,8 +204,6 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
         periodCount = readDates.length;
       }
 
-      final friendSummary = await friendsStreakFuture;
-      final nextSelected = _resolveSelectedPartner(friendSummary);
       if (!mounted) return;
       setState(() {
         _currentStreak = currentStreak;
@@ -226,25 +212,10 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
         _periodCount = periodCount;
         _readDates = readDates;
         _remainingGraceCredits = remainingGraceCredits;
-        _friendSummary = friendSummary;
-        _selectedPartnerId = nextSelected;
       });
     } catch (e, st) {
       ErrorLogger.log(e, st);
     }
-  }
-
-  String? _resolveSelectedPartner(FriendlyStreakLinksSummary summary) {
-    if (_selectedPartnerId != null &&
-        summary.activeLinks.any(
-          (link) => link.partnerUid == _selectedPartnerId,
-        )) {
-      return _selectedPartnerId;
-    }
-    if (summary.activeLinks.isNotEmpty) {
-      return summary.activeLinks.first.partnerUid;
-    }
-    return null;
   }
 
   Future<Set<DateTime>> _queryRange(
@@ -302,12 +273,6 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
     return result;
   }
 
-  void _openFriendsPage() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => FriendsPage(auth: widget.auth)));
-  }
-
   @override
   Widget build(BuildContext context) {
     final periodLabel = _period == _Period.week ? 'Week reads' : 'Month reads';
@@ -345,14 +310,6 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
                 periodCount: _periodCount,
                 periodLabel: periodLabel,
                 remainingGraceCredits: _remainingGraceCredits,
-                friendSummary: _friendSummary,
-                selectedPartnerId: _selectedPartnerId,
-                onPartnerSelected: (value) {
-                  setState(() {
-                    _selectedPartnerId = value;
-                  });
-                },
-                onInviteFriend: _openFriendsPage,
                 description: const Text(
                   'Each month includes two automatic grace credits to freeze a missed day. '
                   'Every 15-day streak earns one extra credit.',

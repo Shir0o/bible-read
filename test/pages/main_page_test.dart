@@ -255,12 +255,16 @@ void main() {
     expect(responsive.contentIndex, 0);
     expect(responsive.selectedIndex, 0);
 
-    Future<void> selectMenuItem(String label, int expectedIndex) async {
+    Future<void> selectMenuItem(
+      String label,
+      int expectedIndex, {
+      String? expectedTitle,
+    }) async {
       final state = tester.state(find.byType(MainPage)) as dynamic;
       state.navigateFromMenu(expectedIndex);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
-      expect(find.text(label), findsWidgets);
+      expect(find.text(expectedTitle ?? label), findsWidgets);
       responsive = tester.widget<ResponsiveScaffold>(
         find.byType(ResponsiveScaffold),
       );
@@ -272,6 +276,11 @@ void main() {
     await selectMenuItem('Friends', 4);
     await selectMenuItem('Achievements', 6);
     await selectMenuItem('History', 7);
+    await selectMenuItem(
+      'Friendly Streaks',
+      8,
+      expectedTitle: 'Friendly streaks',
+    );
   });
 
   testWidgets('bottom navigation visible on non-core pages', (tester) async {
@@ -411,7 +420,8 @@ void main() {
     expect(state.selectedIndex, 0);
   });
 
-  testWidgets('_onItemTapped exits without vibration when blocked', (tester) async {
+  testWidgets('_onItemTapped exits without vibration when blocked',
+      (tester) async {
     final vibration = _RecordingVibrationService();
     await tester.pumpWidget(
       MaterialApp(
@@ -863,7 +873,7 @@ void main() {
     expect(find.byType(ReadLogPage), findsOneWidget);
 
     // Go to profile through the menu and sign out
-    state.navigateFromMenu(9);
+    state.navigateFromMenu(10);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Sign Out'), findsOneWidget);
