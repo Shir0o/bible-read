@@ -144,22 +144,6 @@ class FriendlyStreakBanner extends StatelessWidget {
                         ),
                       ),
                     ],
-                    if (onTap != null) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'View history',
-                            style: textTheme.labelLarge?.copyWith(
-                              color: onPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(Icons.arrow_forward, color: onPrimary, size: 18),
-                        ],
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -199,15 +183,15 @@ class _FriendlyLinkRow extends StatelessWidget {
                 Text(
                   name,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: iconColor,
-                    fontWeight: FontWeight.w600,
-                  ),
+                        color: iconColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 Text(
                   detail,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: iconColor.withValues(alpha: 0.9),
-                  ),
+                        color: iconColor.withValues(alpha: 0.9),
+                      ),
                 ),
               ],
             ),

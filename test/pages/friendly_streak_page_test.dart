@@ -53,14 +53,44 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.text('Pending invites'), findsOneWidget);
-    expect(find.text('Active partners: 2'), findsOneWidget);
 
-    expect(find.text('Streak with Alice: 5 days'), findsOneWidget);
-    await tester.tap(find.byType(DropdownButton<String>));
+    // Verify active partners are listed
+    expect(find.text('Alice'), findsOneWidget);
+    expect(find.text('5 days'), findsOneWidget);
+    expect(find.text('Bob'), findsOneWidget);
+    expect(find.text('3 days'), findsOneWidget);
+
+    // Verify pending partner is listed
+    expect(find.text('Charlie'), findsOneWidget);
+    expect(find.text('Waiting for partner'), findsOneWidget);
+
+    // Alice should be selected by default
+    expect(
+        find.descendant(
+            of: find.byKey(const ValueKey('partner-p1')),
+            matching: find.byIcon(Icons.check_circle)),
+        findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byKey(const ValueKey('partner-p2')),
+            matching: find.byIcon(Icons.check_circle)),
+        findsNothing);
+
+    // Tap on Bob to select him
+    await tester.tap(find.byKey(const ValueKey('partner-p2')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Bob').last);
-    await tester.pumpAndSettle();
-    expect(find.text('Streak with Bob: 3 days'), findsOneWidget);
+
+    // Bob should be selected now
+    expect(
+        find.descendant(
+            of: find.byKey(const ValueKey('partner-p1')),
+            matching: find.byIcon(Icons.check_circle)),
+        findsNothing);
+    expect(
+        find.descendant(
+            of: find.byKey(const ValueKey('partner-p2')),
+            matching: find.byIcon(Icons.check_circle)),
+        findsOneWidget);
   });
 
   testWidgets('shows invite call to action when no partners', (tester) async {

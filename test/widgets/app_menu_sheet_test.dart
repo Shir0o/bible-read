@@ -112,10 +112,10 @@ void main() {
     await select('History', 7);
 
     await openMenu();
-    await select('Notifications', 10);
+    await select('Notifications', 11);
 
     await openMenu();
-    await select('Profile', 9);
+    await select('Profile', 10);
   });
 
   testWidgets('shows Feedback Inbox entry for admin users', (tester) async {
@@ -152,6 +152,13 @@ void main() {
 
     expect(find.text('Feedback Inbox'), findsOneWidget);
 
+    final scrollable = find.descendant(
+        of: find.byType(AppMenuSheet), matching: find.byType(Scrollable));
+    await tester.scrollUntilVisible(
+      find.text('Feedback Inbox'),
+      200.0,
+      scrollable: scrollable,
+    );
     await tester.tap(find.text('Feedback Inbox'));
     await tester.pumpAndSettle();
 

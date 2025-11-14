@@ -6,8 +6,6 @@ import '../models/friend_streak_link.dart';
 import '../services/error_logger.dart';
 import '../services/friendly_streak_service.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/friendly_streak_banner.dart';
-import '../widgets/streak_stats_box.dart';
 import 'friends_page.dart';
 
 /// Dedicated page for managing friendly streak partners.
@@ -124,7 +122,7 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
   }
 
   void _openFriendsPage() {
-    Navigator.of(context).push(
+    Navigator.of(context, rootNavigator: false).push(
       MaterialPageRoute(
         builder: (_) => FriendsPage(auth: widget.auth),
       ),
@@ -245,33 +243,10 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
             shrinkWrap: true,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             children: [
-              FriendlyStreakBanner(
-                summary: _summary,
-                isLoading: _isLoading,
-              ),
-              const SizedBox(height: 16),
               if (_loadError) ...[
                 _buildErrorNotice(),
                 const SizedBox(height: 16),
               ],
-              StreakStatsBox(
-                currentStreak: _currentStreak,
-                longestStreak: _longestStreak,
-                totalReadDays: _totalReadDays,
-                periodCount: _summary.activeLinks.length,
-                periodLabel: 'Active partners',
-                remainingGraceCredits: _remainingGraceCredits,
-                friendSummary: _summary,
-                selectedPartnerId: _selectedPartnerId,
-                onPartnerSelected: _selectPartner,
-                onInviteFriend: _openFriendsPage,
-                description: const Text(
-                  'Each month includes two automatic grace credits to freeze a missed day. '
-                  'Every 15-day streak earns one extra credit.',
-                  style: AppTextStyles.body,
-                ),
-              ),
-              const SizedBox(height: 16),
               _buildPartnerListCard(),
             ],
           ),

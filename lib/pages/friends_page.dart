@@ -177,8 +177,6 @@ class _FriendsPageState extends State<FriendsPage> {
                             .map(
                               (f) => CommonStyles.buildTappableCard(
                                 onTap: () {},
-                                margin:
-                                    const EdgeInsets.symmetric(vertical: 4.0),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [

@@ -362,12 +362,18 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      final state = tester.state(find.byType(MainPage)) as dynamic;
-      state.navigateFromMenu(12);
+      // Tap on the 'Menu' button in the bottom navigation bar.
+      await tester.tap(find.text('Menu'));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
       await tester.pump(const Duration(milliseconds: 500));
 
+      // The AppMenuSheet should now be visible.
+      // Tap on the 'Exercise Challenges' item in the menu.
+      await tester.tap(find.text('Exercise Challenges'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Verify that the ExerciseChallengesPage is displayed.
       expect(find.text('Exercise Challenges'), findsOneWidget);
       expect(find.text('No exercise challenges yet.'), findsOneWidget);
       expect(

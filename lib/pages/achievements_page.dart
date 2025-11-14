@@ -44,10 +44,8 @@ class AchievementsPage extends StatelessWidget {
 
                   final unlocked = snapshot.data!;
                   final categories = AchievementCategory.values;
-                  final colorScheme = Theme.of(context).colorScheme;
-                  final tabLabelColor = colorScheme.onPrimary;
-                  final unselectedTabLabelColor =
-                      tabLabelColor.withValues(alpha: 0.7);
+                  final tabLabelColor = Colors.white;
+                  final unselectedTabLabelColor = Colors.white70;
                   final definitionsByCategory = {
                     for (final category in categories)
                       category: achievementsForCategory(category),
