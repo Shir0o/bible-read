@@ -236,8 +236,9 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   Widget _buildLimitCard(int activeCount, bool reachedLimit) {
-    return Card(
+    return CommonStyles.buildCard(
       child: ListTile(
+        contentPadding: EdgeInsets.zero,
         leading: Icon(
           reachedLimit ? Icons.warning_amber : Icons.local_fire_department,
           color: reachedLimit ? Colors.orange : Colors.pink,
