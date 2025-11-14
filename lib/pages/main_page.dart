@@ -7,12 +7,14 @@ import 'package:bible_read/pages/groups_page.dart';
 import 'package:bible_read/pages/friend_requests_page.dart';
 import 'package:bible_read/pages/streak_history_page.dart';
 import 'package:bible_read/pages/seasonal_challenges_page.dart';
+import 'package:bible_read/pages/friendly_streak_page.dart';
 import 'package:bible_read/widgets/navigation_menu_scope.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:bible_read/widgets/app_menu_sheet.dart';
 import '../services/admin_role_service.dart';
 import '../services/exercise_tracker_service.dart';
 import '../services/friend_service.dart';
+import '../services/friendly_streak_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/group_service.dart';
 import '../services/notification_service.dart';
@@ -107,9 +109,10 @@ class _MainPageState extends State<MainPage> {
   static const int _homeIndex = 0;
   static const int _readLogIndex = 1;
   static const int _leaderboardIndex = 3;
-  static const int _profileIndex = 9;
-  static const int _notificationsIndex = 10;
-  static const int _exerciseDashboardIndex = 11;
+  static const int _friendlyStreakIndex = 8;
+  static const int _profileIndex = 10;
+  static const int _notificationsIndex = 11;
+  static const int _exerciseDashboardIndex = 12;
   static const int _menuDestinationIndex = 2;
   static const List<int> _bottomNavIndices = <int>[
     _homeIndex,
@@ -137,6 +140,7 @@ class _MainPageState extends State<MainPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late final FriendService _friendService;
   late final GroupService _groupService;
+  late final FriendlyStreakService _friendlyStreakService;
   late final ExerciseTrackerService _exerciseTrackerService;
   final GlobalKey<ReadLogPageState> _readLogKey = GlobalKey<ReadLogPageState>();
   final GlobalKey<LeaderboardPageState> _leaderboardKey =
@@ -150,6 +154,9 @@ class _MainPageState extends State<MainPage> {
     super.initState();
     _friendService = FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
+    _friendlyStreakService = FriendlyStreakService(
+      firestore: widget.firestore,
+    );
     _exerciseTrackerService = ExerciseTrackerService(
       firestore: widget.firestore,
       auth: widget.auth,
@@ -225,6 +232,11 @@ class _MainPageState extends State<MainPage> {
       GroupsPage(groupService: _groupService, auth: widget.auth),
       AchievementsPage(firestore: widget.firestore, auth: widget.auth),
       StreakHistoryPage(),
+      FriendlyStreakPage(
+        firestore: widget.firestore,
+        auth: widget.auth,
+        friendlyStreakService: _friendlyStreakService,
+      ),
       FriendRequestsPage(friendService: _friendService, auth: widget.auth),
       UserProfilePage(
         googleSignInProvider: widget.googleSignInProvider,
@@ -248,6 +260,12 @@ class _MainPageState extends State<MainPage> {
         vibrationService: widget.vibrationService,
       ),
     ];
+    assert(_pages.length > _friendlyStreakIndex,
+        '_friendlyStreakIndex must remain within _pages bounds.');
+    assert(
+      _pages[_friendlyStreakIndex] is FriendlyStreakPage,
+      'FriendlyStreakPage must stay at _friendlyStreakIndex.',
+    );
     assert(_pages.length > _notificationsIndex,
         '_notificationsIndex must remain within _pages bounds.');
     assert(

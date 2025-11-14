@@ -24,7 +24,7 @@ import '../widgets/friendly_streak_banner.dart';
 import '../widgets/notification_button.dart';
 import '../widgets/read_status_section.dart';
 import 'read_log_page.dart';
-import 'streak_history_page.dart';
+import 'friendly_streak_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
 /// Firestore when the app starts.
@@ -40,8 +40,7 @@ class HomePage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })?
-  markFirstReader;
+  })? markFirstReader;
 
   HomePage({
     super.key,
@@ -56,23 +55,20 @@ class HomePage extends StatefulWidget {
     AchievementService? achievementService,
     GroupBookAchievementService? groupBookAchievementService,
     FriendStreakLinkService? friendStreakLinkService,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       readingStatusService =
-           readingStatusService ??
-           ReadingStatusService(firestore: firestore, auth: auth),
-       vibrationService = vibrationService ?? const VibrationService(),
-       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-       friendlyStreakService =
-           friendlyStreakService ?? FriendlyStreakService(firestore: firestore),
-       achievementService =
-           achievementService ?? AchievementService(firestore: firestore),
-       groupBookAchievementService =
-           groupBookAchievementService ??
-           GroupBookAchievementService(firestore: firestore),
-       friendStreakLinkService =
-           friendStreakLinkService ??
-           FriendStreakLinkService(firestore: firestore);
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        readingStatusService = readingStatusService ??
+            ReadingStatusService(firestore: firestore, auth: auth),
+        vibrationService = vibrationService ?? const VibrationService(),
+        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+        friendlyStreakService = friendlyStreakService ??
+            FriendlyStreakService(firestore: firestore),
+        achievementService =
+            achievementService ?? AchievementService(firestore: firestore),
+        groupBookAchievementService = groupBookAchievementService ??
+            GroupBookAchievementService(firestore: firestore),
+        friendStreakLinkService = friendStreakLinkService ??
+            FriendStreakLinkService(firestore: firestore);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -286,8 +282,8 @@ class _HomePageState extends State<HomePage>
           .collection('reading')
           .doc(dateKey)
           .set({
-            'read': true,
-          }, SetOptions(merge: true)); // Mark read in Firestore.
+        'read': true,
+      }, SetOptions(merge: true)); // Mark read in Firestore.
 
       // Update summary collection (lightweight update)
       final summary = await _updateSummaryWithToday();
@@ -594,9 +590,10 @@ class _HomePageState extends State<HomePage>
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => StreakHistoryPage(
+                        builder: (_) => FriendlyStreakPage(
                           firestore: widget.firestore,
                           auth: widget.auth,
+                          friendlyStreakService: widget.friendlyStreakService,
                         ),
                       ),
                     );

@@ -49,4 +49,26 @@ void main() {
     expect(find.text('Grace credits remaining: 2'), findsOneWidget);
     expect(find.text('Streak with Alice: 4 days'), findsOneWidget);
   });
+
+  testWidgets('omits friend section when summary not provided', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StreakStatsBox(
+            currentStreak: 1,
+            longestStreak: 2,
+            totalReadDays: 3,
+            periodCount: 4,
+            periodLabel: 'Week reads',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Current streak: 1'), findsOneWidget);
+    expect(
+      find.text('No streak partners yet. Invite a friend to share progress.'),
+      findsNothing,
+    );
+  });
 }

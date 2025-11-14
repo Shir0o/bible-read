@@ -71,15 +71,20 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
       const _MenuItem(index: 4, icon: Icons.people, label: 'Friends'),
       const _MenuItem(index: 5, icon: Icons.group, label: 'Groups'),
       const _MenuItem(index: 7, icon: Icons.calendar_today, label: 'History'),
+      const _MenuItem(
+        index: 8,
+        icon: Icons.local_fire_department,
+        label: 'Friendly Streaks',
+      ),
       const _MenuItem(index: 0, icon: Icons.home_outlined, label: 'Home'),
       const _MenuItem(index: 3, icon: Icons.leaderboard, label: 'Leaderboard'),
       const _MenuItem(
-          index: 10, icon: Icons.notifications, label: 'Notifications'),
-      const _MenuItem(index: 9, icon: Icons.person, label: 'Profile'),
+          index: 11, icon: Icons.notifications, label: 'Notifications'),
+      const _MenuItem(index: 10, icon: Icons.person, label: 'Profile'),
       const _MenuItem(
-          index: 11, icon: Icons.fitness_center, label: 'Daily Exercise'),
+          index: 12, icon: Icons.fitness_center, label: 'Daily Exercise'),
       const _MenuItem(
-        index: 12,
+        index: 13,
         icon: Icons.manage_search,
         label: 'Exercise Challenges',
       ),
