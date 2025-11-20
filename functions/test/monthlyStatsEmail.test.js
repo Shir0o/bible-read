@@ -3,6 +3,7 @@ const assert = require('node:assert');
 const admin = require('firebase-admin');
 const sgMail = require('@sendgrid/mail');
 const { resetSendgridCache } = require('../sendgrid-utils');
+const monthlyStats = require('../monthly-stats');
 
 const originalInit = admin.initializeApp;
 const originalApp = admin.app;
@@ -18,6 +19,7 @@ describe('sendMonthlyStatsEmail', () => {
   let sentMessages;
   let originalSend;
   let originalSetApiKey;
+  let originalGetStats;
 
   const fakeEntryDoc = {
     id: 'user123',
@@ -69,12 +71,20 @@ describe('sendMonthlyStatsEmail', () => {
     sentMessages = [];
     originalSend = sgMail.send;
     originalSetApiKey = sgMail.setApiKey;
+    originalGetStats = monthlyStats.getPreviousMonthStats;
 
     sgMail.setApiKey = () => {};
     sgMail.send = async (message) => {
       sentMessages.push(message);
       return [{ statusCode: 202 }];
     };
+
+    monthlyStats.getPreviousMonthStats = async () => ({
+      monthKey: '2024-04',
+      daysRead: 1,
+      streakSegments: [{ start: '2024-04-01', end: '2024-04-01', length: 1, graceDays: 0 }],
+      graceDaysUsed: 0,
+    });
 
     admin.firestore = Object.assign(() => fakeDb, {
       Timestamp: { fromDate: () => ({}) },
@@ -85,6 +95,7 @@ describe('sendMonthlyStatsEmail', () => {
   afterEach(() => {
     sgMail.send = originalSend;
     sgMail.setApiKey = originalSetApiKey;
+    monthlyStats.getPreviousMonthStats = originalGetStats;
     admin.firestore = originalFirestore;
 
     resetSendgridCache();
@@ -101,7 +112,7 @@ describe('sendMonthlyStatsEmail', () => {
     assert.ok(message.subject.includes('reading summary'));
     assert.deepEqual(message.to, ['reader@example.com']);
     assert.match(message.text, /Days read: 1/);
-    assert.match(message.text, /Chapters tracked: 2/);
+    assert.match(message.text, /Grace days used: 0/);
   });
 });
 
