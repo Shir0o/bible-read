@@ -1057,57 +1057,13 @@ exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
   }
 });
 
-const getPreviousMonthRange = () => {
-  const now = new Date();
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
-  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  return { start, end };
-};
+const monthlyStats = require('./monthly-stats');
 
 const formatMonthLabel = (date) => date.toLocaleString('en-US', {
   month: 'long',
   year: 'numeric',
   timeZone: 'UTC',
 });
-
-const fetchUserMonthlyStats = async (db, uid, start, end) => {
-  const startTs = admin.firestore.Timestamp.fromDate(start);
-  const endTs = admin.firestore.Timestamp.fromDate(end);
-  const entriesSnap = await db
-    .collectionGroup('entries')
-    .where('timestamp', '>=', startTs)
-    .where('timestamp', '<', endTs)
-    .get();
-
-  let totalChapters = 0;
-  const daysRead = new Set();
-
-  entriesSnap.forEach((doc) => {
-    const docId = doc.id;
-    const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-    const entryUid = docId || data?.uid;
-    if (entryUid !== uid) {
-      return;
-    }
-    const chaptersField = data?.chapters;
-    if (Array.isArray(chaptersField)) {
-      totalChapters += chaptersField.length;
-    } else if (typeof chaptersField === 'number') {
-      totalChapters += chaptersField;
-    }
-
-    const parentDate = doc.ref?.parent?.parent?.id;
-    if (parentDate) {
-      daysRead.add(parentDate);
-    }
-  });
-
-  return {
-    entries: entriesSnap.size,
-    chapters: totalChapters,
-    daysRead: daysRead.size,
-  };
-};
 
 exports.sendMonthlyStatsEmail = onSchedule({
   schedule: '0 9 1 * *',
@@ -1116,7 +1072,7 @@ exports.sendMonthlyStatsEmail = onSchedule({
   maxInstances: 1,
 }, async () => {
   const db = admin.firestore();
-  const { start, end } = getPreviousMonthRange();
+  const { start, end } = monthlyStats.getPreviousMonthRange();
   const label = formatMonthLabel(start);
   const userSnapshot = await db.collection('users').get();
 
@@ -1136,14 +1092,18 @@ exports.sendMonthlyStatsEmail = onSchedule({
     }
 
     try {
-      const stats = await fetchUserMonthlyStats(db, userDoc.id, start, end);
+      const stats = await monthlyStats.getPreviousMonthStats(db, userDoc.id, end);
+      const longestStreak = stats.streakSegments.reduce(
+        (max, segment) => Math.max(max, segment.length),
+        0,
+      );
       const subject = `Your ${label} reading summary`;
       const textLines = [
         `Hi ${displayName},`,
         `Here are your ${label} reading stats:`,
         `- Days read: ${stats.daysRead}`,
-        `- Entries logged: ${stats.entries}`,
-        `- Chapters tracked: ${stats.chapters}`,
+        `- Streaks: ${longestStreak || 0}-day max across ${stats.streakSegments.length} segments`,
+        `- Grace days used: ${stats.graceDaysUsed}`,
         '',
         'Keep up the great work! 🕊️',
       ];
@@ -1153,8 +1113,8 @@ exports.sendMonthlyStatsEmail = onSchedule({
         `<p>Here are your ${label} reading stats:</p>`,
         '<ul>',
         `<li>Days read: <strong>${stats.daysRead}</strong></li>`,
-        `<li>Entries logged: <strong>${stats.entries}</strong></li>`,
-        `<li>Chapters tracked: <strong>${stats.chapters}</strong></li>`,
+        `<li>Streaks: <strong>${longestStreak || 0}</strong>-day max across ${stats.streakSegments.length} segments</li>`,
+        `<li>Grace days used: <strong>${stats.graceDaysUsed}</strong></li>`,
         '</ul>',
         '<p>Keep up the great work! 🕊️</p>',
       ];
