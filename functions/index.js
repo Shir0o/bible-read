@@ -1075,7 +1075,6 @@ const fetchUserMonthlyStats = async (db, uid, start, end) => {
   const endTs = admin.firestore.Timestamp.fromDate(end);
   const entriesSnap = await db
     .collectionGroup('entries')
-    .where(admin.firestore.FieldPath.documentId(), '==', uid)
     .where('timestamp', '>=', startTs)
     .where('timestamp', '<', endTs)
     .get();
@@ -1084,7 +1083,12 @@ const fetchUserMonthlyStats = async (db, uid, start, end) => {
   const daysRead = new Set();
 
   entriesSnap.forEach((doc) => {
+    const docId = doc.id;
     const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+    const entryUid = docId || data?.uid;
+    if (entryUid !== uid) {
+      return;
+    }
     const chaptersField = data?.chapters;
     if (Array.isArray(chaptersField)) {
       totalChapters += chaptersField.length;

@@ -20,6 +20,7 @@ describe('sendMonthlyStatsEmail', () => {
   let originalSetApiKey;
 
   const fakeEntryDoc = {
+    id: 'user123',
     data: () => ({ chapters: ['John 1', 'John 2'] }),
     ref: { parent: { parent: { id: '2024-05-01' } } },
   };
