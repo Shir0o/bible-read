@@ -332,11 +332,7 @@ class _MainPageState extends State<MainPage> {
         unawaited(() async {
           try {
             await user.getIdToken(true); // Force-refresh ID token
-            await widget.firestore.collection('users').doc(user.uid).set({
-              'fcmToken': token,
-              'name': user.displayName,
-              'email': user.email?.toLowerCase(),
-            }, SetOptions(merge: true));
+            await _writeUserMetadata(user, token);
           } catch (e, st) {
             if (kDebugMode) {
               debugPrint('Initial Firestore write failed: $e. Retrying...');
@@ -344,11 +340,7 @@ class _MainPageState extends State<MainPage> {
             await ErrorLogger.log(e, st);
             await Future.delayed(const Duration(seconds: 1));
             try {
-              await widget.firestore.collection('users').doc(user.uid).set({
-                'fcmToken': token,
-                'name': user.displayName,
-                'email': user.email?.toLowerCase(),
-              }, SetOptions(merge: true));
+              await _writeUserMetadata(user, token);
             } catch (e2, st2) {
               if (kDebugMode) {
                 debugPrint('Second Firestore write failed: $e2');
@@ -363,6 +355,24 @@ class _MainPageState extends State<MainPage> {
         );
       }
     }
+  }
+
+  Future<void> _writeUserMetadata(User user, String token) async {
+    final userDocRef = widget.firestore.collection('users').doc(user.uid);
+    final snap = await userDocRef.get();
+    final data = snap.data();
+    final emailPrefs = data?['emailPrefs'];
+    final hasMonthlySummaryPreference =
+        emailPrefs is Map<String, dynamic> &&
+            emailPrefs.containsKey('monthlySummary');
+
+    await userDocRef.set({
+      'fcmToken': token,
+      'name': user.displayName,
+      'email': user.email?.toLowerCase(),
+      if (!snap.exists || !hasMonthlySummaryPreference)
+        'emailPrefs': {'monthlySummary': true},
+    }, SetOptions(merge: true));
   }
 
   void _onItemTapped(int index) {
