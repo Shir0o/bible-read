@@ -50,3 +50,22 @@ This document describes the Firebase Cloud Functions exported from [`functions/i
 
 * `notificationPrefs` – subcollection under each user controlling notification opt‑ins.
 * `ADMIN_UID` – environment variable pointing to the admin user who receives signup alerts.
+
+## sendMonthlyStatsEmail
+
+* **Type:** Scheduled Pub/Sub (Functions v2).
+* **Schedule:** Runs at 09:00 UTC on the first day of each month (`0 9 1 * *`).
+* **Configuration:** Uses the shared SendGrid settings (`sendgrid.apikey`, `sendgrid.from`) to deliver messages.
+* **Firestore:** Reads the `users` collection for recipients and the `entries` collection group for the previous month's reading activity.
+* **Resource limits:** Capped at `maxInstances: 1` to control costs.
+* **Behavior:** Generates a monthly summary per user (days read, entries logged, and chapters tracked) and emails the results.
+
+## Deployment
+
+Deploy Cloud Functions from the repository root or the `functions/` directory:
+
+```
+firebase deploy --only functions:sendLikeNotification,functions:sendCommentNotification,functions:sendSignupNotification,functions:markFirstReader,functions:sendMonthlyStatsEmail
+```
+
+The deployment command also provisions the Cloud Scheduler job that triggers `sendMonthlyStatsEmail`.

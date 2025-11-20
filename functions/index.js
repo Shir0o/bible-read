@@ -9,50 +9,18 @@
 
 const { onCall } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
-const sgMail = require("@sendgrid/mail");
 const {
   getFcmToken,
   isNotificationEnabled,
   sendNotification,
 } = require("./notification-utils");
+const { sendEmail, getSendgridSettings } = require("./sendgrid-utils");
 
 admin.initializeApp();
-
-let configuredSendgridKey;
-
-const getSendgridSettings = () => {
-  let config = {};
-  if (typeof functions.config === 'function') {
-    try {
-      config = functions.config();
-    } catch (err) {
-      functions.logger.debug('Failed to read functions config', err);
-    }
-  }
-  const sendgridConfig = config.sendgrid || {};
-  return {
-    apiKey: sendgridConfig.apikey || process.env.SENDGRID_API_KEY || '',
-    from: sendgridConfig.from || process.env.SENDGRID_FROM || '',
-    to: sendgridConfig.to || process.env.SENDGRID_TO || '',
-  };
-};
-
-const ensureSendgridConfigured = (apiKey) => {
-  if (!apiKey) {
-    return false;
-  }
-
-  if (configuredSendgridKey === apiKey) {
-    return true;
-  }
-
-  sgMail.setApiKey(apiKey);
-  configuredSendgridKey = apiKey;
-  return true;
-};
 
 const sendFeedbackEmail = async (type, snapshot, params) => {
   if (!snapshot) {
@@ -79,23 +47,7 @@ const sendFeedbackEmail = async (type, snapshot, params) => {
   const reporterEmail = normalizeText(data.reporterEmail || data.reporter?.email, 'Unknown email');
   const docPath = snapshot?.ref?.path || '';
 
-  const { apiKey, from, to } = getSendgridSettings();
-  const isConfigured = ensureSendgridConfigured(apiKey);
-  const recipients = Array.isArray(to)
-    ? to.filter(Boolean)
-    : String(to || '')
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
-
-  if (!isConfigured || !from || recipients.length === 0) {
-    functions.logger.error('SendGrid configuration incomplete; skipping email', {
-      type,
-      fromConfigured: Boolean(from),
-      recipientsCount: recipients.length,
-    });
-    return;
-  }
+  const { from, to } = getSendgridSettings();
 
   const subject = `[Feedback] ${type}: ${title}`;
   const text = [
@@ -116,17 +68,16 @@ const sendFeedbackEmail = async (type, snapshot, params) => {
     docPath ? `<p><strong>Document Path:</strong> ${docPath}</p>` : '',
   ].filter(Boolean);
 
-  const msg = {
-    to: recipients,
-    from,
-    subject,
-    text,
-    html: htmlLines.join('\n'),
-  };
-
   try {
-    await sgMail.send(msg);
-    functions.logger.info('Feedback email sent', { type, docPath, recipients });
+    await sendEmail({
+      subject,
+      text,
+      html: htmlLines.join('\n'),
+      to,
+      from,
+      messageData: { params },
+    });
+    functions.logger.info('Feedback email sent', { type, docPath });
   } catch (err) {
     functions.logger.error('Failed to send feedback email', err);
     try {
@@ -1103,6 +1054,119 @@ exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
       'Failed to mark first reader',
       err instanceof Error ? err.message : String(err)
     );
+  }
+});
+
+const getPreviousMonthRange = () => {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  return { start, end };
+};
+
+const formatMonthLabel = (date) => date.toLocaleString('en-US', {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+const fetchUserMonthlyStats = async (db, uid, start, end) => {
+  const startTs = admin.firestore.Timestamp.fromDate(start);
+  const endTs = admin.firestore.Timestamp.fromDate(end);
+  const entriesSnap = await db
+    .collectionGroup('entries')
+    .where(admin.firestore.FieldPath.documentId(), '==', uid)
+    .where('timestamp', '>=', startTs)
+    .where('timestamp', '<', endTs)
+    .get();
+
+  let totalChapters = 0;
+  const daysRead = new Set();
+
+  entriesSnap.forEach((doc) => {
+    const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+    const chaptersField = data?.chapters;
+    if (Array.isArray(chaptersField)) {
+      totalChapters += chaptersField.length;
+    } else if (typeof chaptersField === 'number') {
+      totalChapters += chaptersField;
+    }
+
+    const parentDate = doc.ref?.parent?.parent?.id;
+    if (parentDate) {
+      daysRead.add(parentDate);
+    }
+  });
+
+  return {
+    entries: entriesSnap.size,
+    chapters: totalChapters,
+    daysRead: daysRead.size,
+  };
+};
+
+exports.sendMonthlyStatsEmail = onSchedule({
+  schedule: '0 9 1 * *',
+  timeZone: 'Etc/UTC',
+  region: 'us-central1',
+  maxInstances: 1,
+}, async () => {
+  const db = admin.firestore();
+  const { start, end } = getPreviousMonthRange();
+  const label = formatMonthLabel(start);
+  const userSnapshot = await db.collection('users').get();
+
+  if (userSnapshot.empty) {
+    functions.logger.info('No users found for monthly stats email');
+    return;
+  }
+
+  for (const userDoc of userSnapshot.docs) {
+    const data = typeof userDoc.data === 'function' ? userDoc.data() : userDoc.data;
+    const email = data?.email || data?.emailAddress;
+    const displayName = data?.displayName || data?.name || 'there';
+
+    if (!email) {
+      functions.logger.warn('Skipping monthly stats email without recipient', { uid: userDoc.id });
+      continue;
+    }
+
+    try {
+      const stats = await fetchUserMonthlyStats(db, userDoc.id, start, end);
+      const subject = `Your ${label} reading summary`;
+      const textLines = [
+        `Hi ${displayName},`,
+        `Here are your ${label} reading stats:`,
+        `- Days read: ${stats.daysRead}`,
+        `- Entries logged: ${stats.entries}`,
+        `- Chapters tracked: ${stats.chapters}`,
+        '',
+        'Keep up the great work! 🕊️',
+      ];
+
+      const htmlLines = [
+        `<p>Hi ${displayName},</p>`,
+        `<p>Here are your ${label} reading stats:</p>`,
+        '<ul>',
+        `<li>Days read: <strong>${stats.daysRead}</strong></li>`,
+        `<li>Entries logged: <strong>${stats.entries}</strong></li>`,
+        `<li>Chapters tracked: <strong>${stats.chapters}</strong></li>`,
+        '</ul>',
+        '<p>Keep up the great work! 🕊️</p>',
+      ];
+
+      await sendEmail({
+        subject,
+        text: textLines.join('\n'),
+        html: htmlLines.join('\n'),
+        to: email,
+      });
+    } catch (err) {
+      functions.logger.error('Failed to send monthly stats email', {
+        uid: userDoc.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 });
 
