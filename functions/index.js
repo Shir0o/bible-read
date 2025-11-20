@@ -1072,6 +1072,7 @@ exports.sendMonthlyStatsEmail = onSchedule({
   maxInstances: 1,
 }, async () => {
   const db = admin.firestore();
+  const auth = typeof admin.auth === 'function' ? admin.auth() : null;
   const { start, end } = monthlyStats.getPreviousMonthRange();
   const label = formatMonthLabel(start);
   const userSnapshot = await db.collection('users').get();
@@ -1083,11 +1084,38 @@ exports.sendMonthlyStatsEmail = onSchedule({
 
   for (const userDoc of userSnapshot.docs) {
     const data = typeof userDoc.data === 'function' ? userDoc.data() : userDoc.data;
-    const email = data?.email || data?.emailAddress;
-    const displayName = data?.displayName || data?.name || 'there';
+    const emailPrefs = data?.emailPrefs;
+    const monthlySummaryEnabled =
+      typeof emailPrefs?.monthlySummary === 'boolean' ? emailPrefs.monthlySummary : true;
+    if (!monthlySummaryEnabled) {
+      functions.logger.info('Skipping monthly stats email: opted out', { uid: userDoc.id });
+      continue;
+    }
 
-    if (!email) {
-      functions.logger.warn('Skipping monthly stats email without recipient', { uid: userDoc.id });
+    let email = data?.email || data?.emailAddress;
+    const displayName = data?.displayName || data?.name || 'there';
+    let emailVerified = false;
+
+    if (auth?.getUser) {
+      try {
+        const userRecord = await auth.getUser(userDoc.id);
+        emailVerified = userRecord?.emailVerified === true;
+        email = userRecord?.email || email;
+      } catch (err) {
+        functions.logger.warn('Skipping monthly stats email: failed to load auth user', {
+          uid: userDoc.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        continue;
+      }
+    }
+
+    if (!emailVerified || !email) {
+      functions.logger.warn('Skipping monthly stats email without verified recipient', {
+        uid: userDoc.id,
+        emailVerified,
+        hasEmail: Boolean(email),
+      });
       continue;
     }
 

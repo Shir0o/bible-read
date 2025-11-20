@@ -8,6 +8,7 @@ const monthlyStats = require('../monthly-stats');
 const originalInit = admin.initializeApp;
 const originalApp = admin.app;
 const originalFirestore = admin.firestore;
+const originalAuth = admin.auth;
 admin.initializeApp = () => {};
 admin.app = () => ({ options: { projectId: 'demo' } });
 
@@ -20,6 +21,7 @@ describe('sendMonthlyStatsEmail', () => {
   let originalSend;
   let originalSetApiKey;
   let originalGetStats;
+  let fakeUserRecord;
 
   const fakeEntryDoc = {
     id: 'user123',
@@ -72,6 +74,8 @@ describe('sendMonthlyStatsEmail', () => {
     originalSend = sgMail.send;
     originalSetApiKey = sgMail.setApiKey;
     originalGetStats = monthlyStats.getPreviousMonthStats;
+    fakeUserRecord = { email: 'reader@example.com', emailVerified: true };
+    fakeUserDoc.data = () => ({ email: 'reader@example.com', displayName: 'Reader' });
 
     sgMail.setApiKey = () => {};
     sgMail.send = async (message) => {
@@ -90,6 +94,17 @@ describe('sendMonthlyStatsEmail', () => {
       Timestamp: { fromDate: () => ({}) },
       FieldPath: { documentId: () => 'documentId' },
     });
+    admin.app = () => ({
+      options: { projectId: 'demo' },
+      auth() {
+        return { getUser: async (uid) => ({ uid, ...fakeUserRecord }) };
+      },
+    });
+    admin.auth = () => ({
+      async getUser(uid) {
+        return { uid, ...fakeUserRecord };
+      },
+    });
   });
 
   afterEach(() => {
@@ -97,6 +112,8 @@ describe('sendMonthlyStatsEmail', () => {
     sgMail.setApiKey = originalSetApiKey;
     monthlyStats.getPreviousMonthStats = originalGetStats;
     admin.firestore = originalFirestore;
+    admin.auth = originalAuth;
+    admin.app = originalApp;
 
     resetSendgridCache();
 
@@ -113,6 +130,26 @@ describe('sendMonthlyStatsEmail', () => {
     assert.deepEqual(message.to, ['reader@example.com']);
     assert.match(message.text, /Days read: 1/);
     assert.match(message.text, /Grace days used: 0/);
+  });
+
+  it('skips users who opt out of monthly summaries', async () => {
+    fakeUserDoc.data = () => ({
+      email: 'reader@example.com',
+      displayName: 'Reader',
+      emailPrefs: { monthlySummary: false },
+    });
+
+    await myFunctions.sendMonthlyStatsEmail.run();
+
+    assert.equal(sentMessages.length, 0);
+  });
+
+  it('skips users without a verified email', async () => {
+    fakeUserRecord = { email: 'reader@example.com', emailVerified: false };
+
+    await myFunctions.sendMonthlyStatsEmail.run();
+
+    assert.equal(sentMessages.length, 0);
   });
 });
 
