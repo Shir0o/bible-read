@@ -2,6 +2,7 @@ const {after, afterEach, beforeEach, describe, it} = require('mocha');
 const assert = require('node:assert');
 const admin = require('firebase-admin');
 const sgMail = require('@sendgrid/mail');
+const { resetSendgridCache } = require('../sendgrid-utils');
 
 const originalInit = admin.initializeApp;
 const originalApp = admin.app;
@@ -22,6 +23,7 @@ describe('feedback email triggers', () => {
     process.env.SENDGRID_API_KEY = 'test-key';
     process.env.SENDGRID_FROM = 'noreply@example.com';
     process.env.SENDGRID_TO = 'team@example.com,ops@example.com';
+    resetSendgridCache();
 
     sentMessages = [];
     originalSend = sgMail.send;
@@ -37,6 +39,8 @@ describe('feedback email triggers', () => {
   afterEach(() => {
     sgMail.send = originalSend;
     sgMail.setApiKey = originalSetApiKey;
+
+    resetSendgridCache();
 
     delete process.env.SENDGRID_API_KEY;
     delete process.env.SENDGRID_FROM;
