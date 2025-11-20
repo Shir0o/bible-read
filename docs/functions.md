@@ -54,11 +54,26 @@ This document describes the Firebase Cloud Functions exported from [`functions/i
 ## sendMonthlyStatsEmail
 
 * **Type:** Scheduled Pub/Sub (Functions v2).
-* **Schedule:** Runs at 09:00 UTC on the first day of each month (`0 9 1 * *`).
-* **Configuration:** Uses the shared SendGrid settings (`sendgrid.apikey`, `sendgrid.from`) to deliver messages.
-* **Firestore:** Reads the `users` collection for recipients and the `entries` collection group for the previous month's reading activity.
+* **Schedule:** Runs at 09:00 UTC on the first day of each month (`0 9 1 * *`) with the scheduler timezone pinned to `Etc/UTC` to avoid daylight-saving drift.
+* **Configuration:** Uses SendGrid and requires the following config keys or environment variables:
+  * `functions.config().sendgrid.apikey` or `SENDGRID_API_KEY` – SendGrid API key.
+  * `functions.config().sendgrid.from` or `SENDGRID_FROM` – Verified sender address.
+  * `functions.config().sendgrid.to` or `SENDGRID_TO` – Optional default recipient list for ad‑hoc tests.
+* **Opt-in behavior:** Each user can toggle `emailPrefs.monthlySummary` in their profile document. The job sends to verified Auth emails only and defaults to **on** when the flag is absent.
+* **Firestore:** Reads the `users` collection for recipient metadata and uses `monthly-stats.js` to gather the previous month's reading coverage from summary/reading/read_logs data.
+* **Email content:** Subject `Your <Month Year> reading summary` with both text and HTML bodies:
+  * Greeting with the user's display name (e.g., `Hi Jane,`).
+  * Bulleted stats for days read, the longest streak and count of streak segments, and grace days used.
+  * Closing encouragement (“Keep up the great work! 🕊️”).
 * **Resource limits:** Capped at `maxInstances: 1` to control costs.
-* **Behavior:** Generates a monthly summary per user (days read, entries logged, and chapters tracked) and emails the results.
+
+### Local testing
+
+1. Install and build functions: `cd functions && npm ci`.
+2. Provide SendGrid config locally via `firebase functions:config:set sendgrid.apikey="<key>" sendgrid.from="you@example.com"` (and optionally `sendgrid.to`) or export the equivalent environment variables before running the emulator.
+3. Start the Functions emulator: `firebase emulators:start --only functions`.
+4. In another terminal, invoke the scheduled function manually with the shell to simulate the cron trigger: `firebase functions:shell --only sendMonthlyStatsEmail` then run `sendMonthlyStatsEmail()`.
+5. Check emulator logs (and the configured inbox if using a real SendGrid key) for the rendered email that matches the bullet points above.
 
 ## Deployment
 
