@@ -55,6 +55,13 @@ void main() {
       expect(rulesText.contains('match /bugReports/{docId}'), isTrue);
       expect(rulesText.contains('match /featureRequests/{docId}'), isTrue);
       expect(rulesText.contains('isValidFeedbackCreate'), isTrue);
+      expect(rulesText.contains('function isAdmin()'), isTrue);
+      expect(
+        rulesText.contains(
+          'allow read: if isAdmin() || (request.auth != null &&\n      resource.data.uid != null && request.auth.uid == resource.data.uid);',
+        ),
+        isTrue,
+      );
     });
   });
 }

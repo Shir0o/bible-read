@@ -2,11 +2,32 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isStringOrNull(value) {
-      return value == null || value is string;
-    }
+  function isStringOrNull(value) {
+    return value == null || value is string;
+  }
 
-    function isValidFeedbackCreate() {
+  function isTruthy(value) {
+    return value == true || value == 'true' || value == 1 || value == '1';
+  }
+
+  function isAdmin() {
+    return request.auth != null && (
+      isTruthy(request.auth.token.admin) ||
+      isTruthy(request.auth.token.isAdmin) ||
+      (
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        (
+          let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+          isTruthy(userData.admin) ||
+          isTruthy(userData.isAdmin) ||
+          (userData.role is string && (userData.role == 'admin' || userData.role == 'owner')) ||
+          (userData.roles is map && (isTruthy(userData.roles.admin) || isTruthy(userData.roles.isAdmin)))
+        )
+      )
+    );
+  }
+
+  function isValidFeedbackCreate() {
       return request.resource.data.keys().hasOnly([
             'uid',
             'email',
@@ -357,18 +378,20 @@ service cloud.firestore {
       }
     }
 
-    // 🐞 Bug reports
-    match /bugReports/{docId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && isValidFeedbackCreate();
-      allow update, delete: if false;
-    }
+  // 🐞 Bug reports
+  match /bugReports/{docId} {
+    allow read: if isAdmin() || (request.auth != null &&
+      resource.data.uid != null && request.auth.uid == resource.data.uid);
+    allow create: if request.auth != null && isValidFeedbackCreate();
+    allow update, delete: if false;
+  }
 
-    // 💡 Feature requests
-    match /featureRequests/{docId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && isValidFeedbackCreate();
-      allow update, delete: if false;
-    }
+  // 💡 Feature requests
+  match /featureRequests/{docId} {
+    allow read: if isAdmin() || (request.auth != null &&
+      resource.data.uid != null && request.auth.uid == resource.data.uid);
+    allow create: if request.auth != null && isValidFeedbackCreate();
+    allow update, delete: if false;
+  }
   }
 }
