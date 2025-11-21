@@ -23,12 +23,13 @@ import '../widgets/section_header.dart';
 import '../widgets/vibration_button.dart';
 import 'group_join_requests_page.dart';
 
-typedef GroupDatePicker = Future<DateTime?> Function({
-  required BuildContext context,
-  required DateTime initialDate,
-  required DateTime firstDate,
-  required DateTime lastDate,
-});
+typedef GroupDatePicker =
+    Future<DateTime?> Function({
+      required BuildContext context,
+      required DateTime initialDate,
+      required DateTime firstDate,
+      required DateTime lastDate,
+    });
 
 /// Page showing the members and schedule for a group.
 class GroupDetailPage extends StatefulWidget {
@@ -65,9 +66,11 @@ class GroupDetailPage extends StatefulWidget {
     GroupBookAchievementService? groupBookAchievementService,
   }) {
     final resolvedGroupService = groupService ?? GroupService();
-    final resolvedAchievementService = achievementService ??
+    final resolvedAchievementService =
+        achievementService ??
         AchievementService(firestore: resolvedGroupService.firestore);
-    final resolvedGroupBookAchievementService = groupBookAchievementService ??
+    final resolvedGroupBookAchievementService =
+        groupBookAchievementService ??
         GroupBookAchievementService(
           firestore: resolvedGroupService.firestore,
           groupService: resolvedGroupService,
@@ -237,21 +240,22 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       return;
     }
 
-    _achievementSubscription =
-        widget.achievementService.unlockedAchievementIds(uid).listen(
-      (ids) {
-        if (!mounted) return;
-        setState(() {
-          _unlockedAchievementIds = ids;
-        });
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        if (kDebugMode) {
-          debugPrint('Failed to load achievements: $error');
-        }
-        ErrorLogger.log(error, stackTrace);
-      },
-    );
+    _achievementSubscription = widget.achievementService
+        .unlockedAchievementIds(uid)
+        .listen(
+          (ids) {
+            if (!mounted) return;
+            setState(() {
+              _unlockedAchievementIds = ids;
+            });
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            if (kDebugMode) {
+              debugPrint('Failed to load achievements: $error');
+            }
+            ErrorLogger.log(error, stackTrace);
+          },
+        );
   }
 
   Future<void> _refreshBookAchievements({
@@ -485,7 +489,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final uidChanged = previousUid != currentUid;
     final achievementServiceChanged =
         oldWidget.achievementService != widget.achievementService;
-    final groupBookServiceChanged = oldWidget.groupBookAchievementService !=
+    final groupBookServiceChanged =
+        oldWidget.groupBookAchievementService !=
         widget.groupBookAchievementService;
     if (groupChanged || uidChanged) {
       setState(() {
@@ -654,10 +659,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       await db.runTransaction((tx) async {
         final snapshots =
             await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-          tx.get(itemDoc),
-          tx.get(base),
-          tx.get(summaryDoc),
-        ]);
+              tx.get(itemDoc),
+              tx.get(base),
+              tx.get(summaryDoc),
+            ]);
         final itemSnap = snapshots[0];
         final baseSnap = snapshots[1];
         final summarySnap = snapshots[2];
@@ -682,12 +687,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           } else {
             tx.set(base, baseData);
           }
-          tx.set(
-              summaryDoc,
-              {
-                'completed': prevCompleted + 1,
-              },
-              SetOptions(merge: true));
+          tx.set(summaryDoc, {
+            'completed': prevCompleted + 1,
+          }, SetOptions(merge: true));
         } else {
           if (!itemSnap.exists) return; // already unchecked
           tx.delete(itemDoc);
@@ -701,12 +703,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             }
           }
           final newCompleted = prevCompleted > 0 ? prevCompleted - 1 : 0;
-          tx.set(
-              summaryDoc,
-              {
-                'completed': newCompleted,
-              },
-              SetOptions(merge: true));
+          tx.set(summaryDoc, {
+            'completed': newCompleted,
+          }, SetOptions(merge: true));
         }
       });
       return true;
@@ -758,13 +757,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       await db.runTransaction((tx) async {
         final snapshots =
             await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-          tx.get(entryRef),
-          tx.get(summaryRef),
-        ]);
+              tx.get(entryRef),
+              tx.get(summaryRef),
+            ]);
         final entrySnap = snapshots[0];
         final summarySnap = snapshots[1];
         final nowTs = Timestamp.now();
-        final currentCount = (entrySnap.data()?['count'] as num?)?.toInt() ??
+        final currentCount =
+            (entrySnap.data()?['count'] as num?)?.toInt() ??
             currentlyChecked.length;
         final desiredCount = read ? schedule.chapters.length : 0;
         final delta = desiredCount - currentCount;
@@ -780,17 +780,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               'ts': nowTs,
             });
           }
-          tx.set(
-              entryRef,
-              {
-                'done': true,
-                'ts': nowTs,
-                'uid': user.uid,
-                'groupId': widget.group.id,
-                'dateId': dateKey,
-                'count': desiredCount,
-              },
-              SetOptions(merge: true));
+          tx.set(entryRef, {
+            'done': true,
+            'ts': nowTs,
+            'uid': user.uid,
+            'groupId': widget.group.id,
+            'dateId': dateKey,
+            'count': desiredCount,
+          }, SetOptions(merge: true));
         } else {
           if (currentlyChecked.isNotEmpty) {
             for (final idx in currentlyChecked) {
@@ -808,12 +805,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
         if (delta != 0) {
           final updatedCompleted = prevCompleted + delta;
-          tx.set(
-              summaryRef,
-              {
-                'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
-              },
-              SetOptions(merge: true));
+          tx.set(summaryRef, {
+            'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
+          }, SetOptions(merge: true));
         }
       });
       return true;
@@ -1023,11 +1017,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final isOwner = userUid != null && userUid == widget.group.ownerUid;
     final memberStream = user != null
         ? widget.groupService.firestore
-            .collection(GroupCollections.groups)
-            .doc(widget.group.id)
-            .collection(GroupCollections.members)
-            .doc(user.uid)
-            .snapshots()
+              .collection(GroupCollections.groups)
+              .doc(widget.group.id)
+              .collection(GroupCollections.members)
+              .doc(user.uid)
+              .snapshots()
         : null;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -1114,8 +1108,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                   height: 56,
                                   child: ElevatedButton(
                                     key: const Key('save-group-name-button'),
-                                    onPressed:
-                                        _isSavingName ? null : _saveGroupName,
+                                    onPressed: _isSavingName
+                                        ? null
+                                        : _saveGroupName,
                                     child: _isSavingName
                                         ? const SizedBox(
                                             height: 16,
@@ -1141,8 +1136,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     context,
                                   ).colorScheme.onError,
                                 ),
-                                onPressed:
-                                    _isDeleting ? null : _confirmDeleteGroup,
+                                onPressed: _isDeleting
+                                    ? null
+                                    : _confirmDeleteGroup,
                                 child: _isDeleting
                                     ? const SizedBox(
                                         height: 16,
@@ -1237,7 +1233,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         final latest = _latestSchedule;
                         final matchesLatest =
                             latest != null && _schedulesMatch(fetched, latest);
-                        final matchesPrevious = previousFetched != null &&
+                        final matchesPrevious =
+                            previousFetched != null &&
                             _schedulesMatch(fetched, previousFetched);
                         if (matchesLatest) {
                           _latestSchedule = fetched;
@@ -1290,13 +1287,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           final s = e.value;
                           final baseTile = ScheduleItemTile(
                             schedule: s,
-                            onEdit:
-                                canEditSchedule ? () => _editSchedule(s) : null,
+                            onEdit: canEditSchedule
+                                ? () => _editSchedule(s)
+                                : null,
                             onDelete: canEditSchedule
                                 ? () => _deleteSchedule(s)
                                 : null,
                           );
-                          if (user == null || canEditSchedule) {
+                          if (user == null || !isMember || canEditSchedule) {
                             return baseTile;
                           }
                           final dateKey = _dateKey(s.date);
@@ -1309,15 +1307,18 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                               .doc(user.uid);
 
                           return StreamBuilder<
-                              DocumentSnapshot<Map<String, dynamic>>>(
+                            DocumentSnapshot<Map<String, dynamic>>
+                          >(
                             stream: entryRef.snapshots(),
                             builder: (context, entrySnap) {
                               final entryData = entrySnap.data?.data();
                               final baseDone = entryData?['done'] == true;
                               return StreamBuilder<
-                                  QuerySnapshot<Map<String, dynamic>>>(
-                                stream:
-                                    entryRef.collection('items').snapshots(),
+                                QuerySnapshot<Map<String, dynamic>>
+                              >(
+                                stream: entryRef
+                                    .collection('items')
+                                    .snapshots(),
                                 builder: (context, itemsSnap) {
                                   final rawChecked = <int>{};
                                   for (final d
@@ -1340,28 +1341,27 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
                                   final pendingReadOverrideExists =
                                       _pendingReadOverrides.containsKey(
-                                    dateKey,
-                                  );
+                                        dateKey,
+                                      );
                                   final pendingChapterOverrideExists =
                                       (_pendingChapterOverrides[dateKey]
-                                              ?.isNotEmpty ??
-                                          false);
+                                          ?.isNotEmpty ??
+                                      false);
 
                                   if (pendingReadOverrideExists ||
                                       pendingChapterOverrideExists) {
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((
+                                    WidgetsBinding.instance.addPostFrameCallback((
                                       _,
                                     ) {
                                       if (!mounted) return;
                                       final hasPendingChapterOverride =
                                           (_pendingChapterOverrides[dateKey]
-                                                  ?.isNotEmpty ??
-                                              false);
+                                              ?.isNotEmpty ??
+                                          false);
                                       final hasPendingReadOverride =
                                           _pendingReadOverrides.containsKey(
-                                        dateKey,
-                                      );
+                                            dateKey,
+                                          );
                                       if (hasPendingChapterOverride) {
                                         _resolvePendingChapterOverridesFromSnapshot(
                                           dateKey: dateKey,
@@ -1398,7 +1398,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     });
                                   }
 
-                                  final allChecked = hasChapters &&
+                                  final allChecked =
+                                      hasChapters &&
                                       displayChecked.length >= totalChapters;
                                   final pendingRead =
                                       _pendingReadOverrides[dateKey];
