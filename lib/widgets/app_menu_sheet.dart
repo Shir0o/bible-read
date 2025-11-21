@@ -9,12 +9,13 @@ import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
 import 'animated_page_route.dart';
 
-class AppMenuSheet extends StatefulWidget {
+class AppMenuSheet extends StatelessWidget {
   const AppMenuSheet({
     super.key,
     required this.onNavigate,
     required this.vibrationService,
     required this.parentContext,
+    this.isAdmin = false,
     this.feedbackService,
     this.adminRoleService,
   });
@@ -22,6 +23,7 @@ class AppMenuSheet extends StatefulWidget {
   final ValueChanged<int> onNavigate;
   final VibrationService vibrationService;
   final BuildContext parentContext;
+  final bool isAdmin;
   final FeedbackService? feedbackService;
   final AdminRoleService? adminRoleService;
 
@@ -31,8 +33,11 @@ class AppMenuSheet extends StatefulWidget {
     VibrationService? vibrationService,
     FeedbackService? feedbackService,
     AdminRoleService? adminRoleService,
-  }) {
+  }) async {
     final service = vibrationService ?? const VibrationService();
+    final isAdmin =
+        adminRoleService != null ? await adminRoleService.isAdmin() : false;
+
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -42,25 +47,12 @@ class AppMenuSheet extends StatefulWidget {
           onNavigate: onNavigate,
           vibrationService: service,
           parentContext: context,
+          isAdmin: isAdmin,
           feedbackService: feedbackService,
           adminRoleService: adminRoleService,
         );
       },
     );
-  }
-
-  @override
-  State<AppMenuSheet> createState() => _AppMenuSheetState();
-}
-
-class _AppMenuSheetState extends State<AppMenuSheet> {
-  late final Future<bool> _isAdminFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _isAdminFuture =
-        widget.adminRoleService?.isAdmin() ?? Future<bool>.value(false);
   }
 
   List<_MenuItem> _menuItems(bool isAdmin) {
@@ -93,13 +85,13 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
         icon: Icons.feedback,
         label: 'Feedback',
         onTap: (context) {
-          final feedback = widget.feedbackService ?? FeedbackService();
+          final feedback = feedbackService ?? FeedbackService();
           Navigator.of(context).push(
             animatedPageRoute(
               FeedbackPage(
                 initialTab: FeedbackTab.feature,
                 feedbackService: feedback,
-                vibrationService: widget.vibrationService,
+                vibrationService: vibrationService,
                 parentMessenger: ScaffoldMessenger.of(context),
               ),
             ),
@@ -117,9 +109,9 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
             Navigator.of(context).push(
               animatedPageRoute(
                 FeedbackAdminPage(
-                  firestore: widget.feedbackService?.firestore,
-                  auth: widget.feedbackService?.auth,
-                  adminRoleService: widget.adminRoleService,
+                  firestore: feedbackService?.firestore,
+                  auth: feedbackService?.auth,
+                  adminRoleService: adminRoleService,
                 ),
               ),
             );
@@ -132,17 +124,11 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: _isAdminFuture,
-      builder: (context, snapshot) {
-        final isAdmin = snapshot.data ?? false;
-        return _MenuContents(
-          items: _menuItems(isAdmin),
-          vibrationService: widget.vibrationService,
-          onNavigate: widget.onNavigate,
-          parentContext: widget.parentContext,
-        );
-      },
+    return _MenuContents(
+      items: _menuItems(isAdmin),
+      vibrationService: vibrationService,
+      onNavigate: onNavigate,
+      parentContext: parentContext,
     );
   }
 }
