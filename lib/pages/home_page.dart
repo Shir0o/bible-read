@@ -212,19 +212,14 @@ class _HomePageState extends State<HomePage>
       await _checkAchievements(user.uid, stats.streak, stats.totalReadDays);
       return true;
     } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to update summary: $e');
-      }
-      ErrorLogger.log(e, st);
-      if (showErrorSnackBar && !_disposed && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to update summary. Please try again.'),
-          ),
-        );
-        unawaited(_loadReadStatus(showLoading: false));
-      }
-      return false;
+      return _handleRefreshError(
+        e,
+        st,
+        logPrefix: 'Failed to update summary',
+        snackBarMessage: 'Failed to update summary. Please try again.',
+        showErrorSnackBar: showErrorSnackBar,
+        onAfterError: () => unawaited(_loadReadStatus(showLoading: false)),
+      );
     }
   }
 
@@ -371,19 +366,38 @@ class _HomePageState extends State<HomePage>
       );
       return true;
     } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to refresh book achievements: $e');
-      }
-      ErrorLogger.log(e, st);
-      if (showErrorSnackBar && !_disposed && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to refresh achievements. Please try again.'),
-          ),
-        );
-      }
-      return false;
+      return _handleRefreshError(
+        e,
+        st,
+        logPrefix: 'Failed to refresh book achievements',
+        snackBarMessage:
+            'Failed to refresh achievements. Please try again.',
+        showErrorSnackBar: showErrorSnackBar,
+      );
     }
+  }
+
+  bool _handleRefreshError(
+    Object error,
+    StackTrace stackTrace, {
+    required String logPrefix,
+    required String snackBarMessage,
+    required bool showErrorSnackBar,
+    VoidCallback? onAfterError,
+  }) {
+    if (kDebugMode) {
+      debugPrint('$logPrefix: $error');
+    }
+    ErrorLogger.log(error, stackTrace);
+    if (showErrorSnackBar && !_disposed && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(snackBarMessage),
+        ),
+      );
+      onAfterError?.call();
+    }
+    return false;
   }
 
   /// Unlocks achievements based on the user's streak and total read days.
