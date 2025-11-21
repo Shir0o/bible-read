@@ -41,7 +41,8 @@ class HomePage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })? markFirstReader;
+  })?
+  markFirstReader;
 
   HomePage({
     super.key,
@@ -56,20 +57,23 @@ class HomePage extends StatefulWidget {
     AchievementService? achievementService,
     GroupBookAchievementService? groupBookAchievementService,
     FriendStreakLinkService? friendStreakLinkService,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        readingStatusService = readingStatusService ??
-            ReadingStatusService(firestore: firestore, auth: auth),
-        vibrationService = vibrationService ?? const VibrationService(),
-        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-        friendlyStreakService = friendlyStreakService ??
-            FriendlyStreakService(firestore: firestore),
-        achievementService =
-            achievementService ?? AchievementService(firestore: firestore),
-        groupBookAchievementService = groupBookAchievementService ??
-            GroupBookAchievementService(firestore: firestore),
-        friendStreakLinkService = friendStreakLinkService ??
-            FriendStreakLinkService(firestore: firestore);
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       readingStatusService =
+           readingStatusService ??
+           ReadingStatusService(firestore: firestore, auth: auth),
+       vibrationService = vibrationService ?? const VibrationService(),
+       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+       friendlyStreakService =
+           friendlyStreakService ?? FriendlyStreakService(firestore: firestore),
+       achievementService =
+           achievementService ?? AchievementService(firestore: firestore),
+       groupBookAchievementService =
+           groupBookAchievementService ??
+           GroupBookAchievementService(firestore: firestore),
+       friendStreakLinkService =
+           friendStreakLinkService ??
+           FriendStreakLinkService(firestore: firestore);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -199,19 +203,20 @@ class _HomePageState extends State<HomePage>
   /// Cleans and updates the cached summary document without scanning the entire
   /// reading collection. Removes outdated entries, ensures the summary document
   /// exists and resets the streak if a day was missed.
-  Future<void> _updateSummary() async {
+  Future<bool> _updateSummary({bool showErrorSnackBar = true}) async {
     final user = widget.auth.currentUser;
-    if (user == null) return;
+    if (user == null) return false;
 
     try {
       final stats = await widget.readingStatusService.updateSummary();
       await _checkAchievements(user.uid, stats.streak, stats.totalReadDays);
+      return true;
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to update summary: $e');
       }
       ErrorLogger.log(e, st);
-      if (!_disposed && mounted) {
+      if (showErrorSnackBar && !_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to update summary. Please try again.'),
@@ -219,6 +224,7 @@ class _HomePageState extends State<HomePage>
         );
         unawaited(_loadReadStatus(showLoading: false));
       }
+      return false;
     }
   }
 
@@ -283,8 +289,8 @@ class _HomePageState extends State<HomePage>
           .collection('reading')
           .doc(dateKey)
           .set({
-        'read': true,
-      }, SetOptions(merge: true)); // Mark read in Firestore.
+            'read': true,
+          }, SetOptions(merge: true)); // Mark read in Firestore.
 
       // Update summary collection (lightweight update)
       final summary = await _updateSummaryWithToday();
@@ -350,10 +356,12 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  Future<void> _refreshBookAchievementsForUser() async {
+  Future<bool> _refreshBookAchievementsForUser({
+    bool showErrorSnackBar = true,
+  }) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) {
-      return;
+      return false;
     }
 
     try {
@@ -361,18 +369,20 @@ class _HomePageState extends State<HomePage>
         uid: uid,
         completionTimestamp: DateTime.now(),
       );
+      return true;
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to refresh book achievements: $e');
       }
       ErrorLogger.log(e, st);
-      if (!_disposed && mounted) {
+      if (showErrorSnackBar && !_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to refresh achievements. Please try again.'),
           ),
         );
       }
+      return false;
     }
   }
 
@@ -541,8 +551,17 @@ class _HomePageState extends State<HomePage>
             await firebaseUser.updateDisplayName(googleAccount.displayName);
             await firebaseUser.reload();
           }
-          await _updateSummary();
-          await _refreshBookAchievementsForUser();
+          final summarySuccess = await _updateSummary(showErrorSnackBar: false);
+          if (!summarySuccess) {
+            throw Exception('Summary refresh failed');
+          }
+
+          final achievementsSuccess = await _refreshBookAchievementsForUser(
+            showErrorSnackBar: false,
+          );
+          if (!achievementsSuccess) {
+            throw Exception('Book achievements refresh failed');
+          }
           await _loadReadStatus();
           await _loadFriendlyStreak(showLoading: false);
           if (!mounted) return;
