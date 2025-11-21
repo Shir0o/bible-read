@@ -192,6 +192,26 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
+                final error = snapshot.error;
+                final stackTrace = snapshot.stackTrace;
+
+                if (error is FirebaseException &&
+                    error.code == 'permission-denied') {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text(
+                        'You do not have permission to view this feedback.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                }
+
+                if (error != null) {
+                  ErrorLogger.log(error, stackTrace);
+                }
+
                 return const Center(
                   child: Padding(
                     padding: EdgeInsets.all(24),
