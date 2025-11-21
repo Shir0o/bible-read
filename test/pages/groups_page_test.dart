@@ -203,4 +203,20 @@ void main() {
     );
     expect(vibration.lightCount, 1);
   });
+
+  testWidgets('cancel create disposes controller safely', (tester) async {
+    final service = RecordingGroupService(firestore: firestore);
+    await pumpPage(tester, service);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(service.createdName, isNull);
+    expect(service.createdOwner, isNull);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(tester.takeException(), isNull);
+    expect(vibration.lightCount, 1);
+  });
 }
