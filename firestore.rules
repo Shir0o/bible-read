@@ -17,11 +17,22 @@ service cloud.firestore {
       (
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         (
-          let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-          isTruthy(userData.admin) ||
-          isTruthy(userData.isAdmin) ||
-          (userData.role is string && (userData.role == 'admin' || userData.role == 'owner')) ||
-          (userData.roles is map && (isTruthy(userData.roles.admin) || isTruthy(userData.roles.isAdmin)))
+          isTruthy(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin) ||
+          isTruthy(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin) ||
+          (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role is string &&
+            (
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner'
+            )
+          ) ||
+          (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles is map &&
+            (
+              isTruthy(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.admin) ||
+              isTruthy(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.isAdmin)
+            )
+          )
         )
       )
     );
