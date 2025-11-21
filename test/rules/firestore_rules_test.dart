@@ -50,5 +50,11 @@ void main() {
     test('includes cache collection rules', () {
       expect(rulesText.contains('match /cache/{docId}'), isTrue);
     });
+
+    test('includes feedback collection rules', () {
+      expect(rulesText.contains('match /bugReports/{docId}'), isTrue);
+      expect(rulesText.contains('match /featureRequests/{docId}'), isTrue);
+      expect(rulesText.contains('isValidFeedbackCreate'), isTrue);
+    });
   });
 }

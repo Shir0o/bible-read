@@ -2,6 +2,49 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isStringOrNull(value) {
+      return value == null || value is string;
+    }
+
+    function isValidFeedbackCreate() {
+      return request.resource.data.keys().hasOnly([
+            'uid',
+            'email',
+            'displayName',
+            'title',
+            'description',
+            'reproductionSteps',
+            'platform',
+            'timestamp',
+            'status',
+            'updatedAt',
+            'resolvedAt',
+            'resolutionNotes',
+          ]) &&
+          request.resource.data.keys().hasAll([
+            'title',
+            'description',
+            'platform',
+            'timestamp',
+            'status',
+            'updatedAt',
+          ]) &&
+          request.resource.data.title is string &&
+          request.resource.data.description is string &&
+          request.resource.data.platform is string &&
+          request.resource.data.timestamp is timestamp &&
+          request.resource.data.updatedAt is timestamp &&
+          request.resource.data.status is string &&
+          request.resource.data.status == 'open' &&
+          request.resource.data.updatedAt == request.resource.data.timestamp &&
+          isStringOrNull(request.resource.data.uid) &&
+          isStringOrNull(request.resource.data.email) &&
+          isStringOrNull(request.resource.data.displayName) &&
+          isStringOrNull(request.resource.data.reproductionSteps) &&
+          request.resource.data.resolvedAt == null &&
+          request.resource.data.resolutionNotes == null;
+    }
+
     // 🔐 App Check error logs — allow authenticated writes only
     match /app_check_errors/{docId} {
       allow write: if request.auth != null;
@@ -312,6 +355,20 @@ service cloud.firestore {
           allow update: if false;
         }
       }
+    }
+
+    // 🐞 Bug reports
+    match /bugReports/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && isValidFeedbackCreate();
+      allow update, delete: if false;
+    }
+
+    // 💡 Feature requests
+    match /featureRequests/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && isValidFeedbackCreate();
+      allow update, delete: if false;
     }
   }
 }
