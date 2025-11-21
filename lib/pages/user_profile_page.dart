@@ -232,149 +232,154 @@ class UserProfilePageState extends State<UserProfilePage> {
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
-        child: Center(
-          child: () {
-            return _loading
-                ? const CircularProgressIndicator()
-                : ((firebaseUser == null && googleUser == null)
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AnimatedActionButton(
-                            onPressed: _handleSignIn,
-                            isLoading: _isSigningIn,
-                            child: const Text('Sign in with Google'),
-                          ),
-                          const SizedBox(height: 8),
-                          VibrationButton(
-                            vibrationService: widget.vibrationService,
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                animatedPageRoute(
-                                  LoginPage(auth: widget.auth),
-                                ),
-                              );
-                            },
-                            child: const Text('Email Sign In'),
-                          ),
-                          const SizedBox(height: 8),
-                          VibrationButton(
-                            vibrationService: widget.vibrationService,
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                animatedPageRoute(
-                                  SignupPage(
-                                    auth: widget.auth,
-                                    firestore: widget.firestore,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: const Text('Email Sign Up'),
-                          ),
-                        ],
-                      )
-                    : () {
-                        final displayName = googleUser?.displayName ??
-                            firebaseUser?.displayName ??
-                            'No Name';
-                        final email =
-                            googleUser?.email ?? firebaseUser?.email ?? '';
-                        final photoUrl = googleUser?.photoUrl;
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (photoUrl != null && photoUrl.isNotEmpty)
-                              Hero(
-                                tag: 'profile-avatar',
-                                child: CircleAvatar(
-                                  backgroundImage: NetworkImage(photoUrl),
-                                  radius: 40,
-                                ),
-                              ),
-                            const SizedBox(height: 16),
-                            Text(
-                              displayName,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.headlineSmall,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              email,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            const SizedBox(height: 16),
-                          AchievementSummary(
-                            firestore: widget.firestore,
-                            auth: widget.auth,
-                          ),
-                          const SizedBox(height: 24),
-                          _EmailPreferencesCard(
-                            loading: _loadingEmailPrefs,
-                            enabled: _monthlySummaryEnabled,
-                            saving: _savingEmailPrefs,
-                            onChanged: _updateMonthlySummaryPreference,
-                          ),
-                          const SizedBox(height: 24),
-                          AnimatedActionButton(
-                            onPressed: _handleSignOut,
-                            child: const Text('Sign Out'),
-                            ),
-                            const SizedBox(height: 8),
-                            VibrationButton(
-                              vibrationService: widget.vibrationService,
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  animatedPageRoute(
-                                    NotificationSettingsPage(),
-                                  ),
-                                );
-                              },
-                              child: const Text('Notification Settings'),
-                            ),
-                            const SizedBox(height: 8),
-                            VibrationButton(
-                              vibrationService: widget.vibrationService,
-                              onPressed: () {
-                                final messenger = ScaffoldMessenger.of(context);
-                                Navigator.of(context).push(
-                                  animatedPageRoute(
-                                    FeedbackPage(
-                                      initialTab: FeedbackTab.bug,
-                                      feedbackService: widget.feedbackService,
-                                      vibrationService: widget.vibrationService,
-                                      parentMessenger: messenger,
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: () {
+                      return _loading
+                          ? const CircularProgressIndicator()
+                          : ((firebaseUser == null && googleUser == null)
+                              ? Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    AnimatedActionButton(
+                                      onPressed: _handleSignIn,
+                                      isLoading: _isSigningIn,
+                                      child: const Text('Sign in with Google'),
                                     ),
-                                  ),
-                                );
-                              },
-                              child: const Text('Report a Bug'),
-                            ),
-                            const SizedBox(height: 8),
-                            VibrationButton(
-                              vibrationService: widget.vibrationService,
-                              onPressed: () {
-                                final messenger = ScaffoldMessenger.of(context);
-                                Navigator.of(context).push(
-                                  animatedPageRoute(
-                                    FeedbackPage(
-                                      initialTab: FeedbackTab.feature,
-                                      feedbackService: widget.feedbackService,
+                                    const SizedBox(height: 8),
+                                    VibrationButton(
                                       vibrationService: widget.vibrationService,
-                                      parentMessenger: messenger,
+                                      onPressed: () {
+                                        Navigator.of(context).push(
+                                          animatedPageRoute(
+                                            LoginPage(auth: widget.auth),
+                                          ),
+                                        );
+                                      },
+                                      child: const Text('Email Sign In'),
                                     ),
-                                  ),
-                                );
-                              },
-                              child: const Text('Request a Feature'),
-                            ),
-                          ],
-                        );
-                      }());
-          }(),
-        ),
-      ),
+                                    const SizedBox(height: 8),
+                                    VibrationButton(
+                                      vibrationService: widget.vibrationService,
+                                      onPressed: () {
+                                        Navigator.of(context).push(
+                                          animatedPageRoute(
+                                            SignupPage(
+                                              auth: widget.auth,
+                                              firestore: widget.firestore,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: const Text('Email Sign Up'),
+                                    ),
+                                  ],
+                                )
+                              : () {
+                                  final displayName = googleUser?.displayName ??
+                                      firebaseUser?.displayName ??
+                                      'No Name';
+                                  final email =
+                                      googleUser?.email ?? firebaseUser?.email ?? '';
+                                  final photoUrl = googleUser?.photoUrl;
+                                  return Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      if (photoUrl != null && photoUrl.isNotEmpty)
+                                        Hero(
+                                          tag: 'profile-avatar',
+                                          child: CircleAvatar(
+                                            backgroundImage: NetworkImage(photoUrl),
+                                            radius: 40,
+                                          ),
+                                        ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        displayName,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.headlineSmall,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        email,
+                                        style: Theme.of(context).textTheme.bodyMedium,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      AchievementSummary(
+                                        firestore: widget.firestore,
+                                        auth: widget.auth,
+                                      ),
+                                      const SizedBox(height: 24),
+                                      _EmailPreferencesCard(
+                                        loading: _loadingEmailPrefs,
+                                        enabled: _monthlySummaryEnabled,
+                                        saving: _savingEmailPrefs,
+                                        onChanged: _updateMonthlySummaryPreference,
+                                      ),
+                                      const SizedBox(height: 24),
+                                      AnimatedActionButton(
+                                        onPressed: _handleSignOut,
+                                        child: const Text('Sign Out'),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      VibrationButton(
+                                        vibrationService: widget.vibrationService,
+                                        onPressed: () {
+                                          Navigator.of(context).push(
+                                            animatedPageRoute(
+                                              NotificationSettingsPage(),
+                                            ),
+                                          );
+                                        },
+                                        child: const Text('Notification Settings'),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      VibrationButton(
+                                        vibrationService: widget.vibrationService,
+                                        onPressed: () {
+                                          final messenger =
+                                              ScaffoldMessenger.of(context);
+                                          Navigator.of(context).push(
+                                            animatedPageRoute(
+                                              FeedbackPage(
+                                                initialTab: FeedbackTab.bug,
+                                                feedbackService: widget.feedbackService,
+                                                vibrationService:
+                                                    widget.vibrationService,
+                                                parentMessenger: messenger,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: const Text('Report a Bug'),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      VibrationButton(
+                                        vibrationService: widget.vibrationService,
+                                        onPressed: () {
+                                          final messenger =
+                                              ScaffoldMessenger.of(context);
+                                          Navigator.of(context).push(
+                                            animatedPageRoute(
+                                              FeedbackPage(
+                                                initialTab: FeedbackTab.feature,
+                                                feedbackService: widget.feedbackService,
+                                                vibrationService:
+                                                    widget.vibrationService,
+                                                parentMessenger: messenger,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: const Text('Request a Feature'),
+                                      ),
+                                    ],
+                                  );
+                                }());
+                    }(),
+                  ),
+                ),      ),
     );
   }
 }
