@@ -915,7 +915,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             _scheduleChapterOverrideCleanup(dateKey);
           }
         }
-        if (hasChapters && read) {
+        if (read) {
           await _refreshBookAchievements(completionTimestamp: DateTime.now());
         }
         return;
