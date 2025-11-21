@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -175,6 +176,86 @@ void main() {
       );
     });
   });
+
+  group('Feedback submissions', () {
+    test('authenticated user can create bug report with workflow defaults', () {
+      final timestamp = Timestamp.now();
+      final data = {
+        'uid': 'alice',
+        'email': 'alice@example.com',
+        'displayName': 'Alice',
+        'title': 'Crash on load',
+        'description': 'The app crashes after sign in.',
+        'reproductionSteps': 'Open the app and sign in.',
+        'platform': 'android',
+        'timestamp': timestamp,
+        'status': 'open',
+        'updatedAt': timestamp,
+        'resolvedAt': null,
+        'resolutionNotes': null,
+      };
+
+      expect(
+        _canCreateFeedback(authUid: 'alice', data: data),
+        isTrue,
+      );
+    });
+
+    test('authenticated user can create feature request', () {
+      final timestamp = Timestamp.now();
+      final data = {
+        'title': 'Add offline mode',
+        'description': 'Allow reading without connectivity.',
+        'platform': 'ios',
+        'timestamp': timestamp,
+        'status': 'open',
+        'updatedAt': timestamp,
+        'resolvedAt': null,
+        'resolutionNotes': null,
+      };
+
+      expect(
+        _canCreateFeedback(authUid: 'feature-user', data: data),
+        isTrue,
+      );
+    });
+
+    test('missing required feedback fields is rejected', () {
+      final data = {
+        'description': 'Missing title field.',
+        'platform': 'web',
+        'timestamp': Timestamp.now(),
+        'status': 'open',
+        'updatedAt': Timestamp.now(),
+        'resolvedAt': null,
+        'resolutionNotes': null,
+      };
+
+      expect(
+        _canCreateFeedback(authUid: 'alice', data: data),
+        isFalse,
+      );
+    });
+
+    test('unauthenticated feedback submission denied', () {
+      final timestamp = Timestamp.now();
+      final data = {
+        'title': 'Bug',
+        'description': 'Example',
+        'platform': 'web',
+        'timestamp': timestamp,
+        'status': 'open',
+        'updatedAt': timestamp,
+        'resolvedAt': null,
+        'resolutionNotes': null,
+      };
+
+      expect(
+        _canCreateFeedback(authUid: null, data: data),
+        isFalse,
+      );
+    });
+  });
 }
 
 String _findMatchBlock(String source, String path) {
@@ -257,3 +338,62 @@ bool _canReadUserCache({required String? authUid, required String userId}) {
 bool _canWriteUserCache({required String? authUid, required String userId}) {
   return authUid != null && authUid == userId;
 }
+
+bool _canCreateFeedback({
+  required String? authUid,
+  required Map<String, Object?> data,
+}) {
+  return authUid != null && _isValidFeedbackData(data);
+}
+
+bool _isValidFeedbackData(Map<String, Object?> data) {
+  const allowedKeys = {
+    'uid',
+    'email',
+    'displayName',
+    'title',
+    'description',
+    'reproductionSteps',
+    'platform',
+    'timestamp',
+    'status',
+    'updatedAt',
+    'resolvedAt',
+    'resolutionNotes',
+  };
+  const requiredKeys = {
+    'title',
+    'description',
+    'platform',
+    'timestamp',
+    'status',
+    'updatedAt',
+  };
+
+  final keys = data.keys.toSet();
+  final hasOnlyAllowed = keys.difference(allowedKeys).isEmpty;
+  if (!hasOnlyAllowed || !keys.containsAll(requiredKeys)) {
+    return false;
+  }
+
+  final timestamp = data['timestamp'];
+  final updatedAt = data['updatedAt'];
+  final resolvedAt = data['resolvedAt'];
+  final resolutionNotes = data['resolutionNotes'];
+
+  return data['title'] is String &&
+      data['description'] is String &&
+      data['platform'] is String &&
+      data['status'] == 'open' &&
+      timestamp is Timestamp &&
+      updatedAt is Timestamp &&
+      updatedAt == timestamp &&
+      _isStringOrNull(data['uid']) &&
+      _isStringOrNull(data['email']) &&
+      _isStringOrNull(data['displayName']) &&
+      _isStringOrNull(data['reproductionSteps']) &&
+      resolvedAt == null &&
+      resolutionNotes == null;
+}
+
+bool _isStringOrNull(Object? value) => value == null || value is String;
