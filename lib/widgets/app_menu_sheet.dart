@@ -38,6 +38,10 @@ class AppMenuSheet extends StatelessWidget {
     final isAdmin =
         adminRoleService != null ? await adminRoleService.isAdmin() : false;
 
+    if (!context.mounted) {
+      return;
+    }
+
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
