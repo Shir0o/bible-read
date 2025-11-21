@@ -56,6 +56,16 @@ class _GroupsPageState extends State<GroupsPage> {
 
   Future<void> _createGroup() async {
     final controller = TextEditingController();
+    var disposed = false;
+
+    void disposeController() {
+      if (disposed) {
+        return;
+      }
+      disposed = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
+    }
+
     final user = widget.auth.currentUser;
     final name = await showDialog<String>(
       context: context,
@@ -86,7 +96,7 @@ class _GroupsPageState extends State<GroupsPage> {
       },
     );
     if (user == null || name == null || name.isEmpty || !mounted) {
-      controller.dispose();
+      disposeController();
       return;
     }
     setState(() => _inProgress = true);
@@ -113,7 +123,7 @@ class _GroupsPageState extends State<GroupsPage> {
       if (mounted) {
         setState(() => _inProgress = false);
       }
-      WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
+      disposeController();
     }
   }
 
