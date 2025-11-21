@@ -1528,14 +1528,16 @@ void main() {
       MaterialApp(
         home: _RecordingScaffoldMessenger(
           key: messengerKey,
-          child: HomePage(
-            firestore: firestore,
-            auth: auth,
-            vibrationService: _StubVibrationService(),
-            readingStatusService: readingStatusService,
-            friendlyStreakService: _StubFriendlyStreakService(null),
-            achievementService: achievementService,
-            groupBookAchievementService: groupBookAchievementService,
+          child: Scaffold(
+            body: HomePage(
+              firestore: firestore,
+              auth: auth,
+              vibrationService: _StubVibrationService(),
+              readingStatusService: readingStatusService,
+              friendlyStreakService: _StubFriendlyStreakService(null),
+              achievementService: achievementService,
+              groupBookAchievementService: groupBookAchievementService,
+            ),
           ),
         ),
       ),
@@ -1551,7 +1553,7 @@ void main() {
     ) {
       final content = snackBar.content;
       return content is Text &&
-          content.data == 'Failed to refresh achievements. Please try again.';
+          content.data == 'Failed to refresh data. Please try again.';
     });
 
     expect(failureShown, isTrue);
