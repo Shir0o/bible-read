@@ -28,6 +28,16 @@ class AchievementService {
     });
   }
 
+  /// Removes an achievement for the user with [uid].
+  Future<void> removeAchievement(String uid, String achievementId) async {
+    await firestore
+        .collection('users')
+        .doc(uid)
+        .collection(achievementsCollection)
+        .doc(achievementId)
+        .delete();
+  }
+
   /// Stream of unlocked achievements for [uid].
   Stream<List<Achievement>> achievements(String uid) {
     return firestore

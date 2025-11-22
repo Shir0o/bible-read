@@ -64,6 +64,9 @@ class AchievementDefinition {
               1,
           'Provide exactly one badge source.',
         );
+  static String bookAchievementId(String book) {
+    return 'book_${slugify(book)}';
+  }
 }
 
 /// All achievements that can be unlocked in the app.
@@ -113,7 +116,7 @@ List<AchievementDefinition> _buildScriptureAchievements() {
     final chapters = ReferenceParser.chapterCount(book)!;
     final chapterLabel = chapters == 1 ? 'chapter' : 'chapters';
     return AchievementDefinition(
-      id: 'book_${_slugify(book)}',
+      id: AchievementDefinition.bookAchievementId(book),
       title: 'Complete $book',
       description: 'Log all $chapters $chapterLabel of $book.',
       icon: FontAwesomeIcons.book,
@@ -131,7 +134,7 @@ List<AchievementDefinition> achievementsForCategory(
   );
 }
 
-String _slugify(String input) {
+String slugify(String input) {
   final slug = input
       .toLowerCase()
       .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
