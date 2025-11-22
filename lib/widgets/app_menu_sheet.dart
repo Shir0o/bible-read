@@ -63,6 +63,11 @@ class AppMenuSheet extends StatelessWidget {
     final items = [
       const _MenuItem(
           index: 6, icon: Icons.emoji_events, label: 'Achievements'),
+      const _MenuItem(
+        index: 14,
+        icon: Icons.checklist,
+        label: 'Book Tracker',
+      ),
       const _MenuItem(index: 1, icon: Icons.feed, label: 'Feed'),
       const _MenuItem(index: 4, icon: Icons.people, label: 'Friends'),
       const _MenuItem(index: 5, icon: Icons.group, label: 'Groups'),

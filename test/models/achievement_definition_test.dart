@@ -75,6 +75,18 @@ void main() {
       }
     });
 
+    test('slugify handles special characters', () {
+      expect(slugify('Genesis'), 'genesis');
+      expect(slugify('1 Samuel'), '1_samuel');
+      expect(slugify('Song of Songs'), 'song_of_songs');
+      expect(slugify('  Trim Me  '), 'trim_me');
+    });
+
+    test('bookAchievementId generates correct ids', () {
+      expect(AchievementDefinition.bookAchievementId('Genesis'), 'book_genesis');
+      expect(AchievementDefinition.bookAchievementId('1 John'), 'book_1_john');
+    });
+
     test('includes scripture achievements for each canonical book in order',
         () {
       final bookAchievements =
@@ -94,7 +106,7 @@ void main() {
       }
 
       final expectedIds = expectedBooks
-          .map((book) => 'book_${_testSlugify(book)}')
+          .map((book) => AchievementDefinition.bookAchievementId(book))
           .toList(growable: false);
       expect(
         bookAchievements.map((a) => a.id).toList(growable: false),
@@ -102,12 +114,4 @@ void main() {
       );
     });
   });
-}
-
-String _testSlugify(String input) {
-  return input
-      .toLowerCase()
-      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-      .replaceAll(RegExp(r'_+'), '_')
-      .replaceAll(RegExp(r'^_|_$'), '');
 }

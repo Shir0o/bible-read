@@ -37,6 +37,7 @@ import 'read_log_page.dart';
 import 'app_check_error_page.dart';
 import 'notification_center_page.dart';
 import 'exercise_dashboard_page.dart';
+import 'book_tracker_page.dart';
 
 typedef SendLikeNotification = Future<void> Function({
   required String ownerUid,
@@ -114,6 +115,7 @@ class _MainPageState extends State<MainPage> {
   static const int _profileIndex = 10;
   static const int _notificationsIndex = 11;
   static const int _exerciseDashboardIndex = 12;
+  static const int _bookTrackerIndex = 14;
   static const int _menuDestinationIndex = 2;
   static const List<int> _bottomNavIndices = <int>[
     _homeIndex,
@@ -259,6 +261,10 @@ class _MainPageState extends State<MainPage> {
       ExerciseChallengesPage(
         trackerService: _exerciseTrackerService,
         vibrationService: widget.vibrationService,
+      ),
+      BookTrackerPage(
+        firestore: widget.firestore,
+        auth: widget.auth,
       ),
     ];
     assert(

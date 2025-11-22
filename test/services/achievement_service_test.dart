@@ -41,6 +41,40 @@ void main() {
           achievement.dateUnlocked);
     });
 
+    test('removeAchievement deletes document', () async {
+      const uid = 'user1';
+      const achievementId = 'test_achievement';
+
+      // Setup: Add achievement first
+      await firestore
+          .collection('users')
+          .doc(uid)
+          .collection(AchievementService.achievementsCollection)
+          .doc(achievementId)
+          .set({'title': 'Test'});
+
+      // Verify it exists
+      var doc = await firestore
+          .collection('users')
+          .doc(uid)
+          .collection(AchievementService.achievementsCollection)
+          .doc(achievementId)
+          .get();
+      expect(doc.exists, isTrue);
+
+      // Act: Remove it
+      await service.removeAchievement(uid, achievementId);
+
+      // Verify it is gone
+      doc = await firestore
+          .collection('users')
+          .doc(uid)
+          .collection(AchievementService.achievementsCollection)
+          .doc(achievementId)
+          .get();
+      expect(doc.exists, isFalse);
+    });
+
     test('achievements stream returns list of Achievement', () async {
       const uid = 'user2';
       final collection = firestore
