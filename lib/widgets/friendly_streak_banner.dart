@@ -26,7 +26,8 @@ class FriendlyStreakBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final onPrimary = colorScheme.onPrimary;
+    final cardColor = Theme.of(context).cardColor;
+    final onSurface = colorScheme.onSurface;
     final activeLinks = summary.activeLinks;
     final pendingLinks = summary.pendingLinks;
     final reachedLimit =
@@ -37,28 +38,24 @@ class FriendlyStreakBanner extends StatelessWidget {
         horizontal: AppSpacing.hPadding,
         vertical: AppSpacing.vPaddingSmall,
       ),
+      color: cardColor,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: InkWell(
         onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [colorScheme.secondary, colorScheme.primary],
-            ),
-          ),
+        child: Padding(
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: onPrimary.withValues(alpha: 0.18),
+                  color: colorScheme.primary.withValues(alpha: 0.16),
                   shape: BoxShape.circle,
                 ),
                 padding: const EdgeInsets.all(14),
                 child: Icon(
                   Icons.local_fire_department,
-                  color: onPrimary,
+                  color: colorScheme.primary,
                   size: 28,
                 ),
               ),
@@ -71,7 +68,7 @@ class FriendlyStreakBanner extends StatelessWidget {
                     Text(
                       'Friendly streaks',
                       style: textTheme.labelLarge?.copyWith(
-                        color: onPrimary.withValues(alpha: 0.88),
+                        color: onSurface.withValues(alpha: 0.88),
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -82,7 +79,7 @@ class FriendlyStreakBanner extends StatelessWidget {
                         child: Text(
                           'Checking your streak partners...',
                           style: textTheme.bodyMedium?.copyWith(
-                            color: onPrimary,
+                            color: onSurface,
                           ),
                         ),
                       )
@@ -92,7 +89,7 @@ class FriendlyStreakBanner extends StatelessWidget {
                         child: Text(
                           'Invite up to ${FriendService.maxActiveStreakLinks} friends to share streaks.',
                           style: textTheme.bodyMedium?.copyWith(
-                            color: onPrimary.withValues(alpha: 0.9),
+                            color: onSurface.withValues(alpha: 0.9),
                           ),
                         ),
                       )
@@ -100,7 +97,7 @@ class FriendlyStreakBanner extends StatelessWidget {
                       Text(
                         'Active partners (${activeLinks.length}/${FriendService.maxActiveStreakLinks})',
                         style: textTheme.titleMedium?.copyWith(
-                          color: onPrimary,
+                          color: onSurface,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -111,7 +108,7 @@ class FriendlyStreakBanner extends StatelessWidget {
                           detail:
                               '${link.currentStreak} day${link.currentStreak == 1 ? '' : 's'}',
                           icon: Icons.local_fire_department,
-                          iconColor: onPrimary,
+                          iconColor: onSurface,
                         ),
                       ),
                       if (pendingLinks.isNotEmpty) ...[
@@ -119,7 +116,7 @@ class FriendlyStreakBanner extends StatelessWidget {
                         Text(
                           'Pending invites (${pendingLinks.length})',
                           style: textTheme.titleSmall?.copyWith(
-                            color: onPrimary.withValues(alpha: 0.9),
+                            color: onSurface.withValues(alpha: 0.9),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -130,7 +127,7 @@ class FriendlyStreakBanner extends StatelessWidget {
                                 ? 'Respond to invite'
                                 : 'Waiting for partner',
                             icon: Icons.hourglass_top,
-                            iconColor: onPrimary,
+                            iconColor: onSurface,
                           ),
                         ),
                       ],
@@ -140,7 +137,7 @@ class FriendlyStreakBanner extends StatelessWidget {
                       Text(
                         'You reached the limit of ${FriendService.maxActiveStreakLinks} active streak partners.',
                         style: textTheme.bodySmall?.copyWith(
-                          color: onPrimary.withValues(alpha: 0.9),
+                          color: onSurface.withValues(alpha: 0.9),
                         ),
                       ),
                     ],
