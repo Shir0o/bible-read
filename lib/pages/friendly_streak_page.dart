@@ -31,7 +31,6 @@ class FriendlyStreakPage extends StatefulWidget {
 
 class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
   FriendlyStreakLinksSummary _summary = FriendlyStreakLinksSummary.empty;
-  String? _selectedPartnerId;
   int _currentStreak = 0;
   int _longestStreak = 0;
   int _totalReadDays = 0;
@@ -72,7 +71,6 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
       final summaryDoc = await summaryFuture;
       final friendSummary = await friendSummaryFuture;
       final data = summaryDoc.data() ?? {};
-      final nextSelected = _resolveSelectedPartner(friendSummary);
       final now = DateTime.now();
       final currentMonthKey =
           '${now.year}-${now.month.toString().padLeft(2, '0')}';
@@ -89,7 +87,6 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
         _totalReadDays = data['totalReadDays'] ?? 0;
         _remainingGraceCredits = remainingGraceCredits;
         _summary = friendSummary;
-        _selectedPartnerId = nextSelected;
         _isLoading = false;
         _loadError = false;
       });
@@ -101,25 +98,6 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
         _loadError = true;
       });
     }
-  }
-
-  String? _resolveSelectedPartner(FriendlyStreakLinksSummary summary) {
-    if (_selectedPartnerId != null &&
-        summary.activeLinks.any(
-          (link) => link.partnerUid == _selectedPartnerId,
-        )) {
-      return _selectedPartnerId;
-    }
-    if (summary.activeLinks.isNotEmpty) {
-      return summary.activeLinks.first.partnerUid;
-    }
-    return null;
-  }
-
-  void _selectPartner(String? partnerId) {
-    setState(() {
-      _selectedPartnerId = partnerId;
-    });
   }
 
   void _openFriendsPage() {
@@ -177,11 +155,6 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
   }
 
   Widget _buildActivePartnerTile(FriendStreakLink link) {
-    final selectedId = _selectedPartnerId ??
-        (_summary.activeLinks.isNotEmpty
-            ? _summary.activeLinks.first.partnerUid
-            : null);
-    final isSelected = selectedId == link.partnerUid;
     return ListTile(
       key: ValueKey('partner-${link.partnerUid}'),
       contentPadding: EdgeInsets.zero,
@@ -193,8 +166,6 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
         '${link.currentStreak} day${link.currentStreak == 1 ? '' : 's'}',
         style: AppTextStyles.body,
       ),
-      trailing: isSelected ? const Icon(Icons.check_circle) : null,
-      onTap: () => _selectPartner(link.partnerUid),
     );
   }
 
