@@ -1,3 +1,37 @@
+# Release 1.19.0
+
+This release launches monthly reading summary emails with user opt-in controls, tightens Firestore permissions around feedback and leaderboard data, and polishes friendly streak and group interactions while improving refresh reliability.
+
+## Highlights
+
+*   Monthly stats emails now send automatically on the first of each month through a scheduled Cloud Function that compiles the prior month's reading totals and streaks.
+*   Users can opt in or out of monthly summary emails during signup or from their profile thanks to a shared `EmailPreferencesService` and automatic default backfill.
+*   Feedback moderation, leaderboard reads, navigation, and refresh entry points were hardened with more precise Firestore rules, permission messaging, and guardrails.
+
+## Monthly Summary Emails
+
+*   Added a `sendMonthlyStatsEmail` scheduled function (with helper utilities and tests) that gathers the previous month's days read, streak segments, and grace day usage before sending a SendGrid email to every verified user who stays opted in.
+*   Introduced `EmailPreferencesService`, profile page controls, and a signup toggle for the `emailPrefs.monthlySummary` flag plus main-page backfills so every account stores an explicit default.
+*   Documented the new job in `docs/functions.md`, covering scheduler details, SendGrid configuration, and emulator steps for maintainers.
+
+## Feedback & Security
+
+*   Updated Firestore rules so only the owner can read their personal `summary/*` docs while the leaderboard continues to access `summary/data`, and bug/feature submissions now validate payloads plus restrict reads to admins or the author.
+*   The feedback admin inbox now handles Firestore permission errors inline, logs unexpected failures to Crashlytics, and avoids crashing when access is denied.
+*   Firebase configuration and initialization order were refreshed alongside tighter Firestore syntax to keep the app aligned with the latest project settings.
+
+## Navigation & Groups
+
+*   Friendly streak banners and invite entry points use `NavigationMenuScope` so routing to the streak or friends tabs stays within the main navigation stack, and the streak limit card styling now matches the rest of the UI.
+*   Schedule checkboxes, per-chapter chips, and read toggles remain hidden unless the viewer is a signed-in group member, and finishing a plan entry now refreshes book achievements to keep summaries accurate.
+*   Group creation dialogs dispose controllers safely when cancelled, and the App Menu Sheet waits for the admin role check while ensuring its parent context is still mounted before presenting the modal.
+
+## Stability
+
+*   Home page pull-to-refresh now chains summary and book achievement reloads inside a try/catch, surfacing snackbars when a step fails while logging the stack trace.
+*   Book achievement refresh helpers and friendly streak loaders handle Firestore failures gracefully without leaving the UI stuck, and related widget tests were updated to cover the tightened behavior.
+*   Leaderboard summary access, feedback streams, and Firestore rule fixes reduce permission errors during normal navigation.
+
 # Release 1.18.0
 
 This release debuts Friendly Streaks with a dedicated management page, home banner, and invite workflow updates while tightening Firestore rules and coverage around the new flow.
