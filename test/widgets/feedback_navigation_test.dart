@@ -145,7 +145,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Feedback'));
+      final feedbackFinder = find.text('Feedback');
+      await tester.dragUntilVisible(
+        feedbackFinder,
+        find.byType(SingleChildScrollView),
+        const Offset(0, -200),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(feedbackFinder);
       await tester.pumpAndSettle();
 
       expect(find.byType(FeedbackPage), findsOneWidget);
