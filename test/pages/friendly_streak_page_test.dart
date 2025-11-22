@@ -65,33 +65,8 @@ void main() {
     expect(find.text('Charlie'), findsOneWidget);
     expect(find.text('Waiting for partner'), findsOneWidget);
 
-    // Alice should be selected by default
-    expect(
-        find.descendant(
-            of: find.byKey(const ValueKey('partner-p1')),
-            matching: find.byIcon(Icons.check_circle)),
-        findsOneWidget);
-    expect(
-        find.descendant(
-            of: find.byKey(const ValueKey('partner-p2')),
-            matching: find.byIcon(Icons.check_circle)),
-        findsNothing);
-
-    // Tap on Bob to select him
-    await tester.tap(find.byKey(const ValueKey('partner-p2')));
-    await tester.pumpAndSettle();
-
-    // Bob should be selected now
-    expect(
-        find.descendant(
-            of: find.byKey(const ValueKey('partner-p1')),
-            matching: find.byIcon(Icons.check_circle)),
-        findsNothing);
-    expect(
-        find.descendant(
-            of: find.byKey(const ValueKey('partner-p2')),
-            matching: find.byIcon(Icons.check_circle)),
-        findsOneWidget);
+    // Selection indicators are no longer shown or changeable
+    expect(find.byIcon(Icons.check_circle), findsNothing);
   });
 
   testWidgets('shows invite call to action when no partners', (tester) async {
