@@ -1149,8 +1149,9 @@ void main() {
 
     final readingRef =
         firestore.collection('users').doc(user.uid).collection('reading');
+    final now = DateTime.now();
     for (int i = 1; i <= 29; i++) {
-      final date = DateTime.now().subtract(Duration(days: i));
+      final date = DateTime(now.year, now.month, now.day - i);
       await readingRef.doc(_formatDate(date)).set({'read': true});
     }
 

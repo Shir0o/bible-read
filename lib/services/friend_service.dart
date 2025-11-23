@@ -118,7 +118,8 @@ class FriendService {
     DeleteFriendRequestPairFn? deleteFriendRequestPairFn,
     SendNudgeNotificationFn? sendNudgeNotificationFn,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
-        notificationService = notificationService ?? NotificationService(),
+        notificationService = notificationService ??
+            NotificationService(firestore: firestore ?? FirebaseFirestore.instance),
         _acceptFn = acceptFriendRequestFn ?? _defaultAcceptFriendRequest,
         _deleteFn =
             deleteFriendRequestPairFn ?? _defaultDeleteFriendRequestPair,

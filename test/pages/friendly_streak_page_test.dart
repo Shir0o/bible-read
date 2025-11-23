@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/models/friend_streak_link.dart';
 import 'package:bible_read/pages/friendly_streak_page.dart';
+import 'package:bible_read/pages/invite_streak_page.dart';
 import 'package:bible_read/services/friendly_streak_service.dart';
 import 'package:bible_read/widgets/navigation_menu_scope.dart';
 
@@ -96,8 +97,7 @@ void main() {
     expect(find.text('Invite a friend'), findsWidgets);
   });
 
-  testWidgets('Invite a friend uses NavigationMenuScope when available',
-      (tester) async {
+  testWidgets('Invite a friend navigates to InviteStreakPage', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
@@ -105,21 +105,15 @@ void main() {
     );
     await _writeSummaryDoc(firestore);
     final observer = _RecordingNavigatorObserver();
-    int? lastNavigateIndex;
 
     await tester.pumpWidget(
       MaterialApp(
         navigatorObservers: [observer],
-        home: NavigationMenuScope(
-          onNavigate: (index) => lastNavigateIndex = index,
-          friendlyStreakIndex: 8,
-          friendsIndex: 4,
-          child: FriendlyStreakPage(
-            firestore: firestore,
-            auth: auth,
-            friendlyStreakService:
-                _StubFriendlyStreakService(FriendlyStreakLinksSummary.empty),
-          ),
+        home: FriendlyStreakPage(
+          firestore: firestore,
+          auth: auth,
+          friendlyStreakService:
+              _StubFriendlyStreakService(FriendlyStreakLinksSummary.empty),
         ),
       ),
     );
@@ -128,8 +122,8 @@ void main() {
     await tester.tap(find.text('Invite a friend').first);
     await tester.pumpAndSettle();
 
-    expect(lastNavigateIndex, 4);
-    expect(observer.pushCount, 0);
+    expect(observer.pushCount, 1);
+    expect(find.byType(InviteStreakPage), findsOneWidget);
   });
 
   testWidgets('shows error notice when friendly streak load fails',

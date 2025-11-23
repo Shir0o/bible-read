@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 
 import '../models/friend_streak_link.dart';
 import '../services/error_logger.dart';
+import '../services/friend_service.dart';
 import '../services/friendly_streak_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/navigation_menu_scope.dart';
 import 'friends_page.dart';
+import 'invite_streak_page.dart';
 
 /// Dedicated page for managing friendly streak partners.
 class FriendlyStreakPage extends StatefulWidget {
@@ -126,7 +128,16 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
             ),
             const SizedBox(height: 8),
             OutlinedButton(
-              onPressed: _openFriendsPage,
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => InviteStreakPage(
+                      auth: widget.auth,
+                      friendService: FriendService(firestore: widget.firestore),
+                    ),
+                  ),
+                );
+              },
               child: const Text('Invite a friend'),
             ),
           ],
@@ -210,6 +221,20 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
       appBar: CommonStyles.buildAppBar(
         'Friendly streaks',
         automaticallyImplyLeading: false,
+      ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'friendly-streak-fab',
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => InviteStreakPage(
+                auth: widget.auth,
+                friendService: FriendService(firestore: widget.firestore),
+              ),
+            ),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
       body: Container(
         decoration: CommonStyles.backgroundGradient,
