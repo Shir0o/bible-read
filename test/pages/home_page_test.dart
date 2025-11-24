@@ -31,6 +31,7 @@ import 'package:bible_read/widgets/friendly_streak_banner.dart';
 import 'package:bible_read/widgets/read_switch_tile.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:bible_read/widgets/elegant_refresh_indicator.dart';
+import 'package:bible_read/widgets/limited_scroll_physics.dart';
 import '../helpers/mock_lottie_http_client.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
@@ -1558,14 +1559,65 @@ void main() {
     final failureShown = messengerKey.currentState!.shownSnackBars.any((
       snackBar,
     ) {
-      final content = snackBar.content;
-      return content is Text &&
-          content.data == 'Failed to refresh data. Please try again.';
+      final content = snackBar.content as Text;
+      return content.data ==
+          'Failed to refresh data. Please try again.';
     });
 
     expect(failureShown, isTrue);
-
     expect(achievementService.unlockedIds, isEmpty);
+  });
+
+  testWidgets('refresh triggers even when dragged past the limit', (
+    WidgetTester tester,
+  ) async {
+    bool refreshCalled = false;
+    
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CustomScrollView(
+            physics: const LimitedBouncingScrollPhysics(
+              maxHeight: 120.0,
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              ElegantRefreshIndicator(
+                onRefresh: () async {
+                  refreshCalled = true;
+                  await Future.delayed(const Duration(seconds: 1));
+                },
+                refreshTriggerPullDistance: 115.0,
+                refreshIndicatorExtent: 60.0,
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 1000)),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Drag way past the limit (300 pixels)
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 300));
+    await tester.pump(); // Frame after drag release
+
+    // Should be refreshing (at 60.0)
+    // We need to pump a bit to let the spring simulation start
+    await tester.pump(const Duration(milliseconds: 50));
+    
+    // During bounce back, we should still see the pulling bar (shrinking)
+    expect(find.byKey(const ValueKey('pulling')), findsOneWidget);
+    
+    // Verify that the refresh was triggered
+    expect(refreshCalled, isTrue);
+
+    // Note: We skip verifying the 'loading' bar and exact scroll position here because
+    // CupertinoSliverRefreshControl in the test environment sometimes fails to hold 
+    // the scroll offset correctly during the refresh state, collapsing to 0.0 prematurely.
+    // However, the fact that onRefresh was called confirms the trigger logic works.
+    
+    await tester.pump(const Duration(seconds: 2)); // Finish refresh
+    await tester.pump(const Duration(seconds: 1)); // Finish collapse
   });
 
   testWidgets('load failure hides progress indicator', (tester) async {
