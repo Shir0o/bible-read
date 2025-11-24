@@ -7,7 +7,6 @@ import 'package:bible_read/models/friend_streak_link.dart';
 import 'package:bible_read/pages/friendly_streak_page.dart';
 import 'package:bible_read/pages/invite_streak_page.dart';
 import 'package:bible_read/services/friendly_streak_service.dart';
-import 'package:bible_read/widgets/navigation_menu_scope.dart';
 
 void main() {
   testWidgets('renders summary banner and partner lists', (tester) async {
