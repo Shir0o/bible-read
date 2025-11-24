@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -111,6 +112,19 @@ class _HomePageState extends State<HomePage>
   FriendlyStreakLinksSummary? _friendStreaks;
   bool _friendStreakLoading = false;
   late BookAchievementRefresher _bookAchievementRefresher;
+
+  static const double _maxPullIndicatorHeight = 120;
+  static const double _pullTriggerExtent = 80;
+  static const Duration _refreshTimeout = Duration(seconds: 10);
+  static const Duration _refreshProgressTick = Duration(milliseconds: 200);
+
+  double _pullExtent = 0;
+  double _refreshProgress = 0;
+  bool _refreshInProgress = false;
+  String? _refreshResultMessage;
+  bool _refreshResultFailed = false;
+  Timer? _refreshProgressTimer;
+  Timer? _refreshTimeoutTimer;
 
   @override
   void initState() {
@@ -513,6 +527,249 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  bool _handleScrollNotification(ScrollNotification notification) {
+    if (_refreshInProgress) {
+      return false;
+    }
+
+    if (notification is ScrollUpdateNotification ||
+        notification is OverscrollNotification) {
+      final pixels = notification.metrics.pixels;
+      final newExtent = pixels < 0 ? math.min(-pixels, _maxPullIndicatorHeight) : 0;
+      if (!_disposed && mounted && _pullExtent != newExtent) {
+        setState(() {
+          _pullExtent = newExtent;
+        });
+      }
+    }
+
+    if (notification is ScrollEndNotification) {
+      final shouldRefresh = _pullExtent >= _pullTriggerExtent;
+      if (!_disposed && mounted) {
+        setState(() {
+          _pullExtent = 0;
+        });
+      }
+      if (shouldRefresh) {
+        _startRefreshWorkflow();
+      }
+    }
+
+    return false;
+  }
+
+  void _startRefreshProgressTimer() {
+    _refreshProgressTimer?.cancel();
+    _refreshProgressTimer = Timer.periodic(_refreshProgressTick, (timer) {
+      if (_disposed || !mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        _refreshProgress = math.min(
+          1.0,
+          _refreshProgress +
+              _refreshProgressTick.inMilliseconds /
+                  _refreshTimeout.inMilliseconds,
+        );
+      });
+    });
+  }
+
+  void _stopRefreshTimers() {
+    _refreshProgressTimer?.cancel();
+    _refreshTimeoutTimer?.cancel();
+  }
+
+  void _showRefreshResult({required bool success, required String message}) {
+    if (_disposed || !mounted) return;
+    setState(() {
+      _refreshResultFailed = !success;
+      _refreshResultMessage = message;
+    });
+    Future<void>.delayed(const Duration(seconds: 3), () {
+      if (_disposed || !mounted) return;
+      setState(() {
+        _refreshResultMessage = null;
+      });
+    });
+  }
+
+  Future<void> _startRefreshWorkflow() async {
+    if (_refreshInProgress) return;
+
+    if (!_disposed && mounted) {
+      setState(() {
+        _refreshInProgress = true;
+        _refreshProgress = 0;
+        _refreshResultMessage = null;
+      });
+    }
+
+    _startRefreshProgressTimer();
+
+    final timeoutCompleter = Completer<void>();
+    _refreshTimeoutTimer?.cancel();
+    _refreshTimeoutTimer = Timer(_refreshTimeout, () {
+      if (!timeoutCompleter.isCompleted) {
+        timeoutCompleter.completeError(
+          TimeoutException('Refresh timed out'),
+        );
+      }
+    });
+
+    try {
+      await Future.any([
+        _runRefreshSteps(),
+        timeoutCompleter.future,
+      ]);
+      if (!_disposed && mounted) {
+        setState(() {
+          _refreshProgress = 1;
+        });
+      }
+    } on TimeoutException catch (e, st) {
+      _showRefreshResult(
+        success: false,
+        message: 'Refresh timed out. Please try again.',
+      );
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Refresh timed out. Please try again.'),
+          ),
+        );
+      }
+    } catch (_) {
+      // Errors are already handled in _runRefreshSteps.
+    } finally {
+      _stopRefreshTimers();
+      if (!_disposed && mounted) {
+        setState(() {
+          _refreshInProgress = false;
+          _refreshProgress = 0;
+          _pullExtent = 0;
+        });
+      }
+    }
+  }
+
+  Future<void> _runRefreshSteps() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await widget.auth.currentUser?.reload();
+      final googleSignIn = widget.googleSignInProvider();
+      final googleAccount = await googleSignIn.signInSilently();
+      final firebaseUser = widget.auth.currentUser;
+      if (googleAccount != null && firebaseUser != null) {
+        await firebaseUser.updateDisplayName(googleAccount.displayName);
+        await firebaseUser.reload();
+      }
+      final summarySuccess = await _updateSummary(showErrorSnackBar: false);
+      if (!summarySuccess) {
+        throw Exception('Summary refresh failed');
+      }
+
+      final achievementsSuccess = await _refreshBookAchievementsForUser(
+        showErrorSnackBar: false,
+      );
+      if (!achievementsSuccess) {
+        throw Exception('Book achievements refresh failed');
+      }
+      await _loadReadStatus();
+      await _loadFriendlyStreak(showLoading: false);
+      if (!mounted) return;
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Refreshed successfully')),
+        );
+      _showRefreshResult(success: true, message: 'Refresh complete');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Refresh failed: $e');
+      }
+      ErrorLogger.log(e, st);
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Failed to refresh data. Please try again.'),
+        ),
+      );
+      _showRefreshResult(success: false, message: 'Refresh failed');
+      rethrow;
+    }
+  }
+
+  Widget _buildRefreshIndicator() {
+    final isPulling = !_refreshInProgress && _pullExtent > 0;
+    final isRefreshing = _refreshInProgress;
+    if (!isPulling && !isRefreshing) {
+      return const SizedBox.shrink();
+    }
+
+    final height = isRefreshing
+        ? 12.0
+        : math.min(_pullExtent, _maxPullIndicatorHeight);
+    final progressValue = isRefreshing
+        ? _refreshProgress
+        : (_pullExtent / _pullTriggerExtent).clamp(0.0, 1.0);
+    final label = isRefreshing ? 'Refreshing…' : 'Release to refresh';
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progressValue,
+                minHeight: height,
+                backgroundColor: Colors.white24,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  isRefreshing ? Colors.white : Colors.white70,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: AppTextStyles.subtitle.copyWith(color: Colors.white70),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRefreshResultBanner() {
+    if (_refreshResultMessage == null) {
+      return const SizedBox.shrink();
+    }
+    final color = _refreshResultFailed
+        ? Colors.redAccent.withOpacity(0.85)
+        : Colors.green.withOpacity(0.85);
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        _refreshResultMessage!,
+        style: AppTextStyles.subtitle.copyWith(color: Colors.white),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -553,50 +810,8 @@ class _HomePageState extends State<HomePage>
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        final messenger = ScaffoldMessenger.of(context);
-        try {
-          await widget.auth.currentUser?.reload();
-          final googleSignIn = widget.googleSignInProvider();
-          final googleAccount = await googleSignIn.signInSilently();
-          final firebaseUser = widget.auth.currentUser;
-          if (googleAccount != null && firebaseUser != null) {
-            await firebaseUser.updateDisplayName(googleAccount.displayName);
-            await firebaseUser.reload();
-          }
-          final summarySuccess = await _updateSummary(showErrorSnackBar: false);
-          if (!summarySuccess) {
-            throw Exception('Summary refresh failed');
-          }
-
-          final achievementsSuccess = await _refreshBookAchievementsForUser(
-            showErrorSnackBar: false,
-          );
-          if (!achievementsSuccess) {
-            throw Exception('Book achievements refresh failed');
-          }
-          await _loadReadStatus();
-          await _loadFriendlyStreak(showLoading: false);
-          if (!mounted) return;
-          messenger
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              const SnackBar(content: Text('Refreshed successfully')),
-            );
-        } catch (e, st) {
-          if (kDebugMode) {
-            debugPrint('Refresh failed: \$e');
-          }
-          ErrorLogger.log(e, st);
-          if (!mounted) return;
-          messenger.showSnackBar(
-            const SnackBar(
-              content: Text('Failed to refresh data. Please try again.'),
-            ),
-          );
-        }
-      },
+    return NotificationListener<ScrollNotification>(
+      onNotification: _handleScrollNotification,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
@@ -609,6 +824,8 @@ class _HomePageState extends State<HomePage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _buildRefreshIndicator(),
+              _buildRefreshResultBanner(),
               ReadStatusSection(
                 toggleLoading: _toggleLoading,
                 readToday: _readToday,
@@ -648,6 +865,7 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _disposed = true;
+    _stopRefreshTimers();
     super.dispose();
   }
 
