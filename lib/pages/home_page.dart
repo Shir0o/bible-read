@@ -42,8 +42,7 @@ class HomePage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })?
-  markFirstReader;
+  })? markFirstReader;
 
   HomePage({
     super.key,
@@ -58,23 +57,20 @@ class HomePage extends StatefulWidget {
     AchievementService? achievementService,
     GroupBookAchievementService? groupBookAchievementService,
     FriendStreakLinkService? friendStreakLinkService,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       readingStatusService =
-           readingStatusService ??
-           ReadingStatusService(firestore: firestore, auth: auth),
-       vibrationService = vibrationService ?? const VibrationService(),
-       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-       friendlyStreakService =
-           friendlyStreakService ?? FriendlyStreakService(firestore: firestore),
-       achievementService =
-           achievementService ?? AchievementService(firestore: firestore),
-       groupBookAchievementService =
-           groupBookAchievementService ??
-           GroupBookAchievementService(firestore: firestore),
-       friendStreakLinkService =
-           friendStreakLinkService ??
-           FriendStreakLinkService(firestore: firestore);
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        readingStatusService = readingStatusService ??
+            ReadingStatusService(firestore: firestore, auth: auth),
+        vibrationService = vibrationService ?? const VibrationService(),
+        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+        friendlyStreakService = friendlyStreakService ??
+            FriendlyStreakService(firestore: firestore),
+        achievementService =
+            achievementService ?? AchievementService(firestore: firestore),
+        groupBookAchievementService = groupBookAchievementService ??
+            GroupBookAchievementService(firestore: firestore),
+        friendStreakLinkService = friendStreakLinkService ??
+            FriendStreakLinkService(firestore: firestore);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -298,8 +294,8 @@ class _HomePageState extends State<HomePage>
           .collection('reading')
           .doc(dateKey)
           .set({
-            'read': true,
-          }, SetOptions(merge: true)); // Mark read in Firestore.
+        'read': true,
+      }, SetOptions(merge: true)); // Mark read in Firestore.
 
       // Update summary collection (lightweight update)
       final summary = await _updateSummaryWithToday();
@@ -384,8 +380,7 @@ class _HomePageState extends State<HomePage>
         e,
         st,
         logPrefix: 'Failed to refresh book achievements',
-        snackBarMessage:
-            'Failed to refresh achievements. Please try again.',
+        snackBarMessage: 'Failed to refresh achievements. Please try again.',
         showErrorSnackBar: showErrorSnackBar,
       );
     }
@@ -535,7 +530,8 @@ class _HomePageState extends State<HomePage>
     if (notification is ScrollUpdateNotification ||
         notification is OverscrollNotification) {
       final pixels = notification.metrics.pixels;
-      final newExtent = pixels < 0 ? math.min(-pixels, _maxPullIndicatorHeight) : 0;
+      final double newExtent =
+          pixels < 0 ? math.min<double>(-pixels, _maxPullIndicatorHeight) : 0;
       if (!_disposed && mounted && _pullExtent != newExtent) {
         setState(() {
           _pullExtent = newExtent;
@@ -709,9 +705,8 @@ class _HomePageState extends State<HomePage>
       return const SizedBox.shrink();
     }
 
-    final height = isRefreshing
-        ? 12.0
-        : math.min(_pullExtent, _maxPullIndicatorHeight);
+    final height =
+        isRefreshing ? 12.0 : math.min(_pullExtent, _maxPullIndicatorHeight);
     final progressValue = isRefreshing
         ? _refreshProgress
         : (_pullExtent / _pullTriggerExtent).clamp(0.0, 1.0);
@@ -751,8 +746,8 @@ class _HomePageState extends State<HomePage>
       return const SizedBox.shrink();
     }
     final color = _refreshResultFailed
-        ? Colors.redAccent.withOpacity(0.85)
-        : Colors.green.withOpacity(0.85);
+        ? Colors.redAccent.withValues(alpha: 0.85)
+        : Colors.green.withValues(alpha: 0.85);
 
     return Container(
       width: double.infinity,
