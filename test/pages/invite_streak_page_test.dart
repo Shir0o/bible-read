@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bible_read/pages/invite_streak_page.dart';
 import 'package:bible_read/services/friend_service.dart';
-import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 

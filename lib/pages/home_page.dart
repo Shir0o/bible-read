@@ -527,8 +527,21 @@ class _HomePageState extends State<HomePage>
       return false;
     }
 
-    if (notification is ScrollUpdateNotification ||
-        notification is OverscrollNotification) {
+    if (notification is OverscrollNotification) {
+      final metrics = notification.metrics;
+      final atTop = metrics.pixels <= metrics.minScrollExtent;
+      if (atTop && notification.overscroll < 0) {
+        final double newExtent = math.min<double>(
+          _pullExtent + -notification.overscroll,
+          _maxPullIndicatorHeight,
+        );
+        if (!_disposed && mounted && _pullExtent != newExtent) {
+          setState(() {
+            _pullExtent = newExtent;
+          });
+        }
+      }
+    } else if (notification is ScrollUpdateNotification) {
       final pixels = notification.metrics.pixels;
       final double newExtent =
           pixels < 0 ? math.min<double>(-pixels, _maxPullIndicatorHeight) : 0;
