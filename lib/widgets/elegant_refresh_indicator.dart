@@ -18,12 +18,7 @@ class ElegantRefreshIndicator extends StatefulWidget {
     required this.onRefresh,
     this.color,
     this.backgroundColor,
-    this.refreshTriggerPullDistance = 115.0,
-    this.refreshIndicatorExtent = 60.0,
   });
-
-  final double refreshTriggerPullDistance;
-  final double refreshIndicatorExtent;
 
   @override
   State<ElegantRefreshIndicator> createState() =>
@@ -34,7 +29,6 @@ enum _RefreshResult { none, success, error }
 
 class _ElegantRefreshIndicatorState extends State<ElegantRefreshIndicator>
     with SingleTickerProviderStateMixin {
-  final GlobalKey _refreshKey = GlobalKey();
   _RefreshResult _result = _RefreshResult.none;
   late AnimationController _progressController;
   Timer? _delayTimer;
@@ -56,18 +50,13 @@ class _ElegantRefreshIndicatorState extends State<ElegantRefreshIndicator>
   }
 
   Future<void> _handleRefresh() async {
-    _result = _RefreshResult.none;
+    setState(() {
+      _result = _RefreshResult.none;
+    });
     
     _progressController.reset();
-    
-    // Wait for the bounce-back animation to complete (approx 400ms)
-    // before starting the progress bar animation
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) {
-        // Animate to 95% over 10 seconds while waiting for the refresh
-        _progressController.animateTo(0.95, duration: const Duration(seconds: 10), curve: Curves.linear);
-      }
-    });
+    // Animate to 95% over 10 seconds while waiting for the refresh
+    _progressController.animateTo(0.95, duration: const Duration(seconds: 10), curve: Curves.linear);
 
     try {
       // Minimum duration to ensure the loading animation is seen
@@ -125,10 +114,9 @@ class _ElegantRefreshIndicatorState extends State<ElegantRefreshIndicator>
     final primaryColor = widget.color ?? AppTheme.colorScheme.primary;
     
     return CupertinoSliverRefreshControl(
-      key: _refreshKey,
       onRefresh: _handleRefresh,
-      refreshTriggerPullDistance: widget.refreshTriggerPullDistance,
-      refreshIndicatorExtent: widget.refreshIndicatorExtent,
+      refreshTriggerPullDistance: 120.0,
+      refreshIndicatorExtent: 60.0,
       builder: (
         BuildContext context,
         RefreshIndicatorMode refreshState,
@@ -136,8 +124,7 @@ class _ElegantRefreshIndicatorState extends State<ElegantRefreshIndicator>
         double refreshTriggerPullDistance,
         double refreshIndicatorExtent,
       ) {
-        final double percentage = ((pulledExtent - refreshIndicatorExtent) /
-                (refreshTriggerPullDistance - refreshIndicatorExtent))
+        final double percentage = (pulledExtent / refreshTriggerPullDistance)
             .clamp(0.0, 1.0);
 
         return Container(
@@ -147,7 +134,6 @@ class _ElegantRefreshIndicatorState extends State<ElegantRefreshIndicator>
             refreshState,
             percentage,
             primaryColor,
-            pulledExtent,
             pulledExtent,
           ),
         );
@@ -160,11 +146,10 @@ class _ElegantRefreshIndicatorState extends State<ElegantRefreshIndicator>
     double percentage,
     Color primaryColor,
     double height,
-    double pulledExtent,
   ) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
-      child: _buildContentBody(refreshState, percentage, primaryColor, height, pulledExtent),
+      child: _buildContentBody(refreshState, percentage, primaryColor, height),
     );
   }
 
@@ -173,7 +158,6 @@ class _ElegantRefreshIndicatorState extends State<ElegantRefreshIndicator>
     double percentage,
     Color primaryColor,
     double height,
-    double pulledExtent,
   ) {
     // 1. Result State (Success/Error) - takes precedence
     if (_result == _RefreshResult.success) {
@@ -195,13 +179,11 @@ class _ElegantRefreshIndicatorState extends State<ElegantRefreshIndicator>
     }
 
     // 2. Refreshing State
-    // Only switch to loading bar once we've bounced back to the resting height
-    if (refreshState == RefreshIndicatorMode.refresh &&
-        pulledExtent <= widget.refreshIndicatorExtent + 1.0) {
+    if (refreshState == RefreshIndicatorMode.refresh) {
       return _buildLoadingBar(primaryColor, height, key: const ValueKey('loading'));
     }
 
-    // 3. Pulling State (or bouncing back)
+    // 3. Pulling State
     return _buildPullingBar(percentage, primaryColor, height, key: const ValueKey('pulling'));
   }
 
