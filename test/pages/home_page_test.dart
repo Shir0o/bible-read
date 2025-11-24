@@ -30,6 +30,7 @@ import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/widgets/friendly_streak_banner.dart';
 import 'package:bible_read/widgets/read_switch_tile.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
+import 'package:bible_read/widgets/status_refresh_indicator.dart';
 import '../helpers/mock_lottie_http_client.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
@@ -293,29 +294,6 @@ const SummaryStats _defaultSummaryStats = SummaryStats(
   coveredDate: null,
   coveredViaGrace: false,
 );
-
-class _RecordingScaffoldMessenger extends ScaffoldMessenger {
-  const _RecordingScaffoldMessenger({super.key, required super.child});
-
-  @override
-  ScaffoldMessengerState createState() => _RecordingScaffoldMessengerState();
-}
-
-class _RecordingScaffoldMessengerState extends ScaffoldMessengerState {
-  final List<SnackBar> shownSnackBars = <SnackBar>[];
-
-  @override
-  ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showSnackBar(
-    SnackBar snackBar, {
-    AnimationStyle? snackBarAnimationStyle,
-  }) {
-    shownSnackBars.add(snackBar);
-    return super.showSnackBar(
-      snackBar,
-      snackBarAnimationStyle: snackBarAnimationStyle,
-    );
-  }
-}
 
 Future<void> _toggleRead(WidgetTester tester) async {
   await tester.tap(find.byType(ReadSwitchTile));
@@ -1265,9 +1243,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
+    await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
 
     final summary = await firestore
@@ -1328,9 +1308,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
+    await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
 
     final summary = await firestore
@@ -1399,9 +1381,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
+    await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
 
     final summary = await firestore
@@ -1446,9 +1430,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
+    await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
 
     final achievementDoc = await firestore
@@ -1496,9 +1482,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
+    await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
 
     expect(groupBookAchievementService.completedCalls, greaterThan(0));
@@ -1506,7 +1494,7 @@ void main() {
     expect(achievementService.requestedUids, contains('book-user'));
   });
 
-  testWidgets('book achievement refresh failures show snack bar', (
+  testWidgets('book achievement refresh failures show error in indicator', (
     tester,
   ) async {
     final firestore = FakeFirebaseFirestore();
@@ -1523,41 +1511,35 @@ void main() {
     );
     final achievementService = _FakeAchievementService(firestore);
     final groupBookAchievementService = _ThrowingGroupBookAchievementService();
-    final messengerKey = GlobalKey<_RecordingScaffoldMessengerState>();
+    // Removed _RecordingScaffoldMessenger logic as it is not used anymore
 
     await tester.pumpWidget(
       MaterialApp(
-        home: _RecordingScaffoldMessenger(
-          key: messengerKey,
-          child: Scaffold(
-            body: HomePage(
-              firestore: firestore,
-              auth: auth,
-              vibrationService: _StubVibrationService(),
-              readingStatusService: readingStatusService,
-              friendlyStreakService: _StubFriendlyStreakService(null),
-              achievementService: achievementService,
-              groupBookAchievementService: groupBookAchievementService,
-            ),
+        home: Scaffold(
+          body: HomePage(
+            firestore: firestore,
+            auth: auth,
+            vibrationService: _StubVibrationService(),
+            readingStatusService: readingStatusService,
+            friendlyStreakService: _StubFriendlyStreakService(null),
+            achievementService: achievementService,
+            groupBookAchievementService: groupBookAchievementService,
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
-    await tester.pump();
-    await tester.pumpAndSettle();
+    await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
+    await tester.pump(); // release
+    await tester.pump(const Duration(seconds: 1)); // settle/start
+    await tester.pump(const Duration(milliseconds: 500)); // fail
 
-    final failureShown = messengerKey.currentState!.shownSnackBars.any((
-      snackBar,
-    ) {
-      final content = snackBar.content;
-      return content is Text &&
-          content.data == 'Failed to refresh data. Please try again.';
-    });
+    // Check for error text
+    expect(find.text('Refresh failed'), findsOneWidget);
 
-    expect(failureShown, isTrue);
+    await tester.pump(const Duration(seconds: 3)); // error delay
+    await tester.pumpAndSettle(); // finish
 
     expect(achievementService.unlockedIds, isEmpty);
   });
