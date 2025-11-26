@@ -1248,6 +1248,8 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(seconds: 5));
+    // Ensure pending timers (success delay) are cleared
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     final summary = await firestore
@@ -1313,6 +1315,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     final summary = await firestore
@@ -1386,6 +1389,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     final summary = await firestore
@@ -1435,6 +1439,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     final achievementDoc = await firestore
@@ -1487,6 +1492,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     expect(groupBookAchievementService.completedCalls, greaterThan(0));
@@ -1532,8 +1538,10 @@ void main() {
 
     await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
     await tester.pump(); // release
-    await tester.pump(const Duration(seconds: 1)); // settle/start
-    await tester.pump(const Duration(milliseconds: 500)); // fail
+    // settle/start/fail: The animation and api call happen here.
+    // We pump enough time to allow the animation to start, the api to fail, and the text to update.
+    // The delay is 1s (animation start?) + error handling time.
+    await tester.pump(const Duration(seconds: 2));
 
     // Check for error text
     expect(find.text('Refresh failed'), findsOneWidget);
