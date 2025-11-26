@@ -130,6 +130,10 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
     return CustomRefreshIndicator(
       offsetToArmed: widget.maxHeight,
       onRefresh: _handleRefresh,
+      durations: const RefreshIndicatorDurations(
+        settleDuration: Duration.zero,
+        cancelDuration: Duration.zero,
+      ),
       builder: (context, child, controller) {
         return Stack(
           children: [
