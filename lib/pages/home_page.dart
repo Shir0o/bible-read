@@ -590,7 +590,7 @@ class _HomePageState extends State<HomePage>
       onRefresh: _performRefresh,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(
-            parent: ClampingScrollPhysics()),
+            parent: BouncingScrollPhysics()),
         child: Padding(
           padding: const EdgeInsets.only(
             top: 16.0,
