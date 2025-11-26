@@ -137,7 +137,9 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
               animation: controller,
               builder: (context, _) {
                 // Parallax/Push effect: Move child down by the revealed amount
-                final double offset = (widget.maxHeight * controller.value);
+                // Clamp the offset to maxHeight so content doesn't shift too far
+                final double offset = (widget.maxHeight * controller.value)
+                    .clamp(0.0, widget.maxHeight);
                 return Transform.translate(
                   offset: Offset(0, offset),
                   child: child,
@@ -151,8 +153,10 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
               child: AnimatedBuilder(
                 animation: controller,
                 builder: (context, _) {
+                  // Clamp the container height to maxHeight
                   final double containerHeight =
-                      widget.maxHeight * controller.value;
+                      (widget.maxHeight * controller.value)
+                          .clamp(0.0, widget.maxHeight);
 
                   // Only show content if we have some height
                   if (containerHeight <= 0) return const SizedBox.shrink();
