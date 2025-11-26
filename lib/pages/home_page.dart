@@ -589,7 +589,8 @@ class _HomePageState extends State<HomePage>
     return StatusRefreshIndicator(
       onRefresh: _performRefresh,
       child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics()),
         child: Padding(
           padding: const EdgeInsets.only(
             top: 16.0,

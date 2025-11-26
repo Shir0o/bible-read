@@ -160,13 +160,16 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                   return Container(
                     height: containerHeight,
                     width: double.infinity,
-                    color: AppTheme.backgroundColor,
+                    decoration: const BoxDecoration(
+                      color: AppTheme.backgroundColor,
+                    ),
+                    clipBehavior: Clip.hardEdge,
                     child: OverflowBox(
                       maxHeight: widget.maxHeight,
                       minHeight: widget.maxHeight,
                       alignment: Alignment.topCenter,
                       child: Stack(
-                        alignment: Alignment.bottomCenter,
+                        alignment: Alignment.topCenter,
                         children: [
                           // Progress Bar and Text Area
                           SizedBox(
