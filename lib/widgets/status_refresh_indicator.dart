@@ -31,7 +31,7 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
     with SingleTickerProviderStateMixin {
   _RefreshStatus _status = _RefreshStatus.idle;
   late AnimationController _progressController;
-  String _message = 'Release to refresh';
+  String _message = '';
 
   @override
   void initState() {
@@ -92,7 +92,7 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
       if (mounted) {
         setState(() {
           _status = _RefreshStatus.idle;
-          _message = 'Release to refresh';
+          _message = '';
           _progressController.reset();
         });
       }
@@ -110,11 +110,25 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
     }
   }
 
+  String _getStatusText(IndicatorController controller) {
+    if (_status != _RefreshStatus.idle) {
+      return _message;
+    }
+    if (controller.isArmed) {
+      return 'Release to refresh';
+    }
+    if (controller.isDragging) {
+      return 'Pull to refresh';
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     final barHeight = widget.maxHeight / 2;
 
     return CustomRefreshIndicator(
+      offsetToArmed: widget.maxHeight,
       onRefresh: _handleRefresh,
       builder: (context, child, controller) {
         return Stack(
@@ -151,42 +165,54 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                       maxHeight: widget.maxHeight,
                       minHeight: widget.maxHeight,
                       alignment: Alignment.topCenter,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
                         children: [
-                          Expanded(
-                            child: Center(
-                              child: Opacity(
-                                opacity: controller.value.clamp(0.0, 1.0),
-                                child: Text(
-                                  _status == _RefreshStatus.idle && controller.isDragging
-                                      ? 'Release to refresh'
-                                      : _message,
-                                  style: AppTheme.textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                          // Progress Bar and Text Area
                           SizedBox(
                             height: barHeight,
                             width: double.infinity,
-                            child: AnimatedBuilder(
-                              animation: _progressController,
-                              builder: (context, _) {
-                                return LinearProgressIndicator(
-                                  value: _status == _RefreshStatus.idle
-                                      ? 0
-                                      : _progressController.value,
-                                  backgroundColor: Colors.white10,
-                                  valueColor: AlwaysStoppedAnimation(
-                                    _getBarColor(),
+                            child: Stack(
+                              children: [
+                                // Progress Bar
+                                AnimatedBuilder(
+                                  animation: _progressController,
+                                  builder: (context, _) {
+                                    return SizedBox.expand(
+                                      child: LinearProgressIndicator(
+                                        value: _status == _RefreshStatus.idle
+                                            ? 0
+                                            : _progressController.value,
+                                        backgroundColor: Colors.white10,
+                                        valueColor: AlwaysStoppedAnimation(
+                                          _getBarColor(),
+                                        ),
+                                        minHeight: barHeight,
+                                      ),
+                                    );
+                                  },
+                                ),
+                                // Text Overlay
+                                Center(
+                                  child: Opacity(
+                                    opacity: controller.value.clamp(0.0, 1.0),
+                                    child: Text(
+                                      _getStatusText(controller),
+                                      style: AppTheme.textTheme.bodyMedium?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        shadows: [
+                                          const Shadow(
+                                            offset: Offset(0, 1),
+                                            blurRadius: 2,
+                                            color: Colors.black26,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                  minHeight: barHeight,
-                                );
-                              },
+                                ),
+                              ],
                             ),
                           ),
                         ],
