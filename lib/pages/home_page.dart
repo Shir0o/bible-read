@@ -24,6 +24,7 @@ import '../widgets/friendly_streak_banner.dart';
 import '../widgets/navigation_menu_scope.dart';
 import '../widgets/notification_button.dart';
 import '../widgets/read_status_section.dart';
+import '../widgets/status_refresh_indicator.dart';
 import 'read_log_page.dart';
 import 'friendly_streak_page.dart';
 
@@ -481,6 +482,38 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  Future<void> _performRefresh() async {
+    try {
+      await widget.auth.currentUser?.reload();
+      final googleSignIn = widget.googleSignInProvider();
+      final googleAccount = await googleSignIn.signInSilently();
+      final firebaseUser = widget.auth.currentUser;
+      if (googleAccount != null && firebaseUser != null) {
+        await firebaseUser.updateDisplayName(googleAccount.displayName);
+        await firebaseUser.reload();
+      }
+      final summarySuccess = await _updateSummary(showErrorSnackBar: false);
+      if (!summarySuccess) {
+        throw Exception('Summary refresh failed');
+      }
+
+      final achievementsSuccess = await _refreshBookAchievementsForUser(
+        showErrorSnackBar: false,
+      );
+      if (!achievementsSuccess) {
+        throw Exception('Book achievements refresh failed');
+      }
+      await _loadReadStatus();
+      await _loadFriendlyStreak(showLoading: false);
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Refresh failed: $e');
+      }
+      ErrorLogger.log(e, st);
+      rethrow;
+    }
+  }
+
   /// Removes the current user's like from today's reading document.
   Future<void> unlikeReading() async {
     final user = widget.auth.currentUser;
@@ -553,52 +586,11 @@ class _HomePageState extends State<HomePage>
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        final messenger = ScaffoldMessenger.of(context);
-        try {
-          await widget.auth.currentUser?.reload();
-          final googleSignIn = widget.googleSignInProvider();
-          final googleAccount = await googleSignIn.signInSilently();
-          final firebaseUser = widget.auth.currentUser;
-          if (googleAccount != null && firebaseUser != null) {
-            await firebaseUser.updateDisplayName(googleAccount.displayName);
-            await firebaseUser.reload();
-          }
-          final summarySuccess = await _updateSummary(showErrorSnackBar: false);
-          if (!summarySuccess) {
-            throw Exception('Summary refresh failed');
-          }
-
-          final achievementsSuccess = await _refreshBookAchievementsForUser(
-            showErrorSnackBar: false,
-          );
-          if (!achievementsSuccess) {
-            throw Exception('Book achievements refresh failed');
-          }
-          await _loadReadStatus();
-          await _loadFriendlyStreak(showLoading: false);
-          if (!mounted) return;
-          messenger
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              const SnackBar(content: Text('Refreshed successfully')),
-            );
-        } catch (e, st) {
-          if (kDebugMode) {
-            debugPrint('Refresh failed: \$e');
-          }
-          ErrorLogger.log(e, st);
-          if (!mounted) return;
-          messenger.showSnackBar(
-            const SnackBar(
-              content: Text('Failed to refresh data. Please try again.'),
-            ),
-          );
-        }
-      },
+    return StatusRefreshIndicator(
+      onRefresh: _performRefresh,
       child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(
+            parent: ClampingScrollPhysics()),
         child: Padding(
           padding: const EdgeInsets.only(
             top: 16.0,
