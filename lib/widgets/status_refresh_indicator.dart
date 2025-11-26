@@ -20,7 +20,7 @@ class StatusRefreshIndicator extends StatefulWidget {
     super.key,
     required this.child,
     required this.onRefresh,
-    this.maxHeight = 100.0,
+    this.maxHeight = 50.0,
   });
 
   @override
@@ -125,7 +125,7 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
 
   @override
   Widget build(BuildContext context) {
-    final barHeight = widget.maxHeight / 2;
+    final barHeight = widget.maxHeight;
 
     return CustomRefreshIndicator(
       offsetToArmed: widget.maxHeight,

@@ -1541,12 +1541,13 @@ void main() {
     // settle/start/fail: The animation and api call happen here.
     // We pump enough time to allow the animation to start, the api to fail, and the text to update.
     // The delay is 1s (animation start?) + error handling time.
-    await tester.pump(const Duration(seconds: 2));
+    // Pump 1s to let error state settle but NOT finish the 2s delay
+    await tester.pump(const Duration(seconds: 1));
 
     // Check for error text
     expect(find.text('Refresh failed'), findsOneWidget);
 
-    await tester.pump(const Duration(seconds: 3)); // error delay
+    await tester.pump(const Duration(seconds: 4)); // remaining error delay + finish
     await tester.pumpAndSettle(); // finish
 
     expect(achievementService.unlockedIds, isEmpty);
