@@ -89,12 +89,23 @@ class ReadStatusSection extends StatelessWidget {
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Streak freezes left: $streakFreezesLeft',
-                style: AppTextStyles.body,
-              ),
+            child: Row(
+              children: [
+                Text(
+                  'Streak freezes left: $streakFreezesLeft',
+                  style: AppTextStyles.body,
+                ),
+                const SizedBox(width: 8),
+                const Tooltip(
+                  triggerMode: TooltipTriggerMode.tap,
+                  showDuration: Duration(seconds: 4),
+                  padding: EdgeInsets.all(12),
+                  margin: EdgeInsets.symmetric(horizontal: 24),
+                  message:
+                      'Each month includes two automatic grace credits to freeze a missed day. Every 15-day streak earns one extra credit.',
+                  child: Icon(Icons.info_outline, size: 18, color: Colors.grey),
+                ),
+              ],
             ),
           ),
         ],

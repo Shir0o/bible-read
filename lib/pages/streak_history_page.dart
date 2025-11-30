@@ -310,11 +310,6 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
                 periodCount: _periodCount,
                 periodLabel: periodLabel,
                 remainingGraceCredits: _remainingGraceCredits,
-                description: const Text(
-                  'Each month includes two automatic grace credits to freeze a missed day. '
-                  'Every 15-day streak earns one extra credit.',
-                  style: AppTextStyles.body,
-                ),
               ),
               const SizedBox(height: 16),
               if (_period == _Period.week)

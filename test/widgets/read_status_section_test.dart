@@ -70,4 +70,32 @@ void main() {
 
     expect(find.text('Streak freezes left: 2'), findsOneWidget);
   });
+
+  testWidgets('streak freezes info icon and tooltip are present', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ReadStatusSection(
+            toggleLoading: false,
+            readToday: false,
+            readDates: {},
+            streakFreezesLeft: 2,
+          ),
+        ),
+      ),
+    );
+
+    // Verify info icon is present
+    expect(find.byIcon(Icons.info_outline), findsOneWidget);
+
+    // Verify tooltip
+    final tooltipFinder = find.byType(Tooltip);
+    expect(tooltipFinder, findsOneWidget);
+
+    final tooltip = tester.widget<Tooltip>(tooltipFinder);
+    expect(
+      tooltip.message,
+      'Each month includes two automatic grace credits to freeze a missed day. Every 15-day streak earns one extra credit.',
+    );
+  });
 }
