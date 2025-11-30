@@ -70,4 +70,33 @@ void main() {
 
     expect(find.text('Streak freezes left: 2'), findsOneWidget);
   });
+
+  testWidgets('shows streak freeze info dialog when tapping info icon',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ReadStatusSection(
+            toggleLoading: false,
+            readToday: false,
+            readDates: {},
+            streakFreezesLeft: 1,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byIcon(Icons.info_outline), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.info_outline));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Each month includes two automatic grace credits to freeze a missed day. '
+        'Every 15-day streak earns one extra credit.',
+      ),
+      findsOneWidget,
+    );
+  });
 }
