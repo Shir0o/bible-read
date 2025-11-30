@@ -62,7 +62,7 @@ void main() {
         'Each month includes two automatic grace credits to freeze a missed day. '
         'Every 15-day streak earns one extra credit.',
       ),
-      findsOneWidget,
+      findsNothing,
     );
 
     final weekCal = find.byType(WeekStreakCalendar);
