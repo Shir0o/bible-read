@@ -26,6 +26,10 @@ class ReadStatusSection extends StatelessWidget {
   /// Remaining streak freezes (grace credits) for the current month.
   final int? streakFreezesLeft;
 
+  static const _streakFreezeDescription =
+      'Each month includes two automatic grace credits to freeze a missed day. '
+      'Every 15-day streak earns one extra credit.';
+
   const ReadStatusSection({
     super.key,
     required this.toggleLoading,
@@ -91,9 +95,24 @@ class ReadStatusSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text(
-                'Streak freezes left: $streakFreezesLeft',
-                style: AppTextStyles.body,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Streak freezes left: $streakFreezesLeft',
+                    style: AppTextStyles.body,
+                  ),
+                  Tooltip(
+                    message: _streakFreezeDescription,
+                    child: IconButton(
+                      padding: const EdgeInsets.only(left: 4),
+                      constraints: const BoxConstraints(),
+                      iconSize: 18,
+                      icon: const Icon(Icons.info_outline),
+                      onPressed: () => _showStreakFreezeInfo(context),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -128,6 +147,27 @@ class ReadStatusSection extends StatelessWidget {
       const SnackBar(
         content: Text('Already marked today. Come back tomorrow!'),
       ),
+    );
+  }
+
+  static void _showStreakFreezeInfo(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Streak freezes'),
+          content: const Text(
+            _streakFreezeDescription,
+            style: AppTextStyles.body,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Got it'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
