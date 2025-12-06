@@ -168,6 +168,7 @@ class _MainPageState extends State<MainPage> {
       firestore: widget.firestore,
       auth: widget.auth,
     );
+    unawaited(_adminRoleService.prewarm());
     _pages = [
       HomePage(
         firestore: widget.firestore,
@@ -368,9 +369,8 @@ class _MainPageState extends State<MainPage> {
     final snap = await userDocRef.get();
     final data = snap.data();
     final emailPrefs = data?['emailPrefs'];
-    final hasMonthlySummaryPreference =
-        emailPrefs is Map<String, dynamic> &&
-            emailPrefs.containsKey('monthlySummary');
+    final hasMonthlySummaryPreference = emailPrefs is Map<String, dynamic> &&
+        emailPrefs.containsKey('monthlySummary');
 
     await userDocRef.set({
       'fcmToken': token,

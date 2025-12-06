@@ -35,8 +35,9 @@ class AppMenuSheet extends StatelessWidget {
     AdminRoleService? adminRoleService,
   }) async {
     final service = vibrationService ?? const VibrationService();
-    final isAdmin =
-        adminRoleService != null ? await adminRoleService.isAdmin() : false;
+    final bool cachedAdmin = adminRoleService?.cachedAdminRole ?? false;
+    final Future<bool>? adminRoleFuture =
+        adminRoleService?.isAdmin(allowStale: true);
 
     if (!context.mounted) {
       return;
@@ -47,13 +48,20 @@ class AppMenuSheet extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        return AppMenuSheet(
-          onNavigate: onNavigate,
-          vibrationService: service,
-          parentContext: context,
-          isAdmin: isAdmin,
-          feedbackService: feedbackService,
-          adminRoleService: adminRoleService,
+        return FutureBuilder<bool>(
+          future: adminRoleFuture,
+          initialData: cachedAdmin,
+          builder: (context, snapshot) {
+            final bool resolvedIsAdmin = snapshot.data ?? cachedAdmin;
+            return AppMenuSheet(
+              onNavigate: onNavigate,
+              vibrationService: service,
+              parentContext: context,
+              isAdmin: resolvedIsAdmin,
+              feedbackService: feedbackService,
+              adminRoleService: adminRoleService,
+            );
+          },
         );
       },
     );

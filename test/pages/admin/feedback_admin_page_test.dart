@@ -16,7 +16,7 @@ class _AdminRoleStub extends AdminRoleService {
   final bool _isAdmin;
 
   @override
-  Future<bool> isAdmin() async => _isAdmin;
+  Future<bool> isAdmin({bool allowStale = true}) async => _isAdmin;
 }
 
 void main() {

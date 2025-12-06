@@ -25,7 +25,7 @@ class _AlwaysAdminService extends AdminRoleService {
       : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
 
   @override
-  Future<bool> isAdmin() async => true;
+  Future<bool> isAdmin({bool allowStale = true}) async => true;
 }
 
 class _NeverAdminService extends AdminRoleService {
@@ -33,7 +33,23 @@ class _NeverAdminService extends AdminRoleService {
       : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
 
   @override
-  Future<bool> isAdmin() async => false;
+  Future<bool> isAdmin({bool allowStale = true}) async => false;
+}
+
+class _StaleCachedAdminService extends AdminRoleService {
+  _StaleCachedAdminService(bool cachedValue)
+      : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore()) {
+    primeCacheForTest(
+      cachedValue,
+      timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
+    );
+  }
+
+  @override
+  Future<bool> fetchAdminRole() async {
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    return true;
+  }
 }
 
 void main() {
@@ -163,5 +179,40 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(FeedbackAdminPage), findsOneWidget);
+  });
+
+  testWidgets('menu uses cached admin value without waiting for refresh',
+      (tester) async {
+    final adminRoleService = _StaleCachedAdminService(true);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              return ElevatedButton(
+                onPressed: () {
+                  AppMenuSheet.show(
+                    context: context,
+                    onNavigate: (_) {},
+                    vibrationService: const VibrationService(),
+                    adminRoleService: adminRoleService,
+                  );
+                },
+                child: const Text('Open menu'),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open menu'));
+    await tester.pump();
+
+    expect(find.byType(AppMenuSheet), findsOneWidget);
+    expect(find.text('Feedback Inbox'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 20));
   });
 }

@@ -83,7 +83,7 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
   @override
   void initState() {
     super.initState();
-    _isAdminFuture = widget.adminRoleService.isAdmin();
+    _isAdminFuture = widget.adminRoleService.isAdmin(allowStale: false);
     _statusFilters = {
       FeedbackCollections.bugReports: _FeedbackStatusFilter.open,
       FeedbackCollections.featureRequests: _FeedbackStatusFilter.open,
