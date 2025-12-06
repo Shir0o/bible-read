@@ -706,6 +706,14 @@ void main() {
     final chipFinder = find.widgetWithText(FilterChip, 'Ruth 4');
     expect(chipFinder, findsOneWidget);
 
+    final scrollable = find.byType(Scrollable).last;
+    await tester.fling(scrollable, const Offset(0, -600), 1000);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      chipFinder,
+      200,
+      scrollable: scrollable,
+    );
     await tester.tap(chipFinder);
     await tester.pump();
     await pumpUntilSettled(tester);
