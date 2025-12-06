@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -8,6 +10,7 @@ class AdminRoleService {
   AdminRoleService({
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
+    this.cacheDuration = const Duration(minutes: 5),
   })  : auth = auth ?? FirebaseAuth.instance,
         firestore = firestore ?? FirebaseFirestore.instance;
 
@@ -19,9 +22,71 @@ class AdminRoleService {
   @protected
   final FirebaseFirestore firestore;
 
+  /// Duration that determines how long cached admin values remain valid.
+  final Duration cacheDuration;
+
+  bool? _cachedAdminRole;
+  DateTime? _cacheTimestamp;
+  Future<bool>? _refreshing;
+  Future<bool>? _lastRefresh;
+
+  /// Returns the most recently cached admin value, if any.
+  bool? get cachedAdminRole => _cachedAdminRole;
+
+  @visibleForTesting
+  bool get hasValidCache =>
+      _cachedAdminRole != null &&
+      _cacheTimestamp != null &&
+      DateTime.now().difference(_cacheTimestamp!) < cacheDuration;
+
+  @visibleForTesting
+  Future<bool>? get refreshing => _refreshing ?? _lastRefresh;
+
+  @visibleForTesting
+  void primeCacheForTest(bool value, {DateTime? timestamp}) {
+    _cachedAdminRole = value;
+    _cacheTimestamp = timestamp ?? DateTime.now();
+  }
+
   /// Returns `true` when the current user has an admin role either through a
   /// custom claim or their user document in Firestore.
-  Future<bool> isAdmin() async {
+  Future<bool> isAdmin({bool allowStale = true}) {
+    if (hasValidCache) {
+      return Future<bool>.value(_cachedAdminRole!);
+    }
+
+    if (_cachedAdminRole != null && allowStale) {
+      unawaited(_refreshCache());
+      return Future<bool>.value(_cachedAdminRole!);
+    }
+
+    return _refreshCache();
+  }
+
+  /// Fetches and caches the admin role eagerly.
+  Future<bool> prewarm() {
+    return _refreshCache();
+  }
+
+  Future<bool> _refreshCache() {
+    _refreshing ??= fetchAdminRole().then((value) {
+      _cachedAdminRole = value;
+      _cacheTimestamp = DateTime.now();
+      return value;
+    }).catchError((_) {
+      _cacheTimestamp = DateTime.now();
+      _cachedAdminRole ??= false;
+      return _cachedAdminRole!;
+    }).whenComplete(() {
+      _refreshing = null;
+    });
+    _lastRefresh = _refreshing;
+
+    return _refreshing!;
+  }
+
+  @protected
+  Future<bool> fetchAdminRole() async {
     final user = auth.currentUser;
     if (user == null) {
       return false;
