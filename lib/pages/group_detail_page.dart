@@ -962,7 +962,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           updated.add(result);
         }
       }
-      updated.sort((a, b) => b.date.compareTo(a.date));
+      updated.sort((a, b) => a.date.compareTo(b.date));
       if (mounted) {
         setState(() {
           _scheduleOverride = updated;
@@ -970,7 +970,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       }
       final dateChanged = schedule != null && schedule.date != result.date;
       final newSchedule = List<GroupSchedule>.from(updated)
-        ..sort((a, b) => b.date.compareTo(a.date));
+        ..sort((a, b) => a.date.compareTo(b.date));
 
       unawaited(() async {
         try {
@@ -1226,8 +1226,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     }
                     List<GroupSchedule>? baseSchedule;
                     if (snapshot.hasData) {
-                      final fetched = List<GroupSchedule>.from(snapshot.data!)
-                        ..sort((a, b) => b.date.compareTo(a.date));
+                      final fetched = List<GroupSchedule>.from(snapshot.data!);
                       final previousFetched = _lastFetchedSchedule;
                       if (_pendingScheduleSync) {
                         final latest = _latestSchedule;
