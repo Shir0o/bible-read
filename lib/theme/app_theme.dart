@@ -9,6 +9,7 @@ class AppTheme {
   // Desired primary font. If the IBM Plex Sans fonts are not bundled yet,
   // Flutter will fall back to the provided list below.
   static const String fontFamily = 'IBMPlexSans';
+  static const List<String> _fontFamilyFallback = ['IBMPlexMono', 'sans-serif'];
 
   static const RoundedRectangleBorder _buttonShape = RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(14)));
@@ -16,51 +17,19 @@ class AppTheme {
   static const EdgeInsetsGeometry _buttonPadding =
       EdgeInsets.symmetric(horizontal: 16, vertical: 12);
 
-  // Unified typography using IBM Plex Sans with sensible fallbacks.
-  static final TextTheme textTheme = TextTheme(
-    displaySmall: const TextStyle(
-      fontSize: 36,
-      fontWeight: FontWeight.w600,
-      fontFamily: fontFamily,
-      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
-    ),
-    headlineMedium: const TextStyle(
-      fontSize: 28,
-      fontWeight: FontWeight.w600,
-      fontFamily: fontFamily,
-      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
-    ),
-    titleLarge: const TextStyle(
-      fontSize: 22,
-      fontWeight: FontWeight.w600,
-      fontFamily: fontFamily,
-      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
-    ),
-    titleMedium: const TextStyle(
-      fontSize: 18,
-      fontWeight: FontWeight.w600,
-      fontFamily: fontFamily,
-      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
-    ),
-    bodyLarge: const TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
-      fontFamily: fontFamily,
-      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
-    ),
-    bodyMedium: const TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w400,
-      fontFamily: fontFamily,
-      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
-    ),
-    labelLarge: const TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w600,
-      fontFamily: fontFamily,
-      fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
-    ),
-  );
+  static TextTheme _applyIBMFont(TextTheme base) => base.apply(
+        fontFamily: fontFamily,
+        fontFamilyFallback: _fontFamilyFallback,
+      );
+
+  static Typography _typography() {
+    final materialTypography = Typography.material2024();
+
+    return materialTypography.copyWith(
+      black: _applyIBMFont(materialTypography.black),
+      white: _applyIBMFont(materialTypography.white),
+    );
+  }
 
   /// Generates a seeded [ColorScheme] to use when dynamic colors are
   /// unavailable.
@@ -170,12 +139,21 @@ class AppTheme {
   ///
   /// Adjust [colorScheme], [textTheme], or button themes to change the overall
   /// look and feel.
-  static ThemeData appTheme(ColorScheme colorScheme) => ThemeData(
-        brightness: colorScheme.brightness,
-        colorScheme: colorScheme,
-        useMaterial3: true,
-        fontFamily: fontFamily,
-        textTheme: textTheme,
+  static ThemeData appTheme(ColorScheme colorScheme) {
+    final typography = _typography();
+    final textTheme = colorScheme.brightness == Brightness.light
+        ? typography.black
+        : typography.white;
+    final primaryTextTheme = typography.white;
+
+    return ThemeData(
+      brightness: colorScheme.brightness,
+      colorScheme: colorScheme,
+      useMaterial3: true,
+      fontFamily: fontFamily,
+      textTheme: textTheme,
+      primaryTextTheme: primaryTextTheme,
+      typography: typography,
         scaffoldBackgroundColor: colorScheme.surface,
         appBarTheme: AppBarTheme(
           backgroundColor: colorScheme.surface,
@@ -247,37 +225,38 @@ class AppTheme {
             return colorScheme.surfaceContainerHigh;
           }),
         ),
-        elevatedButtonTheme:
-            ElevatedButtonThemeData(style: _elevatedButtonStyle(colorScheme)),
-        filledButtonTheme:
-            FilledButtonThemeData(style: _filledButtonStyle(colorScheme)),
-        outlinedButtonTheme:
-            OutlinedButtonThemeData(style: _outlinedButtonStyle(colorScheme)),
-        textButtonTheme:
-            TextButtonThemeData(style: _baseButtonStyle(colorScheme)),
-        navigationBarTheme: NavigationBarThemeData(
-          indicatorColor: colorScheme.secondaryContainer,
-          backgroundColor: colorScheme.surfaceContainerLow,
-          elevation: 1,
-          height: 60,
-          labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-          labelTextStyle: WidgetStateProperty.all(
-            textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
-          ),
+      elevatedButtonTheme:
+          ElevatedButtonThemeData(style: _elevatedButtonStyle(colorScheme)),
+      filledButtonTheme:
+          FilledButtonThemeData(style: _filledButtonStyle(colorScheme)),
+      outlinedButtonTheme:
+          OutlinedButtonThemeData(style: _outlinedButtonStyle(colorScheme)),
+      textButtonTheme:
+          TextButtonThemeData(style: _baseButtonStyle(colorScheme)),
+      navigationBarTheme: NavigationBarThemeData(
+        indicatorColor: colorScheme.secondaryContainer,
+        backgroundColor: colorScheme.surfaceContainerLow,
+        elevation: 1,
+        height: 60,
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+        labelTextStyle: WidgetStateProperty.all(
+          textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: colorScheme.secondaryContainer,
-          foregroundColor: colorScheme.onSecondaryContainer,
-          splashColor: colorScheme.onSecondaryContainer.withValues(alpha: 0.24),
-          hoverColor: colorScheme.onSecondaryContainer.withValues(alpha: 0.16),
-          focusColor: colorScheme.onSecondaryContainer.withValues(alpha: 0.20),
-        ),
-        hoverColor: colorScheme.primary.withValues(alpha: 0.04),
-        focusColor: colorScheme.primary.withValues(alpha: 0.08),
-        highlightColor: colorScheme.primary.withValues(alpha: 0.10),
-        splashColor: colorScheme.primary.withValues(alpha: 0.14),
-        splashFactory: InkSparkle.splashFactory,
-      );
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: colorScheme.secondaryContainer,
+        foregroundColor: colorScheme.onSecondaryContainer,
+        splashColor: colorScheme.onSecondaryContainer.withValues(alpha: 0.24),
+        hoverColor: colorScheme.onSecondaryContainer.withValues(alpha: 0.16),
+        focusColor: colorScheme.onSecondaryContainer.withValues(alpha: 0.20),
+      ),
+      hoverColor: colorScheme.primary.withValues(alpha: 0.04),
+      focusColor: colorScheme.primary.withValues(alpha: 0.08),
+      highlightColor: colorScheme.primary.withValues(alpha: 0.10),
+      splashColor: colorScheme.primary.withValues(alpha: 0.14),
+      splashFactory: InkSparkle.splashFactory,
+    );
+  }
 }
 
 /// Spacing scale for consistent layout paddings and gaps.
