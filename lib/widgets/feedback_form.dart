@@ -130,7 +130,8 @@ class _FeedbackFormState extends State<FeedbackForm> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: CommonStyles.backgroundGradient,
+      decoration:
+          CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
       width: double.infinity,
       child: Center(
         child: SingleChildScrollView(

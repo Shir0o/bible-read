@@ -56,7 +56,7 @@ class ExerciseStatusSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final children = <Widget>[
       if (showHeader) const SectionHeader('Daily Exercise'),
-      if (loading) _buildLoadingCard() else _buildContent(context),
+      if (loading) _buildLoadingCard(context) else _buildContent(context),
     ];
 
     return Column(
@@ -65,8 +65,9 @@ class ExerciseStatusSection extends StatelessWidget {
     );
   }
 
-  Widget _buildLoadingCard() {
+  Widget _buildLoadingCard(BuildContext context) {
     return CommonStyles.buildCard(
+      context: context,
       child: Center(
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -92,6 +93,7 @@ class ExerciseStatusSection extends StatelessWidget {
   Widget _buildContent(BuildContext context) {
     if (error != null) {
       return CommonStyles.buildCard(
+        context: context,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -123,6 +125,7 @@ class ExerciseStatusSection extends StatelessWidget {
 
     if (summaries.isEmpty) {
       return CommonStyles.buildCard(
+        context: context,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -196,6 +199,7 @@ class _ExerciseChallengeCard extends StatelessWidget {
         totalTarget != null ? (totalTarget - summary.totalRecorded) : null;
 
     return CommonStyles.buildCard(
+      context: context,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

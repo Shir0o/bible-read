@@ -6,7 +6,6 @@ import '../services/error_logger.dart';
 import '../widgets/common_styles.dart';
 import '../services/friend_service.dart';
 import '../models/leaderboard_entry.dart';
-import '../theme/app_theme.dart';
 
 class LeaderboardPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -18,11 +17,10 @@ class LeaderboardPage extends StatefulWidget {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     FriendService? friendService,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       friendService =
-           friendService ??
-           FriendService(firestore: firestore ?? FirebaseFirestore.instance);
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        friendService = friendService ??
+            FriendService(firestore: firestore ?? FirebaseFirestore.instance);
 
   @override
   State<LeaderboardPage> createState() => _LeaderboardPageState();
@@ -74,9 +72,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
             .get();
 
         final data = doc.data();
-        final streak = summaryDoc.exists
-            ? (summaryDoc.data()?['streak'] ?? 0)
-            : 0;
+        final streak =
+            summaryDoc.exists ? (summaryDoc.data()?['streak'] ?? 0) : 0;
         leaderboard.add(
           LeaderboardEntry(
             uid: doc.id,
@@ -141,10 +138,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       final entries = <LeaderboardEntry>[];
       for (final friend in friendList) {
         friendIds.add(friend.uid);
-        final userDoc = await widget.firestore
-            .collection('users')
-            .doc(friend.uid)
-            .get();
+        final userDoc =
+            await widget.firestore.collection('users').doc(friend.uid).get();
         if (!userDoc.exists) continue;
         final summaryDoc = await widget.firestore
             .collection('users')
@@ -154,9 +149,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
             .get();
 
         final data = userDoc.data()!;
-        final streak = summaryDoc.exists
-            ? (summaryDoc.data()?['streak'] ?? 0)
-            : 0;
+        final streak =
+            summaryDoc.exists ? (summaryDoc.data()?['streak'] ?? 0) : 0;
         entries.add(
           LeaderboardEntry(
             uid: friend.uid,
@@ -168,10 +162,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       }
 
       // Include the signed-in user's own data
-      final userDoc = await widget.firestore
-          .collection('users')
-          .doc(user.uid)
-          .get();
+      final userDoc =
+          await widget.firestore.collection('users').doc(user.uid).get();
       if (userDoc.exists) {
         final summaryDoc = await widget.firestore
             .collection('users')
@@ -180,9 +172,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
             .doc('data')
             .get();
         final data = userDoc.data()!;
-        final streak = summaryDoc.exists
-            ? (summaryDoc.data()?['streak'] ?? 0)
-            : 0;
+        final streak =
+            summaryDoc.exists ? (summaryDoc.data()?['streak'] ?? 0) : 0;
         entries.add(
           LeaderboardEntry(
             uid: user.uid,
@@ -284,12 +275,14 @@ class _LeaderboardPageState extends State<LeaderboardPage>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Leaderboard', style: CommonStyles.appBarTitleText),
-          backgroundColor: AppTheme.backgroundColor,
+          title: Text('Leaderboard',
+              style: CommonStyles.appBarTitleText(colorScheme)),
+          backgroundColor: colorScheme.surface,
           automaticallyImplyLeading: false,
           bottom: const TabBar(
             tabs: [
@@ -299,7 +292,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           ),
         ),
         body: Container(
-          decoration: CommonStyles.backgroundGradient,
+          decoration:
+              CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
           child: TabBarView(
             children: [
               _buildLeaderboard(
@@ -415,6 +409,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
             }
           }
           return CommonStyles.buildTappableCard(
+            context: context,
             onTap: canSendRequest ? () => _handleEntryTap(entry) : null,
             margin: const EdgeInsets.symmetric(vertical: 4.0),
             child: ListTile(
@@ -499,10 +494,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       return;
     }
     try {
-      final userDoc = await widget.firestore
-          .collection('users')
-          .doc(user.uid)
-          .get();
+      final userDoc =
+          await widget.firestore.collection('users').doc(user.uid).get();
       final fromName = userDoc.data()?['name'] as String? ?? '';
       await widget.friendService.sendFriendRequest(
         fromUid: user.uid,

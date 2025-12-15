@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/feedback_form.dart';
 
@@ -35,13 +34,15 @@ class FeedbackPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return DefaultTabController(
       length: 2,
       initialIndex: initialTab.index,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Feedback', style: CommonStyles.appBarTitleText),
-          backgroundColor: AppTheme.backgroundColor,
+          title: Text('Feedback',
+              style: CommonStyles.appBarTitleText(colorScheme)),
+          backgroundColor: colorScheme.surface,
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Report a Bug'),

@@ -279,11 +279,13 @@ class _StreakHistoryPageState extends State<StreakHistoryPage> {
 
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
+        context,
         'History',
         automaticallyImplyLeading: false,
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Column(

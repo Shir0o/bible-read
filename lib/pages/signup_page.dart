@@ -38,9 +38,10 @@ class _SignupPageState extends State<SignupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CommonStyles.buildAppBar('Sign Up'),
+      appBar: CommonStyles.buildAppBar(context, 'Sign Up'),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         padding: const EdgeInsets.all(16.0),
         child: Center(
           child: SignupForm(

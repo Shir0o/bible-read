@@ -116,6 +116,7 @@ class SeasonalChallengeCard extends StatelessWidget {
         ? CommonStyles.buildCard
         : ({required Widget child, EdgeInsetsGeometry? margin}) =>
             CommonStyles.buildTappableCard(
+              context: context,
               onTap: onTap,
               margin: margin,
               child: child,

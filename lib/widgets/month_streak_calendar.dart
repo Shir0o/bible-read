@@ -90,6 +90,7 @@ class MonthStreakCalendar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CommonStyles.buildCard(
+      context: context,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -62,11 +62,13 @@ class _SeasonalChallengesPageState extends State<SeasonalChallengesPage> {
     final user = widget.auth.currentUser;
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
+        context,
         'Seasonal Challenges',
         automaticallyImplyLeading: false,
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: user == null
             ? const Center(
                 child: Text('Please sign in to view seasonal challenges.'),
@@ -173,6 +175,7 @@ class _SeasonalChallengesPageState extends State<SeasonalChallengesPage> {
     final subtleStyle = theme.textTheme.bodySmall;
 
     return CommonStyles.buildCard(
+      context: context,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

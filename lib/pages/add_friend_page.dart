@@ -41,9 +41,10 @@ class _AddFriendPageState extends State<AddFriendPage> {
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
     return Scaffold(
-      appBar: CommonStyles.buildAppBar('Add Friend'),
+      appBar: CommonStyles.buildAppBar(context, 'Add Friend'),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         padding: const EdgeInsets.all(16.0),
         child: Center(
           child: SingleChildScrollView(

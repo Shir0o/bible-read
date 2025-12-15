@@ -34,9 +34,9 @@ class NotificationCenterPage extends StatefulWidget {
     NotificationService? service,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-  }) : service = service ?? NotificationService(),
-       auth = auth ?? FirebaseAuth.instance,
-       vibrationService = vibrationService ?? const VibrationService();
+  })  : service = service ?? NotificationService(),
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<NotificationCenterPage> createState() => _NotificationCenterPageState();
@@ -106,18 +106,19 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
           ];
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
+        context,
         'Notifications',
         actions: actions,
         automaticallyImplyLeading: showBack,
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: user == null
             ? const Center(child: Text('Please sign in'))
             : StreamBuilder<List<AppNotification>>(
-                stream: widget.service
-                    .notifications(user.uid)
-                    .asBroadcastStream(),
+                stream:
+                    widget.service.notifications(user.uid).asBroadcastStream(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -141,6 +142,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                       final n = data[index];
                       final read = n.read || _readLocally.contains(n.id);
                       return CommonStyles.buildTappableCard(
+                        context: context,
                         onTap: () {
                           final uid = widget.auth.currentUser?.uid;
                           if (uid != null) {

@@ -51,6 +51,7 @@ class ReadStatusSection extends StatelessWidget {
     return Column(
       children: [
         CommonStyles.buildTappableCard(
+          context: context,
           onTap: toggleLoading
               ? null
               : (canToggle ? onToggle : () => _showLockedSnackBar(context)),

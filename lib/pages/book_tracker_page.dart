@@ -29,14 +29,16 @@ class BookTrackerPage extends StatelessWidget {
     }
 
     final achievementService = AchievementService(firestore: firestore);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
+        context,
         'Book Tracker',
         automaticallyImplyLeading: false,
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration: CommonStyles.backgroundDecoration(colorScheme),
         child: StreamBuilder<Set<String>>(
           stream: achievementService.unlockedAchievementIds(user.uid),
           builder: (context, snapshot) {
@@ -61,15 +63,15 @@ class BookTrackerPage extends StatelessWidget {
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
-                  color: Colors.white.withOpacity(0.1),
+                  color: colorScheme.surfaceContainerHigh,
                   child: CheckboxListTile(
                     title: Text(
                       book,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: colorScheme.onSurface),
                     ),
                     value: isUnlocked,
                     activeColor: Theme.of(context).colorScheme.primary,
-                    checkColor: Colors.white,
+                    checkColor: colorScheme.onPrimary,
                     onChanged: isUnlocked
                         ? null // Disable unchecking
                         : (bool? value) async {

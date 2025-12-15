@@ -83,6 +83,7 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
             final uid = req.uid;
             final name = req.name.isEmpty ? 'Unknown' : req.name;
             return CommonStyles.buildTappableCard(
+              context: context,
               onTap: () {},
               margin: const EdgeInsets.symmetric(vertical: 4),
               child: ListTile(

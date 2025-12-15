@@ -18,7 +18,6 @@ import '../services/group_book_achievement_service.dart';
 import '../services/notification_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/friendly_streak_banner.dart';
 import '../widgets/navigation_menu_scope.dart';
@@ -42,8 +41,7 @@ class HomePage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })?
-  markFirstReader;
+  })? markFirstReader;
 
   HomePage({
     super.key,
@@ -58,23 +56,20 @@ class HomePage extends StatefulWidget {
     AchievementService? achievementService,
     GroupBookAchievementService? groupBookAchievementService,
     FriendStreakLinkService? friendStreakLinkService,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       readingStatusService =
-           readingStatusService ??
-           ReadingStatusService(firestore: firestore, auth: auth),
-       vibrationService = vibrationService ?? const VibrationService(),
-       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-       friendlyStreakService =
-           friendlyStreakService ?? FriendlyStreakService(firestore: firestore),
-       achievementService =
-           achievementService ?? AchievementService(firestore: firestore),
-       groupBookAchievementService =
-           groupBookAchievementService ??
-           GroupBookAchievementService(firestore: firestore),
-       friendStreakLinkService =
-           friendStreakLinkService ??
-           FriendStreakLinkService(firestore: firestore);
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        readingStatusService = readingStatusService ??
+            ReadingStatusService(firestore: firestore, auth: auth),
+        vibrationService = vibrationService ?? const VibrationService(),
+        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+        friendlyStreakService = friendlyStreakService ??
+            FriendlyStreakService(firestore: firestore),
+        achievementService =
+            achievementService ?? AchievementService(firestore: firestore),
+        groupBookAchievementService = groupBookAchievementService ??
+            GroupBookAchievementService(firestore: firestore),
+        friendStreakLinkService = friendStreakLinkService ??
+            FriendStreakLinkService(firestore: firestore);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -285,8 +280,8 @@ class _HomePageState extends State<HomePage>
           .collection('reading')
           .doc(dateKey)
           .set({
-            'read': true,
-          }, SetOptions(merge: true)); // Mark read in Firestore.
+        'read': true,
+      }, SetOptions(merge: true)); // Mark read in Firestore.
 
       // Update summary collection (lightweight update)
       final summary = await _updateSummaryWithToday();
@@ -371,8 +366,7 @@ class _HomePageState extends State<HomePage>
         e,
         st,
         logPrefix: 'Failed to refresh book achievements',
-        snackBarMessage:
-            'Failed to refresh achievements. Please try again.',
+        snackBarMessage: 'Failed to refresh achievements. Please try again.',
         showErrorSnackBar: showErrorSnackBar,
       );
     }
@@ -549,10 +543,12 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reading Hub', style: CommonStyles.appBarTitleText),
-        backgroundColor: AppTheme.backgroundColor,
+        title: Text('Reading Hub',
+            style: CommonStyles.appBarTitleText(colorScheme)),
+        backgroundColor: colorScheme.surface,
         automaticallyImplyLeading: false,
         actions: [
           NotificationButton(
@@ -563,7 +559,8 @@ class _HomePageState extends State<HomePage>
         ],
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: LayoutBuilder(
           builder: (context, constraints) {
             return ConstrainedBox(

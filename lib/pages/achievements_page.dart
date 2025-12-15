@@ -21,11 +21,13 @@ class AchievementsPage extends StatelessWidget {
     final user = auth.currentUser;
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
+        context,
         'Achievements',
         automaticallyImplyLeading: false,
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: user == null
             ? const Center(
                 child: Text('Please sign in to view your achievements.'),

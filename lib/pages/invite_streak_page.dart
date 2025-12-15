@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-
 import '../models/friend_streak_link.dart';
 import '../services/error_logger.dart';
 import '../services/friend_service.dart';
@@ -41,9 +40,10 @@ class _InviteStreakPageState extends State<InviteStreakPage> {
     }
 
     return Scaffold(
-      appBar: CommonStyles.buildAppBar('Start a streak'),
+      appBar: CommonStyles.buildAppBar(context, 'Start a streak'),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: StreamBuilder<List<FriendStreakLink>>(
           stream: widget.friendService.activeStreakLinks(user.uid),
           builder: (context, activeSnapshot) {
@@ -57,7 +57,8 @@ class _InviteStreakPageState extends State<InviteStreakPage> {
               stream: widget.friendService.pendingStreakInvites(user.uid),
               builder: (context, pendingSnapshot) {
                 if (pendingSnapshot.hasError) {
-                  return const Center(child: Text('Failed to load streak data'));
+                  return const Center(
+                      child: Text('Failed to load streak data'));
                 }
                 if (!pendingSnapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
@@ -130,6 +131,7 @@ class _InviteStreakPageState extends State<InviteStreakPage> {
 
   Widget _buildLimitCard(int activeCount, bool reachedLimit) {
     return CommonStyles.buildCard(
+      context: context,
       child: ListTile(
         contentPadding: EdgeInsets.zero,
         leading: Icon(
@@ -156,6 +158,7 @@ class _InviteStreakPageState extends State<InviteStreakPage> {
     bool reachedLimit,
   ) {
     return CommonStyles.buildTappableCard(
+      context: context,
       onTap: () {},
       child: Row(
         children: [
@@ -187,11 +190,11 @@ class _InviteStreakPageState extends State<InviteStreakPage> {
   ) {
     final pending = pendingLinks[friend.uid];
     final isSending = _sendingStreakInvites.contains(friend.uid);
-    
+
     if (activeLinks.containsKey(friend.uid)) {
       return const Chip(label: Text('Streak active'));
-    } 
-    
+    }
+
     if (pending != null) {
       if (pending.isIncoming) {
         return FilledButton.tonal(

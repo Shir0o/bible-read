@@ -68,6 +68,7 @@ class StreakStatsBox extends StatelessWidget {
         summary.activeLinks.length >= FriendService.maxActiveStreakLinks;
 
     return CommonStyles.buildCard(
+      context: context,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1243,7 +1243,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
+    await tester.drag(
+        find.byType(StatusRefreshIndicator), const Offset(0, 300));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 500));
@@ -1310,7 +1311,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
+    await tester.drag(
+        find.byType(StatusRefreshIndicator), const Offset(0, 300));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 500));
@@ -1384,7 +1386,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
+    await tester.drag(
+        find.byType(StatusRefreshIndicator), const Offset(0, 300));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 500));
@@ -1434,7 +1437,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
+    await tester.drag(
+        find.byType(StatusRefreshIndicator), const Offset(0, 300));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 500));
@@ -1487,7 +1491,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
+    await tester.drag(
+        find.byType(StatusRefreshIndicator), const Offset(0, 300));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 500));
@@ -1536,7 +1541,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(StatusRefreshIndicator), const Offset(0, 300));
+    await tester.drag(
+        find.byType(StatusRefreshIndicator), const Offset(0, 300));
     await tester.pump(); // release
     // settle/start/fail: The animation and api call happen here.
     // We pump enough time to allow the animation to start, the api to fail, and the text to update.
@@ -1547,7 +1553,8 @@ void main() {
     // Check for error text
     expect(find.text('Refresh failed'), findsOneWidget);
 
-    await tester.pump(const Duration(seconds: 4)); // remaining error delay + finish
+    await tester
+        .pump(const Duration(seconds: 4)); // remaining error delay + finish
     await tester.pumpAndSettle(); // finish
 
     expect(achievementService.unlockedIds, isEmpty);

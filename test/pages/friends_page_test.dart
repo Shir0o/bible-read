@@ -265,6 +265,4 @@ void main() {
     ));
     expect(button.onPressed, isNull);
   });
-
-
 }

@@ -83,7 +83,8 @@ void main() {
     });
 
     test('bookAchievementId generates correct ids', () {
-      expect(AchievementDefinition.bookAchievementId('Genesis'), 'book_genesis');
+      expect(
+          AchievementDefinition.bookAchievementId('Genesis'), 'book_genesis');
       expect(AchievementDefinition.bookAchievementId('1 John'), 'book_1_john');
     });
 

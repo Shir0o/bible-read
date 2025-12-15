@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-
 import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
@@ -39,8 +38,6 @@ class _FriendsPageState extends State<FriendsPage> {
   /// Tracks friends nudged today so the button can be disabled.
   final Set<String> _nudgedToday = <String>{};
 
-
-
   /// Subscription to the nudged today stream.
   StreamSubscription<Set<String>>? _nudgeSub;
 
@@ -72,6 +69,7 @@ class _FriendsPageState extends State<FriendsPage> {
     final user = widget.auth.currentUser;
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
+        context,
         'Friends',
         automaticallyImplyLeading: false,
         actions: [
@@ -93,7 +91,8 @@ class _FriendsPageState extends State<FriendsPage> {
         ],
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: user == null
             ? const Center(child: Text('Please sign in'))
             : Padding(
@@ -142,6 +141,7 @@ class _FriendsPageState extends State<FriendsPage> {
           children: friends
               .map(
                 (f) => CommonStyles.buildTappableCard(
+                  context: context,
                   onTap: () {},
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -163,8 +163,6 @@ class _FriendsPageState extends State<FriendsPage> {
       },
     );
   }
-
-
 
   Widget _buildNudgeButton(User user, Friend friend) {
     final nudged = _nudgedToday.contains(friend.uid);
@@ -229,6 +227,4 @@ class _FriendsPageState extends State<FriendsPage> {
             },
     );
   }
-
-
 }

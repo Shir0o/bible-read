@@ -119,6 +119,7 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
     final summary = _summary;
     if (!summary.hasPartners) {
       return CommonStyles.buildCard(
+        context: context,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -146,6 +147,7 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
     }
 
     return CommonStyles.buildCard(
+      context: context,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -193,6 +195,7 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
 
   Widget _buildErrorNotice() {
     return CommonStyles.buildCard(
+      context: context,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -219,6 +222,7 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
+        context,
         'Friendly streaks',
         automaticallyImplyLeading: false,
       ),
@@ -237,7 +241,8 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
         child: const Icon(Icons.add),
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: RefreshIndicator(
           onRefresh: _loadFriendlyStreak,
           child: ListView(

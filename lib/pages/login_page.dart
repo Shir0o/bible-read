@@ -32,9 +32,10 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CommonStyles.buildAppBar('Sign In'),
+      appBar: CommonStyles.buildAppBar(context, 'Sign In'),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         padding: const EdgeInsets.all(16.0),
         child: Center(
           child: LoginForm(

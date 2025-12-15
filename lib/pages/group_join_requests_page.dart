@@ -42,6 +42,7 @@ class GroupJoinRequestsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
+        context,
         'Join Requests',
         leading: BackButton(
           onPressed: () {
@@ -52,7 +53,8 @@ class GroupJoinRequestsPage extends StatelessWidget {
         automaticallyImplyLeading: true,
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         padding: const EdgeInsets.all(16),
         child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: joinRequestsStream ??
@@ -80,6 +82,7 @@ class GroupJoinRequestsPage extends StatelessWidget {
                 final uid = data['uid'] as String? ?? d.id;
                 final name = data['name'] as String? ?? '';
                 return CommonStyles.buildTappableCard(
+                  context: context,
                   onTap: () {},
                   margin: const EdgeInsets.symmetric(vertical: 4),
                   child: ListTile(

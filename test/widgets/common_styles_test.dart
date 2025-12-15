@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/widgets/common_styles.dart';
-import 'package:bible_read/theme/app_theme.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -12,9 +11,11 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: CommonStyles.buildCard(child: child),
-        ),
+        home: Builder(builder: (context) {
+          return Scaffold(
+            body: CommonStyles.buildCard(context: context, child: child),
+          );
+        }),
       ),
     );
     await tester.pumpAndSettle();
@@ -35,15 +36,21 @@ void main() {
   testWidgets('buildAppBar uses configured colors', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(appBar: CommonStyles.buildAppBar('Title')),
+        home: Builder(builder: (context) {
+          return Scaffold(
+            appBar: CommonStyles.buildAppBar(context, 'Title'),
+          );
+        }),
       ),
     );
     await tester.pumpAndSettle();
 
     final appBar = tester.widget<AppBar>(find.byType(AppBar));
-    expect(appBar.backgroundColor, AppTheme.backgroundColor);
+    final colorScheme =
+        Theme.of(tester.element(find.byType(AppBar))).colorScheme;
+    expect(appBar.backgroundColor, colorScheme.surface);
 
     final title = tester.widget<Text>(find.text('Title'));
-    expect(title.style?.color, Colors.white);
+    expect(title.style?.color, colorScheme.onSurface);
   });
 }

@@ -19,10 +19,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Genesis'), findsOneWidget);
-    
+
     await tester.drag(find.byType(ListView), const Offset(0, -5000));
     await tester.pumpAndSettle();
-    
+
     expect(find.text('Revelation'), findsOneWidget);
     expect(find.byType(CheckboxListTile), findsWidgets);
   });

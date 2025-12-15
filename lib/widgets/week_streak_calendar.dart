@@ -52,6 +52,7 @@ class WeekStreakCalendar extends StatelessWidget {
     const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
     return CommonStyles.buildCard(
+      context: context,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

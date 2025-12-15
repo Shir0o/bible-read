@@ -229,7 +229,7 @@ class _ExerciseChallengesPageState extends State<ExerciseChallengesPage> {
   Widget build(BuildContext context) {
     final user = widget.trackerService.auth.currentUser;
     return Scaffold(
-      appBar: CommonStyles.buildAppBar('Exercise Challenges'),
+      appBar: CommonStyles.buildAppBar(context, 'Exercise Challenges'),
       floatingActionButton: user == null
           ? null
           : FloatingActionButton.extended(
@@ -238,7 +238,8 @@ class _ExerciseChallengesPageState extends State<ExerciseChallengesPage> {
               label: const Text('Add challenge'),
             ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: user == null
             ? const Center(
                 child: Text('Please sign in to manage exercise challenges.'),
@@ -254,6 +255,7 @@ class _ExerciseChallengesPageState extends State<ExerciseChallengesPage> {
   Widget _buildList(BuildContext context) {
     final children = <Widget>[
       CommonStyles.buildCard(
+        context: context,
         margin: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,6 +291,7 @@ class _ExerciseChallengesPageState extends State<ExerciseChallengesPage> {
       addSpacing();
       children.add(
         CommonStyles.buildCard(
+          context: context,
           margin: EdgeInsets.zero,
           child: const Center(
             child: SizedBox(
@@ -303,6 +306,7 @@ class _ExerciseChallengesPageState extends State<ExerciseChallengesPage> {
       addSpacing();
       children.add(
         CommonStyles.buildCard(
+          context: context,
           margin: EdgeInsets.zero,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,6 +328,7 @@ class _ExerciseChallengesPageState extends State<ExerciseChallengesPage> {
       addSpacing();
       children.add(
         CommonStyles.buildCard(
+          context: context,
           margin: EdgeInsets.zero,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,6 +405,7 @@ class _ChallengeCard extends StatelessWidget {
     final localizations = MaterialLocalizations.of(context);
 
     return CommonStyles.buildCard(
+      context: context,
       margin: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
