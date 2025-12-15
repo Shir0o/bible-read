@@ -69,18 +69,7 @@ class CommonStyles {
       child: InkWell(
         onTap: onTap,
         borderRadius: radius,
-        overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.pressed)) {
-            return colorScheme.primaryContainer.withValues(alpha: 0.16);
-          }
-          if (states.contains(WidgetState.hovered)) {
-            return colorScheme.primaryContainer.withValues(alpha: 0.10);
-          }
-          if (states.contains(WidgetState.focused)) {
-            return colorScheme.primaryContainer.withValues(alpha: 0.12);
-          }
-          return null;
-        }),
+        overlayColor: AppTheme.stateLayer(colorScheme.surfaceTint),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.hPadding),
           child: child,

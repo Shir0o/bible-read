@@ -35,6 +35,28 @@ class AppTheme {
   static const EdgeInsetsGeometry _buttonPadding =
       EdgeInsets.symmetric(horizontal: 16, vertical: 12);
 
+  static WidgetStateColor stateLayer(Color baseColor) =>
+      WidgetStateColor.resolveWith((states) {
+        const hoveredOpacity = 0.08;
+        const focusedOpacity = 0.12;
+        const pressedOpacity = 0.12;
+        const draggedOpacity = 0.16;
+
+        if (states.contains(WidgetState.pressed)) {
+          return baseColor.withValues(alpha: pressedOpacity);
+        }
+        if (states.contains(WidgetState.dragged)) {
+          return baseColor.withValues(alpha: draggedOpacity);
+        }
+        if (states.contains(WidgetState.hovered)) {
+          return baseColor.withValues(alpha: hoveredOpacity);
+        }
+        if (states.contains(WidgetState.focused)) {
+          return baseColor.withValues(alpha: focusedOpacity);
+        }
+        return Colors.transparent;
+      });
+
   /// Generates a seeded [ColorScheme] to use when dynamic colors are
   /// unavailable.
   static ColorScheme seededColorScheme(Brightness brightness) =>
@@ -48,20 +70,7 @@ class AppTheme {
   /// Modify shape, padding, or overlay color to customize button appearance.
   static ButtonStyle _baseButtonStyle(ColorScheme colorScheme) => ButtonStyle(
         animationDuration: const Duration(milliseconds: 180),
-        overlayColor: WidgetStateProperty.resolveWith<Color?>(
-          (states) {
-            if (states.contains(WidgetState.pressed)) {
-              return colorScheme.primaryContainer.withValues(alpha: 0.24);
-            }
-            if (states.contains(WidgetState.hovered)) {
-              return colorScheme.primaryContainer.withValues(alpha: 0.16);
-            }
-            if (states.contains(WidgetState.focused)) {
-              return colorScheme.primaryContainer.withValues(alpha: 0.20);
-            }
-            return null;
-          },
-        ),
+        overlayColor: stateLayer(colorScheme.surfaceTint),
         shape: WidgetStateProperty.all<OutlinedBorder>(_buttonShape),
         padding: WidgetStateProperty.all<EdgeInsetsGeometry>(_buttonPadding),
       );
@@ -77,20 +86,7 @@ class AppTheme {
           }
           return 2;
         }),
-        overlayColor: WidgetStateProperty.resolveWith<Color?>(
-          (states) {
-            if (states.contains(WidgetState.pressed)) {
-              return colorScheme.primaryContainer.withValues(alpha: 0.28);
-            }
-            if (states.contains(WidgetState.hovered)) {
-              return colorScheme.primaryContainer.withValues(alpha: 0.20);
-            }
-            if (states.contains(WidgetState.focused)) {
-              return colorScheme.primaryContainer.withValues(alpha: 0.24);
-            }
-            return null;
-          },
-        ),
+        overlayColor: stateLayer(colorScheme.surfaceTint),
       );
 
   /// Outlined button variant aligned with base style.
@@ -166,20 +162,7 @@ class AppTheme {
       ),
       iconButtonTheme: IconButtonThemeData(
         style: ButtonStyle(
-          overlayColor: WidgetStateProperty.resolveWith<Color?>(
-            (states) {
-              if (states.contains(WidgetState.pressed)) {
-                return colorScheme.primaryContainer.withValues(alpha: 0.20);
-              }
-              if (states.contains(WidgetState.hovered)) {
-                return colorScheme.primaryContainer.withValues(alpha: 0.14);
-              }
-              if (states.contains(WidgetState.focused)) {
-                return colorScheme.primaryContainer.withValues(alpha: 0.18);
-              }
-              return null;
-            },
-          ),
+          overlayColor: stateLayer(colorScheme.surfaceTint),
         ),
       ),
       listTileTheme: ListTileThemeData(
@@ -205,8 +188,9 @@ class AppTheme {
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         side: BorderSide(color: colorScheme.outlineVariant),
-        selectedColor: colorScheme.secondaryContainer,
-        backgroundColor: colorScheme.surfaceContainerHigh,
+        selectedColor: colorScheme.surfaceContainerHighest,
+        backgroundColor: colorScheme.surfaceContainerLow,
+        surfaceTintColor: colorScheme.surfaceTint,
         labelStyle: themedText.bodyMedium!,
         secondaryLabelStyle: themedText.bodyMedium!,
         showCheckmark: true,
@@ -214,16 +198,18 @@ class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.selected)) {
-            return colorScheme.primary;
+            return colorScheme.onSurface;
           }
           return colorScheme.onSurfaceVariant;
         }),
         trackColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.selected)) {
-            return colorScheme.primaryContainer;
+            return colorScheme.surfaceContainerHighest;
           }
           return colorScheme.surfaceContainerHigh;
         }),
+        trackOutlineColor:
+            WidgetStatePropertyAll<Color>(colorScheme.outlineVariant),
       ),
       elevatedButtonTheme:
           ElevatedButtonThemeData(style: _elevatedButtonStyle(colorScheme)),
@@ -234,8 +220,9 @@ class AppTheme {
       textButtonTheme:
           TextButtonThemeData(style: _baseButtonStyle(colorScheme)),
       navigationBarTheme: NavigationBarThemeData(
-        indicatorColor: colorScheme.secondaryContainer,
+        indicatorColor: colorScheme.surfaceContainerHigh,
         backgroundColor: colorScheme.surfaceContainerLow,
+        surfaceTintColor: colorScheme.surfaceTint,
         elevation: 1,
         height: 60,
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
@@ -246,14 +233,21 @@ class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: colorScheme.secondaryContainer,
         foregroundColor: colorScheme.onSecondaryContainer,
-        splashColor: colorScheme.onSecondaryContainer.withValues(alpha: 0.24),
-        hoverColor: colorScheme.onSecondaryContainer.withValues(alpha: 0.16),
-        focusColor: colorScheme.onSecondaryContainer.withValues(alpha: 0.20),
+        splashColor: stateLayer(colorScheme.surfaceTint)
+            .resolve({WidgetState.pressed}),
+        hoverColor:
+            stateLayer(colorScheme.surfaceTint).resolve({WidgetState.hovered}),
+        focusColor:
+            stateLayer(colorScheme.surfaceTint).resolve({WidgetState.focused}),
       ),
-      hoverColor: colorScheme.primary.withValues(alpha: 0.04),
-      focusColor: colorScheme.primary.withValues(alpha: 0.08),
-      highlightColor: colorScheme.primary.withValues(alpha: 0.10),
-      splashColor: colorScheme.primary.withValues(alpha: 0.14),
+      hoverColor: stateLayer(colorScheme.surfaceTint)
+          .resolve({WidgetState.hovered, WidgetState.focused}),
+      focusColor:
+          stateLayer(colorScheme.surfaceTint).resolve({WidgetState.focused}),
+      highlightColor:
+          stateLayer(colorScheme.surfaceTint).resolve({WidgetState.pressed}),
+      splashColor:
+          stateLayer(colorScheme.surfaceTint).resolve({WidgetState.pressed}),
       splashFactory: InkSparkle.splashFactory,
     );
   }
