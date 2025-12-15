@@ -9,7 +9,6 @@ import '../models/exercise_challenge.dart';
 import '../services/error_logger.dart';
 import '../services/exercise_tracker_service.dart';
 import '../services/vibration_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/exercise_status_section.dart';
 import 'exercise_challenges_page.dart';
@@ -211,16 +210,18 @@ class _ExerciseDashboardPageState extends State<ExerciseDashboardPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Daily Exercise',
-          style: CommonStyles.appBarTitleText,
+          style: CommonStyles.appBarTitleText(colorScheme),
         ),
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: colorScheme.surface,
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: LayoutBuilder(
           builder: (context, constraints) {
             return ConstrainedBox(

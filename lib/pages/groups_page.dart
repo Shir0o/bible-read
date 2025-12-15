@@ -150,11 +150,13 @@ class _GroupsPageState extends State<GroupsPage> {
     final user = widget.auth.currentUser;
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
+        context,
         'Groups',
         automaticallyImplyLeading: false,
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: user == null
             ? RefreshIndicator(
                 onRefresh: _refresh,
@@ -259,6 +261,7 @@ class _GroupsPageState extends State<GroupsPage> {
                                             ? adjusted
                                             : g.memberCount;
                                     return CommonStyles.buildTappableCard(
+                                      context: context,
                                       onTap: () => _openGroup(g),
                                       margin: const EdgeInsets.symmetric(
                                           vertical: 4.0),

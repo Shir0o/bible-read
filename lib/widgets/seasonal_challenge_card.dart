@@ -112,16 +112,22 @@ class SeasonalChallengeCard extends StatelessWidget {
     final canClaim = onClaim != null && _isComplete && !_isClaimed;
     final buttonLabel = _resolveButtonLabel(materialLocalizations);
 
-    final builder = onTap == null
-        ? CommonStyles.buildCard
+    final buildCard = onTap == null
+        ? ({required Widget child, EdgeInsetsGeometry? margin}) =>
+            CommonStyles.buildCard(
+              context: context,
+              margin: margin,
+              child: child,
+            )
         : ({required Widget child, EdgeInsetsGeometry? margin}) =>
             CommonStyles.buildTappableCard(
+              context: context,
               onTap: onTap,
               margin: margin,
               child: child,
             );
 
-    return builder(
+    return buildCard(
       margin: margin,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -39,6 +39,7 @@ class ReadLogList extends StatelessWidget {
         final isLiked = log.liked;
         final isFirst = log.firstReader;
         return CommonStyles.buildTappableCard(
+          context: context,
           onTap: () {},
           margin: const EdgeInsets.symmetric(vertical: 8),
           child: Padding(

@@ -12,6 +12,7 @@ enum _RefreshStatus {
 
 class StatusRefreshIndicator extends StatefulWidget {
   final Widget child;
+
   /// Function that performs the refresh. Should throw an exception on failure.
   final Future<void> Function() onRefresh;
   final double maxHeight;
@@ -99,14 +100,14 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
     }
   }
 
-  Color _getBarColor() {
+  Color _getBarColor(ColorScheme colorScheme) {
     switch (_status) {
       case _RefreshStatus.success:
-        return Colors.greenAccent;
+        return colorScheme.tertiary;
       case _RefreshStatus.error:
-        return Colors.redAccent;
+        return colorScheme.error;
       default:
-        return AppTheme.colorScheme.primary;
+        return colorScheme.primary;
     }
   }
 
@@ -126,6 +127,7 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
   @override
   Widget build(BuildContext context) {
     final barHeight = widget.maxHeight;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return CustomRefreshIndicator(
       offsetToArmed: widget.maxHeight,
@@ -168,8 +170,8 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                   return Container(
                     height: containerHeight,
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: AppTheme.backgroundColor,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
                     ),
                     clipBehavior: Clip.hardEdge,
                     child: OverflowBox(
@@ -194,9 +196,10 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                                         value: _status == _RefreshStatus.idle
                                             ? 0
                                             : _progressController.value,
-                                        backgroundColor: Colors.white10,
+                                        backgroundColor:
+                                            colorScheme.surfaceContainerHigh,
                                         valueColor: AlwaysStoppedAnimation(
-                                          _getBarColor(),
+                                          _getBarColor(colorScheme),
                                         ),
                                         minHeight: barHeight,
                                       ),
@@ -209,11 +212,12 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                                     opacity: controller.value.clamp(0.0, 1.0),
                                     child: Text(
                                       _getStatusText(controller),
-                                      style: AppTheme.textTheme.bodyMedium?.copyWith(
-                                        color: Colors.white,
+                                      style: AppTheme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                        color: colorScheme.onSurface,
                                         fontWeight: FontWeight.bold,
-                                        shadows: [
-                                          const Shadow(
+                                        shadows: const [
+                                          Shadow(
                                             offset: Offset(0, 1),
                                             blurRadius: 2,
                                             color: Colors.black26,

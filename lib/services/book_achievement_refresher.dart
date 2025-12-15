@@ -28,8 +28,8 @@ class BookAchievementRefresher {
     required DateTime completionTimestamp,
     Set<String> skipAchievementIds = const <String>{},
   }) async {
-    final completedByBook = await groupBookAchievementService
-        .completedChaptersByBook(uid);
+    final completedByBook =
+        await groupBookAchievementService.completedChaptersByBook(uid);
     if (completedByBook.isEmpty) {
       return const BookAchievementRefreshResult();
     }

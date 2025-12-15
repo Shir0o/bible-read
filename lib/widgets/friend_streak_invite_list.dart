@@ -78,6 +78,7 @@ class _FriendStreakInviteListState extends State<FriendStreakInviteList> {
                 : 'Friend';
             final busy = _processing.contains(partnerUid);
             return CommonStyles.buildTappableCard(
+              context: context,
               onTap: () {},
               margin: const EdgeInsets.symmetric(vertical: 4),
               child: ListTile(

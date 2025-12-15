@@ -7,17 +7,16 @@ import '../theme/app_theme.dart';
 /// Use these helpers when constructing common UI elements like cards and
 /// app bars to ensure the same look and feel throughout the app.
 class CommonStyles {
-  static const BoxDecoration backgroundGradient = BoxDecoration(
-    color: AppTheme.backgroundColor,
-  );
+  static BoxDecoration backgroundDecoration(ColorScheme colorScheme) =>
+      BoxDecoration(
+        color: colorScheme.surface,
+      );
 
-  static const TextStyle appBarTitleText = TextStyle(
-    fontFamily: AppTheme.fontFamily,
-    fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
-    fontSize: 20,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-  );
+  static TextStyle appBarTitleText(ColorScheme colorScheme) =>
+      AppTheme.textTheme.titleLarge!.copyWith(
+        fontWeight: FontWeight.w700,
+        color: colorScheme.onSurface,
+      );
 
   /// Builds a card with the app's standard padding and rounded corners.
   ///
@@ -25,7 +24,12 @@ class CommonStyles {
   /// [margin] optionally overrides the default margin.
   ///
   /// Returns a [Card] widget styled for the application.
-  static Card buildCard({required Widget child, EdgeInsetsGeometry? margin}) {
+  static Card buildCard({
+    required BuildContext context,
+    required Widget child,
+    EdgeInsetsGeometry? margin,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Card(
       elevation: 1,
       clipBehavior: Clip.antiAlias,
@@ -35,6 +39,7 @@ class CommonStyles {
             horizontal: AppSpacing.hPadding,
             vertical: AppSpacing.vPaddingSmall,
           ),
+      color: colorScheme.surfaceContainerLow,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.hPadding),
         child: child,
@@ -44,10 +49,12 @@ class CommonStyles {
 
   /// Builds a card that provides an InkWell overlay when tapped/hovered.
   static Card buildTappableCard({
+    required BuildContext context,
     required Widget child,
     EdgeInsetsGeometry? margin,
     VoidCallback? onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     final radius = BorderRadius.circular(16);
     return Card(
       elevation: 1,
@@ -58,18 +65,19 @@ class CommonStyles {
             horizontal: AppSpacing.hPadding,
             vertical: AppSpacing.vPaddingSmall,
           ),
+      color: colorScheme.surfaceContainerLow,
       child: InkWell(
         onTap: onTap,
         borderRadius: radius,
         overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.pressed)) {
-            return AppTheme.colorScheme.primary.withValues(alpha: 0.12);
+            return colorScheme.primaryContainer.withValues(alpha: 0.16);
           }
           if (states.contains(WidgetState.hovered)) {
-            return AppTheme.colorScheme.primary.withValues(alpha: 0.06);
+            return colorScheme.primaryContainer.withValues(alpha: 0.10);
           }
           if (states.contains(WidgetState.focused)) {
-            return AppTheme.colorScheme.primary.withValues(alpha: 0.08);
+            return colorScheme.primaryContainer.withValues(alpha: 0.12);
           }
           return null;
         }),
@@ -91,14 +99,16 @@ class CommonStyles {
   ///
   /// Returns a [PreferredSizeWidget] configured app bar.
   static PreferredSizeWidget buildAppBar(
+    BuildContext context,
     String title, {
     List<Widget>? actions,
     Widget? leading,
     bool automaticallyImplyLeading = true,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return AppBar(
-      title: Text(title, style: appBarTitleText),
-      backgroundColor: AppTheme.backgroundColor,
+      title: Text(title, style: appBarTitleText(colorScheme)),
+      backgroundColor: colorScheme.surface,
       actions: actions,
       leading: leading,
       automaticallyImplyLeading: automaticallyImplyLeading,

@@ -104,6 +104,7 @@ class _CommentSectionState extends State<CommentSection> {
           itemBuilder: (context, index) {
             final c = widget.comments[index];
             return CommonStyles.buildTappableCard(
+              context: context,
               onTap: () {},
               margin: const EdgeInsets.symmetric(vertical: 4),
               child: ListTile(

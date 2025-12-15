@@ -73,6 +73,7 @@ class ScheduleItemTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CommonStyles.buildTappableCard(
+          context: context,
           onTap: onTap,
           margin: const EdgeInsets.symmetric(vertical: 4),
           child: ListTile(

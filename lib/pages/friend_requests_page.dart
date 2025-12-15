@@ -34,6 +34,7 @@ class FriendRequestsPage extends StatelessWidget {
     final user = auth.currentUser;
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
+        context,
         'Friend Requests',
         leading: BackButton(onPressed: () {
           unawaited(vibrationService.lightImpact());
@@ -42,7 +43,8 @@ class FriendRequestsPage extends StatelessWidget {
         automaticallyImplyLeading: true,
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: user == null
             ? const Center(child: Text('Please sign in'))
             : Padding(

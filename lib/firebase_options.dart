@@ -64,8 +64,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '82330382748',
     projectId: 'bible-read-39389',
     storageBucket: 'bible-read-39389.firebasestorage.app',
-    androidClientId: '82330382748-2p05l088d3gb3c2verqp961i8s4pic3o.apps.googleusercontent.com',
-    iosClientId: '82330382748-kv8cr6ehdtjglo5v2iqa6e8ge038kh0s.apps.googleusercontent.com',
+    androidClientId:
+        '82330382748-2p05l088d3gb3c2verqp961i8s4pic3o.apps.googleusercontent.com',
+    iosClientId:
+        '82330382748-kv8cr6ehdtjglo5v2iqa6e8ge038kh0s.apps.googleusercontent.com',
     iosBundleId: 'com.bibleread.challenge',
   );
 
@@ -75,8 +77,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '82330382748',
     projectId: 'bible-read-39389',
     storageBucket: 'bible-read-39389.firebasestorage.app',
-    androidClientId: '82330382748-2p05l088d3gb3c2verqp961i8s4pic3o.apps.googleusercontent.com',
-    iosClientId: '82330382748-p6nddo8u50pf2295h70lqdrtlvhjsfih.apps.googleusercontent.com',
+    androidClientId:
+        '82330382748-2p05l088d3gb3c2verqp961i8s4pic3o.apps.googleusercontent.com',
+    iosClientId:
+        '82330382748-p6nddo8u50pf2295h70lqdrtlvhjsfih.apps.googleusercontent.com',
     iosBundleId: 'com.bibleread.bibleRead',
   );
 
@@ -89,5 +93,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'bible-read-39389.firebasestorage.app',
     measurementId: 'G-SSR7836PWC',
   );
-
 }

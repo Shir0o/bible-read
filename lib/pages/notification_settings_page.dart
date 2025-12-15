@@ -101,9 +101,10 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CommonStyles.buildAppBar('Notification Settings'),
+      appBar: CommonStyles.buildAppBar(context, 'Notification Settings'),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : (_prefs == null
@@ -115,6 +116,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                         (type) {
                           final val = _prefs![type];
                           return CommonStyles.buildTappableCard(
+                            context: context,
                             onTap: () => _toggle(type, !val),
                             margin: const EdgeInsets.symmetric(vertical: 4.0),
                             child: SwitchListTile(
@@ -127,6 +129,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                         },
                       ),
                       CommonStyles.buildTappableCard(
+                        context: context,
                         onTap: () => _toggleVibration(!_vibrationEnabled),
                         margin: const EdgeInsets.symmetric(vertical: 4.0),
                         child: SwitchListTile(

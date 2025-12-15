@@ -364,8 +364,7 @@ void main() {
       (tile) => (tile.title as Text).data == 'Other',
     );
     final beforeSubtitle = otherTileBefore.subtitle as Padding;
-    final beforeTooltip =
-        (beforeSubtitle.child as Align).child as Tooltip;
+    final beforeTooltip = (beforeSubtitle.child as Align).child as Tooltip;
     expect(beforeTooltip.message, 'Tap to send a friend request.');
 
     await tester.tap(find.text('Other'));
@@ -390,8 +389,7 @@ void main() {
       (tile) => (tile.title as Text).data == 'Other',
     );
     final afterSubtitle = otherTileAfter.subtitle as Padding;
-    final afterTooltip =
-        (afterSubtitle.child as Align).child as Tooltip;
+    final afterTooltip = (afterSubtitle.child as Align).child as Tooltip;
     expect(afterTooltip.message, 'Friend request sent.');
   });
 

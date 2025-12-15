@@ -22,6 +22,7 @@ class AchievementListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CommonStyles.buildTappableCard(
+      context: context,
       onTap: () {},
       child: ListTile(
         contentPadding: EdgeInsets.zero,

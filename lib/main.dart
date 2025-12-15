@@ -13,6 +13,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 
 import 'firebase_options.dart';
 import 'services/error_logger.dart';
@@ -54,7 +55,8 @@ void main() async {
       });
     } catch (firestoreError, st) {
       if (kDebugMode) {
-        debugPrint('Failed to log AppCheck error to Firestore: $firestoreError');
+        debugPrint(
+            'Failed to log AppCheck error to Firestore: $firestoreError');
       }
       ErrorLogger.log(firestoreError, st);
     }
@@ -100,7 +102,8 @@ Future<void> _setupMessaging() async {
 
   final notificationLaunchDetails =
       await _localNotificationsPlugin.getNotificationAppLaunchDetails();
-  final launchPayload = notificationLaunchDetails?.notificationResponse?.payload;
+  final launchPayload =
+      notificationLaunchDetails?.notificationResponse?.payload;
   if ((notificationLaunchDetails?.didNotificationLaunchApp ?? false) &&
       launchPayload != null &&
       launchPayload.isNotEmpty) {
@@ -162,13 +165,30 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Bible Reading Challenge',
-      theme: AppTheme.appTheme,
-      navigatorKey: _rootNavigatorKey,
-      home: MainPage(
-        appCheckFailed: appCheckFailed,
-      ),
+    return DynamicColorBuilder(
+      builder: (lightDynamic, darkDynamic) {
+        final ColorScheme colorScheme;
+        final harmonizedDark = darkDynamic?.harmonized();
+        if (harmonizedDark != null) {
+          colorScheme = harmonizedDark;
+        } else if (lightDynamic != null) {
+          colorScheme = ColorScheme.fromSeed(
+            seedColor: lightDynamic.harmonized().primary,
+            brightness: Brightness.dark,
+          );
+        } else {
+          colorScheme = AppTheme.seededColorScheme(Brightness.dark);
+        }
+
+        return MaterialApp(
+          title: 'Bible Reading Challenge',
+          theme: AppTheme.appTheme(colorScheme),
+          navigatorKey: _rootNavigatorKey,
+          home: MainPage(
+            appCheckFailed: appCheckFailed,
+          ),
+        );
+      },
     );
   }
 }

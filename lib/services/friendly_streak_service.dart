@@ -34,7 +34,7 @@ class FriendlyStreakService {
   final FirebaseFirestore firestore;
 
   FriendlyStreakService({FirebaseFirestore? firestore})
-    : firestore = firestore ?? FirebaseFirestore.instance;
+      : firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Returns the active streak links and pending invites for the given [uid].
   ///
@@ -45,19 +45,19 @@ class FriendlyStreakService {
       final invitesFuture = _invitesRef(uid).get();
       final results = await Future.wait([linksFuture, invitesFuture]);
 
-      final activeLinks =
-          results[0].docs
-              .map((doc) => FriendStreakLink.fromDoc(doc, ownerUid: uid))
-              .where((link) => link.isActive)
-              .toList()
-            ..sort((a, b) => b.currentStreak.compareTo(a.currentStreak));
+      final activeLinks = results[0]
+          .docs
+          .map((doc) => FriendStreakLink.fromDoc(doc, ownerUid: uid))
+          .where((link) => link.isActive)
+          .toList()
+        ..sort((a, b) => b.currentStreak.compareTo(a.currentStreak));
 
-      final pendingLinks =
-          results[1].docs
-              .map((doc) => FriendStreakLink.fromDoc(doc, ownerUid: uid))
-              .where((link) => link.isPending)
-              .toList()
-            ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      final pendingLinks = results[1]
+          .docs
+          .map((doc) => FriendStreakLink.fromDoc(doc, ownerUid: uid))
+          .where((link) => link.isPending)
+          .toList()
+        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
       return FriendlyStreakLinksSummary(
         activeLinks: activeLinks,

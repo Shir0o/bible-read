@@ -338,11 +338,13 @@ class _ReadLogPageState extends State<ReadLogPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
+        context,
         "Today's Readers",
         automaticallyImplyLeading: false,
       ),
       body: Container(
-        decoration: CommonStyles.backgroundGradient,
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: _loading
             ? Container(
                 alignment: Alignment.center,

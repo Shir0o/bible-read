@@ -93,24 +93,24 @@ void main() {
         .collection('notifications')
         .doc('n1')
         .set({
-          'type': NotificationType.like.name,
-          'timestamp': Timestamp.now(),
-          'read': false,
-          'senderUid': 'u2',
-          'message': 'Test like',
-        });
+      'type': NotificationType.like.name,
+      'timestamp': Timestamp.now(),
+      'read': false,
+      'senderUid': 'u2',
+      'message': 'Test like',
+    });
     await firestore
         .collection('users')
         .doc(user.uid)
         .collection('notifications')
         .doc('n2')
         .set({
-          'type': NotificationType.nudge.name,
-          'timestamp': Timestamp.now(),
-          'read': true,
-          'senderUid': 'u3',
-          'message': 'Test nudge',
-        });
+      'type': NotificationType.nudge.name,
+      'timestamp': Timestamp.now(),
+      'read': true,
+      'senderUid': 'u3',
+      'message': 'Test nudge',
+    });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -211,11 +211,11 @@ void main() {
         .collection('notifications')
         .doc('n1')
         .set({
-          'type': NotificationType.achievement.name,
-          'timestamp': Timestamp.now(),
-          'read': false,
-          'senderUid': 'u4',
-        });
+      'type': NotificationType.achievement.name,
+      'timestamp': Timestamp.now(),
+      'read': false,
+      'senderUid': 'u4',
+    });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -251,11 +251,11 @@ void main() {
         .collection('notifications')
         .doc('n1')
         .set({
-          'type': NotificationType.friendRequest.name,
-          'timestamp': Timestamp.now(),
-          'read': false,
-          'senderUid': 'u7',
-        });
+      'type': NotificationType.friendRequest.name,
+      'timestamp': Timestamp.now(),
+      'read': false,
+      'senderUid': 'u7',
+    });
 
     await firestore
         .collection('users')
@@ -299,11 +299,11 @@ void main() {
         .collection('notifications')
         .doc('n1')
         .set({
-          'type': NotificationType.groupJoinRequest.name,
-          'timestamp': Timestamp.now(),
-          'read': false,
-          'groupId': 'g1',
-        });
+      'type': NotificationType.groupJoinRequest.name,
+      'timestamp': Timestamp.now(),
+      'read': false,
+      'groupId': 'g1',
+    });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -346,12 +346,12 @@ void main() {
         .collection('challenges')
         .doc('challenge')
         .set({
-          'seasonId': 'season',
-          'title': 'Complete readings',
-          'description': 'Finish readings',
-          'metric': 'chapters',
-          'goal': 1,
-        });
+      'seasonId': 'season',
+      'title': 'Complete readings',
+      'description': 'Finish readings',
+      'metric': 'chapters',
+      'goal': 1,
+    });
 
     await firestore
         .collection('users')
@@ -359,10 +359,10 @@ void main() {
         .collection('notifications')
         .doc('n1')
         .set({
-          'type': NotificationType.seasonalChallenge.name,
-          'timestamp': Timestamp.now(),
-          'read': false,
-        });
+      'type': NotificationType.seasonalChallenge.name,
+      'timestamp': Timestamp.now(),
+      'read': false,
+    });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -395,11 +395,11 @@ void main() {
           .collection('notifications')
           .doc('n1')
           .set({
-            'type': NotificationType.friendRequest.name,
-            'timestamp': Timestamp.now(),
-            'read': false,
-            'senderUid': 'u9',
-          });
+        'type': NotificationType.friendRequest.name,
+        'timestamp': Timestamp.now(),
+        'read': false,
+        'senderUid': 'u9',
+      });
 
       await tester.pumpWidget(
         MaterialApp(
@@ -438,11 +438,11 @@ void main() {
           .collection('notifications')
           .doc('n1')
           .set({
-            'type': NotificationType.like.name,
-            'timestamp': Timestamp.now(),
-            'read': false,
-            'senderUid': 'u5',
-          });
+        'type': NotificationType.like.name,
+        'timestamp': Timestamp.now(),
+        'read': false,
+        'senderUid': 'u5',
+      });
 
       await tester.pumpWidget(
         MaterialApp(
@@ -514,7 +514,7 @@ class _FailingService extends NotificationService {
 
 class _SingleNotificationService extends NotificationService {
   _SingleNotificationService({required this.notification})
-    : super(firestore: FakeFirebaseFirestore());
+      : super(firestore: FakeFirebaseFirestore());
 
   final AppNotification notification;
 
