@@ -33,14 +33,21 @@ class FriendlyStreakBanner extends StatelessWidget {
     final reachedLimit =
         activeLinks.length >= FriendService.maxActiveStreakLinks;
 
-    return Card(
+    return Card.filled(
+      elevation: 2,
+      shadowColor: Colors.black12,
       margin: const EdgeInsets.symmetric(
         horizontal: AppSpacing.hPadding,
         vertical: AppSpacing.vPaddingSmall,
       ),
-      color: cardColor,
+      color: colorScheme.surfaceContainerHigh,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+        ),
+      ),
       child: InkWell(
         onTap: onTap,
         child: Padding(

@@ -94,7 +94,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   bool _disposed = false;
   bool _readToday = false;
 
@@ -108,15 +108,20 @@ class _HomePageState extends State<HomePage>
   bool _friendStreakLoading = false;
   late BookAchievementRefresher _bookAchievementRefresher;
 
+  late final AnimationController _animationController;
+
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1000));
     _bookAchievementRefresher = BookAchievementRefresher(
       achievementService: widget.achievementService,
       groupBookAchievementService: widget.groupBookAchievementService,
     );
     _loadReadStatus();
     _loadFriendlyStreak();
+    _animationController.forward();
   }
 
   @override
@@ -545,35 +550,13 @@ class _HomePageState extends State<HomePage>
     super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Reading Hub',
-            style: CommonStyles.appBarTitleText(colorScheme)),
-        backgroundColor: colorScheme.surface,
-        automaticallyImplyLeading: false,
-        actions: [
-          NotificationButton(
-            service: NotificationService(firestore: widget.firestore),
-            auth: widget.auth,
-            vibrationService: widget.vibrationService,
-          ),
-        ],
-      ),
-      body: Container(
-        decoration:
-            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: _buildMainContent(context),
-            );
-          },
-        ),
-      ),
+      backgroundColor: colorScheme.surface,
+      body: _buildMainContent(context),
     );
   }
 
   Widget _buildMainContent(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     if (widget.auth.currentUser == null) {
       return Center(
         child: Text(
@@ -583,52 +566,108 @@ class _HomePageState extends State<HomePage>
       );
     }
 
-    return StatusRefreshIndicator(
-      onRefresh: _performRefresh,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics()),
-        child: Padding(
-          padding: const EdgeInsets.only(
-            top: 16.0,
-            bottom: 48,
-            left: 16,
-            right: 16,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ReadStatusSection(
-                toggleLoading: _toggleLoading,
-                readToday: _readToday,
-                onToggle: _toggleReadStatus,
-                readDates: _readDates,
-                streakFreezesLeft: _streakFreezesLeft,
+    return NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          SliverAppBar(
+            title: Text(
+              'Reading Hub',
+              style: CommonStyles.appBarTitleText(colorScheme),
+            ),
+            centerTitle: false,
+            pinned: true,
+            backgroundColor: colorScheme.surface,
+            scrolledUnderElevation: 0,
+            leading: null,
+            automaticallyImplyLeading: false,
+            actions: [
+              NotificationButton(
+                service: NotificationService(firestore: widget.firestore),
+                auth: widget.auth,
                 vibrationService: widget.vibrationService,
               ),
-              if (_friendStreakLoading || _friendStreaks != null)
-                FriendlyStreakBanner(
-                  summary: _friendStreaks ?? FriendlyStreakLinksSummary.empty,
-                  isLoading: _friendStreakLoading,
-                  onTap: () {
-                    final scope = NavigationMenuScope.maybeOf(context);
-                    if (scope != null) {
-                      scope.onNavigate(scope.friendlyStreakIndex);
-                      return;
-                    }
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => FriendlyStreakPage(
-                          firestore: widget.firestore,
-                          auth: widget.auth,
-                          friendlyStreakService: widget.friendlyStreakService,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+              const SizedBox(width: 8),
             ],
           ),
+        ];
+      },
+      body: StatusRefreshIndicator(
+        onRefresh: _performRefresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics()),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.only(
+                top: 16.0,
+                bottom: 48,
+                left: 16,
+                right: 16,
+              ),
+              sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: _animationController,
+                    curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+                  ),
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.1),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: _animationController,
+                      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+                    )),
+                    child: ReadStatusSection(
+                      toggleLoading: _toggleLoading,
+                      readToday: _readToday,
+                      onToggle: _toggleReadStatus,
+                      readDates: _readDates,
+                      streakFreezesLeft: _streakFreezesLeft,
+                      vibrationService: widget.vibrationService,
+                    ),
+                  ),
+                ),
+                if (_friendStreakLoading || _friendStreaks != null)
+                  FadeTransition(
+                    opacity: CurvedAnimation(
+                      parent: _animationController,
+                      curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+                    ),
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.1),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: _animationController,
+                        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+                      )),
+                      child: FriendlyStreakBanner(
+                        summary: _friendStreaks ?? FriendlyStreakLinksSummary.empty,
+                        isLoading: _friendStreakLoading,
+                        onTap: () {
+                          final scope = NavigationMenuScope.maybeOf(context);
+                          if (scope != null) {
+                            scope.onNavigate(scope.friendlyStreakIndex);
+                            return;
+                          }
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => FriendlyStreakPage(
+                                firestore: widget.firestore,
+                                auth: widget.auth,
+                                friendlyStreakService: widget.friendlyStreakService,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+              ])),
+            ),
+          ],
         ),
       ),
     );
@@ -637,6 +676,7 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _disposed = true;
+    _animationController.dispose();
     super.dispose();
   }
 
