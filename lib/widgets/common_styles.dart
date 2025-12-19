@@ -31,7 +31,7 @@ class CommonStyles {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     return Card.filled(
-      elevation: 2,
+      elevation: 4,
       shadowColor: Colors.black12,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
@@ -63,7 +63,7 @@ class CommonStyles {
     final colorScheme = Theme.of(context).colorScheme;
     final radius = BorderRadius.circular(24);
     return Card.filled(
-      elevation: 2,
+      elevation: 4,
       shadowColor: Colors.black12,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(

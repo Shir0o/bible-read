@@ -582,7 +582,7 @@ void main() {
     );
 
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
 
     final bannerFinder = find.descendant(
       of: find.byType(HomePage),

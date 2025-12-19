@@ -34,7 +34,7 @@ class FriendlyStreakBanner extends StatelessWidget {
         activeLinks.length >= FriendService.maxActiveStreakLinks;
 
     return Card.filled(
-      elevation: 2,
+      elevation: 4,
       shadowColor: Colors.black12,
       margin: const EdgeInsets.symmetric(
         horizontal: AppSpacing.hPadding,

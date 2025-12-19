@@ -179,7 +179,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        elevation: 1,
+        elevation: 4,
         color: colorScheme.surfaceContainerLow,
       ),
       inputDecorationTheme: const InputDecorationTheme(
