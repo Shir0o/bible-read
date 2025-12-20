@@ -589,10 +589,10 @@ class _HomePageState extends State<HomePage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (_readToday) ...[
-              const Icon(
+              Icon(
                 Icons.check_circle_outline_rounded,
                 size: 80,
-                color: Colors.green,
+                color: const Color(0xFF7E9F7A).withValues(alpha: 0.8),
               ),
               const SizedBox(height: 24),
               // Simpler, calmer text
@@ -646,7 +646,7 @@ class _HomePageState extends State<HomePage>
               ),
             ],
             
-            const SizedBox(height: 48),
+            const SizedBox(height: 32),
 
             // Weekly Progress Section - Constrained width for intentionality
             Center(
