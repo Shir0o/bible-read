@@ -9,13 +9,23 @@ import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
 import 'animated_page_route.dart';
 
-class AppMenuSheet extends StatelessWidget {
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../pages/admin/feedback_admin_page.dart';
+import '../pages/feedback_page.dart';
+import '../services/admin_role_service.dart';
+import '../services/feedback_service.dart';
+import '../services/vibration_service.dart';
+import 'animated_page_route.dart';
+
+class AppMenuSheet extends StatefulWidget {
   const AppMenuSheet({
     super.key,
     required this.onNavigate,
     required this.vibrationService,
     required this.parentContext,
-    this.isAdmin = false,
     this.feedbackService,
     this.adminRoleService,
   });
@@ -23,7 +33,6 @@ class AppMenuSheet extends StatelessWidget {
   final ValueChanged<int> onNavigate;
   final VibrationService vibrationService;
   final BuildContext parentContext;
-  final bool isAdmin;
   final FeedbackService? feedbackService;
   final AdminRoleService? adminRoleService;
 
@@ -33,41 +42,83 @@ class AppMenuSheet extends StatelessWidget {
     VibrationService? vibrationService,
     FeedbackService? feedbackService,
     AdminRoleService? adminRoleService,
-  }) async {
-    final service = vibrationService ?? const VibrationService();
-    final bool cachedAdmin = adminRoleService?.cachedAdminRole ?? false;
-    final Future<bool>? adminRoleFuture =
-        adminRoleService?.isAdmin(allowStale: true);
-
+  }) {
     if (!context.mounted) {
-      return;
+      return Future.value();
     }
 
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return FutureBuilder<bool>(
-          future: adminRoleFuture,
-          initialData: cachedAdmin,
-          builder: (context, snapshot) {
-            final bool resolvedIsAdmin = snapshot.data ?? cachedAdmin;
-            return AppMenuSheet(
-              onNavigate: onNavigate,
-              vibrationService: service,
-              parentContext: context,
-              isAdmin: resolvedIsAdmin,
-              feedbackService: feedbackService,
-              adminRoleService: adminRoleService,
-            );
-          },
-        );
-      },
+    return Navigator.of(context).push(
+      _MenuRoute(
+        builder: (sheetContext) {
+          return AppMenuSheet(
+            onNavigate: onNavigate,
+            vibrationService: vibrationService ?? const VibrationService(),
+            parentContext: context,
+            feedbackService: feedbackService,
+            adminRoleService: adminRoleService,
+          );
+        },
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+      ),
     );
   }
 
-  List<_MenuItem> _menuItems(bool isAdmin) {
+  @override
+  State<AppMenuSheet> createState() => _AppMenuSheetState();
+}
+
+class _MenuRoute<T> extends ModalBottomSheetRoute<T> {
+  _MenuRoute({
+    required super.builder,
+    super.isScrollControlled = false,
+    super.backgroundColor,
+  });
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 600);
+
+  @override
+  AnimationController createAnimationController() {
+    return super.createAnimationController()
+      ..duration = transitionDuration
+      ..reverseDuration = transitionDuration;
+  }
+}
+
+class _AppMenuSheetState extends State<AppMenuSheet> {
+  bool _isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAdminRole();
+  }
+
+  Future<void> _checkAdminRole() async {
+    final service = widget.adminRoleService;
+    if (service == null) return;
+
+    // Use cached value immediately if available
+    if (service.cachedAdminRole != null) {
+      setState(() {
+        _isAdmin = service.cachedAdminRole!;
+      });
+    }
+
+    try {
+      final isAdmin = await service.isAdmin(allowStale: true);
+      if (mounted && isAdmin != _isAdmin) {
+        setState(() {
+          _isAdmin = isAdmin;
+        });
+      }
+    } catch (_) {
+      // Ignore errors, default to false
+    }
+  }
+
+  List<_MenuItem> _menuItems() {
     final items = [
       const _MenuItem(
           index: 6, icon: Icons.emoji_events, label: 'Achievements'),
@@ -102,13 +153,13 @@ class AppMenuSheet extends StatelessWidget {
         icon: Icons.feedback,
         label: 'Feedback',
         onTap: (context) {
-          final feedback = feedbackService ?? FeedbackService();
+          final feedback = widget.feedbackService ?? FeedbackService();
           Navigator.of(context).push(
             animatedPageRoute(
               FeedbackPage(
                 initialTab: FeedbackTab.feature,
                 feedbackService: feedback,
-                vibrationService: vibrationService,
+                vibrationService: widget.vibrationService,
                 parentMessenger: ScaffoldMessenger.of(context),
               ),
             ),
@@ -117,7 +168,7 @@ class AppMenuSheet extends StatelessWidget {
       ),
     ];
 
-    if (isAdmin) {
+    if (_isAdmin) {
       items.add(
         _MenuItem(
           icon: Icons.inventory_2,
@@ -126,9 +177,9 @@ class AppMenuSheet extends StatelessWidget {
             Navigator.of(context).push(
               animatedPageRoute(
                 FeedbackAdminPage(
-                  firestore: feedbackService?.firestore,
-                  auth: feedbackService?.auth,
-                  adminRoleService: adminRoleService,
+                  firestore: widget.feedbackService?.firestore,
+                  auth: widget.feedbackService?.auth,
+                  adminRoleService: widget.adminRoleService,
                 ),
               ),
             );
@@ -142,10 +193,10 @@ class AppMenuSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _MenuContents(
-      items: _menuItems(isAdmin),
-      vibrationService: vibrationService,
-      onNavigate: onNavigate,
-      parentContext: parentContext,
+      items: _menuItems(),
+      vibrationService: widget.vibrationService,
+      onNavigate: widget.onNavigate,
+      parentContext: widget.parentContext,
     );
   }
 }
