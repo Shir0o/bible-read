@@ -122,14 +122,14 @@ class CommonStyles {
 /// Use [subtitle] for section headings and [body] for regular content text.
 class AppTextStyles {
   static const TextStyle subtitle = TextStyle(
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: FontWeight.w600,
     fontFamily: AppTheme.fontFamily,
     fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
   );
 
   static const TextStyle body = TextStyle(
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: AppTheme.fontFamily,
     fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
   );

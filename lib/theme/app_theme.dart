@@ -1,5 +1,6 @@
 // Defines the global color scheme, fonts, spacing, and button styles.
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Provides the application's theme configuration.
 ///
@@ -11,10 +12,8 @@ class AppTheme {
   static const String fontFamily = 'IBMPlexSans';
   static const List<String> _fontFamilyFallback = ['IBMPlexMono', 'sans-serif'];
 
-  static TextTheme _applyIBMFont(TextTheme base) => base.apply(
-        fontFamily: fontFamily,
-        fontFamilyFallback: _fontFamilyFallback,
-      );
+  static TextTheme _applyIBMFont(TextTheme base) =>
+      GoogleFonts.ibmPlexSansTextTheme(base);
 
   static Typography _buildTypography() {
     final materialTypography = Typography.material2021();
@@ -140,29 +139,42 @@ class AppTheme {
   /// Adjust [colorScheme], [textTheme], or button themes to change the overall
   /// look and feel.
   static ThemeData appTheme(ColorScheme colorScheme) {
-    final themedText = colorScheme.brightness == Brightness.light
-        ? textTheme
-        : primaryTextTheme;
+    // Override colors to ensure text is strictly black
+    final blackColorScheme = colorScheme.copyWith(
+      onSurface: Colors.black,
+      onSurfaceVariant: Colors.black,
+    );
+
+    final themedText = (blackColorScheme.brightness == Brightness.light
+            ? textTheme
+            : primaryTextTheme)
+        .copyWith(
+          bodyMedium: GoogleFonts.ibmPlexSans(fontSize: 16),
+        )
+        .apply(
+          bodyColor: Colors.black,
+          displayColor: Colors.black,
+        );
 
     return ThemeData(
-      brightness: colorScheme.brightness,
-      colorScheme: colorScheme,
+      brightness: blackColorScheme.brightness,
+      colorScheme: blackColorScheme,
       useMaterial3: true,
       fontFamily: fontFamily,
       textTheme: themedText,
       primaryTextTheme: primaryTextTheme,
       typography: typography,
-      scaffoldBackgroundColor: colorScheme.surface,
+      scaffoldBackgroundColor: blackColorScheme.surface,
       appBarTheme: AppBarTheme(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: blackColorScheme.surface,
         titleTextStyle:
-            themedText.titleLarge?.copyWith(color: colorScheme.onSurface),
+            themedText.titleLarge?.copyWith(color: blackColorScheme.onSurface),
         elevation: 0,
         centerTitle: false,
       ),
       iconButtonTheme: IconButtonThemeData(
         style: ButtonStyle(
-          overlayColor: stateLayer(colorScheme.surfaceTint),
+          overlayColor: stateLayer(blackColorScheme.surfaceTint),
         ),
       ),
       listTileTheme: ListTileThemeData(
@@ -180,17 +192,17 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
         ),
         elevation: 8,
-        color: colorScheme.surfaceContainerHighest,
+        color: blackColorScheme.surfaceContainerHighest,
       ),
       inputDecorationTheme: const InputDecorationTheme(
         border: OutlineInputBorder(),
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        side: BorderSide(color: colorScheme.outlineVariant),
-        selectedColor: colorScheme.surfaceContainerHighest,
-        backgroundColor: colorScheme.surfaceContainerLow,
-        surfaceTintColor: colorScheme.surfaceTint,
+        side: BorderSide(color: blackColorScheme.outlineVariant),
+        selectedColor: blackColorScheme.surfaceContainerHighest,
+        backgroundColor: blackColorScheme.surfaceContainerLow,
+        surfaceTintColor: blackColorScheme.surfaceTint,
         labelStyle: themedText.bodyMedium!,
         secondaryLabelStyle: themedText.bodyMedium!,
         showCheckmark: true,
@@ -198,56 +210,56 @@ class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.selected)) {
-            return colorScheme.onSurface;
+            return blackColorScheme.onSurface;
           }
-          return colorScheme.onSurfaceVariant;
+          return blackColorScheme.onSurfaceVariant;
         }),
         trackColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.selected)) {
-            return colorScheme.surfaceContainerHighest;
+            return blackColorScheme.surfaceContainerHighest;
           }
-          return colorScheme.surfaceContainerHigh;
+          return blackColorScheme.surfaceContainerHigh;
         }),
         trackOutlineColor:
-            WidgetStatePropertyAll<Color>(colorScheme.outlineVariant),
+            WidgetStatePropertyAll<Color>(blackColorScheme.outlineVariant),
       ),
       elevatedButtonTheme:
-          ElevatedButtonThemeData(style: _elevatedButtonStyle(colorScheme)),
+          ElevatedButtonThemeData(style: _elevatedButtonStyle(blackColorScheme)),
       filledButtonTheme:
-          FilledButtonThemeData(style: _filledButtonStyle(colorScheme)),
+          FilledButtonThemeData(style: _filledButtonStyle(blackColorScheme)),
       outlinedButtonTheme:
-          OutlinedButtonThemeData(style: _outlinedButtonStyle(colorScheme)),
+          OutlinedButtonThemeData(style: _outlinedButtonStyle(blackColorScheme)),
       textButtonTheme:
-          TextButtonThemeData(style: _baseButtonStyle(colorScheme)),
+          TextButtonThemeData(style: _baseButtonStyle(blackColorScheme)),
       navigationBarTheme: NavigationBarThemeData(
-        indicatorColor: colorScheme.surfaceContainerHigh,
-        backgroundColor: colorScheme.surfaceContainerLow,
-        surfaceTintColor: colorScheme.surfaceTint,
+        indicatorColor: blackColorScheme.surfaceContainerHigh,
+        backgroundColor: blackColorScheme.surfaceContainerLow,
+        surfaceTintColor: blackColorScheme.surfaceTint,
         elevation: 1,
         height: 60,
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         labelTextStyle: WidgetStateProperty.all(
-          textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+          textTheme.labelLarge?.copyWith(color: blackColorScheme.onSurfaceVariant),
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: colorScheme.secondaryContainer,
-        foregroundColor: colorScheme.onSecondaryContainer,
-        splashColor: stateLayer(colorScheme.surfaceTint)
+        backgroundColor: blackColorScheme.secondaryContainer,
+        foregroundColor: blackColorScheme.onSecondaryContainer,
+        splashColor: stateLayer(blackColorScheme.surfaceTint)
             .resolve({WidgetState.pressed}),
         hoverColor:
-            stateLayer(colorScheme.surfaceTint).resolve({WidgetState.hovered}),
+            stateLayer(blackColorScheme.surfaceTint).resolve({WidgetState.hovered}),
         focusColor:
-            stateLayer(colorScheme.surfaceTint).resolve({WidgetState.focused}),
+            stateLayer(blackColorScheme.surfaceTint).resolve({WidgetState.focused}),
       ),
-      hoverColor: stateLayer(colorScheme.surfaceTint)
+      hoverColor: stateLayer(blackColorScheme.surfaceTint)
           .resolve({WidgetState.hovered, WidgetState.focused}),
       focusColor:
-          stateLayer(colorScheme.surfaceTint).resolve({WidgetState.focused}),
+          stateLayer(blackColorScheme.surfaceTint).resolve({WidgetState.focused}),
       highlightColor:
-          stateLayer(colorScheme.surfaceTint).resolve({WidgetState.pressed}),
+          stateLayer(blackColorScheme.surfaceTint).resolve({WidgetState.pressed}),
       splashColor:
-          stateLayer(colorScheme.surfaceTint).resolve({WidgetState.pressed}),
+          stateLayer(blackColorScheme.surfaceTint).resolve({WidgetState.pressed}),
       splashFactory: InkSparkle.splashFactory,
     );
   }

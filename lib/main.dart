@@ -168,16 +168,16 @@ class MyApp extends StatelessWidget {
     return DynamicColorBuilder(
       builder: (lightDynamic, darkDynamic) {
         final ColorScheme colorScheme;
-        final harmonizedDark = darkDynamic?.harmonized();
-        if (harmonizedDark != null) {
-          colorScheme = harmonizedDark;
-        } else if (lightDynamic != null) {
+        final harmonizedLight = lightDynamic?.harmonized();
+        if (harmonizedLight != null) {
+          colorScheme = harmonizedLight;
+        } else if (darkDynamic != null) {
           colorScheme = ColorScheme.fromSeed(
-            seedColor: lightDynamic.harmonized().primary,
-            brightness: Brightness.dark,
+            seedColor: darkDynamic.harmonized().primary,
+            brightness: Brightness.light,
           );
         } else {
-          colorScheme = AppTheme.seededColorScheme(Brightness.dark);
+          colorScheme = AppTheme.seededColorScheme(Brightness.light);
         }
 
         return MaterialApp(
