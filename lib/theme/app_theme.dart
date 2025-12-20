@@ -179,8 +179,8 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        elevation: 4,
-        color: colorScheme.surfaceContainerLow,
+        elevation: 8,
+        color: colorScheme.surfaceContainerHighest,
       ),
       inputDecorationTheme: const InputDecorationTheme(
         border: OutlineInputBorder(),
