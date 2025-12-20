@@ -352,20 +352,83 @@ class _ReadLogPageState extends State<ReadLogPage> {
               )
             : _loadError
                 ? Center(
-                    child: Text(
-                      'Unable to load feed.',
-                      style: AppTextStyles.subtitle
-                          .copyWith(color: Colors.white70),
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Text(
+                        'Unable to load today\'s readers.\nPlease check your connection.',
+                        style: AppTextStyles.body.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   )
                 : widget.auth.currentUser == null
                     ? Center(
-                        child: Text(
-                          'Please sign in to view your read log.',
-                          style: AppTextStyles.subtitle
-                              .copyWith(color: Colors.white70),
+                        child: Padding(
+                          padding: const EdgeInsets.all(32.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.people_outline,
+                                size: 48,
+                                color: Theme.of(context).colorScheme.outlineVariant,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Sign in to see who\'s reading today',
+                                style: AppTextStyles.subtitle.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Join the community and encourage others.',
+                                style: AppTextStyles.body.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
                         ),
                       )
+                    : _logs.isEmpty 
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(48.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.wb_sunny_outlined,
+                                    size: 48,
+                                    color: Theme.of(context).colorScheme.outlineVariant,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Be the first light today',
+                                    style: AppTextStyles.subtitle.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Read your passage and be an encouragement to others.',
+                                    style: AppTextStyles.body.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      height: 1.5,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
                     : Padding(
                         padding: const EdgeInsets.only(
                           top: 16.0,

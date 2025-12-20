@@ -1,12 +1,0 @@
-00:00 +0: loading /Users/twang/bible-read/test/pages/home_page_test.dart                                                                                                                               00:01 +0: loading /Users/twang/bible-read/test/pages/home_page_test.dart                                                                                                                               00:02 +0: loading /Users/twang/bible-read/test/pages/home_page_test.dart                                                                                                                               00:03 +0: loading /Users/twang/bible-read/test/pages/home_page_test.dart                                                                                                                               00:04 +0: loading /Users/twang/bible-read/test/pages/home_page_test.dart                                                                                                                               test/pages/home_page_test.dart:289:26: Error: Member not found: 'empty'.
-    return ReadingStatus.empty; 
-                         ^^^^^
-00:04 +0 -1: loading /Users/twang/bible-read/test/pages/home_page_test.dart [E]                                                                                                                        
-  Failed to load "/Users/twang/bible-read/test/pages/home_page_test.dart":
-  Compilation failed for testPath=/Users/twang/bible-read/test/pages/home_page_test.dart: test/pages/home_page_test.dart:289:26: Error: Member not found: 'empty'.
-      return ReadingStatus.empty; 
-                           ^^^^^
-  .
-
-To run this test again: /opt/homebrew/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/twang/bible-read/test/pages/home_page_test.dart -p vm --plain-name 'loading /Users/twang/bible-read/test/pages/home_page_test.dart'
-00:04 +0 -1: Some tests failed.                                                                                                                                                                        

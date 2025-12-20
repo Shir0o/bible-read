@@ -41,82 +41,158 @@ class ReadLogList extends StatelessWidget {
         return CommonStyles.buildTappableCard(
           context: context,
           onTap: () {},
-          margin: const EdgeInsets.symmetric(vertical: 8),
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4), // Added horizontal margin for "breathing room"
           child: Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12), // Adjusted padding
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.check_circle, color: Colors.green),
-                  title: Text(
-                    '${log.name} read today!',
-                    style: AppTextStyles.subtitle,
-                  ),
-                  subtitle: () {
-                    final likeNames = log.likeNames;
-                    if (likeNames.isEmpty) return null;
-
-                    const maxToShow = 3;
-                    final displayText = likeNames.length > maxToShow
-                        ? '${likeNames.take(maxToShow).join(", ")} +${likeNames.length - maxToShow} more'
-                        : likeNames.join(', ');
-
-                    return Text('Liked by $displayText');
-                  }(),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (isFirst)
-                        Tooltip(
-                          message: 'First reader of the day',
-                          child: BadgeIcon(
-                            imageUrl: allAchievements
-                                .firstWhere((a) => a.id == 'firstReader')
-                                .imageUrl,
-                            iconData: allAchievements
-                                .firstWhere((a) => a.id == 'firstReader')
-                                .icon,
-                            size: 24,
-                          ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: IconButton(
-                          icon: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 300),
-                            transitionBuilder: (child, animation) =>
-                                ScaleTransition(scale: animation, child: child),
-                            child: Icon(
-                              isLiked ? Icons.favorite : Icons.favorite_border,
-                              key: ValueKey<bool>(isLiked),
-                              color: isLiked ? Colors.red : null,
-                            ),
-                          ),
-                          onPressed:
-                              isLiked ? null : () => onToggleLike(log.uid),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.mode_comment_outlined),
-                        onPressed: () {
-                          CommentDrawer.show(
-                            context,
-                            comments: log.comments,
-                            onAdd: (msg) => onAddComment(log.uid, msg),
-                            commenterName: commenterName,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                   const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                   const SizedBox(width: 12),
+                   Expanded(
+                     child: Column(
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: [
+                         // Name is primary
+                         Text(
+                           log.name,
+                           style: AppTextStyles.subtitle.copyWith(
+                             fontWeight: FontWeight.w600,
+                             height: 1.2,
+                           ),
+                         ),
+                         const SizedBox(height: 2),
+                         // Action context is secondary
+                         Text(
+                           'read today',
+                           style: AppTextStyles.body.copyWith(
+                             color: Theme.of(context).colorScheme.onSurfaceVariant,
+                             fontSize: 13,
+                           ),
+                         ),
+                       ],
+                     ),
+                   ),
+                    /* Gamification removed: First Reader badge
+                    if (isFirst)
+                      Tooltip(...)
+                    */
+                  ],
                 ),
-                CommentSection(
-                  comments: log.comments,
-                  onAdd: (msg) => onAddComment(log.uid, msg),
-                  showInput: false,
+
+                const SizedBox(height: 12), // Spacing between header and interactions
+
+                // Encouragement Text
+                if (log.likeNames.isNotEmpty) ...[
+                   Text(
+                    () {
+                      final likeNames = log.likeNames;
+                      const maxToShow = 3;
+                      final displayText = likeNames.length > maxToShow
+                          ? '${likeNames.take(maxToShow).join(", ")} +${likeNames.length - maxToShow} more'
+                          : likeNames.join(', ');
+                      return 'Encouraged by $displayText';
+                    }(),
+                    style: AppTextStyles.body.copyWith(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // Action Row: Subtle alignment
+                Row(
+                   mainAxisAlignment: MainAxisAlignment.start,
+                   children: [
+                     // Encouragement Button (Heart)
+                     Material(
+                       color: Colors.transparent,
+                       child: InkWell(
+                         borderRadius: BorderRadius.circular(20),
+                         onTap: isLiked ? null : () => onToggleLike(log.uid),
+                         child: Padding(
+                           padding: const EdgeInsets.all(8.0), // Larger touch target, visual space
+                           child: Row(
+                             mainAxisSize: MainAxisSize.min,
+                             children: [
+                               AnimatedSwitcher(
+                                 duration: const Duration(milliseconds: 300),
+                                 child: Icon(
+                                   isLiked ? Icons.favorite : Icons.favorite_border,
+                                   key: ValueKey<bool>(isLiked),
+                                   color: isLiked 
+                                     ? Theme.of(context).colorScheme.primary.withOpacity(0.7) // Muted heart color
+                                     : Theme.of(context).colorScheme.outline, // Subtle outline
+                                   size: 20,
+                                 ),
+                               ),
+                               if (!isLiked) ...[
+                                 const SizedBox(width: 6),
+                                 Text(
+                                   'Encourage',
+                                   style: TextStyle(
+                                     fontSize: 13,
+                                     color: Theme.of(context).colorScheme.outline,
+                                   ),
+                                 ),
+                               ],
+                             ],
+                           ),
+                         ),
+                       ),
+                     ),
+                     const SizedBox(width: 16),
+                     // Comment Button
+                     Material(
+                       color: Colors.transparent,
+                       child: InkWell(
+                         borderRadius: BorderRadius.circular(20),
+                         onTap: () {
+                           CommentDrawer.show(
+                             context,
+                             comments: log.comments,
+                             onAdd: (msg) => onAddComment(log.uid, msg),
+                             commenterName: commenterName,
+                           );
+                         },
+                         child: Padding(
+                           padding: const EdgeInsets.all(8.0),
+                           child: Row(
+                             children: [
+                               Icon(
+                                 Icons.chat_bubble_outline_rounded, // Rounded variant
+                                 size: 19,
+                                 color: Theme.of(context).colorScheme.outline,
+                               ),
+                               const SizedBox(width: 6),
+                               Text(
+                                   log.comments.isEmpty ? 'Comment' : '${log.comments.length}',
+                                   style: TextStyle(
+                                     fontSize: 13,
+                                     color: Theme.of(context).colorScheme.outline,
+                                   ),
+                               ),
+                             ],
+                           ),
+                         ),
+                       ),
+                     ),
+                   ],
                 ),
+                
+                if (log.comments.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: CommentSection(
+                      comments: log.comments,
+                      onAdd: (msg) => onAddComment(log.uid, msg),
+                      showInput: false,
+                    ),
+                  ),
               ],
             ),
           ),

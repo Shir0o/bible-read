@@ -595,25 +595,19 @@ class _HomePageState extends State<HomePage>
                 color: Colors.green,
               ),
               const SizedBox(height: 24),
+              // Simpler, calmer text
               Text(
-                'Marked Today',
+                'Glad you\'re here.',
                 style: AppTextStyles.subtitle.copyWith(
-                  fontSize: 28, 
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Great job! Come back tomorrow.',
-                style: AppTextStyles.body.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 24, 
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
             ] else ...[
               Text(
-                'Have you read today?',
+                'Did you read today?',
                 style: AppTextStyles.subtitle.copyWith(
                    fontSize: 24,
                    color: colorScheme.onSurfaceVariant,
@@ -624,9 +618,12 @@ class _HomePageState extends State<HomePage>
               SizedBox(
                 width: double.infinity,
                 height: 80,
-                child: FilledButton(
+                child: FilledButton.tonal(
                   onPressed: _toggleLoading ? null : _toggleReadStatus,
                   style: FilledButton.styleFrom(
+                    backgroundColor: colorScheme.primaryContainer,
+                    foregroundColor: colorScheme.onPrimaryContainer,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
@@ -636,15 +633,15 @@ class _HomePageState extends State<HomePage>
                     ),
                   ),
                   child: _toggleLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 32,
                           height: 32,
                           child: CircularProgressIndicator(
-                            color: Colors.white,
+                            color: colorScheme.onPrimaryContainer,
                             strokeWidth: 3,
                           ),
                         )
-                      : const Text('Mark as Read'),
+                      : const Text('Yes, I read'),
                 ),
               ),
             ],
@@ -709,12 +706,13 @@ class _HomePageState extends State<HomePage>
                        text: '$_currentStreak',
                        style: const TextStyle(fontWeight: FontWeight.w600),
                      ),
-                     const TextSpan(text: ' days in a row'),
+                     TextSpan(text: ' days of reading'),
                    ],
                  ),
               ),
 
-             if (_streakFreezesLeft != null && !_readToday && _currentStreak > 0) ...[
+             // Streak freezes hidden to reduce gamification pressure
+             if (false && _streakFreezesLeft != null && !_readToday && _currentStreak > 0) ...[
                const SizedBox(height: 4),
                Text(
                  'Streak freezes available: $_streakFreezesLeft',

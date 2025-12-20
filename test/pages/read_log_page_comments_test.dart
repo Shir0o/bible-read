@@ -123,7 +123,7 @@ void main() {
           auth: auth,
           onSend: ({required ownerUid, required commenterName}) async {});
 
-      await tester.tap(find.byIcon(Icons.mode_comment_outlined));
+      await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
       await tester.pumpAndSettle();
 
       expect(find.byType(CommentDrawer), findsOneWidget);
@@ -181,7 +181,7 @@ void main() {
 
       await pumpPage(tester, firestore: firestore, auth: auth, onSend: notify);
 
-      await tester.tap(find.byIcon(Icons.mode_comment_outlined));
+      await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
       await tester.pumpAndSettle();
 
       expect(find.byType(CommentDrawer), findsOneWidget);
@@ -249,7 +249,7 @@ void main() {
           auth: auth,
           onSend: ({required ownerUid, required commenterName}) async {});
 
-      await tester.tap(find.byIcon(Icons.mode_comment_outlined));
+      await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
       await tester.pumpAndSettle();
 
       final sheet = tester.widget<DraggableScrollableSheet>(

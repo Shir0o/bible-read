@@ -87,10 +87,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Have you read today?'), findsOneWidget);
-    expect(find.text('Mark as Read'), findsOneWidget);
+    expect(find.text('Did you read today?'), findsOneWidget);
+    expect(find.text('Yes, I read'), findsOneWidget);
     expect(find.byType(FilledButton), findsOneWidget);
-    expect(find.text('Marked Today'), findsNothing);
+    expect(find.text('Glad you\'re here.'), findsNothing);
   });
 
   testWidgets('show "Marked Today" when read today', (tester) async {
@@ -130,10 +130,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200)); 
     await tester.pumpAndSettle();
 
-    expect(find.text('Marked Today'), findsOneWidget);
-    expect(find.text('Great job! Come back tomorrow.'), findsOneWidget);
+    expect(find.text('Marked Today'), findsNothing);
+    expect(find.text('Glad you\'re here.'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
-    expect(find.text('Mark as Read'), findsNothing);
+    expect(find.text('Yes, I read'), findsNothing);
   });
 
   testWidgets('tapping "Mark as Read" updates UI to read state', (tester) async {
@@ -160,10 +160,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify initial state
-    expect(find.text('Mark as Read'), findsOneWidget);
+    expect(find.text('Yes, I read'), findsOneWidget);
 
     // Tap button
-    await tester.tap(find.text('Mark as Read'));
+    await tester.tap(find.text('Yes, I read'));
     await tester.pump(); // Start animation/process
 
     // Expect loading state or immediate update (optimistic)
@@ -172,7 +172,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify final state
-    expect(find.text('Marked Today'), findsOneWidget);
+    expect(find.text('Glad you\'re here.'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
     
     // Verify Firestore was updated
@@ -223,8 +223,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify streak text (RichText)
-    // RichText content aggregates to "5 days in a row"
-    expect(find.text('5 days in a row', findRichText: true), findsOneWidget);
+    // RichText content aggregates to "5 days of reading"
+    expect(find.text('5 days of reading', findRichText: true), findsOneWidget);
     
     // Verify progress bar elements
     expect(find.text('Reading this week'), findsOneWidget);
@@ -260,8 +260,8 @@ void main() {
     await tester.pump(); 
     
     // Check that regular content is NOT present yet
-    expect(find.text('Have you read today?'), findsNothing);
-    expect(find.text('Mark as Read'), findsNothing);
+    expect(find.text('Did you read today?'), findsNothing);
+    expect(find.text('Yes, I read'), findsNothing);
     
     // Check that Skeleton is present
     expect(find.byType(HomePageSkeleton), findsOneWidget);
@@ -274,7 +274,7 @@ void main() {
     await tester.pumpAndSettle();
     
     // Now content should be visible
-    expect(find.text('Have you read today?'), findsOneWidget);
+    expect(find.text('Did you read today?'), findsOneWidget);
     expect(find.byType(HomePageSkeleton), findsNothing);
   });
 }

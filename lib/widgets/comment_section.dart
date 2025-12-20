@@ -134,7 +134,7 @@ class _CommentSectionState extends State<CommentSection> {
                       textCapitalization: TextCapitalization.sentences,
                       keyboardType: TextInputType.text,
                       decoration:
-                          const InputDecoration(hintText: 'Add a comment...'),
+                          const InputDecoration(hintText: 'Write a word of encouragement...'),
                     ),
                   ),
                   const SizedBox(width: 8),
