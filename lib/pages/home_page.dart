@@ -18,6 +18,8 @@ import '../services/group_book_achievement_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
+import '../widgets/skeleton_loader.dart';
+import '../widgets/skeletons/home_page_skeleton.dart';
 import 'read_log_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
@@ -93,6 +95,8 @@ class _HomePageState extends State<HomePage>
 
   /// Whether the page is currently fetching or toggling the read status.
   bool _toggleLoading = false;
+  /// Whether the page is currently performing its initial data fetch.
+  bool _initialLoading = true;
   List<bool> _pastWeek = [];
   List<bool> _pastMonth = [];
   Set<DateTime> _readDates = {};
@@ -113,9 +117,20 @@ class _HomePageState extends State<HomePage>
       achievementService: widget.achievementService,
       groupBookAchievementService: widget.groupBookAchievementService,
     );
-    _loadReadStatus();
-    _loadFriendlyStreak();
+    _loadInitialData();
     _animationController.forward();
+  }
+
+  Future<void> _loadInitialData() async {
+    await Future.wait([
+      _loadReadStatus(showLoading: false),
+      _loadFriendlyStreak(showLoading: false),
+    ]);
+    if (!_disposed && mounted) {
+      setState(() {
+        _initialLoading = false;
+      });
+    }
   }
 
   @override
@@ -546,7 +561,11 @@ class _HomePageState extends State<HomePage>
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: _buildMinimalContent(context),
+      body: SkeletonLoader(
+        loading: _initialLoading,
+        skeleton: const HomePageSkeleton(),
+        child: _buildMinimalContent(context),
+      ),
     );
   }
 
@@ -647,16 +666,26 @@ class _HomePageState extends State<HomePage>
                       ),
                     ),
                     const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: _pastWeek.isEmpty 
-                            ? 0.0 
-                            : _pastWeek.where((d) => d).length / 7.0,
-                        minHeight: 6,
-                        backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.green.withValues(alpha: 0.4),
+                    Container(
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: colorScheme.outline.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: _pastWeek.isEmpty 
+                              ? 0.0 
+                              : _pastWeek.where((d) => d).length / 7.0,
+                          minHeight: 10,
+                          backgroundColor: Colors.transparent,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.green.withValues(alpha: 0.4),
+                          ),
                         ),
                       ),
                     ),

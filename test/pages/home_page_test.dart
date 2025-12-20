@@ -17,6 +17,7 @@ import 'package:bible_read/services/friendly_streak_service.dart';
 import 'package:bible_read/services/achievement_service.dart';
 import 'package:bible_read/services/group_book_achievement_service.dart';
 import 'package:bible_read/services/friend_streak_link_service.dart';
+import 'package:bible_read/widgets/skeletons/home_page_skeleton.dart'; // Import for type check
 import '../helpers/mock_lottie_http_client.dart';
 
 class _StubVibrationService extends VibrationService {
@@ -229,4 +230,70 @@ void main() {
     expect(find.text('Reading this week'), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
   });
+
+  testWidgets('displays skeleton while loading', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+
+    // Create a slow service to simulate loading delay
+    final slowReadingService = MockReadingStatusService();
+    
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+          friendlyStreakService: _StubFriendlyStreakService(),
+          achievementService: _StubAchievementService(),
+          groupBookAchievementService: _StubGroupBookAchievementService(),
+          friendStreakLinkService: _StubFriendStreakLinkService(),
+          readingStatusService: slowReadingService,
+        ),
+      ),
+    );
+
+    // Initial pump - should show skeleton immediately
+    await tester.pump(); 
+    
+    // Check that regular content is NOT present yet
+    expect(find.text('Have you read today?'), findsNothing);
+    expect(find.text('Mark as Read'), findsNothing);
+    
+    // Check that Skeleton is present
+    expect(find.byType(HomePageSkeleton), findsOneWidget);
+    
+    // Fast forward time to finish loading
+    // The skeleton loader has a minTime of 500ms (default)
+    // The service has a delay of 1s.
+    // We pump for 1 second + buffer
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pumpAndSettle();
+    
+    // Now content should be visible
+    expect(find.text('Have you read today?'), findsOneWidget);
+    expect(find.byType(HomePageSkeleton), findsNothing);
+  });
+}
+
+class MockReadingStatusService extends ReadingStatusService {
+  MockReadingStatusService() : super(firestore: FakeFirebaseFirestore(), auth: MockFirebaseAuth());
+
+  @override
+  Future<ReadingStatus> fetchStatus() async {
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 1000));
+    return ReadingStatus(
+      readToday: false,
+      pastWeek: [],
+      pastMonth: [],
+      readDates: {},
+      streak: 0,
+      graceCreditsAvailable: 0,
+      graceCreditsMonth: '2021-01',
+    );
+  }
 }
