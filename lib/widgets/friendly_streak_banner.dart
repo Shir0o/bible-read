@@ -9,8 +9,6 @@ class FriendlyStreakBanner extends StatelessWidget {
   /// Active and pending streak data for the current user.
   final FriendlyStreakLinksSummary summary;
 
-  /// Whether the banner is still loading data.
-  final bool isLoading;
 
   /// Optional tap handler to navigate to streak history.
   final VoidCallback? onTap;
@@ -18,7 +16,6 @@ class FriendlyStreakBanner extends StatelessWidget {
   const FriendlyStreakBanner({
     super.key,
     required this.summary,
-    this.isLoading = false,
     this.onTap,
   });
 
@@ -80,17 +77,7 @@ class FriendlyStreakBanner extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    if (isLoading)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Text(
-                          'Checking your streak partners...',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: onSurface,
-                          ),
-                        ),
-                      )
-                    else if (!summary.hasPartners)
+                    if (!summary.hasPartners)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Text(

@@ -24,6 +24,10 @@ import '../widgets/navigation_menu_scope.dart';
 import '../widgets/notification_button.dart';
 import '../widgets/read_status_section.dart';
 import '../widgets/status_refresh_indicator.dart';
+import '../widgets/skeleton_loader.dart';
+import '../widgets/skeletons/read_status_skeleton.dart';
+import '../widgets/skeletons/friendly_streak_skeleton.dart';
+
 import 'read_log_page.dart';
 import 'friendly_streak_page.dart';
 
@@ -619,13 +623,18 @@ class _HomePageState extends State<HomePage>
                       parent: _animationController,
                       curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
                     )),
-                    child: ReadStatusSection(
-                      toggleLoading: _toggleLoading,
-                      readToday: _readToday,
-                      onToggle: _toggleReadStatus,
-                      readDates: _readDates,
-                      streakFreezesLeft: _streakFreezesLeft,
-                      vibrationService: widget.vibrationService,
+                    child: SkeletonLoader(
+                      loading: _toggleLoading,
+                      minTime: Duration.zero,
+                      skeleton: const ReadStatusSkeleton(),
+                      child: ReadStatusSection(
+                        toggleLoading: _toggleLoading,
+                        readToday: _readToday,
+                        onToggle: _toggleReadStatus,
+                        readDates: _readDates,
+                        streakFreezesLeft: _streakFreezesLeft,
+                        vibrationService: widget.vibrationService,
+                      ),
                     ),
                   ),
                 ),
@@ -643,25 +652,29 @@ class _HomePageState extends State<HomePage>
                         parent: _animationController,
                         curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
                       )),
-                      child: FriendlyStreakBanner(
-                        summary: _friendStreaks ?? FriendlyStreakLinksSummary.empty,
-                        isLoading: _friendStreakLoading,
-                        onTap: () {
-                          final scope = NavigationMenuScope.maybeOf(context);
-                          if (scope != null) {
-                            scope.onNavigate(scope.friendlyStreakIndex);
-                            return;
-                          }
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => FriendlyStreakPage(
-                                firestore: widget.firestore,
-                                auth: widget.auth,
-                                friendlyStreakService: widget.friendlyStreakService,
+                      child: SkeletonLoader(
+                        loading: _friendStreakLoading,
+                        minTime: Duration.zero,
+                        skeleton: const FriendlyStreakSkeleton(),
+                        child: FriendlyStreakBanner(
+                          summary: _friendStreaks ?? FriendlyStreakLinksSummary.empty,
+                          onTap: () {
+                            final scope = NavigationMenuScope.maybeOf(context);
+                            if (scope != null) {
+                              scope.onNavigate(scope.friendlyStreakIndex);
+                              return;
+                            }
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => FriendlyStreakPage(
+                                  firestore: widget.firestore,
+                                  auth: widget.auth,
+                                  friendlyStreakService: widget.friendlyStreakService,
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),

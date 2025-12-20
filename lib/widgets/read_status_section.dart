@@ -57,37 +57,29 @@ class ReadStatusSection extends StatelessWidget {
               : (canToggle ? onToggle : () => _showLockedSnackBar(context)),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            child: toggleLoading
-                ? const Center(
-                    child: SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  )
-                : SizedBox(
-                    width: double.infinity,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(left: 12),
-                          child: Text('Mark today as read'),
-                        ),
-                        const SizedBox(width: 12),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: ReadSwitchTile(
-                            value: readToday,
-                            onChanged: (readToday || onToggle == null)
-                                ? (_) => _showLockedSnackBar(context)
-                                : (_) => onToggle?.call(),
-                            vibrationService: vibrationService,
-                          ),
-                        ),
-                      ],
+            child: SizedBox(
+              width: double.infinity,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(left: 12),
+                    child: Text('Mark today as read'),
+                  ),
+                  const SizedBox(width: 12),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: ReadSwitchTile(
+                      value: readToday,
+                      onChanged: (readToday || onToggle == null)
+                          ? (_) => _showLockedSnackBar(context)
+                          : (_) => onToggle?.call(),
+                      vibrationService: vibrationService,
                     ),
                   ),
+                ],
+              ),
+            ),
           ),
         ),
         if (streakFreezesLeft != null) ...[
