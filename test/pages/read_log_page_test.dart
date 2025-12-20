@@ -475,7 +475,7 @@ void main() {
 
       expect(find.text('User'), findsOneWidget);
       expect(find.text('read today'), findsOneWidget);
-      expect(find.textContaining('Encouraged by'), findsOneWidget);
+      expect(find.textContaining('sent encouragement'), findsOneWidget);
       expect(find.byType(BadgeIcon), findsNothing);
     });
 
@@ -561,7 +561,7 @@ void main() {
       expect(find.byType(BadgeIcon), findsNothing);
     });
 
-    testWidgets('toggleLike adds and does not remove like', (tester) async {
+    testWidgets('toggleLike adds and then removes like', (tester) async {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1', displayName: 'Tester One');
       final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
@@ -591,13 +591,35 @@ void main() {
                   required String commenterName}) async {})));
       await tester.pumpAndSettle();
 
+      // Likes
       await tester.tap(find.byIcon(Icons.favorite_border));
-      await tester.pump();
-      expect(find.byType(AnimatedSwitcher), findsWidgets);
-     
-      // I need to update this test logic significantly below manually.
-      // Let me just fix the assertions I can easily see here.
-      // Wait, "toggleLike adds and does not remove like" test is intricate.
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.favorite), findsOneWidget); // Expect filled
+
+      final likeDoc = await firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc('u2')
+          .collection('likes')
+          .doc('u1')
+          .get();
+      expect(likeDoc.exists, isTrue);
+
+      // Unlikes
+      await tester.tap(find.byIcon(Icons.favorite));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.favorite_border), findsOneWidget); // Expect outline
+
+      final likeDocDeleted = await firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .doc('u2')
+          .collection('likes')
+          .doc('u1')
+          .get();
+      expect(likeDocDeleted.exists, isFalse);
     });
 
     // Cutting off here to rewrite the test logic separately?

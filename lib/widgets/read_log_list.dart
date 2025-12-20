@@ -87,101 +87,104 @@ class ReadLogList extends StatelessWidget {
 
                 // Encouragement Text
                 if (log.likeNames.isNotEmpty) ...[
-                   Text(
-                    () {
-                      final likeNames = log.likeNames;
-                      const maxToShow = 3;
-                      final displayText = likeNames.length > maxToShow
-                          ? '${likeNames.take(maxToShow).join(", ")} +${likeNames.length - maxToShow} more'
-                          : likeNames.join(', ');
-                      return 'Encouraged by $displayText';
-                    }(),
-                    style: AppTextStyles.body.copyWith(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
+                   Padding(
+                     padding: const EdgeInsets.only(left: 32.0), // Align with name
+                     child: Text(
+                      () {
+                        final likeNames = log.likeNames;
+                        const maxToShow = 2; // Reduced to fit better
+                        final displayText = likeNames.length > maxToShow
+                            ? '${likeNames.take(maxToShow).join(", ")} +${likeNames.length - maxToShow} more'
+                            : likeNames.join(', ');
+                        return '$displayText sent encouragement';
+                      }(),
+                      style: AppTextStyles.body.copyWith(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                                       ),
+                   ),
                   const SizedBox(height: 12),
                 ],
 
                 // Action Row: Subtle alignment
-                Row(
-                   mainAxisAlignment: MainAxisAlignment.start,
-                   children: [
-                     // Encouragement Button (Heart)
-                     Material(
-                       color: Colors.transparent,
-                       child: InkWell(
-                         borderRadius: BorderRadius.circular(20),
-                         onTap: isLiked ? null : () => onToggleLike(log.uid),
-                         child: Padding(
-                           padding: const EdgeInsets.all(8.0), // Larger touch target, visual space
-                           child: Row(
-                             mainAxisSize: MainAxisSize.min,
-                             children: [
-                               AnimatedSwitcher(
+                Padding(
+                  padding: const EdgeInsets.only(left: 32.0), // Align with name (20 icon + 12 gap)
+                  child: Row(
+                     mainAxisAlignment: MainAxisAlignment.start,
+                     children: [
+                       // Encouragement Button (Heart)
+                       Material(
+                         color: Colors.transparent,
+                         child: InkWell(
+                           borderRadius: BorderRadius.circular(20),
+                           onTap: () => onToggleLike(log.uid), // Allow toggling (unlike)
+                           child: Semantics(
+                             button: true,
+                             label: isLiked 
+                                 ? 'Remove encouragement for ${log.name}' 
+                                 : 'Encourage ${log.name}',
+                             child: Padding(
+                               padding: const EdgeInsets.all(8.0),
+                               child: AnimatedSwitcher(
                                  duration: const Duration(milliseconds: 300),
                                  child: Icon(
                                    isLiked ? Icons.favorite : Icons.favorite_border,
                                    key: ValueKey<bool>(isLiked),
                                    color: isLiked 
-                                     ? Theme.of(context).colorScheme.primary.withOpacity(0.7) // Muted heart color
+                                     ? const Color(0xFFCFA69D) // Warm muted clay
                                      : Theme.of(context).colorScheme.outline, // Subtle outline
                                    size: 20,
                                  ),
                                ),
-                               if (!isLiked) ...[
-                                 const SizedBox(width: 6),
-                                 Text(
-                                   'Encourage',
-                                   style: TextStyle(
-                                     fontSize: 13,
-                                     color: Theme.of(context).colorScheme.outline,
-                                   ),
-                                 ),
-                               ],
-                             ],
+                             ),
                            ),
                          ),
                        ),
-                     ),
-                     const SizedBox(width: 16),
-                     // Comment Button
-                     Material(
-                       color: Colors.transparent,
-                       child: InkWell(
-                         borderRadius: BorderRadius.circular(20),
-                         onTap: () {
-                           CommentDrawer.show(
-                             context,
-                             comments: log.comments,
-                             onAdd: (msg) => onAddComment(log.uid, msg),
-                             commenterName: commenterName,
-                           );
-                         },
-                         child: Padding(
-                           padding: const EdgeInsets.all(8.0),
-                           child: Row(
-                             children: [
-                               Icon(
-                                 Icons.chat_bubble_outline_rounded, // Rounded variant
-                                 size: 19,
-                                 color: Theme.of(context).colorScheme.outline,
-                               ),
-                               const SizedBox(width: 6),
-                               Text(
-                                   log.comments.isEmpty ? 'Comment' : '${log.comments.length}',
-                                   style: TextStyle(
-                                     fontSize: 13,
+                       const SizedBox(width: 8), // Adjusted spacing for icons
+                       // Comment Button
+                       Material(
+                         color: Colors.transparent,
+                         child: InkWell(
+                           borderRadius: BorderRadius.circular(20),
+                           onTap: () {
+                             CommentDrawer.show(
+                               context,
+                               comments: log.comments,
+                               onAdd: (msg) => onAddComment(log.uid, msg),
+                               commenterName: commenterName,
+                             );
+                           },
+                           child: Semantics(
+                              button: true,
+                              label: 'Comments for ${log.name}',
+                             child: Padding(
+                               padding: const EdgeInsets.all(8.0),
+                               child: Row(
+                                 children: [
+                                   Icon(
+                                     Icons.chat_bubble_outline_rounded,
+                                     size: 20, // Matched size
                                      color: Theme.of(context).colorScheme.outline,
                                    ),
+                                   if (log.comments.isNotEmpty) ...[
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '${log.comments.length}',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Theme.of(context).colorScheme.outline,
+                                        ),
+                                      ),
+                                   ],
+                                 ],
                                ),
-                             ],
+                             ),
                            ),
                          ),
                        ),
-                     ),
-                   ],
+                     ],
+                  ),
                 ),
                 
                 if (log.comments.isNotEmpty)

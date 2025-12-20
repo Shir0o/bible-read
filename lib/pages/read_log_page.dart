@@ -212,18 +212,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
     if (index == -1) return;
     final original = _logs[index];
 
-    if (original.liked) {
-      return;
-    }
-
     final likerName = (user.displayName ?? '').split(' ').first;
-    final updatedNames = List<String>.from(original.likeNames)..add(likerName);
-
-    // Optimistically update UI
-    setState(() {
-      _logs[index] = original.copyWith(liked: true, likeNames: updatedNames);
-    });
-
     final now = widget.dateProvider();
     final dateKey =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
@@ -234,28 +223,58 @@ class _ReadLogPageState extends State<ReadLogPage> {
         .doc(logUid)
         .collection('likes')
         .doc(user.uid);
-    try {
-      final likeDoc = await likeRef.get();
-      if (likeDoc.exists) {
+
+    if (original.liked) {
+      // Unlike logic
+      final updatedNames = List<String>.from(original.likeNames)..remove(likerName);
+      setState(() {
+        _logs[index] = original.copyWith(liked: false, likeNames: updatedNames);
+      });
+
+      try {
+        await likeRef.delete();
+      } catch (e, st) {
+        if (kDebugMode) {
+          debugPrint('Failed to unlike: $e');
+        }
+        ErrorLogger.log(e, st);
         if (mounted) {
           setState(() => _logs[index] = original);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to remove encouragement. Please try again.')),
+          );
         }
-        return;
       }
-      await likeRef.set({'timestamp': Timestamp.now(), 'name': likerName});
-      if (logUid != user.uid) {
-        await _sendLikeNotification(ownerUid: logUid, likerName: likerName);
-      }
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to toggle like: $e');
-      }
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        setState(() => _logs[index] = original);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to like. Please try again.')),
-        );
+    } else {
+      // Like logic
+      final updatedNames = List<String>.from(original.likeNames)..add(likerName);
+      setState(() {
+        _logs[index] = original.copyWith(liked: true, likeNames: updatedNames);
+      });
+
+      try {
+        final likeDoc = await likeRef.get();
+        if (likeDoc.exists) {
+          if (mounted) {
+            setState(() => _logs[index] = original);
+          }
+          return;
+        }
+        await likeRef.set({'timestamp': Timestamp.now(), 'name': likerName});
+        if (logUid != user.uid) {
+          await _sendLikeNotification(ownerUid: logUid, likerName: likerName);
+        }
+      } catch (e, st) {
+        if (kDebugMode) {
+          debugPrint('Failed to toggle like: $e');
+        }
+        ErrorLogger.log(e, st);
+        if (mounted) {
+          setState(() => _logs[index] = original);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to encourage. Please try again.')),
+          );
+        }
       }
     }
   }
