@@ -97,6 +97,7 @@ class _HomePageState extends State<HomePage>
   List<bool> _pastMonth = [];
   Set<DateTime> _readDates = {};
   int? _streakFreezesLeft;
+  int _currentStreak = 0;
   FriendlyStreakLinksSummary? _friendStreaks;
   bool _friendStreakLoading = false;
   late BookAchievementRefresher _bookAchievementRefresher;
@@ -151,6 +152,7 @@ class _HomePageState extends State<HomePage>
           _pastMonth = status.pastMonth;
           _readDates = status.readDates;
           _streakFreezesLeft = status.graceCreditsAvailable;
+          _currentStreak = status.streak;
         });
       }
     } catch (e, st) {
@@ -628,14 +630,68 @@ class _HomePageState extends State<HomePage>
               ),
             ],
             
-            // Secondary, unobtrusive progress info
-            if (_streakFreezesLeft != null && !_readToday) ...[
-               const SizedBox(height: 32),
+            const SizedBox(height: 48),
+
+            // Weekly Progress Section - Constrained width for intentionality
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 240),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Reading this week',
+                      style: AppTextStyles.body.copyWith(
+                        fontSize: 12,
+                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: _pastWeek.isEmpty 
+                            ? 0.0 
+                            : _pastWeek.where((d) => d).length / 7.0,
+                        minHeight: 6,
+                        backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.green.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Streak Count
+            if (_currentStreak > 0)
+              RichText(
+                 text: TextSpan(
+                   style: AppTextStyles.body.copyWith(
+                     fontSize: 13,
+                     color: colorScheme.outline,
+                   ),
+                   children: [
+                     TextSpan(
+                       text: '$_currentStreak',
+                       style: const TextStyle(fontWeight: FontWeight.w600),
+                     ),
+                     const TextSpan(text: ' days in a row'),
+                   ],
+                 ),
+              ),
+
+             if (_streakFreezesLeft != null && !_readToday && _currentStreak > 0) ...[
+               const SizedBox(height: 4),
                Text(
                  'Streak freezes available: $_streakFreezesLeft',
                  style: AppTextStyles.body.copyWith(
-                   fontSize: 14,
-                   color: colorScheme.outline,
+                   fontSize: 11,
+                   color: colorScheme.outline.withValues(alpha: 0.5),
                  ),
                ),
             ],

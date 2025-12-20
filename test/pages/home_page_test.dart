@@ -188,4 +188,45 @@ void main() {
     expect(doc.exists, isTrue);
     expect(doc.data()?['read'], isTrue);
   });
+  testWidgets('displays streak and weekly progress', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+
+    // Seed summary data with a streak
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('summary')
+        .doc('data')
+        .set({
+          'streak': 5,
+          'pastWeekReadDates': [], // Empty for now
+        });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: _StubVibrationService(),
+           friendlyStreakService: _StubFriendlyStreakService(),
+          achievementService: _StubAchievementService(),
+          groupBookAchievementService: _StubGroupBookAchievementService(),
+          friendStreakLinkService: _StubFriendStreakLinkService(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify streak text (RichText)
+    // RichText content aggregates to "5 days in a row"
+    expect(find.text('5 days in a row', findRichText: true), findsOneWidget);
+    
+    // Verify progress bar elements
+    expect(find.text('Reading this week'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+  });
 }
