@@ -15,21 +15,10 @@ import '../services/friend_streak_link_service.dart';
 import '../services/friendly_streak_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/group_book_achievement_service.dart';
-import '../services/notification_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
-import '../widgets/common_styles.dart';
-import '../widgets/friendly_streak_banner.dart';
-import '../widgets/navigation_menu_scope.dart';
-import '../widgets/notification_button.dart';
-import '../widgets/read_status_section.dart';
-import '../widgets/status_refresh_indicator.dart';
-import '../widgets/skeleton_loader.dart';
-import '../widgets/skeletons/read_status_skeleton.dart';
-import '../widgets/skeletons/friendly_streak_skeleton.dart';
-
+import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
 import 'read_log_page.dart';
-import 'friendly_streak_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
 /// Firestore when the app starts.
@@ -555,12 +544,11 @@ class _HomePageState extends State<HomePage>
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: _buildMainContent(context),
+      body: _buildMinimalContent(context),
     );
   }
 
-  Widget _buildMainContent(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildMinimalContent(BuildContext context) {
     if (widget.auth.currentUser == null) {
       return Center(
         child: Text(
@@ -570,116 +558,87 @@ class _HomePageState extends State<HomePage>
       );
     }
 
-    return NestedScrollView(
-      headerSliverBuilder: (context, innerBoxIsScrolled) {
-        return [
-          SliverAppBar(
-            title: Text(
-              'Reading Hub',
-              style: CommonStyles.appBarTitleText(colorScheme),
-            ),
-            centerTitle: false,
-            pinned: true,
-            backgroundColor: colorScheme.surface,
-            scrolledUnderElevation: 0,
-            leading: null,
-            automaticallyImplyLeading: false,
-            actions: [
-              NotificationButton(
-                service: NotificationService(firestore: widget.firestore),
-                auth: widget.auth,
-                vibrationService: widget.vibrationService,
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    // Minimal UI: Centered content, no distractions.
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (_readToday) ...[
+              const Icon(
+                Icons.check_circle_outline_rounded,
+                size: 80,
+                color: Colors.green,
               ),
-              const SizedBox(width: 8),
-            ],
-          ),
-        ];
-      },
-      body: StatusRefreshIndicator(
-        onRefresh: _performRefresh,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics()),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.only(
-                top: 16.0,
-                bottom: 48,
-                left: 16,
-                right: 16,
-              ),
-              sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: _animationController,
-                    curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-                  ),
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.1),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: _animationController,
-                      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-                    )),
-                    child: SkeletonLoader(
-                      loading: _toggleLoading,
-                      minTime: Duration.zero,
-                      skeleton: const ReadStatusSkeleton(),
-                      child: ReadStatusSection(
-                        toggleLoading: _toggleLoading,
-                        readToday: _readToday,
-                        onToggle: _toggleReadStatus,
-                        readDates: _readDates,
-                        streakFreezesLeft: _streakFreezesLeft,
-                        vibrationService: widget.vibrationService,
-                      ),
-                    ),
-                  ),
+              const SizedBox(height: 24),
+              Text(
+                'Marked Today',
+                style: AppTextStyles.subtitle.copyWith(
+                  fontSize: 28, 
+                  fontWeight: FontWeight.bold,
                 ),
-                if (_friendStreakLoading || _friendStreaks != null)
-                  FadeTransition(
-                    opacity: CurvedAnimation(
-                      parent: _animationController,
-                      curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Great job! Come back tomorrow.',
+                style: AppTextStyles.body.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ] else ...[
+              Text(
+                'Have you read today?',
+                style: AppTextStyles.subtitle.copyWith(
+                   fontSize: 24,
+                   color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 48),
+              SizedBox(
+                width: double.infinity,
+                height: 80,
+                child: FilledButton(
+                  onPressed: _toggleLoading ? null : _toggleReadStatus,
+                  style: FilledButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
                     ),
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.1),
-                        end: Offset.zero,
-                      ).animate(CurvedAnimation(
-                        parent: _animationController,
-                        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
-                      )),
-                      child: SkeletonLoader(
-                        loading: _friendStreakLoading,
-                        minTime: Duration.zero,
-                        skeleton: const FriendlyStreakSkeleton(),
-                        child: FriendlyStreakBanner(
-                          summary: _friendStreaks ?? FriendlyStreakLinksSummary.empty,
-                          onTap: () {
-                            final scope = NavigationMenuScope.maybeOf(context);
-                            if (scope != null) {
-                              scope.onNavigate(scope.friendlyStreakIndex);
-                              return;
-                            }
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => FriendlyStreakPage(
-                                  firestore: widget.firestore,
-                                  auth: widget.auth,
-                                  friendlyStreakService: widget.friendlyStreakService,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                    textStyle: const TextStyle(
+                      fontSize: 22, 
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-              ])),
-            ),
+                  child: _toggleLoading
+                      ? const SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
+                      : const Text('Mark as Read'),
+                ),
+              ),
+            ],
+            
+            // Secondary, unobtrusive progress info
+            if (_streakFreezesLeft != null && !_readToday) ...[
+               const SizedBox(height: 32),
+               Text(
+                 'Streak freezes available: $_streakFreezesLeft',
+                 style: AppTextStyles.body.copyWith(
+                   fontSize: 14,
+                   color: colorScheme.outline,
+                 ),
+               ),
+            ],
           ],
         ),
       ),
