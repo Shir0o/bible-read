@@ -21,6 +21,7 @@ import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or ve
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
 import 'read_log_page.dart';
+import '../widgets/profile_button.dart';
 
 /// Landing page that displays reading progress and loads user data from
 /// Firestore when the app starts.
@@ -561,6 +562,14 @@ class _HomePageState extends State<HomePage>
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: colorScheme.surface,
+      appBar: AppBar(
+        forceMaterialTransparency: true,
+        backgroundColor: Colors.transparent,
+        actions: [
+          ProfileButton(auth: widget.auth),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: SkeletonLoader(
         loading: _initialLoading,
         skeleton: const HomePageSkeleton(),

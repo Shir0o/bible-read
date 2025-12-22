@@ -1,24 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../pages/admin/feedback_admin_page.dart';
 import '../pages/feedback_page.dart';
 import '../services/admin_role_service.dart';
 import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
+import '../services/friend_service.dart';
+import '../services/exercise_tracker_service.dart';
 import 'animated_page_route.dart';
-
-import 'dart:async';
-
-import 'package:flutter/material.dart';
-
-import '../pages/admin/feedback_admin_page.dart';
-import '../pages/feedback_page.dart';
-import '../services/admin_role_service.dart';
-import '../services/feedback_service.dart';
-import '../services/vibration_service.dart';
-import 'animated_page_route.dart';
+import '../pages/inbox_page.dart';
+import '../pages/challenges_page.dart';
+import '../pages/user_profile_page.dart';
+import '../services/google_sign_in_factory.dart';
 
 class AppMenuSheet extends StatefulWidget {
   const AppMenuSheet({
@@ -99,7 +96,6 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
     final service = widget.adminRoleService;
     if (service == null) return;
 
-    // Use cached value immediately if available
     if (service.cachedAdminRole != null) {
       setState(() {
         _isAdmin = service.cachedAdminRole!;
@@ -114,41 +110,60 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
         });
       }
     } catch (_) {
-      // Ignore errors, default to false
+      // Ignore errors
     }
   }
 
   List<_MenuItem> _menuItems() {
     final items = [
-      const _MenuItem(
-          index: 6, icon: Icons.emoji_events, label: 'Achievements'),
-      const _MenuItem(
-        index: 14,
-        icon: Icons.checklist,
-        label: 'Book Tracker',
+      _MenuItem(
+        icon: Icons.person,
+        label: 'Profile',
+        onTap: (context) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => UserProfilePage(
+                auth: FirebaseAuth.instance,
+                firestore: FirebaseFirestore.instance,
+                googleSignInProvider: createGoogleSignIn,
+                friendService: FriendService(firestore: FirebaseFirestore.instance),
+              ),
+            ),
+          );
+        },
       ),
-      const _MenuItem(index: 1, icon: Icons.feed, label: 'Feed'),
-      const _MenuItem(index: 4, icon: Icons.people, label: 'Friends'),
-      const _MenuItem(index: 5, icon: Icons.group, label: 'Groups'),
-      const _MenuItem(index: 7, icon: Icons.calendar_today, label: 'History'),
-      const _MenuItem(
-        index: 8,
-        icon: Icons.local_fire_department,
-        label: 'Friendly Streaks',
+      _MenuItem(
+        icon: Icons.inbox,
+        label: 'Inbox',
+        onTap: (context) {
+           Navigator.of(context).push(
+            MaterialPageRoute(
+               builder: (_) => InboxPage(
+                  auth: FirebaseAuth.instance,
+                  firestore: FirebaseFirestore.instance,
+                  vibrationService: widget.vibrationService,
+               ),
+            ),
+           );
+        },
       ),
-      const _MenuItem(index: 0, icon: Icons.home_outlined, label: 'Home'),
-      const _MenuItem(index: 3, icon: Icons.leaderboard, label: 'Leaderboard'),
-      const _MenuItem(
-          index: 11, icon: Icons.notifications, label: 'Notifications'),
-      const _MenuItem(index: 10, icon: Icons.person, label: 'Profile'),
-      const _MenuItem(
-          index: 12, icon: Icons.fitness_center, label: 'Daily Exercise'),
-      const _MenuItem(
-        index: 13,
-        icon: Icons.manage_search,
-        label: 'Exercise Challenges',
+      _MenuItem(
+        icon: Icons.emoji_events,
+        label: 'Challenges',
+        onTap: (context) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ChallengesPage(
+                auth: FirebaseAuth.instance,
+                firestore: FirebaseFirestore.instance,
+                friendService: FriendService(firestore: FirebaseFirestore.instance),
+                vibrationService: widget.vibrationService,
+                exerciseTrackerService: ExerciseTrackerService(firestore: FirebaseFirestore.instance, auth: FirebaseAuth.instance),
+              ),
+            ),
+          );
+        },
       ),
-      const _MenuItem(index: 2, icon: Icons.flag, label: 'Seasonal Challenges'),
       _MenuItem(
         icon: Icons.feedback,
         label: 'Feedback',
@@ -281,7 +296,7 @@ class _MenuContents extends StatelessWidget {
                     children: items
                         .map(
                           (item) => SizedBox(
-                            width: buttonWidth,
+                            width: buttonWidth, // Ensure equal width
                             child: _MenuActionButton(
                               item: item,
                               onNavigate: onNavigate,

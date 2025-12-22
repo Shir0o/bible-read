@@ -133,4 +133,11 @@ class AppTextStyles {
     fontFamily: AppTheme.fontFamily,
     fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
   );
+
+  static const TextStyle title = TextStyle(
+    fontSize: 22,
+    fontWeight: FontWeight.w700,
+    fontFamily: AppTheme.fontFamily,
+    fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
+  );
 }

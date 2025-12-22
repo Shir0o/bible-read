@@ -11,27 +11,23 @@ import '../widgets/navigation_menu_scope.dart';
 import 'friends_page.dart';
 import 'invite_streak_page.dart';
 
-/// Dedicated page for managing friendly streak partners.
-class FriendlyStreakPage extends StatefulWidget {
+class FriendlyStreakView extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final FriendlyStreakService friendlyStreakService;
 
-  FriendlyStreakPage({
+  FriendlyStreakView({
     super.key,
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-    FriendlyStreakService? friendlyStreakService,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        friendlyStreakService = friendlyStreakService ??
-            FriendlyStreakService(firestore: firestore);
+    required this.firestore,
+    required this.auth,
+    required this.friendlyStreakService,
+  });
 
   @override
-  State<FriendlyStreakPage> createState() => _FriendlyStreakPageState();
+  State<FriendlyStreakView> createState() => _FriendlyStreakViewState();
 }
 
-class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
+class _FriendlyStreakViewState extends State<FriendlyStreakView> {
   FriendlyStreakLinksSummary _summary = FriendlyStreakLinksSummary.empty;
   int _currentStreak = 0;
   int _longestStreak = 0;
@@ -100,19 +96,6 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
         _loadError = true;
       });
     }
-  }
-
-  void _openFriendsPage() {
-    final scope = NavigationMenuScope.maybeOf(context);
-    if (scope != null) {
-      scope.onNavigate(scope.friendsIndex);
-      return;
-    }
-    Navigator.of(context, rootNavigator: false).push(
-      MaterialPageRoute(
-        builder: (_) => FriendsPage(auth: widget.auth),
-      ),
-    );
   }
 
   Widget _buildPartnerListCard() {
@@ -220,44 +203,80 @@ class _FriendlyStreakPageState extends State<FriendlyStreakPage> {
 
   @override
   Widget build(BuildContext context) {
+    return Container(
+      decoration:
+          CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
+      child: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: _loadFriendlyStreak,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              children: [
+                if (_loadError) ...[
+                  _buildErrorNotice(),
+                  const SizedBox(height: 16),
+                ],
+                _buildPartnerListCard(),
+                const SizedBox(height: 80), // Fab spacing
+              ],
+            ),
+          ),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton(
+              heroTag: 'friendly-streak-fab',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => InviteStreakPage(
+                      auth: widget.auth,
+                      friendService: FriendService(firestore: widget.firestore),
+                    ),
+                  ),
+                );
+              },
+              child: const Icon(Icons.add),
+            ),
+          ),
+        ],
+      )
+    );
+  }
+}
+
+// Keeping the original Page as a wrapper for backward compatibility if needed, 
+// though we primarily want to use the view.
+class FriendlyStreakPage extends StatelessWidget {
+  final FirebaseFirestore firestore;
+  final FirebaseAuth auth;
+  final FriendlyStreakService friendlyStreakService;
+
+  FriendlyStreakPage({
+    super.key,
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+    FriendlyStreakService? friendlyStreakService,
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        friendlyStreakService = friendlyStreakService ??
+            FriendlyStreakService(firestore: firestore ?? FirebaseFirestore.instance);
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         context,
         'Friendly streaks',
         automaticallyImplyLeading: false,
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'friendly-streak-fab',
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => InviteStreakPage(
-                auth: widget.auth,
-                friendService: FriendService(firestore: widget.firestore),
-              ),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
-      body: Container(
-        decoration:
-            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
-        child: RefreshIndicator(
-          onRefresh: _loadFriendlyStreak,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            shrinkWrap: true,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            children: [
-              if (_loadError) ...[
-                _buildErrorNotice(),
-                const SizedBox(height: 16),
-              ],
-              _buildPartnerListCard(),
-            ],
-          ),
-        ),
+      body: FriendlyStreakView(
+        firestore: firestore,
+        auth: auth,
+        friendlyStreakService: friendlyStreakService,
       ),
     );
   }

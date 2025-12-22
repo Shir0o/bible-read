@@ -5,12 +5,11 @@ import 'dart:async';
 import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
-import '../services/error_logger.dart';
-import 'add_friend_page.dart';
+import '../widgets/views/friends_view.dart';
 import 'friend_requests_page.dart';
 
 /// Page that lists current friends and allows sending friend requests by email.
-class FriendsPage extends StatefulWidget {
+class FriendsPage extends StatelessWidget {
   /// Service used to manage friends and requests.
   final FriendService friendService;
 
@@ -31,42 +30,8 @@ class FriendsPage extends StatefulWidget {
         vibrationService = vibrationService ?? const VibrationService();
 
   @override
-  State<FriendsPage> createState() => _FriendsPageState();
-}
-
-class _FriendsPageState extends State<FriendsPage> {
-  /// Tracks friends nudged today so the button can be disabled.
-  final Set<String> _nudgedToday = <String>{};
-
-  /// Subscription to the nudged today stream.
-  StreamSubscription<Set<String>>? _nudgeSub;
-
-  @override
-  void initState() {
-    super.initState();
-    final user = widget.auth.currentUser;
-    if (user != null) {
-      _nudgeSub = widget.friendService.nudgedToday(user.uid).listen((ids) {
-        if (mounted) {
-          setState(() {
-            _nudgedToday
-              ..clear()
-              ..addAll(ids);
-          });
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _nudgeSub?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final user = widget.auth.currentUser;
+    final user = auth.currentUser;
     return Scaffold(
       appBar: CommonStyles.buildAppBar(
         context,
@@ -77,12 +42,12 @@ class _FriendsPageState extends State<FriendsPage> {
             IconButton(
               icon: const Icon(Icons.person_add),
               onPressed: () {
-                unawaited(widget.vibrationService.lightImpact());
+                unawaited(vibrationService.lightImpact());
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => FriendRequestsPage(
-                      friendService: widget.friendService,
-                      auth: widget.auth,
+                      friendService: friendService,
+                      auth: auth,
                     ),
                   ),
                 );
@@ -90,141 +55,11 @@ class _FriendsPageState extends State<FriendsPage> {
             ),
         ],
       ),
-      body: Container(
-        decoration:
-            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
-        child: user == null
-            ? const Center(child: Text('Please sign in'))
-            : Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: _buildSignedInContent(user),
-              ),
+      body: FriendsView(
+        friendService: friendService,
+        auth: auth,
+        vibrationService: vibrationService,
       ),
-      floatingActionButton: user == null
-          ? null
-          : FloatingActionButton(
-              heroTag: 'friends-fab',
-              onPressed: () {
-                unawaited(widget.vibrationService.lightImpact());
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => AddFriendPage(
-                      friendService: widget.friendService,
-                      auth: widget.auth,
-                      vibrationService: widget.vibrationService,
-                    ),
-                  ),
-                );
-              },
-              child: const Icon(Icons.add),
-            ),
-    );
-  }
-
-  Widget _buildSignedInContent(User user) {
-    return StreamBuilder<List<Friend>>(
-      stream: widget.friendService.friends(user.uid),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const Text('Failed to load data');
-        }
-        if (!snapshot.hasData) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-        final friends = snapshot.data!;
-        if (friends.isEmpty) {
-          return const Center(child: Text('No friends yet'));
-        }
-        return ListView(
-          children: friends
-              .map(
-                (f) => CommonStyles.buildTappableCard(
-                  context: context,
-                  onTap: () {},
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          f.name.isEmpty ? 'Friend' : f.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      _buildNudgeButton(user, f),
-                    ],
-                  ),
-                ),
-              )
-              .toList(),
-        );
-      },
-    );
-  }
-
-  Widget _buildNudgeButton(User user, Friend friend) {
-    final nudged = _nudgedToday.contains(friend.uid);
-    return IconButton(
-      icon: Icon(
-        nudged ? Icons.notifications_off : Icons.notifications_active,
-        color: nudged ? Colors.grey : null,
-      ),
-      onPressed: nudged
-          ? null
-          : () async {
-              final messenger = ScaffoldMessenger.of(context);
-              setState(() {
-                _nudgedToday.add(friend.uid);
-              });
-              try {
-                final result = await widget.friendService.nudgeFriend(
-                  currentUid: user.uid,
-                  friendUid: friend.uid,
-                  currentName: user.displayName ?? 'You',
-                );
-                if (!mounted) return;
-                switch (result) {
-                  case NudgeResult.alreadyRead:
-                    setState(() {
-                      _nudgedToday.remove(friend.uid);
-                    });
-                    messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Friend already read today'),
-                      ),
-                    );
-                    break;
-                  case NudgeResult.alreadySent:
-                    messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Nudge already sent'),
-                      ),
-                    );
-                    break;
-                  case NudgeResult.sent:
-                    messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Nudge sent'),
-                      ),
-                    );
-                    break;
-                }
-              } catch (e, st) {
-                debugPrint('Failed to send nudge: $e');
-                ErrorLogger.log(e, st);
-                if (!mounted) return;
-                setState(() {
-                  _nudgedToday.remove(friend.uid);
-                });
-                messenger.showSnackBar(
-                  const SnackBar(
-                    content: Text('Failed to send nudge'),
-                  ),
-                );
-              }
-            },
     );
   }
 }

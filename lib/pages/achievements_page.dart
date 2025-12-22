@@ -2,129 +2,116 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../models/achievement_definition.dart';
+import '../models/achievement.dart';
 import '../services/achievement_service.dart';
-import '../widgets/achievement_list_item.dart';
+// import '../services/error_logger.dart'; // Add if needed for error handling
 import '../widgets/common_styles.dart';
 
-class AchievementsPage extends StatelessWidget {
-  final FirebaseFirestore firestore;
+class AchievementsView extends StatelessWidget {
   final FirebaseAuth auth;
+  final AchievementService achievementService;
 
-  AchievementsPage(
-      {super.key, FirebaseFirestore? firestore, FirebaseAuth? auth})
-      : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance;
+  AchievementsView({
+    super.key,
+    required this.auth,
+    required this.achievementService,
+  });
 
   @override
   Widget build(BuildContext context) {
     final user = auth.currentUser;
-    return Scaffold(
-      appBar: CommonStyles.buildAppBar(
-        context,
-        'Achievements',
-        automaticallyImplyLeading: false,
-      ),
-      body: Container(
-        decoration:
-            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
-        child: user == null
-            ? const Center(
-                child: Text('Please sign in to view your achievements.'),
-              )
-            : StreamBuilder<Set<String>>(
-                stream: AchievementService(firestore: firestore)
-                    .unlockedAchievementIds(user.uid),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return const Center(
-                        child: Text('Failed to load achievements'));
-                  }
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+    if (user == null) return const Center(child: Text('Please sign in'));
 
-                  final unlocked = snapshot.data!;
-                  final categories = AchievementCategory.values;
-                  final tabLabelColor = Colors.white;
-                  final unselectedTabLabelColor = Colors.white70;
-                  final definitionsByCategory = {
-                    for (final category in categories)
-                      category: achievementsForCategory(category),
-                  };
+    return StreamBuilder<List<Achievement>>(
+      stream: achievementService.achievements(user.uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return const Center(child: Text('Error loading achievements'));
+        }
 
-                  return DefaultTabController(
-                    length: categories.length,
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 8),
-                        Material(
-                          color: Colors.transparent,
-                          child: TabBar(
-                            labelColor: tabLabelColor,
-                            unselectedLabelColor: unselectedTabLabelColor,
-                            indicatorColor: tabLabelColor,
-                            tabs: [
-                              for (final category in categories)
-                                Tab(text: category.label),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: TabBarView(
-                            children: [
-                              for (final category in categories)
-                                _AchievementCategoryList(
-                                  category: category,
-                                  definitions:
-                                      definitionsByCategory[category] ??
-                                          const <AchievementDefinition>[],
-                                  unlocked: unlocked,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-      ),
+        final achievements = snapshot.data ?? [];
+        if (achievements.isEmpty) {
+          return const Center(child: Text('No achievements yet. Keep reading!'));
+        }
+
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 0.8,
+          ),
+          itemCount: achievements.length,
+          itemBuilder: (context, index) {
+            return _AchievementCard(achievement: achievements[index]);
+          },
+        );
+      },
     );
   }
 }
 
-class _AchievementCategoryList extends StatelessWidget {
-  const _AchievementCategoryList({
-    required this.category,
-    required this.definitions,
-    required this.unlocked,
-  });
+class _AchievementCard extends StatelessWidget {
+  final Achievement achievement;
 
-  final AchievementCategory category;
-  final List<AchievementDefinition> definitions;
-  final Set<String> unlocked;
+  const _AchievementCard({required this.achievement});
 
   @override
   Widget build(BuildContext context) {
-    if (definitions.isEmpty) {
-      return const Center(
-        child: Text('No achievements in this category yet.'),
-      );
-    }
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 30,
+          backgroundColor: Colors.amber.withValues(alpha: 0.2),
+          child: const Icon(Icons.emoji_events, color: Colors.amber, size: 30),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          achievement.title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        ),
+        Text(
+          _formatDate(achievement.dateUnlocked),
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.secondary),
+        ),
+      ],
+    );
+  }
 
-    return ListView.builder(
-      key: ValueKey('achievementsList_${category.name}'),
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: definitions.length,
-      itemBuilder: (context, index) {
-        final def = definitions[index];
-        return AchievementListItem(
-          definition: def,
-          unlocked: unlocked.contains(def.id),
-        );
-      },
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+// Wrapper for backward compatibility
+class AchievementsPage extends StatelessWidget {
+  final FirebaseAuth auth;
+  final FirebaseFirestore firestore;
+  final AchievementService achievementService;
+
+  AchievementsPage({
+    super.key,
+    FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+    AchievementService? achievementService,
+  })  : auth = auth ?? FirebaseAuth.instance,
+        firestore = firestore ?? FirebaseFirestore.instance,
+        achievementService = achievementService ?? AchievementService(firestore: firestore ?? FirebaseFirestore.instance);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: CommonStyles.buildAppBar(context, 'Achievements'),
+      body: AchievementsView(
+        auth: auth,
+        achievementService: achievementService,
+      ),
     );
   }
 }

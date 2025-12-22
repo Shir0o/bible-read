@@ -3,46 +3,37 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../models/app_notification.dart';
-import '../models/notification_preferences.dart';
-import '../services/error_logger.dart';
-import '../services/notification_service.dart';
-import '../services/seasonal_challenge_service.dart';
-import 'achievements_page.dart';
-import 'friend_requests_page.dart';
-import 'seasonal_challenges_page.dart';
-import '../services/group_service.dart';
-import 'group_join_requests_page.dart';
-import '../services/friend_service.dart';
-import '../services/vibration_service.dart';
+import '../../models/app_notification.dart';
+import '../../models/notification_preferences.dart';
+import '../../services/error_logger.dart';
+import '../../services/notification_service.dart';
+import '../../services/seasonal_challenge_service.dart';
+import '../../pages/achievements_page.dart';
+import '../../pages/friend_requests_page.dart';
+import '../../pages/seasonal_challenges_page.dart';
+import '../../services/group_service.dart';
+import '../../pages/group_join_requests_page.dart';
+import '../../services/friend_service.dart';
+import '../../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 
-/// Page showing a list of notifications for the current user.
-class NotificationCenterPage extends StatefulWidget {
-  /// Service used to fetch and update notifications.
+class NotificationCenterContent extends StatefulWidget {
   final NotificationService service;
-
-  /// Auth instance to identify the current user.
   final FirebaseAuth auth;
-
-  /// Service used to trigger vibrations.
   final VibrationService vibrationService;
 
-  /// Creates a [NotificationCenterPage].
-  NotificationCenterPage({
+  const NotificationCenterContent({
     super.key,
-    NotificationService? service,
-    FirebaseAuth? auth,
-    VibrationService? vibrationService,
-  })  : service = service ?? NotificationService(),
-        auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService();
+    required this.service,
+    required this.auth,
+    required this.vibrationService,
+  });
 
   @override
-  State<NotificationCenterPage> createState() => _NotificationCenterPageState();
+  State<NotificationCenterContent> createState() => _NotificationCenterContentState();
 }
 
-class _NotificationCenterPageState extends State<NotificationCenterPage> {
+class _NotificationCenterContentState extends State<NotificationCenterContent> {
   final _readLocally = <String>{};
   bool _isClearing = false;
   bool _hasNotifications = false;
@@ -86,103 +77,102 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
   @override
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
-    final bool showBack = Navigator.of(context).canPop();
-    final actions = user == null
-        ? null
-        : <Widget>[
-            IconButton(
-              tooltip: 'Clear all',
-              onPressed: (!_hasNotifications || _isClearing)
-                  ? null
-                  : _clearNotifications,
-              icon: _isClearing
-                  ? const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.clear_all),
-            ),
-          ];
-    return Scaffold(
-      appBar: CommonStyles.buildAppBar(
-        context,
-        'Notifications',
-        actions: actions,
-        automaticallyImplyLeading: showBack,
-      ),
-      body: Container(
-        decoration:
-            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
-        child: user == null
-            ? const Center(child: Text('Please sign in'))
-            : StreamBuilder<List<AppNotification>>(
-                stream:
-                    widget.service.notifications(user.uid).asBroadcastStream(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final data = snapshot.data ?? [];
-                  final hasNotifications = data.isNotEmpty;
-                  if (hasNotifications != _hasNotifications) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (!mounted) {
-                        return;
+    // We can't show actions in the AppBar here since we are inside a TabBarView usually. 
+    // We might want to add a "Clear All" button at the top of the list or floating.
+    // precise behavior: check if we are in a Scaffold.
+    // For now, let's put a "Clear All" text button at top right if not empty?
+    // Or we keep it simple.
+
+    return Container(
+      decoration:
+          CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
+      child: user == null
+          ? const Center(child: Text('Please sign in'))
+          : Column(
+              children: [
+                if (_hasNotifications)
+                   Align(
+                     alignment: Alignment.centerRight,
+                     child: Padding(
+                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                       child: TextButton.icon(
+                         onPressed: _isClearing ? null : _clearNotifications,
+                         icon: _isClearing 
+                             ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)) 
+                             : const Icon(Icons.clear_all, size: 18),
+                         label: const Text('Clear All'),
+                       ),
+                     ),
+                   ),
+                Expanded(
+                  child: StreamBuilder<List<AppNotification>>(
+                    stream: widget.service.notifications(user.uid).asBroadcastStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
                       }
-                      setState(() => _hasNotifications = hasNotifications);
-                    });
-                  }
-                  if (data.isEmpty) {
-                    return const Center(child: Text('No notifications'));
-                  }
-                  return ListView.builder(
-                    itemCount: data.length,
-                    itemBuilder: (context, index) {
-                      final n = data[index];
-                      final read = n.read || _readLocally.contains(n.id);
-                      return CommonStyles.buildTappableCard(
-                        context: context,
-                        onTap: () {
-                          final uid = widget.auth.currentUser?.uid;
-                          if (uid != null) {
-                            final messenger = ScaffoldMessenger.of(context);
-                            setState(() => _readLocally.add(n.id));
-                            unawaited(
-                              widget.service.markRead(uid, n.id).catchError((
-                                e,
-                                st,
-                              ) {
-                                ErrorLogger.log(e, st);
-                                if (mounted) {
-                                  setState(() => _readLocally.remove(n.id));
-                                  messenger.showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Failed to mark notification as read.',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }),
-                            );
+                      final data = snapshot.data ?? [];
+                      final hasNotifications = data.isNotEmpty;
+                      if (hasNotifications != _hasNotifications) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (!mounted) {
+                            return;
                           }
-                          if (context.mounted) {
-                            unawaited(_navigate(context, n));
-                          }
+                          setState(() => _hasNotifications = hasNotifications);
+                        });
+                      }
+                      if (data.isEmpty) {
+                        return const Center(child: Text('No notifications'));
+                      }
+                      return ListView.builder(
+                        itemCount: data.length,
+                        itemBuilder: (context, index) {
+                          final n = data[index];
+                          final read = n.read || _readLocally.contains(n.id);
+                          return CommonStyles.buildTappableCard(
+                            context: context,
+                            onTap: () {
+                              final uid = widget.auth.currentUser?.uid;
+                              if (uid != null) {
+                                final messenger = ScaffoldMessenger.of(context);
+                                setState(() => _readLocally.add(n.id));
+                                unawaited(
+                                  widget.service.markRead(uid, n.id).catchError((
+                                    e,
+                                    st,
+                                  ) {
+                                    ErrorLogger.log(e, st);
+                                    if (mounted) {
+                                      setState(() => _readLocally.remove(n.id));
+                                      messenger.showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Failed to mark notification as read.',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }),
+                                );
+                              }
+                              if (context.mounted) {
+                                unawaited(_navigate(context, n));
+                              }
+                            },
+                            child: ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: _icon(n.type, read),
+                              title: Text(_text(n)),
+                              subtitle: n.message != null ? Text(n.message!) : null,
+                            ),
+                          );
                         },
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: _icon(n.type, read),
-                          title: Text(_text(n)),
-                          subtitle: n.message != null ? Text(n.message!) : null,
-                        ),
                       );
                     },
-                  );
-                },
-              ),
-      ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -288,7 +278,6 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
       case NotificationType.groupScheduleUpdate:
         break;
       case NotificationType.groupJoinRequest:
-        // Navigate to the join requests view for the group when possible.
         try {
           final gid = n.groupId;
           if (gid == null) {
