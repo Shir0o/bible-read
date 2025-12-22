@@ -50,7 +50,14 @@ class ReadLogList extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                   const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                   Padding(
+                     padding: const EdgeInsets.only(top: 2.0),
+                     child: Icon(
+                       Icons.check_circle,
+                       color: const Color(0xFF7E9F7A).withValues(alpha: 0.8),
+                       size: 20,
+                     ),
+                   ),
                    const SizedBox(width: 12),
                    Expanded(
                      child: Column(
