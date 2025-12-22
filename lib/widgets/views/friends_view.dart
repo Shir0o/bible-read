@@ -26,7 +26,8 @@ class FriendsView extends StatefulWidget {
   State<FriendsView> createState() => _FriendsViewState();
 }
 
-class _FriendsViewState extends State<FriendsView> {
+class _FriendsViewState extends State<FriendsView>
+    with AutomaticKeepAliveClientMixin {
   final Set<String> _nudgedToday = <String>{};
   StreamSubscription<Set<String>>? _nudgeSub;
 
@@ -54,7 +55,11 @@ class _FriendsViewState extends State<FriendsView> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final user = widget.auth.currentUser;
     return Scaffold(
       body: Container(

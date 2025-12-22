@@ -28,7 +28,8 @@ class GroupsView extends StatefulWidget {
   State<GroupsView> createState() => _GroupsViewState();
 }
 
-class _GroupsViewState extends State<GroupsView> {
+class _GroupsViewState extends State<GroupsView>
+    with AutomaticKeepAliveClientMixin {
   bool _inProgress = false;
   int _refreshTick = 0;
 
@@ -138,7 +139,12 @@ class _GroupsViewState extends State<GroupsView> {
   }
 
   @override
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final user = widget.auth.currentUser;
     return Scaffold(
       body: Container(

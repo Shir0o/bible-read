@@ -33,18 +33,23 @@ class ReadLogView extends StatefulWidget {
     required this.onSendLikeNotification,
     required this.onSendCommentNotification,
     DateTime Function()? dateProvider,
+    this.tabController,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         dateProvider = dateProvider ?? DateTime.now;
+
+  final TabController? tabController;
 
   @override
   State<ReadLogView> createState() => _ReadLogViewState();
 }
 
-class _ReadLogViewState extends State<ReadLogView> {
+class _ReadLogViewState extends State<ReadLogView>
+    with AutomaticKeepAliveClientMixin {
   List<ReadLog> _logs = [];
   bool _loading = true;
   bool _loadError = false;
+  DateTime? _lastLoadTime;
 
   Future<void> _sendLikeNotification({
     required String ownerUid,
@@ -69,16 +74,45 @@ class _ReadLogViewState extends State<ReadLogView> {
   @override
   void initState() {
     super.initState();
+    widget.tabController?.addListener(_onTabChanged);
     _loadLogs();
   }
 
-  Future<void> _loadLogs() async {
+  @override
+  void dispose() {
+    widget.tabController?.removeListener(_onTabChanged);
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (widget.tabController?.index == 1) {
+      // We are on the Feed tab (index 1)
+      final now = DateTime.now();
+      if (_lastLoadTime != null &&
+          now.difference(_lastLoadTime!) > const Duration(minutes: 5)) {
+        _loadLogs(silent: true);
+      }
+    }
+  }
+
+
+
+  Future<void> _loadLogs({bool silent = false}) async {
     final currentUser = widget.auth.currentUser;
     if (currentUser == null) {
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
       return;
+    }
+
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _loadError = false;
+      });
     }
     bool error = false;
     List<ReadLog> logs = [];
@@ -116,6 +150,7 @@ class _ReadLogViewState extends State<ReadLogView> {
           );
         }).toList(),
       );
+      _lastLoadTime = DateTime.now();
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Load logs failed: $e');
@@ -295,7 +330,11 @@ class _ReadLogViewState extends State<ReadLogView> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       body: Container(
         decoration:

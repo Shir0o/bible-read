@@ -52,7 +52,11 @@ class _CommunityPageState extends State<CommunityPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      animationDuration: const Duration(milliseconds: 350),
+    );
   }
 
   @override
@@ -77,17 +81,68 @@ class _CommunityPageState extends State<CommunityPage>
             vibrationService: widget.vibrationService,
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: colorScheme.primary,
-          unselectedLabelColor: colorScheme.onSurfaceVariant,
-          indicatorColor: colorScheme.primary,
-          dividerColor: Colors.transparent, // Clean look
-          tabs: const [
-            Tab(text: 'Groups'),
-            Tab(text: 'Feed'),
-            Tab(text: 'Friends'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: colorScheme.onSecondaryContainer,
+              unselectedLabelColor: colorScheme.onSurfaceVariant,
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicator: BoxDecoration(
+                color: colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(28),
+              ),
+              dividerColor: Colors.transparent,
+              overlayColor: MaterialStateProperty.all(Colors.transparent),
+              splashBorderRadius: BorderRadius.circular(28),
+              labelStyle: AppTextStyles.body.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              unselectedLabelStyle: AppTextStyles.body.copyWith(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+              tabs: const [
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.groups_outlined, size: 18),
+                      SizedBox(width: 4),
+                      Text('Groups'),
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.view_agenda_outlined, size: 18),
+                      SizedBox(width: 4),
+                      Text('Feed'),
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.face_outlined, size: 18),
+                      SizedBox(width: 4),
+                      Text('Friends'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
       body: TabBarView(
@@ -104,6 +159,7 @@ class _CommunityPageState extends State<CommunityPage>
             onSendLikeNotification: widget.onSendLikeNotification,
             onSendCommentNotification: widget.onSendCommentNotification,
             dateProvider: widget.dateProvider,
+            tabController: _tabController,
           ),
           FriendsView(
             friendService: widget.friendService,
