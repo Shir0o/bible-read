@@ -7,6 +7,8 @@ import '../streak_stats_box.dart';
 import '../week_streak_calendar.dart';
 import '../month_streak_calendar.dart';
 import '../../services/error_logger.dart';
+import '../skeleton_loader.dart';
+import '../skeletons/streak_history_skeleton.dart';
 
 class StreakHistoryView extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -24,7 +26,8 @@ class StreakHistoryView extends StatefulWidget {
 
 enum _Period { week, month }
 
-class _StreakHistoryViewState extends State<StreakHistoryView> {
+class _StreakHistoryViewState extends State<StreakHistoryView>
+    with AutomaticKeepAliveClientMixin {
   _Period _period = _Period.week;
   late DateTime _periodStart;
 
@@ -34,6 +37,10 @@ class _StreakHistoryViewState extends State<StreakHistoryView> {
   int _periodCount = 0;
   int? _remainingGraceCredits;
   Set<DateTime> _readDates = {};
+  bool _loading = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -41,6 +48,10 @@ class _StreakHistoryViewState extends State<StreakHistoryView> {
     _periodStart = _startOfWeek(DateTime.now());
     _loadStats();
   }
+
+  // ... (rest of methods)
+
+
 
   DateTime _startOfWeek(DateTime date) {
     final normalized = DateTime(date.year, date.month, date.day);
@@ -81,8 +92,12 @@ class _StreakHistoryViewState extends State<StreakHistoryView> {
   }
 
   Future<void> _loadStats() async {
+    setState(() => _loading = true);
     final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
+    if (uid == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
 
     try {
       final userDocRef = widget.firestore.collection('users').doc(uid);
@@ -191,9 +206,11 @@ class _StreakHistoryViewState extends State<StreakHistoryView> {
         _periodCount = periodCount;
         _readDates = readDates;
         _remainingGraceCredits = remainingGraceCredits;
+        _loading = false;
       });
     } catch (e, st) {
       ErrorLogger.log(e, st);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -252,55 +269,60 @@ class _StreakHistoryViewState extends State<StreakHistoryView> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final periodLabel = _period == _Period.week ? 'Week reads' : 'Month reads';
 
     return Scaffold(
       body: Container(
         decoration:
             CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SegmentedButton<_Period>(
-                    segments: const [
-                      ButtonSegment(value: _Period.week, label: Text('Week')),
-                      ButtonSegment(value: _Period.month, label: Text('Month')),
-                    ],
-                    selected: {_period},
-                    onSelectionChanged: _onPeriodChanged,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              StreakStatsBox(
-                currentStreak: _currentStreak,
-                longestStreak: _longestStreak,
-                totalReadDays: _totalReadDays,
-                periodCount: _periodCount,
-                periodLabel: periodLabel,
-                remainingGraceCredits: _remainingGraceCredits,
-              ),
-              const SizedBox(height: 16),
-              if (_period == _Period.week)
-                WeekStreakCalendar(
-                  readDates: _readDates,
-                  sunday: _periodStart,
-                  onPrevious: () => _changePeriod(-1),
-                  onNext: () => _changePeriod(1),
-                )
-              else
-                MonthStreakCalendar(
-                  readDates: _readDates,
-                  month: _periodStart,
-                  onPrevious: () => _changePeriod(-1),
-                  onNext: () => _changePeriod(1),
+        child: SkeletonLoader(
+          loading: _loading,
+          skeleton: const StreakHistorySkeleton(),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SegmentedButton<_Period>(
+                      segments: const [
+                        ButtonSegment(value: _Period.week, label: Text('Week')),
+                        ButtonSegment(value: _Period.month, label: Text('Month')),
+                      ],
+                      selected: {_period},
+                      onSelectionChanged: _onPeriodChanged,
+                    ),
+                  ],
                 ),
-            ],
+                const SizedBox(height: 12),
+                StreakStatsBox(
+                  currentStreak: _currentStreak,
+                  longestStreak: _longestStreak,
+                  totalReadDays: _totalReadDays,
+                  periodCount: _periodCount,
+                  periodLabel: periodLabel,
+                  remainingGraceCredits: _remainingGraceCredits,
+                ),
+                const SizedBox(height: 16),
+                if (_period == _Period.week)
+                  WeekStreakCalendar(
+                    readDates: _readDates,
+                    sunday: _periodStart,
+                    onPrevious: () => _changePeriod(-1),
+                    onNext: () => _changePeriod(1),
+                  )
+                else
+                  MonthStreakCalendar(
+                    readDates: _readDates,
+                    month: _periodStart,
+                    onPrevious: () => _changePeriod(-1),
+                    onNext: () => _changePeriod(1),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

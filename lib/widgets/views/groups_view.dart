@@ -9,6 +9,8 @@ import '../../services/error_logger.dart';
 import '../../services/group_service.dart';
 import '../../services/vibration_service.dart';
 import '../common_styles.dart';
+import '../skeleton_loader.dart';
+import '../skeletons/group_list_skeleton.dart';
 import '../../pages/group_detail_page.dart';
 
 /// View that lists all groups, suitable for embedding in a TabBarView.
@@ -178,15 +180,10 @@ class _GroupsViewState extends State<GroupsView>
                     );
                   }
                   if (!snapshot.hasData) {
-                    return RefreshIndicator(
-                      onRefresh: _refresh,
-                      child: ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: const [
-                          SizedBox(height: 200),
-                          Center(child: CircularProgressIndicator()),
-                        ],
-                      ),
+                    return SkeletonLoader(
+                      loading: true,
+                      skeleton: const GroupListSkeleton(),
+                      child: const SizedBox.shrink(),
                     );
                   }
                   final groups = snapshot.data!;
@@ -202,7 +199,10 @@ class _GroupsViewState extends State<GroupsView>
                       ),
                     );
                   }
-                  return StreamBuilder<List<Group>>(
+                  return SkeletonLoader(
+                    loading: false,
+                    skeleton: const GroupListSkeleton(),
+                    child: StreamBuilder<List<Group>>(
                     key: ValueKey('my-groups-$_refreshTick'),
                     stream: widget.groupService.groupsForUser(user.uid),
                     builder: (context, mySnap) {
@@ -217,7 +217,7 @@ class _GroupsViewState extends State<GroupsView>
                                   .map((d) => d.reference.parent.parent?.id)
                                   .whereType<String>()
                                   .toSet()
-                              : <String>{};
+                                  : <String>{};
                           return RefreshIndicator(
                             onRefresh: _refresh,
                             child: ListView.separated(
@@ -277,6 +277,7 @@ class _GroupsViewState extends State<GroupsView>
                         },
                       );
                     },
+                  ),
                   );
                 },
               ),

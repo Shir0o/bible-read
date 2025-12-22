@@ -5,6 +5,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import '../services/error_logger.dart';
 
+import '../services/reading_status_service.dart';
 import '../services/achievement_service.dart';
 import '../models/achievement.dart';
 
@@ -14,6 +15,7 @@ import '../widgets/views/read_log_view.dart';
 class ReadLogPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final ReadingStatusService? readingStatusService;
   final Future<void> Function({
     required String ownerUid,
     required String likerName,
@@ -28,6 +30,7 @@ class ReadLogPage extends StatefulWidget {
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
+    this.readingStatusService,
     required this.onSendLikeNotification,
     required this.onSendCommentNotification,
     DateTime Function()? dateProvider,
@@ -127,6 +130,8 @@ class _ReadLogPageState extends State<ReadLogPage> {
         key: _viewKey,
         firestore: widget.firestore,
         auth: widget.auth,
+        readingStatusService: widget.readingStatusService ?? 
+            ReadingStatusService(firestore: widget.firestore, auth: widget.auth),
         onSendLikeNotification: widget.onSendLikeNotification,
         onSendCommentNotification: widget.onSendCommentNotification,
         dateProvider: widget.dateProvider,

@@ -11,11 +11,17 @@ import '../../models/achievement.dart';
 import '../common_styles.dart';
 import '../../models/comment.dart';
 import '../read_log_list.dart';
+import '../read_log_list.dart';
+import '../../services/reading_status_service.dart';
 import '../../models/read_log.dart';
+import '../skeleton_loader.dart';
+import '../skeletons/read_log_skeleton.dart';
+import '../skeletons/read_log_empty_skeleton.dart';
 
 class ReadLogView extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final ReadingStatusService readingStatusService;
   final Future<void> Function({
     required String ownerUid,
     required String likerName,
@@ -30,6 +36,7 @@ class ReadLogView extends StatefulWidget {
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
+    required this.readingStatusService,
     required this.onSendLikeNotification,
     required this.onSendCommentNotification,
     DateTime Function()? dateProvider,
@@ -49,6 +56,7 @@ class _ReadLogViewState extends State<ReadLogView>
   List<ReadLog> _logs = [];
   bool _loading = true;
   bool _loadError = false;
+  bool _readToday = true; // Default to true to show list skeleton
   DateTime? _lastLoadTime;
 
   Future<void> _sendLikeNotification({
@@ -76,6 +84,20 @@ class _ReadLogViewState extends State<ReadLogView>
     super.initState();
     widget.tabController?.addListener(_onTabChanged);
     _loadLogs();
+    _checkReadStatus();
+  }
+
+  Future<void> _checkReadStatus() async {
+    try {
+      final status = await widget.readingStatusService.fetchStatus();
+      if (mounted) {
+        setState(() {
+          _readToday = status.readToday;
+        });
+      }
+    } catch (e) {
+      // Ignore errors, default to keeping current skeleton
+    }
   }
 
   @override
@@ -339,12 +361,10 @@ class _ReadLogViewState extends State<ReadLogView>
       body: Container(
         decoration:
             CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
-        child: _loading
-            ? Container(
-                alignment: Alignment.center,
-                child: const CircularProgressIndicator(),
-              )
-            : _loadError
+        child: SkeletonLoader(
+          loading: _loading,
+          skeleton: _readToday ? const ReadLogSkeleton() : const ReadLogEmptySkeleton(),
+          child: _loadError
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(32.0),
@@ -440,6 +460,7 @@ class _ReadLogViewState extends State<ReadLogView>
                                   .first,
                         ),
                       ),
+        ),
       ),
     );
   }

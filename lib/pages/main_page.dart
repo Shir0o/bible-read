@@ -19,6 +19,7 @@ import '../services/friend_service.dart';
 import '../services/friendly_streak_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/group_service.dart';
+import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import 'app_check_error_page.dart';
 import 'leaderboard_page.dart';
@@ -54,6 +55,7 @@ class MainPage extends StatefulWidget {
   final SendCommentNotification? sendCommentNotification;
   final FirebaseMessaging messaging;
   final VibrationService vibrationService;
+  final ReadingStatusService? readingStatusService;
   final bool appCheckFailed;
 
   MainPage({
@@ -63,6 +65,7 @@ class MainPage extends StatefulWidget {
     GoogleSignIn Function()? googleSignInProvider,
     FirebaseMessaging? messaging,
     VibrationService? vibrationService,
+    this.readingStatusService,
     LeaderboardPage Function({
       Key? key,
       FirebaseFirestore? firestore,
@@ -104,11 +107,15 @@ class _MainPageState extends State<MainPage> {
   late final GroupService _groupService;
   late final FriendlyStreakService _friendlyStreakService;
   late final ExerciseTrackerService _exerciseTrackerService;
+  late final ReadingStatusService _readingStatusService;
   late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    _readingStatusService = widget.readingStatusService ??
+        ReadingStatusService(
+            firestore: widget.firestore, auth: widget.auth);
     _friendService = FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
     _friendlyStreakService = FriendlyStreakService(
@@ -128,6 +135,7 @@ class _MainPageState extends State<MainPage> {
       HomePage(
         firestore: widget.firestore,
         auth: widget.auth,
+        readingStatusService: _readingStatusService,
         functions: FirebaseFunctions.instance,
         googleSignInProvider: widget.googleSignInProvider,
       ),
@@ -136,6 +144,7 @@ class _MainPageState extends State<MainPage> {
         firestore: widget.firestore,
         groupService: _groupService,
         friendService: _friendService,
+        readingStatusService: _readingStatusService,
         vibrationService: widget.vibrationService,
         onSendLikeNotification: widget.sendLikeNotification ??
             ({required String ownerUid, required String likerName}) async {

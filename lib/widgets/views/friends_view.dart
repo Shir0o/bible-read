@@ -5,6 +5,8 @@ import 'dart:async';
 import '../../services/friend_service.dart';
 import '../../services/vibration_service.dart';
 import '../common_styles.dart';
+import '../skeleton_loader.dart';
+import '../skeletons/friends_skeleton.dart';
 import '../../services/error_logger.dart';
 import '../../pages/add_friend_page.dart';
 import '../../pages/friend_requests_page.dart'; // Needed for direct navigation or extraction
@@ -100,37 +102,36 @@ class _FriendsViewState extends State<FriendsView>
         if (snapshot.hasError) {
           return const Text('Failed to load data');
         }
-        if (!snapshot.hasData) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-        final friends = snapshot.data!;
-        if (friends.isEmpty) {
-          return const Center(child: Text('No friends yet'));
-        }
-        return ListView(
-          children: friends
-              .map(
-                (f) => CommonStyles.buildTappableCard(
-                  context: context,
-                  onTap: () {},
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          f.name.isEmpty ? 'Friend' : f.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      _buildNudgeButton(user, f),
-                    ],
-                  ),
-                ),
-              )
-              .toList(),
+        return SkeletonLoader(
+          loading: !snapshot.hasData,
+          skeleton: const FriendsSkeleton(),
+          child: snapshot.hasData
+              ? snapshot.data!.isEmpty
+                  ? const Center(child: Text('No friends yet'))
+                  : ListView(
+                      children: snapshot.data!
+                          .map(
+                            (f) => CommonStyles.buildTappableCard(
+                              context: context,
+                              onTap: () {},
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      f.name.isEmpty ? 'Friend' : f.name,
+                                      style: Theme.of(context).textTheme.titleMedium,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  _buildNudgeButton(user, f),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    )
+              : const SizedBox.shrink(),
         );
       },
     );

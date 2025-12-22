@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../services/friend_service.dart';
 import '../services/group_service.dart';
+import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/profile_button.dart';
@@ -16,6 +17,7 @@ class CommunityPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final GroupService groupService;
   final FriendService friendService;
+  final ReadingStatusService readingStatusService;
   final VibrationService vibrationService;
   
   // Dependencies for ReadLogView
@@ -35,6 +37,7 @@ class CommunityPage extends StatefulWidget {
     required this.firestore,
     required this.groupService,
     required this.friendService,
+    required this.readingStatusService,
     required this.vibrationService,
     required this.onSendLikeNotification,
     required this.onSendCommentNotification,
@@ -156,6 +159,7 @@ class _CommunityPageState extends State<CommunityPage>
           ReadLogView(
             firestore: widget.firestore,
             auth: widget.auth,
+            readingStatusService: widget.readingStatusService,
             onSendLikeNotification: widget.onSendLikeNotification,
             onSendCommentNotification: widget.onSendCommentNotification,
             dateProvider: widget.dateProvider,
