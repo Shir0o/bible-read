@@ -6,6 +6,7 @@ import '../models/read_log.dart';
 import 'badge_icon.dart';
 import 'comment_drawer.dart';
 import 'comment_section.dart';
+import '../services/vibration_service.dart';
 import 'common_styles.dart';
 
 /// Displays a list of read log entries.
@@ -126,6 +127,7 @@ class ReadLogList extends StatelessWidget {
                          child: InkWell(
                            borderRadius: BorderRadius.circular(20),
                            onTap: () => onToggleLike(log.uid), // Allow toggling (unlike)
+                           onTapDown: (_) => const VibrationService().lightImpact(),
                            child: Semantics(
                              button: true,
                              label: isLiked 

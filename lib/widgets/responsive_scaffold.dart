@@ -2,6 +2,8 @@
 // by switching based on the current width.
 import 'package:flutter/material.dart';
 
+import '../services/vibration_service.dart';
+
 /// A scaffold that adapts its navigation UI to the screen width.
 ///
 /// Required parameters are [selectedIndex], [onDestinationSelected], [pages],
@@ -32,11 +34,14 @@ class ResponsiveScaffold extends StatelessWidget {
   /// Adds a subtle scale animation to [icon] when it is the selected
   /// destination.
   Widget _animatedIcon(Widget icon, bool selected) {
-    return AnimatedScale(
-      scale: selected ? 1.2 : 1.0,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-      child: icon,
+    return Listener(
+      onPointerDown: (_) => const VibrationService().lightImpact(),
+      child: AnimatedScale(
+        scale: selected ? 1.2 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        child: icon,
+      ),
     );
   }
 
