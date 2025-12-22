@@ -420,8 +420,8 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
 
   try {
     await sendNotification(token, {
-      title: "📖 Time to Read!",
-      body: `${fromName} nudged you to read today.`,
+      title: "Encouragement",
+      body: `${fromName} sent you some encouragement.`,
       data: {
         type: 'nudge',
         fromUid,

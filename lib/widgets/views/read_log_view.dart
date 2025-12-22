@@ -182,6 +182,16 @@ class _ReadLogViewState extends State<ReadLogView> {
       setState(() {
         _logs[index] = original.copyWith(liked: true, likeNames: updatedNames);
       });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Encouragement sent'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
 
       try {
         final likeDoc = await likeRef.get();

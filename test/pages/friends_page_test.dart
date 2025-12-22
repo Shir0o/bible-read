@@ -147,7 +147,7 @@ void main() {
     expect(find.text('Alice'), findsOneWidget);
   });
 
-  testWidgets('tapping nudge icon calls service', (tester) async {
+  testWidgets('tapping encouragement icon calls service', (tester) async {
     await firestore
         .collection('users')
         .doc('u1')
@@ -157,13 +157,13 @@ void main() {
 
     await pumpPage(tester);
 
-    await tester.tap(find.byIcon(Icons.notifications_active));
+    await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
     await settle(tester);
 
     expect(service.nudged, isTrue);
   });
 
-  testWidgets('nudge button disabled after send', (tester) async {
+  testWidgets('encouragement button changes appearance after send', (tester) async {
     await firestore
         .collection('users')
         .doc('u1')
@@ -173,14 +173,26 @@ void main() {
 
     await pumpPage(tester);
 
-    await tester.tap(find.byIcon(Icons.notifications_active));
+    // Initial state: Enabled color (null in code means default icon color)
+    final initialIcon = tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
+    expect(initialIcon.color, isNull);
+
+    await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
     await settle(tester);
 
+    // After tap: Disabled color
+    final nudgedIcon = tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
+    // We can't easily check for Theme.of(context).disabledColor without context, 
+    // but we can check it is NOT null anymore, or check if it matches a typical disabled color?
+    // Actually, in test environment, we might need to capture the context or just assert it is not null.
+    expect(nudgedIcon.color, isNotNull); 
+    
+    // Also verify onPressed is NOT null
     final button = tester.widget<IconButton>(find.ancestor(
-      of: find.byIcon(Icons.notifications_off),
+      of: find.byIcon(Icons.auto_awesome_outlined),
       matching: find.byType(IconButton),
     ));
-    expect(button.onPressed, isNull);
+    expect(button.onPressed, isNotNull);
   });
 
   testWidgets('failed request leaves send button enabled', (tester) async {
@@ -208,7 +220,7 @@ void main() {
     expect(button.onPressed, isNotNull);
   });
 
-  testWidgets('already sent nudge disables button', (tester) async {
+  testWidgets('already sent nudge updates appearance/interaction', (tester) async {
     final already = AlreadySentFriendService(firestore: firestore);
     await firestore
         .collection('users')
@@ -228,17 +240,20 @@ void main() {
     );
     await settle(tester);
 
-    await tester.tap(find.byIcon(Icons.notifications_active));
+    await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
     await settle(tester);
 
     final button = tester.widget<IconButton>(find.ancestor(
-      of: find.byIcon(Icons.notifications_off),
+      of: find.byIcon(Icons.auto_awesome_outlined),
       matching: find.byType(IconButton),
     ));
-    expect(button.onPressed, isNull);
+    expect(button.onPressed, isNotNull);
+    
+    // Verify snackbar "Encouragement already sent today"
+    expect(find.text('Encouragement already sent today'), findsOneWidget);
   });
 
-  testWidgets('existing nudge log disables nudge button', (tester) async {
+  testWidgets('existing nudge log updates encouragement button appearance', (tester) async {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
     await firestore
@@ -259,10 +274,13 @@ void main() {
 
     await pumpPage(tester);
 
+    final icon = tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
+    expect(icon.color, isNotNull); 
+
     final button = tester.widget<IconButton>(find.ancestor(
-      of: find.byIcon(Icons.notifications_off),
+      of: find.byIcon(Icons.auto_awesome_outlined),
       matching: find.byType(IconButton),
     ));
-    expect(button.onPressed, isNull);
+    expect(button.onPressed, isNotNull);
   });
 }

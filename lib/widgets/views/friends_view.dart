@@ -135,16 +135,33 @@ class _FriendsViewState extends State<FriendsView> {
     final nudged = _nudgedToday.contains(friend.uid);
     return IconButton(
       icon: Icon(
-        nudged ? Icons.notifications_off : Icons.notifications_active,
-        color: nudged ? Colors.grey : null,
+        Icons.auto_awesome_outlined,
+        color: nudged ? Theme.of(context).disabledColor : null,
       ),
       onPressed: nudged
-          ? null
+          ? () {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Encouragement already sent today'),
+                ),
+              );
+            }
           : () async {
+              unawaited(widget.vibrationService.lightImpact());
               final messenger = ScaffoldMessenger.of(context);
               setState(() {
                 _nudgedToday.add(friend.uid);
               });
+              
+              messenger.clearSnackBars();
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('Encouragement sent'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+
               try {
                 final result = await widget.friendService.nudgeFriend(
                   currentUid: user.uid,
@@ -154,40 +171,29 @@ class _FriendsViewState extends State<FriendsView> {
                 if (!mounted) return;
                 switch (result) {
                   case NudgeResult.alreadyRead:
-                    setState(() {
-                      _nudgedToday.remove(friend.uid);
-                    });
-                    messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Friend already read today'),
-                      ),
-                    );
+                  case NudgeResult.sent:
+                    // optimistic update handled it
                     break;
                   case NudgeResult.alreadySent:
+                    messenger.clearSnackBars();
                     messenger.showSnackBar(
                       const SnackBar(
-                        content: Text('Nudge already sent'),
-                      ),
-                    );
-                    break;
-                  case NudgeResult.sent:
-                    messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Nudge sent'),
+                        content: Text('Encouragement already sent today'),
                       ),
                     );
                     break;
                 }
               } catch (e, st) {
-                debugPrint('Failed to send nudge: $e');
+                debugPrint('Failed to send encouragement: $e');
                 ErrorLogger.log(e, st);
                 if (!mounted) return;
                 setState(() {
                   _nudgedToday.remove(friend.uid);
                 });
+                messenger.clearSnackBars();
                 messenger.showSnackBar(
                   const SnackBar(
-                    content: Text('Failed to send nudge'),
+                    content: Text('Failed to send encouragement'),
                   ),
                 );
               }
