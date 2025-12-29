@@ -1,3 +1,27 @@
+# Release 1.20.0
+
+This release introduces a major visual redesign with a "Calm" menu structure, a new Book Tracker, and significant UI polish including a switch to Light Mode and IBM Plex Sans.
+
+## Highlights
+
+*   **UI Overhaul:** A shift to Material 3 Expressive design, Light Mode by default, and a new IBM Plex Sans typography. The home screen is minimal with skeleton loaders and subtle progress indicators.
+*   **Calm Navigation:** Consolidated navigation into Home, Community, and Journey tabs for a more focused experience.
+*   **Book Tracker:** Track your reading progress on a per-book basis.
+*   **Optimistic UI:** Encouragement (nudges) and read logs now update instantly.
+
+## Visual Design & UX
+
+*   **Redesign:** The app now features a "Calm" aesthetic with warm clay colors, cleaner spacing, and improved card elevations.
+*   **Home Page:** Completely redesigned with a minimal 'Mark as Read' UI, skeleton loading states, and no more loading bars using the new `StatusRefreshIndicator`.
+*   **Typography:** Adopted IBM Plex Sans/Mono for a distinct, readable look.
+*   **Haptics:** Refined haptic feedback to trigger on touch down for a more responsive feel.
+
+## Features
+
+*   **Book Tracker:** A new feature to visualize and track progress through individual books of the Bible.
+*   **Community Tabs:** Improved state preservation and smart refreshing for the Community page tabs (Feed/Friends).
+*   **Optimistic Updates:** Nudges and read status changes reflect immediately in the UI.
+
 # Release 1.19.0
 
 This release launches monthly reading summary emails with user opt-in controls, tightens Firestore permissions around feedback and leaderboard data, and polishes friendly streak and group interactions while improving refresh reliability.
