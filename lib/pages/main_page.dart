@@ -13,6 +13,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:async';
 
+import 'package:bible_read/pages/user_profile_page.dart';
 import '../services/admin_role_service.dart';
 import '../services/exercise_tracker_service.dart';
 import '../services/friend_service.dart';
@@ -203,30 +204,48 @@ class _MainPageState extends State<MainPage> {
       return const AppCheckErrorPage();
     }
 
-    final bool signedIn = widget.auth.currentUser != null;
-    
-    // If not signed in, we might want to restrict tabs or show a login buffer. 
-    // The individual pages handle "not signed in" states gracefully (wrapping in Scaffold).
-    // For simplicity, we show the same structure but pages will prompt login.
+    return StreamBuilder<User?>(
+      stream: widget.auth.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+           return const Scaffold(
+             body: Center(
+               child: CircularProgressIndicator(),
+             ),
+           );
+        }
 
-    final destinations = const [
-      NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-      NavigationDestination(icon: Icon(Icons.people_outlined), selectedIcon: Icon(Icons.people), label: 'Community'),
-      NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Journey'),
-    ];
+        final user = snapshot.data;
+        if (user == null) {
+          return UserProfilePage(
+            auth: widget.auth,
+            firestore: widget.firestore,
+            googleSignInProvider: widget.googleSignInProvider,
+            friendService: _friendService,
+            vibrationService: widget.vibrationService,
+          );
+        }
 
-    return NavigationMenuScope(
-      onNavigate: _navigateFromMenu,
-      friendlyStreakIndex: 0, // Legacy indices, not used
-      friendsIndex: 0,
-      vibrationService: widget.vibrationService,
-      adminRoleService: _adminRoleService,
-      child: ResponsiveScaffold(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: _onItemTapped,
-        pages: _pages,
-        destinations: destinations,
-      ),
+        final destinations = const [
+          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.people_outlined), selectedIcon: Icon(Icons.people), label: 'Community'),
+          NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Journey'),
+        ];
+
+        return NavigationMenuScope(
+          onNavigate: _navigateFromMenu,
+          friendlyStreakIndex: 0, // Legacy indices, not used
+          friendsIndex: 0,
+          vibrationService: widget.vibrationService,
+          adminRoleService: _adminRoleService,
+          child: ResponsiveScaffold(
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: _onItemTapped,
+            pages: _pages,
+            destinations: destinations,
+          ),
+        );
+      },
     );
   }
 }
