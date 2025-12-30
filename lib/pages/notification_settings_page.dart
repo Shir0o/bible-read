@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/notification_preferences.dart';
 import '../services/error_logger.dart';
 import '../services/notification_preferences_service.dart';
+import '../services/reminder_service.dart';
 import '../widgets/common_styles.dart';
 
 /// Page to configure notification preferences.
@@ -31,6 +32,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   NotificationPreferences? _prefs;
   bool _loading = true;
   bool _vibrationEnabled = true;
+  bool _reminderEnabled = false;
+  TimeOfDay _reminderTime = const TimeOfDay(hour: 7, minute: 0);
 
   @override
   void initState() {
@@ -40,11 +43,15 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       Future.wait([
         widget.service.fetchPreferences(user.uid),
         widget.service.fetchVibrationEnabled(user.uid),
+        ReminderService().loadSettings(),
       ]).then((result) {
         if (mounted) {
           setState(() {
             _prefs = result[0] as NotificationPreferences;
             _vibrationEnabled = result[1] as bool;
+            final reminderSettings = result[2] as Map<String, dynamic>;
+            _reminderEnabled = reminderSettings['enabled'] as bool;
+            _reminderTime = reminderSettings['time'] as TimeOfDay;
             _loading = false;
           });
         }
@@ -98,6 +105,33 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     });
   }
 
+  Future<void> _toggleReminder(bool value) async {
+    setState(() {
+      _reminderEnabled = value;
+    });
+    await ReminderService().saveSettings(value, _reminderTime);
+  }
+
+  Future<void> _pickTime() async {
+    final newTime = await showTimePicker(
+      context: context,
+      initialTime: _reminderTime,
+    );
+
+    if (newTime != null) {
+      setState(() {
+        _reminderTime = newTime;
+      });
+      if (_reminderEnabled) {
+        await ReminderService().saveSettings(true, newTime);
+      } else {
+        // Just save the time preference without scheduling if disabled
+        // Actually saveSettings handles scheduling only if enabled.
+        await ReminderService().saveSettings(false, newTime);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -112,6 +146,33 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 : ListView(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     children: [
+                      CommonStyles.buildTappableCard(
+                        context: context,
+                        onTap: () => _toggleReminder(!_reminderEnabled),
+                        margin: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Column(
+                          children: [
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text('Daily Reminder'),
+                              value: _reminderEnabled,
+                              onChanged: _toggleReminder,
+                            ),
+                            if (_reminderEnabled) ...[
+                              const Divider(height: 1),
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: const Text('Time'),
+                                trailing: Text(
+                                  _reminderTime.format(context),
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                onTap: _pickTime,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                       ...NotificationType.values.map(
                         (type) {
                           final val = _prefs![type];

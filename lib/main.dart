@@ -17,6 +17,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 
 import 'firebase_options.dart';
 import 'services/error_logger.dart';
+import 'services/reminder_service.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -80,8 +81,7 @@ void main() async {
   runApp(MyApp(appCheckFailed: appCheckFailed));
 }
 
-final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -89,19 +89,15 @@ Future<void> _setupMessaging() async {
   final messaging = FirebaseMessaging.instance;
   await messaging.requestPermission();
 
-  const initializationSettings = InitializationSettings(
-    android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-    iOS: DarwinInitializationSettings(),
-  );
-  await _localNotificationsPlugin.initialize(
-    initializationSettings,
+  await ReminderService().init(
     onDidReceiveNotificationResponse: (response) async {
       await _handleNotificationPayload(response.payload);
     },
   );
 
-  final notificationLaunchDetails =
-      await _localNotificationsPlugin.getNotificationAppLaunchDetails();
+  final notificationLaunchDetails = await ReminderService()
+      .flutterLocalNotificationsPlugin
+      .getNotificationAppLaunchDetails();
   final launchPayload =
       notificationLaunchDetails?.notificationResponse?.payload;
   if ((notificationLaunchDetails?.didNotificationLaunchApp ?? false) &&
@@ -117,7 +113,7 @@ Future<void> _setupMessaging() async {
     final notification = message.notification;
     if (notification != null) {
       final payload = message.data.isEmpty ? null : jsonEncode(message.data);
-      await _localNotificationsPlugin.show(
+      await ReminderService().flutterLocalNotificationsPlugin.show(
         notification.hashCode,
         notification.title,
         notification.body,
