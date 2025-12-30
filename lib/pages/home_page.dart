@@ -567,7 +567,6 @@ class _HomePageState extends State<HomePage>
         backgroundColor: Colors.transparent,
         actions: [
           ProfileButton(auth: widget.auth),
-          const SizedBox(width: 8),
         ],
       ),
       body: SkeletonLoader(

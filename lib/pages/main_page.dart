@@ -110,10 +110,13 @@ class _MainPageState extends State<MainPage> {
   late final ExerciseTrackerService _exerciseTrackerService;
   late final ReadingStatusService _readingStatusService;
   late final List<Widget> _pages;
+  late final Stream<User?> _authStream;
 
   @override
   void initState() {
     super.initState();
+    _authStream = widget.auth.authStateChanges();
+    // ... existing init code ...
     _readingStatusService = widget.readingStatusService ??
         ReadingStatusService(
             firestore: widget.firestore, auth: widget.auth);
@@ -199,13 +202,21 @@ class _MainPageState extends State<MainPage> {
   }
 
   @override
+  void didUpdateWidget(covariant MainPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.auth != widget.auth) {
+      _authStream = widget.auth.authStateChanges();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (widget.appCheckFailed) {
       return const AppCheckErrorPage();
     }
 
     return StreamBuilder<User?>(
-      stream: widget.auth.authStateChanges(),
+      stream: _authStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
            return const Scaffold(
