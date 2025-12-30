@@ -11,7 +11,7 @@ import 'package:google_sign_in_platform_interface/google_sign_in_platform_interf
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-import 'package:bible_read/services/email_preferences_service.dart';
+
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/badge_icon.dart';
@@ -96,22 +96,7 @@ class _RecordingVibrationService extends VibrationService {
   }
 }
 
-class MockEmailPreferencesService extends EmailPreferencesService {
-  MockEmailPreferencesService({FirebaseFirestore? firestore})
-      : super(firestore: firestore ?? FakeFirebaseFirestore());
 
-  bool monthlySummaryEnabled = true;
-
-  @override
-  Future<bool> fetchMonthlySummaryEnabled(String uid) async {
-    return monthlySummaryEnabled;
-  }
-
-  @override
-  Future<void> updateMonthlySummaryEnabled(String uid, bool enabled) async {
-    monthlySummaryEnabled = enabled;
-  }
-}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -290,16 +275,15 @@ void main() {
       ),
       signedIn: true,
     );
-    final emailPrefsService = MockEmailPreferencesService();
 
     await tester.pumpWidget(
       MaterialApp(
         home: UserProfilePage(
           auth: auth,
-          emailPreferencesService: emailPrefsService,
         ),
       ),
     );
+
     await tester.pumpAndSettle();
 
     expect(find.text('Firebase User'), findsOneWidget);

@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import '../services/error_logger.dart';
 import '../services/feedback_service.dart';
 import '../services/friend_service.dart';
-import '../services/email_preferences_service.dart';
+
 import '../services/google_sign_in_factory.dart';
 import '../services/vibration_service.dart';
 import '../widgets/achievement_summary.dart';
@@ -27,7 +27,7 @@ class UserProfilePage extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final FriendService friendService;
-  final EmailPreferencesService emailPreferencesService;
+
   final VibrationService vibrationService;
   final FeedbackService feedbackService;
 
@@ -38,7 +38,7 @@ class UserProfilePage extends StatefulWidget {
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     FriendService? friendService,
-    EmailPreferencesService? emailPreferencesService,
+
     VibrationService? vibrationService,
     FeedbackService? feedbackService,
   }) {
@@ -51,8 +51,7 @@ class UserProfilePage extends StatefulWidget {
       auth: authInstance,
       firestore: fs,
       friendService: friendService ?? FriendService(firestore: fs),
-      emailPreferencesService:
-          emailPreferencesService ?? EmailPreferencesService(firestore: fs),
+
       vibrationService: vibrationService ?? const VibrationService(),
       feedbackService:
           feedbackService ?? FeedbackService(firestore: fs, auth: authInstance),
@@ -66,7 +65,7 @@ class UserProfilePage extends StatefulWidget {
     required this.auth,
     required this.firestore,
     required this.friendService,
-    required this.emailPreferencesService,
+
     required this.vibrationService,
     required this.feedbackService,
   });
@@ -78,9 +77,7 @@ class UserProfilePage extends StatefulWidget {
 class UserProfilePageState extends State<UserProfilePage> {
   bool _isSigningIn = false;
   bool _loading = true;
-  bool _loadingEmailPrefs = false;
-  bool _savingEmailPrefs = false;
-  bool _monthlySummaryEnabled = true;
+
 
   @override
   void initState() {
@@ -90,61 +87,11 @@ class UserProfilePageState extends State<UserProfilePage> {
       setState(() {
         _loading = false;
       });
-      _loadEmailPreferences();
+
     });
   }
 
-  Future<void> _loadEmailPreferences() async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    setState(() {
-      _loadingEmailPrefs = true;
-    });
-    try {
-      final enabled =
-          await widget.emailPreferencesService.fetchMonthlySummaryEnabled(uid);
-      if (!mounted) return;
-      setState(() {
-        _monthlySummaryEnabled = enabled;
-      });
-    } catch (error, stackTrace) {
-      await ErrorLogger.log(error, stackTrace);
-    } finally {
-      if (!mounted) return;
-      setState(() {
-        _loadingEmailPrefs = false;
-      });
-    }
-  }
 
-  Future<void> _updateMonthlySummaryPreference(bool enabled) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    setState(() {
-      _savingEmailPrefs = true;
-      _monthlySummaryEnabled = enabled;
-    });
-    try {
-      await widget.emailPreferencesService
-          .updateMonthlySummaryEnabled(uid, enabled);
-    } catch (error, stackTrace) {
-      await ErrorLogger.log(error, stackTrace);
-      if (!mounted) return;
-      setState(() {
-        _monthlySummaryEnabled = !enabled;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to update email preference. Please try again.'),
-        ),
-      );
-    } finally {
-      if (!mounted) return;
-      setState(() {
-        _savingEmailPrefs = false;
-      });
-    }
-  }
 
   Future<void> _handleSignIn() async {
     if (mounted) {
@@ -311,13 +258,7 @@ class UserProfilePageState extends State<UserProfilePage> {
                                 firestore: widget.firestore,
                                 auth: widget.auth,
                               ),
-                              const SizedBox(height: 24),
-                              _EmailPreferencesCard(
-                                loading: _loadingEmailPrefs,
-                                enabled: _monthlySummaryEnabled,
-                                saving: _savingEmailPrefs,
-                                onChanged: _updateMonthlySummaryPreference,
-                              ),
+
                               const SizedBox(height: 24),
                               AnimatedActionButton(
                                 onPressed: _handleSignOut,
@@ -386,53 +327,4 @@ class UserProfilePageState extends State<UserProfilePage> {
   }
 }
 
-class _EmailPreferencesCard extends StatelessWidget {
-  final bool loading;
-  final bool enabled;
-  final bool saving;
-  final ValueChanged<bool> onChanged;
 
-  const _EmailPreferencesCard({
-    required this.loading,
-    required this.enabled,
-    required this.saving,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Email preferences',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'We send a monthly summary email to highlight your reading '
-              'progress. You can opt out at any time.',
-            ),
-            const SizedBox(height: 8),
-            if (loading)
-              const Center(child: CircularProgressIndicator())
-            else
-              SwitchListTile.adaptive(
-                value: enabled,
-                onChanged: saving ? null : onChanged,
-                title: const Text('Receive monthly summary emails'),
-                subtitle: Text(
-                  saving
-                      ? 'Saving preference...'
-                      : 'Keep me updated about my monthly progress.',
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}

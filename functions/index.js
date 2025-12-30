@@ -18,101 +18,11 @@ const {
   isNotificationEnabled,
   sendNotification,
 } = require("./notification-utils");
-const { sendEmail, getSendgridSettings } = require("./sendgrid-utils");
+
 
 admin.initializeApp();
 
-const sendFeedbackEmail = async (type, snapshot, params) => {
-  if (!snapshot) {
-    functions.logger.error('Feedback email aborted: missing snapshot');
-    return;
-  }
 
-  const data = typeof snapshot.data === 'function' ? snapshot.data() || {} : {};
-  const normalizeText = (value, fallback) => {
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      return trimmed.length > 0 ? trimmed : fallback;
-    }
-    if (value !== undefined && value !== null) {
-      const stringified = String(value).trim();
-      return stringified.length > 0 ? stringified : fallback;
-    }
-    return fallback;
-  };
-
-  const title = normalizeText(data.title, 'No title provided');
-  const description = normalizeText(data.description, 'No description provided');
-  const reporterName = normalizeText(data.reporterName || data.reporter?.name, 'Unknown reporter');
-  const reporterEmail = normalizeText(data.reporterEmail || data.reporter?.email, 'Unknown email');
-  const docPath = snapshot?.ref?.path || '';
-
-  const { from, to } = getSendgridSettings();
-
-  const subject = `[Feedback] ${type}: ${title}`;
-  const text = [
-    `A new ${type.toLowerCase()} was submitted.`,
-    '',
-    `Title: ${title}`,
-    `Description: ${description}`,
-    `Reporter: ${reporterName} <${reporterEmail}>`,
-    `Document Path: ${docPath}`,
-    params ? `Parameters: ${JSON.stringify(params)}` : undefined,
-  ].filter(Boolean).join('\n');
-
-  const htmlLines = [
-    `<p>A new ${type.toLowerCase()} was submitted.</p>`,
-    `<p><strong>Title:</strong> ${title}</p>`,
-    `<p><strong>Description:</strong><br>${description.replace(/\n/g, '<br>')}</p>`,
-    `<p><strong>Reporter:</strong> ${reporterName} &lt;${reporterEmail}&gt;</p>`,
-    docPath ? `<p><strong>Document Path:</strong> ${docPath}</p>` : '',
-  ].filter(Boolean);
-
-  try {
-    await sendEmail({
-      subject,
-      text,
-      html: htmlLines.join('\n'),
-      to,
-      from,
-      messageData: { params },
-    });
-    functions.logger.info('Feedback email sent', { type, docPath });
-  } catch (err) {
-    functions.logger.error('Failed to send feedback email', err);
-    try {
-      const db = typeof admin.firestore === 'function' ? admin.firestore() : null;
-      if (db?.collection) {
-        await db.collection('feedbackEmailErrors').add({
-          type,
-          docPath,
-          error: err instanceof Error ? err.message : String(err),
-          occurredAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-      }
-    } catch (logErr) {
-      functions.logger.error('Failed to record feedback email error', logErr);
-    }
-  }
-};
-
-exports.onBugReportCreated = onDocumentCreated('bugReports/{reportId}', async (event) => {
-  if (!event?.data) {
-    functions.logger.error('Bug report creation event missing data');
-    return;
-  }
-
-  await sendFeedbackEmail('Bug Report', event.data, event.params);
-});
-
-exports.onFeatureRequestCreated = onDocumentCreated('featureRequests/{requestId}', async (event) => {
-  if (!event?.data) {
-    functions.logger.error('Feature request creation event missing data');
-    return;
-  }
-
-  await sendFeedbackEmail('Feature Request', event.data, event.params);
-});
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
@@ -393,8 +303,8 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
   if (logDoc.exists) {
     const lastTs = logDoc.data().timestamp?.toDate ? logDoc.data().timestamp.toDate() : null;
     if (lastTs && lastTs.getFullYear() === now.getFullYear() &&
-        lastTs.getMonth() === now.getMonth() &&
-        lastTs.getDate() === now.getDate()) {
+      lastTs.getMonth() === now.getMonth() &&
+      lastTs.getDate() === now.getDate()) {
       return { alreadySent: true };
     }
   }
@@ -1057,110 +967,9 @@ exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
   }
 });
 
-const monthlyStats = require('./monthly-stats');
 
-const formatMonthLabel = (date) => date.toLocaleString('en-US', {
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
 
-exports.sendMonthlyStatsEmail = onSchedule({
-  schedule: '0 9 1 * *',
-  timeZone: 'Etc/UTC',
-  region: 'us-central1',
-  maxInstances: 1,
-}, async () => {
-  const db = admin.firestore();
-  const auth = typeof admin.auth === 'function' ? admin.auth() : null;
-  const { start, end } = monthlyStats.getPreviousMonthRange();
-  const label = formatMonthLabel(start);
-  const userSnapshot = await db.collection('users').get();
 
-  if (userSnapshot.empty) {
-    functions.logger.info('No users found for monthly stats email');
-    return;
-  }
-
-  for (const userDoc of userSnapshot.docs) {
-    const data = typeof userDoc.data === 'function' ? userDoc.data() : userDoc.data;
-    const emailPrefs = data?.emailPrefs;
-    const monthlySummaryEnabled =
-      typeof emailPrefs?.monthlySummary === 'boolean' ? emailPrefs.monthlySummary : true;
-    if (!monthlySummaryEnabled) {
-      functions.logger.info('Skipping monthly stats email: opted out', { uid: userDoc.id });
-      continue;
-    }
-
-    let email = data?.email || data?.emailAddress;
-    const displayName = data?.displayName || data?.name || 'there';
-    let emailVerified = false;
-
-    if (auth?.getUser) {
-      try {
-        const userRecord = await auth.getUser(userDoc.id);
-        emailVerified = userRecord?.emailVerified === true;
-        email = userRecord?.email || email;
-      } catch (err) {
-        functions.logger.warn('Skipping monthly stats email: failed to load auth user', {
-          uid: userDoc.id,
-          error: err instanceof Error ? err.message : String(err),
-        });
-        continue;
-      }
-    }
-
-    if (!emailVerified || !email) {
-      functions.logger.warn('Skipping monthly stats email without verified recipient', {
-        uid: userDoc.id,
-        emailVerified,
-        hasEmail: Boolean(email),
-      });
-      continue;
-    }
-
-    try {
-      const stats = await monthlyStats.getPreviousMonthStats(db, userDoc.id, end);
-      const longestStreak = stats.streakSegments.reduce(
-        (max, segment) => Math.max(max, segment.length),
-        0,
-      );
-      const subject = `Your ${label} reading summary`;
-      const textLines = [
-        `Hi ${displayName},`,
-        `Here are your ${label} reading stats:`,
-        `- Days read: ${stats.daysRead}`,
-        `- Streaks: ${longestStreak || 0}-day max across ${stats.streakSegments.length} segments`,
-        `- Grace days used: ${stats.graceDaysUsed}`,
-        '',
-        'Keep up the great work! 🕊️',
-      ];
-
-      const htmlLines = [
-        `<p>Hi ${displayName},</p>`,
-        `<p>Here are your ${label} reading stats:</p>`,
-        '<ul>',
-        `<li>Days read: <strong>${stats.daysRead}</strong></li>`,
-        `<li>Streaks: <strong>${longestStreak || 0}</strong>-day max across ${stats.streakSegments.length} segments</li>`,
-        `<li>Grace days used: <strong>${stats.graceDaysUsed}</strong></li>`,
-        '</ul>',
-        '<p>Keep up the great work! 🕊️</p>',
-      ];
-
-      await sendEmail({
-        subject,
-        text: textLines.join('\n'),
-        html: htmlLines.join('\n'),
-        to: email,
-      });
-    } catch (err) {
-      functions.logger.error('Failed to send monthly stats email', {
-        uid: userDoc.id,
-        error: err instanceof Error ? err.message : String(err),
-      });
-    }
-  }
-});
 
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
