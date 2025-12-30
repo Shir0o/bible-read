@@ -78,12 +78,6 @@ class _CommunityPageState extends State<CommunityPage>
         backgroundColor: colorScheme.surface,
         scrolledUnderElevation: 0,
         titleTextStyle: AppTextStyles.title.copyWith(fontSize: 22),
-        actions: [
-          ProfileButton(
-            auth: widget.auth,
-            vibrationService: widget.vibrationService,
-          ),
-        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Container(

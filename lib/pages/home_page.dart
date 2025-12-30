@@ -5,6 +5,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../models/achievement.dart';
@@ -565,9 +566,12 @@ class _HomePageState extends State<HomePage>
       appBar: AppBar(
         forceMaterialTransparency: true,
         backgroundColor: Colors.transparent,
-        actions: [
-          ProfileButton(auth: widget.auth),
-        ],
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark, // Android: Dark icons
+          statusBarBrightness: Brightness.light,    // iOS: Dark icons
+        ),
+        ),
       ),
       body: SkeletonLoader(
         loading: _initialLoading,
