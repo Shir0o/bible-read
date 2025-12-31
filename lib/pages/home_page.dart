@@ -571,7 +571,6 @@ class _HomePageState extends State<HomePage>
           statusBarIconBrightness: Brightness.dark, // Android: Dark icons
           statusBarBrightness: Brightness.light,    // iOS: Dark icons
         ),
-        ),
       ),
       body: SkeletonLoader(
         loading: _initialLoading,
