@@ -2,14 +2,14 @@
 // by switching based on the current width.
 import 'package:flutter/material.dart';
 
-import '../services/vibration_service.dart';
+
 
 /// A scaffold that adapts its navigation UI to the screen width.
 ///
 /// Required parameters are [selectedIndex], [onDestinationSelected], [pages],
 /// and [destinations]. The [pages] and [destinations] lists should have the
 /// same length so each destination maps to a page.
-class ResponsiveScaffold extends StatelessWidget {
+class ResponsiveScaffold extends StatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final List<Widget> pages;
@@ -32,28 +32,56 @@ class ResponsiveScaffold extends StatelessWidget {
   });
 
   @override
+  State<ResponsiveScaffold> createState() => _ResponsiveScaffoldState();
+}
+
+class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
+  late PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: widget.selectedIndex);
+  }
+
+  @override
+  void didUpdateWidget(covariant ResponsiveScaffold oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedIndex != oldWidget.selectedIndex) {
+      _pageController.animateToPage(
+        widget.selectedIndex,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.fastOutSlowIn,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bool isWide = MediaQuery.of(context).size.width >= 600;
-    final int displayIndex = contentIndex ?? selectedIndex;
-    final int safeDisplay =
-        pages.isEmpty ? 0 : displayIndex.clamp(0, pages.length - 1);
-    final int safeSelected = destinations.isEmpty
+    final int safeSelected = widget.destinations.isEmpty
         ? 0
-        : selectedIndex.clamp(0, destinations.length - 1);
+        : widget.selectedIndex.clamp(0, widget.destinations.length - 1);
     
     return Scaffold(
-      key: scaffoldKey,
-      appBar: appBar,
-      drawer: drawer,
+      key: widget.scaffoldKey,
+      appBar: widget.appBar,
+      drawer: widget.drawer,
       body: Row(
         children: [
-          if (isWide && destinations.length > 1)
+          if (isWide && widget.destinations.length > 1)
             NavigationRail(
               selectedIndex: safeSelected,
-              onDestinationSelected: onDestinationSelected,
+              onDestinationSelected: widget.onDestinationSelected,
               labelType: NavigationRailLabelType.all,
               leading: const SizedBox(height: 16),
-              destinations: destinations
+              destinations: widget.destinations
                   .map(
                     (d) => NavigationRailDestination(
                       icon: d.icon,
@@ -64,18 +92,22 @@ class ResponsiveScaffold extends StatelessWidget {
                   .toList(),
             ),
           Expanded(
-            child: IndexedStack(index: safeDisplay, children: pages),
+            child: PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(), // Disable swipe
+              children: widget.pages,
+            ),
           ),
         ],
       ),
-      bottomNavigationBar: isWide || destinations.length <= 1
+      bottomNavigationBar: isWide || widget.destinations.length <= 1
           ? null
           : NavigationBar(
               selectedIndex: safeSelected,
-              onDestinationSelected: onDestinationSelected,
+              onDestinationSelected: widget.onDestinationSelected,
               height: 88,
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-              destinations: destinations,
+              destinations: widget.destinations,
             ),
     );
   }

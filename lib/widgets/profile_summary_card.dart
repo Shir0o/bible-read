@@ -72,18 +72,7 @@ class ProfileSummaryCard extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 4),
 
-              // Reflective Subtitle
-              Text(
-                'Walking in the Word', // Static for now, could be dynamic later
-                style: AppTextStyles.body.copyWith(
-                  fontSize: 14,
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w400,
-                ),
-                textAlign: TextAlign.center,
-              ),
 
               const SizedBox(height: 12),
 
