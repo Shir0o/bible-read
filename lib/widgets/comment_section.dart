@@ -96,6 +96,7 @@ class _CommentSectionState extends State<CommentSection> {
         final hasBoundedHeight = constraints.maxHeight.isFinite;
         final listView = ListView.builder(
           controller: widget.scrollController,
+          padding: const EdgeInsets.only(bottom: 20),
           shrinkWrap: !hasBoundedHeight,
           physics: hasBoundedHeight
               ? const BouncingScrollPhysics()
@@ -125,7 +126,8 @@ class _CommentSectionState extends State<CommentSection> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             listChild,
-            if (widget.showInput)
+            if (widget.showInput) ...[
+              const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
@@ -162,6 +164,7 @@ class _CommentSectionState extends State<CommentSection> {
                   ),
                 ],
               ),
+            ],
           ],
         );
       },

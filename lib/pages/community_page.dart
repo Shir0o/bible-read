@@ -85,38 +85,46 @@ class _CommunityPageState extends State<CommunityPage>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Reduced horizontal margin
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(28),
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(32),
             ),
+            padding: const EdgeInsets.all(3), // Reduced padding
             child: TabBar(
               controller: _tabController,
-              labelColor: colorScheme.onSecondaryContainer,
+              labelColor: colorScheme.onSurface,
               unselectedLabelColor: colorScheme.onSurfaceVariant,
               indicatorSize: TabBarIndicatorSize.tab,
               indicator: BoxDecoration(
-                color: colorScheme.secondaryContainer,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               dividerColor: Colors.transparent,
               overlayColor: MaterialStateProperty.all(Colors.transparent),
               splashBorderRadius: BorderRadius.circular(28),
               labelStyle: AppTextStyles.body.copyWith(
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: 13, // Slightly smaller font
               ),
               unselectedLabelStyle: AppTextStyles.body.copyWith(
                 fontWeight: FontWeight.w500,
-                fontSize: 14,
+                fontSize: 13,
               ),
               tabs: const [
                 Tab(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.groups_outlined, size: 18),
-                      SizedBox(width: 4),
+                      Icon(Icons.groups_outlined, size: 16), // Smaller icon
+                      SizedBox(width: 4), // Reduced gap
                       Text('Groups'),
                     ],
                   ),
@@ -125,7 +133,7 @@ class _CommunityPageState extends State<CommunityPage>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.view_agenda_outlined, size: 18),
+                      Icon(Icons.view_agenda_outlined, size: 16),
                       SizedBox(width: 4),
                       Text('Feed'),
                     ],
@@ -135,7 +143,7 @@ class _CommunityPageState extends State<CommunityPage>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.face_outlined, size: 18),
+                      Icon(Icons.face_outlined, size: 16),
                       SizedBox(width: 4),
                       Text('Friends'),
                     ],
