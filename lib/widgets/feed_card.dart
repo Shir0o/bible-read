@@ -63,24 +63,18 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
     final colorScheme = Theme.of(context).colorScheme;
     final isLiked = widget.log.liked;
 
-    return Container(
+    return Card.filled(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        // Soft elevation (tonal surface)
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3), // Very subtle off-white/gray
+      elevation: 8,
+      shadowColor: Colors.black26,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.05),
-          width: 0.5,
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
+      color: colorScheme.surfaceContainerHighest,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -93,7 +87,7 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
             ),
             // Light, airy layout with generous padding
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -232,10 +226,10 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
                    thickness: 0.5,
                    color: colorScheme.outlineVariant.withValues(alpha: 0.5)
                  ),
-                if (widget.log.comments.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                    child: Column(
+                  if (widget.log.comments.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: widget.log.comments.map((comment) {
                         return Padding(
