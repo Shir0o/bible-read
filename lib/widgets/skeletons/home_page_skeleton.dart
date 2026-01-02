@@ -12,48 +12,50 @@ class HomePageSkeleton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon Skeleton
+            // "Did you read today?" Title Skeleton
+            // Size 24 font ~ 32px height visually including line height
             const Skeleton(
-              width: 80,
-              height: 80,
-              shape: CircleBorder(),
-            ),
-            const SizedBox(height: 24),
-            // "Marked Today" Title Skeleton
-            const Skeleton(
-              width: 180,
+              width: 220,
               height: 32,
               radius: 8,
             ),
-            const SizedBox(height: 12),
-            // Subtitle Skeleton
-            const Skeleton(
-              width: 220,
-              height: 20,
-              radius: 4,
-            ),
+            
             const SizedBox(height: 48),
-            // Button Skeleton (Full width)
+            
+            // "Yes, I read" Button Skeleton (Full width)
             const Skeleton(
               width: double.infinity,
               height: 80,
               radius: 24,
             ),
-            const SizedBox(height: 48),
+            
+            const SizedBox(height: 32),
 
-            // Weekly Progress Title Skeleton
-            const Skeleton(
-              width: 100,
-              height: 14,
-              radius: 4,
+            // Weekly Progress Section (Constrained width to 240)
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 240),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // "Reading this week" Label
+                    const Skeleton(
+                      width: 100,
+                      height: 12,
+                      radius: 4,
+                    ),
+                    const SizedBox(height: 8),
+                    // Progress Bar
+                    const Skeleton(
+                      width: 240,
+                      height: 10,
+                      radius: 8,
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 8),
-            // Progress Bar Skeleton (Constrained width in real app is 240)
-            const Skeleton(
-              width: 240,
-              height: 6,
-              radius: 4,
-            ),
+            
             const SizedBox(height: 24),
 
             // Streak Text Skeleton
