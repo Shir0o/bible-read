@@ -7,10 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 /// Pass a [ColorScheme] to [appTheme] to change primary colors and adjust
 /// [fontFamily] or [textTheme] to modify typography.
 class AppTheme {
-  // Desired primary font. If the IBM Plex Sans fonts are not bundled yet,
-  // Flutter will fall back to the provided list below.
-  static const String fontFamily = 'IBMPlexSans';
-  static const List<String> _fontFamilyFallback = ['IBMPlexMono', 'sans-serif'];
+
 
   static TextTheme _applyIBMFont(TextTheme base) =>
       GoogleFonts.ibmPlexSansTextTheme(base);
@@ -160,7 +157,6 @@ class AppTheme {
       brightness: blackColorScheme.brightness,
       colorScheme: blackColorScheme,
       useMaterial3: true,
-      fontFamily: fontFamily,
       textTheme: themedText,
       primaryTextTheme: primaryTextTheme,
       typography: typography,

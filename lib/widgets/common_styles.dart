@@ -124,26 +124,18 @@ class AppTextStyles {
   static const TextStyle subtitle = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    fontFamily: AppTheme.fontFamily,
-    fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
   );
 
   static const TextStyle body = TextStyle(
     fontSize: 16,
-    fontFamily: AppTheme.fontFamily,
-    fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
   );
 
   static const TextStyle title = TextStyle(
     fontSize: 22,
     fontWeight: FontWeight.w700,
-    fontFamily: AppTheme.fontFamily,
-    fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
   );
 
   static const TextStyle caption = TextStyle(
     fontSize: 12,
-    fontFamily: AppTheme.fontFamily,
-    fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
   );
 }
