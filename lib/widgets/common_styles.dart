@@ -140,4 +140,10 @@ class AppTextStyles {
     fontFamily: AppTheme.fontFamily,
     fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
   );
+
+  static const TextStyle caption = TextStyle(
+    fontSize: 12,
+    fontFamily: AppTheme.fontFamily,
+    fontFamilyFallback: ['IBMPlexMono', 'sans-serif'],
+  );
 }

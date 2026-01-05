@@ -1,0 +1,150 @@
+import 'dart:convert';
+import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/reading_plan.dart';
+import '../models/reading_plan_progress.dart';
+
+class ReadingPlanService {
+  final FirebaseFirestore firestore;
+
+  ReadingPlanService({required this.firestore});
+
+  // Cached plans to avoid repeated JSON parsing
+  List<ReadingPlan>? _cachedPlans;
+
+  /// Loads available reading plans from local assets.
+  Future<List<ReadingPlan>> getAvailablePlans() async {
+    if (_cachedPlans != null) return _cachedPlans!;
+
+    try {
+      final String jsonString =
+          await rootBundle.loadString('assets/plans/sample_plans.json');
+      final List<dynamic> jsonList = json.decode(jsonString);
+      _cachedPlans = jsonList.map((json) => ReadingPlan.fromJson(json)).toList();
+      return _cachedPlans!;
+    } catch (e) {
+      print('Error loading reading plans: $e');
+      return [];
+    }
+  }
+
+  /// Gets a specific plan by ID.
+  Future<ReadingPlan?> getPlanById(String planId) async {
+    final plans = await getAvailablePlans();
+    try {
+      return plans.firstWhere((p) => p.id == planId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Starts a reading plan for a user.
+  Future<void> startPlan(String userId, String planId) async {
+    final progress = UserPlanProgress(
+      planId: planId,
+      userId: userId,
+      startDate: DateTime.now(),
+      completedDays: [],
+    );
+
+    await firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .doc(planId)
+        .set(progress.toFirestore());
+  }
+
+  /// Streams the user's progress for a specific plan.
+  Stream<UserPlanProgress?> getPlanProgress(String userId, String planId) {
+    return firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .doc(planId)
+        .snapshots()
+        .map((doc) {
+      if (!doc.exists) return null;
+      return UserPlanProgress.fromFirestore(doc);
+    });
+  }
+  
+  /// Streams all active plans for a user.
+  Stream<List<UserPlanProgress>> getActivePlans(String userId) {
+    return firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => UserPlanProgress.fromFirestore(doc))
+          .toList();
+    });
+  }
+
+  /// Marks a specific day in the plan as completed.
+  Future<void> markDayComplete(String userId, String planId, int day) async {
+    final docRef = firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .doc(planId);
+
+    await firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(docRef);
+      if (!snapshot.exists) return;
+
+      final progress = UserPlanProgress.fromFirestore(snapshot);
+      if (!progress.completedDays.contains(day)) {
+        final updatedCompletedDays = List<int>.from(progress.completedDays)
+          ..add(day)
+          ..sort(); // Keep sorted
+
+        transaction.update(docRef, {
+          'completedDays': updatedCompletedDays,
+          'lastReadDate': Timestamp.now(),
+        });
+      }
+    });
+  }
+
+  /// Unmarks a specific day in the plan.
+  Future<void> unmarkDayComplete(String userId, String planId, int day) async {
+     final docRef = firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .doc(planId);
+
+     await firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(docRef);
+      if (!snapshot.exists) return;
+
+      final progress = UserPlanProgress.fromFirestore(snapshot);
+      if (progress.completedDays.contains(day)) {
+        final updatedCompletedDays = List<int>.from(progress.completedDays)
+          ..remove(day);
+
+        transaction.update(docRef, {
+          'completedDays': updatedCompletedDays,
+          // We don't necessarily revert lastReadDate easily without history, 
+          // so we leave it or typically you'd check if it was today. 
+          // For simplicity, we leave it.
+        });
+      }
+    });
+  }
+
+  /// Returns the readings for the user's "next" due day.
+  /// This is a helper to find the first incomplete day.
+  /// Returns null if plan is completed.
+  ReadingPlanDay? getNextDueDay(ReadingPlan plan, UserPlanProgress progress) {
+    for (final day in plan.schedule) {
+      if (!progress.completedDays.contains(day.day)) {
+        return day;
+      }
+    }
+    return null; // All done!
+  }
+}

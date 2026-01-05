@@ -152,7 +152,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: ExerciseChallengesPage(
-            trackerService: service,
+            service: service,
             vibrationService: vibration,
           ),
         ),
@@ -217,7 +217,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: ExerciseChallengesPage(
-            trackerService: service,
+            service: service,
             vibrationService: vibration,
           ),
         ),
@@ -288,7 +288,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: ExerciseChallengesPage(
-            trackerService: service,
+            service: service,
             vibrationService: vibration,
           ),
         ),

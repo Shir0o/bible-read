@@ -6,6 +6,7 @@ import '../widgets/common_styles.dart';
 import '../widgets/profile_summary_card.dart';
 import '../widgets/views/book_tracker_view.dart';
 import '../widgets/views/streak_history_view.dart';
+import '../widgets/views/reading_plans_view.dart';
 
 class JourneyPage extends StatefulWidget {
   final FirebaseAuth auth;
@@ -32,7 +33,7 @@ class _JourneyPageState extends State<JourneyPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -75,7 +76,7 @@ class _JourneyPageState extends State<JourneyPage>
                     borderRadius: BorderRadius.circular(28),
                   ),
                   dividerColor: Colors.transparent,
-                  overlayColor: MaterialStateProperty.all(Colors.transparent),
+                  overlayColor: WidgetStateProperty.all(Colors.transparent),
                   splashBorderRadius: BorderRadius.circular(28),
                   labelStyle: AppTextStyles.body.copyWith(
                     fontWeight: FontWeight.w600,
@@ -86,6 +87,16 @@ class _JourneyPageState extends State<JourneyPage>
                     fontSize: 14,
                   ),
                   tabs: const [
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.calendar_today, size: 18),
+                          SizedBox(width: 4),
+                          Text('Plans'),
+                        ],
+                      ),
+                    ),
                     Tab(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -117,6 +128,10 @@ class _JourneyPageState extends State<JourneyPage>
         body: TabBarView(
           controller: _tabController,
           children: [
+            ReadingPlansView(
+              firestore: widget.firestore,
+              auth: widget.auth,
+            ),
             BookTrackerView(
               firestore: widget.firestore,
               auth: widget.auth,
