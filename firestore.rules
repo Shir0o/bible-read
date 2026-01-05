@@ -145,6 +145,10 @@ service cloud.firestore {
         allow update, delete: if request.auth != null && request.auth.uid == userId;
       }
 
+      match /plan_progress/{planId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
       match /achievements/{achievementId} {
         allow read, write: if request.auth != null &&
             request.auth.uid == userId;
