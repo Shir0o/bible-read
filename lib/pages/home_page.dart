@@ -16,7 +16,10 @@ import '../services/friend_streak_link_service.dart';
 import '../services/friendly_streak_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/group_book_achievement_service.dart';
+import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
+import '../models/reading_plan.dart';
+import '../models/reading_plan_progress.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
 import '../widgets/skeleton_loader.dart';
@@ -53,10 +56,13 @@ class HomePage extends StatefulWidget {
     AchievementService? achievementService,
     GroupBookAchievementService? groupBookAchievementService,
     FriendStreakLinkService? friendStreakLinkService,
+    ReadingPlanService? readingPlanService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         readingStatusService = readingStatusService ??
-            ReadingStatusService(firestore: firestore, auth: auth),
+            ReadingStatusService(firestore: firestore ?? FirebaseFirestore.instance, auth: auth ?? FirebaseAuth.instance),
+        readingPlanService = readingPlanService ??
+            ReadingPlanService(firestore: firestore ?? FirebaseFirestore.instance),
         vibrationService = vibrationService ?? const VibrationService(),
         googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
         friendlyStreakService = friendlyStreakService ??
@@ -86,6 +92,9 @@ class HomePage extends StatefulWidget {
   /// Service that fans read coverage events out to friend streak links.
   final FriendStreakLinkService friendStreakLinkService;
 
+  /// Service for managing reading plans.
+  final ReadingPlanService readingPlanService;
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -108,6 +117,13 @@ class _HomePageState extends State<HomePage>
   bool _friendStreakLoading = false;
   late BookAchievementRefresher _bookAchievementRefresher;
 
+
+
+  // Plan state
+  ReadingPlan? _currentPlan;
+  UserPlanProgress? _currentPlanProgress;
+  ReadingPlanDay? _scheduledDay;
+
   late final AnimationController _animationController;
 
   @override
@@ -127,6 +143,7 @@ class _HomePageState extends State<HomePage>
     await Future.wait([
       _loadReadStatus(showLoading: false),
       _loadFriendlyStreak(showLoading: false),
+      _loadActivePlan(showLoading: false),
     ]);
     if (!_disposed && mounted) {
       setState(() {
@@ -141,6 +158,7 @@ class _HomePageState extends State<HomePage>
     if (oldWidget.auth != widget.auth) {
       unawaited(_loadReadStatus());
       unawaited(_loadFriendlyStreak());
+      unawaited(_loadActivePlan());
     }
     if (oldWidget.achievementService != widget.achievementService ||
         oldWidget.groupBookAchievementService !=
@@ -213,6 +231,41 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  Future<void> _loadActivePlan({bool showLoading = true}) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    
+    // Listen to the stream for real-time updates
+    widget.readingPlanService.getActivePlans(uid).listen((plans) async {
+       if (plans.isEmpty) {
+         if (!_disposed && mounted) {
+           setState(() {
+             _currentPlan = null;
+             _currentPlanProgress = null;
+             _scheduledDay = null;
+           });
+         }
+         return;
+       }
+
+       // Just take the first one for now as we don't have multi-plan UI yet
+       final progress = plans.first;
+       final plan = await widget.readingPlanService.getPlanById(progress.planId);
+       
+       if (plan != null) {
+          final day = widget.readingPlanService.getScheduledDay(plan, progress.startDate, DateTime.now());
+          
+          if (!_disposed && mounted) {
+            setState(() {
+              _currentPlan = plan;
+              _currentPlanProgress = progress;
+              _scheduledDay = day;
+            });
+          }
+       }
+    });
+  }
+
   /// Cleans and updates the cached summary document without scanning the entire
   /// reading collection. Removes outdated entries, ensures the summary document
   /// exists and resets the streak if a day was missed.
@@ -252,6 +305,9 @@ class _HomePageState extends State<HomePage>
     final prevWeek = List<bool>.from(_pastWeek);
     final prevMonth = List<bool>.from(_pastMonth);
     final prevReadDates = Set<DateTime>.from(_readDates);
+    
+    // Also track if we successfully marked the plan day
+    bool markedPlanDay = false;
 
     final today = DateTime.now();
     final weekIndex = today.weekday % 7;
@@ -300,6 +356,13 @@ class _HomePageState extends State<HomePage>
         'read': true,
       }, SetOptions(merge: true)); // Mark read in Firestore.
 
+      // Mark plan day if relevant
+      if (_currentPlan != null && _scheduledDay != null) {
+        await widget.readingPlanService.markDayComplete(
+            user.uid, _currentPlan!.id, _scheduledDay!.day);
+        markedPlanDay = true;
+      }
+
       // Update summary collection (lightweight update)
       final summary = await _updateSummaryWithToday();
       if (summary != null) {
@@ -319,6 +382,15 @@ class _HomePageState extends State<HomePage>
         debugPrint('Failed to mark reading: $e');
       }
       ErrorLogger.log(e, st);
+      
+      // Revert plan day if needed (though it's idempotent mostly)
+      if (markedPlanDay && _currentPlan != null && _scheduledDay != null) {
+         try {
+           await widget.readingPlanService.unmarkDayComplete(
+               user.uid, _currentPlan!.id, _scheduledDay!.day);
+         } catch (_) { /* ignore rollback errors */ }
+      }
+
       if (!_disposed && mounted) {
         // Revert to previous state and notify the user.
         setState(() {
@@ -580,6 +652,61 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  /// Groups sequential chapters (e.g., "Genesis 1", "Genesis 2" -> "Genesis 1–2").
+  String _formatReadings(List<String> readings) {
+    if (readings.isEmpty) return '';
+
+    final List<String> result = [];
+    String? currentBook;
+    List<int> currentChapters = [];
+
+    void flush() {
+      if (currentBook == null) return;
+      if (currentChapters.isEmpty) return;
+
+      // Format chapters
+      List<String> ranges = [];
+      currentChapters.sort(); // Ensure sorted, though input usually is
+      int start = currentChapters[0];
+      int end = start;
+
+      for (int i = 1; i < currentChapters.length; i++) {
+        if (currentChapters[i] == end + 1) {
+          end = currentChapters[i];
+        } else {
+          ranges.add(start == end ? '$start' : '$start–$end');
+          start = currentChapters[i];
+          end = currentChapters[i];
+        }
+      }
+      ranges.add(start == end ? '$start' : '$start–$end');
+      result.add('$currentBook ${ranges.join(", ")}');
+    }
+
+    for (var reading in readings) {
+      final match = RegExp(r'^(.+)\s+(\d+)$').firstMatch(reading);
+      if (match != null) {
+        final book = match.group(1)!;
+        final chapter = int.parse(match.group(2)!);
+
+        if (book != currentBook) {
+          flush();
+          currentBook = book;
+          currentChapters = [chapter];
+        } else {
+          currentChapters.add(chapter);
+        }
+      } else {
+        flush();
+        currentBook = null;
+        currentChapters = [];
+        result.add(reading);
+      }
+    }
+    flush();
+    return result.join(', ');
+  }
+
   Widget _buildMinimalContent(BuildContext context) {
     if (widget.auth.currentUser == null) {
       return Center(
@@ -591,148 +718,199 @@ class _HomePageState extends State<HomePage>
     }
 
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     // Minimal UI: Centered content, no distractions.
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const Spacer(flex: 3),
             if (_readToday) ...[
               Icon(
                 Icons.check_circle_outline_rounded,
-                size: 80,
-                color: const Color(0xFF7E9F7A).withValues(alpha: 0.8),
+                size: 64, // Slightly smaller
+                color: const Color(0xFF7E9F7A).withValues(alpha: 0.7), // Muted
               ),
               const SizedBox(height: 24),
-              // Simpler, calmer text
               Text(
-                'Glad you\'re here.',
+                'Rest in His word.',
                 style: AppTextStyles.subtitle.copyWith(
-                  fontSize: 24, 
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withValues(alpha: 0.8),
                 ),
                 textAlign: TextAlign.center,
               ),
             ] else ...[
-              Text(
-                'Did you read today?',
-                style: AppTextStyles.subtitle.copyWith(
-                   fontSize: 24,
-                   color: colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              SizedBox(
-                width: double.infinity,
-                height: 80,
-                child: FilledButton.tonal(
-                  onPressed: _toggleLoading ? null : _toggleReadStatus,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colorScheme.primaryContainer,
-                    foregroundColor: colorScheme.onPrimaryContainer,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 22, 
-                      fontWeight: FontWeight.w600,
-                    ),
+              if (_scheduledDay != null) ...[
+                Text(
+                  'TODAY\'S READING',
+                  style: AppTextStyles.caption.copyWith(
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 2.0,
+                    fontSize: 11,
                   ),
-                  child: _toggleLoading
-                      ? SizedBox(
-                          width: 32,
-                          height: 32,
-                          child: CircularProgressIndicator(
-                            color: colorScheme.onPrimaryContainer,
-                            strokeWidth: 3,
-                          ),
-                        )
-                      : const Text('Yes, I read'),
                 ),
-              ),
+                const SizedBox(height: 24),
+                Text(
+                  _formatReadings(_scheduledDay!.readings),
+                  style: AppTextStyles.title.copyWith(
+                    fontSize: 28, // Reduced from 32
+                    fontWeight: FontWeight.w400, // Lighter weight
+                    height: 1.3,
+                    color: colorScheme.onSurface.withValues(alpha: 0.9),
+                    fontFamily: 'Serif', // Fallback if custom font not loaded, implies content
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 56), // Increased spacing
+                SizedBox(
+                  width: double.infinity,
+                  height: 64, // Reduced height from 80
+                  child: FilledButton.tonal(
+                    onPressed: _toggleLoading ? null : _toggleReadStatus,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colorScheme.primary.withValues(alpha: 0.08), // Softer background
+                      foregroundColor: colorScheme.primary,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(32), // Softer corners
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    child: _toggleLoading
+                        ? SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: colorScheme.primary,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Text('I have read'),
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  'Daily Reading',
+                  style: AppTextStyles.caption.copyWith(
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 2.0,
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Make space to read.',
+                  style: AppTextStyles.title.copyWith(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w400,
+                    color: colorScheme.onSurface.withValues(alpha: 0.9),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
+                SizedBox(
+                  width: double.infinity,
+                  height: 64,
+                  child: FilledButton.tonal(
+                    onPressed: _toggleLoading ? null : _toggleReadStatus,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colorScheme.primary.withValues(alpha: 0.08),
+                      foregroundColor: colorScheme.primary,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(32),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    child: _toggleLoading
+                        ? SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: colorScheme.primary,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Text('I have read'),
+                  ),
+                ),
+              ],
             ],
-            
-            const SizedBox(height: 32),
 
-            // Weekly Progress Section - Constrained width for intentionality
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 240),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            const Spacer(flex: 4), // Push progress lower
+
+            // Weekly Progress Section - Visual separation
+            Opacity(
+              opacity: _readToday ? 0.0 : 1.0, // Optionally hide on read? Or keep consistent. kept consistent but low contrast
+              child: AnimatedOpacity(
+                 duration: const Duration(milliseconds: 500),
+                 opacity: 1.0,
+                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'Reading this week',
-                      style: AppTextStyles.body.copyWith(
-                        fontSize: 12,
-                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                      ),
+                    // Tiny Week visual
+                    Row(
+                       mainAxisAlignment: MainAxisAlignment.center,
+                       mainAxisSize: MainAxisSize.min,
+                       children: List.generate(7, (index) {
+                         // 0..6
+                         final todayIndex = (DateTime.now().weekday % 7);
+                         final isPast = index < _pastWeek.length;
+                         final isRead = isPast && _pastWeek[index];
+                         final isToday = index == todayIndex;
+                         
+                         return Padding(
+                           padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                           child: Container(
+                             width: 8,
+                             height: 8,
+                             decoration: BoxDecoration(
+                               shape: BoxShape.circle,
+                               color: isRead 
+                                  ? colorScheme.primary.withValues(alpha: 0.4) 
+                                  : (isToday 
+                                      ? colorScheme.primary.withValues(alpha: 0.1)
+                                      : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
+                             ),
+                           ),
+                         );
+                       }),
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: colorScheme.outline.withValues(alpha: 0.1),
-                        ),
+                    const SizedBox(height: 16),
+                    // Removed "Reading this week" label and linear progress bar for cleaner look
+                    // Or keep the linear one but make it very subtle? 
+                    // User asked: "Visually separate ... using spacing and lower contrast"
+                    // User also said "Normalize vertical spacing"
+                    
+                    // Let's keep the streak simply as a quiet subtitle at the very bottom
+                     if (_currentStreak > 0)
+                      Text(
+                         '$_currentStreak day streak',
+                         style: AppTextStyles.body.copyWith(
+                           fontSize: 12,
+                           color: colorScheme.outline.withValues(alpha: 0.4),
+                           letterSpacing: 0.5,
+                         ),
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: _pastWeek.isEmpty 
-                              ? 0.0 
-                              : _pastWeek.where((d) => d).length / 7.0,
-                          minHeight: 10,
-                          backgroundColor: Colors.transparent,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.green.withValues(alpha: 0.4),
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
-                ),
+                 ),
               ),
             ),
-            
-            const SizedBox(height: 24),
-            
-            // Streak Count
-            if (_currentStreak > 0)
-              RichText(
-                 text: TextSpan(
-                   style: AppTextStyles.body.copyWith(
-                     fontSize: 13,
-                     color: colorScheme.outline,
-                   ),
-                   children: [
-                     TextSpan(
-                       text: '$_currentStreak',
-                       style: const TextStyle(fontWeight: FontWeight.w600),
-                     ),
-                     TextSpan(text: ' days of reading'),
-                   ],
-                 ),
-              ),
-
-             // Streak freezes hidden to reduce gamification pressure
-             if (false && _streakFreezesLeft != null && !_readToday && _currentStreak > 0) ...[
-               const SizedBox(height: 4),
-               Text(
-                 'Streak freezes available: $_streakFreezesLeft',
-                 style: AppTextStyles.body.copyWith(
-                   fontSize: 11,
-                   color: colorScheme.outline.withValues(alpha: 0.5),
-                 ),
-               ),
-            ],
+            const SizedBox(height: 32),
           ],
         ),
       ),

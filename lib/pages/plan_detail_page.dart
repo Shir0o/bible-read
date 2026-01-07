@@ -42,7 +42,81 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   Future<void> _startPlan() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
-    await _planService.startPlan(user.uid, widget.plan.id);
+
+    final now = DateTime.now();
+    final currentYear = now.year;
+    // Dynamic option for Jan 1 of current year, or next year if deep in the year? 
+    // Simply offering Jan 1 of this year covers late joiners.
+    final jan1 = DateTime(currentYear, 1, 1);
+    
+    // Show dialog
+    final DateTime? pickedDate = await showModalBottomSheet<DateTime>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'When would you like to start?',
+                  style: AppTextStyles.subtitle.copyWith(fontSize: 20),
+                ),
+                const SizedBox(height: 24),
+                ListTile(
+                  leading: const Icon(Icons.today),
+                  title: const Text('Start Today'),
+                  subtitle: Text(_formatDate(now)),
+                  onTap: () => Navigator.pop(context, now),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                if (jan1.isBefore(now)) ...[
+                  const SizedBox(height: 8),
+                  ListTile(
+                    leading: const Icon(Icons.calendar_today),
+                    title: const Text('Start on January 1st'),
+                    subtitle: const Text('Catch up or join late'),
+                    onTap: () => Navigator.pop(context, jan1),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                ListTile(
+                  leading: const Icon(Icons.edit_calendar),
+                  title: const Text('Pick a Date'),
+                  subtitle: const Text('Choose a custom start date'),
+                  onTap: () async {
+                    final customDate = await showDatePicker(
+                      context: context,
+                      initialDate: now,
+                      firstDate: DateTime(currentYear - 1),
+                      lastDate: DateTime(currentYear + 2),
+                    );
+                    if (context.mounted) Navigator.pop(context, customDate);
+                  },
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (pickedDate != null) {
+      await _planService.startPlan(user.uid, widget.plan.id, startDate: pickedDate);
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    // Simple formatter to avoid intl dependency if not already there, 
+    // or use if available. Keeping it simple.
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[date.month - 1]} ${date.day}';
   }
 
   @override

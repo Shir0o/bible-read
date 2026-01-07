@@ -39,11 +39,11 @@ class ReadingPlanService {
   }
 
   /// Starts a reading plan for a user.
-  Future<void> startPlan(String userId, String planId) async {
+  Future<void> startPlan(String userId, String planId, {DateTime? startDate}) async {
     final progress = UserPlanProgress(
       planId: planId,
       userId: userId,
-      startDate: DateTime.now(),
+      startDate: startDate ?? DateTime.now(),
       completedDays: [],
     );
 
@@ -146,5 +146,29 @@ class ReadingPlanService {
       }
     }
     return null; // All done!
+  }
+
+  /// Calculates the scheduled day for a given date based on the plan start date.
+  /// Returns null if the date is before the start or after the end.
+  ReadingPlanDay? getScheduledDay(
+      ReadingPlan plan, DateTime startDate, DateTime targetDate) {
+    // Normalize dates to ignore time components
+    final start = DateTime(startDate.year, startDate.month, startDate.day);
+    final target = DateTime(targetDate.year, targetDate.month, targetDate.day);
+
+    final difference = target.difference(start).inDays;
+    
+    // Day 1 is index 0 in difference (0 days since start = day 1)
+    final dayNumber = difference + 1;
+
+    if (dayNumber < 1 || dayNumber > plan.durationDays) {
+      return null;
+    }
+
+    try {
+      return plan.schedule.firstWhere((d) => d.day == dayNumber);
+    } catch (_) {
+      return null; // Day might not exist in schedule (e.g. rest days not in specific schedule list)
+    }
   }
 }
