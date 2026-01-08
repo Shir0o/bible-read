@@ -13,7 +13,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dynamic_color/dynamic_color.dart';
+
 
 import 'firebase_options.dart';
 import 'services/error_logger.dart';
@@ -161,38 +161,19 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return DynamicColorBuilder(
-      builder: (lightDynamic, darkDynamic) {
-        final ColorScheme lightScheme;
-        final ColorScheme darkScheme;
+    // Force specific seed color (Purple/Expressive) regardless of system/wallpaper
+    final lightScheme = AppTheme.seededColorScheme(Brightness.light);
+    final darkScheme = AppTheme.seededColorScheme(Brightness.dark);
 
-        if (lightDynamic != null && darkDynamic != null) {
-          lightScheme = ColorScheme.fromSeed(
-            seedColor: lightDynamic.harmonized().primary,
-            brightness: Brightness.light,
-            dynamicSchemeVariant: DynamicSchemeVariant.expressive,
-          );
-          darkScheme = ColorScheme.fromSeed(
-            seedColor: darkDynamic.harmonized().primary,
-            brightness: Brightness.dark,
-            dynamicSchemeVariant: DynamicSchemeVariant.expressive,
-          );
-        } else {
-          lightScheme = AppTheme.seededColorScheme(Brightness.light);
-          darkScheme = AppTheme.seededColorScheme(Brightness.dark);
-        }
-
-        return MaterialApp(
-          title: 'Bible Reading Challenge',
-          theme: AppTheme.appTheme(lightScheme),
-          darkTheme: AppTheme.appTheme(darkScheme),
-          themeMode: ThemeMode.system,
-          navigatorKey: _rootNavigatorKey,
-          home: MainPage(
-            appCheckFailed: appCheckFailed,
-          ),
-        );
-      },
+    return MaterialApp(
+      title: 'Bible Reading Challenge',
+      theme: AppTheme.appTheme(lightScheme),
+      darkTheme: AppTheme.appTheme(darkScheme),
+      themeMode: ThemeMode.system,
+      navigatorKey: _rootNavigatorKey,
+      home: MainPage(
+        appCheckFailed: appCheckFailed,
+      ),
     );
   }
 }

@@ -81,7 +81,6 @@ class CommonStyles {
       child: InkWell(
         onTap: onTap,
         borderRadius: radius,
-        overlayColor: AppTheme.stateLayer(colorScheme.surfaceTint),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.hPadding),
           child: child,

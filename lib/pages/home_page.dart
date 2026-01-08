@@ -775,19 +775,6 @@ class _HomePageState extends State<HomePage>
                   height: 64,
                   child: FilledButton(
                     onPressed: _toggleLoading ? null : _toggleReadStatus,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
                     child: _toggleLoading
                         ? SizedBox(
                             width: 24,
