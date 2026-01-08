@@ -54,7 +54,7 @@ class MonthStreakCalendar extends StatelessWidget {
     return months[month - 1];
   }
 
-  List<TableRow> _buildRows() {
+  List<TableRow> _buildRows(ColorScheme colorScheme) {
     final firstDay = DateTime(month.year, month.month, 1);
     final totalDays = DateTime(month.year, month.month + 1, 0).day;
     final weekdayOffset = firstDay.weekday % 7;
@@ -76,7 +76,7 @@ class MonthStreakCalendar extends StatelessWidget {
           child: Icon(
             filled ? Icons.circle : Icons.circle_outlined,
             size: 12,
-            color: filled ? Colors.green : Colors.grey,
+            color: filled ? colorScheme.primary : colorScheme.outlineVariant,
           ),
         ),
       );
@@ -136,7 +136,7 @@ class MonthStreakCalendar extends StatelessWidget {
                         )
                         .toList(),
                   ),
-                  ..._buildRows(),
+                  ..._buildRows(Theme.of(context).colorScheme),
                 ],
               ),
             ],

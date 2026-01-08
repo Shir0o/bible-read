@@ -163,22 +163,30 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return DynamicColorBuilder(
       builder: (lightDynamic, darkDynamic) {
-        final ColorScheme colorScheme;
-        final harmonizedLight = lightDynamic?.harmonized();
-        if (harmonizedLight != null) {
-          colorScheme = harmonizedLight;
-        } else if (darkDynamic != null) {
-          colorScheme = ColorScheme.fromSeed(
-            seedColor: darkDynamic.harmonized().primary,
+        final ColorScheme lightScheme;
+        final ColorScheme darkScheme;
+
+        if (lightDynamic != null && darkDynamic != null) {
+          lightScheme = ColorScheme.fromSeed(
+            seedColor: lightDynamic.harmonized().primary,
             brightness: Brightness.light,
+            dynamicSchemeVariant: DynamicSchemeVariant.expressive,
+          );
+          darkScheme = ColorScheme.fromSeed(
+            seedColor: darkDynamic.harmonized().primary,
+            brightness: Brightness.dark,
+            dynamicSchemeVariant: DynamicSchemeVariant.expressive,
           );
         } else {
-          colorScheme = AppTheme.seededColorScheme(Brightness.light);
+          lightScheme = AppTheme.seededColorScheme(Brightness.light);
+          darkScheme = AppTheme.seededColorScheme(Brightness.dark);
         }
 
         return MaterialApp(
           title: 'Bible Reading Challenge',
-          theme: AppTheme.appTheme(colorScheme),
+          theme: AppTheme.appTheme(lightScheme),
+          darkTheme: AppTheme.appTheme(darkScheme),
+          themeMode: ThemeMode.system,
           navigatorKey: _rootNavigatorKey,
           home: MainPage(
             appCheckFailed: appCheckFailed,

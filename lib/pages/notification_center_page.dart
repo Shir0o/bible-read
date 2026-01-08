@@ -177,7 +177,8 @@ class _NotificationCenterContentState extends State<NotificationCenterContent> {
   }
 
   Widget _icon(NotificationType type, bool read) {
-    final color = read ? Colors.grey : Colors.blue;
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = read ? colorScheme.onSurfaceVariant : colorScheme.primary;
     switch (type) {
       case NotificationType.like:
         return Icon(Icons.thumb_up, color: color);

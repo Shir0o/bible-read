@@ -65,9 +65,9 @@ class BadgeIcon extends StatelessWidget {
           child: image,
         ),
         if (locked)
-          const Icon(
+          Icon(
             Icons.lock,
-            color: Colors.white70,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             size: 16,
           ),
       ],

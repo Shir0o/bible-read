@@ -69,6 +69,12 @@ npm test
 - Wrap asynchronous work in `try`/`catch` blocks and return `Future<void>`.
 - Document public functions with brief comments.
 
+## Material 3 Design Guidelines
+
+- **Strict No-Hex Policy**: Do not use custom hex codes for colors (e.g., `Color(0xFF...)`) or hardcoded constants (e.g. `Colors.green`) unless explicitly requested by the user.
+- **Use Material Tokens**: Always use the default classes provided by Material 3 Expressive, such as `md.sys.color.primary` (mapped to `Theme.of(context).colorScheme.primary` in Flutter).
+- **Avoid Hardcoding**: Do not hardcode structure colors. Use semantic tokens like `colorScheme.surface`, `colorScheme.onSurfaceVariant`, `colorScheme.outline`, etc.
+
 ## Error handling & logging
 
 - Use the shared logger in `lib/services/error_logger.dart` by calling `ErrorLogger.log(error, stackTrace)` from catch blocks or platform hooks.

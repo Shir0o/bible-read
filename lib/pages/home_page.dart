@@ -712,7 +712,9 @@ class _HomePageState extends State<HomePage>
       return Center(
         child: Text(
           'User not signed in.',
-          style: AppTextStyles.subtitle.copyWith(color: Colors.white70),
+          style: AppTextStyles.subtitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
         ),
       );
     }
@@ -731,18 +733,19 @@ class _HomePageState extends State<HomePage>
               Icon(
                 Icons.check_circle_outline_rounded,
                 size: 64, // Slightly smaller
-                color: const Color(0xFF7E9F7A).withValues(alpha: 0.7), // Muted
+                color: colorScheme.primary.withValues(alpha: 0.7),
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Rest in His word.',
-                style: AppTextStyles.subtitle.copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface.withValues(alpha: 0.8),
+                const SizedBox(height: 16),
+                Text(
+                  'Rest in His word.',
+                  style: AppTextStyles.subtitle.copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w400,
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    letterSpacing: 0.5,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
             ] else ...[
               if (_scheduledDay != null) ...[
                 Text(
@@ -754,33 +757,33 @@ class _HomePageState extends State<HomePage>
                     fontSize: 11,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 Text(
                   _formatReadings(_scheduledDay!.readings),
                   style: AppTextStyles.title.copyWith(
-                    fontSize: 28, // Reduced from 32
-                    fontWeight: FontWeight.w400, // Lighter weight
+                    fontSize: 26,
+                    fontWeight: FontWeight.w400,
                     height: 1.3,
                     color: colorScheme.onSurface.withValues(alpha: 0.9),
-                    fontFamily: 'Serif', // Fallback if custom font not loaded, implies content
+                    fontFamily: 'Serif',
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 56), // Increased spacing
+                const SizedBox(height: 56),
                 SizedBox(
                   width: double.infinity,
-                  height: 64, // Reduced height from 80
-                  child: FilledButton.tonal(
+                  height: 64,
+                  child: FilledButton(
                     onPressed: _toggleLoading ? null : _toggleReadStatus,
                     style: FilledButton.styleFrom(
-                      backgroundColor: colorScheme.primary.withValues(alpha: 0.08), // Softer background
-                      foregroundColor: colorScheme.primary,
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(32), // Softer corners
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       textStyle: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 17,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.5,
                       ),
@@ -790,8 +793,8 @@ class _HomePageState extends State<HomePage>
                             width: 24,
                             height: 24,
                             child: CircularProgressIndicator(
-                              color: colorScheme.primary,
                               strokeWidth: 2.5,
+                              color: colorScheme.onPrimary,
                             ),
                           )
                         : const Text('I have read'),
@@ -811,9 +814,10 @@ class _HomePageState extends State<HomePage>
                 Text(
                   'Make space to read.',
                   style: AppTextStyles.title.copyWith(
-                    fontSize: 24,
+                    fontSize: 26,
                     fontWeight: FontWeight.w400,
                     color: colorScheme.onSurface.withValues(alpha: 0.9),
+                    fontFamily: 'Serif',
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -824,24 +828,21 @@ class _HomePageState extends State<HomePage>
                   child: FilledButton.tonal(
                     onPressed: _toggleLoading ? null : _toggleReadStatus,
                     style: FilledButton.styleFrom(
-                      backgroundColor: colorScheme.primary.withValues(alpha: 0.08),
-                      foregroundColor: colorScheme.primary,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(32),
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       textStyle: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 17,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.5,
                       ),
                     ),
                     child: _toggleLoading
-                        ? SizedBox(
+                        ? const SizedBox(
                             width: 24,
                             height: 24,
                             child: CircularProgressIndicator(
-                              color: colorScheme.primary,
                               strokeWidth: 2.5,
                             ),
                           )
@@ -863,49 +864,48 @@ class _HomePageState extends State<HomePage>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Tiny Week visual
+                    // Tiny Week visual + Streak count
                     Row(
                        mainAxisAlignment: MainAxisAlignment.center,
                        mainAxisSize: MainAxisSize.min,
-                       children: List.generate(7, (index) {
-                         // 0..6
-                         final todayIndex = (DateTime.now().weekday % 7);
-                         final isPast = index < _pastWeek.length;
-                         final isRead = isPast && _pastWeek[index];
-                         final isToday = index == todayIndex;
-                         
-                         return Padding(
-                           padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                           child: Container(
-                             width: 8,
-                             height: 8,
-                             decoration: BoxDecoration(
-                               shape: BoxShape.circle,
-                               color: isRead 
-                                  ? colorScheme.primary.withValues(alpha: 0.4) 
-                                  : (isToday 
-                                      ? colorScheme.primary.withValues(alpha: 0.1)
-                                      : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
+                       children: [
+                         ...List.generate(7, (index) {
+                           // 0..6
+                           final todayIndex = (DateTime.now().weekday % 7);
+                           final isPast = index < _pastWeek.length;
+                           final isRead = isPast && _pastWeek[index];
+                           final isToday = index == todayIndex;
+                           
+                           return Padding(
+                             padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                             child: Container(
+                               width: 6,
+                               height: 6,
+                               decoration: BoxDecoration(
+                                 shape: BoxShape.circle,
+                                 color: isRead 
+                                    ? colorScheme.primary.withValues(alpha: 0.3) 
+                                    : (isToday 
+                                        ? colorScheme.primary.withValues(alpha: 0.1)
+                                        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)),
+                               ),
                              ),
+                           );
+                         }),
+                         if (_currentStreak > 0) ...[
+                           const SizedBox(width: 16),
+                           Text(
+                              '$_currentStreak day streak',
+                              style: AppTextStyles.body.copyWith(
+                                fontSize: 12,
+                                color: colorScheme.outline.withValues(alpha: 0.5),
+                                letterSpacing: 0.5,
+                              ),
                            ),
-                         );
-                       }),
+                         ],
+                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Removed "Reading this week" label and linear progress bar for cleaner look
-                    // Or keep the linear one but make it very subtle? 
-                    // User asked: "Visually separate ... using spacing and lower contrast"
-                    // User also said "Normalize vertical spacing"
-                    
-                    // Let's keep the streak simply as a quiet subtitle at the very bottom
-                     if (_currentStreak > 0)
-                      Text(
-                         '$_currentStreak day streak',
-                         style: AppTextStyles.body.copyWith(
-                           fontSize: 12,
-                           color: colorScheme.outline.withValues(alpha: 0.4),
-                           letterSpacing: 0.5,
-                         ),
-                      ),
                   ],
                  ),
               ),

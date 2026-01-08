@@ -66,7 +66,7 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
     return Card.filled(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 8,
-      shadowColor: Colors.black26,
+      shadowColor: colorScheme.shadow,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
@@ -115,14 +115,14 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
                                 // Leading green check icon
                                 Container(
                                   padding: const EdgeInsets.all(2),
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: Color(0xFFE8F5E9), // Light green bg
+                                    color: colorScheme.tertiaryContainer,
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.check,
                                     size: 14,
-                                    color: Color(0xFF43A047), // Green
+                                    color: colorScheme.onTertiaryContainer,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -187,8 +187,8 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
                         icon: isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                         label: 'Encourage',
                         // Warm dynamic color if liked
-                        color: isLiked ? const Color(0xFFCFA69D) : colorScheme.onSurfaceVariant,
-                        backgroundColor: isLiked ? const Color(0xFFCFA69D).withValues(alpha: 0.1) : null,
+                        color: isLiked ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                        backgroundColor: isLiked ? colorScheme.primaryContainer : null,
                         onTap: () {
                            const VibrationService().lightImpact();
                            widget.onToggleLike();

@@ -220,7 +220,7 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                                           Shadow(
                                             offset: Offset(0, 1),
                                             blurRadius: 2,
-                                            color: Colors.black26,
+                                            color: colorScheme.shadow,
                                           ),
                                         ],
                                       ),

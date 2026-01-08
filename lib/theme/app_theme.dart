@@ -57,8 +57,9 @@ class AppTheme {
   /// unavailable.
   static ColorScheme seededColorScheme(Brightness brightness) =>
       ColorScheme.fromSeed(
-        seedColor: Colors.indigo.shade900,
+        seedColor: const Color(0xFF6750A4), // M3 Purple
         brightness: brightness,
+        dynamicSchemeVariant: DynamicSchemeVariant.expressive,
       );
 
   /// Base configuration for text and elevated buttons.
@@ -89,7 +90,7 @@ class AppTheme {
   static ButtonStyle _outlinedButtonStyle(ColorScheme colorScheme) =>
       _baseButtonStyle(colorScheme).copyWith(
         side: WidgetStateProperty.all(
-          BorderSide(color: colorScheme.outlineVariant),
+          BorderSide(color: colorScheme.outline),
         ),
       );
 
@@ -100,26 +101,16 @@ class AppTheme {
           if (states.contains(WidgetState.disabled)) {
             return colorScheme.onSurface.withValues(alpha: 0.12);
           }
-          if (states.contains(WidgetState.pressed)) {
-            return colorScheme.primaryContainer;
-          }
-          if (states.contains(WidgetState.hovered) ||
-              states.contains(WidgetState.focused)) {
-            return colorScheme.primaryFixedDim;
-          }
           return colorScheme.primary;
         }),
         foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.disabled)) {
             return colorScheme.onSurface.withValues(alpha: 0.38);
           }
-          if (states.contains(WidgetState.pressed)) {
-            return colorScheme.onPrimaryContainer;
-          }
           return colorScheme.onPrimary;
         }),
-        shadowColor: WidgetStateProperty.all(colorScheme.surfaceTint),
-        surfaceTintColor: WidgetStateProperty.all(colorScheme.primary),
+        shadowColor: WidgetStateProperty.all(colorScheme.shadow),
+        surfaceTintColor: WidgetStateProperty.all(colorScheme.surfaceTint),
         elevation: WidgetStateProperty.resolveWith<double?>((states) {
           if (states.contains(WidgetState.disabled)) return 0;
           if (states.contains(WidgetState.pressed)) return 1.5;
@@ -127,7 +118,7 @@ class AppTheme {
               states.contains(WidgetState.focused)) {
             return 4.5;
           }
-          return 3;
+          return 3; // Standard M3 elevation
         }),
       );
 
@@ -135,42 +126,41 @@ class AppTheme {
   ///
   /// Adjust [colorScheme], [textTheme], or button themes to change the overall
   /// look and feel.
+  /// Complete [ThemeData] for the application.
+  ///
+  /// Adjust [colorScheme], [textTheme], or button themes to change the overall
+  /// look and feel.
   static ThemeData appTheme(ColorScheme colorScheme) {
-    // Override colors to ensure text is strictly black
-    final blackColorScheme = colorScheme.copyWith(
-      onSurface: Colors.black,
-      onSurfaceVariant: Colors.black,
-    );
-
-    final themedText = (blackColorScheme.brightness == Brightness.light
+    // Apply standard M3 typography scaling
+    final themedText = (colorScheme.brightness == Brightness.light
             ? textTheme
             : primaryTextTheme)
         .copyWith(
           bodyMedium: GoogleFonts.ibmPlexSans(fontSize: 16),
         )
         .apply(
-          bodyColor: Colors.black,
-          displayColor: Colors.black,
+          bodyColor: colorScheme.onSurface,
+          displayColor: colorScheme.onSurface,
         );
 
     return ThemeData(
-      brightness: blackColorScheme.brightness,
-      colorScheme: blackColorScheme,
+      brightness: colorScheme.brightness,
+      colorScheme: colorScheme,
       useMaterial3: true,
       textTheme: themedText,
       primaryTextTheme: primaryTextTheme,
       typography: typography,
-      scaffoldBackgroundColor: blackColorScheme.surface,
+      scaffoldBackgroundColor: colorScheme.surface,
       appBarTheme: AppBarTheme(
-        backgroundColor: blackColorScheme.surface,
+        backgroundColor: colorScheme.surface,
         titleTextStyle:
-            themedText.titleLarge?.copyWith(color: blackColorScheme.onSurface),
+            themedText.titleLarge?.copyWith(color: colorScheme.onSurface),
         elevation: 0,
         centerTitle: false,
       ),
       iconButtonTheme: IconButtonThemeData(
         style: ButtonStyle(
-          overlayColor: stateLayer(blackColorScheme.surfaceTint),
+          overlayColor: stateLayer(colorScheme.surfaceTint),
         ),
       ),
       listTileTheme: ListTileThemeData(
@@ -187,75 +177,82 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        elevation: 8,
-        color: blackColorScheme.surfaceContainerHighest,
+        elevation: 1, // Lower elevation for standard M3 cards
+        color: colorScheme.surfaceContainer, // Standard M3 card color
       ),
       inputDecorationTheme: const InputDecorationTheme(
         border: OutlineInputBorder(),
       ),
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        side: BorderSide(color: blackColorScheme.outlineVariant),
-        selectedColor: blackColorScheme.surfaceContainerHighest,
-        backgroundColor: blackColorScheme.surfaceContainerLow,
-        surfaceTintColor: blackColorScheme.surfaceTint,
-        labelStyle: themedText.bodyMedium!,
-        secondaryLabelStyle: themedText.bodyMedium!,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), // Standard M3 chip radius
+        side: BorderSide(color: colorScheme.outlineVariant),
+        selectedColor: colorScheme.secondaryContainer,
+        backgroundColor: colorScheme.surfaceContainerLow,
+        surfaceTintColor: Colors.transparent, // Disable tint
+        labelStyle: themedText.labelLarge?.copyWith(color: colorScheme.onSurface),
+        secondaryLabelStyle: themedText.labelLarge?.copyWith(color: colorScheme.onSecondaryContainer),
         showCheckmark: true,
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.selected)) {
-            return blackColorScheme.onSurface;
+            return colorScheme.onPrimary;
           }
-          return blackColorScheme.onSurfaceVariant;
+          return colorScheme.outline;
         }),
         trackColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.selected)) {
-            return blackColorScheme.surfaceContainerHighest;
+            return colorScheme.primary;
           }
-          return blackColorScheme.surfaceContainerHigh;
+          return colorScheme.surfaceContainerHighest;
         }),
         trackOutlineColor:
-            WidgetStatePropertyAll<Color>(blackColorScheme.outlineVariant),
+            WidgetStatePropertyAll<Color>(Colors.transparent),
       ),
       elevatedButtonTheme:
-          ElevatedButtonThemeData(style: _elevatedButtonStyle(blackColorScheme)),
+          ElevatedButtonThemeData(style: _elevatedButtonStyle(colorScheme)),
       filledButtonTheme:
-          FilledButtonThemeData(style: _filledButtonStyle(blackColorScheme)),
+          FilledButtonThemeData(style: _filledButtonStyle(colorScheme)),
       outlinedButtonTheme:
-          OutlinedButtonThemeData(style: _outlinedButtonStyle(blackColorScheme)),
+          OutlinedButtonThemeData(style: _outlinedButtonStyle(colorScheme)),
       textButtonTheme:
-          TextButtonThemeData(style: _baseButtonStyle(blackColorScheme)),
+          TextButtonThemeData(style: _baseButtonStyle(colorScheme)),
       navigationBarTheme: NavigationBarThemeData(
-        indicatorColor: blackColorScheme.surfaceContainerHigh,
-        backgroundColor: blackColorScheme.surfaceContainerLow,
-        surfaceTintColor: blackColorScheme.surfaceTint,
-        elevation: 1,
-        height: 60,
-        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+        indicatorColor: colorScheme.secondaryContainer, // Standard M3 active indicator
+        backgroundColor: colorScheme.surfaceContainer,
+        surfaceTintColor: Colors.transparent,
+        elevation: 3,
+        height: 80, // Standard M3
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStateProperty.all(
-          textTheme.labelLarge?.copyWith(color: blackColorScheme.onSurfaceVariant),
+          textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+           if (states.contains(WidgetState.selected)) {
+             return IconThemeData(color: colorScheme.onSecondaryContainer);
+           }
+           return IconThemeData(color: colorScheme.onSurfaceVariant);
+        }),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: blackColorScheme.secondaryContainer,
-        foregroundColor: blackColorScheme.onSecondaryContainer,
-        splashColor: stateLayer(blackColorScheme.surfaceTint)
+        backgroundColor: colorScheme.primaryContainer, // Standard M3
+        foregroundColor: colorScheme.onPrimaryContainer, // Standard M3
+        splashColor: stateLayer(colorScheme.onPrimaryContainer)
             .resolve({WidgetState.pressed}),
         hoverColor:
-            stateLayer(blackColorScheme.surfaceTint).resolve({WidgetState.hovered}),
+            stateLayer(colorScheme.onPrimaryContainer).resolve({WidgetState.hovered}),
         focusColor:
-            stateLayer(blackColorScheme.surfaceTint).resolve({WidgetState.focused}),
+            stateLayer(colorScheme.onPrimaryContainer).resolve({WidgetState.focused}),
+            elevation: 6, // Standard M3 FAB
       ),
-      hoverColor: stateLayer(blackColorScheme.surfaceTint)
+      hoverColor: stateLayer(colorScheme.primary)
           .resolve({WidgetState.hovered, WidgetState.focused}),
       focusColor:
-          stateLayer(blackColorScheme.surfaceTint).resolve({WidgetState.focused}),
+          stateLayer(colorScheme.primary).resolve({WidgetState.focused}),
       highlightColor:
-          stateLayer(blackColorScheme.surfaceTint).resolve({WidgetState.pressed}),
+          stateLayer(colorScheme.primary).resolve({WidgetState.pressed}),
       splashColor:
-          stateLayer(blackColorScheme.surfaceTint).resolve({WidgetState.pressed}),
+          stateLayer(colorScheme.primary).resolve({WidgetState.pressed}),
       splashFactory: InkSparkle.splashFactory,
     );
   }
