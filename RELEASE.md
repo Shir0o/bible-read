@@ -1,3 +1,21 @@
+# Release 1.21.0
+
+This release introduces a refined visual experience with font updates and expressiveness, implements the "Bible in a Year" reading plan, and streamlines the app by removing email summary features.
+
+## Highlights
+
+*   **Bible in a Year Plan:** A structured reading plan for reading the entire Bible in one year.
+*   **Visual Refinements:** Updated to "IBM Plex Sans" for a cleaner look and deeper integration of Material 3 Expressive tokens.
+*   **Expressive Feed:** Redesigned feed cards to match the new design language.
+*   **Journey Tab Polish:** Improvements to the Journey tab layout and transitions.
+
+## Features & Enhancements
+
+*   **Reading Plans:** Added logic and data models for 'Bible in a Year', with Old and New Testament tracking.
+*   **Typography:** Switched primary font to IBM Plex Sans and removed IBM Plex Mono.
+*   **UI Polish:** Refined button styles, tab animations, and home screen skeleton loaders to match the new expressive theme.
+*   **Removal of Email Summaries:** Removed the email stats summary functionality to simplify the user experience.
+
 # Release 1.20.0
 
 This release introduces a major visual redesign with a "Calm" menu structure, a new Book Tracker, and significant UI polish including a switch to Light Mode and IBM Plex Sans.
