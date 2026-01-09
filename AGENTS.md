@@ -73,6 +73,7 @@ npm test
 
 - **Strict No-Hex Policy**: Do not use custom hex codes for colors (e.g., `Color(0xFF...)`) or hardcoded constants (e.g. `Colors.green`) unless explicitly requested by the user.
 - **Use Material Tokens**: Always use the default classes provided by Material 3 Expressive, such as `md.sys.color.primary` (mapped to `Theme.of(context).colorScheme.primary` in Flutter).
+- **Pre-built Components**: Prioritize using pre-built Material 3 classes and components (e.g., `TextTheme` styles like `titleLarge`, `FilledButton`, `Card`) over custom implementations.
 - **Avoid Hardcoding**: Do not hardcode structure colors. Use semantic tokens like `colorScheme.surface`, `colorScheme.onSurfaceVariant`, `colorScheme.outline`, etc.
 
 ## Error handling & logging

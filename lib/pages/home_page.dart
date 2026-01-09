@@ -784,7 +784,13 @@ class _HomePageState extends State<HomePage>
                               color: colorScheme.onPrimary,
                             ),
                           )
-                        : const Text('I have read'),
+                        : Text(
+                            'I have read',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
                   ),
                 ),
               ] else ...[

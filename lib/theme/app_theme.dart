@@ -25,6 +25,13 @@ class AppTheme {
   static final TextTheme textTheme = typography.black;
   static final TextTheme primaryTextTheme = typography.white;
 
+  // Material 3 Ref Palette Colors
+  static const Color neutral90 = Color(0xFFE6E0E9);
+  static const Color neutral22 = Color(0xFF36343B);
+  static const Color neutralVariant30 = Color(0xFF49454F);
+  static const Color primary90 = Color(0xFFEADDFF);
+  static const Color primary30 = Color(0xFF4F378B);
+
   /// Generates a seeded [ColorScheme] to use when dynamic colors are
   /// unavailable.
   static ColorScheme seededColorScheme(Brightness brightness) =>

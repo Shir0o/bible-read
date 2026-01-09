@@ -10,6 +10,7 @@ import '../widgets/common_styles.dart';
 import '../widgets/profile_button.dart';
 import '../widgets/views/friends_view.dart';
 import '../widgets/views/groups_view.dart';
+import '../theme/app_theme.dart';
 import '../widgets/views/read_log_view.dart';
 
 class CommunityPage extends StatefulWidget {
@@ -86,70 +87,28 @@ class _CommunityPageState extends State<CommunityPage>
           preferredSize: const Size.fromHeight(56),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Reduced horizontal margin
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(32),
+            decoration: const BoxDecoration(
+              color: Colors.transparent,
             ),
-            padding: const EdgeInsets.all(3), // Reduced padding
-            child: TabBar(
-              controller: _tabController,
-              labelColor: colorScheme.onSurface,
-              unselectedLabelColor: colorScheme.onSurfaceVariant,
-              indicatorSize: TabBarIndicatorSize.tab,
-              indicator: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              dividerColor: Colors.transparent,
-              overlayColor: MaterialStateProperty.all(Colors.transparent),
-              splashBorderRadius: BorderRadius.circular(28),
-              labelStyle: AppTextStyles.body.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 13, // Slightly smaller font
-              ),
-              unselectedLabelStyle: AppTextStyles.body.copyWith(
-                fontWeight: FontWeight.w500,
-                fontSize: 13,
-              ),
-              tabs: const [
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.groups_outlined, size: 16), // Smaller icon
-                      SizedBox(width: 4), // Reduced gap
-                      Text('Groups'),
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.view_agenda_outlined, size: 16),
-                      SizedBox(width: 4),
-                      Text('Feed'),
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.face_outlined, size: 16),
-                      SizedBox(width: 4),
-                      Text('Friends'),
-                    ],
-                  ),
-                ),
-              ],
+            child: AnimatedBuilder(
+              animation: _tabController,
+              builder: (context, child) {
+                return TabBar(
+                  controller: _tabController,
+                  labelColor: AppTheme.primary90,
+                  unselectedLabelColor: AppTheme.neutral90,
+                  indicator: const BoxDecoration(),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  overlayColor: WidgetStateProperty.all(Colors.transparent),
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  tabs: [
+                    _buildTab(0, Icons.groups_outlined, 'Groups'),
+                    _buildTab(1, Icons.view_agenda_outlined, 'Feed'),
+                    _buildTab(2, Icons.face_outlined, 'Friends'),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -177,6 +136,32 @@ class _CommunityPageState extends State<CommunityPage>
             vibrationService: widget.vibrationService,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTab(int index, IconData icon, String label) {
+    final isSelected = _tabController.index == index;
+    return Tab(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primary30 : AppTheme.neutral22,
+          borderRadius: BorderRadius.circular(isSelected ? 99 : 16),
+        ),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 16), // Inner padding
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16),
+            const SizedBox(width: 4),
+            Text(label, style: AppTextStyles.body.copyWith(
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 13,
+            )),
+          ],
+        ),
       ),
     );
   }
