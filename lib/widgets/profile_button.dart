@@ -35,6 +35,13 @@ class ProfileButton extends StatelessWidget {
                     width: 32,
                     height: 32,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.person,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      );
+                    },
                   ),
                 )
               : Icon(

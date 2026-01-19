@@ -1,6 +1,7 @@
 import 'package:bible_read/models/exercise_challenge.dart';
 import 'package:bible_read/pages/exercise_challenges_page.dart';
 import 'package:bible_read/pages/main_page.dart';
+import 'package:bible_read/widgets/profile_button.dart';
 import 'package:bible_read/services/exercise_tracker_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -335,8 +336,10 @@ void main() {
 
     setUp(() {
       firestore = FakeFirebaseFirestore();
-      auth =
-          MockFirebaseAuth(mockUser: MockUser(uid: 'user-1'), signedIn: true);
+      auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'user-1', photoURL: null),
+        signedIn: true,
+      );
       vibration = _RecordingVibrationService();
       google = _FakeGoogleSignInPlatform();
       google.user = GoogleSignInUserData(
@@ -362,8 +365,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Tap on the 'Menu' button in the bottom navigation bar.
-      await tester.tap(find.text('Menu'));
+      // Tap on the ProfileButton to open menu
+      await tester.tap(find.byType(ProfileButton));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
