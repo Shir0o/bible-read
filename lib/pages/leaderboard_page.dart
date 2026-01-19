@@ -122,28 +122,18 @@ class _FriendsLeaderboardList extends StatelessWidget {
     final user = auth.currentUser;
     if (user == null) return const SizedBox.shrink();
 
-    return StreamBuilder<List<String>>(
-      stream: friendService
-          .friends(user.uid)
-          .map((friends) => friends.map((f) => f.uid).toList()),
+    final stream = friendService
+        .friends(user.uid)
+        .map((friends) => friends.map((f) => f.uid).toList())
+        .asyncMap((friendIds) async {
+      final allIds = [user.uid, ...friendIds];
+      return _fetchEntries(firestore, allIds);
+    });
+
+    return StreamBuilder<List<LeaderboardEntry>>(
+      stream: stream,
       builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const Center(child: Text('Error loading friends'));
-        }
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final friendIds = snapshot.data!;
-        final allIds = [user.uid, ...friendIds];
-
-        // Fetch user data and streak data
-        return FutureBuilder<List<LeaderboardEntry>>(
-          future: _fetchEntries(firestore, allIds),
-          builder: (context, snapshot) {
-            return _buildList(context, snapshot, user.uid, friendService);
-          },
-        );
+        return _buildList(context, snapshot, user.uid, friendService);
       },
     );
   }
@@ -162,31 +152,26 @@ class _GlobalLeaderboardList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: firestore
-          .collectionGroup('summary')
-          .orderBy('streak', descending: true)
-          .limit(50)
-          .snapshots(),
+    final stream = firestore
+        .collectionGroup('summary')
+        .orderBy('streak', descending: true)
+        .limit(50)
+        .snapshots()
+        .asyncMap((snap) async {
+      final uids =
+          snap.docs.map((d) => d.reference.parent.parent!.id).toList();
+      final streaks = {
+        for (var d in snap.docs)
+          d.reference.parent.parent!.id:
+              (d.data() as Map<String, dynamic>)['streak'] as int? ?? 0
+      };
+      return _fetchEntries(firestore, uids, preloadedStreaks: streaks);
+    });
+
+    return StreamBuilder<List<LeaderboardEntry>>(
+      stream: stream,
       builder: (context, snapshot) {
-        if (snapshot.hasError) return const Center(child: Text('Error loading leaderboard'));
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-
-        final docs = snapshot.data!.docs;
-        // Extract UIDs from parent path: users/{uid}/summary/data
-        final uids = docs.map((d) => d.reference.parent.parent!.id).toList();
-
-        // Map streak values
-        final streaks = {
-          for (var d in docs) d.reference.parent.parent!.id: (d.data() as Map<String, dynamic>)['streak'] as int? ?? 0
-        };
-
-        return FutureBuilder<List<LeaderboardEntry>>(
-          future: _fetchEntries(firestore, uids, preloadedStreaks: streaks),
-          builder: (context, snapshot) {
-             return _buildList(context, snapshot, auth.currentUser?.uid, friendService);
-          },
-        );
+        return _buildList(context, snapshot, auth.currentUser?.uid, friendService);
       },
     );
   }
@@ -207,11 +192,8 @@ Future<List<LeaderboardEntry>> _fetchEntries(
 }) async {
   if (uids.isEmpty) return [];
 
-  // Unique UIDs
   final uniqueUids = uids.toSet().toList();
-  // print('Fetching entries for UIDs: $uniqueUids');
 
-  // Fetch Users
   final usersData = <String, Map<String, dynamic>>{};
   final userFutures = uniqueUids.map((uid) async {
     try {
@@ -228,10 +210,6 @@ Future<List<LeaderboardEntry>> _fetchEntries(
   // Fetch Streaks if not preloaded
   final streaks = preloadedStreaks ?? {};
   if (preloadedStreaks == null) {
-     // We need to fetch summary/data for each UID.
-     // Since we know the path, we can do direct gets.
-     // No batch get for unrelated docs (except strict batch limitation).
-     // We can just loop future wait.
      final futures = uniqueUids.map((uid) async {
        try {
          final doc = await firestore.collection('users').doc(uid).collection('summary').doc('data').get();
@@ -255,7 +233,6 @@ Future<List<LeaderboardEntry>> _fetchEntries(
     entries.add(LeaderboardEntry(uid: uid, name: name, streak: streak));
   }
 
-  // Sort descending by streak
   entries.sort((a, b) => b.streak.compareTo(a.streak));
 
   return entries;
@@ -279,7 +256,6 @@ Widget _buildList(
     return const Center(child: Text('No one is on the leaderboard yet.'));
   }
 
-  // Fetch sent requests to update UI state
   return StreamBuilder<QuerySnapshot>(
     stream: currentUserId == null
         ? const Stream.empty()
