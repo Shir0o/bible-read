@@ -1,14 +1,41 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/exercise_tracker_service.dart';
 import '../services/vibration_service.dart';
 import '../models/exercise_challenge.dart';
 import '../widgets/common_styles.dart';
 
+class ExerciseChallengesPage extends StatelessWidget {
+  final ExerciseTrackerService service;
+  final VibrationService? vibrationService;
+
+  const ExerciseChallengesPage({
+    super.key,
+    required this.service,
+    this.vibrationService,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: CommonStyles.buildAppBar(context, 'Exercise Challenges'),
+      body: ExerciseChallengesView(
+        service: service,
+        vibrationService: vibrationService,
+      ),
+    );
+  }
+}
+
 class ExerciseChallengesView extends StatefulWidget {
   final ExerciseTrackerService service;
   final VibrationService? vibrationService;
 
-  const ExerciseChallengesView({super.key, required this.service, this.vibrationService});
+  const ExerciseChallengesView({
+    super.key,
+    required this.service,
+    this.vibrationService,
+  });
 
   @override
   State<ExerciseChallengesView> createState() => _ExerciseChallengesViewState();
@@ -38,66 +65,15 @@ class _ExerciseChallengesViewState extends State<ExerciseChallengesView> {
   }
 
   Future<void> _showForm([ExerciseChallenge? challenge]) async {
-    final isEditing = challenge != null;
-    final nameController = TextEditingController(text: challenge?.name ?? '');
-    final goalController = TextEditingController(text: challenge?.dailyGoal.toString() ?? '');
-    final unitController = TextEditingController(text: challenge?.unit ?? '');
-    // Target type and categories handling omitted for brevity unless needed by test
-    // Test creates "Morning Yoga", "20", "mins".
-    // TargetType default? AtLeast.
-
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isEditing ? 'Edit Challenge' : 'Create Challenge'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Title'),
-            ),
-            TextField(
-              controller: goalController,
-              decoration: const InputDecoration(labelText: 'Goal'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: unitController,
-              decoration: const InputDecoration(labelText: 'Unit'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              try {
-                final goal = double.tryParse(goalController.text) ?? 0;
-                final newChallenge = ExerciseChallenge(
-                  id: challenge?.id ?? '',
-                  uid: challenge?.uid ?? '',
-                  name: nameController.text,
-                  dailyGoal: goal,
-                  unit: unitController.text,
-                  targetType: challenge?.targetType ?? ExerciseTargetType.atLeast,
-                  totalTarget: challenge?.totalTarget,
-                  categories: challenge?.categories ?? [],
-                  archived: false,
-                );
-                await widget.service.upsertChallenge(newChallenge);
-                if (context.mounted) Navigator.pop(context);
-                _load();
-              } catch (e) {
-                // ignore
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+      builder: (context) => _ChallengeFormDialog(
+        challenge: challenge,
+        onSave: (newChallenge) async {
+          await widget.service.upsertChallenge(newChallenge);
+          widget.vibrationService?.mediumImpact();
+          if (mounted) _load();
+        },
       ),
     );
   }
@@ -106,14 +82,14 @@ class _ExerciseChallengesViewState extends State<ExerciseChallengesView> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Challenge'),
-        content: Text('Are you sure you want to delete "${challenge.name}"?'),
+        title: const Text('Delete challenge?'), // Matches test
+        content: Text('Delete "${challenge.name}"?'), // Content can vary, test checks contains name
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          FilledButton( // Test taps widgetWithText(FilledButton, 'Delete')
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Delete'),
           ),
@@ -123,7 +99,13 @@ class _ExerciseChallengesViewState extends State<ExerciseChallengesView> {
 
     if (confirm == true) {
       await widget.service.deleteChallenge(challenge);
-      _load();
+      widget.vibrationService?.lightImpact();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${challenge.name} deleted.')),
+        );
+        _load();
+      }
     }
   }
 
@@ -144,7 +126,10 @@ class _ExerciseChallengesViewState extends State<ExerciseChallengesView> {
                   children: [
                     Text(
                       'For bodily exercise is profitable for a little: but godliness is profitable unto all things.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(fontStyle: FontStyle.italic),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 4),
@@ -158,7 +143,7 @@ class _ExerciseChallengesViewState extends State<ExerciseChallengesView> {
             ),
             if (_challenges.isEmpty)
               const SliverFillRemaining(
-                child: Center(child: Text('No active challenges')),
+                child: Center(child: Text('No exercise challenges yet.')),
               )
             else
               SliverList(
@@ -167,23 +152,17 @@ class _ExerciseChallengesViewState extends State<ExerciseChallengesView> {
                     final challenge = _challenges[index];
                     return ListTile(
                       title: Text(challenge.name),
-                      subtitle: Text('Daily Goal: ${challenge.dailyGoal.toInt()} ${challenge.unit}'),
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          if (value == 'edit') {
-                            _showForm(challenge);
-                          } else if (value == 'delete') {
-                            _delete(challenge);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Text('Edit'),
+                      subtitle: Text(_formatSubtitle(challenge)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton(
+                            onPressed: () => _showForm(challenge),
+                            child: const Text('Edit'),
                           ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Text('Delete'),
+                          TextButton(
+                            onPressed: () => _delete(challenge),
+                            child: const Text('Delete'),
                           ),
                         ],
                       ),
@@ -205,19 +184,139 @@ class _ExerciseChallengesViewState extends State<ExerciseChallengesView> {
       ],
     );
   }
+
+  String _formatSubtitle(ExerciseChallenge challenge) {
+    // "Goal: at least 30.00 minutes per day"
+    String typeStr;
+    switch (challenge.targetType) {
+      case ExerciseTargetType.atLeast:
+        typeStr = 'at least';
+        break;
+      case ExerciseTargetType.atMost:
+        typeStr = 'at most';
+        break;
+      case ExerciseTargetType.exactly:
+        typeStr = 'exactly';
+        break;
+    }
+    return 'Goal: $typeStr ${challenge.dailyGoal.toStringAsFixed(2)} ${challenge.unit} per day';
+  }
 }
 
-class ExerciseChallengesPage extends StatelessWidget {
-    final ExerciseTrackerService service;
-    final VibrationService? vibrationService;
+class _ChallengeFormDialog extends StatefulWidget {
+  final ExerciseChallenge? challenge;
+  final ValueChanged<ExerciseChallenge> onSave;
 
-    const ExerciseChallengesPage({super.key, required this.service, this.vibrationService});
+  const _ChallengeFormDialog({this.challenge, required this.onSave});
 
-    @override
-    Widget build(BuildContext context) {
-        return Scaffold(
-            appBar: CommonStyles.buildAppBar(context, 'Exercise Challenges'),
-            body: ExerciseChallengesView(service: service, vibrationService: vibrationService),
-        );
+  @override
+  State<_ChallengeFormDialog> createState() => _ChallengeFormDialogState();
+}
+
+class _ChallengeFormDialogState extends State<_ChallengeFormDialog> {
+  late TextEditingController _nameController;
+  late TextEditingController _goalController;
+  late TextEditingController _totalTargetController;
+  late TextEditingController _customUnitController;
+  String _selectedUnit = 'reps';
+  bool _isCustomUnit = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final c = widget.challenge;
+    _nameController = TextEditingController(text: c?.name ?? '');
+    _goalController = TextEditingController(text: c?.dailyGoal.toString() ?? '');
+    _totalTargetController = TextEditingController(text: c?.totalTarget?.toString() ?? '');
+
+    if (c != null) {
+      if (['reps', 'minutes'].contains(c.unit)) {
+        _selectedUnit = c.unit;
+        _customUnitController = TextEditingController();
+      } else {
+        _selectedUnit = 'Custom unit';
+        _isCustomUnit = true;
+        _customUnitController = TextEditingController(text: c.unit);
+      }
+    } else {
+      _customUnitController = TextEditingController();
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEditing = widget.challenge != null;
+    return AlertDialog(
+      title: Text(isEditing ? 'Edit Challenge' : 'Create Challenge'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Challenge name'),
+            ),
+            DropdownButtonFormField<String>(
+              value: _selectedUnit,
+              items: const [
+                DropdownMenuItem(value: 'reps', child: Text('reps')),
+                DropdownMenuItem(value: 'minutes', child: Text('minutes')),
+                DropdownMenuItem(value: 'Custom unit', child: Text('Custom unit')),
+              ],
+              onChanged: (val) {
+                setState(() {
+                  _selectedUnit = val!;
+                  _isCustomUnit = val == 'Custom unit';
+                });
+              },
+              decoration: const InputDecoration(labelText: 'Unit'),
+            ),
+            if (_isCustomUnit)
+              TextFormField(
+                controller: _customUnitController,
+                decoration: const InputDecoration(labelText: 'Custom unit'),
+              ),
+            TextFormField(
+              controller: _goalController,
+              decoration: const InputDecoration(labelText: 'Daily goal'),
+              keyboardType: TextInputType.number,
+            ),
+            TextFormField(
+              controller: _totalTargetController,
+              decoration: const InputDecoration(labelText: 'Total target (optional)'),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton( // Test uses tap(find.text('Create')) or 'Save changes'
+          onPressed: () {
+            final goal = double.tryParse(_goalController.text) ?? 0;
+            final total = double.tryParse(_totalTargetController.text);
+            final unit = _isCustomUnit ? _customUnitController.text : _selectedUnit;
+
+            final newChallenge = ExerciseChallenge(
+              id: widget.challenge?.id ?? '',
+              uid: widget.challenge?.uid ?? '',
+              name: _nameController.text,
+              dailyGoal: goal,
+              unit: unit,
+              targetType: widget.challenge?.targetType ?? ExerciseTargetType.atLeast,
+              totalTarget: total,
+              categories: widget.challenge?.categories ?? [],
+              archived: false,
+            );
+            widget.onSave(newChallenge);
+            Navigator.pop(context);
+          },
+          child: Text(isEditing ? 'Save changes' : 'Create'),
+        ),
+      ],
+    );
+  }
 }
