@@ -14,6 +14,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:async';
 
 import 'package:bible_read/pages/user_profile_page.dart';
+import 'friends_page.dart';
+import 'achievements_page.dart';
 import '../services/admin_role_service.dart';
 import '../services/exercise_tracker_service.dart';
 import '../services/friend_service.dart';
@@ -25,6 +27,7 @@ import '../services/vibration_service.dart';
 import 'app_check_error_page.dart';
 import 'leaderboard_page.dart';
 import 'read_log_page.dart';
+import 'notification_center_page.dart';
 
 typedef SendLikeNotification = Future<void> Function({
   required String ownerUid,
@@ -59,6 +62,9 @@ class MainPage extends StatefulWidget {
   final ReadingStatusService? readingStatusService;
   final bool appCheckFailed;
 
+  // Expose onNavigate for testing overrides if needed, though usually not passed
+  final bool Function(int)? onNavigate;
+
   MainPage({
     super.key,
     FirebaseFirestore? firestore,
@@ -83,6 +89,7 @@ class MainPage extends StatefulWidget {
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
+    this.onNavigate,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         messaging = messaging ?? FirebaseMessaging.instance,
@@ -101,6 +108,10 @@ class _MainPageState extends State<MainPage> {
   static const int _journeyIndex = 2;
 
   int _selectedIndex = _homeIndex;
+
+  // Expose selectedIndex for testing
+  @visibleForTesting
+  int get selectedIndex => _selectedIndex;
 
   VibrationService get vibrationService => widget.vibrationService;
   late final AdminRoleService _adminRoleService;
@@ -134,6 +145,7 @@ class _MainPageState extends State<MainPage> {
       auth: widget.auth,
     );
     unawaited(_adminRoleService.prewarm());
+    unawaited(_saveFcmToken());
 
     _pages = [
       HomePage(
@@ -150,6 +162,7 @@ class _MainPageState extends State<MainPage> {
         friendService: _friendService,
         readingStatusService: _readingStatusService,
         vibrationService: widget.vibrationService,
+        readLogBuilder: widget.readLogPageBuilder,
         onSendLikeNotification: widget.sendLikeNotification ??
             ({required String ownerUid, required String likerName}) async {
               final user = FirebaseAuth.instance.currentUser;
@@ -185,10 +198,37 @@ class _MainPageState extends State<MainPage> {
     ];
   }
 
+  Future<void> _saveFcmToken() async {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+    try {
+      final token = await widget.messaging.getToken();
+      if (token != null) {
+        await widget.firestore.collection('users').doc(user.uid).set({
+          'fcmToken': token,
+        }, SetOptions(merge: true));
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Error saving FCM token: $e');
+      }
+    }
+  }
+
+  // Expose onItemTapped for testing
+  @visibleForTesting
+  void onItemTapped(int index) {
+    _onItemTapped(index);
+  }
+
   void _onItemTapped(int index) {
     if (widget.appCheckFailed) return;
-    if (_selectedIndex == index) return;
+    if (widget.auth.currentUser == null) return;
+    if (widget.onNavigate != null && !widget.onNavigate!(index)) return;
+
     unawaited(vibrationService.lightImpact());
+    if (_selectedIndex == index) return;
+
     setState(() {
       _selectedIndex = index;
     });
@@ -196,9 +236,49 @@ class _MainPageState extends State<MainPage> {
 
   // Helper to maintain compatibility if menu expects specific indices, 
   // currently menu actions should just be navigation pushes.
+  @visibleForTesting
+  void navigateFromMenu(int index) {
+    _navigateFromMenu(index);
+  }
+
   void _navigateFromMenu(int index) {
-      // no-op or handle special cases if needed. 
-      // The new menu pushes pages directly.
+      if (widget.appCheckFailed) return;
+      if (widget.auth.currentUser == null) return;
+      if (widget.onNavigate != null && !widget.onNavigate!(index)) return;
+
+      unawaited(vibrationService.lightImpact());
+
+      if (index >= 0 && index < 3) {
+          setState(() {
+            _selectedIndex = index;
+          });
+      } else {
+        switch (index) {
+          case 3: // Leaderboard
+             Navigator.push(context, MaterialPageRoute(builder: (_) => widget.leaderboardPageBuilder(
+                firestore: widget.firestore,
+                auth: widget.auth,
+                friendService: _friendService,
+             )));
+             break;
+          case 4: // Friends
+             Navigator.push(context, MaterialPageRoute(builder: (_) => FriendsPage(
+                auth: widget.auth,
+                friendService: _friendService,
+             )));
+             break;
+          case 6: // Achievements
+             Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsPage(
+                auth: widget.auth,
+                firestore: widget.firestore,
+             )));
+             break;
+          case 10: // Sign Out
+             unawaited(widget.auth.signOut());
+             setState(() { _selectedIndex = 0; });
+             break;
+        }
+      }
   }
 
   @override
@@ -217,8 +297,9 @@ class _MainPageState extends State<MainPage> {
 
     return StreamBuilder<User?>(
       stream: _authStream,
+      initialData: widget.auth.currentUser,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
            return const Scaffold(
              body: Center(
                child: CircularProgressIndicator(),
@@ -245,12 +326,12 @@ class _MainPageState extends State<MainPage> {
 
         return NavigationMenuScope(
           onNavigate: _navigateFromMenu,
-          friendlyStreakIndex: 0, // Legacy indices, not used
+          friendlyStreakIndex: 0,
           friendsIndex: 0,
           vibrationService: widget.vibrationService,
           adminRoleService: _adminRoleService,
           child: ResponsiveScaffold(
-            selectedIndex: _selectedIndex,
+            selectedIndex: _selectedIndex >= _pages.length ? 0 : _selectedIndex,
             onDestinationSelected: _onItemTapped,
             pages: _pages,
             destinations: destinations,

@@ -643,6 +643,12 @@ class _HomePageState extends State<HomePage>
           statusBarIconBrightness: Brightness.dark, // Android: Dark icons
           statusBarBrightness: Brightness.light,    // iOS: Dark icons
         ),
+        actions: [
+          ProfileButton(
+            auth: widget.auth,
+            vibrationService: widget.vibrationService,
+          ),
+        ],
       ),
       body: SkeletonLoader(
         loading: _initialLoading,
@@ -805,7 +811,7 @@ class _HomePageState extends State<HomePage>
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Make space to read.',
+                  'Did you read today?',
                   style: AppTextStyles.title.copyWith(
                     fontSize: 26,
                     fontWeight: FontWeight.w400,
@@ -839,7 +845,7 @@ class _HomePageState extends State<HomePage>
                               strokeWidth: 2.5,
                             ),
                           )
-                        : const Text('I have read'),
+                        : const Text('Yes, I read'),
                   ),
                 ),
               ],

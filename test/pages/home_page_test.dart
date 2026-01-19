@@ -62,7 +62,7 @@ void main() {
   });
   tearDownAll(resetHttpOverrides);
 
-  testWidgets('show "Have you read today?" and button when not read', (
+  testWidgets('show "Did you read today?" and button when not read', (
     tester,
   ) async {
     final firestore = FakeFirebaseFirestore();
@@ -88,12 +88,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Did you read today?'), findsOneWidget);
-    expect(find.text('Yes, I read'), findsOneWidget);
+    expect(find.text('Yes, I read'), findsOneWidget); // Can be FilledButton or FilledButton.tonal
     expect(find.byType(FilledButton), findsOneWidget);
-    expect(find.text('Glad you\'re here.'), findsNothing);
+    expect(find.text('Thank you for being here.'), findsNothing);
   });
 
-  testWidgets('show "Marked Today" when read today', (tester) async {
+  testWidgets('show "Thank you for being here." when read today', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
@@ -131,12 +131,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Marked Today'), findsNothing);
-    expect(find.text('Glad you\'re here.'), findsOneWidget);
+    expect(find.text('Thank you for being here.'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
     expect(find.text('Yes, I read'), findsNothing);
   });
 
-  testWidgets('tapping "Mark as Read" updates UI to read state', (tester) async {
+  testWidgets('tapping "Yes, I read" updates UI to read state', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
@@ -167,12 +167,10 @@ void main() {
     await tester.pump(); // Start animation/process
 
     // Expect loading state or immediate update (optimistic)
-    // The simplified UI disables button on loading, but optimistic update might happen fast.
-    // Let's pump until settled.
     await tester.pumpAndSettle();
 
     // Verify final state
-    expect(find.text('Glad you\'re here.'), findsOneWidget);
+    expect(find.text('Thank you for being here.'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
     
     // Verify Firestore was updated
@@ -189,6 +187,7 @@ void main() {
     expect(doc.exists, isTrue);
     expect(doc.data()?['read'], isTrue);
   });
+
   testWidgets('displays streak and weekly progress', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
@@ -206,6 +205,18 @@ void main() {
           'streak': 5,
           'pastWeekReadDates': [], // Empty for now
         });
+
+    // Also mark as read today so the streak UI is visible
+    final today = DateTime.now();
+    final dateKey =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+    await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('reading')
+          .doc(dateKey)
+          .set({'read': true});
 
     await tester.pumpWidget(
       MaterialApp(

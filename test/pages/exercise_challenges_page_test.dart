@@ -1,6 +1,7 @@
 import 'package:bible_read/models/exercise_challenge.dart';
 import 'package:bible_read/pages/exercise_challenges_page.dart';
 import 'package:bible_read/pages/main_page.dart';
+import 'package:bible_read/widgets/profile_button.dart';
 import 'package:bible_read/services/exercise_tracker_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -335,8 +336,10 @@ void main() {
 
     setUp(() {
       firestore = FakeFirebaseFirestore();
-      auth =
-          MockFirebaseAuth(mockUser: MockUser(uid: 'user-1'), signedIn: true);
+      auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'user-1', photoURL: null),
+        signedIn: true,
+      );
       vibration = _RecordingVibrationService();
       google = _FakeGoogleSignInPlatform();
       google.user = GoogleSignInUserData(
@@ -362,19 +365,24 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Tap on the 'Menu' button in the bottom navigation bar.
-      await tester.tap(find.text('Menu'));
+      // Tap on the ProfileButton to open menu
+      await tester.tap(find.byType(ProfileButton));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
       // The AppMenuSheet should now be visible.
-      // Tap on the 'Exercise Challenges' item in the menu.
-      await tester.tap(find.text('Exercise Challenges'));
+      // Tap on the 'Challenges' item in the menu.
+      await tester.tap(find.text('Challenges'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Verify that the ExerciseChallengesPage is displayed.
-      expect(find.text('Exercise Challenges'), findsOneWidget);
+      // Verify that the ChallengesPage is displayed.
+      expect(find.text('Challenges'), findsOneWidget);
+
+      // Switch to Exercise tab
+      await tester.tap(find.text('Exercise'));
+      await tester.pumpAndSettle();
+
       expect(find.text('No exercise challenges yet.'), findsOneWidget);
       expect(
         find.textContaining('For bodily exercise is profitable for a little'),
