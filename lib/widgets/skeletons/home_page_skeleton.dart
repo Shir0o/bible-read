@@ -28,42 +28,6 @@ class HomePageSkeleton extends StatelessWidget {
               height: 80,
               radius: 24,
             ),
-            
-            const SizedBox(height: 32),
-
-            // Weekly Progress Section (Constrained width to 240)
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 240),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // "Reading this week" Label
-                    const Skeleton(
-                      width: 100,
-                      height: 12,
-                      radius: 4,
-                    ),
-                    const SizedBox(height: 8),
-                    // Progress Bar
-                    const Skeleton(
-                      width: 240,
-                      height: 10,
-                      radius: 8,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-
-            // Streak Text Skeleton
-            const Skeleton(
-              width: 120,
-              height: 16,
-              radius: 4,
-            ),
           ],
         ),
       ),

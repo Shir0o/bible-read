@@ -732,20 +732,20 @@ class _HomePageState extends State<HomePage>
             if (_readToday) ...[
               Icon(
                 Icons.check_circle_outline_rounded,
-                size: 64, // Slightly smaller
-                color: colorScheme.primary.withValues(alpha: 0.7),
+                size: 80,
+                color: colorScheme.primary.withValues(alpha: 0.8),
               ),
-                const SizedBox(height: 16),
-                Text(
-                  'Rest in His word.',
-                  style: AppTextStyles.subtitle.copyWith(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w400,
-                    color: colorScheme.onSurface.withValues(alpha: 0.7),
-                    letterSpacing: 0.5,
-                  ),
-                  textAlign: TextAlign.center,
+              const SizedBox(height: 24),
+              Text(
+                'Thank you for being here.',
+                style: AppTextStyles.subtitle.copyWith(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface.withValues(alpha: 0.9),
+                  letterSpacing: 0.0,
                 ),
+                textAlign: TextAlign.center,
+              ),
             ] else ...[
               if (_scheduledDay != null) ...[
                 Text(
@@ -848,61 +848,70 @@ class _HomePageState extends State<HomePage>
             const Spacer(flex: 4), // Push progress lower
 
             // Weekly Progress Section - Visual separation
-            Opacity(
-              opacity: _readToday ? 0.0 : 1.0, // Optionally hide on read? Or keep consistent. kept consistent but low contrast
-              child: AnimatedOpacity(
-                 duration: const Duration(milliseconds: 500),
-                 opacity: 1.0,
-                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Tiny Week visual
-                    // Tiny Week visual + Streak count
-                    Row(
-                       mainAxisAlignment: MainAxisAlignment.center,
-                       mainAxisSize: MainAxisSize.min,
-                       children: [
-                         ...List.generate(7, (index) {
-                           // 0..6
-                           final todayIndex = (DateTime.now().weekday % 7);
-                           final isPast = index < _pastWeek.length;
-                           final isRead = isPast && _pastWeek[index];
-                           final isToday = index == todayIndex;
-                           
-                           return Padding(
-                             padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                             child: Container(
-                               width: 6,
-                               height: 6,
-                               decoration: BoxDecoration(
-                                 shape: BoxShape.circle,
-                                 color: isRead 
-                                    ? colorScheme.primary.withValues(alpha: 0.3) 
-                                    : (isToday 
-                                        ? colorScheme.primary.withValues(alpha: 0.1)
-                                        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)),
-                               ),
-                             ),
-                           );
-                         }),
-                         if (_currentStreak > 0) ...[
-                           const SizedBox(width: 16),
-                           Text(
-                              '$_currentStreak day streak',
-                              style: AppTextStyles.body.copyWith(
-                                fontSize: 12,
-                                color: colorScheme.outline.withValues(alpha: 0.5),
-                                letterSpacing: 0.5,
-                              ),
-                           ),
-                         ],
-                       ],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                 ),
+            if (_readToday) ...[
+              // Weekly Progress Section
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 240),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Reading this week',
+                        style: AppTextStyles.body.copyWith(
+                          fontSize: 12,
+                          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: colorScheme.outline.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: _pastWeek.isEmpty 
+                                ? 0.0 
+                                : _pastWeek.where((d) => d).length / 7.0,
+                            minHeight: 10,
+                            backgroundColor: Colors.transparent,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.primary.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              
+              const SizedBox(height: 24),
+              
+              // Streak Count
+              if (_currentStreak > 0)
+                RichText(
+                   text: TextSpan(
+                     style: AppTextStyles.body.copyWith(
+                       fontSize: 13,
+                       color: colorScheme.outline,
+                     ),
+                     children: [
+                       TextSpan(
+                         text: '$_currentStreak',
+                         style: const TextStyle(fontWeight: FontWeight.w600),
+                       ),
+                       TextSpan(text: ' days of reading'),
+                     ],
+                   ),
+                ),
+            ],
             const SizedBox(height: 32),
           ],
         ),
