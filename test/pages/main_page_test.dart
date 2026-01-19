@@ -177,7 +177,7 @@ void main() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
-    final auth = MockFirebaseAuth();
+    final auth = MockFirebaseAuth(signedIn: false);
     await tester.pumpWidget(
       MaterialApp(
         home: MainPage(
@@ -226,7 +226,7 @@ void main() {
         ),
       ),
     );
-    expect(find.byType(IndexedStack), findsOneWidget);
+    expect(find.byType(ResponsiveScaffold), findsOneWidget);
     var responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );

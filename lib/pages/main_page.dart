@@ -25,6 +25,7 @@ import '../services/vibration_service.dart';
 import 'app_check_error_page.dart';
 import 'leaderboard_page.dart';
 import 'read_log_page.dart';
+import 'notification_center_page.dart';
 
 typedef SendLikeNotification = Future<void> Function({
   required String ownerUid,
@@ -59,6 +60,9 @@ class MainPage extends StatefulWidget {
   final ReadingStatusService? readingStatusService;
   final bool appCheckFailed;
 
+  // Expose onNavigate for testing overrides if needed, though usually not passed
+  final bool Function(int)? onNavigate;
+
   MainPage({
     super.key,
     FirebaseFirestore? firestore,
@@ -83,6 +87,7 @@ class MainPage extends StatefulWidget {
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
+    this.onNavigate,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         messaging = messaging ?? FirebaseMessaging.instance,
@@ -101,6 +106,10 @@ class _MainPageState extends State<MainPage> {
   static const int _journeyIndex = 2;
 
   int _selectedIndex = _homeIndex;
+
+  // Expose selectedIndex for testing
+  @visibleForTesting
+  int get selectedIndex => _selectedIndex;
 
   VibrationService get vibrationService => widget.vibrationService;
   late final AdminRoleService _adminRoleService;
@@ -185,10 +194,20 @@ class _MainPageState extends State<MainPage> {
     ];
   }
 
+  // Expose onItemTapped for testing
+  @visibleForTesting
+  void onItemTapped(int index) {
+    _onItemTapped(index);
+  }
+
   void _onItemTapped(int index) {
     if (widget.appCheckFailed) return;
-    if (_selectedIndex == index) return;
+    if (widget.auth.currentUser == null) return;
+    if (widget.onNavigate != null && !widget.onNavigate!(index)) return;
+
     unawaited(vibrationService.lightImpact());
+    if (_selectedIndex == index) return;
+
     setState(() {
       _selectedIndex = index;
     });
@@ -196,9 +215,27 @@ class _MainPageState extends State<MainPage> {
 
   // Helper to maintain compatibility if menu expects specific indices, 
   // currently menu actions should just be navigation pushes.
+  @visibleForTesting
+  void navigateFromMenu(int index) {
+    _navigateFromMenu(index);
+  }
+
   void _navigateFromMenu(int index) {
-      // no-op or handle special cases if needed. 
-      // The new menu pushes pages directly.
+      if (widget.appCheckFailed) return;
+      if (widget.auth.currentUser == null) return;
+      if (widget.onNavigate != null && !widget.onNavigate!(index)) return;
+
+      unawaited(vibrationService.lightImpact());
+
+      if (index >= 0 && index < 3) {
+          setState(() {
+            _selectedIndex = index;
+          });
+      } else {
+        setState(() {
+            _selectedIndex = index;
+        });
+      }
   }
 
   @override
@@ -217,6 +254,7 @@ class _MainPageState extends State<MainPage> {
 
     return StreamBuilder<User?>(
       stream: _authStream,
+      initialData: widget.auth.currentUser,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
            return const Scaffold(
@@ -245,12 +283,12 @@ class _MainPageState extends State<MainPage> {
 
         return NavigationMenuScope(
           onNavigate: _navigateFromMenu,
-          friendlyStreakIndex: 0, // Legacy indices, not used
+          friendlyStreakIndex: 0,
           friendsIndex: 0,
           vibrationService: widget.vibrationService,
           adminRoleService: _adminRoleService,
           child: ResponsiveScaffold(
-            selectedIndex: _selectedIndex,
+            selectedIndex: _selectedIndex >= _pages.length ? 0 : _selectedIndex,
             onDestinationSelected: _onItemTapped,
             pages: _pages,
             destinations: destinations,

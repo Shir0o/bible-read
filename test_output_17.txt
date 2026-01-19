@@ -1,0 +1,1548 @@
+Resolving dependencies...
+Downloading packages...
+  _flutterfire_internals 1.3.58 (1.3.65 available)
+  archive 3.6.1 (4.0.7 available)
+  async 2.11.0 (2.13.0 available)
+  boolean_selector 2.1.1 (2.1.2 available)
+  cel 0.5.3 (0.5.4+1 available)
+  characters 1.4.0 (1.4.1 available)
+  cloud_firestore 5.6.11 (6.1.1 available)
+  cloud_firestore_platform_interface 6.6.11 (7.0.5 available)
+  cloud_firestore_web 4.4.11 (5.1.1 available)
+  cloud_functions 5.6.1 (6.0.5 available)
+  cloud_functions_platform_interface 5.8.1 (5.8.8 available)
+  cloud_functions_web 4.11.4 (5.1.1 available)
+  crypto 3.0.6 (3.0.7 available)
+  dart_jsonwebtoken 2.17.0 (3.3.1 available)
+  device_info_plus 11.3.0 (12.3.0 available)
+  equatable 2.0.7 (2.0.8 available)
+  fake_cloud_firestore 3.1.0 (4.0.1 available)
+  ffi 2.1.3 (2.1.5 available)
+  file 7.0.0 (7.0.1 available)
+  firebase_app_check 0.3.2+9 (0.4.1+3 available)
+  firebase_app_check_platform_interface 0.1.1+9 (0.2.1+3 available)
+  firebase_app_check_web 0.2.0+13 (0.2.2+1 available)
+  firebase_auth 5.6.2 (6.1.3 available)
+  firebase_auth_mocks 0.14.1 (0.15.1 available)
+  firebase_auth_platform_interface 7.7.2 (8.1.5 available)
+  firebase_auth_web 5.15.2 (6.1.1 available)
+  firebase_core 3.15.1 (4.3.0 available)
+  firebase_core_platform_interface 6.0.0 (6.0.2 available)
+  firebase_core_web 2.24.1 (3.3.1 available)
+  firebase_crashlytics 4.3.9 (5.0.6 available)
+  firebase_crashlytics_platform_interface 3.8.9 (3.8.16 available)
+  firebase_messaging 15.2.9 (16.1.0 available)
+  firebase_messaging_platform_interface 4.6.9 (4.7.5 available)
+  firebase_messaging_web 3.10.9 (4.1.1 available)
+  flutter_lints 5.0.0 (6.0.0 available)
+  flutter_local_notifications 19.3.0 (19.5.0 available)
+  flutter_local_notifications_windows 1.0.1 (1.0.3 available)
+  flutter_timezone 4.1.1 (5.0.1 available)
+  font_awesome_flutter 10.9.0 (10.12.0 available)
+  google_fonts 6.3.3 (7.0.2 available)
+  google_sign_in 6.2.2 (7.2.0 available)
+  google_sign_in_android 6.1.35 (7.2.7 available)
+  google_sign_in_ios 5.9.0 (6.2.5 available)
+  google_sign_in_mocks 0.3.0 (0.4.1 available)
+  google_sign_in_platform_interface 2.5.0 (3.1.0 available)
+  google_sign_in_web 0.12.4+4 (1.1.0 available)
+  http 1.4.0 (1.6.0 available)
+  http_parser 4.0.2 (4.1.2 available)
+  js 0.7.1 (0.7.2 available)
+  leak_tracker 11.0.1 (11.0.2 available)
+  lints 5.0.0 (6.0.0 available)
+  logger 2.6.0 (2.6.2 available)
+  lottie 3.2.0 (3.3.2 available)
+  matcher 0.12.17 (0.12.18 available)
+  material_color_utilities 0.11.1 (0.13.0 available)
+  meta 1.17.0 (1.18.0 available)
+  more 4.4.0 (4.7.0 available)
+  path_provider_android 2.2.17 (2.2.22 available)
+  path_provider_foundation 2.4.1 (2.6.0 available)
+  petitparser 6.0.2 (7.0.1 available)
+  platform 3.1.5 (3.1.6 available)
+  pointycastle 3.9.1 (4.0.0 available)
+  process 5.0.2 (5.0.5 available)
+  rx 0.4.0 (0.5.0 available)
+  shared_preferences 2.5.3 (2.5.4 available)
+  shared_preferences_android 2.4.11 (2.4.18 available)
+  shared_preferences_foundation 2.5.4 (2.5.6 available)
+  source_span 1.10.0 (1.10.1 available)
+  sqflite_android 2.4.1 (2.4.2+2 available)
+  string_scanner 1.2.0 (1.4.1 available)
+  term_glyph 1.2.1 (1.2.2 available)
+  test_api 0.7.7 (0.7.9 available)
+  timezone 0.10.1 (0.11.0 available)
+  uuid 4.5.1 (4.5.2 available)
+  vibration 3.1.3 (3.1.5 available)
+  vibration_platform_interface 0.1.0 (0.1.1 available)
+  vm_service 14.2.5 (15.0.2 available)
+  webdriver 3.0.3 (3.1.0 available)
+  win32 5.13.0 (5.15.0 available)
+  win32_registry 1.1.5 (2.1.0 available)
+  xml 6.5.0 (6.6.1 available)
+Got dependencies!
+81 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:01 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:02 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:03 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:04 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:05 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:06 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   test/pages/notification_center_page_test.dart:39:13: Error: Method not found: 'NotificationCenterPage'.
+      home: NotificationCenterPage(
+            ^^^^^^^^^^^^^^^^^^^^^^
+test/pages/notification_center_page_test.dart:117:15: Error: Method not found: 'NotificationCenterPage'.
+        home: NotificationCenterPage(
+              ^^^^^^^^^^^^^^^^^^^^^^
+test/pages/notification_center_page_test.dart:140:15: Error: Method not found: 'NotificationCenterPage'.
+        home: NotificationCenterPage(
+              ^^^^^^^^^^^^^^^^^^^^^^
+test/pages/notification_center_page_test.dart:168:15: Error: Method not found: 'NotificationCenterPage'.
+        home: NotificationCenterPage(
+              ^^^^^^^^^^^^^^^^^^^^^^
+test/pages/notification_center_page_test.dart:187:15: Error: Method not found: 'NotificationCenterPage'.
+        home: NotificationCenterPage(
+              ^^^^^^^^^^^^^^^^^^^^^^
+test/pages/notification_center_page_test.dart:222:15: Error: Method not found: 'NotificationCenterPage'.
+        home: NotificationCenterPage(
+              ^^^^^^^^^^^^^^^^^^^^^^
+test/pages/notification_center_page_test.dart:269:15: Error: Method not found: 'NotificationCenterPage'.
+        home: NotificationCenterPage(
+              ^^^^^^^^^^^^^^^^^^^^^^
+test/pages/notification_center_page_test.dart:310:15: Error: Method not found: 'NotificationCenterPage'.
+        home: NotificationCenterPage(
+              ^^^^^^^^^^^^^^^^^^^^^^
+test/pages/notification_center_page_test.dart:369:15: Error: Method not found: 'NotificationCenterPage'.
+        home: NotificationCenterPage(
+              ^^^^^^^^^^^^^^^^^^^^^^
+test/pages/notification_center_page_test.dart:406:17: Error: Method not found: 'NotificationCenterPage'.
+          home: NotificationCenterPage(
+                ^^^^^^^^^^^^^^^^^^^^^^
+test/pages/notification_center_page_test.dart:449:17: Error: Method not found: 'NotificationCenterPage'.
+          home: NotificationCenterPage(
+                ^^^^^^^^^^^^^^^^^^^^^^
+00:07 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:08 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:09 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:10 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:11 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:12 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:13 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:14 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:15 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:16 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:17 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:18 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:19 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:20 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:21 +0: loading /app/test/pages/notification_center_page_test.dart                                                                                                                                   00:21 +0 -1: loading /app/test/pages/notification_center_page_test.dart [E]
+  Failed to load "/app/test/pages/notification_center_page_test.dart":
+  Compilation failed for testPath=/app/test/pages/notification_center_page_test.dart: test/pages/notification_center_page_test.dart:39:13: Error: Method not found: 'NotificationCenterPage'.
+        home: NotificationCenterPage(
+              ^^^^^^^^^^^^^^^^^^^^^^
+  test/pages/notification_center_page_test.dart:117:15: Error: Method not found: 'NotificationCenterPage'.
+          home: NotificationCenterPage(
+                ^^^^^^^^^^^^^^^^^^^^^^
+  test/pages/notification_center_page_test.dart:140:15: Error: Method not found: 'NotificationCenterPage'.
+          home: NotificationCenterPage(
+                ^^^^^^^^^^^^^^^^^^^^^^
+  test/pages/notification_center_page_test.dart:168:15: Error: Method not found: 'NotificationCenterPage'.
+          home: NotificationCenterPage(
+                ^^^^^^^^^^^^^^^^^^^^^^
+  test/pages/notification_center_page_test.dart:187:15: Error: Method not found: 'NotificationCenterPage'.
+          home: NotificationCenterPage(
+                ^^^^^^^^^^^^^^^^^^^^^^
+  test/pages/notification_center_page_test.dart:222:15: Error: Method not found: 'NotificationCenterPage'.
+          home: NotificationCenterPage(
+                ^^^^^^^^^^^^^^^^^^^^^^
+  test/pages/notification_center_page_test.dart:269:15: Error: Method not found: 'NotificationCenterPage'.
+          home: NotificationCenterPage(
+                ^^^^^^^^^^^^^^^^^^^^^^
+  test/pages/notification_center_page_test.dart:310:15: Error: Method not found: 'NotificationCenterPage'.
+          home: NotificationCenterPage(
+                ^^^^^^^^^^^^^^^^^^^^^^
+  test/pages/notification_center_page_test.dart:369:15: Error: Method not found: 'NotificationCenterPage'.
+          home: NotificationCenterPage(
+                ^^^^^^^^^^^^^^^^^^^^^^
+  test/pages/notification_center_page_test.dart:406:17: Error: Method not found: 'NotificationCenterPage'.
+            home: NotificationCenterPage(
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  test/pages/notification_center_page_test.dart:449:17: Error: Method not found: 'NotificationCenterPage'.
+            home: NotificationCenterPage(
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  .
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/notification_center_page_test.dart -p vm --plain-name 'loading /app/test/pages/notification_center_page_test.dart'
+  Error: The Dart compiler exited unexpectedly.
+  package:flutter_tools/src/base/common.dart 34:3  throwToolExit
+  package:flutter_tools/src/compile.dart 911:11    DefaultResidentCompiler._compile.<fn>
+  dart:async/zone.dart 1538:47                     _rootRunUnary
+  dart:async/zone.dart 1429:19                     _CustomZone.runUnary
+  dart:async/future_impl.dart 948:45               Future._propagateToListeners.handleValueCallback
+  dart:async/future_impl.dart 977:13               Future._propagateToListeners
+  dart:async/future_impl.dart 862:9                Future._propagateToListeners
+  dart:async/future_impl.dart 720:5                Future._completeWithValue
+  dart:async/future_impl.dart 804:7                Future._asyncCompleteWithValue.<fn>
+  dart:async/zone.dart 1525:13                     _rootRun
+  dart:async/zone.dart 1422:19                     _CustomZone.run
+  dart:async/zone.dart 1321:7                      _CustomZone.runGuarded
+  dart:async/zone.dart 1362:23                     _CustomZone.bindCallbackGuarded.<fn>
+  dart:async/schedule_microtask.dart 40:35         _microtaskLoop
+  dart:async/schedule_microtask.dart 49:5          _startMicrotaskLoop
+  dart:isolate-patch/isolate_patch.dart 127:13     _runPendingImmediateCallback
+  dart:isolate-patch/isolate_patch.dart 194:5      _RawReceivePort._handleMessage
+
+00:45 +0 -1: loading /app/test/pages/main_page_test.dart                                                                                                                                               00:45 +0 -1: /app/test/pages/main_page_test.dart: (setUpAll)                                                                                                                                           00:45 +0 -1: /app/test/pages/main_page_test.dart: MainPage navigation to profile                                                                                                                       00:46 +0 -1: /app/test/pages/main_page_test.dart: MainPage navigation to profile                                                                                                                       00:46 +1 -1: /app/test/pages/main_page_test.dart: MainPage navigation to profile                                                                                                                       00:46 +1 -1: /app/test/pages/main_page_test.dart: tapping protected drawer item when signed out has no effect                                                                                          00:46 +2 -1: /app/test/pages/leaderboard_page_test.dart: displays message when no data                                                                                                                 00:47 +2 -1: /app/test/pages/leaderboard_page_test.dart: displays message when no data                                                                                                                 00:47 +2 -1: /app/test/pages/main_page_test.dart: navigation updates selected index
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TypeWidgetFinder:<Found 0 widgets with type "IndexedStack": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/main_page_test.dart:229:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/main_page_test.dart line 229
+The test description was:
+  navigation updates selected index
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:47 +2 -2: /app/test/pages/main_page_test.dart: navigation updates selected index [E]
+  Test failed. See exception logs above.
+  The test description was: navigation updates selected index
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/main_page_test.dart -p vm --plain-name 'navigation updates selected index'
+00:48 +2 -2: /app/test/pages/main_page_test.dart: bottom navigation visible on non-core pages
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TypeWidgetFinder:<Found 0 widgets with type "FriendsPage": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/main_page_test.dart:321:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/main_page_test.dart line 321
+The test description was:
+  bottom navigation visible on non-core pages
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:48 +2 -3: /app/test/pages/main_page_test.dart: bottom navigation visible on non-core pages [E]
+  Test failed. See exception logs above.
+  The test description was: bottom navigation visible on non-core pages
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/main_page_test.dart -p vm --plain-name 'bottom navigation visible on non-core pages'
+00:48 +2 -3: /app/test/pages/leaderboard_page_test.dart: displays message when no data
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "No one is on the leaderboard yet.": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/leaderboard_page_test.dart:68:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/leaderboard_page_test.dart line 68
+The test description was:
+  displays message when no data
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:48 +2 -4: /app/test/pages/leaderboard_page_test.dart: displays message when no data [E]
+  Test failed. See exception logs above.
+  The test description was: displays message when no data
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/leaderboard_page_test.dart -p vm --plain-name 'displays message when no data'
+00:48 +2 -4: /app/test/pages/leaderboard_page_test.dart: shows sign in prompt when not authenticated
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "Please sign in to view the leaderboard.":
+[]>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/leaderboard_page_test.dart:89:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/leaderboard_page_test.dart line 89
+The test description was:
+  shows sign in prompt when not authenticated
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:48 +2 -5: /app/test/pages/leaderboard_page_test.dart: shows sign in prompt when not authenticated [E]
+  Test failed. See exception logs above.
+  The test description was: shows sign in prompt when not authenticated
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/leaderboard_page_test.dart -p vm --plain-name 'shows sign in prompt when not authenticated'
+00:49 +2 -5: /app/test/pages/main_page_test.dart: bottom navigation visible when navigating to leaderboard
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TypeWidgetFinder:<Found 0 widgets with type "LeaderboardPage": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/main_page_test.dart:364:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/main_page_test.dart line 364
+The test description was:
+  bottom navigation visible when navigating to leaderboard
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:49 +2 -6: /app/test/pages/main_page_test.dart: bottom navigation visible when navigating to leaderboard [E]
+  Test failed. See exception logs above.
+  The test description was: bottom navigation visible when navigating to leaderboard
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/main_page_test.dart -p vm --plain-name 'bottom navigation visible when navigating to leaderboard'
+00:49 +2 -6: /app/test/pages/leaderboard_page_test.dart: shows sign in prompt when auth has no user
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "Please sign in to view the leaderboard.":
+[]>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/leaderboard_page_test.dart:114:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/leaderboard_page_test.dart line 114
+The test description was:
+  shows sign in prompt when auth has no user
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:49 +2 -7: /app/test/pages/leaderboard_page_test.dart: shows sign in prompt when auth has no user [E]
+  Test failed. See exception logs above.
+  The test description was: shows sign in prompt when auth has no user
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/leaderboard_page_test.dart -p vm --plain-name 'shows sign in prompt when auth has no user'
+00:49 +3 -7: /app/test/pages/leaderboard_page_test.dart: tabs are present                                                                                                                              00:49 +3 -7: /app/test/pages/leaderboard_page_test.dart: tabs are present
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "Public": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/leaderboard_page_test.dart:138:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/leaderboard_page_test.dart line 138
+The test description was:
+  tabs are present
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:49 +3 -8: /app/test/pages/leaderboard_page_test.dart: tabs are present [E]
+  Test failed. See exception logs above.
+  The test description was: tabs are present
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/leaderboard_page_test.dart -p vm --plain-name 'tabs are present'
+00:49 +3 -8: /app/test/pages/main_page_test.dart: _navigateFromMenu does not vibrate when navigation blocked
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: <1>
+  Actual: <0>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/main_page_test.dart:425:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/main_page_test.dart line 425
+The test description was:
+  _navigateFromMenu does not vibrate when navigation blocked
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:49 +3 -9: /app/test/pages/main_page_test.dart: _navigateFromMenu does not vibrate when navigation blocked [E]
+  Test failed. See exception logs above.
+  The test description was: _navigateFromMenu does not vibrate when navigation blocked
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/main_page_test.dart -p vm --plain-name '_navigateFromMenu does not vibrate when navigation blocked'
+00:49 +3 -9: /app/test/pages/main_page_test.dart: _onItemTapped exits without vibration when blocked
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: <1>
+  Actual: <0>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/main_page_test.dart:453:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/main_page_test.dart line 453
+The test description was:
+  _onItemTapped exits without vibration when blocked
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:49 +3 -10: /app/test/pages/main_page_test.dart: _onItemTapped exits without vibration when blocked [E]
+  Test failed. See exception logs above.
+  The test description was: _onItemTapped exits without vibration when blocked
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/main_page_test.dart -p vm --plain-name '_onItemTapped exits without vibration when blocked'
+00:49 +3 -10: /app/test/pages/main_page_test.dart: onItemTapped refreshes read log page
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following LateError was thrown running a test:
+LateInitializationError: Local 'testPage' has not been initialized.
+
+When the exception was thrown, this was the stack:
+#0      LateError._throwLocalNotInitialized (dart:_internal-patch/internal_patch.dart:214:5)
+#1      main.<anonymous closure> (file:///app/test/pages/main_page_test.dart)
+<asynchronous suspension>
+#2      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#3      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  onItemTapped refreshes read log page
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:49 +3 -11: /app/test/pages/main_page_test.dart: onItemTapped refreshes read log page [E]
+  Test failed. See exception logs above.
+  The test description was: onItemTapped refreshes read log page
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/main_page_test.dart -p vm --plain-name 'onItemTapped refreshes read log page'
+00:49 +3 -11: /app/test/pages/main_page_test.dart: responsive scaffold switches layout
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TypeWidgetFinder:<Found 0 widgets with type "NavigationRail": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/main_page_test.dart:537:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/main_page_test.dart line 537
+The test description was:
+  responsive scaffold switches layout
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:49 +3 -11: /app/test/pages/leaderboard_page_test.dart: public tab shows sorted leaderboard
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: <2>
+  Actual: <0>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/leaderboard_page_test.dart:175:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/leaderboard_page_test.dart line 175
+The test description was:
+  public tab shows sorted leaderboard
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:49 +3 -13: /app/test/pages/main_page_test.dart: responsive scaffold switches layout [E]
+  Test failed. See exception logs above.
+  The test description was: responsive scaffold switches layout
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/main_page_test.dart -p vm --plain-name 'responsive scaffold switches layout'
+00:49 +3 -13: /app/test/pages/main_page_test.dart: unauthenticated navigation restricted to profile                                                                                                    00:49 +3 -13: /app/test/pages/leaderboard_page_test.dart: public tab shows sorted leaderboard [E]
+  Test failed. See exception logs above.
+  The test description was: public tab shows sorted leaderboard
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/leaderboard_page_test.dart -p vm --plain-name 'public tab shows sorted leaderboard'
+00:50 +3 -13: /app/test/pages/main_page_test.dart: unauthenticated navigation restricted to profile
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      Iterable.single (dart:core/iterable.dart:694:25)
+#1      WidgetController.widget (package:flutter_test/src/controller.dart:808:30)
+#2      main.<anonymous closure> (file:///app/test/pages/main_page_test.dart:576:29)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  unauthenticated navigation restricted to profile
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:50 +3 -14: /app/test/pages/main_page_test.dart: unauthenticated navigation restricted to profile [E]
+  Test failed. See exception logs above.
+  The test description was: unauthenticated navigation restricted to profile
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/main_page_test.dart -p vm --plain-name 'unauthenticated navigation restricted to profile'
+00:50 +3 -14: /app/test/pages/leaderboard_page_test.dart: shows placeholder when name is missing
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: <1>
+  Actual: <0>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/leaderboard_page_test.dart:209:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/leaderboard_page_test.dart line 209
+The test description was:
+  shows placeholder when name is missing
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:50 +3 -15: /app/test/pages/leaderboard_page_test.dart: shows placeholder when name is missing [E]
+  Test failed. See exception logs above.
+  The test description was: shows placeholder when name is missing
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/leaderboard_page_test.dart -p vm --plain-name 'shows placeholder when name is missing'
+00:50 +3 -15: /app/test/pages/main_page_test.dart: saves FCM token to Firestore on silent sign-in
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: true
+  Actual: <false>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/main_page_test.dart:621:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/main_page_test.dart line 621
+The test description was:
+  saves FCM token to Firestore on silent sign-in
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:50 +3 -16: /app/test/pages/main_page_test.dart: saves FCM token to Firestore on silent sign-in [E]
+  Test failed. See exception logs above.
+  The test description was: saves FCM token to Firestore on silent sign-in
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/main_page_test.dart -p vm --plain-name 'saves FCM token to Firestore on silent sign-in'
+00:50 +3 -16: /app/test/pages/main_page_test.dart: calls sendLikeNotification when a like is triggered
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with icon "IconData(U+0E25F)": []" (used in a call to "tap()") could not
+find any matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2013:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1865:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1045:7)
+#3      main.<anonymous closure> (file:///app/test/pages/main_page_test.dart:671:18)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  calls sendLikeNotification when a like is triggered
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:50 +3 -17: /app/test/pages/main_page_test.dart: calls sendLikeNotification when a like is triggered [E]
+  Test failed. See exception logs above.
+  The test description was: calls sendLikeNotification when a like is triggered
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/main_page_test.dart -p vm --plain-name 'calls sendLikeNotification when a like is triggered'
+00:50 +3 -17: /app/test/pages/main_page_test.dart: calls sendCommentNotification when a comment is submitted
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with icon "IconData(U+0E25F)": []" (used in a call to "tap()") could not
+find any matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2013:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1865:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1045:7)
+#3      main.<anonymous closure> (file:///app/test/pages/main_page_test.dart:750:18)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  calls sendCommentNotification when a comment is submitted
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:50 +3 -18: /app/test/pages/main_page_test.dart: calls sendCommentNotification when a comment is submitted [E]
+  Test failed. See exception logs above.
+  The test description was: calls sendCommentNotification when a comment is submitted
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/main_page_test.dart -p vm --plain-name 'calls sendCommentNotification when a comment is submitted'
+00:50 +3 -18: /app/test/pages/leaderboard_page_test.dart: friends tab shows friend and user entries
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: 'Friend'
+  Actual: 'Anonymous'
+   Which: is different.
+          Expected: Friend
+            Actual: Anonymous
+                    ^
+           Differ at offset 0
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/leaderboard_page_test.dart:262:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/leaderboard_page_test.dart line 262
+The test description was:
+  friends tab shows friend and user entries
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:50 +3 -19: /app/test/pages/leaderboard_page_test.dart: friends tab shows friend and user entries [E]
+  Test failed. See exception logs above.
+  The test description was: friends tab shows friend and user entries
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/leaderboard_page_test.dart -p vm --plain-name 'friends tab shows friend and user entries'
+00:50 +4 -19: /app/test/pages/leaderboard_page_test.dart: friends tab includes user entry sorted by streak                                                                                             00:50 +5 -19: /app/test/pages/leaderboard_page_test.dart: friends tab includes user entry sorted by streak                                                                                             00:50 +5 -19: /app/test/pages/leaderboard_page_test.dart: friends tab includes user entry sorted by streak
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: 'Friend'
+  Actual: 'Anonymous'
+   Which: is different.
+          Expected: Friend
+            Actual: Anonymous
+                    ^
+           Differ at offset 0
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///app/test/pages/leaderboard_page_test.dart:316:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///app/test/pages/leaderboard_page_test.dart line 316
+The test description was:
+  friends tab includes user entry sorted by streak
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:50 +5 -20: /app/test/pages/leaderboard_page_test.dart: friends tab includes user entry sorted by streak [E]
+  Test failed. See exception logs above.
+  The test description was: friends tab includes user entry sorted by streak
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/leaderboard_page_test.dart -p vm --plain-name 'friends tab includes user entry sorted by streak'
+00:50 +5 -20: /app/test/pages/main_page_test.dart: signing out returns to profile and restricts navigation
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with icon "IconData(U+0E25F)": []" (used in a call to "tap()") could not
+find any matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2013:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1865:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1045:7)
+#3      main.<anonymous closure> (file:///app/test/pages/main_page_test.dart:877:18)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  signing out returns to profile and restricts navigation
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:50 +5 -21: /app/test/pages/main_page_test.dart: signing out returns to profile and restricts navigation [E]
+  Test failed. See exception logs above.
+  The test description was: signing out returns to profile and restricts navigation
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/main_page_test.dart -p vm --plain-name 'signing out returns to profile and restricts navigation'
+00:50 +5 ~1 -21: /app/test/pages/leaderboard_page_test.dart: public leaderboard allows sending friend requests                                                                                         00:51 +5 ~1 -21: /app/test/pages/leaderboard_page_test.dart: public leaderboard allows sending friend requests
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      ListBase.firstWhere (dart:collection/list.dart:132:5)
+#1      main.<anonymous closure> (file:///app/test/pages/leaderboard_page_test.dart:363:42)
+<asynchronous suspension>
+#2      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#3      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  public leaderboard allows sending friend requests
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:51 +5 ~1 -22: /app/test/pages/leaderboard_page_test.dart: public leaderboard allows sending friend requests [E]
+  Test failed. See exception logs above.
+  The test description was: public leaderboard allows sending friend requests
+
+
+To run this test again: /app/flutter/bin/cache/dart-sdk/bin/dart test /app/test/pages/leaderboard_page_test.dart -p vm --plain-name 'public leaderboard allows sending friend requests'
+00:51 +5 ~1 -22: /app/test/pages/leaderboard_page_test.dart: failure hides loading indicator                                                                                                           00:51 +6 ~1 -22: /app/test/pages/leaderboard_page_test.dart: failure hides loading indicator                                                                                                           00:52 +6 ~1 -22: /app/test/pages/leaderboard_page_test.dart: failure hides loading indicator                                                                                                           00:52 +6 ~1 -22: loading /app/test/services/group_service_test.dart                                                                                                                                    00:52 +6 ~1 -22: /app/test/services/group_service_test.dart: (setUpAll)                                                                                                                                00:52 +6 ~1 -22: /app/test/services/group_service_test.dart: GroupService createGroup creates group and owner member                                                                                   00:52 +7 ~1 -22: /app/test/services/group_service_test.dart: GroupService createGroup creates group and owner member                                                                                   00:52 +7 ~1 -22: /app/test/services/group_service_test.dart: GroupService joinGroup creates join request and notification                                                                              00:52 +8 ~1 -22: /app/test/services/group_service_test.dart: GroupService joinGroup creates join request and notification                                                                              00:52 +8 ~1 -22: /app/test/services/group_service_test.dart: GroupService approveJoinRequest moves member and removes request                                                                          00:52 +9 ~1 -22: /app/test/services/group_service_test.dart: GroupService approveJoinRequest moves member and removes request                                                                          00:52 +9 ~1 -22: /app/test/services/group_service_test.dart: GroupService approveJoinRequest seeds memberCount when missing                                                                            00:52 +10 ~1 -22: /app/test/services/group_service_test.dart: GroupService approveJoinRequest seeds memberCount when missing                                                                           00:52 +10 ~1 -22: /app/test/services/group_service_test.dart: GroupService approveJoinRequest performs batched write                                                                                   00:52 +11 ~1 -22: /app/test/services/group_service_test.dart: GroupService approveJoinRequest performs batched write                                                                                   00:52 +11 ~1 -22: /app/test/services/group_service_test.dart: GroupService denyJoinRequest removes request without adding member                                                                       00:52 +12 ~1 -22: /app/test/services/group_service_test.dart: GroupService denyJoinRequest removes request without adding member                                                                       00:52 +12 ~1 -22: /app/test/services/group_service_test.dart: GroupService leaveGroup removes membership document                                                                                      00:52 +13 ~1 -22: /app/test/services/group_service_test.dart: GroupService leaveGroup removes membership document                                                                                      00:52 +13 ~1 -22: /app/test/services/group_service_test.dart: GroupService leaveGroup seeds memberCount when missing                                                                                   00:52 +14 ~1 -22: /app/test/services/group_service_test.dart: GroupService leaveGroup seeds memberCount when missing                                                                                   00:52 +14 ~1 -22: /app/test/services/group_service_test.dart: GroupService promoteToAdmin updates member role to admin                                                                                 00:52 +15 ~1 -22: /app/test/services/group_service_test.dart: GroupService promoteToAdmin updates member role to admin                                                                                 00:52 +15 ~1 -22: /app/test/services/group_service_test.dart: GroupService demoteAdmin downgrades admin role to member                                                                                 00:52 +16 ~1 -22: /app/test/services/group_service_test.dart: GroupService demoteAdmin downgrades admin role to member                                                                                 00:52 +16 ~1 -22: /app/test/services/group_service_test.dart: GroupService role changes require owner permissions                                                                                      00:52 +16 ~1 -22: /app/test/services/group_service_test.dart: GroupService role changes require owner permissions
+Bad state: Only the group owner can promote admins.
+#0      GroupService.promoteToAdmin (package:bible_read/services/group_service.dart:277:9)
+<asynchronous suspension>
+#1      Throws._matchFuture (package:matcher/src/expect/throws_matcher.dart:102:19)
+<asynchronous suspension>
+#2      _expect.<anonymous closure> (package:matcher/src/expect/expect.dart:123:26)
+<asynchronous suspension>
+#3      StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
+<asynchronous suspension>
+#4      expectLater.<anonymous closure> (package:flutter_test/src/widget_tester.dart:508:19)
+<asynchronous suspension>
+#5      main.<anonymous closure>.<anonymous closure> (file:///app/test/services/group_service_test.dart:325:7)
+<asynchronous suspension>
+#6      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:9)
+<asynchronous suspension>
+#7      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#8      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+
+----------------FIREBASE CRASHLYTICS----------------
+Bad state: Only the group owner can promote admins.
+
+#0      GroupService.promoteToAdmin (package:bible_read/services/group_service.dart:277:9)
+<asynchronous suspension>
+#1      Throws._matchFuture (package:matcher/src/expect/throws_matcher.dart:102:19)
+<asynchronous suspension>
+#2      _expect.<anonymous closure> (package:matcher/src/expect/expect.dart:123:26)
+<asynchronous suspension>
+#3      StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
+<asynchronous suspension>
+#4      expectLater.<anonymous closure> (package:flutter_test/src/widget_tester.dart:508:19)
+<asynchronous suspension>
+#5      main.<anonymous closure>.<anonymous closure> (file:///app/test/services/group_service_test.dart:325:7)
+<asynchronous suspension>
+#6      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:9)
+<asynchronous suspension>
+#7      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#8      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+
+----------------------------------------------------
+Bad state: Only the group owner can demote admins.
+#0      GroupService.demoteAdmin (package:bible_read/services/group_service.dart:313:9)
+<asynchronous suspension>
+#1      Throws._matchFuture (package:matcher/src/expect/throws_matcher.dart:102:19)
+<asynchronous suspension>
+#2      _expect.<anonymous closure> (package:matcher/src/expect/expect.dart:123:26)
+<asynchronous suspension>
+#3      StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
+<asynchronous suspension>
+#4      expectLater.<anonymous closure> (package:flutter_test/src/widget_tester.dart:508:19)
+<asynchronous suspension>
+#5      main.<anonymous closure>.<anonymous closure> (file:///app/test/services/group_service_test.dart:329:7)
+<asynchronous suspension>
+#6      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:9)
+<asynchronous suspension>
+#7      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#8      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+
+----------------FIREBASE CRASHLYTICS----------------
+Bad state: Only the group owner can demote admins.
+
+#0      GroupService.demoteAdmin (package:bible_read/services/group_service.dart:313:9)
+<asynchronous suspension>
+#1      Throws._matchFuture (package:matcher/src/expect/throws_matcher.dart:102:19)
+<asynchronous suspension>
+#2      _expect.<anonymous closure> (package:matcher/src/expect/expect.dart:123:26)
+<asynchronous suspension>
+#3      StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
+<asynchronous suspension>
+#4      expectLater.<anonymous closure> (package:flutter_test/src/widget_tester.dart:508:19)
+<asynchronous suspension>
+#5      main.<anonymous closure>.<anonymous closure> (file:///app/test/services/group_service_test.dart:329:7)
+<asynchronous suspension>
+#6      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:9)
+<asynchronous suspension>
+#7      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#8      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+
+----------------------------------------------------
+00:52 +17 ~1 -22: /app/test/services/group_service_test.dart: GroupService role changes require owner permissions                                                                                      00:52 +17 ~1 -22: /app/test/services/group_service_test.dart: GroupService updateSchedule writes schedule document                                                                                     00:52 +18 ~1 -22: /app/test/services/group_service_test.dart: GroupService updateSchedule writes schedule document                                                                                     00:52 +18 ~1 -22: /app/test/services/group_service_test.dart: GroupService updateSchedule notifies group members                                                                                       00:52 +19 ~1 -22: /app/test/services/group_service_test.dart: GroupService updateSchedule notifies group members                                                                                       00:52 +19 ~1 -22: /app/test/services/group_service_test.dart: GroupService fetchTodaysChapters returns schedule for today                                                                              00:52 +20 ~1 -22: /app/test/services/group_service_test.dart: GroupService fetchTodaysChapters returns schedule for today                                                                              00:52 +20 ~1 -22: /app/test/services/group_service_test.dart: GroupService fetchTodaysChapters handles positive UTC offset                                                                             00:52 +21 ~1 -22: /app/test/services/group_service_test.dart: GroupService fetchTodaysChapters handles positive UTC offset                                                                             00:52 +21 ~1 -22: /app/test/services/group_service_test.dart: GroupService allGroups streams every group                                                                                               00:52 +22 ~1 -22: /app/test/services/group_service_test.dart: GroupService allGroups streams every group                                                                                               00:52 +22 ~1 -22: /app/test/services/group_service_test.dart: GroupService groupsForUser streams groups where user is member                                                                           00:52 +23 ~1 -22: /app/test/services/group_service_test.dart: GroupService groupsForUser streams groups where user is member                                                                           00:52 +23 ~1 -22: /app/test/services/group_service_test.dart: GroupService groupsForUser includes owned groups without membership doc                                                                  00:52 +24 ~1 -22: /app/test/services/group_service_test.dart: GroupService groupsForUser includes owned groups without membership doc                                                                  00:52 +24 ~1 -22: /app/test/services/group_service_test.dart: GroupService groupsForUser returns owned group without owner membership doc                                                              00:52 +25 ~1 -22: /app/test/services/group_service_test.dart: GroupService groupsForUser returns owned group without owner membership doc                                                              00:52 +25 ~1 -22: /app/test/services/group_service_test.dart: GroupService groupsForUser deduplicates owned membership groups                                                                          00:52 +26 ~1 -22: /app/test/services/group_service_test.dart: GroupService groupsForUser deduplicates owned membership groups                                                                          00:52 +26 ~1 -22: /app/test/services/group_service_test.dart: GroupService memberNames streams display names                                                                                           00:52 +27 ~1 -22: /app/test/services/group_service_test.dart: GroupService memberNames streams display names                                                                                           00:52 +27 ~1 -22: /app/test/services/group_service_test.dart: GroupService memberNames batches user lookups                                                                                            00:52 +28 ~1 -22: /app/test/services/group_service_test.dart: GroupService memberNames batches user lookups                                                                                            00:52 +28 ~1 -22: /app/test/services/group_service_test.dart: GroupService schedule streams list of entries                                                                                            00:52 +29 ~1 -22: /app/test/services/group_service_test.dart: GroupService schedule streams list of entries                                                                                            00:52 +29 ~1 -22: /app/test/services/group_service_test.dart: GroupService groupsForUser logs and returns empty list on stream error                                                                   00:52 +29 ~1 -22: /app/test/services/group_service_test.dart: GroupService groupsForUser logs and returns empty list on stream error
+Exception: fail
+dart:async/future_impl.dart 21:26                              _interceptError
+dart:async/future_impl.dart 52:23                              _interceptUserError
+dart:async/stream.dart 213:39                                  new Stream.error
+test/services/group_service_test.dart 590:16                   main.<fn>.<fn>.<fn>
+package:mocktail/src/mocktail.dart 131:37                      Mock.noSuchMethod
+test/services/group_service_test.dart 31:7                     MockQuery.snapshots
+package:bible_read/services/group_service.dart 521:10          GroupService.groupsForUser
+test/services/group_service_test.dart 611:31                   main.<fn>.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 2020:12                                   runZonedGuarded
+test/services/group_service_test.dart 610:13                   main.<fn>.<fn>
+package:test_api/src/backend/declarer.dart 242:19              Declarer.test.<fn>.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 1450:19                                   _CustomZone.registerUnaryCallback
+package:test_api/src/backend/declarer.dart 241:9               Declarer.test.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/declarer.dart 240:13              Declarer.test.<fn>
+package:test_api/src/backend/invoker.dart 282:17               Invoker._waitForOutstandingCallbacks.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/invoker.dart 278:5                Invoker._waitForOutstandingCallbacks
+package:test_api/src/backend/invoker.dart 418:17               Invoker._onRun.<fn>.<fn>.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 1450:19                                   _CustomZone.registerUnaryCallback
+package:test_api/src/backend/invoker.dart 416:11               Invoker._onRun.<fn>.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/invoker.dart 407:9                Invoker._onRun.<fn>.<fn>
+package:test_api/src/backend/invoker.dart 450:15               Invoker._guardIfGuarded
+package:test_api/src/backend/invoker.dart 406:7                Invoker._onRun.<fn>
+package:stack_trace/src/chain.dart 97:24                       Chain.capture.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:stack_trace/src/chain.dart 95:12                       Chain.capture
+package:test_api/src/backend/invoker.dart 405:11               Invoker._onRun
+package:test_api/src/backend/live_test_controller.dart 153:11  LiveTestController.run
+package:test_api/src/backend/remote_listener.dart 275:16       RemoteListener._runLiveTest.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/remote_listener.dart 274:5        RemoteListener._runLiveTest
+package:test_api/src/backend/remote_listener.dart 221:7        RemoteListener._serializeTest.<fn>
+dart:async/zone.dart 1538:47                                   _rootRunUnary
+dart:async/zone.dart 1429:19                                   _CustomZone.runUnary
+dart:async/zone.dart 1329:7                                    _CustomZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/zone.dart 1546:13                                   _rootRunUnary
+dart:async/zone.dart 1429:19                                   _CustomZone.runUnary
+dart:async/zone.dart 1329:7                                    _CustomZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/stream_controller.dart 898:13                       _StreamSinkWrapper.add
+package:stream_channel/src/guarantee_channel.dart 125:12       _GuaranteeSink.add
+package:stream_channel/src/multi_channel.dart 159:31           new _MultiChannel.<fn>
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:_internal/async_cast.dart 95:11                           CastStreamSubscription._onData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/stream_controller.dart 898:13                       _StreamSinkWrapper.add
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_pipe.dart 154:11                             _ForwardingStreamSubscription._add
+dart:async/stream_pipe.dart 252:10                             _MapStream._handleData
+dart:async/stream_pipe.dart 184:13                             _ForwardingStreamSubscription._handleData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:_http/websocket_impl.dart 1252:27                         new _WebSocketImpl._fromSocket.<fn>
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_transformers.dart 67:11                      _SinkTransformerStreamSubscription._add
+dart:async/stream_transformers.dart 13:11                      _EventSinkWrapper.add
+dart:_http/websocket_impl.dart 348:23                          _WebSocketProtocolTransformer._messageFrameEnd
+dart:_http/websocket_impl.dart 238:46                          _WebSocketProtocolTransformer.add
+dart:async/stream_transformers.dart 115:24                     _SinkTransformerStreamSubscription._handleData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:io-patch/socket_patch.dart 2880:41                        _Socket._onData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:io-patch/socket_patch.dart 2315:31                        new _RawSocket.<fn>
+dart:io-patch/socket_patch.dart 1655:14                        _NativeSocket.issueReadEvent.issue
+dart:async/schedule_microtask.dart 40:35                       _microtaskLoop
+dart:async/schedule_microtask.dart 49:5                        _startMicrotaskLoop
+
+00:53 +30 ~1 -22: /app/test/services/group_service_test.dart: GroupService groupsForUser logs and returns empty list on stream error                                                                   00:53 +30 ~1 -22: /app/test/services/group_service_test.dart: GroupService allGroups logs and returns empty list on stream error                                                                       00:53 +30 ~1 -22: /app/test/services/group_service_test.dart: GroupService allGroups logs and returns empty list on stream error
+Exception: fail
+dart:async/future_impl.dart 21:26                              _interceptError
+dart:async/future_impl.dart 52:23                              _interceptUserError
+dart:async/stream.dart 213:39                                  new Stream.error
+test/services/group_service_test.dart 630:18                   main.<fn>.<fn>.<fn>
+package:mocktail/src/mocktail.dart 131:37                      Mock.noSuchMethod
+test/services/group_service_test.dart 24:7                     MockCollectionReference.snapshots
+package:bible_read/services/group_service.dart 495:57          GroupService.allGroups.<fn>
+dart:async/stream_impl.dart 1178:16                            _MultiStream.listen.<fn>
+dart:async/stream_controller.dart 838:24                       _runGuarded
+dart:async/stream_controller.dart 716:7                        _StreamController._subscribe.<fn>
+dart:async/stream_impl.dart 457:13                             _BufferingStreamSubscription._guardCallback
+dart:async/stream_controller.dart 715:18                       _StreamController._subscribe
+dart:async/stream_impl.dart 1180:23                            _MultiStream.listen
+package:async/src/stream_queue.dart 475:31                     StreamQueue._ensureListening
+package:async/src/stream_queue.dart 531:7                      StreamQueue._addRequest
+package:async/src/stream_queue.dart 291:5                      StreamQueue.startTransaction
+package:matcher/src/expect/stream_matcher.dart 139:29          _StreamMatcher.matchAsync
+package:matcher/src/expect/expect.dart 109:26                  _expect
+package:matcher/src/expect/expect.dart 73:5                    expectLater
+package:flutter_test/src/widget_tester.dart 507:8              expectLater
+test/services/group_service_test.dart 643:15                   main.<fn>.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 2020:12                                   runZonedGuarded
+test/services/group_service_test.dart 642:13                   main.<fn>.<fn>
+package:test_api/src/backend/declarer.dart 242:19              Declarer.test.<fn>.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 1450:19                                   _CustomZone.registerUnaryCallback
+package:test_api/src/backend/declarer.dart 241:9               Declarer.test.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/declarer.dart 240:13              Declarer.test.<fn>
+package:test_api/src/backend/invoker.dart 282:17               Invoker._waitForOutstandingCallbacks.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/invoker.dart 278:5                Invoker._waitForOutstandingCallbacks
+package:test_api/src/backend/invoker.dart 418:17               Invoker._onRun.<fn>.<fn>.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 1450:19                                   _CustomZone.registerUnaryCallback
+package:test_api/src/backend/invoker.dart 416:11               Invoker._onRun.<fn>.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/invoker.dart 407:9                Invoker._onRun.<fn>.<fn>
+package:test_api/src/backend/invoker.dart 450:15               Invoker._guardIfGuarded
+package:test_api/src/backend/invoker.dart 406:7                Invoker._onRun.<fn>
+package:stack_trace/src/chain.dart 97:24                       Chain.capture.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:stack_trace/src/chain.dart 95:12                       Chain.capture
+package:test_api/src/backend/invoker.dart 405:11               Invoker._onRun
+package:test_api/src/backend/live_test_controller.dart 153:11  LiveTestController.run
+package:test_api/src/backend/remote_listener.dart 275:16       RemoteListener._runLiveTest.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/remote_listener.dart 274:5        RemoteListener._runLiveTest
+package:test_api/src/backend/remote_listener.dart 221:7        RemoteListener._serializeTest.<fn>
+dart:async/zone.dart 1538:47                                   _rootRunUnary
+dart:async/zone.dart 1429:19                                   _CustomZone.runUnary
+dart:async/zone.dart 1329:7                                    _CustomZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/zone.dart 1546:13                                   _rootRunUnary
+dart:async/zone.dart 1429:19                                   _CustomZone.runUnary
+dart:async/zone.dart 1329:7                                    _CustomZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/stream_controller.dart 898:13                       _StreamSinkWrapper.add
+package:stream_channel/src/guarantee_channel.dart 125:12       _GuaranteeSink.add
+package:stream_channel/src/multi_channel.dart 159:31           new _MultiChannel.<fn>
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:_internal/async_cast.dart 95:11                           CastStreamSubscription._onData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/stream_controller.dart 898:13                       _StreamSinkWrapper.add
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_pipe.dart 154:11                             _ForwardingStreamSubscription._add
+dart:async/stream_pipe.dart 252:10                             _MapStream._handleData
+dart:async/stream_pipe.dart 184:13                             _ForwardingStreamSubscription._handleData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:_http/websocket_impl.dart 1252:27                         new _WebSocketImpl._fromSocket.<fn>
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_transformers.dart 67:11                      _SinkTransformerStreamSubscription._add
+dart:async/stream_transformers.dart 13:11                      _EventSinkWrapper.add
+dart:_http/websocket_impl.dart 348:23                          _WebSocketProtocolTransformer._messageFrameEnd
+dart:_http/websocket_impl.dart 238:46                          _WebSocketProtocolTransformer.add
+dart:async/stream_transformers.dart 115:24                     _SinkTransformerStreamSubscription._handleData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:io-patch/socket_patch.dart 2880:41                        _Socket._onData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:io-patch/socket_patch.dart 2315:31                        new _RawSocket.<fn>
+dart:io-patch/socket_patch.dart 1655:14                        _NativeSocket.issueReadEvent.issue
+dart:async/schedule_microtask.dart 40:35                       _microtaskLoop
+dart:async/schedule_microtask.dart 49:5                        _startMicrotaskLoop
+
+00:53 +31 ~1 -22: /app/test/services/group_service_test.dart: GroupService allGroups logs and returns empty list on stream error                                                                       00:53 +31 ~1 -22: /app/test/services/group_service_test.dart: GroupService memberNames surfaces stream errors                                                                                          00:53 +31 ~1 -22: /app/test/services/group_service_test.dart: GroupService memberNames surfaces stream errors
+Exception: fail
+dart:async/future_impl.dart 21:26                              _interceptError
+dart:async/future_impl.dart 52:23                              _interceptUserError
+dart:async/stream.dart 213:39                                  new Stream.error
+test/services/group_service_test.dart 665:18                   main.<fn>.<fn>.<fn>
+package:mocktail/src/mocktail.dart 131:37                      Mock.noSuchMethod
+test/services/group_service_test.dart 24:7                     MockCollectionReference.snapshots
+package:bible_read/services/group_service.dart 601:10          GroupService.memberNames
+test/services/group_service_test.dart 678:31                   main.<fn>.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 2020:12                                   runZonedGuarded
+test/services/group_service_test.dart 677:13                   main.<fn>.<fn>
+package:test_api/src/backend/declarer.dart 242:19              Declarer.test.<fn>.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 1450:19                                   _CustomZone.registerUnaryCallback
+package:test_api/src/backend/declarer.dart 241:9               Declarer.test.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/declarer.dart 240:13              Declarer.test.<fn>
+package:test_api/src/backend/invoker.dart 282:17               Invoker._waitForOutstandingCallbacks.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/invoker.dart 278:5                Invoker._waitForOutstandingCallbacks
+package:test_api/src/backend/invoker.dart 418:17               Invoker._onRun.<fn>.<fn>.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 1450:19                                   _CustomZone.registerUnaryCallback
+package:test_api/src/backend/invoker.dart 416:11               Invoker._onRun.<fn>.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/invoker.dart 407:9                Invoker._onRun.<fn>.<fn>
+package:test_api/src/backend/invoker.dart 450:15               Invoker._guardIfGuarded
+package:test_api/src/backend/invoker.dart 406:7                Invoker._onRun.<fn>
+package:stack_trace/src/chain.dart 97:24                       Chain.capture.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:stack_trace/src/chain.dart 95:12                       Chain.capture
+package:test_api/src/backend/invoker.dart 405:11               Invoker._onRun
+package:test_api/src/backend/live_test_controller.dart 153:11  LiveTestController.run
+package:test_api/src/backend/remote_listener.dart 275:16       RemoteListener._runLiveTest.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/remote_listener.dart 274:5        RemoteListener._runLiveTest
+package:test_api/src/backend/remote_listener.dart 221:7        RemoteListener._serializeTest.<fn>
+dart:async/zone.dart 1538:47                                   _rootRunUnary
+dart:async/zone.dart 1429:19                                   _CustomZone.runUnary
+dart:async/zone.dart 1329:7                                    _CustomZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/zone.dart 1546:13                                   _rootRunUnary
+dart:async/zone.dart 1429:19                                   _CustomZone.runUnary
+dart:async/zone.dart 1329:7                                    _CustomZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/stream_controller.dart 898:13                       _StreamSinkWrapper.add
+package:stream_channel/src/guarantee_channel.dart 125:12       _GuaranteeSink.add
+package:stream_channel/src/multi_channel.dart 159:31           new _MultiChannel.<fn>
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:_internal/async_cast.dart 95:11                           CastStreamSubscription._onData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/stream_controller.dart 898:13                       _StreamSinkWrapper.add
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_pipe.dart 154:11                             _ForwardingStreamSubscription._add
+dart:async/stream_pipe.dart 252:10                             _MapStream._handleData
+dart:async/stream_pipe.dart 184:13                             _ForwardingStreamSubscription._handleData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:_http/websocket_impl.dart 1252:27                         new _WebSocketImpl._fromSocket.<fn>
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_transformers.dart 67:11                      _SinkTransformerStreamSubscription._add
+dart:async/stream_transformers.dart 13:11                      _EventSinkWrapper.add
+dart:_http/websocket_impl.dart 348:23                          _WebSocketProtocolTransformer._messageFrameEnd
+dart:_http/websocket_impl.dart 238:46                          _WebSocketProtocolTransformer.add
+dart:async/stream_transformers.dart 115:24                     _SinkTransformerStreamSubscription._handleData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:io-patch/socket_patch.dart 2880:41                        _Socket._onData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:io-patch/socket_patch.dart 2315:31                        new _RawSocket.<fn>
+dart:io-patch/socket_patch.dart 1655:14                        _NativeSocket.issueReadEvent.issue
+dart:async/schedule_microtask.dart 40:35                       _microtaskLoop
+dart:async/schedule_microtask.dart 49:5                        _startMicrotaskLoop
+
+00:53 +32 ~1 -22: /app/test/services/group_service_test.dart: GroupService memberNames surfaces stream errors                                                                                          00:53 +32 ~1 -22: /app/test/services/group_service_test.dart: GroupService schedule surfaces stream errors                                                                                             00:53 +32 ~1 -22: /app/test/services/group_service_test.dart: GroupService schedule surfaces stream errors
+Exception: fail
+dart:async/future_impl.dart 21:26                              _interceptError
+dart:async/future_impl.dart 52:23                              _interceptUserError
+dart:async/stream.dart 213:39                                  new Stream.error
+test/services/group_service_test.dart 696:18                   main.<fn>.<fn>.<fn>
+package:mocktail/src/mocktail.dart 131:37                      Mock.noSuchMethod
+test/services/group_service_test.dart 31:7                     MockQuery.snapshots
+package:bible_read/services/group_service.dart 1086:10         GroupService.schedule
+test/services/group_service_test.dart 709:31                   main.<fn>.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 2020:12                                   runZonedGuarded
+test/services/group_service_test.dart 708:13                   main.<fn>.<fn>
+package:test_api/src/backend/declarer.dart 242:19              Declarer.test.<fn>.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 1450:19                                   _CustomZone.registerUnaryCallback
+package:test_api/src/backend/declarer.dart 241:9               Declarer.test.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/declarer.dart 240:13              Declarer.test.<fn>
+package:test_api/src/backend/invoker.dart 282:17               Invoker._waitForOutstandingCallbacks.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/invoker.dart 278:5                Invoker._waitForOutstandingCallbacks
+package:test_api/src/backend/invoker.dart 418:17               Invoker._onRun.<fn>.<fn>.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 1450:19                                   _CustomZone.registerUnaryCallback
+package:test_api/src/backend/invoker.dart 416:11               Invoker._onRun.<fn>.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/invoker.dart 407:9                Invoker._onRun.<fn>.<fn>
+package:test_api/src/backend/invoker.dart 450:15               Invoker._guardIfGuarded
+package:test_api/src/backend/invoker.dart 406:7                Invoker._onRun.<fn>
+package:stack_trace/src/chain.dart 97:24                       Chain.capture.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:stack_trace/src/chain.dart 95:12                       Chain.capture
+package:test_api/src/backend/invoker.dart 405:11               Invoker._onRun
+package:test_api/src/backend/live_test_controller.dart 153:11  LiveTestController.run
+package:test_api/src/backend/remote_listener.dart 275:16       RemoteListener._runLiveTest.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/remote_listener.dart 274:5        RemoteListener._runLiveTest
+package:test_api/src/backend/remote_listener.dart 221:7        RemoteListener._serializeTest.<fn>
+dart:async/zone.dart 1538:47                                   _rootRunUnary
+dart:async/zone.dart 1429:19                                   _CustomZone.runUnary
+dart:async/zone.dart 1329:7                                    _CustomZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/zone.dart 1546:13                                   _rootRunUnary
+dart:async/zone.dart 1429:19                                   _CustomZone.runUnary
+dart:async/zone.dart 1329:7                                    _CustomZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/stream_controller.dart 898:13                       _StreamSinkWrapper.add
+package:stream_channel/src/guarantee_channel.dart 125:12       _GuaranteeSink.add
+package:stream_channel/src/multi_channel.dart 159:31           new _MultiChannel.<fn>
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:_internal/async_cast.dart 95:11                           CastStreamSubscription._onData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/stream_controller.dart 898:13                       _StreamSinkWrapper.add
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_pipe.dart 154:11                             _ForwardingStreamSubscription._add
+dart:async/stream_pipe.dart 252:10                             _MapStream._handleData
+dart:async/stream_pipe.dart 184:13                             _ForwardingStreamSubscription._handleData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:_http/websocket_impl.dart 1252:27                         new _WebSocketImpl._fromSocket.<fn>
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_transformers.dart 67:11                      _SinkTransformerStreamSubscription._add
+dart:async/stream_transformers.dart 13:11                      _EventSinkWrapper.add
+dart:_http/websocket_impl.dart 348:23                          _WebSocketProtocolTransformer._messageFrameEnd
+dart:_http/websocket_impl.dart 238:46                          _WebSocketProtocolTransformer.add
+dart:async/stream_transformers.dart 115:24                     _SinkTransformerStreamSubscription._handleData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:io-patch/socket_patch.dart 2880:41                        _Socket._onData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:io-patch/socket_patch.dart 2315:31                        new _RawSocket.<fn>
+dart:io-patch/socket_patch.dart 1655:14                        _NativeSocket.issueReadEvent.issue
+dart:async/schedule_microtask.dart 40:35                       _microtaskLoop
+dart:async/schedule_microtask.dart 49:5                        _startMicrotaskLoop
+
+00:53 +33 ~1 -22: /app/test/services/group_service_test.dart: GroupService schedule surfaces stream errors                                                                                             00:53 +33 ~1 -22: /app/test/services/group_service_test.dart: GroupService createGroup rethrows and logs on error                                                                                      00:53 +33 ~1 -22: /app/test/services/group_service_test.dart: GroupService createGroup rethrows and logs on error
+Exception: fail
+#0      When.thenThrow.<anonymous closure> (package:mocktail/src/mocktail.dart:249:7)
+#1      Mock.noSuchMethod (package:mocktail/src/mocktail.dart:131:37)
+#2      MockDocumentReference.set (file:///app/test/services/group_service_test.dart:27:7)
+#3      GroupService.createGroup (package:bible_read/services/group_service.dart:55:17)
+#4      main.<anonymous closure>.<anonymous closure> (file:///app/test/services/group_service_test.dart:734:15)
+#5      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:19)
+<asynchronous suspension>
+#6      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#7      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+
+00:53 +34 ~1 -22: /app/test/services/group_service_test.dart: GroupService createGroup rethrows and logs on error                                                                                      00:53 +34 ~1 -22: /app/test/services/group_service_test.dart: GroupService joinGroup rethrows and logs on error                                                                                        00:53 +34 ~1 -22: /app/test/services/group_service_test.dart: GroupService joinGroup rethrows and logs on error
+Exception: fail
+#0      When.thenThrow.<anonymous closure> (package:mocktail/src/mocktail.dart:249:7)
+#1      Mock.noSuchMethod (package:mocktail/src/mocktail.dart:131:37)
+#2      MockDocumentReference.set (file:///app/test/services/group_service_test.dart:27:7)
+#3      GroupService.requestJoin (package:bible_read/services/group_service.dart:123:12)
+#4      GroupService.joinGroup (package:bible_read/services/group_service.dart:108:12)
+#5      main.<anonymous closure>.<anonymous closure> (file:///app/test/services/group_service_test.dart:768:29)
+#6      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:19)
+<asynchronous suspension>
+#7      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#8      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+
+00:53 +35 ~1 -22: /app/test/services/group_service_test.dart: GroupService joinGroup rethrows and logs on error                                                                                        00:53 +35 ~1 -22: /app/test/services/group_service_test.dart: GroupService fetchTodaysChapters logs and returns empty list on error                                                                    00:53 +35 ~1 -22: /app/test/services/group_service_test.dart: GroupService fetchTodaysChapters logs and returns empty list on error
+Exception: boom
+#0      When.thenThrow.<anonymous closure> (package:mocktail/src/mocktail.dart:249:7)
+#1      Mock.noSuchMethod (package:mocktail/src/mocktail.dart:131:37)
+#2      MockDocumentReference.get (file:///app/test/services/group_service_test.dart:27:7)
+#3      GroupService.fetchTodaysChapters (package:bible_read/services/group_service.dart:475:12)
+#4      main.<anonymous closure>.<anonymous closure> (file:///app/test/services/group_service_test.dart:803:34)
+#5      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:19)
+<asynchronous suspension>
+#6      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#7      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+
+00:53 +36 ~1 -22: /app/test/services/group_service_test.dart: GroupService fetchTodaysChapters logs and returns empty list on error                                                                    00:53 +36 ~1 -22: /app/test/services/group_service_test.dart: GroupService leaveGroup rethrows and logs on error                                                                                       00:53 +36 ~1 -22: /app/test/services/group_service_test.dart: GroupService leaveGroup rethrows and logs on error
+Exception: fail
+dart:async/future_impl.dart 21:26                              _interceptError
+dart:async/future_impl.dart 52:23                              _interceptUserError
+dart:async/future.dart 393:33                                  new Future.error
+test/services/group_service_test.dart 835:30                   main.<fn>.<fn>.<fn>
+package:mocktail/src/mocktail.dart 131:37                      Mock.noSuchMethod
+test/services/group_service_test.dart 35:7                     MockWriteBatch.commit
+package:bible_read/services/group_service.dart 233:19          GroupService.leaveGroup
+===== asynchronous gap ===========================
+dart:async/zone.dart 1450:19                                   _CustomZone.registerUnaryCallback
+package:bible_read/services/group_service.dart 225:26          GroupService.leaveGroup
+test/services/group_service_test.dart 848:15                   main.<fn>.<fn>
+package:test_api/src/backend/declarer.dart 242:19              Declarer.test.<fn>.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 1450:19                                   _CustomZone.registerUnaryCallback
+package:test_api/src/backend/declarer.dart 241:9               Declarer.test.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/declarer.dart 240:13              Declarer.test.<fn>
+package:test_api/src/backend/invoker.dart 282:17               Invoker._waitForOutstandingCallbacks.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/invoker.dart 278:5                Invoker._waitForOutstandingCallbacks
+package:test_api/src/backend/invoker.dart 418:17               Invoker._onRun.<fn>.<fn>.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 1450:19                                   _CustomZone.registerUnaryCallback
+package:test_api/src/backend/invoker.dart 416:11               Invoker._onRun.<fn>.<fn>.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/invoker.dart 407:9                Invoker._onRun.<fn>.<fn>
+package:test_api/src/backend/invoker.dart 450:15               Invoker._guardIfGuarded
+package:test_api/src/backend/invoker.dart 406:7                Invoker._onRun.<fn>
+package:stack_trace/src/chain.dart 97:24                       Chain.capture.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:stack_trace/src/chain.dart 95:12                       Chain.capture
+package:test_api/src/backend/invoker.dart 405:11               Invoker._onRun
+package:test_api/src/backend/live_test_controller.dart 153:11  LiveTestController.run
+package:test_api/src/backend/remote_listener.dart 275:16       RemoteListener._runLiveTest.<fn>
+dart:async/zone.dart 1525:13                                   _rootRun
+dart:async/zone.dart 1422:19                                   _CustomZone.run
+dart:async/zone.dart 2034:6                                    _runZoned
+dart:async/zone.dart 1960:10                                   runZoned
+package:test_api/src/backend/remote_listener.dart 274:5        RemoteListener._runLiveTest
+package:test_api/src/backend/remote_listener.dart 221:7        RemoteListener._serializeTest.<fn>
+dart:async/zone.dart 1538:47                                   _rootRunUnary
+dart:async/zone.dart 1429:19                                   _CustomZone.runUnary
+dart:async/zone.dart 1329:7                                    _CustomZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/zone.dart 1546:13                                   _rootRunUnary
+dart:async/zone.dart 1429:19                                   _CustomZone.runUnary
+dart:async/zone.dart 1329:7                                    _CustomZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/stream_controller.dart 898:13                       _StreamSinkWrapper.add
+package:stream_channel/src/guarantee_channel.dart 125:12       _GuaranteeSink.add
+package:stream_channel/src/multi_channel.dart 159:31           new _MultiChannel.<fn>
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:_internal/async_cast.dart 95:11                           CastStreamSubscription._onData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/stream_controller.dart 898:13                       _StreamSinkWrapper.add
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_pipe.dart 154:11                             _ForwardingStreamSubscription._add
+dart:async/stream_pipe.dart 252:10                             _MapStream._handleData
+dart:async/stream_pipe.dart 184:13                             _ForwardingStreamSubscription._handleData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:_http/websocket_impl.dart 1252:27                         new _WebSocketImpl._fromSocket.<fn>
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_transformers.dart 67:11                      _SinkTransformerStreamSubscription._add
+dart:async/stream_transformers.dart 13:11                      _EventSinkWrapper.add
+dart:_http/websocket_impl.dart 348:23                          _WebSocketProtocolTransformer._messageFrameEnd
+dart:_http/websocket_impl.dart 238:46                          _WebSocketProtocolTransformer.add
+dart:async/stream_transformers.dart 115:24                     _SinkTransformerStreamSubscription._handleData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:io-patch/socket_patch.dart 2880:41                        _Socket._onData
+dart:async/zone.dart 1778:10                                   _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:io-patch/socket_patch.dart 2315:31                        new _RawSocket.<fn>
+dart:io-patch/socket_patch.dart 1655:14                        _NativeSocket.issueReadEvent.issue
+dart:async/schedule_microtask.dart 40:35                       _microtaskLoop
+dart:async/schedule_microtask.dart 49:5                        _startMicrotaskLoop
+
+00:53 +37 ~1 -22: /app/test/services/group_service_test.dart: GroupService leaveGroup rethrows and logs on error                                                                                       00:53 +37 ~1 -22: /app/test/services/group_service_test.dart: (tearDownAll)                                                                                                                            00:53 +37 ~1 -22: Some tests failed.

@@ -11,7 +11,7 @@ import '../services/seasonal_challenge_service.dart';
 
 // These imports assume we will refactor or use existing pages
 import 'achievements_page.dart';
-import 'leaderboard_page.dart';
+import 'leaderboard_page.dart' as lb;
 import 'seasonal_challenges_page.dart';
 import 'exercise_challenges_page.dart';
 
@@ -85,7 +85,7 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
             // View takes service.
             service: SeasonalChallengeService(firestore: widget.firestore),
           ),
-          LeaderboardView(
+          lb.LeaderboardView(
             firestore: widget.firestore,
             auth: widget.auth,
             friendService: widget.friendService,

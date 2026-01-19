@@ -462,7 +462,9 @@ void main() {
 
       expect(find.text('Failed to mark notification as read.'), findsOneWidget);
       final icon = tester.widget<Icon>(find.byIcon(Icons.thumb_up));
-      expect(icon.color, Colors.blue);
+      final context = tester.element(find.byType(NotificationCenterPage));
+      final primary = Theme.of(context).colorScheme.primary;
+      expect(icon.color, primary);
     },
   );
 }

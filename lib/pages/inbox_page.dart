@@ -64,7 +64,7 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
       body: TabBarView(
         controller: _tabController,
         children: [
-          NotificationCenterContent(
+          NotificationCenterPage(
             service: NotificationService(firestore: widget.firestore),
             auth: widget.auth,
             vibrationService: widget.vibrationService,
@@ -79,16 +79,3 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
     );
   }
 }
-
-// Wrapper for NotificationCenterPage to fit in TabView without Scaffold if needed, 
-// but NotificationCenterPage currently has Scaffold. We should likely refactor it too, 
-// but for now I will wrap it layout-wise. 
-// Ideally NotificationCenterPage should be split like others. 
-// Checking imports -> NotificationCenterPage is imported.
-// I'll assume for this pass I can't refactor everything, so I might just embed 
-// the pages directly if they allow, or I'll just use the existing pages.
-// `NotificationCenterPage` seems to have a Scaffold. `FriendlyStreakPage` also does.
-// I will need to refactor them briefly to separate Views or accept a 'scaffold' parameter.
-// For now, I'll extract logic from NotificationCenter and FriendlyStreak in the next steps 
-// if I haven't already. I haven't. 
-// I will create simple View wrappers akin to others.

@@ -43,6 +43,12 @@ class GroupService {
             NotificationService(
                 firestore: firestore ?? FirebaseFirestore.instance);
 
+  static Future<void> _safeLog(Object e, StackTrace? st) async {
+    try {
+      await ErrorLogger.log(e, st);
+    } catch (_) {}
+  }
+
   /// Create a new group owned by [ownerUid] with [name].
   ///
   /// Returns the id of the created group.
@@ -88,11 +94,11 @@ class GroupService {
           }
         }
       } catch (e, st) {
-        await ErrorLogger.log(e, st);
+        await _safeLog(e, st);
       }
       return doc.id;
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       rethrow;
     }
   }
@@ -153,7 +159,7 @@ class GroupService {
             .set(notification.toFirestore(), SetOptions(merge: true));
       }
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       rethrow;
     }
   }
@@ -190,7 +196,7 @@ class GroupService {
       batch.delete(requestRef);
       await batch.commit();
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       rethrow;
     }
   }
@@ -208,7 +214,7 @@ class GroupService {
           .doc(uid)
           .delete();
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       rethrow;
     }
   }
@@ -257,7 +263,7 @@ class GroupService {
         }
       } catch (_) {}
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       rethrow;
     }
   }
@@ -292,7 +298,7 @@ class GroupService {
       }
       await memberRef.update({'role': 'admin'});
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       rethrow;
     }
   }
@@ -328,7 +334,7 @@ class GroupService {
       }
       await memberRef.update({'role': 'member'});
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       rethrow;
     }
   }
@@ -372,7 +378,7 @@ class GroupService {
         'chapters': schedule.chapters,
       });
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       rethrow;
     }
 
@@ -402,12 +408,12 @@ class GroupService {
           );
           await notificationService.addNotification(uid, notification);
         } catch (e, st) {
-          await ErrorLogger.log(e, st);
+          await _safeLog(e, st);
           // continue notifying other members
         }
       }
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       // Do not rethrow: schedule has been updated successfully.
     }
   }
@@ -450,7 +456,7 @@ class GroupService {
           }
           await entry.reference.delete();
         } catch (e, st) {
-          await ErrorLogger.log(e, st);
+          await _safeLog(e, st);
         }
       }
       // Delete the progress date doc itself
@@ -458,7 +464,7 @@ class GroupService {
         await dateRef.delete();
       } catch (_) {}
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       rethrow;
     }
   }
@@ -476,7 +482,7 @@ class GroupService {
       if (!doc.exists) return <String>[];
       return GroupSchedule.fromFirestore(doc).chapters;
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       return <String>[];
     }
   }
@@ -499,12 +505,12 @@ class GroupService {
               snap.docs.map(Group.fromFirestore).toList(),
             );
           } catch (e, st) {
-            await ErrorLogger.log(e, st);
+            await _safeLog(e, st);
             controller.add(<Group>[]);
           }
         },
         onError: (e, st) async {
-          await ErrorLogger.log(e, st);
+          await _safeLog(e, st);
           controller.add(<Group>[]);
         },
       );
@@ -552,7 +558,7 @@ class GroupService {
           memberGroups =
               docs.where((doc) => doc.exists).map(Group.fromFirestore).toList();
         } catch (e, st) {
-          await ErrorLogger.log(e, st);
+          await _safeLog(e, st);
           memberGroups = <Group>[];
         }
         await emit();
@@ -562,7 +568,7 @@ class GroupService {
         try {
           ownerGroups = snap.docs.map(Group.fromFirestore).toList();
         } catch (e, st) {
-          await ErrorLogger.log(e, st);
+          await _safeLog(e, st);
           ownerGroups = <Group>[];
         }
         await emit();
@@ -571,7 +577,7 @@ class GroupService {
       final sub1 = memberSnaps.listen(
         (snap) => unawaited(handleMember(snap)),
         onError: (e, st) async {
-          await ErrorLogger.log(e, st);
+          await _safeLog(e, st);
           memberGroups = <Group>[];
           await emit();
         },
@@ -579,7 +585,7 @@ class GroupService {
       final sub2 = ownerSnaps.listen(
         (snap) => unawaited(handleOwner(snap)),
         onError: (e, st) async {
-          await ErrorLogger.log(e, st);
+          await _safeLog(e, st);
           ownerGroups = <Group>[];
           await emit();
         },
@@ -600,7 +606,7 @@ class GroupService {
         .collection(GroupCollections.members)
         .snapshots()
         .handleError((e, st) {
-      unawaited(ErrorLogger.log(e, st));
+      unawaited(_safeLog(e, st));
       throw e;
     });
     return snaps.asyncMap((snap) async {
@@ -646,7 +652,7 @@ class GroupService {
 
         return names;
       } catch (e, st) {
-        await ErrorLogger.log(e, st);
+        await _safeLog(e, st);
         return <String>[];
       }
     });
@@ -667,7 +673,7 @@ class GroupService {
         .collection(GroupCollections.members)
         .snapshots()
         .handleError((e, st) {
-      unawaited(ErrorLogger.log(e, st));
+      unawaited(_safeLog(e, st));
       throw e;
     });
 
@@ -723,7 +729,7 @@ class GroupService {
               groupId: groupId, date: targetDate);
           controller.add(list);
         } catch (e, st) {
-          await ErrorLogger.log(e, st);
+          await _safeLog(e, st);
           controller.addError(e, st);
         }
       }
@@ -743,7 +749,7 @@ class GroupService {
           unawaited(emit());
         },
         onError: (e, st) async {
-          await ErrorLogger.log(e, st);
+          await _safeLog(e, st);
           progressDenied = true;
           latestProgress = null;
           unawaited(emit());
@@ -776,7 +782,7 @@ class GroupService {
         .collection(GroupCollections.members)
         .snapshots()
         .handleError((e, st) {
-      unawaited(ErrorLogger.log(e, st));
+      unawaited(_safeLog(e, st));
       throw e;
     });
 
@@ -786,7 +792,7 @@ class GroupService {
         .collection(GroupCollections.schedule)
         .snapshots()
         .handleError((e, st) {
-      unawaited(ErrorLogger.log(e, st));
+      unawaited(_safeLog(e, st));
       throw e;
     });
 
@@ -798,7 +804,7 @@ class GroupService {
         .collection('entries')
         .snapshots()
         .handleError((e, st) {
-      unawaited(ErrorLogger.log(e, st));
+      unawaited(_safeLog(e, st));
       throw e;
     });
 
@@ -845,7 +851,7 @@ class GroupService {
               missingUids.add(ownerUid);
             }
           } catch (e, st) {
-            await ErrorLogger.log(e, st);
+            await _safeLog(e, st);
           }
 
           if (includeUid != null &&
@@ -895,7 +901,7 @@ class GroupService {
               )
           ]);
         } catch (e, st) {
-          await ErrorLogger.log(e, st);
+          await _safeLog(e, st);
           controller.addError(e, st);
         }
       }
@@ -962,7 +968,7 @@ class GroupService {
         missingUids.add(ownerUid);
       }
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
     }
 
     // Ensure current user (admin/owner) appears even if not in members.
@@ -1085,14 +1091,14 @@ class GroupService {
         .orderBy('date')
         .snapshots()
         .handleError((e, st) {
-      unawaited(ErrorLogger.log(e, st));
+      unawaited(_safeLog(e, st));
       throw e;
     });
     return snaps.asyncMap((snap) async {
       try {
         return snap.docs.map(GroupSchedule.fromFirestore).toList();
       } catch (e, st) {
-        await ErrorLogger.log(e, st);
+        await _safeLog(e, st);
         return <GroupSchedule>[];
       }
     });
@@ -1109,7 +1115,7 @@ class GroupService {
           .doc(groupId)
           .set({'name': name}, SetOptions(merge: true));
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       rethrow;
     }
   }
@@ -1171,7 +1177,7 @@ class GroupService {
       // Finally delete the group document
       await groupRef.delete();
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
       rethrow;
     }
   }
@@ -1213,7 +1219,7 @@ class GroupService {
           }
           total += count;
         } catch (e, st) {
-          await ErrorLogger.log(e, st);
+          await _safeLog(e, st);
         }
       }
 
@@ -1224,7 +1230,7 @@ class GroupService {
           .doc(uid);
       await summaryRef.set({'completed': total}, SetOptions(merge: true));
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
     }
   }
 
@@ -1236,7 +1242,7 @@ class GroupService {
         await recalcProgressForUserInGroup(groupId: g.id, uid: uid);
       }
     } catch (e, st) {
-      await ErrorLogger.log(e, st);
+      await _safeLog(e, st);
     }
   }
 }

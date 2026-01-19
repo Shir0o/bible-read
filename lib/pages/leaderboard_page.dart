@@ -4,18 +4,43 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../services/error_logger.dart';
 import '../services/friend_service.dart';
-import '../services/vibration_service.dart';
-import '../widgets/common_styles.dart';
-// import 'friends_page.dart'; // Removed as we are likely using FriendsView now if needed, or keeping it for deeper nav
+import '../services/error_logger.dart';
+
+class LeaderboardPage extends StatelessWidget {
+  final FirebaseFirestore firestore;
+  final FirebaseAuth auth;
+  final FriendService friendService;
+
+  LeaderboardPage({
+    super.key,
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+    FriendService? friendService,
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        friendService = friendService ??
+            FriendService(firestore: firestore ?? FirebaseFirestore.instance);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Leaderboard')),
+      body: LeaderboardView(
+        firestore: firestore,
+        auth: auth,
+        friendService: friendService,
+      ),
+    );
+  }
+}
 
 class LeaderboardView extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final FriendService friendService;
 
-  LeaderboardView({
+  const LeaderboardView({
     super.key,
     required this.firestore,
     required this.auth,
@@ -26,7 +51,8 @@ class LeaderboardView extends StatefulWidget {
   State<LeaderboardView> createState() => _LeaderboardViewState();
 }
 
-class _LeaderboardViewState extends State<LeaderboardView> with SingleTickerProviderStateMixin {
+class _LeaderboardViewState extends State<LeaderboardView>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -43,13 +69,19 @@ class _LeaderboardViewState extends State<LeaderboardView> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
+    final user = widget.auth.currentUser;
+    if (user == null) {
+      return const Center(
+          child: Text('Please sign in to view the leaderboard.'));
+    }
+
     return Column(
       children: [
         TabBar(
           controller: _tabController,
           tabs: const [
             Tab(text: 'Friends'),
-            Tab(text: 'Global'),
+            Tab(text: 'Public'),
           ],
         ),
         Expanded(
@@ -64,6 +96,7 @@ class _LeaderboardViewState extends State<LeaderboardView> with SingleTickerProv
               _GlobalLeaderboardList(
                 firestore: widget.firestore,
                 auth: widget.auth,
+                friendService: widget.friendService,
               ),
             ],
           ),
@@ -87,39 +120,28 @@ class _FriendsLeaderboardList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = auth.currentUser;
-    if (user == null) return const Center(child: Text('Please sign in'));
+    if (user == null) return const SizedBox.shrink();
 
     return StreamBuilder<List<String>>(
-      stream: friendService.friends(user.uid).map((friends) => friends.map((f) => f.uid).toList()),
+      stream: friendService
+          .friends(user.uid)
+          .map((friends) => friends.map((f) => f.uid).toList()),
       builder: (context, snapshot) {
-        if (snapshot.hasError) return const Center(child: Text('Error loading friends'));
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-
-        final friendIds = snapshot.data!;
-        if (friendIds.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Add friends to see how they are doing!'),
-                const SizedBox(height: 16),
-                // Could add a button to go to Friends tab if we had navigation context
-              ],
-            ),
-          );
+        if (snapshot.hasError) {
+          return const Center(child: Text('Error loading friends'));
+        }
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
         }
 
+        final friendIds = snapshot.data!;
         final allIds = [user.uid, ...friendIds];
 
-        return StreamBuilder<QuerySnapshot>(
-          stream: firestore
-              .collection('users')
-              .where(FieldPath.documentId, whereIn: allIds) // batching? might hit limit if > 30 friends.
-              // For a robust implementation, we'd client-side filter or chunk. 
-              // Assuming small friend count for now as per minimal implementation.
-              .snapshots(),
+        // Fetch user data and streak data
+        return FutureBuilder<List<LeaderboardEntry>>(
+          future: _fetchEntries(firestore, allIds),
           builder: (context, snapshot) {
-            return _buildList(context, snapshot, user.uid);
+            return _buildList(context, snapshot, user.uid, friendService);
           },
         );
       },
@@ -130,28 +152,121 @@ class _FriendsLeaderboardList extends StatelessWidget {
 class _GlobalLeaderboardList extends StatelessWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final FriendService friendService;
 
   const _GlobalLeaderboardList({
     required this.firestore,
     required this.auth,
+    required this.friendService,
   });
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: firestore
-          .collection('users')
-          .orderBy('summary.totalReadDays', descending: true)
+          .collectionGroup('summary')
+          .orderBy('streak', descending: true)
           .limit(50)
           .snapshots(),
       builder: (context, snapshot) {
-        return _buildList(context, snapshot, auth.currentUser?.uid);
+        if (snapshot.hasError) return const Center(child: Text('Error loading leaderboard'));
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+
+        final docs = snapshot.data!.docs;
+        // Extract UIDs from parent path: users/{uid}/summary/data
+        final uids = docs.map((d) => d.reference.parent.parent!.id).toList();
+
+        // Map streak values
+        final streaks = {
+          for (var d in docs) d.reference.parent.parent!.id: (d.data() as Map<String, dynamic>)['streak'] as int? ?? 0
+        };
+
+        return FutureBuilder<List<LeaderboardEntry>>(
+          future: _fetchEntries(firestore, uids, preloadedStreaks: streaks),
+          builder: (context, snapshot) {
+             return _buildList(context, snapshot, auth.currentUser?.uid, friendService);
+          },
+        );
       },
     );
   }
 }
 
-Widget _buildList(BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot, String? currentUserId) {
+class LeaderboardEntry {
+  final String uid;
+  final String name;
+  final int streak;
+
+  LeaderboardEntry({required this.uid, required this.name, required this.streak});
+}
+
+Future<List<LeaderboardEntry>> _fetchEntries(
+  FirebaseFirestore firestore,
+  List<String> uids, {
+  Map<String, int>? preloadedStreaks,
+}) async {
+  if (uids.isEmpty) return [];
+
+  // Unique UIDs
+  final uniqueUids = uids.toSet().toList();
+  // print('Fetching entries for UIDs: $uniqueUids');
+
+  // Fetch Users
+  final usersData = <String, Map<String, dynamic>>{};
+  final userFutures = uniqueUids.map((uid) async {
+    try {
+      final doc = await firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        usersData[uid] = doc.data()!;
+      }
+    } catch (_) {
+      // ignore
+    }
+  });
+  await Future.wait(userFutures);
+
+  // Fetch Streaks if not preloaded
+  final streaks = preloadedStreaks ?? {};
+  if (preloadedStreaks == null) {
+     // We need to fetch summary/data for each UID.
+     // Since we know the path, we can do direct gets.
+     // No batch get for unrelated docs (except strict batch limitation).
+     // We can just loop future wait.
+     final futures = uniqueUids.map((uid) async {
+       try {
+         final doc = await firestore.collection('users').doc(uid).collection('summary').doc('data').get();
+         if (doc.exists) {
+           streaks[uid] = (doc.data()?['streak'] as num?)?.toInt() ?? 0;
+         } else {
+           streaks[uid] = 0;
+         }
+       } catch (_) {
+         streaks[uid] = 0;
+       }
+     });
+     await Future.wait(futures);
+  }
+
+  final entries = <LeaderboardEntry>[];
+  for (final uid in uniqueUids) {
+    final userData = usersData[uid] ?? {};
+    final name = userData['displayName'] ?? userData['name'] ?? 'Unknown';
+    final streak = streaks[uid] ?? 0;
+    entries.add(LeaderboardEntry(uid: uid, name: name, streak: streak));
+  }
+
+  // Sort descending by streak
+  entries.sort((a, b) => b.streak.compareTo(a.streak));
+
+  return entries;
+}
+
+Widget _buildList(
+  BuildContext context,
+  AsyncSnapshot<List<LeaderboardEntry>> snapshot,
+  String? currentUserId,
+  FriendService friendService,
+) {
   if (snapshot.hasError) {
     return const Center(child: Text('Error loading leaderboard'));
   }
@@ -159,62 +274,102 @@ Widget _buildList(BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot, S
     return const Center(child: CircularProgressIndicator());
   }
 
-  final docs = snapshot.data!.docs;
-  // Sort manually if needed (e.g. for friends query which lacks order)
-  docs.sort((a, b) {
-    final aData = a.data() as Map<String, dynamic>;
-    final bData = b.data() as Map<String, dynamic>;
-    final aScore = (aData['summary']?['totalReadDays'] ?? 0) as int;
-    final bScore = (bData['summary']?['totalReadDays'] ?? 0) as int;
-    return bScore.compareTo(aScore);
-  });
-
-  return ListView.builder(
-    itemCount: docs.length,
-    itemBuilder: (context, index) {
-      final data = docs[index].data() as Map<String, dynamic>;
-      final uid = docs[index].id;
-      final isMe = uid == currentUserId;
-      final name = data['displayName'] ?? 'Anonymous';
-      final score = data['summary']?['totalReadDays'] ?? 0;
-
-      return ListTile(
-        leading: CircleAvatar(
-          backgroundColor: isMe ? Theme.of(context).colorScheme.primaryContainer : null,
-          child: Text('${index + 1}'),
-        ),
-        title: Text(name, style: isMe ? const TextStyle(fontWeight: FontWeight.bold) : null),
-        trailing: Text('$score days'),
-        tileColor: isMe ? Theme.of(context).colorScheme.surfaceContainer : null,
-      );
-    },
-  );
-}
-
-// Wrapper for backward compatibility
-class LeaderboardPage extends StatelessWidget {
-  final FirebaseFirestore firestore;
-  final FirebaseAuth auth;
-  final FriendService friendService;
-
-  LeaderboardPage({
-    super.key,
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-    FriendService? friendService,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        friendService = friendService ?? FriendService(firestore: firestore ?? FirebaseFirestore.instance);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Leaderboard')),
-      body: LeaderboardView(
-        firestore: firestore,
-        auth: auth,
-        friendService: friendService,
-      ),
-    );
+  final entries = snapshot.data!;
+  if (entries.isEmpty) {
+    return const Center(child: Text('No one is on the leaderboard yet.'));
   }
+
+  // Fetch sent requests to update UI state
+  return StreamBuilder<QuerySnapshot>(
+    stream: currentUserId == null
+        ? const Stream.empty()
+        : friendService.firestore
+            .collection(FriendCollections.users)
+            .doc(currentUserId)
+            .collection(FriendCollections.sentRequests)
+            .snapshots(),
+    builder: (context, sentSnap) {
+       final sentUids = <String>{};
+       if (sentSnap.hasData) {
+         for (var d in sentSnap.data!.docs) {
+           sentUids.add(d.id);
+         }
+       }
+
+       return ListView.builder(
+        itemCount: entries.length,
+        itemBuilder: (context, index) {
+          final entry = entries[index];
+          final uid = entry.uid;
+          final isMe = uid == currentUserId;
+          final name = entry.name;
+          final score = entry.streak;
+          final isSent = sentUids.contains(uid);
+
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundColor:
+                  isMe ? Theme.of(context).colorScheme.primaryContainer : null,
+              child: Text('${index + 1}'),
+            ),
+            title: Text(name,
+                style: isMe ? const TextStyle(fontWeight: FontWeight.bold) : null),
+            trailing: Text('$score days'),
+            tileColor: isMe ? Theme.of(context).colorScheme.surfaceContainer : null,
+            subtitle: (!isMe)
+                ? Align(
+                    alignment: Alignment.centerLeft,
+                    child: Tooltip(
+                      message: isSent ? 'Friend request sent.' : 'Tap to send a friend request.',
+                      child: Icon(
+                          isSent ? Icons.check : Icons.person_add,
+                          size: 16,
+                          color: isSent ? Colors.green : null,
+                      ),
+                    ),
+                  )
+                : null,
+            onTap: (!isMe && !isSent)
+                ? () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Send friend request'),
+                        content: Text('Send a friend request to $name?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                               if (currentUserId != null) {
+                                 friendService.firestore.collection('users').doc(currentUserId).get().then((snap) {
+                                   final myName = snap.data()?['displayName'] ?? snap.data()?['name'] ?? 'Unknown';
+                                   friendService.sendFriendRequest(
+                                     fromUid: currentUserId,
+                                     fromName: myName,
+                                     toUid: uid,
+                                   ).then((_) {
+                                     if (context.mounted) {
+                                       Navigator.pop(context);
+                                     }
+                                   }).catchError((e) {
+                                      // ignore
+                                   });
+                                 });
+                               }
+                            },
+                            child: const Text('Send'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                : null,
+          );
+        },
+      );
+    }
+  );
 }
