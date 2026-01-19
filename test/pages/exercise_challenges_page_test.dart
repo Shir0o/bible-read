@@ -371,13 +371,18 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       // The AppMenuSheet should now be visible.
-      // Tap on the 'Exercise Challenges' item in the menu.
-      await tester.tap(find.text('Exercise Challenges'));
+      // Tap on the 'Challenges' item in the menu.
+      await tester.tap(find.text('Challenges'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Verify that the ExerciseChallengesPage is displayed.
-      expect(find.text('Exercise Challenges'), findsOneWidget);
+      // Verify that the ChallengesPage is displayed.
+      expect(find.text('Challenges'), findsOneWidget);
+
+      // Switch to Exercise tab
+      await tester.tap(find.text('Exercise'));
+      await tester.pumpAndSettle();
+
       expect(find.text('No exercise challenges yet.'), findsOneWidget);
       expect(
         find.textContaining('For bodily exercise is profitable for a little'),
