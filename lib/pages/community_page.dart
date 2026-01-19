@@ -31,6 +31,13 @@ class CommunityPage extends StatefulWidget {
     required String commenterName,
   }) onSendCommentNotification;
   final DateTime Function() dateProvider;
+  final Widget Function({
+    Key? key,
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+    required Future<void> Function({required String ownerUid, required String likerName}) onSendLikeNotification,
+    required Future<void> Function({required String ownerUid, required String commenterName}) onSendCommentNotification,
+  })? readLogBuilder;
 
   const CommunityPage({
     super.key,
@@ -43,6 +50,7 @@ class CommunityPage extends StatefulWidget {
     required this.onSendLikeNotification,
     required this.onSendCommentNotification,
     required this.dateProvider,
+    this.readLogBuilder,
   });
 
   @override
@@ -121,7 +129,12 @@ class _CommunityPageState extends State<CommunityPage>
             auth: widget.auth,
             vibrationService: widget.vibrationService,
           ),
-          ReadLogView(
+          widget.readLogBuilder?.call(
+            firestore: widget.firestore,
+            auth: widget.auth,
+            onSendLikeNotification: widget.onSendLikeNotification,
+            onSendCommentNotification: widget.onSendCommentNotification,
+          ) ?? ReadLogView(
             firestore: widget.firestore,
             auth: widget.auth,
             readingStatusService: widget.readingStatusService,

@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import '../services/friend_service.dart';
 import '../services/error_logger.dart';
 
-class LeaderboardPage extends StatelessWidget {
+class LeaderboardPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final FriendService friendService;
@@ -23,13 +23,24 @@ class LeaderboardPage extends StatelessWidget {
             FriendService(firestore: firestore ?? FirebaseFirestore.instance);
 
   @override
+  LeaderboardPageState createState() => LeaderboardPageState();
+}
+
+class LeaderboardPageState extends State<LeaderboardPage> {
+  // Method expected by test helper
+  Future<void> refresh() async {
+    // No-op or trigger stream refresh if possible
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Leaderboard')),
       body: LeaderboardView(
-        firestore: firestore,
-        auth: auth,
-        friendService: friendService,
+        firestore: widget.firestore,
+        auth: widget.auth,
+        friendService: widget.friendService,
       ),
     );
   }
