@@ -115,4 +115,36 @@ void main() {
         )).called(1);
     expect(find.textContaining('Failed to sign in'), findsOneWidget);
   }, skip: true);
+
+  testWidgets('fields have correct keyboard configuration', (tester) async {
+    final auth = RecordingAuth();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LoginForm(auth: auth),
+        ),
+      ),
+    );
+
+    final emailField =
+        tester.widget<TextField>(find.byKey(const Key('loginEmailField')));
+    expect(emailField.keyboardType, TextInputType.emailAddress);
+    expect(emailField.textInputAction, TextInputAction.next);
+    expect(emailField.autofillHints, contains(AutofillHints.email));
+
+    final passwordField =
+        tester.widget<TextField>(find.byKey(const Key('loginPasswordField')));
+    expect(passwordField.textInputAction, TextInputAction.done);
+    expect(passwordField.autofillHints, contains(AutofillHints.password));
+    expect(passwordField.onSubmitted, isNotNull);
+
+    // Test onSubmitted triggers submit
+    await tester.enterText(
+        find.byKey(const Key('loginEmailField')), 'test@example.com');
+    await tester.enterText(find.byKey(const Key('loginPasswordField')), 'password');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    expect(auth.signInCalled, isTrue);
+  });
 }
