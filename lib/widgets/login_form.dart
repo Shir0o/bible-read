@@ -72,28 +72,36 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextField(
-          key: const Key('loginEmailField'),
-          controller: _emailController,
-          decoration: const InputDecoration(labelText: 'Email'),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          key: const Key('loginPasswordField'),
-          controller: _passwordController,
-          decoration: const InputDecoration(labelText: 'Password'),
-          obscureText: true,
-        ),
-        const SizedBox(height: 16),
-        AnimatedActionButton(
-          onPressed: _submit,
-          isLoading: _loading,
-          child: const Text('Sign In'),
-        ),
-      ],
+    return AutofillGroup(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            key: const Key('loginEmailField'),
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.email],
+            decoration: const InputDecoration(labelText: 'Email'),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            key: const Key('loginPasswordField'),
+            controller: _passwordController,
+            textInputAction: TextInputAction.done,
+            autofillHints: const [AutofillHints.password],
+            onSubmitted: (_) => _submit(),
+            decoration: const InputDecoration(labelText: 'Password'),
+            obscureText: true,
+          ),
+          const SizedBox(height: 16),
+          AnimatedActionButton(
+            onPressed: _submit,
+            isLoading: _loading,
+            child: const Text('Sign In'),
+          ),
+        ],
+      ),
     );
   }
 }
