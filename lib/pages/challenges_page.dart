@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
-import '../services/exercise_tracker_service.dart';
 import '../widgets/common_styles.dart';
 import '../services/achievement_service.dart';
 import '../services/seasonal_challenge_service.dart';
@@ -13,14 +12,12 @@ import '../services/seasonal_challenge_service.dart';
 import 'achievements_page.dart';
 import 'leaderboard_page.dart' as lb;
 import 'seasonal_challenges_page.dart';
-import 'exercise_challenges_page.dart';
 
 class ChallengesPage extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final FriendService friendService;
   final VibrationService vibrationService;
-  final ExerciseTrackerService exerciseTrackerService;
 
   const ChallengesPage({
     super.key,
@@ -28,7 +25,6 @@ class ChallengesPage extends StatefulWidget {
     required this.firestore,
     required this.friendService,
     required this.vibrationService,
-    required this.exerciseTrackerService,
   });
 
   @override
@@ -41,7 +37,7 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -70,7 +66,6 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
             Tab(text: 'Seasonal'),
             Tab(text: 'Leaderboard'),
             Tab(text: 'Achievements'),
-            Tab(text: 'Exercise'),
           ],
         ),
       ),
@@ -79,10 +74,6 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
         children: [
           SeasonalChallengesView(
             auth: widget.auth,
-            // Assuming we need to instantiate the service here or pass it. 
-            // SeasonalChallengesPage wrapper instantiated it?
-            // Let's check constructor of SeasonalChallengesPage/View.
-            // View takes service.
             service: SeasonalChallengeService(firestore: widget.firestore),
           ),
           lb.LeaderboardView(
@@ -93,9 +84,6 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
           AchievementsView(
              auth: widget.auth,
              achievementService: AchievementService(firestore: widget.firestore),
-          ),
-          ExerciseChallengesView(
-             service: widget.exerciseTrackerService,
           ),
         ],
       ),

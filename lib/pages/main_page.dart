@@ -21,7 +21,6 @@ import 'challenges_page.dart';
 import 'streak_history_page.dart';
 import 'friendly_streak_page.dart';
 import '../services/admin_role_service.dart';
-import '../services/exercise_tracker_service.dart';
 import '../services/friend_service.dart';
 import '../services/friendly_streak_service.dart';
 import '../services/google_sign_in_factory.dart';
@@ -122,7 +121,6 @@ class _MainPageState extends State<MainPage> {
   late final FriendService _friendService;
   late final GroupService _groupService;
   late final FriendlyStreakService _friendlyStreakService;
-  late final ExerciseTrackerService _exerciseTrackerService;
   late final ReadingStatusService _readingStatusService;
   late final List<Widget> _pages;
   late final Stream<User?> _authStream;
@@ -141,10 +139,6 @@ class _MainPageState extends State<MainPage> {
     _groupService = GroupService(firestore: widget.firestore);
     _friendlyStreakService = FriendlyStreakService(
       firestore: widget.firestore,
-    );
-    _exerciseTrackerService = ExerciseTrackerService(
-      firestore: widget.firestore,
-      auth: widget.auth,
     );
     _adminRoleService = AdminRoleService(
       firestore: widget.firestore,
@@ -282,7 +276,6 @@ class _MainPageState extends State<MainPage> {
                 firestore: widget.firestore,
                 friendService: _friendService,
                 vibrationService: widget.vibrationService,
-                exerciseTrackerService: _exerciseTrackerService,
              )));
              break;
           case 6: // Achievements

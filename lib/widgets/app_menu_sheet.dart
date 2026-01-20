@@ -10,7 +10,6 @@ import '../services/admin_role_service.dart';
 import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
 import '../services/friend_service.dart';
-import '../services/exercise_tracker_service.dart';
 import 'animated_page_route.dart';
 import '../pages/inbox_page.dart';
 import '../pages/challenges_page.dart';
@@ -160,7 +159,6 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
                 firestore: firestore,
                 friendService: FriendService(firestore: firestore),
                 vibrationService: widget.vibrationService,
-                exerciseTrackerService: ExerciseTrackerService(firestore: firestore, auth: auth),
               ),
             ),
           );
