@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../services/admin_role_service.dart';
@@ -14,6 +16,8 @@ class NavigationMenuScope extends InheritedWidget {
     required this.friendsIndex,
     this.vibrationService = const VibrationService(),
     this.adminRoleService,
+    this.auth,
+    this.firestore,
   });
 
   /// Invoked when a menu item is selected.
@@ -30,6 +34,12 @@ class NavigationMenuScope extends InheritedWidget {
 
   /// Service used to determine whether the current user should see admin items.
   final AdminRoleService? adminRoleService;
+
+  /// Auth instance used for navigation items.
+  final FirebaseAuth? auth;
+
+  /// Firestore instance used for navigation items.
+  final FirebaseFirestore? firestore;
 
   /// Retrieves the nearest [NavigationMenuScope] above [context], if any.
   static NavigationMenuScope? maybeOf(BuildContext context) {
@@ -52,6 +62,8 @@ class NavigationMenuScope extends InheritedWidget {
       onNavigate: onNavigate,
       vibrationService: vibrationService,
       adminRoleService: adminRoleService,
+      auth: auth,
+      firestore: firestore,
     );
   }
 
@@ -61,6 +73,8 @@ class NavigationMenuScope extends InheritedWidget {
         friendlyStreakIndex != oldWidget.friendlyStreakIndex ||
         friendsIndex != oldWidget.friendsIndex ||
         vibrationService != oldWidget.vibrationService ||
-        adminRoleService != oldWidget.adminRoleService;
+        adminRoleService != oldWidget.adminRoleService ||
+        auth != oldWidget.auth ||
+        firestore != oldWidget.firestore;
   }
 }

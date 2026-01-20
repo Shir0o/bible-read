@@ -69,6 +69,13 @@ npm test
 - Wrap asynchronous work in `try`/`catch` blocks and return `Future<void>`.
 - Document public functions with brief comments.
 
+## Test Driven Development
+
+- **Red-Green-Refactor**: Adopt a TDD workflow. Write a failing test for the bug or feature first, then implement the code to make it pass.
+- **Regression Protection**: Before modifying shared widgets or logic, identifying existing tests is crucial. If a change could affect other screens, run the full test suite to prevent unintended regressions.
+- **Test Isolation**: Ensure new tests are isolated and do not depend on global state or order of execution.
+- **Meaningful Tests**: Ensure tests verify actual business logic or user behavior. Do not add logic to the production code (like caching unused values) solely to make a test pass. If a test forces you to change the app code in a way that provides no user or system value, the test is likely flawed.
+
 ## Material 3 Design Guidelines
 
 - **Strict No-Hex Policy**: Do not use custom hex codes for colors (e.g., `Color(0xFF...)`) or hardcoded constants (e.g. `Colors.green`) unless explicitly requested by the user.
@@ -118,7 +125,7 @@ If you modify Cloud Functions code in `functions/`, run `npm run lint` and `npm 
 
 ## Running tests in Codex
 
-In Codex, run the commands in [Programmatic checks](#programmatic-checks). If the full Flutter test suite exceeds the session limit, execute a minimal subset of tests (e.g., `flutter test --no-pub test/widget_test.dart`) or run the full suite locally.
+In Codex, run the commands in [Programmatic checks](#programmatic-checks). **Always** use the `--fail-fast` flag (e.g., `flutter test --no-pub --fail-fast`) to stop immediately on the first failure and save token usage. If the full Flutter test suite exceeds the session limit, execute a minimal subset of tests.
 
 For a one-minute command performing basic checks, see [docs/quick_fix.md](docs/quick_fix.md).
 

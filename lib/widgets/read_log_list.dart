@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/comment.dart';
 import '../models/read_log.dart';
+import '../services/vibration_service.dart';
 import 'feed_card.dart';
 
 /// Displays a list of read log entries using the new FeedCard design.
@@ -24,7 +25,10 @@ class ReadLogList extends StatelessWidget {
     required this.onToggleLike,
     required this.onAddComment,
     required this.commenterName,
+    this.vibrationService,
   });
+
+  final VibrationService? vibrationService;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +41,7 @@ class ReadLogList extends StatelessWidget {
           onToggleLike: () => onToggleLike(log.uid),
           onAddComment: (msg) => onAddComment(log.uid, msg),
           currentUserName: commenterName,
+          vibrationService: vibrationService,
         );
       },
       padding: const EdgeInsets.only(bottom: 24),

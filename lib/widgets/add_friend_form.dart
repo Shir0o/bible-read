@@ -72,9 +72,6 @@ class _AddFriendFormState extends State<AddFriendForm> {
       );
       widget.onComplete?.call();
     } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to send friend request: $e');
-      }
       await ErrorLogger.log(e, st);
       if (!mounted) return;
       _controller

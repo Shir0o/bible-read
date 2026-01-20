@@ -81,15 +81,24 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
               onDestinationSelected: widget.onDestinationSelected,
               labelType: NavigationRailLabelType.all,
               leading: const SizedBox(height: 16),
-              destinations: widget.destinations
-                  .map(
-                    (d) => NavigationRailDestination(
-                      icon: d.icon,
-                      selectedIcon: d.selectedIcon ?? d.icon,
-                      label: Text(d.label),
-                    ),
-                  )
-                  .toList(),
+              destinations: widget.destinations.asMap().entries.map((entry) {
+                final index = entry.key;
+                final d = entry.value;
+                final isSelected = safeSelected == index;
+                return NavigationRailDestination(
+                  icon: AnimatedScale(
+                    scale: isSelected ? 1.2 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: d.icon,
+                  ),
+                  selectedIcon: AnimatedScale(
+                    scale: 1.2,
+                    duration: const Duration(milliseconds: 200),
+                    child: d.selectedIcon ?? d.icon,
+                  ),
+                  label: Text(d.label),
+                );
+              }).toList(),
             ),
           Expanded(
             child: PageView(
@@ -107,7 +116,25 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
               onDestinationSelected: widget.onDestinationSelected,
               height: 88,
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-              destinations: widget.destinations,
+              destinations: widget.destinations.asMap().entries.map((entry) {
+                final index = entry.key;
+                final d = entry.value;
+                final isSelected = safeSelected == index;
+                return NavigationDestination(
+                  icon: AnimatedScale(
+                    scale: isSelected ? 1.2 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: d.icon,
+                  ),
+                  selectedIcon: AnimatedScale(
+                    scale: 1.2,
+                    duration: const Duration(milliseconds: 200),
+                    child: d.selectedIcon ?? d.icon,
+                  ),
+                  label: d.label,
+                  tooltip: d.tooltip,
+                );
+              }).toList(),
             ),
     );
   }

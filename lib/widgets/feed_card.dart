@@ -17,7 +17,10 @@ class FeedCard extends StatefulWidget {
     required this.onToggleLike,
     required this.onAddComment,
     required this.currentUserName,
+    this.vibrationService,
   });
+
+  final VibrationService? vibrationService;
 
   @override
   State<FeedCard> createState() => _FeedCardState();
@@ -190,7 +193,7 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
                         color: isLiked ? colorScheme.primary : colorScheme.onSurfaceVariant,
                         backgroundColor: isLiked ? colorScheme.primaryContainer : null,
                         onTap: () {
-                           const VibrationService().lightImpact();
+                           (widget.vibrationService ?? const VibrationService()).lightImpact();
                            widget.onToggleLike();
                         },
                       ),

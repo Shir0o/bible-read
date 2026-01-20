@@ -4,9 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/pages/notification_settings_page.dart';
 import 'package:bible_read/services/notification_preferences_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
 
   testWidgets('toggling switch updates Firestore', (tester) async {
     tester.view.physicalSize = const Size(1200, 1600);

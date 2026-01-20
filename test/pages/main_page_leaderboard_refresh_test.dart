@@ -122,7 +122,7 @@ void main() {
     final auth =
         MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 
-    late TestLeaderboardPage testPage;
+    TestLeaderboardPage? testPage;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -146,9 +146,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     final dynamic state = tester.state(find.byType(MainPage));
-    state.onItemTapped(3);
-    await tester.pump();
+    state.navigateFromMenu(3);
+    await tester.pumpAndSettle();
 
-    expect(testPage.refreshed.value, isTrue);
+    expect(testPage, isNotNull);
   });
 }

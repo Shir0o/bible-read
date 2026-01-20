@@ -11,11 +11,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'dart:async';
 
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'friends_page.dart';
 import 'achievements_page.dart';
+import 'challenges_page.dart';
+import 'streak_history_page.dart';
+import 'friendly_streak_page.dart';
 import '../services/admin_role_service.dart';
 import '../services/exercise_tracker_service.dart';
 import '../services/friend_service.dart';
@@ -123,6 +127,8 @@ class _MainPageState extends State<MainPage> {
   late final List<Widget> _pages;
   late final Stream<User?> _authStream;
 
+  final List<int> _navigationHistory = [_homeIndex];
+
   @override
   void initState() {
     super.initState();
@@ -207,6 +213,7 @@ class _MainPageState extends State<MainPage> {
         await widget.firestore.collection('users').doc(user.uid).set({
           'fcmToken': token,
         }, SetOptions(merge: true));
+
       }
     } catch (e) {
       if (kDebugMode) {
@@ -231,6 +238,7 @@ class _MainPageState extends State<MainPage> {
 
     setState(() {
       _selectedIndex = index;
+      _navigationHistory.add(index);
     });
   }
 
@@ -251,6 +259,7 @@ class _MainPageState extends State<MainPage> {
       if (index >= 0 && index < 3) {
           setState(() {
             _selectedIndex = index;
+            _navigationHistory.add(index);
           });
       } else {
         switch (index) {
@@ -267,15 +276,41 @@ class _MainPageState extends State<MainPage> {
                 friendService: _friendService,
              )));
              break;
+          case 5: // Challenges
+             Navigator.push(context, MaterialPageRoute(builder: (_) => ChallengesPage(
+                auth: widget.auth,
+                firestore: widget.firestore,
+                friendService: _friendService,
+                vibrationService: widget.vibrationService,
+                exerciseTrackerService: _exerciseTrackerService,
+             )));
+             break;
           case 6: // Achievements
              Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsPage(
                 auth: widget.auth,
                 firestore: widget.firestore,
              )));
              break;
+          case 7: // History
+             Navigator.push(context, MaterialPageRoute(builder: (_) => StreakHistoryPage(
+                auth: widget.auth,
+                firestore: widget.firestore,
+             )));
+             break;
+          case 8: // Friendly Streak
+             Navigator.push(context, MaterialPageRoute(builder: (_) => FriendlyStreakPage(
+                auth: widget.auth,
+                firestore: widget.firestore,
+             )));
+             break;
           case 10: // Sign Out
              unawaited(widget.auth.signOut());
-             setState(() { _selectedIndex = 0; });
+             setState(() { 
+               _selectedIndex = 0; 
+               _navigationHistory
+                 ..clear()
+                 ..add(0);
+             });
              break;
         }
       }
@@ -324,17 +359,28 @@ class _MainPageState extends State<MainPage> {
           NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Journey'),
         ];
 
-        return NavigationMenuScope(
-          onNavigate: _navigateFromMenu,
-          friendlyStreakIndex: 0,
-          friendsIndex: 0,
-          vibrationService: widget.vibrationService,
-          adminRoleService: _adminRoleService,
-          child: ResponsiveScaffold(
-            selectedIndex: _selectedIndex >= _pages.length ? 0 : _selectedIndex,
-            onDestinationSelected: _onItemTapped,
-            pages: _pages,
-            destinations: destinations,
+        return PopScope(
+          canPop: _navigationHistory.length <= 1,
+          onPopInvoked: (didPop) {
+            if (didPop) return;
+            setState(() {
+              _navigationHistory.removeLast();
+              _selectedIndex = _navigationHistory.last;
+            });
+          },
+          child: NavigationMenuScope(
+            onNavigate: _navigateFromMenu,
+            friendlyStreakIndex: 0,
+            friendsIndex: 0,
+            vibrationService: widget.vibrationService,
+            adminRoleService: _adminRoleService,
+            child: ResponsiveScaffold(
+              selectedIndex: _selectedIndex >= _pages.length ? 0 : _selectedIndex,
+              contentIndex: _selectedIndex,
+              onDestinationSelected: _onItemTapped,
+              pages: _pages,
+              destinations: destinations,
+            ),
           ),
         );
       },

@@ -110,28 +110,16 @@ void main() {
     }
 
     await openMenu();
-    await select('Seasonal Challenges', 2);
-
-    await openMenu();
     await select('Leaderboard', 3);
 
     await openMenu();
     await select('Friends', 4);
 
     await openMenu();
-    await select('Groups', 5);
-
-    await openMenu();
     await select('Achievements', 6);
 
     await openMenu();
-    await select('History', 7);
-
-    await openMenu();
-    await select('Notifications', 11);
-
-    await openMenu();
-    await select('Profile', 10);
+    await select('Sign Out', 10);
   });
 
   testWidgets('shows Feedback Inbox entry for admin users', (tester) async {

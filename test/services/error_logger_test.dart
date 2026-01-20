@@ -70,8 +70,12 @@ void main() {
       () async {
     final original = Firebase.delegatePackingProperty;
     Firebase.delegatePackingProperty = _EmptyFirebasePlatform();
+    // Clear the crashlytics mock to simulate uninitialized state
+    ErrorLogger.crashlytics = null;
     addTearDown(() {
       Firebase.delegatePackingProperty = original;
+      // Restore the mock for other tests (though setUp runs before each test anyway)
+      ErrorLogger.crashlytics = mock;
     });
 
     await ErrorLogger.log(Exception('boom'), StackTrace.current);

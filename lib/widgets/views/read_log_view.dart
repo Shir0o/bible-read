@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import '../../services/error_logger.dart';
+import '../../services/vibration_service.dart';
 
 import '../../services/achievement_service.dart';
 import '../../models/achievement.dart';
@@ -31,6 +32,7 @@ class ReadLogView extends StatefulWidget {
     required String commenterName,
   }) onSendCommentNotification;
   final DateTime Function() dateProvider;
+  final VibrationService? vibrationService;
 
   ReadLogView({
     super.key,
@@ -41,6 +43,7 @@ class ReadLogView extends StatefulWidget {
     required this.onSendCommentNotification,
     DateTime Function()? dateProvider,
     this.tabController,
+    this.vibrationService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         dateProvider = dateProvider ?? DateTime.now;
@@ -458,6 +461,7 @@ class _ReadLogViewState extends State<ReadLogView>
                               (widget.auth.currentUser?.displayName ?? '')
                                   .split(' ')
                                   .first,
+                          vibrationService: widget.vibrationService,
                         ),
                       ),
         ),

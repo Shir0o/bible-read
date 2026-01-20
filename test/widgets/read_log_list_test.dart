@@ -115,7 +115,7 @@ void main() {
 
     // Tap send (if needed, but onSubmitted handles it too)
     // Find the send button (arrow_upward_rounded)
-    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    await tester.tap(find.byIcon(Icons.send_rounded));
     await tester.pump();
 
     expect(postedMessage, 'Keep it up!');

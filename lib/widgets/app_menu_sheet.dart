@@ -25,6 +25,8 @@ class AppMenuSheet extends StatefulWidget {
     required this.parentContext,
     this.feedbackService,
     this.adminRoleService,
+    this.auth,
+    this.firestore,
   });
 
   final ValueChanged<int> onNavigate;
@@ -32,6 +34,8 @@ class AppMenuSheet extends StatefulWidget {
   final BuildContext parentContext;
   final FeedbackService? feedbackService;
   final AdminRoleService? adminRoleService;
+  final FirebaseAuth? auth;
+  final FirebaseFirestore? firestore;
 
   static Future<void> show({
     required BuildContext context,
@@ -39,25 +43,28 @@ class AppMenuSheet extends StatefulWidget {
     VibrationService? vibrationService,
     FeedbackService? feedbackService,
     AdminRoleService? adminRoleService,
+    FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
   }) {
     if (!context.mounted) {
       return Future.value();
     }
 
-    return Navigator.of(context).push(
-      _MenuRoute(
-        builder: (sheetContext) {
-          return AppMenuSheet(
-            onNavigate: onNavigate,
-            vibrationService: vibrationService ?? const VibrationService(),
-            parentContext: context,
-            feedbackService: feedbackService,
-            adminRoleService: adminRoleService,
-          );
-        },
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-      ),
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return AppMenuSheet(
+          onNavigate: onNavigate,
+          vibrationService: vibrationService ?? const VibrationService(),
+          parentContext: context,
+          feedbackService: feedbackService,
+          adminRoleService: adminRoleService,
+          auth: auth,
+          firestore: firestore,
+        );
+      },
     );
   }
 
@@ -65,23 +72,7 @@ class AppMenuSheet extends StatefulWidget {
   State<AppMenuSheet> createState() => _AppMenuSheetState();
 }
 
-class _MenuRoute<T> extends ModalBottomSheetRoute<T> {
-  _MenuRoute({
-    required super.builder,
-    super.isScrollControlled = false,
-    super.backgroundColor,
-  });
 
-  @override
-  Duration get transitionDuration => const Duration(milliseconds: 600);
-
-  @override
-  AnimationController createAnimationController() {
-    return super.createAnimationController()
-      ..duration = transitionDuration
-      ..reverseDuration = transitionDuration;
-  }
-}
 
 class _AppMenuSheetState extends State<AppMenuSheet> {
   bool _isAdmin = false;
@@ -115,6 +106,16 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
   }
 
   List<_MenuItem> _menuItems() {
+    try {
+      final auth = widget.auth ?? FirebaseAuth.instance;
+      final firestore = widget.firestore ?? FirebaseFirestore.instance;
+      return _buildFullMenuList(auth, firestore);
+    } catch (_) {
+      return _buildFallbackMenuList();
+    }
+  }
+
+  List<_MenuItem> _buildFullMenuList(FirebaseAuth auth, FirebaseFirestore firestore) {
     final items = [
       _MenuItem(
         icon: Icons.person,
@@ -123,10 +124,11 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => UserProfilePage(
-                auth: FirebaseAuth.instance,
-                firestore: FirebaseFirestore.instance,
+                auth: auth,
+                firestore: firestore,
                 googleSignInProvider: createGoogleSignIn,
-                friendService: FriendService(firestore: FirebaseFirestore.instance),
+                friendService: FriendService(firestore: firestore),
+                vibrationService: widget.vibrationService,
               ),
             ),
           );
@@ -139,8 +141,8 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
            Navigator.of(context).push(
             MaterialPageRoute(
                builder: (_) => InboxPage(
-                  auth: FirebaseAuth.instance,
-                  firestore: FirebaseFirestore.instance,
+                  auth: auth,
+                  firestore: firestore,
                   vibrationService: widget.vibrationService,
                ),
             ),
@@ -154,15 +156,35 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => ChallengesPage(
-                auth: FirebaseAuth.instance,
-                firestore: FirebaseFirestore.instance,
-                friendService: FriendService(firestore: FirebaseFirestore.instance),
+                auth: auth,
+                firestore: firestore,
+                friendService: FriendService(firestore: firestore),
                 vibrationService: widget.vibrationService,
-                exerciseTrackerService: ExerciseTrackerService(firestore: FirebaseFirestore.instance, auth: FirebaseAuth.instance),
+                exerciseTrackerService: ExerciseTrackerService(firestore: firestore, auth: auth),
               ),
             ),
           );
         },
+      ),
+      _MenuItem(
+        icon: Icons.leaderboard,
+        label: 'Leaderboard',
+        index: 3,
+      ),
+      _MenuItem(
+        icon: Icons.people,
+        label: 'Friends',
+        index: 4,
+      ),
+      _MenuItem(
+        icon: Icons.stars,
+        label: 'Achievements',
+        index: 6,
+      ),
+      _MenuItem(
+        icon: Icons.logout,
+        label: 'Sign Out',
+        index: 10,
       ),
       _MenuItem(
         icon: Icons.feedback,
@@ -203,6 +225,48 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
       );
     }
     return items;
+  }
+
+  List<_MenuItem> _buildFallbackMenuList() {
+    return [
+      _MenuItem(
+        icon: Icons.leaderboard,
+        label: 'Leaderboard',
+        index: 3,
+      ),
+      _MenuItem(
+        icon: Icons.people,
+        label: 'Friends',
+        index: 4,
+      ),
+      _MenuItem(
+        icon: Icons.stars,
+        label: 'Achievements',
+        index: 6,
+      ),
+      _MenuItem(
+        icon: Icons.logout,
+        label: 'Sign Out',
+        index: 10,
+      ),
+      _MenuItem(
+        icon: Icons.feedback,
+        label: 'Feedback',
+        onTap: (context) {
+          final feedback = widget.feedbackService ?? FeedbackService();
+          Navigator.of(context).push(
+            animatedPageRoute(
+              FeedbackPage(
+                initialTab: FeedbackTab.feature,
+                feedbackService: feedback,
+                vibrationService: widget.vibrationService,
+                parentMessenger: ScaffoldMessenger.of(context),
+              ),
+            ),
+          );
+        },
+      ),
+    ];
   }
 
   @override
@@ -254,6 +318,7 @@ class _MenuContents extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
+          key: const Key('menu_scroll_view'),
           padding: EdgeInsets.zero,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -275,14 +340,14 @@ class _MenuContents extends StatelessWidget {
                     const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 20),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final double availableWidth = constraints.maxWidth.isFinite
-                      ? constraints.maxWidth
-                      : MediaQuery.of(context).size.width;
+              Builder(
+                builder: (context) {
+                  final double availableWidth = MediaQuery.of(context).size.width;
                   final bool compact = availableWidth < 360;
-                  final double baseWidth =
-                      compact ? availableWidth : (availableWidth - 40) / 2;
+                  final double horizontalPadding = 40.0; // 20 on each side
+                  final double contentWidth = availableWidth - horizontalPadding;
+                  
+                  final double baseWidth = compact ? contentWidth : (contentWidth - 16) / 2;
                   final double buttonWidth = compact
                       ? baseWidth
                       : baseWidth.clamp(140.0, 240.0).toDouble();

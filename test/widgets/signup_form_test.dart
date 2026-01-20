@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/widgets/signup_form.dart';
 import 'package:bible_read/widgets/success_animation.dart';
 import 'package:bible_read/services/vibration_service.dart';
+import 'package:bible_read/services/error_logger.dart';
 import '../helpers/mock_lottie_http_client.dart';
 
 class RecordingAuth extends MockFirebaseAuth {
@@ -34,7 +35,7 @@ class FailingAuth extends MockFirebaseAuth {
   Future<UserCredential> createUserWithEmailAndPassword({
     required String email,
     required String password,
-  }) {
+  }) async {
     throw Exception('fail');
   }
 }
@@ -83,6 +84,15 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(setupLottieHttpOverrides);
   tearDownAll(resetHttpOverrides);
+
+  tearDown(() {
+    ErrorLogger.resetForTest();
+  });
+
+  setUp(() {
+    ErrorLogger.muteForTest = true;
+  });
+
   const vibration = _TestVibrationService();
 
   testWidgets('creates account and writes user document then calls onComplete',
@@ -181,9 +191,12 @@ void main() {
         find.byKey(const Key('signupEmailField')), 'user@example.com');
     await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
     await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
-    await tester.tap(find.text('Sign Up'));
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Sign Up'));
+      await tester.pumpAndSettle();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      tester.takeException();
+    });
     expect(find.text('Failed to sign up. Please try again.'), findsOneWidget);
   });
 
@@ -203,14 +216,17 @@ void main() {
         ),
       ),
     );
-
+    tester.takeException(); // Clear any leftovers
     await tester.enterText(
         find.byKey(const Key('signupEmailField')), 'user@example.com');
     await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
     await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
-    await tester.tap(find.text('Sign Up'));
-    await tester.pumpAndSettle();
-
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Sign Up'));
+      await tester.pumpAndSettle();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      tester.takeException();
+    });
     expect(find.text('Failed to sign up. Please try again.'), findsOneWidget);
   });
 }

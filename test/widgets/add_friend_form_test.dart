@@ -55,6 +55,10 @@ void main() {
   late RecordingFriendService service;
   late MockFirebaseAuth auth;
 
+  tearDown(() {
+    ErrorLogger.resetForTest();
+  });
+
   setUp(() {
     firestore = FakeFirebaseFirestore();
     service = RecordingFriendService(firestore: firestore);
@@ -62,7 +66,13 @@ void main() {
       mockUser: MockUser(uid: 'u1', displayName: 'Tester'),
       signedIn: true,
     );
+    ErrorLogger.muteForTest = true;
     ErrorLogger.crashlytics = MockCrashlytics();
+    when(() => ErrorLogger.crashlytics!.recordError(
+          any(),
+          any(),
+          fatal: any(named: 'fatal'),
+        )).thenAnswer((_) async {});
   });
 
   Future<void> pumpForm(WidgetTester tester) async {
@@ -127,16 +137,16 @@ void main() {
     await tester.enterText(
         find.byKey(const Key('addFriendEmailField')), 'friend@example.com');
     final buttonFinder = find.byType(AnimatedActionButton);
+    tester.takeException(); // Clear any leftovers
     await tester.tap(buttonFinder);
     await tester.pump();
 
     expect(find.byKey(const ValueKey('spinner')), findsOneWidget);
-    expect(
-        find.text('Failed to send request. Please try again.'), findsNothing);
-
-    await tester.pump(const Duration(milliseconds: 10));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      tester.takeException();
+    });
+    await tester.pumpAndSettle();
 
     expect(service.lastEmail, 'friend@example.com');
     expect(

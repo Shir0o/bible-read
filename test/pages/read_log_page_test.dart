@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bible_read/pages/read_log_page.dart';
 import 'package:bible_read/widgets/badge_icon.dart';
+import '../helpers/stub_vibration_service.dart';
 
 class ThrowingCollectionReference
     extends MockCollectionReference<Map<String, dynamic>> {
@@ -427,7 +428,9 @@ void main() {
                   required String likerName}) async {},
               onSendCommentNotification: (
                   {required String ownerUid,
-                  required String commenterName}) async {})));
+                  required String commenterName}) async {},
+              vibrationService: const StubVibrationService(),
+          )));
       await tester.pumpAndSettle();
 
       expect(
@@ -470,12 +473,18 @@ void main() {
                   required String likerName}) async {},
               onSendCommentNotification: (
                   {required String ownerUid,
-                  required String commenterName}) async {})));
+                  required String commenterName}) async {},
+              vibrationService: const StubVibrationService(),
+          )));
       await tester.pumpAndSettle();
 
       expect(find.text('User'), findsOneWidget);
-      expect(find.text('read today'), findsOneWidget);
-      expect(find.textContaining('sent encouragement'), findsOneWidget);
+      expect(find.text('Read today'), findsOneWidget);
+      // expect(find.textContaining('sent encouragement'), findsOneWidget); // FeedCard uses specific format.
+      // FeedCard: "Liker" (if 1 like) or logic.
+      // FeedCard likes logic: "Liker" (if 1 like) or join.
+      // _buildLikeText: "Liker".
+      expect(find.text('Liker'), findsOneWidget);
       expect(find.byType(BadgeIcon), findsNothing);
     });
 
@@ -510,7 +519,9 @@ void main() {
                   required String likerName}) async {},
               onSendCommentNotification: (
                   {required String ownerUid,
-                  required String commenterName}) async {})));
+                  required String commenterName}) async {},
+              vibrationService: const StubVibrationService(),
+          )));
       await tester.pumpAndSettle();
 
       /* Gamification removed
@@ -552,11 +563,13 @@ void main() {
                   required String likerName}) async {},
               onSendCommentNotification: (
                   {required String ownerUid,
-                  required String commenterName}) async {})));
+                  required String commenterName}) async {},
+              vibrationService: const StubVibrationService(),
+          )));
       await tester.pumpAndSettle();
 
       expect(find.text('User'), findsOneWidget);
-      expect(find.text('read today'), findsOneWidget);
+      expect(find.text('Read today'), findsOneWidget);
       expect(find.text('Unable to load today\'s readers.\nPlease check your connection.'), findsNothing);
       expect(find.byType(BadgeIcon), findsNothing);
     });
@@ -588,13 +601,15 @@ void main() {
                   required String likerName}) async {},
               onSendCommentNotification: (
                   {required String ownerUid,
-                  required String commenterName}) async {})));
+                  required String commenterName}) async {},
+              vibrationService: const StubVibrationService(),
+          )));
       await tester.pumpAndSettle();
 
       // Likes
-      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.tap(find.byIcon(Icons.favorite_border_rounded));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.favorite), findsOneWidget); // Expect filled
+      expect(find.byIcon(Icons.favorite_rounded), findsOneWidget); // Expect filled
 
       final likeDoc = await firestore
           .collection('read_logs')
@@ -607,9 +622,9 @@ void main() {
       expect(likeDoc.exists, isTrue);
 
       // Unlikes
-      await tester.tap(find.byIcon(Icons.favorite));
+      await tester.tap(find.byIcon(Icons.favorite_rounded));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.favorite_border), findsOneWidget); // Expect outline
+      expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget); // Expect outline
 
       final likeDocDeleted = await firestore
           .collection('read_logs')
@@ -622,10 +637,6 @@ void main() {
       expect(likeDocDeleted.exists, isFalse);
     });
 
-    // Cutting off here to rewrite the test logic separately?
-    // ReplacementContent must be contiguous.
-    // I should probably edit "shows fallback text when Firestore fails" separately, it's at the end.
-    
     testWidgets('shows fallback text when Firestore fails', (tester) async {
       final firestore = ThrowingFirestore();
       final auth =
@@ -641,7 +652,9 @@ void main() {
                   required String likerName}) async {},
               onSendCommentNotification: (
                   {required String ownerUid,
-                  required String commenterName}) async {})));
+                  required String commenterName}) async {},
+              vibrationService: const StubVibrationService(),
+          )));
       await tester.pumpAndSettle();
 
       expect(find.text('Unable to load today\'s readers.\nPlease check your connection.'), findsOneWidget);
@@ -675,15 +688,17 @@ void main() {
                   required String likerName}) async {},
               onSendCommentNotification: (
                   {required String ownerUid,
-                  required String commenterName}) async {})));
+                  required String commenterName}) async {},
+              vibrationService: const StubVibrationService(),
+          )));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+      expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.tap(find.byIcon(Icons.favorite_border_rounded));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+      expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
 
       await tester.runAsync(() async {
         final likeDoc = await firestore

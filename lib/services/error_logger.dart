@@ -14,19 +14,37 @@ class ErrorLogger {
   @visibleForTesting
   static FirebaseCrashlytics? crashlytics;
 
+  /// Whether to silence all logs. Useful for preventing side effects in tests.
+  @visibleForTesting
+  static bool muteForTest = false;
+
   static FirebaseCrashlytics _ensureCrashlytics() =>
       crashlytics ??= FirebaseCrashlytics.instance;
 
   /// Records [error] and optional [stack] to Crashlytics.
   static Future<void> log(Object error, [StackTrace? stack]) async {
+    if (muteForTest) return;
     if (kDebugMode) {
-      debugPrint('$error\n$stack');
+      debugPrint('ErrorLogger: $error\n$stack');
     }
-    if (Firebase.apps.isEmpty) return;
+    
+    // In tests, we want to avoid side effects from uninitialized Firebase apps.
     try {
-      await _ensureCrashlytics().recordError(error, stack, fatal: false);
-    } catch (_) {
-      // ignore errors if Crashlytics is unavailable
+      if (Firebase.apps.isEmpty && crashlytics == null) return;
+      
+      final instance = _ensureCrashlytics();
+      await instance.recordError(error, stack, fatal: false);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('ErrorLogger failed to record error: $e');
+      }
     }
+  }
+
+  /// Resets the internal state for testing.
+  @visibleForTesting
+  static void resetForTest() {
+    crashlytics = null;
+    muteForTest = false;
   }
 }

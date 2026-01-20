@@ -148,7 +148,7 @@ void main() {
       final feedbackFinder = find.text('Feedback');
       await tester.dragUntilVisible(
         feedbackFinder,
-        find.byType(SingleChildScrollView),
+        find.byKey(const Key('menu_scroll_view')),
         const Offset(0, -200),
       );
       await tester.pumpAndSettle();

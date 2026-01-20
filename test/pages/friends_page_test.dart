@@ -105,10 +105,7 @@ void main() {
   });
 
   Future<void> settle(WidgetTester tester) async {
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
   }
 
   Future<void> pumpPage(WidgetTester tester) async {
@@ -157,6 +154,7 @@ void main() {
 
     await pumpPage(tester);
 
+    expect(find.byIcon(Icons.auto_awesome_outlined), findsOneWidget);
     await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
     await settle(tester);
 
@@ -182,9 +180,6 @@ void main() {
 
     // After tap: Disabled color
     final nudgedIcon = tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
-    // We can't easily check for Theme.of(context).disabledColor without context, 
-    // but we can check it is NOT null anymore, or check if it matches a typical disabled color?
-    // Actually, in test environment, we might need to capture the context or just assert it is not null.
     expect(nudgedIcon.color, isNotNull); 
     
     // Also verify onPressed is NOT null

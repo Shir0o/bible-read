@@ -64,6 +64,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Public')); 
+    await tester.pumpAndSettle();
 
     expect(find.text('No one is on the leaderboard yet.'), findsOneWidget);
   });
@@ -169,6 +171,8 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Public'));
     await tester.pumpAndSettle();
 
     final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
@@ -357,17 +361,19 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Public'));
+    await tester.pumpAndSettle();
 
     final initialTiles =
         tester.widgetList<ListTile>(find.byType(ListTile)).toList();
     final otherTileBefore = initialTiles.firstWhere(
-      (tile) => (tile.title as Text).data == 'Other',
+      (tile) => (tile.title as Text).data == 'Other Person',
     );
-    final beforeSubtitle = otherTileBefore.subtitle as Padding;
-    final beforeTooltip = (beforeSubtitle.child as Align).child as Tooltip;
+    final beforeSubtitle = otherTileBefore.subtitle as Align;
+    final beforeTooltip = beforeSubtitle.child as Tooltip;
     expect(beforeTooltip.message, 'Tap to send a friend request.');
 
-    await tester.tap(find.text('Other'));
+    await tester.tap(find.text('Other Person'));
     await tester.pumpAndSettle();
 
     expect(find.text('Send friend request'), findsOneWidget);
@@ -386,10 +392,10 @@ void main() {
     final updatedTiles =
         tester.widgetList<ListTile>(find.byType(ListTile)).toList();
     final otherTileAfter = updatedTiles.firstWhere(
-      (tile) => (tile.title as Text).data == 'Other',
+      (tile) => (tile.title as Text).data == 'Other Person',
     );
-    final afterSubtitle = otherTileAfter.subtitle as Padding;
-    final afterTooltip = (afterSubtitle.child as Align).child as Tooltip;
+    final afterSubtitle = otherTileAfter.subtitle as Align;
+    final afterTooltip = afterSubtitle.child as Tooltip;
     expect(afterTooltip.message, 'Friend request sent.');
   });
 

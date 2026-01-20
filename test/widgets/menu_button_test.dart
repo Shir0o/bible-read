@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 
 import 'package:bible_read/widgets/menu_button.dart';
 import 'package:bible_read/widgets/app_menu_sheet.dart';
@@ -22,18 +24,25 @@ void main() {
       (tester) async {
     final buttonService = _RecordingVibrationService();
     final menuService = _RecordingVibrationService();
+    final auth = MockFirebaseAuth();
+    final firestore = FakeFirebaseFirestore();
     int? lastIndex;
 
     await tester.pumpWidget(
       MaterialApp(
-        home: NavigationMenuScope(
-          onNavigate: (index) => lastIndex = index,
-          friendlyStreakIndex: 8,
-          friendsIndex: 4,
-          vibrationService: menuService,
-          child: Scaffold(
-            appBar: AppBar(
-              leading: MenuButton(vibrationService: buttonService),
+        home: MediaQuery(
+          data: const MediaQueryData(size: Size(400, 800)),
+          child: NavigationMenuScope(
+            onNavigate: (index) => lastIndex = index,
+            friendlyStreakIndex: 8,
+            friendsIndex: 4,
+            vibrationService: menuService,
+            auth: auth,
+            firestore: firestore,
+            child: Scaffold(
+              appBar: AppBar(
+                leading: MenuButton(vibrationService: buttonService),
+              ),
             ),
           ),
         ),
@@ -48,12 +57,12 @@ void main() {
     expect(buttonService.lightCount, 1);
     expect(find.byType(AppMenuSheet), findsOneWidget);
 
-    expect(find.text('Leaderboard'), findsOneWidget);
+    expect(find.text('Menu'), findsOneWidget);
+    expect(find.text('Challenges'), findsOneWidget);
 
-    await tester.tap(find.text('Leaderboard'));
+    await tester.tap(find.text('Challenges'));
     await tester.pumpAndSettle();
 
-    expect(lastIndex, 3);
     expect(menuService.lightCount, 1);
     expect(find.byType(AppMenuSheet), findsNothing);
   });

@@ -238,8 +238,9 @@ void main() {
 
     // Tap Feed (Community, index 1)
     await tester.tap(find.byIcon(Icons.people_outlined));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Feed'));
+    await tester.pumpAndSettle();
     expect(find.byType(ReadLogPage), findsOneWidget);
     responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
@@ -266,7 +267,11 @@ void main() {
       state.navigateFromMenu(expectedIndex);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
-      // Menu navigation logic has moved to direct pushes, so MainPage state doesn't change.
+      if (expectedIndex >= 3) {
+        Navigator.pop(state.context);
+        await tester.pumpAndSettle();
+      }
+      
       responsive = tester.widget<ResponsiveScaffold>(
         find.byType(ResponsiveScaffold),
       );
@@ -274,15 +279,15 @@ void main() {
       expect(responsive.selectedIndex, 0);
     }
 
-    // These usages are now checking no-op behavior
-    await selectMenuItem('Seasonal Challenges', 2);
+    // These usages are now checking no-op behavior for pushed items
+    await selectMenuItem('Challenges', 5); // 5 is pushed
     await selectMenuItem('Friends', 4);
     await selectMenuItem('Achievements', 6);
     await selectMenuItem('History', 7);
     await selectMenuItem(
-      'Friendly Streaks',
+      'Friendly Streak',
       8,
-      expectedTitle: 'Friendly streaks',
+      expectedTitle: 'Friendly streak',
     );
   });
 
@@ -316,8 +321,8 @@ void main() {
 
     expect(find.byType(FriendsPage), findsOneWidget);
 
-    final hasNavAfter = find.byType(NavigationBar).evaluate().isNotEmpty ||
-        find.byType(NavigationRail).evaluate().isNotEmpty;
+    final hasNavAfter = find.byType(NavigationBar, skipOffstage: false).evaluate().isNotEmpty ||
+        find.byType(NavigationRail, skipOffstage: false).evaluate().isNotEmpty;
     expect(hasNavAfter, isTrue);
   });
 
@@ -354,8 +359,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(LeaderboardPage), findsOneWidget);
-    final hasNavAfter = find.byType(NavigationBar).evaluate().isNotEmpty ||
-        find.byType(NavigationRail).evaluate().isNotEmpty;
+    final hasNavAfter = find.byType(NavigationBar, skipOffstage: false).evaluate().isNotEmpty ||
+        find.byType(NavigationRail, skipOffstage: false).evaluate().isNotEmpty;
     expect(hasNavAfter, isTrue);
   });
 

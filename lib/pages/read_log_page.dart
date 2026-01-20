@@ -9,6 +9,8 @@ import '../services/reading_status_service.dart';
 import '../services/achievement_service.dart';
 import '../models/achievement.dart';
 
+import '../services/vibration_service.dart';
+
 import '../widgets/common_styles.dart';
 import '../widgets/views/read_log_view.dart';
 
@@ -25,6 +27,7 @@ class ReadLogPage extends StatefulWidget {
     required String commenterName,
   }) onSendCommentNotification;
   final DateTime Function() dateProvider;
+  final VibrationService? vibrationService;
 
   ReadLogPage({
     super.key,
@@ -34,6 +37,7 @@ class ReadLogPage extends StatefulWidget {
     required this.onSendLikeNotification,
     required this.onSendCommentNotification,
     DateTime Function()? dateProvider,
+    this.vibrationService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         dateProvider = dateProvider ?? DateTime.now;
@@ -135,6 +139,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
         onSendLikeNotification: widget.onSendLikeNotification,
         onSendCommentNotification: widget.onSendCommentNotification,
         dateProvider: widget.dateProvider,
+        vibrationService: widget.vibrationService,
       ),
     );
   }

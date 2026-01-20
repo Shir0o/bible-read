@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import '../services/error_logger.dart';
 import 'animated_action_button.dart';
 import 'success_animation.dart';
@@ -45,11 +46,8 @@ class _SignupFormState extends State<SignupForm> {
   bool _loading = false;
   bool _monthlySummaryEnabled = true;
 
-  void _handleSignupError(Object error, StackTrace stackTrace) {
-    if (kDebugMode) {
-      debugPrint('Failed to sign up: $error');
-    }
-    ErrorLogger.log(error, stackTrace);
+  Future<void> _handleSignupError(Object error, StackTrace stackTrace) async {
+    await ErrorLogger.log(error, stackTrace);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(_failureSnackBar);
   }
@@ -83,7 +81,7 @@ class _SignupFormState extends State<SignupForm> {
       );
       final user = credential.user;
       if (user == null) {
-        _handleSignupError(
+        await _handleSignupError(
           FirebaseAuthException(
             code: 'missing-user',
             message: 'Auth returned a null user after sign up.',
@@ -97,15 +95,16 @@ class _SignupFormState extends State<SignupForm> {
         'email': user.email?.toLowerCase(),
         'emailPrefs': {'monthlySummary': _monthlySummaryEnabled},
       });
+
       if (mounted) {
-        SuccessAnimation.show(
+        unawaited(SuccessAnimation.show(
           context,
           vibrationService: widget.vibrationService,
-        );
+        ));
         widget.onComplete?.call();
       }
     } catch (e, st) {
-      _handleSignupError(e, st);
+      await _handleSignupError(e, st);
     } finally {
       if (mounted) {
         setState(() {
