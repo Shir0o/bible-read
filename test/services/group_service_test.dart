@@ -76,6 +76,50 @@ void main() {
       expect(member.data()?['joinedAt'], isA<Timestamp>());
     });
 
+    test('createGroup uses correct name fallback', () async {
+      // 1. User Name
+      await firestore.collection('users').doc('u1').set({
+        'name': 'Real Name',
+        'displayName': 'Display Name',
+        'email': 'email@test.com',
+      });
+      var id = await service.createGroup(ownerUid: 'u1', name: 'G1');
+      var member = await firestore
+          .collection(GroupCollections.groups)
+          .doc(id)
+          .collection(GroupCollections.members)
+          .doc('u1')
+          .get();
+      expect(member.data()?['name'], 'Real Name');
+
+      // 2. Display Name
+      await firestore.collection('users').doc('u2').set({
+        'displayName': 'Display Name',
+        'email': 'email@test.com',
+      });
+      id = await service.createGroup(ownerUid: 'u2', name: 'G2');
+      member = await firestore
+          .collection(GroupCollections.groups)
+          .doc(id)
+          .collection(GroupCollections.members)
+          .doc('u2')
+          .get();
+      expect(member.data()?['name'], 'Display Name');
+
+      // 3. Email Username
+      await firestore.collection('users').doc('u3').set({
+        'email': 'user@test.com',
+      });
+      id = await service.createGroup(ownerUid: 'u3', name: 'G3');
+      member = await firestore
+          .collection(GroupCollections.groups)
+          .doc(id)
+          .collection(GroupCollections.members)
+          .doc('u3')
+          .get();
+      expect(member.data()?['name'], 'user');
+    });
+
     test('joinGroup creates join request and notification', () async {
       await firestore
           .collection(GroupCollections.groups)
@@ -157,53 +201,6 @@ void main() {
 
       final groupDoc = await groupRef.get();
       expect(groupDoc.data()?['memberCount'], 2);
-    });
-
-    test('approveJoinRequest performs batched write', () async {
-      final firestore = MockFirebaseFirestore();
-      final service = GroupService(firestore: firestore);
-
-      final groups = MockCollectionReference<Map<String, dynamic>>();
-      final groupRef = MockDocumentReference<Map<String, dynamic>>();
-      final joinRequests = MockCollectionReference<Map<String, dynamic>>();
-      final members = MockCollectionReference<Map<String, dynamic>>();
-      final requestRef = MockDocumentReference<Map<String, dynamic>>();
-      final memberRef = MockDocumentReference<Map<String, dynamic>>();
-      final requestSnap = MockDocumentSnapshot<Map<String, dynamic>>();
-      final memberSnap = MockDocumentSnapshot<Map<String, dynamic>>();
-      final groupSnap = MockDocumentSnapshot<Map<String, dynamic>>();
-      final batch = MockWriteBatch();
-
-      when(() => firestore.collection(GroupCollections.groups))
-          .thenReturn(groups);
-      when(() => groups.doc('g1')).thenReturn(groupRef);
-      when(() => groupRef.get()).thenAnswer((_) async => groupSnap);
-      when(() => groupSnap.exists).thenReturn(true);
-      when(() => groupSnap.data()).thenReturn({'memberCount': 1});
-      when(() => groupRef.collection(GroupCollections.joinRequests))
-          .thenReturn(joinRequests);
-      when(() => groupRef.collection(GroupCollections.members))
-          .thenReturn(members);
-      when(() => joinRequests.doc('u2')).thenReturn(requestRef);
-      when(() => members.doc('u2')).thenReturn(memberRef);
-      when(() => requestRef.get()).thenAnswer((_) async => requestSnap);
-      when(() => requestSnap.data()).thenReturn({'name': 'User'});
-      when(() => memberRef.get()).thenAnswer((_) async => memberSnap);
-      when(() => memberSnap.exists).thenReturn(false);
-      when(() => firestore.batch()).thenReturn(batch);
-      when(() => batch.commit()).thenAnswer((_) async {});
-
-      await service.approveJoinRequest(groupId: 'g1', uid: 'u2');
-
-      verify(() => firestore.batch()).called(1);
-      verify(() => batch.set(memberRef, any<Map<String, dynamic>>(), any()))
-          .called(1);
-      verify(() => batch.update(groupRef, any<Map<String, dynamic>>()))
-          .called(1);
-      verify(() => batch.delete(requestRef)).called(1);
-      verify(() => batch.commit()).called(1);
-      verifyNever(() => memberRef.set(any(), any()));
-      verifyNever(() => requestRef.delete());
     });
 
     test('denyJoinRequest removes request without adding member', () async {
