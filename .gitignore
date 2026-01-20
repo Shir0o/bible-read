@@ -59,3 +59,7 @@ google-services.json
 android/.kotlin/
 
 key.properties
+
+# Test output files
+test_output*.txt
+test_results.txt
