@@ -61,6 +61,7 @@ class _SignupFormState extends State<SignupForm> {
   }
 
   Future<void> _submit() async {
+    if (_loading) return;
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirm = _confirmController.text;
@@ -116,51 +117,61 @@ class _SignupFormState extends State<SignupForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextField(
-          key: const Key('signupEmailField'),
-          controller: _emailController,
-          decoration: const InputDecoration(labelText: 'Email'),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          key: const Key('signupPasswordField'),
-          controller: _passwordController,
-          decoration: const InputDecoration(labelText: 'Password'),
-          obscureText: true,
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          key: const Key('signupConfirmField'),
-          controller: _confirmController,
-          decoration: const InputDecoration(labelText: 'Confirm Password'),
-          obscureText: true,
-        ),
-        const SizedBox(height: 16),
-        CheckboxListTile(
-          value: _monthlySummaryEnabled,
-          onChanged: (value) {
-            setState(() {
-              _monthlySummaryEnabled = value ?? true;
-            });
-          },
-          title: const Text('Receive monthly summary emails'),
-          subtitle: const Text(
-            'We will email you a monthly summary of your reading progress. '
-            'You can opt out anytime in your profile settings.',
+    return AutofillGroup(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            key: const Key('signupEmailField'),
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(labelText: 'Email'),
           ),
-          controlAffinity: ListTileControlAffinity.leading,
-        ),
-        const SizedBox(height: 8),
-        AnimatedActionButton(
-          onPressed: _submit,
-          isLoading: _loading,
-          vibrationService: widget.vibrationService,
-          child: const Text('Sign Up'),
-        ),
-      ],
+          const SizedBox(height: 16),
+          TextField(
+            key: const Key('signupPasswordField'),
+            controller: _passwordController,
+            autofillHints: const [AutofillHints.newPassword],
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(labelText: 'Password'),
+            obscureText: true,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            key: const Key('signupConfirmField'),
+            controller: _confirmController,
+            autofillHints: const [AutofillHints.newPassword],
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _submit(),
+            decoration: const InputDecoration(labelText: 'Confirm Password'),
+            obscureText: true,
+          ),
+          const SizedBox(height: 16),
+          CheckboxListTile(
+            value: _monthlySummaryEnabled,
+            onChanged: (value) {
+              setState(() {
+                _monthlySummaryEnabled = value ?? true;
+              });
+            },
+            title: const Text('Receive monthly summary emails'),
+            subtitle: const Text(
+              'We will email you a monthly summary of your reading progress. '
+              'You can opt out anytime in your profile settings.',
+            ),
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+          const SizedBox(height: 8),
+          AnimatedActionButton(
+            onPressed: _submit,
+            isLoading: _loading,
+            vibrationService: widget.vibrationService,
+            child: const Text('Sign Up'),
+          ),
+        ],
+      ),
     );
   }
 }
