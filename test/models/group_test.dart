@@ -7,6 +7,16 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Group', () {
+    test('supports value equality', () {
+      const g1 = Group(id: '1', name: 'N', ownerUid: 'o');
+      const g2 = Group(id: '1', name: 'N', ownerUid: 'o');
+      const g3 = Group(id: '2', name: 'N', ownerUid: 'o');
+
+      expect(g1, equals(g2));
+      expect(g1.hashCode, equals(g2.hashCode));
+      expect(g1, isNot(equals(g3)));
+    });
+
     test('fromFirestore parses data', () async {
       final firestore = FakeFirebaseFirestore();
       await firestore.collection('groups').doc('g1').set({
@@ -16,11 +26,15 @@ void main() {
       });
       final doc = await firestore.collection('groups').doc('g1').get();
 
-      final group = Group.fromFirestore(doc);
-      expect(group.id, 'g1');
-      expect(group.name, 'Test');
-      expect(group.ownerUid, 'u1');
-      expect(group.memberCount, 3);
+      final actual = Group.fromFirestore(doc);
+      const expected = Group(
+        id: 'g1',
+        name: 'Test',
+        ownerUid: 'u1',
+        memberCount: 3,
+      );
+
+      expect(actual, equals(expected));
     });
 
     test('fromFirestore handles missing fields', () async {
@@ -28,10 +42,15 @@ void main() {
       await firestore.collection('groups').doc('g1').set({});
       final doc = await firestore.collection('groups').doc('g1').get();
 
-      final group = Group.fromFirestore(doc);
-      expect(group.name, '');
-      expect(group.ownerUid, '');
-      expect(group.memberCount, 0);
+      final actual = Group.fromFirestore(doc);
+      const expected = Group(
+        id: 'g1',
+        name: '',
+        ownerUid: '',
+        memberCount: 0,
+      );
+
+      expect(actual, equals(expected));
     });
 
     test('toFirestore outputs expected map', () {

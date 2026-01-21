@@ -77,5 +77,36 @@ void main() {
       expect(result, equals(<String>[normalizedInvalid, valid]));
       expect(result.every(isCanonical), isTrue);
     });
+
+    test('expands cross-book ranges', () {
+      final result = ReferenceParser.parseChaptersList('Genesis 50 - Exodus 2');
+
+      expect(
+        result,
+        equals(
+          <String>[
+            'Genesis 50',
+            'Exodus 1',
+            'Exodus 2',
+          ],
+        ),
+      );
+      expect(result.every(isCanonical), isTrue);
+    });
+
+    test('expands complex cross-book ranges', () {
+      final result = ReferenceParser.parseChaptersList('2 John 1 - 3 John 1');
+
+      expect(
+        result,
+        equals(
+          <String>[
+            '2 John 1',
+            '3 John 1',
+          ],
+        ),
+      );
+      expect(result.every(isCanonical), isTrue);
+    });
   });
 }

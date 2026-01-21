@@ -39,4 +39,20 @@ class Group {
         'ownerUid': ownerUid,
         'memberCount': memberCount,
       };
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is Group &&
+        other.id == id &&
+        other.name == name &&
+        other.ownerUid == ownerUid &&
+        other.memberCount == memberCount;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^ name.hashCode ^ ownerUid.hashCode ^ memberCount.hashCode;
+  }
 }
