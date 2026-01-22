@@ -94,6 +94,7 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.check),
+                      tooltip: 'Accept request',
                       onPressed: () => _handleAction(
                         uid,
                         () => widget.service.acceptFriendRequest(
@@ -106,6 +107,7 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
+                      tooltip: 'Decline request',
                       onPressed: () => _handleAction(
                         uid,
                         () => widget.service.declineFriendRequest(

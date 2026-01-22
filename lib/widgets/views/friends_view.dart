@@ -139,21 +139,29 @@ class _FriendsViewState extends State<FriendsView>
 
   Widget _buildNudgeButton(User user, Friend friend) {
     final nudged = _nudgedToday.contains(friend.uid);
-    return IconButton(
-      icon: Icon(
-        Icons.auto_awesome_outlined,
-        color: nudged ? Theme.of(context).disabledColor : null,
-      ),
-      onPressed: nudged
-          ? () {
-              ScaffoldMessenger.of(context).clearSnackBars();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Encouragement already sent today'),
-                ),
-              );
-            }
-          : () async {
+    final actionLabel = nudged
+        ? 'Encouragement sent to ${friend.name}'
+        : 'Send encouragement to ${friend.name}';
+    return Semantics(
+      label: actionLabel,
+      button: true,
+      enabled: true,
+      child: IconButton(
+        tooltip: nudged ? 'Encouragement sent' : 'Send encouragement',
+        icon: Icon(
+          Icons.auto_awesome_outlined,
+          color: nudged ? Theme.of(context).disabledColor : null,
+        ),
+        onPressed: nudged
+            ? () {
+                ScaffoldMessenger.of(context).clearSnackBars();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Encouragement already sent today'),
+                  ),
+                );
+              }
+            : () async {
               unawaited(widget.vibrationService.lightImpact());
               final messenger = ScaffoldMessenger.of(context);
               setState(() {
@@ -204,6 +212,7 @@ class _FriendsViewState extends State<FriendsView>
                 );
               }
             },
+      ),
     );
   }
 }

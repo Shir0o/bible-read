@@ -41,6 +41,7 @@ class FriendsPage extends StatelessWidget {
           if (user != null)
             IconButton(
               icon: const Icon(Icons.person_add),
+              tooltip: 'Add friend',
               onPressed: () {
                 unawaited(vibrationService.lightImpact());
                 Navigator.of(context).push(
