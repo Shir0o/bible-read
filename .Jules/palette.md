@@ -15,3 +15,7 @@
 ## 2026-01-24 - Friends List Accessibility
 **Learning:** Icon-only buttons (like "Nudge") in lists are ambiguous to screen readers. Context matters: "Send encouragement" is okay, but "Send encouragement to Alice" is better.
 **Action:** Use `Semantics` with a dynamic `label` property to provide context-aware descriptions (e.g., including the item name) for actions in lists.
+
+## 2026-02-14 - Add Friend Form Polish
+**Learning:** Single-field forms (like Add Friend) often get overlooked for standard accessibility features.
+**Action:** Enforce `TextInputType.emailAddress`, `AutofillHints.email`, and `textInputAction` even for simple, one-off inputs. Added `prefixIcon` for immediate visual recognition.

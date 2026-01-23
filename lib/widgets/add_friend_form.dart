@@ -95,22 +95,31 @@ class _AddFriendFormState extends State<AddFriendForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextField(
-          key: const Key('addFriendEmailField'),
-          controller: _controller,
-          decoration: const InputDecoration(labelText: "Friend's Email"),
-        ),
-        const SizedBox(height: 16),
-        AnimatedActionButton(
-          onPressed: _sendRequest,
-          isLoading: _isLoading,
-          vibrationService: widget.vibrationService,
-          child: const Text('Send'),
-        ),
-      ],
+    return AutofillGroup(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            key: const Key('addFriendEmailField'),
+            controller: _controller,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            textInputAction: TextInputAction.send,
+            onSubmitted: (_) => _sendRequest(),
+            decoration: const InputDecoration(
+              labelText: "Friend's Email",
+              prefixIcon: Icon(Icons.email_outlined),
+            ),
+          ),
+          const SizedBox(height: 16),
+          AnimatedActionButton(
+            onPressed: _sendRequest,
+            isLoading: _isLoading,
+            vibrationService: widget.vibrationService,
+            child: const Text('Send'),
+          ),
+        ],
+      ),
     );
   }
 }
