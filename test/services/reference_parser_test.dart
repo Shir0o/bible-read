@@ -72,10 +72,8 @@ void main() {
 
       final result = ReferenceParser.parseChaptersList('$invalid; $valid');
 
-      final normalizedInvalid = ReferenceParser.normalizeOne(invalid);
-
-      expect(result, equals(<String>[normalizedInvalid, valid]));
-      expect(result.every(isCanonical), isTrue);
+      // invalid input returns trimmed input if parsing fails
+      expect(result, equals(<String>[invalid, valid]));
     });
 
     test('expands cross-book ranges', () {
@@ -107,6 +105,66 @@ void main() {
         ),
       );
       expect(result.every(isCanonical), isTrue);
+    });
+  });
+
+  group('ReferenceParser.nextChapter', () {
+    test('returns next chapter in same book', () {
+      expect(ReferenceParser.nextChapter('Genesis 1'), 'Genesis 2');
+      expect(ReferenceParser.nextChapter('John 3'), 'John 4');
+    });
+
+    test('returns first chapter of next book when current book ends', () {
+      expect(ReferenceParser.nextChapter('Genesis 50'), 'Exodus 1');
+      expect(ReferenceParser.nextChapter('Malachi 4'), 'Matthew 1');
+    });
+
+    test('returns null for last chapter of Revelation', () {
+      expect(ReferenceParser.nextChapter('Revelation 22'), isNull);
+    });
+
+    test('returns null for invalid inputs', () {
+      expect(ReferenceParser.nextChapter(''), isNull);
+      expect(ReferenceParser.nextChapter('NotABook 1'), isNull);
+      expect(ReferenceParser.nextChapter('Genesis'), isNull); // missing chapter
+      expect(ReferenceParser.nextChapter('Genesis 100'), isNull); // chapter out of range
+    });
+  });
+
+  group('ReferenceParser.chapterCount', () {
+    test('returns correct count for valid books', () {
+      expect(ReferenceParser.chapterCount('Genesis'), 50);
+      expect(ReferenceParser.chapterCount('Psalm'), 150);
+      expect(ReferenceParser.chapterCount('2 John'), 1);
+    });
+
+    test('handles abbreviations and casing', () {
+      expect(ReferenceParser.chapterCount('gen'), 50);
+      expect(ReferenceParser.chapterCount('GENESIS'), 50);
+      expect(ReferenceParser.chapterCount('jn'), 21);
+    });
+
+    test('returns null for invalid books', () {
+      expect(ReferenceParser.chapterCount('Mystery'), isNull);
+      expect(ReferenceParser.chapterCount(''), isNull);
+    });
+  });
+
+  group('ReferenceParser.normalizeOne', () {
+    test('normalizes valid references', () {
+      expect(ReferenceParser.normalizeOne('jn 3:16'), 'John 3');
+      expect(ReferenceParser.normalizeOne('  gen   1  '), 'Genesis 1');
+    });
+
+    test('returns original string for invalid references', () {
+      expect(ReferenceParser.normalizeOne('Mystery 5'), 'Mystery 5');
+      expect(ReferenceParser.normalizeOne('Genesis -1'), 'Genesis -1');
+      expect(ReferenceParser.normalizeOne('Genesis 0'), 'Genesis 0');
+    });
+
+    test('handles ordinals', () {
+      expect(ReferenceParser.normalizeOne('1 john 1'), '1 John 1');
+      expect(ReferenceParser.normalizeOne('ii kings 2'), '2 Kings 2');
     });
   });
 }

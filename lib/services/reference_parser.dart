@@ -334,6 +334,10 @@ class ReferenceParser {
       return '$book ${chapter + 1}';
     }
 
+    if (chapter > totalChapters) {
+      return null;
+    }
+
     final index = _bookOrder.indexOf(book);
     if (index == -1 || index + 1 >= _bookOrder.length) {
       return null;
