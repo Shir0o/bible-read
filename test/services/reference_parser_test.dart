@@ -109,4 +109,50 @@ void main() {
       expect(result.every(isCanonical), isTrue);
     });
   });
+
+  group('ReferenceParser.nextChapter', () {
+    test('increments chapter within book', () {
+      expect(ReferenceParser.nextChapter('Genesis 1'), 'Genesis 2');
+    });
+
+    test('crosses book boundary', () {
+      expect(ReferenceParser.nextChapter('Genesis 50'), 'Exodus 1');
+    });
+
+    test('returns null at end of Bible', () {
+      expect(ReferenceParser.nextChapter('Revelation 22'), isNull);
+    });
+
+    test('normalizes input before processing', () {
+      expect(ReferenceParser.nextChapter('gen 1'), 'Genesis 2');
+    });
+
+    test('returns null for invalid input', () {
+      expect(ReferenceParser.nextChapter('Invalid 1'), isNull);
+    });
+  });
+
+  group('ReferenceParser.normalizeOne', () {
+    test('normalizes book names', () {
+      expect(ReferenceParser.normalizeOne('gen 1'), 'Genesis 1');
+      expect(ReferenceParser.normalizeOne('ex 1'), 'Exodus 1');
+    });
+
+    test('preserves unknown books', () {
+      expect(ReferenceParser.normalizeOne('Unknown 1'), 'Unknown 1');
+    });
+
+    test('handles ordinal books', () {
+      expect(ReferenceParser.normalizeOne('1 jn 1'), '1 John 1');
+      expect(ReferenceParser.normalizeOne('II kings 1'), '2 Kings 1');
+    });
+
+    test('does NOT clamp chapters (current behavior)', () {
+      expect(ReferenceParser.normalizeOne('Genesis 100'), 'Genesis 100');
+    });
+
+    test('ignores invalid chapter numbers', () {
+      expect(ReferenceParser.normalizeOne('Genesis 0'), 'Genesis 0');
+    });
+  });
 }
