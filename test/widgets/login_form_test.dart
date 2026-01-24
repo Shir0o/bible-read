@@ -147,4 +147,39 @@ void main() {
 
     expect(auth.signInCalled, isTrue);
   });
+
+  testWidgets('toggles password visibility', (tester) async {
+    final auth = RecordingAuth();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LoginForm(auth: auth),
+        ),
+      ),
+    );
+
+    final passwordFieldFinder = find.byKey(const Key('loginPasswordField'));
+
+    // Initially obscured (true) -> Icon: Icons.visibility (Show password)
+    expect(tester.widget<TextField>(passwordFieldFinder).obscureText, isTrue);
+    expect(find.byIcon(Icons.visibility), findsOneWidget);
+    expect(find.byIcon(Icons.visibility_off), findsNothing);
+
+    // Tap to show password
+    await tester.tap(find.byIcon(Icons.visibility));
+    await tester.pump();
+
+    // Now visible (false) -> Icon: Icons.visibility_off (Hide password)
+    expect(tester.widget<TextField>(passwordFieldFinder).obscureText, isFalse);
+    expect(find.byIcon(Icons.visibility_off), findsOneWidget);
+    expect(find.byIcon(Icons.visibility), findsNothing);
+
+    // Tap to hide password
+    await tester.tap(find.byIcon(Icons.visibility_off));
+    await tester.pump();
+
+    // Back to obscured
+    expect(tester.widget<TextField>(passwordFieldFinder).obscureText, isTrue);
+    expect(find.byIcon(Icons.visibility), findsOneWidget);
+  });
 }

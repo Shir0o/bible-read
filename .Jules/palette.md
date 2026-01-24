@@ -15,3 +15,7 @@
 ## 2026-01-24 - Friends List Accessibility
 **Learning:** Icon-only buttons (like "Nudge") in lists are ambiguous to screen readers. Context matters: "Send encouragement" is okay, but "Send encouragement to Alice" is better.
 **Action:** Use `Semantics` with a dynamic `label` property to provide context-aware descriptions (e.g., including the item name) for actions in lists.
+
+## 2026-01-25 - Password Visibility Toggle
+**Learning:** Password fields are frustrating without a way to verify input. Visibility toggles reduce errors and improve accessibility.
+**Action:** Add a `suffixIcon` with an `IconButton` that toggles `obscureText`. Use `Semantics` to label the action ("Show password" / "Hide password") and update the icon (`visibility` / `visibility_off`).
