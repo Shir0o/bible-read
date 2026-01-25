@@ -216,9 +216,9 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                                           ?.copyWith(
                                         color: colorScheme.onSurface,
                                         fontWeight: FontWeight.bold,
-                                        shadows: const [
+                                        shadows: [
                                           Shadow(
-                                            offset: Offset(0, 1),
+                                            offset: const Offset(0, 1),
                                             blurRadius: 2,
                                             color: colorScheme.shadow,
                                           ),
