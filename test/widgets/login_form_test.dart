@@ -9,6 +9,7 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:bible_read/widgets/login_form.dart';
 import 'package:bible_read/services/error_logger.dart';
+import 'package:flutter/semantics.dart';
 
 class RecordingAuth extends MockFirebaseAuth {
   bool signInCalled = false;
@@ -146,5 +147,60 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(auth.signInCalled, isTrue);
+  });
+
+  testWidgets('toggles password visibility', (tester) async {
+    final auth = RecordingAuth();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LoginForm(auth: auth),
+        ),
+      ),
+    );
+
+    final passwordFieldFinder = find.byKey(const Key('loginPasswordField'));
+    final toggleButtonFinder = find.descendant(
+      of: passwordFieldFinder,
+      matching: find.byType(IconButton),
+    );
+
+    // Initial state: obscured
+    expect(
+      tester.widget<TextField>(passwordFieldFinder).obscureText,
+      isTrue,
+    );
+    var semantics = tester.getSemantics(toggleButtonFinder);
+    var data = semantics.getSemanticsData();
+    expect(data.tooltip, 'Show password');
+    expect(data.hasFlag(SemanticsFlag.isButton), isTrue);
+    expect(data.hasFlag(SemanticsFlag.isEnabled), isTrue);
+    expect(data.hasAction(SemanticsAction.tap), isTrue);
+
+    // Tap to show
+    await tester.tap(toggleButtonFinder);
+    await tester.pump();
+
+    // State: visible
+    expect(
+      tester.widget<TextField>(passwordFieldFinder).obscureText,
+      isFalse,
+    );
+    semantics = tester.getSemantics(toggleButtonFinder);
+    data = semantics.getSemanticsData();
+    expect(data.tooltip, 'Hide password');
+    expect(data.hasFlag(SemanticsFlag.isButton), isTrue);
+    expect(data.hasFlag(SemanticsFlag.isEnabled), isTrue);
+    expect(data.hasAction(SemanticsAction.tap), isTrue);
+
+    // Tap to hide
+    await tester.tap(toggleButtonFinder);
+    await tester.pump();
+
+    // State: obscured
+    expect(
+      tester.widget<TextField>(passwordFieldFinder).obscureText,
+      isTrue,
+    );
   });
 }

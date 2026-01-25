@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'dart:async';
 import '../services/error_logger.dart';
 import 'animated_action_button.dart';
@@ -45,6 +44,8 @@ class _SignupFormState extends State<SignupForm> {
   final TextEditingController _confirmController = TextEditingController();
   bool _loading = false;
   bool _monthlySummaryEnabled = true;
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   Future<void> _handleSignupError(Object error, StackTrace stackTrace) async {
     await ErrorLogger.log(error, stackTrace);
@@ -135,8 +136,23 @@ class _SignupFormState extends State<SignupForm> {
             controller: _passwordController,
             autofillHints: const [AutofillHints.newPassword],
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(labelText: 'Password'),
-            obscureText: true,
+            decoration: InputDecoration(
+              labelText: 'Password',
+              suffixIcon: IconButton(
+                tooltip: _isPasswordVisible ? 'Hide password' : 'Show password',
+                icon: Icon(
+                  _isPasswordVisible
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isPasswordVisible = !_isPasswordVisible;
+                  });
+                },
+              ),
+            ),
+            obscureText: !_isPasswordVisible,
           ),
           const SizedBox(height: 16),
           TextField(
@@ -145,8 +161,25 @@ class _SignupFormState extends State<SignupForm> {
             autofillHints: const [AutofillHints.newPassword],
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
-            decoration: const InputDecoration(labelText: 'Confirm Password'),
-            obscureText: true,
+            decoration: InputDecoration(
+              labelText: 'Confirm Password',
+              suffixIcon: IconButton(
+                tooltip: _isConfirmPasswordVisible
+                    ? 'Hide password'
+                    : 'Show password',
+                icon: Icon(
+                  _isConfirmPasswordVisible
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                  });
+                },
+              ),
+            ),
+            obscureText: !_isConfirmPasswordVisible,
           ),
           const SizedBox(height: 16),
           CheckboxListTile(

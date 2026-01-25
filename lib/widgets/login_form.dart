@@ -27,6 +27,7 @@ class _LoginFormState extends State<LoginForm> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _loading = false;
+  bool _isPasswordVisible = false;
 
   @override
   void dispose() {
@@ -91,8 +92,23 @@ class _LoginFormState extends State<LoginForm> {
             textInputAction: TextInputAction.done,
             autofillHints: const [AutofillHints.password],
             onSubmitted: (_) => _submit(),
-            decoration: const InputDecoration(labelText: 'Password'),
-            obscureText: true,
+            decoration: InputDecoration(
+              labelText: 'Password',
+              suffixIcon: IconButton(
+                tooltip: _isPasswordVisible ? 'Hide password' : 'Show password',
+                icon: Icon(
+                  _isPasswordVisible
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isPasswordVisible = !_isPasswordVisible;
+                  });
+                },
+              ),
+            ),
+            obscureText: !_isPasswordVisible,
           ),
           const SizedBox(height: 16),
           AnimatedActionButton(

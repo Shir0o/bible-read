@@ -19,3 +19,7 @@
 ## 2026-02-14 - Add Friend Form Polish
 **Learning:** Single-field forms (like Add Friend) often get overlooked for standard accessibility features.
 **Action:** Enforce `TextInputType.emailAddress`, `AutofillHints.email`, and `textInputAction` even for simple, one-off inputs. Added `prefixIcon` for immediate visual recognition.
+
+## 2026-02-18 - Password Visibility
+**Learning:** Password fields without a visibility toggle cause user frustration and errors.
+**Action:** Always add a toggle `IconButton` with `tooltip` (e.g., 'Show password') in the `suffixIcon` of password `TextField`s.

@@ -8,6 +8,7 @@ import 'package:bible_read/widgets/signup_form.dart';
 import 'package:bible_read/widgets/success_animation.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/services/error_logger.dart';
+import 'package:flutter/semantics.dart';
 import '../helpers/mock_lottie_http_client.dart';
 
 class RecordingAuth extends MockFirebaseAuth {
@@ -228,5 +229,70 @@ void main() {
       tester.takeException();
     });
     expect(find.text('Failed to sign up. Please try again.'), findsOneWidget);
+  });
+
+  testWidgets('toggles password visibility for both fields', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = RecordingAuth();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SignupForm(
+            auth: auth,
+            firestore: firestore,
+            vibrationService: vibration,
+          ),
+        ),
+      ),
+    );
+
+    // Password Field
+    final passwordFieldFinder = find.byKey(const Key('signupPasswordField'));
+    final passwordToggleFinder = find.descendant(
+      of: passwordFieldFinder,
+      matching: find.byType(IconButton),
+    );
+
+    // Initial state
+    expect(tester.widget<TextField>(passwordFieldFinder).obscureText, isTrue);
+    var semantics = tester.getSemantics(passwordToggleFinder);
+    var data = semantics.getSemanticsData();
+    expect(data.tooltip, 'Show password');
+    expect(data.hasFlag(SemanticsFlag.isButton), isTrue);
+    expect(data.hasFlag(SemanticsFlag.isEnabled), isTrue);
+    expect(data.hasAction(SemanticsAction.tap), isTrue);
+
+    // Toggle on
+    await tester.tap(passwordToggleFinder);
+    await tester.pump();
+    expect(tester.widget<TextField>(passwordFieldFinder).obscureText, isFalse);
+    semantics = tester.getSemantics(passwordToggleFinder);
+    data = semantics.getSemanticsData();
+    expect(data.tooltip, 'Hide password');
+    expect(data.hasFlag(SemanticsFlag.isButton), isTrue);
+    expect(data.hasFlag(SemanticsFlag.isEnabled), isTrue);
+    expect(data.hasAction(SemanticsAction.tap), isTrue);
+
+    // Confirm Field
+    final confirmFieldFinder = find.byKey(const Key('signupConfirmField'));
+    final confirmToggleFinder = find.descendant(
+      of: confirmFieldFinder,
+      matching: find.byType(IconButton),
+    );
+
+    // Initial state
+    expect(tester.widget<TextField>(confirmFieldFinder).obscureText, isTrue);
+
+    // Toggle on
+    await tester.tap(confirmToggleFinder);
+    await tester.pump();
+    expect(tester.widget<TextField>(confirmFieldFinder).obscureText, isFalse);
+
+    // Ensure independent toggling: Toggle password off, confirm should stay on
+    await tester.tap(passwordToggleFinder);
+    await tester.pump();
+    expect(tester.widget<TextField>(passwordFieldFinder).obscureText, isTrue);
+    expect(tester.widget<TextField>(confirmFieldFinder).obscureText, isFalse);
   });
 }
