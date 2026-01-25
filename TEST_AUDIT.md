@@ -6,11 +6,10 @@
 
 | File | Issue Type | Description |
 | :--- | :--- | :--- |
-| `lib/services/group_service.dart` | **Incomplete Error Handling** | The service uses `_safeLog` to catch and swallow errors in almost all methods. While this prevents crashes, the tests (in `group_service_test.dart`) only verify that `Crashlytics` records the error. They do not verify that the app state remains consistent or that the UI receives appropriate feedback (e.g., via return values or streams). |
-| `test/services/group_service_test.dart` | **Over-Mocking** | Error handling tests heavily rely on `MockFirebaseFirestore`, `MockCollectionReference`, etc., making them brittle to implementation details (e.g., specific order of calls). |
-| `lib/services/reference_parser.dart` | **Untested Logic** | The `nextChapter` and `chapterCount` methods are completely untested. `normalizeOne` has edge cases (invalid books, negative numbers) that are not explicitly covered by existing tests. |
-| `test/widgets/responsive_scaffold_test.dart` | **Shallow Assertions** | (Previous audit note) *Re-evaluated*: Current tests seem to cover basic responsive behavior, but could be improved by verifying specific layout properties rather than just widget presence. |
-| `lib/widgets/status_refresh_indicator.dart` | **No Coverage** | This custom widget has complex state logic (Idle -> Loading -> Success/Error) and animations, but currently has **zero** tests. |
+| `lib/services/group_service.dart` | **Critical Coverage Gap** | Core business logic for progress tracking (`memberDailyCompletion`, `memberOverallCompletion`, `recalcProgressForUserInGroup`) and data management (`deleteGroup`, `fixMemberProgressSummariesForUser`) is completely untested. These methods contain complex aggregation logic that is prone to regression. |
+| `test/services/group_service_test.dart` | **Over-Mocking** | Error handling tests rely heavily on `MockFirebaseFirestore` and `when(...).thenThrow(...)` chains. This makes the tests brittle and tautological (verifying the mock throws and catch block runs, rather than verifying system state). Happy path tests use `FakeFirebaseFirestore` which is good, but the mix creates inconsistency. |
+| `test/widgets/status_refresh_indicator_test.dart` | **Brittleness** | Tests rely on hardcoded `pump` durations (e.g., `10s`, `2s`) that match the implementation's internal animation times. Changing the animation speed in the widget would silently break the tests or cause timeouts. |
+| `lib/widgets/responsive_scaffold.dart` | **Shallow Assertions** | `responsive_scaffold_test.dart` verifies widget presence (`findsOneWidget`) but does not deeply verify layout properties (e.g., that the body is actually visible or constraints are applied). |
 
 ## Objective 2: Gap Analysis
 
@@ -18,10 +17,8 @@
 
 | Scenario | Input | Expected Outcome |
 | :--- | :--- | :--- |
-| **ReferenceParser: Next Chapter (Standard)** | `ReferenceParser.nextChapter('Genesis 1')` | Returns `'Genesis 2'` |
-| **ReferenceParser: Next Chapter (Book Transition)** | `ReferenceParser.nextChapter('Genesis 50')` | Returns `'Exodus 1'` |
-| **ReferenceParser: Next Chapter (End of Bible)** | `ReferenceParser.nextChapter('Revelation 22')` | Returns `null` |
-| **ReferenceParser: Invalid Input** | `ReferenceParser.nextChapter('Invalid Book 1')` | Returns `null` |
-| **StatusRefreshIndicator: Success Flow** | User pulls to refresh, action succeeds. | Widget shows "Refreshing...", then "Refreshed successfully", and progress bar turns green/tertiary. |
-| **StatusRefreshIndicator: Error Flow** | User pulls to refresh, action throws error. | Widget shows "Refresh failed", progress bar turns red/error, and error state persists briefly. |
-| **GroupService: Member Progress (Negative)** | `memberDailyCompletion` called when user has no permissions to read progress subcollection. | Stream should emit empty list or list with 0% completion, without crashing the app (swallowed error). |
+| **GroupService: Member Daily Completion** | Group with 2 members. Schedule has 2 chapters. Member A read 1 chapter. Member B read 2 chapters. | Stream emits list: [Member A: 50%, Member B: 100%]. |
+| **GroupService: Member Daily Completion (No Entries)** | Group with 1 member. Schedule has 1 chapter. No progress entries exist. | Stream emits list: [Member: 0%]. Should not crash or return empty list (unless intended). |
+| **GroupService: Delete Group** | Owner calls `deleteGroup`. Group has members, schedule, and progress subcollections. | All subcollections (members, schedule, progress) and the group document are deleted. |
+| **GroupService: Delete Group (Not Owner)** | Non-owner calls `deleteGroup`. | Throws `StateError`. Group remains intact. |
+| **ReferenceParser: Verse-Only Shorthand** | Input `John 3, 4`. | Current behavior: `['John 3', '4']`. Desired behavior (Feature Gap): `['John 3', 'John 4']` or validation error. Existing parser allows invalid `4`. |

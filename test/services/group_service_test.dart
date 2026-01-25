@@ -850,5 +850,132 @@ void main() {
           printDetails: any(named: 'printDetails'),
           fatal: false)).called(1);
     });
+
+    test('memberDailyCompletion streams progress for group members', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+
+      // Members
+      await groupRef.collection(GroupCollections.members).doc('u1').set({
+        'uid': 'u1',
+        'name': 'Alice',
+        'role': 'owner',
+      });
+      await groupRef.collection(GroupCollections.members).doc('u2').set({
+        'uid': 'u2',
+        'name': 'Bob',
+        'role': 'member',
+      });
+
+      // Schedule for today
+      final today = DateTime.now();
+      final dateId =
+          '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+      await groupRef.collection(GroupCollections.schedule).doc(dateId).set({
+        'date': Timestamp.fromDate(
+            DateTime.utc(today.year, today.month, today.day)),
+        'chapters': ['Gen 1', 'Gen 2'] // 2 chapters
+      });
+
+      // Progress: u1 read 1 chapter (50%)
+      await groupRef
+          .collection('progress')
+          .doc(dateId)
+          .collection('entries')
+          .doc('u1')
+          .collection('items')
+          .doc('Gen 1')
+          .set({});
+
+      // Progress: u2 read 2 chapters (100%)
+      await groupRef
+          .collection('progress')
+          .doc(dateId)
+          .collection('entries')
+          .doc('u2')
+          .collection('items')
+          .doc('Gen 1')
+          .set({});
+      await groupRef
+          .collection('progress')
+          .doc(dateId)
+          .collection('entries')
+          .doc('u2')
+          .collection('items')
+          .doc('Gen 2')
+          .set({});
+
+      final stream = service.memberDailyCompletion('g1', date: today);
+
+      final result = await stream.first;
+
+      expect(result.length, 2);
+
+      final u1 = result.firstWhere((m) => m.uid == 'u1');
+      expect(u1.completion, 0.5);
+      expect(u1.name, 'Alice');
+
+      final u2 = result.firstWhere((m) => m.uid == 'u2');
+      expect(u2.completion, 1.0);
+      expect(u2.name, 'Bob');
+    });
+
+    test('memberDailyCompletion returns 0% when no progress exists', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      await groupRef.collection(GroupCollections.members).doc('u1').set({
+        'uid': 'u1',
+        'name': 'Alice',
+      });
+
+      final today = DateTime.now();
+      final dateId =
+          '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      await groupRef.collection(GroupCollections.schedule).doc(dateId).set({
+        'date': Timestamp.fromDate(
+            DateTime.utc(today.year, today.month, today.day)),
+        'chapters': ['Gen 1']
+      });
+
+      final result =
+          await service.memberDailyCompletion('g1', date: today).first;
+      expect(result.length, 1);
+      expect(result.first.completion, 0.0);
+    });
+
+    test('deleteGroup removes group and subcollections', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+
+      // Populate subcollections
+      await groupRef.collection(GroupCollections.members).doc('u1').set({});
+      await groupRef.collection(GroupCollections.schedule).doc('d1').set({});
+      await groupRef.collection(GroupCollections.joinRequests).doc('u2').set({});
+
+      // Execute delete
+      await service.deleteGroup(groupId: 'g1', ownerUid: 'u1');
+
+      expect((await groupRef.get()).exists, isFalse);
+      expect((await groupRef.collection(GroupCollections.members).get()).docs,
+          isEmpty);
+      expect((await groupRef.collection(GroupCollections.schedule).get()).docs,
+          isEmpty);
+      expect(
+          (await groupRef.collection(GroupCollections.joinRequests).get()).docs,
+          isEmpty);
+    });
+
+    test('deleteGroup throws if caller is not owner', () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+
+      await expectLater(
+        service.deleteGroup(groupId: 'g1', ownerUid: 'u2'),
+        throwsStateError,
+      );
+
+      expect((await groupRef.get()).exists, isTrue);
+    });
   });
 }
