@@ -17,6 +17,11 @@ class StatusRefreshIndicator extends StatefulWidget {
   final Future<void> Function() onRefresh;
   final double maxHeight;
 
+  static const Duration successAnimationDuration = Duration(milliseconds: 300);
+  static const Duration successDelay = Duration(seconds: 1);
+  static const Duration errorDelay = Duration(seconds: 2);
+  static const Duration loadingAnimationDuration = Duration(seconds: 10);
+
   const StatusRefreshIndicator({
     super.key,
     required this.child,
@@ -40,7 +45,7 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
     // Animation for the "fake" progress bar.
     _progressController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 10),
+      duration: StatusRefreshIndicator.loadingAnimationDuration,
     );
   }
 
@@ -63,7 +68,8 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
 
     // Start indeterminate/slow animation
     _progressController.reset();
-    _progressController.animateTo(0.95, duration: const Duration(seconds: 10));
+    _progressController.animateTo(0.95,
+        duration: StatusRefreshIndicator.loadingAnimationDuration);
 
     try {
       await widget.onRefresh();
@@ -75,9 +81,9 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
         });
         // Fast finish
         await _progressController.animateTo(1.0,
-            duration: const Duration(milliseconds: 300));
+            duration: StatusRefreshIndicator.successAnimationDuration);
         // Keep success state visible
-        await Future.delayed(const Duration(seconds: 1));
+        await Future.delayed(StatusRefreshIndicator.successDelay);
       }
     } catch (e) {
       if (mounted) {
@@ -87,7 +93,7 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
         });
         _progressController.value = 1.0;
         // Keep error state visible
-        await Future.delayed(const Duration(seconds: 2));
+        await Future.delayed(StatusRefreshIndicator.errorDelay);
       }
     } finally {
       if (mounted) {
