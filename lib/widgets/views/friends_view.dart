@@ -107,7 +107,7 @@ class _FriendsViewState extends State<FriendsView>
           skeleton: const FriendsSkeleton(),
           child: snapshot.hasData
               ? snapshot.data!.isEmpty
-                  ? const Center(child: Text('No friends yet'))
+                  ? _buildEmptyState(context)
                   : ListView(
                       children: snapshot.data!
                           .map(
@@ -134,6 +134,55 @@ class _FriendsViewState extends State<FriendsView>
               : const SizedBox.shrink(),
         );
       },
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.groups_outlined,
+              size: 64,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No friends yet',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Invite friends to track your reading journey together.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () {
+                unawaited(widget.vibrationService.lightImpact());
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AddFriendPage(
+                      friendService: widget.friendService,
+                      auth: widget.auth,
+                      vibrationService: widget.vibrationService,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.person_add),
+              label: const Text('Find Friends'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

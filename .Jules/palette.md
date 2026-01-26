@@ -23,3 +23,7 @@
 ## 2026-02-18 - Password Visibility
 **Learning:** Password fields without a visibility toggle cause user frustration and errors.
 **Action:** Always add a toggle `IconButton` with `tooltip` (e.g., 'Show password') in the `suffixIcon` of password `TextField`s.
+
+## 2026-02-19 - Empty States
+**Learning:** Default text-only empty states (e.g., "No friends yet") are missed opportunities for engagement.
+**Action:** Use rich empty states with an icon, encouraging text, and a primary call-to-action button to guide users.

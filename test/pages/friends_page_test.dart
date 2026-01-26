@@ -121,6 +121,16 @@ void main() {
     await settle(tester);
   }
 
+  testWidgets('shows empty state when no friends', (tester) async {
+    await pumpPage(tester);
+
+    expect(find.text('No friends yet'), findsOneWidget);
+    expect(find.text('Invite friends to track your reading journey together.'),
+        findsOneWidget);
+    expect(find.byIcon(Icons.groups_outlined), findsOneWidget);
+    expect(find.text('Find Friends'), findsOneWidget);
+  });
+
   testWidgets('fab navigates to AddFriendPage', (tester) async {
     await pumpPage(tester);
 
