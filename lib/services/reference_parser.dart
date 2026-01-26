@@ -356,12 +356,21 @@ class ReferenceParser {
         .where((s) => s.isNotEmpty)
         .toList();
     final out = <String>[];
+    String? lastBook;
+
     for (final part in parts) {
       if (RegExp(r'[-–—]|\bto\b', caseSensitive: false).hasMatch(part)) {
         final rangeSplit =
             part.split(RegExp(r'[-–—]|\bto\b', caseSensitive: false));
         if (rangeSplit.length >= 2) {
-          final start = _parseEndpoint(rangeSplit.first.trim());
+          var start = _parseEndpoint(rangeSplit.first.trim());
+          // Inherit book from previous entry if start is number-only
+          if (start == null &&
+              lastBook != null &&
+              RegExp(r'^\d+$').hasMatch(rangeSplit.first.trim())) {
+            start = _parseEndpoint('$lastBook ${rangeSplit.first.trim()}');
+          }
+
           var end = _parseEndpoint(rangeSplit.last.trim());
           // Shorthand like "deut 28-31": inherit book from start.
           if (start != null && end == null) {
@@ -372,16 +381,32 @@ class ReferenceParser {
           }
           if (start != null && end != null) {
             out.addAll(_expandRange(start, end));
+            lastBook = end.book;
             continue;
           }
         }
       }
-      final single = _parseEndpoint(part);
+      var single = _parseEndpoint(part);
+      // Inherit book from previous entry if single is number-only
+      if (single == null &&
+          lastBook != null &&
+          RegExp(r'^\d+$').hasMatch(part)) {
+        single = _parseEndpoint('$lastBook $part');
+      }
+
       if (single != null) {
         out.add('${single.book} ${single.chapter}');
+        lastBook = single.book;
       } else {
         final fallback = normalizeOne(part);
-        if (fallback.trim().isNotEmpty) out.add(fallback);
+        if (fallback.trim().isNotEmpty) {
+          out.add(fallback);
+          // Try to extract book context from fallback for future use
+          final fbRef = _parseEndpoint(fallback);
+          if (fbRef != null) {
+            lastBook = fbRef.book;
+          }
+        }
       }
     }
     return out;

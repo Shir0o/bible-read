@@ -5,7 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/widgets/status_refresh_indicator.dart';
 
 void main() {
-  testWidgets('StatusRefreshIndicator shows success message on successful refresh',
+  testWidgets(
+      'StatusRefreshIndicator shows success message on successful refresh',
       (tester) async {
     final completer = Completer<void>();
 
@@ -52,10 +53,11 @@ void main() {
 
     expect(find.text('Refreshed successfully'), findsOneWidget);
 
-    // Fast forward through animation (350ms to be safe)
-    await tester.pump(const Duration(milliseconds: 350));
-    // Fast forward through delay (1s)
-    await tester.pump(const Duration(seconds: 1));
+    // Fast forward through animation (add a small buffer)
+    await tester.pump(StatusRefreshIndicator.successAnimationDuration +
+        const Duration(milliseconds: 50));
+    // Fast forward through delay
+    await tester.pump(StatusRefreshIndicator.successDelay);
     // Run finally block and rebuild
     await tester.pump();
     await tester.pump();
@@ -109,7 +111,7 @@ void main() {
     expect(find.text('Refresh failed'), findsOneWidget);
 
     // Fast forward through error display
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(StatusRefreshIndicator.errorDelay);
 
     // 4. Verify Idle State
     await tester.pump(); // finally block

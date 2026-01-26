@@ -106,6 +106,12 @@ void main() {
       );
       expect(result.every(isCanonical), isTrue);
     });
+
+    test('parses comma-separated list with implied book', () {
+      final result = ReferenceParser.parseChaptersList('John 3, 4');
+      expect(result, equals(['John 3', 'John 4']));
+      expect(result.every(isCanonical), isTrue);
+    });
   });
 
   group('ReferenceParser.nextChapter', () {
@@ -127,7 +133,8 @@ void main() {
       expect(ReferenceParser.nextChapter(''), isNull);
       expect(ReferenceParser.nextChapter('NotABook 1'), isNull);
       expect(ReferenceParser.nextChapter('Genesis'), isNull); // missing chapter
-      expect(ReferenceParser.nextChapter('Genesis 100'), isNull); // chapter out of range
+      expect(ReferenceParser.nextChapter('Genesis 100'),
+          isNull); // chapter out of range
     });
   });
 
