@@ -42,9 +42,20 @@ class _AddFriendFormState extends State<AddFriendForm> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onTextChanged);
+  }
+
+  @override
   void dispose() {
+    _controller.removeListener(_onTextChanged);
     _controller.dispose();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {});
   }
 
   Future<void> _sendRequest() async {
@@ -106,9 +117,16 @@ class _AddFriendFormState extends State<AddFriendForm> {
             autofillHints: const [AutofillHints.email],
             textInputAction: TextInputAction.send,
             onSubmitted: (_) => _sendRequest(),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: "Friend's Email",
-              prefixIcon: Icon(Icons.email_outlined),
+              prefixIcon: const Icon(Icons.email_outlined),
+              suffixIcon: _controller.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      tooltip: 'Clear email',
+                      onPressed: _controller.clear,
+                    )
+                  : null,
             ),
           ),
           const SizedBox(height: 16),
