@@ -977,5 +977,63 @@ void main() {
 
       expect((await groupRef.get()).exists, isTrue);
     });
+
+    test('memberOverallCompletion streams total progress for group members',
+        () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+
+      // Members
+      await groupRef.collection(GroupCollections.members).doc('u1').set({
+        'uid': 'u1',
+        'name': 'Alice',
+        'role': 'owner',
+      });
+      await groupRef.collection(GroupCollections.members).doc('u2').set({
+        'uid': 'u2',
+        'name': 'Bob',
+        'role': 'member',
+      });
+
+      // Schedule: Total 4 chapters
+      await groupRef
+          .collection(GroupCollections.schedule)
+          .doc('2024-01-01')
+          .set({
+        'date': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+        'chapters': ['Gen 1', 'Gen 2'],
+      });
+      await groupRef
+          .collection(GroupCollections.schedule)
+          .doc('2024-01-02')
+          .set({
+        'date': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+        'chapters': ['Gen 3', 'Gen 4'],
+      });
+
+      // Progress Summary
+      // u1: Completed 3 chapters (75%)
+      await groupRef
+          .collection('progressSummary')
+          .doc('data')
+          .collection('entries')
+          .doc('u1')
+          .set({'completed': 3});
+
+      // u2: Completed 0 chapters (0%) - No entry or entry with 0
+
+      final stream = service.memberOverallCompletion('g1');
+      final result = await stream.first;
+
+      expect(result.length, 2);
+
+      final u1 = result.firstWhere((m) => m.uid == 'u1');
+      expect(u1.completion, 0.75);
+      expect(u1.name, 'Alice');
+
+      final u2 = result.firstWhere((m) => m.uid == 'u2');
+      expect(u2.completion, 0.0);
+      expect(u2.name, 'Bob');
+    });
   });
 }
