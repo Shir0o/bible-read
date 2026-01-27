@@ -27,3 +27,7 @@
 ## 2026-02-19 - Empty States
 **Learning:** Default text-only empty states (e.g., "No friends yet") are missed opportunities for engagement.
 **Action:** Use rich empty states with an icon, encouraging text, and a primary call-to-action button to guide users.
+
+## 2026-02-21 - Clearable Text Fields
+**Learning:** Users often struggle to clear long inputs (like emails) on mobile without a clear button.
+**Action:** Implement a `suffixIcon` with an `IconButton` (icon: `Icons.clear`, tooltip: 'Clear') that appears only when `controller.text.isNotEmpty` to allow one-tap clearing.
