@@ -1237,8 +1237,38 @@ class GroupService {
   /// Recalculate progress summaries for all groups the user belongs to or owns.
   Future<void> fixMemberProgressSummariesForUser(String uid) async {
     try {
-      final groups = await groupsForUser(uid).first;
-      for (final g in groups) {
+      final groups = <String, Group>{};
+
+      // 1. Groups where user is a member
+      final memberSnaps = await firestore
+          .collectionGroup(GroupCollections.members)
+          .where('uid', isEqualTo: uid)
+          .get();
+
+      final memberGroupFutures = memberSnaps.docs
+          .map((doc) => doc.reference.parent.parent)
+          .whereType<DocumentReference<Map<String, dynamic>>>()
+          .map((parent) => parent.get())
+          .toList();
+      final memberGroupDocs = await Future.wait(memberGroupFutures);
+      for (final doc in memberGroupDocs) {
+        if (doc.exists) {
+          final g = Group.fromFirestore(doc);
+          groups[g.id] = g;
+        }
+      }
+
+      // 2. Groups owned by user
+      final ownerSnaps = await firestore
+          .collection(GroupCollections.groups)
+          .where('ownerUid', isEqualTo: uid)
+          .get();
+      for (final doc in ownerSnaps.docs) {
+        final g = Group.fromFirestore(doc);
+        groups[g.id] = g;
+      }
+
+      for (final g in groups.values) {
         await recalcProgressForUserInGroup(groupId: g.id, uid: uid);
       }
     } catch (e, st) {
