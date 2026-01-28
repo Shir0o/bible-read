@@ -1035,5 +1035,165 @@ void main() {
       expect(u2.completion, 0.0);
       expect(u2.name, 'Bob');
     });
+
+    group('Recalc & Fix Progress', () {
+      test('recalcProgressForUserInGroup sums counts and updates summary',
+          () async {
+        final groupRef =
+            firestore.collection(GroupCollections.groups).doc('g1');
+        await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+        await groupRef.collection(GroupCollections.members).doc('u1').set({
+          'uid': 'u1',
+          'role': 'owner',
+        });
+
+        // Date 1: 2 items
+        await groupRef.collection('progress').doc('d1').set({});
+        await groupRef
+            .collection('progress')
+            .doc('d1')
+            .collection('entries')
+            .doc('u1')
+            .set({'count': 2});
+
+        // Date 2: 3 items
+        await groupRef.collection('progress').doc('d2').set({});
+        await groupRef
+            .collection('progress')
+            .doc('d2')
+            .collection('entries')
+            .doc('u1')
+            .set({'count': 3});
+
+        // Pre-existing summary (wrong value to verify update)
+        await groupRef
+            .collection('progressSummary')
+            .doc('data')
+            .collection('entries')
+            .doc('u1')
+            .set({'completed': 0});
+
+        await service.recalcProgressForUserInGroup(groupId: 'g1', uid: 'u1');
+
+        final summary = await groupRef
+            .collection('progressSummary')
+            .doc('data')
+            .collection('entries')
+            .doc('u1')
+            .get();
+        expect(summary.data()?['completed'], 5);
+      });
+
+      test('recalcProgressForUserInGroup backfills missing count', () async {
+        final groupRef =
+            firestore.collection(GroupCollections.groups).doc('g1');
+        await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+        await groupRef.collection(GroupCollections.members).doc('u1').set({
+          'uid': 'u1',
+          'role': 'owner',
+        });
+
+        // Date 1: Entry exists but no count. Has 2 items.
+        await groupRef.collection('progress').doc('d1').set({});
+        final entryRef = groupRef
+            .collection('progress')
+            .doc('d1')
+            .collection('entries')
+            .doc('u1');
+        await entryRef.set({}); // Empty entry
+        await entryRef.collection('items').doc('i1').set({});
+        await entryRef.collection('items').doc('i2').set({});
+
+        await service.recalcProgressForUserInGroup(groupId: 'g1', uid: 'u1');
+
+        final entry = await entryRef.get();
+        expect(entry.data()?['count'], 2);
+
+        final summary = await groupRef
+            .collection('progressSummary')
+            .doc('data')
+            .collection('entries')
+            .doc('u1')
+            .get();
+        expect(summary.data()?['completed'], 2);
+      });
+
+      test('recalcProgressForUserInGroup does nothing if user not member/owner',
+          () async {
+        final groupRef =
+            firestore.collection(GroupCollections.groups).doc('g1');
+        await groupRef.set({'name': 'G', 'ownerUid': 'owner'});
+        // u1 is not a member
+
+        await groupRef.collection('progress').doc('d1').set({});
+        await groupRef
+            .collection('progress')
+            .doc('d1')
+            .collection('entries')
+            .doc('u1')
+            .set({'count': 5});
+
+        await service.recalcProgressForUserInGroup(groupId: 'g1', uid: 'u1');
+
+        final summary = await groupRef
+            .collection('progressSummary')
+            .doc('data')
+            .collection('entries')
+            .doc('u1')
+            .get();
+        expect(summary.exists, isFalse);
+      });
+
+      test('fixMemberProgressSummariesForUser updates all groups for user',
+          () async {
+        // Group 1
+        final g1 = firestore.collection(GroupCollections.groups).doc('g1');
+        await g1.set({'name': 'G1', 'ownerUid': 'u1'});
+        await g1
+            .collection(GroupCollections.members)
+            .doc('u1')
+            .set({'uid': 'u1', 'role': 'owner'});
+        await g1.collection('progress').doc('d1').set({});
+        await g1
+            .collection('progress')
+            .doc('d1')
+            .collection('entries')
+            .doc('u1')
+            .set({'count': 2});
+
+        // Group 2
+        final g2 = firestore.collection(GroupCollections.groups).doc('g2');
+        await g2.set({'name': 'G2', 'ownerUid': 'u2'});
+        await g2
+            .collection(GroupCollections.members)
+            .doc('u1')
+            .set({'uid': 'u1', 'role': 'member'});
+        await g2.collection('progress').doc('d1').set({});
+        await g2
+            .collection('progress')
+            .doc('d1')
+            .collection('entries')
+            .doc('u1')
+            .set({'count': 3});
+
+        await service.fixMemberProgressSummariesForUser('u1');
+
+        final s1 = await g1
+            .collection('progressSummary')
+            .doc('data')
+            .collection('entries')
+            .doc('u1')
+            .get();
+        expect(s1.data()?['completed'], 2);
+
+        final s2 = await g2
+            .collection('progressSummary')
+            .doc('data')
+            .collection('entries')
+            .doc('u1')
+            .get();
+        expect(s2.data()?['completed'], 3);
+      });
+    });
   });
 }
