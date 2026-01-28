@@ -52,11 +52,24 @@ class _FeedbackFormState extends State<FeedbackForm> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    _descriptionController.addListener(_onTextChanged);
+    _stepsController.addListener(_onTextChanged);
+  }
+
+  @override
   void dispose() {
+    _descriptionController.removeListener(_onTextChanged);
+    _stepsController.removeListener(_onTextChanged);
     _titleController.dispose();
     _descriptionController.dispose();
     _stepsController.dispose();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {});
   }
 
   String get _formPrefix => widget.tab == FeedbackTab.bug ? 'bug' : 'feature';
@@ -146,6 +159,8 @@ class _FeedbackFormState extends State<FeedbackForm> {
                   TextFormField(
                     key: ValueKey('${_formPrefix}TitleField'),
                     controller: _titleController,
+                    textCapitalization: TextCapitalization.sentences,
+                    keyboardType: TextInputType.text,
                     decoration: InputDecoration(labelText: _titleLabel),
                     textInputAction: TextInputAction.next,
                     validator: (value) {
@@ -159,7 +174,18 @@ class _FeedbackFormState extends State<FeedbackForm> {
                   TextFormField(
                     key: ValueKey('${_formPrefix}DescriptionField'),
                     controller: _descriptionController,
-                    decoration: InputDecoration(labelText: _descriptionLabel),
+                    textCapitalization: TextCapitalization.sentences,
+                    keyboardType: TextInputType.multiline,
+                    decoration: InputDecoration(
+                      labelText: _descriptionLabel,
+                      suffixIcon: _descriptionController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              tooltip: 'Clear description',
+                              onPressed: _descriptionController.clear,
+                            )
+                          : null,
+                    ),
                     minLines: 3,
                     maxLines: 6,
                     validator: (value) {
@@ -173,7 +199,18 @@ class _FeedbackFormState extends State<FeedbackForm> {
                   TextFormField(
                     key: ValueKey('${_formPrefix}StepsField'),
                     controller: _stepsController,
-                    decoration: InputDecoration(labelText: _stepsLabel),
+                    textCapitalization: TextCapitalization.sentences,
+                    keyboardType: TextInputType.multiline,
+                    decoration: InputDecoration(
+                      labelText: _stepsLabel,
+                      suffixIcon: _stepsController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              tooltip: 'Clear steps',
+                              onPressed: _stepsController.clear,
+                            )
+                          : null,
+                    ),
                     minLines: 2,
                     maxLines: 5,
                   ),

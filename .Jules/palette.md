@@ -31,3 +31,7 @@
 ## 2026-02-21 - Clearable Text Fields
 **Learning:** Users often struggle to clear long inputs (like emails) on mobile without a clear button.
 **Action:** Implement a `suffixIcon` with an `IconButton` (icon: `Icons.clear`, tooltip: 'Clear') that appears only when `controller.text.isNotEmpty` to allow one-tap clearing.
+
+## 2026-02-23 - Feedback Form Polish
+**Learning:** Multiline text inputs (like descriptions/steps) benefit significantly from 'Clear' buttons and sentence capitalization.
+**Action:** Use `TextCapitalization.sentences` for free-text fields. Implement dynamic `suffixIcon` clear buttons for multiline inputs using controller listeners.
