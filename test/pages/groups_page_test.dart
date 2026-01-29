@@ -204,6 +204,26 @@ void main() {
     expect(vibration.lightCount, 1);
   });
 
+  testWidgets('shows empty state with create button when no groups exist',
+      (tester) async {
+    final service = RecordingGroupService(firestore: firestore);
+    await pumpPage(tester, service);
+
+    expect(find.text('No groups found'), findsOneWidget);
+    expect(
+      find.text('Create a group to start reading together.'),
+      findsOneWidget,
+    );
+    expect(find.text('Create Group'), findsOneWidget);
+
+    await tester.tap(find.text('Create Group'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.descendant(of: find.byType(AlertDialog), matching: find.text('Create Group')), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+  });
+
   testWidgets('cancel create disposes controller safely', (tester) async {
     final service = RecordingGroupService(firestore: firestore);
     await pumpPage(tester, service);
