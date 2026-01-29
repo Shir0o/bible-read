@@ -133,8 +133,11 @@ void main() {
       expect(ReferenceParser.nextChapter(''), isNull);
       expect(ReferenceParser.nextChapter('NotABook 1'), isNull);
       expect(ReferenceParser.nextChapter('Genesis'), isNull); // missing chapter
-      expect(ReferenceParser.nextChapter('Genesis 100'),
-          isNull); // chapter out of range
+    });
+
+    test('clamps and advances out-of-range chapters', () {
+      // Genesis 100 clamps to Genesis 50, so next is Exodus 1
+      expect(ReferenceParser.nextChapter('Genesis 100'), 'Exodus 1');
     });
   });
 
@@ -172,6 +175,11 @@ void main() {
     test('handles ordinals', () {
       expect(ReferenceParser.normalizeOne('1 john 1'), '1 John 1');
       expect(ReferenceParser.normalizeOne('ii kings 2'), '2 Kings 2');
+    });
+
+    test('clamps out-of-range chapters', () {
+      expect(ReferenceParser.normalizeOne('Genesis 100'), 'Genesis 50');
+      expect(ReferenceParser.normalizeOne('Jude 2'), 'Jude 1');
     });
   });
 }

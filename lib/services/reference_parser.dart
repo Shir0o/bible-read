@@ -274,7 +274,7 @@ class ReferenceParser {
     final bookRaw = m.group(2) ?? '';
     final chapStr = m.group(3) ?? '';
     if (chapStr.isEmpty) return raw;
-    final chapter = int.tryParse(chapStr) ?? 0;
+    var chapter = int.tryParse(chapStr) ?? 0;
     if (chapter <= 0) return raw;
 
     final ordinal = _parseOrdinal(ordStr);
@@ -292,6 +292,12 @@ class ReferenceParser {
     } else {
       display = base;
     }
+
+    final maxChapters = _chapters[display];
+    if (maxChapters != null && chapter > maxChapters) {
+      chapter = maxChapters;
+    }
+
     return '$display $chapter';
   }
 
