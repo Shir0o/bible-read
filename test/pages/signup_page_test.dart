@@ -10,6 +10,8 @@ import 'package:bible_read/pages/signup_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bible_read/services/vibration_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:bible_read/services/notification_preferences_service.dart';
 import 'dart:io';
 import 'dart:async';
 
@@ -87,6 +89,11 @@ class MockVibrationService extends VibrationService {
   Future<void> mediumImpact() async {}
 }
 
+class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
+  @override
+  Future<String?> getToken({String? vapidKey}) async => 'fake_token';
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MockHttpOverrides();
@@ -109,6 +116,12 @@ void main() {
           auth: auth, 
           firestore: firestore,
           vibrationService: MockVibrationService(),
+          mainPageBuilder: (_) => MainPage(
+            auth: auth, // Pass same auth so it sees logged in user
+            firestore: firestore,
+            messaging: FakeFirebaseMessaging(),
+            vibrationService: MockVibrationService(),
+          ),
         ),
       ),
     );

@@ -185,8 +185,6 @@ class _RecordingVibrationService extends VibrationService {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MockHttpOverrides();
   setupFirebaseCoreMocks();
 
