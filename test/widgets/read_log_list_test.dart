@@ -6,7 +6,8 @@ import 'package:bible_read/models/comment.dart';
 import 'package:bible_read/models/read_log.dart';
 
 void main() {
-  testWidgets('FeedCard displays correctly and like button works', (tester) async {
+  testWidgets('FeedCard displays correctly and like button works',
+      (tester) async {
     String? likedUid;
     final logs = [
       ReadLog(
@@ -63,12 +64,11 @@ void main() {
         firstReader: false,
         comments: [
           Comment(
-             id: 'c1', 
-             uid: 'u2', 
-             authorName: 'Charlie', 
-             message: 'Great job!', 
-             timestamp: DateTime.now()
-          ),
+              id: 'c1',
+              uid: 'u2',
+              authorName: 'Charlie',
+              message: 'Great job!',
+              timestamp: DateTime.now()),
         ],
       ),
     ];
@@ -99,7 +99,7 @@ void main() {
     // We just verify we can expand and see the composer.
 
     // Tap to expand (either comment button or card body)
-    await tester.tap(find.text('Bob')); 
+    await tester.tap(find.text('Bob'));
     await tester.pumpAndSettle();
 
     // Now comment should be visible and composer interactive

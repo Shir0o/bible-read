@@ -54,23 +54,23 @@ class _JourneyPageState extends State<JourneyPage>
         controller: _scrollController,
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
-             SliverAppBar(
-               centerTitle: true,
-               backgroundColor: colorScheme.surface,
-               scrolledUnderElevation: 0,
-               forceMaterialTransparency: true, // Keep it transparent/clean
-               // No explicitly set title, letting the card be the focus
-               // but we can add an opacity-faded title if scrolled later if desired.
-             ),
-             SliverToBoxAdapter(
-               child: ProfileSummaryCard(auth: widget.auth),
-             ),
-             AnimatedBuilder(
-               animation: _tabController,
-               builder: (context, child) {
-                 return SliverPersistentHeader(
-                   delegate: _SliverTabBarDelegate(
-                     TabBar(
+            SliverAppBar(
+              centerTitle: true,
+              backgroundColor: colorScheme.surface,
+              scrolledUnderElevation: 0,
+              forceMaterialTransparency: true, // Keep it transparent/clean
+              // No explicitly set title, letting the card be the focus
+              // but we can add an opacity-faded title if scrolled later if desired.
+            ),
+            SliverToBoxAdapter(
+              child: ProfileSummaryCard(auth: widget.auth),
+            ),
+            AnimatedBuilder(
+              animation: _tabController,
+              builder: (context, child) {
+                return SliverPersistentHeader(
+                  delegate: _SliverTabBarDelegate(
+                    TabBar(
                       controller: _tabController,
                       labelColor: AppTheme.primary90,
                       unselectedLabelColor: AppTheme.neutral90,
@@ -80,17 +80,20 @@ class _JourneyPageState extends State<JourneyPage>
                       overlayColor: WidgetStateProperty.all(Colors.transparent),
                       labelPadding: const EdgeInsets.symmetric(horizontal: 4),
                       tabs: [
-                        _JourneyPageState._buildTab(_tabController, 0, Icons.calendar_today, 'Plans'),
-                        _JourneyPageState._buildTab(_tabController, 1, Icons.check_circle_outline, 'Tracker'),
-                        _JourneyPageState._buildTab(_tabController, 2, Icons.history, 'History'),
+                        _JourneyPageState._buildTab(
+                            _tabController, 0, Icons.calendar_today, 'Plans'),
+                        _JourneyPageState._buildTab(_tabController, 1,
+                            Icons.check_circle_outline, 'Tracker'),
+                        _JourneyPageState._buildTab(
+                            _tabController, 2, Icons.history, 'History'),
                       ],
                     ),
                     colorScheme: colorScheme,
-                   ),
-                   pinned: true,
-                 );
-               },
-             ),
+                  ),
+                  pinned: true,
+                );
+              },
+            ),
           ];
         },
         body: TabBarView(
@@ -114,10 +117,10 @@ class _JourneyPageState extends State<JourneyPage>
     );
   }
 
-
-  static Widget _buildTab(TabController controller, int index, IconData icon, String label) {
+  static Widget _buildTab(
+      TabController controller, int index, IconData icon, String label) {
     if (!controller.indexIsChanging) {
-       // Accessing index is safe
+      // Accessing index is safe
     }
     // We listen to animation in parent, so rebuild happens.
     // controller.index gives the current index.
@@ -136,10 +139,11 @@ class _JourneyPageState extends State<JourneyPage>
           children: [
             Icon(icon, size: 18),
             const SizedBox(width: 4),
-            Text(label, style: AppTextStyles.body.copyWith(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                fontSize: 14,
-            )),
+            Text(label,
+                style: AppTextStyles.body.copyWith(
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: 14,
+                )),
           ],
         ),
       ),
@@ -166,8 +170,8 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       alignment: Alignment.center,
       child: Container(
-         // No decoration needed
-         child: _tabBar,
+        // No decoration needed
+        child: _tabBar,
       ),
     );
   }

@@ -38,7 +38,6 @@ class UserProfilePage extends StatefulWidget {
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     FriendService? friendService,
-
     VibrationService? vibrationService,
     FeedbackService? feedbackService,
   }) {
@@ -51,7 +50,6 @@ class UserProfilePage extends StatefulWidget {
       auth: authInstance,
       firestore: fs,
       friendService: friendService ?? FriendService(firestore: fs),
-
       vibrationService: vibrationService ?? const VibrationService(),
       feedbackService:
           feedbackService ?? FeedbackService(firestore: fs, auth: authInstance),
@@ -65,7 +63,6 @@ class UserProfilePage extends StatefulWidget {
     required this.auth,
     required this.firestore,
     required this.friendService,
-
     required this.vibrationService,
     required this.feedbackService,
   });
@@ -78,7 +75,6 @@ class UserProfilePageState extends State<UserProfilePage> {
   bool _isSigningIn = false;
   bool _loading = true;
 
-
   @override
   void initState() {
     super.initState();
@@ -87,11 +83,8 @@ class UserProfilePageState extends State<UserProfilePage> {
       setState(() {
         _loading = false;
       });
-
     });
   }
-
-
 
   Future<void> _handleSignIn() async {
     if (mounted) {
@@ -258,7 +251,6 @@ class UserProfilePageState extends State<UserProfilePage> {
                                 firestore: widget.firestore,
                                 auth: widget.auth,
                               ),
-
                               const SizedBox(height: 24),
                               AnimatedActionButton(
                                 onPressed: _handleSignOut,
@@ -326,5 +318,3 @@ class UserProfilePageState extends State<UserProfilePage> {
     );
   }
 }
-
-

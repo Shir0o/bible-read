@@ -171,7 +171,8 @@ void main() {
     expect(service.nudged, isTrue);
   });
 
-  testWidgets('encouragement button changes appearance after send', (tester) async {
+  testWidgets('encouragement button changes appearance after send',
+      (tester) async {
     await firestore
         .collection('users')
         .doc('u1')
@@ -182,16 +183,18 @@ void main() {
     await pumpPage(tester);
 
     // Initial state: Enabled color (null in code means default icon color)
-    final initialIcon = tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
+    final initialIcon =
+        tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
     expect(initialIcon.color, isNull);
 
     await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
     await settle(tester);
 
     // After tap: Disabled color
-    final nudgedIcon = tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
-    expect(nudgedIcon.color, isNotNull); 
-    
+    final nudgedIcon =
+        tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
+    expect(nudgedIcon.color, isNotNull);
+
     // Also verify onPressed is NOT null
     final button = tester.widget<IconButton>(find.ancestor(
       of: find.byIcon(Icons.auto_awesome_outlined),
@@ -225,7 +228,8 @@ void main() {
     expect(button.onPressed, isNotNull);
   });
 
-  testWidgets('already sent nudge updates appearance/interaction', (tester) async {
+  testWidgets('already sent nudge updates appearance/interaction',
+      (tester) async {
     final already = AlreadySentFriendService(firestore: firestore);
     await firestore
         .collection('users')
@@ -253,12 +257,13 @@ void main() {
       matching: find.byType(IconButton),
     ));
     expect(button.onPressed, isNotNull);
-    
+
     // Verify snackbar "Encouragement already sent today"
     expect(find.text('Encouragement already sent today'), findsOneWidget);
   });
 
-  testWidgets('existing nudge log updates encouragement button appearance', (tester) async {
+  testWidgets('existing nudge log updates encouragement button appearance',
+      (tester) async {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
     await firestore
@@ -280,7 +285,7 @@ void main() {
     await pumpPage(tester);
 
     final icon = tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
-    expect(icon.color, isNotNull); 
+    expect(icon.color, isNotNull);
 
     final button = tester.widget<IconButton>(find.ancestor(
       of: find.byIcon(Icons.auto_awesome_outlined),

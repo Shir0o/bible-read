@@ -204,51 +204,52 @@ class _FriendlyStreakViewState extends State<FriendlyStreakView> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration:
-          CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
-      child: Stack(
-        children: [
-          RefreshIndicator(
-            onRefresh: _loadFriendlyStreak,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              children: [
-                if (_loadError) ...[
-                  _buildErrorNotice(),
-                  const SizedBox(height: 16),
+        decoration:
+            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
+        child: Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: _loadFriendlyStreak,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                shrinkWrap: true,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                children: [
+                  if (_loadError) ...[
+                    _buildErrorNotice(),
+                    const SizedBox(height: 16),
+                  ],
+                  _buildPartnerListCard(),
+                  const SizedBox(height: 80), // Fab spacing
                 ],
-                _buildPartnerListCard(),
-                const SizedBox(height: 80), // Fab spacing
-              ],
+              ),
             ),
-          ),
-          Positioned(
-            bottom: 16,
-            right: 16,
-            child: FloatingActionButton(
-              heroTag: 'friendly-streak-fab',
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => InviteStreakPage(
-                      auth: widget.auth,
-                      friendService: FriendService(firestore: widget.firestore),
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: FloatingActionButton(
+                heroTag: 'friendly-streak-fab',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => InviteStreakPage(
+                        auth: widget.auth,
+                        friendService:
+                            FriendService(firestore: widget.firestore),
+                      ),
                     ),
-                  ),
-                );
-              },
-              child: const Icon(Icons.add),
+                  );
+                },
+                child: const Icon(Icons.add),
+              ),
             ),
-          ),
-        ],
-      )
-    );
+          ],
+        ));
   }
 }
 
-// Keeping the original Page as a wrapper for backward compatibility if needed, 
+// Keeping the original Page as a wrapper for backward compatibility if needed,
 // though we primarily want to use the view.
 class FriendlyStreakPage extends StatelessWidget {
   final FirebaseFirestore firestore;
@@ -263,7 +264,8 @@ class FriendlyStreakPage extends StatelessWidget {
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         friendlyStreakService = friendlyStreakService ??
-            FriendlyStreakService(firestore: firestore ?? FirebaseFirestore.instance);
+            FriendlyStreakService(
+                firestore: firestore ?? FirebaseFirestore.instance);
 
   @override
   Widget build(BuildContext context) {

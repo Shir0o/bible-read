@@ -420,21 +420,18 @@ void main() {
 
       await tester.pumpWidget(MaterialApp(
           home: ReadLogPage(
-              firestore: firestore,
-              auth: auth,
-              dateProvider: () => fixedDate,
-              onSendLikeNotification: (
-                  {required String ownerUid,
-                  required String likerName}) async {},
-              onSendCommentNotification: (
-                  {required String ownerUid,
-                  required String commenterName}) async {},
-              vibrationService: const StubVibrationService(),
-          )));
+        firestore: firestore,
+        auth: auth,
+        dateProvider: () => fixedDate,
+        onSendLikeNotification: (
+            {required String ownerUid, required String likerName}) async {},
+        onSendCommentNotification: (
+            {required String ownerUid, required String commenterName}) async {},
+        vibrationService: const StubVibrationService(),
+      )));
       await tester.pumpAndSettle();
 
-      expect(
-          find.text('Sign in to see who\'s reading today'), findsOneWidget);
+      expect(find.text('Sign in to see who\'s reading today'), findsOneWidget);
       expect(find.byType(ListTile), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
@@ -465,17 +462,15 @@ void main() {
 
       await tester.pumpWidget(MaterialApp(
           home: ReadLogPage(
-              firestore: firestore,
-              auth: MockFirebaseAuth(mockUser: user, signedIn: true),
-              dateProvider: () => fixedDate,
-              onSendLikeNotification: (
-                  {required String ownerUid,
-                  required String likerName}) async {},
-              onSendCommentNotification: (
-                  {required String ownerUid,
-                  required String commenterName}) async {},
-              vibrationService: const StubVibrationService(),
-          )));
+        firestore: firestore,
+        auth: MockFirebaseAuth(mockUser: user, signedIn: true),
+        dateProvider: () => fixedDate,
+        onSendLikeNotification: (
+            {required String ownerUid, required String likerName}) async {},
+        onSendCommentNotification: (
+            {required String ownerUid, required String commenterName}) async {},
+        vibrationService: const StubVibrationService(),
+      )));
       await tester.pumpAndSettle();
 
       expect(find.text('User'), findsOneWidget);
@@ -511,17 +506,15 @@ void main() {
 
       await tester.pumpWidget(MaterialApp(
           home: ReadLogPage(
-              firestore: firestore,
-              auth: MockFirebaseAuth(mockUser: user, signedIn: true),
-              dateProvider: () => fixedDate,
-              onSendLikeNotification: (
-                  {required String ownerUid,
-                  required String likerName}) async {},
-              onSendCommentNotification: (
-                  {required String ownerUid,
-                  required String commenterName}) async {},
-              vibrationService: const StubVibrationService(),
-          )));
+        firestore: firestore,
+        auth: MockFirebaseAuth(mockUser: user, signedIn: true),
+        dateProvider: () => fixedDate,
+        onSendLikeNotification: (
+            {required String ownerUid, required String likerName}) async {},
+        onSendCommentNotification: (
+            {required String ownerUid, required String commenterName}) async {},
+        vibrationService: const StubVibrationService(),
+      )));
       await tester.pumpAndSettle();
 
       /* Gamification removed
@@ -555,22 +548,23 @@ void main() {
 
       await tester.pumpWidget(MaterialApp(
           home: ReadLogPage(
-              firestore: firestore,
-              auth: MockFirebaseAuth(mockUser: user, signedIn: true),
-              dateProvider: () => fixedDate,
-              onSendLikeNotification: (
-                  {required String ownerUid,
-                  required String likerName}) async {},
-              onSendCommentNotification: (
-                  {required String ownerUid,
-                  required String commenterName}) async {},
-              vibrationService: const StubVibrationService(),
-          )));
+        firestore: firestore,
+        auth: MockFirebaseAuth(mockUser: user, signedIn: true),
+        dateProvider: () => fixedDate,
+        onSendLikeNotification: (
+            {required String ownerUid, required String likerName}) async {},
+        onSendCommentNotification: (
+            {required String ownerUid, required String commenterName}) async {},
+        vibrationService: const StubVibrationService(),
+      )));
       await tester.pumpAndSettle();
 
       expect(find.text('User'), findsOneWidget);
       expect(find.text('Read today'), findsOneWidget);
-      expect(find.text('Unable to load today\'s readers.\nPlease check your connection.'), findsNothing);
+      expect(
+          find.text(
+              'Unable to load today\'s readers.\nPlease check your connection.'),
+          findsNothing);
       expect(find.byType(BadgeIcon), findsNothing);
     });
 
@@ -593,23 +587,22 @@ void main() {
 
       await tester.pumpWidget(MaterialApp(
           home: ReadLogPage(
-              firestore: firestore,
-              auth: auth,
-              dateProvider: () => fixedDate,
-              onSendLikeNotification: (
-                  {required String ownerUid,
-                  required String likerName}) async {},
-              onSendCommentNotification: (
-                  {required String ownerUid,
-                  required String commenterName}) async {},
-              vibrationService: const StubVibrationService(),
-          )));
+        firestore: firestore,
+        auth: auth,
+        dateProvider: () => fixedDate,
+        onSendLikeNotification: (
+            {required String ownerUid, required String likerName}) async {},
+        onSendCommentNotification: (
+            {required String ownerUid, required String commenterName}) async {},
+        vibrationService: const StubVibrationService(),
+      )));
       await tester.pumpAndSettle();
 
       // Likes
       await tester.tap(find.byIcon(Icons.favorite_border_rounded));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.favorite_rounded), findsOneWidget); // Expect filled
+      expect(
+          find.byIcon(Icons.favorite_rounded), findsOneWidget); // Expect filled
 
       final likeDoc = await firestore
           .collection('read_logs')
@@ -624,7 +617,8 @@ void main() {
       // Unlikes
       await tester.tap(find.byIcon(Icons.favorite_rounded));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget); // Expect outline
+      expect(find.byIcon(Icons.favorite_border_rounded),
+          findsOneWidget); // Expect outline
 
       final likeDocDeleted = await firestore
           .collection('read_logs')
@@ -644,20 +638,21 @@ void main() {
 
       await tester.pumpWidget(MaterialApp(
           home: ReadLogPage(
-              firestore: firestore,
-              auth: auth,
-              dateProvider: () => fixedDate,
-              onSendLikeNotification: (
-                  {required String ownerUid,
-                  required String likerName}) async {},
-              onSendCommentNotification: (
-                  {required String ownerUid,
-                  required String commenterName}) async {},
-              vibrationService: const StubVibrationService(),
-          )));
+        firestore: firestore,
+        auth: auth,
+        dateProvider: () => fixedDate,
+        onSendLikeNotification: (
+            {required String ownerUid, required String likerName}) async {},
+        onSendCommentNotification: (
+            {required String ownerUid, required String commenterName}) async {},
+        vibrationService: const StubVibrationService(),
+      )));
       await tester.pumpAndSettle();
 
-      expect(find.text('Unable to load today\'s readers.\nPlease check your connection.'), findsOneWidget);
+      expect(
+          find.text(
+              'Unable to load today\'s readers.\nPlease check your connection.'),
+          findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
@@ -680,17 +675,15 @@ void main() {
 
       await tester.pumpWidget(MaterialApp(
           home: ReadLogPage(
-              firestore: firestore,
-              auth: auth,
-              dateProvider: () => fixedDate,
-              onSendLikeNotification: (
-                  {required String ownerUid,
-                  required String likerName}) async {},
-              onSendCommentNotification: (
-                  {required String ownerUid,
-                  required String commenterName}) async {},
-              vibrationService: const StubVibrationService(),
-          )));
+        firestore: firestore,
+        auth: auth,
+        dateProvider: () => fixedDate,
+        onSendLikeNotification: (
+            {required String ownerUid, required String likerName}) async {},
+        onSendCommentNotification: (
+            {required String ownerUid, required String commenterName}) async {},
+        vibrationService: const StubVibrationService(),
+      )));
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);

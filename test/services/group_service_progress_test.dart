@@ -142,7 +142,9 @@ void main() {
       expect(result.first.completion, 0.0);
     });
 
-    test('memberDailyCompletion fetches names from users collection if missing in member doc', () async {
+    test(
+        'memberDailyCompletion fetches names from users collection if missing in member doc',
+        () async {
       final groupId = 'g1';
       final now = DateTime.now();
       final date = DateTime.utc(now.year, now.month, now.day);
@@ -165,7 +167,8 @@ void main() {
       });
 
       final stream = service.memberDailyCompletion(groupId, date: date);
-      final result = await stream.firstWhere((l) => l.isNotEmpty && l.first.name == 'Real Name');
+      final result = await stream
+          .firstWhere((l) => l.isNotEmpty && l.first.name == 'Real Name');
 
       expect(result.first.name, 'Real Name');
     });

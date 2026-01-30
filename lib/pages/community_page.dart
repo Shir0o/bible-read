@@ -20,7 +20,7 @@ class CommunityPage extends StatefulWidget {
   final FriendService friendService;
   final ReadingStatusService readingStatusService;
   final VibrationService vibrationService;
-  
+
   // Dependencies for ReadLogView
   final Future<void> Function({
     required String ownerUid,
@@ -35,8 +35,12 @@ class CommunityPage extends StatefulWidget {
     Key? key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-    required Future<void> Function({required String ownerUid, required String likerName}) onSendLikeNotification,
-    required Future<void> Function({required String ownerUid, required String commenterName}) onSendCommentNotification,
+    required Future<void> Function(
+            {required String ownerUid, required String likerName})
+        onSendLikeNotification,
+    required Future<void> Function(
+            {required String ownerUid, required String commenterName})
+        onSendCommentNotification,
   })? readLogBuilder;
 
   const CommunityPage({
@@ -94,7 +98,8 @@ class _CommunityPageState extends State<CommunityPage>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Reduced horizontal margin
+            margin: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 8), // Reduced horizontal margin
             decoration: const BoxDecoration(
               color: Colors.transparent,
             ),
@@ -130,19 +135,20 @@ class _CommunityPageState extends State<CommunityPage>
             vibrationService: widget.vibrationService,
           ),
           widget.readLogBuilder?.call(
-            firestore: widget.firestore,
-            auth: widget.auth,
-            onSendLikeNotification: widget.onSendLikeNotification,
-            onSendCommentNotification: widget.onSendCommentNotification,
-          ) ?? ReadLogView(
-            firestore: widget.firestore,
-            auth: widget.auth,
-            readingStatusService: widget.readingStatusService,
-            onSendLikeNotification: widget.onSendLikeNotification,
-            onSendCommentNotification: widget.onSendCommentNotification,
-            dateProvider: widget.dateProvider,
-            tabController: _tabController,
-          ),
+                firestore: widget.firestore,
+                auth: widget.auth,
+                onSendLikeNotification: widget.onSendLikeNotification,
+                onSendCommentNotification: widget.onSendCommentNotification,
+              ) ??
+              ReadLogView(
+                firestore: widget.firestore,
+                auth: widget.auth,
+                readingStatusService: widget.readingStatusService,
+                onSendLikeNotification: widget.onSendLikeNotification,
+                onSendCommentNotification: widget.onSendCommentNotification,
+                dateProvider: widget.dateProvider,
+                tabController: _tabController,
+              ),
           FriendsView(
             friendService: widget.friendService,
             auth: widget.auth,
@@ -169,10 +175,11 @@ class _CommunityPageState extends State<CommunityPage>
           children: [
             Icon(icon, size: 16),
             const SizedBox(width: 4),
-            Text(label, style: AppTextStyles.body.copyWith(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                fontSize: 13,
-            )),
+            Text(label,
+                style: AppTextStyles.body.copyWith(
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: 13,
+                )),
           ],
         ),
       ),

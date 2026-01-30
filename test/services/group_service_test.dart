@@ -442,9 +442,8 @@ void main() {
       await expectLater(
         service.allGroups(),
         emits(
-          isA<List<Group>>()
-              .having((l) => l.length, 'length', 3)
-              .having((l) => l.map((g) => g.id).toSet(), 'ids', {'g1', 'g2', 'g3'}),
+          isA<List<Group>>().having((l) => l.length, 'length', 3).having(
+              (l) => l.map((g) => g.id).toSet(), 'ids', {'g1', 'g2', 'g3'}),
         ),
       );
     });
@@ -657,7 +656,6 @@ void main() {
           fatal: false)).called(1);
     });
 
-
     test('memberDailyCompletion streams progress for group members', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
@@ -758,7 +756,10 @@ void main() {
       // Populate subcollections
       await groupRef.collection(GroupCollections.members).doc('u1').set({});
       await groupRef.collection(GroupCollections.schedule).doc('d1').set({});
-      await groupRef.collection(GroupCollections.joinRequests).doc('u2').set({});
+      await groupRef
+          .collection(GroupCollections.joinRequests)
+          .doc('u2')
+          .set({});
 
       // Execute delete
       await service.deleteGroup(groupId: 'g1', ownerUid: 'u1');
@@ -1009,7 +1010,8 @@ void main() {
       // While brittle, these are necessary to ensure the service handles Firestore
       // outages gracefully.
 
-      test('groupsForUser logs and returns empty list on stream error', () async {
+      test('groupsForUser logs and returns empty list on stream error',
+          () async {
         final mockFs = MockFirebaseFirestore();
         final memberQuery = MockQuery<Map<String, dynamic>>();
         final groups = MockCollectionReference<Map<String, dynamic>>();
@@ -1175,8 +1177,7 @@ void main() {
 
         final svc = GroupService(firestore: mockFs);
 
-        await expectLater(
-            svc.joinGroup(groupId: 'g1', uid: 'u1', name: 'Name'),
+        await expectLater(svc.joinGroup(groupId: 'g1', uid: 'u1', name: 'Name'),
             throwsA(same(err)));
 
         verify(() => joinRequests.doc('u1')).called(1);

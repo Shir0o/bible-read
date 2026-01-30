@@ -115,17 +115,76 @@ class MockHttpClientResponse extends Fake implements HttpClientResponse {
       {Function? onError, void Function()? onDone, bool? cancelOnError}) {
     // 1x1 transparent pixel png
     final List<int> bytes = [
-      0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 
-      0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, 
-      0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 
-      0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 
-      0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41, 
-      0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, 
-      0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 
-      0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 
-      0x42, 0x60, 0x82
+      0x89,
+      0x50,
+      0x4E,
+      0x47,
+      0x0D,
+      0x0A,
+      0x1A,
+      0x0A,
+      0x00,
+      0x00,
+      0x00,
+      0x0D,
+      0x49,
+      0x48,
+      0x44,
+      0x52,
+      0x00,
+      0x00,
+      0x00,
+      0x01,
+      0x00,
+      0x00,
+      0x00,
+      0x01,
+      0x08,
+      0x06,
+      0x00,
+      0x00,
+      0x00,
+      0x1F,
+      0x15,
+      0xC4,
+      0x89,
+      0x00,
+      0x00,
+      0x00,
+      0x0A,
+      0x49,
+      0x44,
+      0x41,
+      0x54,
+      0x78,
+      0x9C,
+      0x63,
+      0x00,
+      0x01,
+      0x00,
+      0x00,
+      0x05,
+      0x00,
+      0x01,
+      0x0D,
+      0x0A,
+      0x2D,
+      0xB4,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x49,
+      0x45,
+      0x4E,
+      0x44,
+      0xAE,
+      0x42,
+      0x60,
+      0x82
     ];
-    return Stream<List<int>>.value(bytes).listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+    return Stream<List<int>>.value(bytes).listen(onData,
+        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 }
 
@@ -143,7 +202,8 @@ void main() {
     GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
   });
 
-  testWidgets('Authenticated user sees responsive scaffold with home', (tester) async {
+  testWidgets('Authenticated user sees responsive scaffold with home',
+      (tester) async {
     final user = MockUser(uid: 'u1', email: 'test@example.com');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
     final firestore = FakeFirebaseFirestore();
@@ -158,16 +218,18 @@ void main() {
         ),
       ),
     );
-    await tester.pump(); 
+    await tester.pump();
     // Wait for StreamBuilder if necessary. MockFirebaseAuth usually emits immediately.
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.byType(ResponsiveScaffold), findsOneWidget);
     expect(find.byType(UserProfilePage), findsNothing);
-    expect(find.text('Home'), findsOneWidget); // Assuming Home tab is selected by default
+    expect(find.text('Home'),
+        findsOneWidget); // Assuming Home tab is selected by default
   });
 
-  testWidgets('Unauthenticated user sees UserProfilePage and no navigation', (tester) async {
+  testWidgets('Unauthenticated user sees UserProfilePage and no navigation',
+      (tester) async {
     final auth = MockFirebaseAuth(signedIn: false);
     final firestore = FakeFirebaseFirestore();
 

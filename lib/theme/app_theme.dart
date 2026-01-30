@@ -7,8 +7,6 @@ import 'package:google_fonts/google_fonts.dart';
 /// Pass a [ColorScheme] to [appTheme] to change primary colors and adjust
 /// [fontFamily] or [textTheme] to modify typography.
 class AppTheme {
-
-
   static TextTheme _applyIBMFont(TextTheme base) =>
       GoogleFonts.ibmPlexSansTextTheme(base);
 

@@ -78,11 +78,11 @@ void main() {
 
       // Initially comments are hidden inside AnimatedCrossFade (first child is SizedBox.shrink)
       // We need to tap the comment button to expand.
-      
+
       // Find the comment button (chat icon)
       final commentButton = find.byIcon(Icons.chat_bubble_outline_rounded);
       expect(commentButton, findsOneWidget);
-      
+
       await tester.tap(commentButton);
       await tester.pumpAndSettle();
 

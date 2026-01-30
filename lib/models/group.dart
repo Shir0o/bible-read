@@ -53,6 +53,9 @@ class Group {
 
   @override
   int get hashCode {
-    return id.hashCode ^ name.hashCode ^ ownerUid.hashCode ^ memberCount.hashCode;
+    return id.hashCode ^
+        name.hashCode ^
+        ownerUid.hashCode ^
+        memberCount.hashCode;
   }
 }

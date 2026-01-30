@@ -5,7 +5,7 @@ class StubVibrationService extends VibrationService {
 
   @override
   Future<void> lightImpact() async {}
-  
+
   @override
   Future<void> tap() async {}
 

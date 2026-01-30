@@ -19,9 +19,9 @@ class HomePageSkeleton extends StatelessWidget {
               height: 32,
               radius: 8,
             ),
-            
+
             const SizedBox(height: 48),
-            
+
             // "Yes, I read" Button Skeleton (Full width)
             const Skeleton(
               width: double.infinity,

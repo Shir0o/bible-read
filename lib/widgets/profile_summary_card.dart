@@ -60,7 +60,7 @@ class ProfileSummaryCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Name
               Text(
                 user?.displayName ?? 'Reader',
@@ -73,12 +73,12 @@ class ProfileSummaryCard extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
 
-
               const SizedBox(height: 12),
 
               // "View Profile" Affordance (Subtle)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(20),

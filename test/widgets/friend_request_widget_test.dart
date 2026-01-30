@@ -112,7 +112,9 @@ void main() {
 
     await pumpRequestWidget(tester);
 
-    await tester.tap(find.byIcon(Icons.check));
+    await tester.tap(find.byWidgetPredicate((widget) =>
+        widget is Semantics &&
+        widget.properties.label == 'Accept friend request from Alice'));
     await tester.pumpAndSettle();
 
     final friendDocA = await firestore
@@ -158,7 +160,9 @@ void main() {
 
     await pumpRequestWidget(tester);
 
-    await tester.tap(find.byIcon(Icons.close));
+    await tester.tap(find.byWidgetPredicate((widget) =>
+        widget is Semantics &&
+        widget.properties.label == 'Decline friend request from Alice'));
     await tester.pumpAndSettle();
 
     final sentDoc = await firestore

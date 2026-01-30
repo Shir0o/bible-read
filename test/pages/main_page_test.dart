@@ -271,7 +271,7 @@ void main() {
         Navigator.pop(state.context);
         await tester.pumpAndSettle();
       }
-      
+
       responsive = tester.widget<ResponsiveScaffold>(
         find.byType(ResponsiveScaffold),
       );
@@ -321,7 +321,10 @@ void main() {
 
     expect(find.byType(FriendsPage), findsOneWidget);
 
-    final hasNavAfter = find.byType(NavigationBar, skipOffstage: false).evaluate().isNotEmpty ||
+    final hasNavAfter = find
+            .byType(NavigationBar, skipOffstage: false)
+            .evaluate()
+            .isNotEmpty ||
         find.byType(NavigationRail, skipOffstage: false).evaluate().isNotEmpty;
     expect(hasNavAfter, isTrue);
   });
@@ -359,7 +362,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(LeaderboardPage), findsOneWidget);
-    final hasNavAfter = find.byType(NavigationBar, skipOffstage: false).evaluate().isNotEmpty ||
+    final hasNavAfter = find
+            .byType(NavigationBar, skipOffstage: false)
+            .evaluate()
+            .isNotEmpty ||
         find.byType(NavigationRail, skipOffstage: false).evaluate().isNotEmpty;
     expect(hasNavAfter, isTrue);
   });
@@ -588,7 +594,6 @@ void main() {
 
     expect(find.text('Sign in with Google'), findsOneWidget);
   });
-
 
   testWidgets('saves FCM token to Firestore on silent sign-in', (tester) async {
     fakePlatform.user = GoogleSignInUserData(

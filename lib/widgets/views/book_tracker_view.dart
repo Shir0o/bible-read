@@ -90,12 +90,14 @@ class _BookTrackerViewState extends State<BookTrackerView>
                                           actions: [
                                             TextButton(
                                               onPressed: () =>
-                                                  Navigator.of(context).pop(false),
+                                                  Navigator.of(context)
+                                                      .pop(false),
                                               child: const Text('Cancel'),
                                             ),
                                             TextButton(
                                               onPressed: () =>
-                                                  Navigator.of(context).pop(true),
+                                                  Navigator.of(context)
+                                                      .pop(true),
                                               child: const Text('Confirm'),
                                             ),
                                           ],
@@ -103,7 +105,8 @@ class _BookTrackerViewState extends State<BookTrackerView>
                                       );
 
                                       if (confirmed == true) {
-                                        await achievementService.unlockAchievement(
+                                        await achievementService
+                                            .unlockAchievement(
                                           user.uid,
                                           Achievement(
                                             id: achievementId,

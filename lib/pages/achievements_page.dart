@@ -34,7 +34,8 @@ class AchievementsView extends StatelessWidget {
 
         final achievements = snapshot.data ?? [];
         if (achievements.isEmpty) {
-          return const Center(child: Text('No achievements yet. Keep reading!'));
+          return const Center(
+              child: Text('No achievements yet. Keep reading!'));
         }
 
         return GridView.builder(
@@ -78,7 +79,8 @@ class _AchievementCard extends StatelessWidget {
         Text(
           _formatDate(achievement.dateUnlocked),
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.secondary),
+          style: TextStyle(
+              fontSize: 10, color: Theme.of(context).colorScheme.secondary),
         ),
       ],
     );
@@ -102,7 +104,9 @@ class AchievementsPage extends StatelessWidget {
     AchievementService? achievementService,
   })  : auth = auth ?? FirebaseAuth.instance,
         firestore = firestore ?? FirebaseFirestore.instance,
-        achievementService = achievementService ?? AchievementService(firestore: firestore ?? FirebaseFirestore.instance);
+        achievementService = achievementService ??
+            AchievementService(
+                firestore: firestore ?? FirebaseFirestore.instance);
 
   @override
   Widget build(BuildContext context) {

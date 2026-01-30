@@ -15,7 +15,8 @@ class BookTrackerSkeleton extends StatelessWidget {
           elevation: 0,
           color: Theme.of(context).colorScheme.surfaceContainerHigh,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
             child: Row(
               children: const [
                 Skeleton(width: 24, height: 24, radius: 4),

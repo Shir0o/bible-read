@@ -162,7 +162,9 @@ void main() {
 
     expect(find.text('Alice'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Approve'));
+    await tester.tap(find.byWidgetPredicate((widget) =>
+        widget is Semantics &&
+        widget.properties.label == 'Approve join request from Alice'));
     await tester.pumpAndSettle();
 
     expect(service.approveCalled, isTrue);
@@ -217,7 +219,9 @@ void main() {
 
     expect(find.text('Eve'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Deny'));
+    await tester.tap(find.byWidgetPredicate((widget) =>
+        widget is Semantics &&
+        widget.properties.label == 'Deny join request from Eve'));
     await tester.pumpAndSettle();
 
     expect(service.denyCalled, isTrue);
