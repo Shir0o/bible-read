@@ -112,6 +112,15 @@ void main() {
       expect(result, equals(['John 3', 'John 4']));
       expect(result.every(isCanonical), isTrue);
     });
+
+    test('parses ambiguous ranges deterministically', () {
+      // "Gen 1-2-3" is parsed by splitting on '-' into ["Gen 1", "2", "3"].
+      // The logic takes start="Gen 1" and end="3", ignoring intermediate "2".
+      // range(Gen 1, Gen 3) -> Gen 1, Gen 2, Gen 3.
+      final result = ReferenceParser.parseChaptersList('Gen 1-2-3');
+      expect(result, equals(['Genesis 1', 'Genesis 2', 'Genesis 3']));
+      expect(result.every(isCanonical), isTrue);
+    });
   });
 
   group('ReferenceParser.nextChapter', () {
