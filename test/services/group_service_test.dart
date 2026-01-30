@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:bible_read/models/group.dart';
+import 'package:bible_read/models/group_member_progress.dart';
 import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:bible_read/services/group_service.dart';
@@ -555,8 +556,16 @@ void main() {
         'role': 'member',
       });
 
-      final names = await service.memberNames('g1').first;
-      expect(names.toSet(), {'Alice', 'Bob'});
+      await expectLater(
+        service.memberNames('g1'),
+        emitsThrough(
+          isA<List<String>>().having(
+            (l) => l.toSet(),
+            'names',
+            {'Alice', 'Bob'},
+          ),
+        ),
+      );
     });
 
     test('memberNames batches user lookups', () async {
@@ -575,8 +584,16 @@ void main() {
         expected.add(name);
       }
 
-      final names = await service.memberNames('g1').first;
-      expect(names.toSet(), expected);
+      await expectLater(
+        service.memberNames('g1'),
+        emitsThrough(
+          isA<List<String>>().having(
+            (l) => l.toSet(),
+            'names',
+            expected,
+          ),
+        ),
+      );
     });
 
     test('schedule streams list of entries', () async {
@@ -589,9 +606,15 @@ void main() {
         'date': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
         'chapters': ['Gen 1']
       });
-      final entries = await service.schedule('g1').first;
-      expect(entries, hasLength(1));
-      expect(entries.first.chapters, ['Gen 1']);
+
+      await expectLater(
+        service.schedule('g1'),
+        emitsThrough(
+          isA<List<GroupSchedule>>()
+              .having((l) => l.length, 'length', 1)
+              .having((l) => l.first.chapters, 'chapters', ['Gen 1']),
+        ),
+      );
     });
 
     test('createGroup rethrows and logs on error', () async {
@@ -713,19 +736,27 @@ void main() {
           .doc('Gen 2')
           .set({});
 
-      final stream = service.memberDailyCompletion('g1', date: today);
-
-      final result = await stream.first;
-
-      expect(result.length, 2);
-
-      final u1 = result.firstWhere((m) => m.uid == 'u1');
-      expect(u1.completion, 0.5);
-      expect(u1.name, 'Alice');
-
-      final u2 = result.firstWhere((m) => m.uid == 'u2');
-      expect(u2.completion, 1.0);
-      expect(u2.name, 'Bob');
+      await expectLater(
+        service.memberDailyCompletion('g1', date: today),
+        emitsThrough(
+          isA<List<GroupMemberProgressData>>()
+              .having((l) => l.length, 'length', 2)
+              .having(
+                (l) => l.firstWhere((m) => m.uid == 'u1'),
+                'u1',
+                isA<GroupMemberProgressData>()
+                    .having((m) => m.completion, 'completion', 0.5)
+                    .having((m) => m.name, 'name', 'Alice'),
+              )
+              .having(
+                (l) => l.firstWhere((m) => m.uid == 'u2'),
+                'u2',
+                isA<GroupMemberProgressData>()
+                    .having((m) => m.completion, 'completion', 1.0)
+                    .having((m) => m.name, 'name', 'Bob'),
+              ),
+        ),
+      );
     });
 
     test('memberDailyCompletion returns 0% when no progress exists', () async {
@@ -745,10 +776,14 @@ void main() {
         'chapters': ['Gen 1']
       });
 
-      final result =
-          await service.memberDailyCompletion('g1', date: today).first;
-      expect(result.length, 1);
-      expect(result.first.completion, 0.0);
+      await expectLater(
+        service.memberDailyCompletion('g1', date: today),
+        emitsThrough(
+          isA<List<GroupMemberProgressData>>()
+              .having((l) => l.length, 'length', 1)
+              .having((l) => l.first.completion, 'completion', 0.0),
+        ),
+      );
     });
 
     test('deleteGroup removes group and subcollections', () async {
@@ -829,18 +864,27 @@ void main() {
 
       // u2: Completed 0 chapters (0%) - No entry or entry with 0
 
-      final stream = service.memberOverallCompletion('g1');
-      final result = await stream.first;
-
-      expect(result.length, 2);
-
-      final u1 = result.firstWhere((m) => m.uid == 'u1');
-      expect(u1.completion, 0.75);
-      expect(u1.name, 'Alice');
-
-      final u2 = result.firstWhere((m) => m.uid == 'u2');
-      expect(u2.completion, 0.0);
-      expect(u2.name, 'Bob');
+      await expectLater(
+        service.memberOverallCompletion('g1'),
+        emitsThrough(
+          isA<List<GroupMemberProgressData>>()
+              .having((l) => l.length, 'length', 2)
+              .having(
+                (l) => l.firstWhere((m) => m.uid == 'u1'),
+                'u1',
+                isA<GroupMemberProgressData>()
+                    .having((m) => m.completion, 'completion', 0.75)
+                    .having((m) => m.name, 'name', 'Alice'),
+              )
+              .having(
+                (l) => l.firstWhere((m) => m.uid == 'u2'),
+                'u2',
+                isA<GroupMemberProgressData>()
+                    .having((m) => m.completion, 'completion', 0.0)
+                    .having((m) => m.name, 'name', 'Bob'),
+              ),
+        ),
+      );
     });
 
     group('Recalc & Fix Progress', () {
