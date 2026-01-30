@@ -15,6 +15,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:async';
 
 import 'package:bible_read/pages/user_profile_page.dart';
+import 'package:bible_read/pages/welcome_page.dart';
 import 'friends_page.dart';
 import 'achievements_page.dart';
 import 'challenges_page.dart';
@@ -126,6 +127,7 @@ class _MainPageState extends State<MainPage> {
   late final Stream<User?> _authStream;
 
   final List<int> _navigationHistory = [_homeIndex];
+  bool _showAuthSelection = false;
 
   @override
   void initState() {
@@ -354,12 +356,30 @@ class _MainPageState extends State<MainPage> {
 
         final user = snapshot.data;
         if (user == null) {
-          return UserProfilePage(
-            auth: widget.auth,
-            firestore: widget.firestore,
-            googleSignInProvider: widget.googleSignInProvider,
-            friendService: _friendService,
-            vibrationService: widget.vibrationService,
+          if (_showAuthSelection) {
+            return PopScope(
+              canPop: false,
+              onPopInvoked: (didPop) {
+                if (didPop) return;
+                setState(() {
+                  _showAuthSelection = false;
+                });
+              },
+              child: UserProfilePage(
+                auth: widget.auth,
+                firestore: widget.firestore,
+                googleSignInProvider: widget.googleSignInProvider,
+                friendService: _friendService,
+                vibrationService: widget.vibrationService,
+              ),
+            );
+          }
+          return WelcomePage(
+            onGetStarted: () {
+              setState(() {
+                _showAuthSelection = true;
+              });
+            },
           );
         }
 

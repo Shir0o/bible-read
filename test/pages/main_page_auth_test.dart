@@ -1,5 +1,6 @@
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
+import 'package:bible_read/pages/welcome_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -228,8 +229,7 @@ void main() {
         findsOneWidget); // Assuming Home tab is selected by default
   });
 
-  testWidgets('Unauthenticated user sees UserProfilePage and no navigation',
-      (tester) async {
+  testWidgets('Unauthenticated user navigation flow', (tester) async {
     final auth = MockFirebaseAuth(signedIn: false);
     final firestore = FakeFirebaseFirestore();
 
@@ -246,9 +246,24 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    // Should see UserProfilePage which contains "Sign in with Google" or similar
+    // 1. WelcomePage
+    expect(find.byType(WelcomePage), findsOneWidget);
+    expect(find.byType(UserProfilePage), findsNothing);
+
+    // 2. Tap Get Started
+    await tester.tap(find.text('Get Started'));
+    await tester.pumpAndSettle();
+
+    // 3. UserProfilePage
+    expect(find.byType(WelcomePage), findsNothing);
     expect(find.byType(UserProfilePage), findsOneWidget);
-    expect(find.byType(ResponsiveScaffold), findsNothing);
-    expect(find.text('Home'), findsNothing); // Navigation shouldn't be visible
+
+    // 4. Back
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    // 5. WelcomePage again
+    expect(find.byType(WelcomePage), findsOneWidget);
+    expect(find.byType(UserProfilePage), findsNothing);
   });
 }
