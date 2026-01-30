@@ -204,6 +204,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: MainPage(
+          auth: MockFirebaseAuth(signedIn: false),
+          firestore: FakeFirebaseFirestore(),
+          messaging: FakeFirebaseMessaging(null),
           vibrationService: _RecordingVibrationService(),
         ),
       ),
@@ -266,7 +269,7 @@ void main() {
 
     // The profile page should remain visible and navigation index unchanged (default Home=0).
     expect(state.selectedIndex, 0);
-    expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('Get Started'), findsOneWidget);
   });
 
   testWidgets('navigation updates selected index', (tester) async {
@@ -650,7 +653,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(NavigationDestination), findsNothing);
-    expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('Get Started'), findsOneWidget);
 
     // ResponsiveScaffold is not present when unauthenticated (UserProfilePage is shown)
     expect(find.byType(ResponsiveScaffold), findsNothing);
@@ -660,7 +663,7 @@ void main() {
     state.onItemTapped(1);
     await tester.pump();
 
-    expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('Get Started'), findsOneWidget);
   });
 
   testWidgets('saves FCM token to Firestore on silent sign-in', (tester) async {
@@ -953,7 +956,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     // Should now show the unauthenticated profile page
-    expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('Get Started'), findsOneWidget);
 
     expect(find.byType(ResponsiveScaffold), findsNothing);
     expect(find.byType(NavigationBar), findsNothing);
@@ -968,7 +971,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('Get Started'), findsOneWidget);
   });
 
   testWidgets('drawer navigation updates content index', (tester) async {

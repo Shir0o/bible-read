@@ -1,5 +1,6 @@
 // ignore_for_file: depend_on_referenced_packages
 import 'package:firebase_core/firebase_core.dart';
+import 'package:network_image_mock/network_image_mock.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -12,10 +13,12 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:bible_read/pages/main_page.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/badge_icon.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -161,27 +164,34 @@ void main() {
   });
 
   testWidgets('successful sign in navigates to main page', (tester) async {
-    final googlePlatform = FakeGoogleSignInPlatform(
-      userData: GoogleSignInUserData(email: 'e', id: 'id', displayName: 'd'),
-    );
-    GoogleSignInPlatform.instance = googlePlatform;
-    final auth = TrackingAuth();
+    await mockNetworkImagesFor(() async {
+      final googlePlatform = FakeGoogleSignInPlatform(
+        userData: GoogleSignInUserData(email: 'e', id: 'id', displayName: 'd'),
+      );
+      GoogleSignInPlatform.instance = googlePlatform;
+      final auth = TrackingAuth();
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UserProfilePage(
-          auth: auth,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UserProfilePage(
+            auth: auth,
+            mainPageBuilder: (_) => MainPage(
+              auth: auth,
+              firestore: FakeFirebaseFirestore(),
+              messaging: FakeFirebaseMessaging(null),
+            ),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Sign in with Google'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign in with Google'));
+      await tester.pumpAndSettle();
 
-    expect(googlePlatform.signInCalled, isTrue);
-    expect(auth.signInCalled, isTrue);
-    expect(find.byType(MainPage), findsOneWidget);
+      expect(googlePlatform.signInCalled, isTrue);
+      expect(auth.signInCalled, isTrue);
+      expect(find.byType(MainPage), findsOneWidget);
+    });
   });
 
   testWidgets('sign in cancelled shows snackbar', (tester) async {
@@ -233,140 +243,190 @@ void main() {
   });
 
   testWidgets('shows user info when user provided', (tester) async {
-    final userData = GoogleSignInUserData(
-      email: 'test@example.com',
-      id: 'id',
-      displayName: 'Test User',
-    );
-    final googlePlatform = FakeGoogleSignInPlatform(userData: userData);
-    GoogleSignInPlatform.instance = googlePlatform;
+    await mockNetworkImagesFor(() async {
+      final userData = GoogleSignInUserData(
+        email: 'test@example.com',
+        id: 'id',
+        displayName: 'Test User',
+      );
+      final googlePlatform = FakeGoogleSignInPlatform(userData: userData);
+      GoogleSignInPlatform.instance = googlePlatform;
 
-    final account = await GoogleSignIn().signIn();
+      final account = await GoogleSignIn().signIn();
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UserProfilePage(
-          user: account,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UserProfilePage(
+            user: account,
+          ),
         ),
-      ),
-    );
+      );
 
-    // Loading indicator shown first
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // Loading indicator shown first
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    expect(find.text('Test User'), findsOneWidget);
-    expect(find.text('test@example.com'), findsOneWidget);
-    expect(find.text('Sign in with Google'), findsNothing);
+      expect(find.text('Test User'), findsOneWidget);
+      expect(find.text('test@example.com'), findsOneWidget);
+      expect(find.text('Sign in with Google'), findsNothing);
+    });
   });
 
   testWidgets('shows firebase user info when no google user provided',
       (tester) async {
-    final auth = MockFirebaseAuth(
-      mockUser: MockUser(
-        uid: 'abc',
-        email: 'firebase@example.com',
-        displayName: 'Firebase User',
-        photoURL: '',
-      ),
-      signedIn: true,
-    );
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UserProfilePage(
-          auth: auth,
+    await mockNetworkImagesFor(() async {
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(
+          uid: 'abc',
+          email: 'firebase@example.com',
+          displayName: 'Firebase User',
+          photoURL: '',
         ),
-      ),
-    );
+        signedIn: true,
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UserProfilePage(
+            auth: auth,
+          ),
+        ),
+      );
 
-    expect(find.text('Firebase User'), findsOneWidget);
-    expect(find.text('firebase@example.com'), findsOneWidget);
-    expect(find.text('Sign in with Google'), findsNothing);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Firebase User'), findsOneWidget);
+      expect(find.text('firebase@example.com'), findsOneWidget);
+      expect(find.text('Sign in with Google'), findsNothing);
+    });
   });
 
   testWidgets('sign out signs out google and firebase', (tester) async {
-    final googlePlatform = FakeGoogleSignInPlatform(
-      userData: GoogleSignInUserData(
-        email: 'signout@example.com',
-        id: 'id',
-        displayName: 'Sign Out User',
-      ),
-    );
-    GoogleSignInPlatform.instance = googlePlatform;
-    final auth = TrackingAuth();
-
-    final account = await GoogleSignIn().signIn();
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UserProfilePage(
-          user: account,
-          auth: auth,
+    await mockNetworkImagesFor(() async {
+      final googlePlatform = FakeGoogleSignInPlatform(
+        userData: GoogleSignInUserData(
+          email: 'signout@example.com',
+          id: 'id',
+          displayName: 'Sign Out User',
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      GoogleSignInPlatform.instance = googlePlatform;
+      final auth = TrackingAuth();
 
-    await tester.tap(find.text('Sign Out'));
-    await tester.pumpAndSettle();
+      final account = await GoogleSignIn().signIn();
 
-    expect(googlePlatform.signOutCalled, isTrue);
-    expect(auth.signOutCalled, isTrue);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UserProfilePage(
+            user: account,
+            auth: auth,
+            mainPageBuilder: (_) => MainPage(
+               auth: auth,
+               firestore: FakeFirebaseFirestore(),
+               messaging: FakeFirebaseMessaging(null),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Sign Out'));
+      await tester.pumpAndSettle();
+
+      expect(googlePlatform.signOutCalled, isTrue);
+      expect(auth.signOutCalled, isTrue);
+    });
   });
 
   testWidgets('notification settings button vibrates', (tester) async {
-    final vibration = _RecordingVibrationService();
-    final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    await mockNetworkImagesFor(() async {
+      final vibration = _RecordingVibrationService();
+      final firestore = FakeFirebaseFirestore();
+      final auth =
+          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UserProfilePage(
-          auth: auth,
-          firestore: firestore,
-          vibrationService: vibration,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UserProfilePage(
+            auth: auth,
+            firestore: firestore,
+            vibrationService: vibration,
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Notification Settings'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Notification Settings'));
+      await tester.pumpAndSettle();
 
-    expect(vibration.lightCount, 1);
+      expect(vibration.lightCount, 1);
+    });
   });
 
   testWidgets('shows achievements summary for signed in user', (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final user = MockUser(uid: 'u1');
-    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+    await mockNetworkImagesFor(() async {
+      final firestore = FakeFirebaseFirestore();
+      final user = MockUser(uid: 'u1');
+      final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
-    await firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('achievements')
-        .doc('a1')
-        .set({
-      'title': 'Test',
-      'type': 't',
-      'dateUnlocked': Timestamp.fromDate(DateTime(2025)),
-    });
+      await firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('achievements')
+          .doc('a1')
+          .set({
+        'title': 'Test',
+        'type': 't',
+        'dateUnlocked': Timestamp.fromDate(DateTime(2025)),
+      });
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UserProfilePage(
-          auth: auth,
-          firestore: firestore,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UserProfilePage(
+            auth: auth,
+            firestore: firestore,
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.byType(BadgeIcon), findsOneWidget);
+      expect(find.byType(BadgeIcon), findsOneWidget);
+    });
   });
+}
+
+class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
+  FakeFirebaseMessaging(this.token);
+  final String? token;
+
+  @override
+  Future<String?> getToken({String? vapidKey}) async => token;
+
+  @override
+  Future<NotificationSettings> requestPermission({
+    bool alert = true,
+    bool announcement = false,
+    bool badge = true,
+    bool carPlay = false,
+    bool criticalAlert = false,
+    bool provisional = false,
+    bool sound = true,
+    bool providesAppNotificationSettings = false,
+  }) async {
+    return const NotificationSettings(
+      alert: AppleNotificationSetting.enabled,
+      announcement: AppleNotificationSetting.enabled,
+      authorizationStatus: AuthorizationStatus.authorized,
+      badge: AppleNotificationSetting.enabled,
+      carPlay: AppleNotificationSetting.enabled,
+      lockScreen: AppleNotificationSetting.enabled,
+      notificationCenter: AppleNotificationSetting.enabled,
+      showPreviews: AppleShowPreviewSetting.always,
+      timeSensitive: AppleNotificationSetting.enabled,
+      criticalAlert: AppleNotificationSetting.enabled,
+      sound: AppleNotificationSetting.enabled,
+      providesAppNotificationSettings: AppleNotificationSetting.disabled,
+    );
+  }
 }

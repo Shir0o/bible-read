@@ -8,6 +8,7 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:network_image_mock/network_image_mock.dart';
 
 class RecordingAuth extends MockFirebaseAuth {
   bool signInCalled = false;
@@ -35,20 +36,22 @@ void main() {
   });
 
   testWidgets('LoginPage signs in and navigates to MainPage', (tester) async {
-    final auth = RecordingAuth();
-    SharedPreferences.setMockInitialValues({});
+    await mockNetworkImagesFor(() async {
+      final auth = RecordingAuth();
+      SharedPreferences.setMockInitialValues({});
 
-    await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+      await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
 
-    await tester.enterText(
-        find.byKey(const Key('loginEmailField')), 'user@example.com');
-    await tester.enterText(find.byKey(const Key('loginPasswordField')), 'pw');
-    await tester.tap(find.widgetWithText(FilledButton, 'Sign In'));
-    await tester.pumpAndSettle();
+      await tester.enterText(
+          find.byKey(const Key('loginEmailField')), 'user@example.com');
+      await tester.enterText(find.byKey(const Key('loginPasswordField')), 'pw');
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign In'));
+      await tester.pumpAndSettle();
 
-    expect(auth.signInCalled, isTrue);
-    expect(auth.email, 'user@example.com');
-    expect(auth.password, 'pw');
-    expect(find.byType(MainPage), findsOneWidget);
+      expect(auth.signInCalled, isTrue);
+      expect(auth.email, 'user@example.com');
+      expect(auth.password, 'pw');
+      expect(find.byType(MainPage), findsOneWidget);
+    });
   });
 }
