@@ -30,8 +30,7 @@ class _StubVibrationService extends VibrationService {
 }
 
 class _StubFriendlyStreakService extends FriendlyStreakService {
-  _StubFriendlyStreakService()
-      : super(firestore: FakeFirebaseFirestore());
+  _StubFriendlyStreakService() : super(firestore: FakeFirebaseFirestore());
 
   @override
   Future<FriendlyStreakLinksSummary> fetchLinks(String uid) async {
@@ -40,17 +39,17 @@ class _StubFriendlyStreakService extends FriendlyStreakService {
 }
 
 class _StubAchievementService extends AchievementService {
-    _StubAchievementService() : super(firestore: FakeFirebaseFirestore());
+  _StubAchievementService() : super(firestore: FakeFirebaseFirestore());
 }
 
 class _StubGroupBookAchievementService extends GroupBookAchievementService {
-    _StubGroupBookAchievementService() : super(firestore: FakeFirebaseFirestore());
+  _StubGroupBookAchievementService()
+      : super(firestore: FakeFirebaseFirestore());
 }
 
 class _StubFriendStreakLinkService extends FriendStreakLinkService {
-    _StubFriendStreakLinkService() : super(firestore: FakeFirebaseFirestore());
+  _StubFriendStreakLinkService() : super(firestore: FakeFirebaseFirestore());
 }
-
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -88,12 +87,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Did you read today?'), findsOneWidget);
-    expect(find.text('Yes, I read'), findsOneWidget); // Can be FilledButton or FilledButton.tonal
+    expect(find.text('Yes, I read'),
+        findsOneWidget); // Can be FilledButton or FilledButton.tonal
     expect(find.byType(FilledButton), findsOneWidget);
     expect(find.text('Thank you for being here.'), findsNothing);
   });
 
-  testWidgets('show "Thank you for being here." when read today', (tester) async {
+  testWidgets('show "Thank you for being here." when read today',
+      (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
@@ -104,13 +105,13 @@ void main() {
     final today = DateTime.now();
     final dateKey =
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-    
+
     await firestore
-          .collection('users')
-          .doc('u1')
-          .collection('reading')
-          .doc(dateKey)
-          .set({'read': true});
+        .collection('users')
+        .doc('u1')
+        .collection('reading')
+        .doc(dateKey)
+        .set({'read': true});
 
     await tester.pumpWidget(
       MaterialApp(
@@ -118,7 +119,7 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-           friendlyStreakService: _StubFriendlyStreakService(),
+          friendlyStreakService: _StubFriendlyStreakService(),
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
           friendStreakLinkService: _StubFriendStreakLinkService(),
@@ -127,7 +128,7 @@ void main() {
     );
     // Allow FutureBuilder/async loads to complete
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200)); 
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
 
     expect(find.text('Marked Today'), findsNothing);
@@ -150,7 +151,7 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: vibrationService,
-           friendlyStreakService: _StubFriendlyStreakService(),
+          friendlyStreakService: _StubFriendlyStreakService(),
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
           friendStreakLinkService: _StubFriendStreakLinkService(),
@@ -172,18 +173,18 @@ void main() {
     // Verify final state
     expect(find.text('Thank you for being here.'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
-    
+
     // Verify Firestore was updated
     final today = DateTime.now();
     final dateKey =
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
     final doc = await firestore
-          .collection('users')
-          .doc('u1')
-          .collection('reading')
-          .doc(dateKey)
-          .get();
-    
+        .collection('users')
+        .doc('u1')
+        .collection('reading')
+        .doc(dateKey)
+        .get();
+
     expect(doc.exists, isTrue);
     expect(doc.data()?['read'], isTrue);
   });
@@ -202,9 +203,9 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-          'streak': 5,
-          'pastWeekReadDates': [], // Empty for now
-        });
+      'streak': 5,
+      'pastWeekReadDates': [], // Empty for now
+    });
 
     // Also mark as read today so the streak UI is visible
     final today = DateTime.now();
@@ -212,11 +213,11 @@ void main() {
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
     await firestore
-          .collection('users')
-          .doc('u1')
-          .collection('reading')
-          .doc(dateKey)
-          .set({'read': true});
+        .collection('users')
+        .doc('u1')
+        .collection('reading')
+        .doc(dateKey)
+        .set({'read': true});
 
     await tester.pumpWidget(
       MaterialApp(
@@ -224,7 +225,7 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-           friendlyStreakService: _StubFriendlyStreakService(),
+          friendlyStreakService: _StubFriendlyStreakService(),
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
           friendStreakLinkService: _StubFriendStreakLinkService(),
@@ -236,7 +237,7 @@ void main() {
     // Verify streak text (RichText)
     // RichText content aggregates to "5 days of reading"
     expect(find.text('5 days of reading', findRichText: true), findsOneWidget);
-    
+
     // Verify progress bar elements
     expect(find.text('Reading this week'), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
@@ -251,7 +252,7 @@ void main() {
 
     // Create a slow service to simulate loading delay
     final slowReadingService = MockReadingStatusService();
-    
+
     await tester.pumpWidget(
       MaterialApp(
         home: HomePage(
@@ -268,22 +269,22 @@ void main() {
     );
 
     // Initial pump - should show skeleton immediately
-    await tester.pump(); 
-    
+    await tester.pump();
+
     // Check that regular content is NOT present yet
     expect(find.text('Did you read today?'), findsNothing);
     expect(find.text('Yes, I read'), findsNothing);
-    
+
     // Check that Skeleton is present
     expect(find.byType(HomePageSkeleton), findsOneWidget);
-    
+
     // Fast forward time to finish loading
     // The skeleton loader has a minTime of 500ms (default)
     // The service has a delay of 1s.
     // We pump for 1 second + buffer
     await tester.pump(const Duration(milliseconds: 1100));
     await tester.pumpAndSettle();
-    
+
     // Now content should be visible
     expect(find.text('Did you read today?'), findsOneWidget);
     expect(find.byType(HomePageSkeleton), findsNothing);
@@ -291,7 +292,8 @@ void main() {
 }
 
 class MockReadingStatusService extends ReadingStatusService {
-  MockReadingStatusService() : super(firestore: FakeFirebaseFirestore(), auth: MockFirebaseAuth());
+  MockReadingStatusService()
+      : super(firestore: FakeFirebaseFirestore(), auth: MockFirebaseAuth());
 
   @override
   Future<ReadingStatus> fetchStatus() async {

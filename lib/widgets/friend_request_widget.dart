@@ -92,27 +92,33 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.check),
-                      tooltip: 'Accept request',
-                      onPressed: () => _handleAction(
-                        uid,
-                        () => widget.service.acceptFriendRequest(
-                          currentUid: widget.currentUid,
-                          currentName: widget.currentName,
-                          fromUid: uid,
-                          fromName: name,
+                    Semantics(
+                      label: 'Accept friend request from $name',
+                      child: IconButton(
+                        icon: const Icon(Icons.check),
+                        tooltip: 'Accept request',
+                        onPressed: () => _handleAction(
+                          uid,
+                          () => widget.service.acceptFriendRequest(
+                            currentUid: widget.currentUid,
+                            currentName: widget.currentName,
+                            fromUid: uid,
+                            fromName: name,
+                          ),
                         ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      tooltip: 'Decline request',
-                      onPressed: () => _handleAction(
-                        uid,
-                        () => widget.service.declineFriendRequest(
-                          currentUid: widget.currentUid,
-                          fromUid: uid,
+                    Semantics(
+                      label: 'Decline friend request from $name',
+                      child: IconButton(
+                        icon: const Icon(Icons.close),
+                        tooltip: 'Decline request',
+                        onPressed: () => _handleAction(
+                          uid,
+                          () => widget.service.declineFriendRequest(
+                            currentUid: widget.currentUid,
+                            fromUid: uid,
+                          ),
                         ),
                       ),
                     ),

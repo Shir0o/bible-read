@@ -220,7 +220,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AlertDialog), findsOneWidget);
-    expect(find.descendant(of: find.byType(AlertDialog), matching: find.text('Create Group')), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(AlertDialog), matching: find.text('Create Group')),
+        findsOneWidget);
     expect(find.byType(TextField), findsOneWidget);
   });
 

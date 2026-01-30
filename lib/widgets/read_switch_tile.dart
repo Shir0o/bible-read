@@ -26,7 +26,8 @@ class ReadSwitchTile extends StatefulWidget {
   State<ReadSwitchTile> createState() => _ReadSwitchTileState();
 }
 
-class _ReadSwitchTileState extends State<ReadSwitchTile> with SingleTickerProviderStateMixin {
+class _ReadSwitchTileState extends State<ReadSwitchTile>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scale;
 

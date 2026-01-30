@@ -120,7 +120,9 @@ class _FriendsViewState extends State<FriendsView>
                                   Expanded(
                                     child: Text(
                                       f.name.isEmpty ? 'Friend' : f.name,
-                                      style: Theme.of(context).textTheme.titleMedium,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
                                     ),
                                   ),
                                   const SizedBox(width: 16),
@@ -211,56 +213,56 @@ class _FriendsViewState extends State<FriendsView>
                 );
               }
             : () async {
-              unawaited(widget.vibrationService.lightImpact());
-              final messenger = ScaffoldMessenger.of(context);
-              setState(() {
-                _nudgedToday.add(friend.uid);
-              });
-              
-              messenger.clearSnackBars();
-              messenger.showSnackBar(
-                const SnackBar(
-                  content: Text('Encouragement sent'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-
-              try {
-                final result = await widget.friendService.nudgeFriend(
-                  currentUid: user.uid,
-                  friendUid: friend.uid,
-                  currentName: user.displayName ?? 'You',
-                );
-                if (!mounted) return;
-                switch (result) {
-                  case NudgeResult.alreadyRead:
-                  case NudgeResult.sent:
-                    // optimistic update handled it
-                    break;
-                  case NudgeResult.alreadySent:
-                    messenger.clearSnackBars();
-                    messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Encouragement already sent today'),
-                      ),
-                    );
-                    break;
-                }
-              } catch (e, st) {
-                debugPrint('Failed to send encouragement: $e');
-                ErrorLogger.log(e, st);
-                if (!mounted) return;
+                unawaited(widget.vibrationService.lightImpact());
+                final messenger = ScaffoldMessenger.of(context);
                 setState(() {
-                  _nudgedToday.remove(friend.uid);
+                  _nudgedToday.add(friend.uid);
                 });
+
                 messenger.clearSnackBars();
                 messenger.showSnackBar(
                   const SnackBar(
-                    content: Text('Failed to send encouragement'),
+                    content: Text('Encouragement sent'),
+                    duration: Duration(seconds: 2),
                   ),
                 );
-              }
-            },
+
+                try {
+                  final result = await widget.friendService.nudgeFriend(
+                    currentUid: user.uid,
+                    friendUid: friend.uid,
+                    currentName: user.displayName ?? 'You',
+                  );
+                  if (!mounted) return;
+                  switch (result) {
+                    case NudgeResult.alreadyRead:
+                    case NudgeResult.sent:
+                      // optimistic update handled it
+                      break;
+                    case NudgeResult.alreadySent:
+                      messenger.clearSnackBars();
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Encouragement already sent today'),
+                        ),
+                      );
+                      break;
+                  }
+                } catch (e, st) {
+                  debugPrint('Failed to send encouragement: $e');
+                  ErrorLogger.log(e, st);
+                  if (!mounted) return;
+                  setState(() {
+                    _nudgedToday.remove(friend.uid);
+                  });
+                  messenger.clearSnackBars();
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to send encouragement'),
+                    ),
+                  );
+                }
+              },
       ),
     );
   }

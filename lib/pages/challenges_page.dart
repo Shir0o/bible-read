@@ -31,7 +31,8 @@ class ChallengesPage extends StatefulWidget {
   State<ChallengesPage> createState() => _ChallengesPageState();
 }
 
-class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProviderStateMixin {
+class _ChallengesPageState extends State<ChallengesPage>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   @override
@@ -82,8 +83,8 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
             friendService: widget.friendService,
           ),
           AchievementsView(
-             auth: widget.auth,
-             achievementService: AchievementService(firestore: widget.firestore),
+            auth: widget.auth,
+            achievementService: AchievementService(firestore: widget.firestore),
           ),
         ],
       ),

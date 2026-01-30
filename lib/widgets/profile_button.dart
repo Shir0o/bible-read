@@ -27,7 +27,8 @@ class ProfileButton extends StatelessWidget {
         padding: const EdgeInsets.only(right: 16.0),
         child: CircleAvatar(
           radius: 16,
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          backgroundColor:
+              Theme.of(context).colorScheme.surfaceContainerHighest,
           child: user?.photoURL != null
               ? ClipOval(
                   child: Image.network(

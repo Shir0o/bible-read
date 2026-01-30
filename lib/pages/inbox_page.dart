@@ -25,7 +25,8 @@ class InboxPage extends StatefulWidget {
   State<InboxPage> createState() => _InboxPageState();
 }
 
-class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMixin {
+class _InboxPageState extends State<InboxPage>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   @override
@@ -56,8 +57,12 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
           indicatorColor: colorScheme.primary,
           dividerColor: Colors.transparent,
           tabs: const [
-             Tab(icon: Icon(Icons.notifications_outlined), text: 'Notifications'),
-             Tab(icon: Icon(Icons.local_fire_department_outlined), text: 'Streaks'),
+            Tab(
+                icon: Icon(Icons.notifications_outlined),
+                text: 'Notifications'),
+            Tab(
+                icon: Icon(Icons.local_fire_department_outlined),
+                text: 'Streaks'),
           ],
         ),
       ),
@@ -70,9 +75,10 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
             vibrationService: widget.vibrationService,
           ),
           FriendlyStreakView(
-             firestore: widget.firestore,
-             auth: widget.auth,
-             friendlyStreakService: FriendlyStreakService(firestore: widget.firestore),
+            firestore: widget.firestore,
+            auth: widget.auth,
+            friendlyStreakService:
+                FriendlyStreakService(firestore: widget.firestore),
           ),
         ],
       ),

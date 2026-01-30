@@ -133,8 +133,7 @@ class _MainPageState extends State<MainPage> {
     _authStream = widget.auth.authStateChanges();
     // ... existing init code ...
     _readingStatusService = widget.readingStatusService ??
-        ReadingStatusService(
-            firestore: widget.firestore, auth: widget.auth);
+        ReadingStatusService(firestore: widget.firestore, auth: widget.auth);
     _friendService = FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
     _friendlyStreakService = FriendlyStreakService(
@@ -207,7 +206,6 @@ class _MainPageState extends State<MainPage> {
         await widget.firestore.collection('users').doc(user.uid).set({
           'fcmToken': token,
         }, SetOptions(merge: true));
-
       }
     } catch (e) {
       if (kDebugMode) {
@@ -236,7 +234,7 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  // Helper to maintain compatibility if menu expects specific indices, 
+  // Helper to maintain compatibility if menu expects specific indices,
   // currently menu actions should just be navigation pushes.
   @visibleForTesting
   void navigateFromMenu(int index) {
@@ -244,69 +242,87 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _navigateFromMenu(int index) {
-      if (widget.appCheckFailed) return;
-      if (widget.auth.currentUser == null) return;
-      if (widget.onNavigate != null && !widget.onNavigate!(index)) return;
+    if (widget.appCheckFailed) return;
+    if (widget.auth.currentUser == null) return;
+    if (widget.onNavigate != null && !widget.onNavigate!(index)) return;
 
-      unawaited(vibrationService.lightImpact());
+    unawaited(vibrationService.lightImpact());
 
-      if (index >= 0 && index < 3) {
+    if (index >= 0 && index < 3) {
+      setState(() {
+        _selectedIndex = index;
+        _navigationHistory.add(index);
+      });
+    } else {
+      switch (index) {
+        case 3: // Leaderboard
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => widget.leaderboardPageBuilder(
+                        firestore: widget.firestore,
+                        auth: widget.auth,
+                        friendService: _friendService,
+                      )));
+          break;
+        case 4: // Friends
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => FriendsPage(
+                        auth: widget.auth,
+                        friendService: _friendService,
+                      )));
+          break;
+        case 5: // Challenges
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => ChallengesPage(
+                        auth: widget.auth,
+                        firestore: widget.firestore,
+                        friendService: _friendService,
+                        vibrationService: widget.vibrationService,
+                      )));
+          break;
+        case 6: // Achievements
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => AchievementsPage(
+                        auth: widget.auth,
+                        firestore: widget.firestore,
+                      )));
+          break;
+        case 7: // History
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => StreakHistoryPage(
+                        auth: widget.auth,
+                        firestore: widget.firestore,
+                      )));
+          break;
+        case 8: // Friendly Streak
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => FriendlyStreakPage(
+                        auth: widget.auth,
+                        firestore: widget.firestore,
+                      )));
+          break;
+        case 10: // Sign Out
+          unawaited(widget.auth.signOut());
           setState(() {
-            _selectedIndex = index;
-            _navigationHistory.add(index);
+            _selectedIndex = 0;
+            _navigationHistory
+              ..clear()
+              ..add(0);
           });
-      } else {
-        switch (index) {
-          case 3: // Leaderboard
-             Navigator.push(context, MaterialPageRoute(builder: (_) => widget.leaderboardPageBuilder(
-                firestore: widget.firestore,
-                auth: widget.auth,
-                friendService: _friendService,
-             )));
-             break;
-          case 4: // Friends
-             Navigator.push(context, MaterialPageRoute(builder: (_) => FriendsPage(
-                auth: widget.auth,
-                friendService: _friendService,
-             )));
-             break;
-          case 5: // Challenges
-             Navigator.push(context, MaterialPageRoute(builder: (_) => ChallengesPage(
-                auth: widget.auth,
-                firestore: widget.firestore,
-                friendService: _friendService,
-                vibrationService: widget.vibrationService,
-             )));
-             break;
-          case 6: // Achievements
-             Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsPage(
-                auth: widget.auth,
-                firestore: widget.firestore,
-             )));
-             break;
-          case 7: // History
-             Navigator.push(context, MaterialPageRoute(builder: (_) => StreakHistoryPage(
-                auth: widget.auth,
-                firestore: widget.firestore,
-             )));
-             break;
-          case 8: // Friendly Streak
-             Navigator.push(context, MaterialPageRoute(builder: (_) => FriendlyStreakPage(
-                auth: widget.auth,
-                firestore: widget.firestore,
-             )));
-             break;
-          case 10: // Sign Out
-             unawaited(widget.auth.signOut());
-             setState(() { 
-               _selectedIndex = 0; 
-               _navigationHistory
-                 ..clear()
-                 ..add(0);
-             });
-             break;
-        }
+          break;
       }
+    }
   }
 
   @override
@@ -327,12 +343,13 @@ class _MainPageState extends State<MainPage> {
       stream: _authStream,
       initialData: widget.auth.currentUser,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-           return const Scaffold(
-             body: Center(
-               child: CircularProgressIndicator(),
-             ),
-           );
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
         }
 
         final user = snapshot.data;
@@ -347,9 +364,18 @@ class _MainPageState extends State<MainPage> {
         }
 
         final destinations = const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.people_outlined), selectedIcon: Icon(Icons.people), label: 'Community'),
-          NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Journey'),
+          NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.people_outlined),
+              selectedIcon: Icon(Icons.people),
+              label: 'Community'),
+          NavigationDestination(
+              icon: Icon(Icons.map_outlined),
+              selectedIcon: Icon(Icons.map),
+              label: 'Journey'),
         ];
 
         return PopScope(
@@ -368,7 +394,8 @@ class _MainPageState extends State<MainPage> {
             vibrationService: widget.vibrationService,
             adminRoleService: _adminRoleService,
             child: ResponsiveScaffold(
-              selectedIndex: _selectedIndex >= _pages.length ? 0 : _selectedIndex,
+              selectedIndex:
+                  _selectedIndex >= _pages.length ? 0 : _selectedIndex,
               contentIndex: _selectedIndex,
               onDestinationSelected: _onItemTapped,
               pages: _pages,

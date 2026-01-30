@@ -64,7 +64,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Public')); 
+    await tester.tap(find.text('Public'));
     await tester.pumpAndSettle();
 
     expect(find.text('No one is on the leaderboard yet.'), findsOneWidget);

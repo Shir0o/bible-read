@@ -43,7 +43,8 @@ class SeasonalChallengesView extends StatelessWidget {
             }
             final challenges = snapshot.data ?? [];
             if (challenges.isEmpty) {
-              return const Center(child: Text('No active challenges at the moment.'));
+              return const Center(
+                  child: Text('No active challenges at the moment.'));
             }
 
             return ListView.builder(

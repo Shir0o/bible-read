@@ -14,7 +14,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 import 'firebase_options.dart';
 import 'services/error_logger.dart';
 import 'services/reminder_service.dart';
@@ -81,8 +80,6 @@ void main() async {
   runApp(MyApp(appCheckFailed: appCheckFailed));
 }
 
-
-
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> _setupMessaging() async {
@@ -114,19 +111,19 @@ Future<void> _setupMessaging() async {
     if (notification != null) {
       final payload = message.data.isEmpty ? null : jsonEncode(message.data);
       await ReminderService().flutterLocalNotificationsPlugin.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'default_channel',
-            'Notifications',
-            importance: Importance.defaultImportance,
-          ),
-          iOS: DarwinNotificationDetails(),
-        ),
-        payload: payload,
-      );
+            notification.hashCode,
+            notification.title,
+            notification.body,
+            const NotificationDetails(
+              android: AndroidNotificationDetails(
+                'default_channel',
+                'Notifications',
+                importance: Importance.defaultImportance,
+              ),
+              iOS: DarwinNotificationDetails(),
+            ),
+            payload: payload,
+          );
     }
   });
 

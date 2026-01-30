@@ -27,11 +27,11 @@ class ErrorLogger {
     if (kDebugMode) {
       debugPrint('ErrorLogger: $error\n$stack');
     }
-    
+
     // In tests, we want to avoid side effects from uninitialized Firebase apps.
     try {
       if (Firebase.apps.isEmpty && crashlytics == null) return;
-      
+
       final instance = _ensureCrashlytics();
       await instance.recordError(error, stack, fatal: false);
     } catch (e) {

@@ -142,7 +142,8 @@ void main() {
     // Test onSubmitted triggers submit
     await tester.enterText(
         find.byKey(const Key('loginEmailField')), 'test@example.com');
-    await tester.enterText(find.byKey(const Key('loginPasswordField')), 'password');
+    await tester.enterText(
+        find.byKey(const Key('loginPasswordField')), 'password');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 

@@ -2,8 +2,6 @@
 // by switching based on the current width.
 import 'package:flutter/material.dart';
 
-
-
 /// A scaffold that adapts its navigation UI to the screen width.
 ///
 /// Required parameters are [selectedIndex], [onDestinationSelected], [pages],
@@ -68,7 +66,7 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
     final int safeSelected = widget.destinations.isEmpty
         ? 0
         : widget.selectedIndex.clamp(0, widget.destinations.length - 1);
-    
+
     return Scaffold(
       key: widget.scaffoldKey,
       appBar: widget.appBar,

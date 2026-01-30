@@ -209,81 +209,82 @@ class _GroupsViewState extends State<GroupsView>
                     loading: false,
                     skeleton: const GroupListSkeleton(),
                     child: StreamBuilder<List<Group>>(
-                    key: ValueKey('my-groups-$_refreshTick'),
-                    stream: widget.groupService.groupsForUser(user.uid),
-                    builder: (context, mySnap) {
-                      return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                        stream: widget.groupService.firestore
-                            .collectionGroup(GroupCollections.joinRequests)
-                            .where('uid', isEqualTo: user.uid)
-                            .snapshots(),
-                        builder: (context, reqSnap) {
-                          final pending = reqSnap.hasData
-                              ? reqSnap.data!.docs
-                                  .map((d) => d.reference.parent.parent?.id)
-                                  .whereType<String>()
-                                  .toSet()
-                                  : <String>{};
-                          return RefreshIndicator(
-                            onRefresh: _refresh,
-                            child: ListView.separated(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              itemCount: groups.length,
-                              separatorBuilder: (_, __) =>
-                                  const Divider(height: 0),
-                              itemBuilder: (context, index) {
-                                final g = groups[index];
-                                return StreamBuilder<
-                                    QuerySnapshot<Map<String, dynamic>>>(
-                                  stream: widget.groupService.firestore
-                                      .collection(GroupCollections.groups)
-                                      .doc(g.id)
-                                      .collection(GroupCollections.members)
-                                      .snapshots(),
-                                  builder: (context, memberSnap) {
-                                    final docs =
-                                        memberSnap.data?.docs ?? const [];
-                                    final liveCount = docs.length;
-                                    // Ensure the owner appears in count even if their member doc is missing.
-                                    final hasOwner = docs.any((d) =>
-                                        d.id == g.ownerUid ||
-                                        (d.data()['uid'] as String?) ==
-                                            g.ownerUid);
-                                    final adjusted =
-                                        hasOwner ? liveCount : liveCount + 1;
-                                    final count =
-                                        (memberSnap.hasData && adjusted > 0)
-                                            ? adjusted
-                                            : g.memberCount;
-                                    return CommonStyles.buildTappableCard(
-                                      context: context,
-                                      onTap: () => _openGroup(g),
-                                      margin: const EdgeInsets.symmetric(
-                                          vertical: 4.0),
-                                      child: ListTile(
-                                        contentPadding: EdgeInsets.zero,
-                                        title: Text(g.name),
-                                        subtitle: Text(
-                                          '$count member${count == 1 ? '' : 's'}',
+                      key: ValueKey('my-groups-$_refreshTick'),
+                      stream: widget.groupService.groupsForUser(user.uid),
+                      builder: (context, mySnap) {
+                        return StreamBuilder<
+                            QuerySnapshot<Map<String, dynamic>>>(
+                          stream: widget.groupService.firestore
+                              .collectionGroup(GroupCollections.joinRequests)
+                              .where('uid', isEqualTo: user.uid)
+                              .snapshots(),
+                          builder: (context, reqSnap) {
+                            final pending = reqSnap.hasData
+                                ? reqSnap.data!.docs
+                                    .map((d) => d.reference.parent.parent?.id)
+                                    .whereType<String>()
+                                    .toSet()
+                                : <String>{};
+                            return RefreshIndicator(
+                              onRefresh: _refresh,
+                              child: ListView.separated(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                itemCount: groups.length,
+                                separatorBuilder: (_, __) =>
+                                    const Divider(height: 0),
+                                itemBuilder: (context, index) {
+                                  final g = groups[index];
+                                  return StreamBuilder<
+                                      QuerySnapshot<Map<String, dynamic>>>(
+                                    stream: widget.groupService.firestore
+                                        .collection(GroupCollections.groups)
+                                        .doc(g.id)
+                                        .collection(GroupCollections.members)
+                                        .snapshots(),
+                                    builder: (context, memberSnap) {
+                                      final docs =
+                                          memberSnap.data?.docs ?? const [];
+                                      final liveCount = docs.length;
+                                      // Ensure the owner appears in count even if their member doc is missing.
+                                      final hasOwner = docs.any((d) =>
+                                          d.id == g.ownerUid ||
+                                          (d.data()['uid'] as String?) ==
+                                              g.ownerUid);
+                                      final adjusted =
+                                          hasOwner ? liveCount : liveCount + 1;
+                                      final count =
+                                          (memberSnap.hasData && adjusted > 0)
+                                              ? adjusted
+                                              : g.memberCount;
+                                      return CommonStyles.buildTappableCard(
+                                        context: context,
+                                        onTap: () => _openGroup(g),
+                                        margin: const EdgeInsets.symmetric(
+                                            vertical: 4.0),
+                                        child: ListTile(
+                                          contentPadding: EdgeInsets.zero,
+                                          title: Text(g.name),
+                                          subtitle: Text(
+                                            '$count member${count == 1 ? '' : 's'}',
+                                          ),
+                                          trailing: pending.contains(g.id)
+                                              ? const Text('Pending')
+                                              : null,
                                         ),
-                                        trailing: pending.contains(g.id)
-                                            ? const Text('Pending')
-                                            : null,
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   );
                 },
               ),
@@ -306,7 +307,8 @@ class _GroupsViewState extends State<GroupsView>
             Icon(
               Icons.groups_outlined,
               size: 64,
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(

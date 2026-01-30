@@ -141,9 +141,7 @@ class _SignupFormState extends State<SignupForm> {
               suffixIcon: IconButton(
                 tooltip: _isPasswordVisible ? 'Hide password' : 'Show password',
                 icon: Icon(
-                  _isPasswordVisible
-                      ? Icons.visibility_off
-                      : Icons.visibility,
+                  _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
                 ),
                 onPressed: () {
                   setState(() {

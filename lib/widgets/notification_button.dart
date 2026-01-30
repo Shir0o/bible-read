@@ -61,7 +61,8 @@ class NotificationButton extends StatelessWidget {
                 builder: (_) => NotificationCenterPage(
                   service: service,
                   auth: auth,
-                  vibrationService: vibrationService ?? const VibrationService(),
+                  vibrationService:
+                      vibrationService ?? const VibrationService(),
                 ),
               ),
             );

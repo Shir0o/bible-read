@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart' as fln;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'
+    as fln;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -23,7 +24,8 @@ class ReminderService {
   bool _initialized = false;
 
   Future<void> init({
-    required void Function(fln.NotificationResponse)? onDidReceiveNotificationResponse,
+    required void Function(fln.NotificationResponse)?
+        onDidReceiveNotificationResponse,
   }) async {
     if (_initialized) return;
 
@@ -37,7 +39,8 @@ class ReminderService {
     final fln.DarwinInitializationSettings initializationSettingsDarwin =
         fln.DarwinInitializationSettings();
 
-    final fln.InitializationSettings initializationSettings = fln.InitializationSettings(
+    final fln.InitializationSettings initializationSettings =
+        fln.InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsDarwin,
     );

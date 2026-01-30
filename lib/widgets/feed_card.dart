@@ -26,7 +26,8 @@ class FeedCard extends StatefulWidget {
   State<FeedCard> createState() => _FeedCardState();
 }
 
-class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin {
+class _FeedCardState extends State<FeedCard>
+    with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   final TextEditingController _commentController = TextEditingController();
   bool _isSending = false;
@@ -173,7 +174,7 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
                             style: AppTextStyles.body.copyWith(
                               fontSize: 13,
                               // Muted but friendly tone
-                              color: colorScheme.onSurfaceVariant, 
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -187,23 +188,31 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
                     children: [
                       // Encourage Action
                       _ActionButton(
-                        icon: isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                        icon: isLiked
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
                         label: 'Encourage',
                         // Warm dynamic color if liked
-                        color: isLiked ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                        backgroundColor: isLiked ? colorScheme.primaryContainer : null,
+                        color: isLiked
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
+                        backgroundColor:
+                            isLiked ? colorScheme.primaryContainer : null,
                         onTap: () {
-                           (widget.vibrationService ?? const VibrationService()).lightImpact();
-                           widget.onToggleLike();
+                          (widget.vibrationService ?? const VibrationService())
+                              .lightImpact();
+                          widget.onToggleLike();
                         },
                       ),
                       const SizedBox(width: 12),
-                      
+
                       // Comment Action
                       _ActionButton(
                         icon: Icons.chat_bubble_outline_rounded,
                         // Count e.g. "1"
-                        label: widget.log.comments.isNotEmpty ? '${widget.log.comments.length}' : 'Comment',
+                        label: widget.log.comments.isNotEmpty
+                            ? '${widget.log.comments.length}'
+                            : 'Comment',
                         color: colorScheme.onSurfaceVariant,
                         onTap: () {
                           if (!_isExpanded) {
@@ -224,15 +233,14 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
             secondChild: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                 Divider(
-                   height: 1, 
-                   thickness: 0.5,
-                   color: colorScheme.outlineVariant.withValues(alpha: 0.5)
-                 ),
-                  if (widget.log.comments.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: Column(
+                Divider(
+                    height: 1,
+                    thickness: 0.5,
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                if (widget.log.comments.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: widget.log.comments.map((comment) {
                         return Padding(
@@ -264,7 +272,7 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
                       }).toList(),
                     ),
                   ),
-                
+
                 // Inline Composer
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -276,16 +284,20 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
                           decoration: BoxDecoration(
                             color: colorScheme.surface,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                            border: Border.all(
+                                color: colorScheme.outlineVariant
+                                    .withValues(alpha: 0.5)),
                           ),
                           child: TextField(
                             controller: _commentController,
                             decoration: InputDecoration(
                               hintText: 'Write a word of encouragement...',
-                              hintStyle: TextStyle(fontSize: 13, color: colorScheme.outline),
+                              hintStyle: TextStyle(
+                                  fontSize: 13, color: colorScheme.outline),
                               border: InputBorder.none,
                               isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                              contentPadding:
+                                  const EdgeInsets.symmetric(vertical: 12),
                             ),
                             style: const TextStyle(fontSize: 13),
                             onSubmitted: (_) => _submitComment(),
@@ -301,16 +313,22 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
                           foregroundColor: colorScheme.onPrimaryContainer,
                           minimumSize: const Size(40, 40),
                         ),
-                        icon: _isSending 
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) 
-                          : const Icon(Icons.send_rounded, size: 18),
+                        icon: _isSending
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.send_rounded, size: 18),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 300),
           ),
         ],
@@ -321,9 +339,9 @@ class _FeedCardState extends State<FeedCard> with SingleTickerProviderStateMixin
   String _buildLikeText(List<String> likeNames) {
     const maxToShow = 2;
     if (likeNames.length <= maxToShow) {
-       return likeNames.join(' & ');
+      return likeNames.join(' & ');
     } else {
-       return '${likeNames.take(maxToShow).join(', ')} and ${likeNames.length - maxToShow} others';
+      return '${likeNames.take(maxToShow).join(', ')} and ${likeNames.length - maxToShow} others';
     }
   }
 }

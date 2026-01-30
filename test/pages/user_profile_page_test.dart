@@ -11,7 +11,6 @@ import 'package:google_sign_in_platform_interface/google_sign_in_platform_interf
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/badge_icon.dart';
@@ -95,8 +94,6 @@ class _RecordingVibrationService extends VibrationService {
     lightCount++;
   }
 }
-
-
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

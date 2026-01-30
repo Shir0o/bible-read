@@ -18,16 +18,16 @@ class PostReadSkeleton extends StatelessWidget {
               height: 80,
               radius: 40, // Circular
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // "Thank you for being here" Text Skeleton
             const Skeleton(
               width: 200,
               height: 32,
               radius: 8,
             ),
-            
+
             const Spacer(),
 
             // Weekly Progress Section (Constrained width to 240)
@@ -54,7 +54,7 @@ class PostReadSkeleton extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
 
             // Streak Text Skeleton
@@ -63,7 +63,7 @@ class PostReadSkeleton extends StatelessWidget {
               height: 16,
               radius: 4,
             ),
-            
+
             const SizedBox(height: 32),
           ],
         ),

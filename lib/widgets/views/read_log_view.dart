@@ -120,8 +120,6 @@ class _ReadLogViewState extends State<ReadLogView>
     }
   }
 
-
-
   Future<void> _loadLogs({bool silent = false}) async {
     final currentUser = widget.auth.currentUser;
     if (currentUser == null) {
@@ -217,7 +215,8 @@ class _ReadLogViewState extends State<ReadLogView>
 
     if (original.liked) {
       // Unlike logic
-      final updatedNames = List<String>.from(original.likeNames)..remove(likerName);
+      final updatedNames = List<String>.from(original.likeNames)
+        ..remove(likerName);
       setState(() {
         _logs[index] = original.copyWith(liked: false, likeNames: updatedNames);
       });
@@ -232,17 +231,20 @@ class _ReadLogViewState extends State<ReadLogView>
         if (mounted) {
           setState(() => _logs[index] = original);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to remove encouragement. Please try again.')),
+            const SnackBar(
+                content:
+                    Text('Failed to remove encouragement. Please try again.')),
           );
         }
       }
     } else {
       // Like logic
-      final updatedNames = List<String>.from(original.likeNames)..add(likerName);
+      final updatedNames = List<String>.from(original.likeNames)
+        ..add(likerName);
       setState(() {
         _logs[index] = original.copyWith(liked: true, likeNames: updatedNames);
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -273,7 +275,8 @@ class _ReadLogViewState extends State<ReadLogView>
         if (mounted) {
           setState(() => _logs[index] = original);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to encourage. Please try again.')),
+            const SnackBar(
+                content: Text('Failed to encourage. Please try again.')),
           );
         }
       }
@@ -366,104 +369,114 @@ class _ReadLogViewState extends State<ReadLogView>
             CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
         child: SkeletonLoader(
           loading: _loading,
-          skeleton: _readToday ? const ReadLogSkeleton() : const ReadLogEmptySkeleton(),
+          skeleton: _readToday
+              ? const ReadLogSkeleton()
+              : const ReadLogEmptySkeleton(),
           child: _loadError
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Text(
-                        'Unable to load today\'s readers.\nPlease check your connection.',
-                        style: AppTextStyles.body.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Text(
+                      'Unable to load today\'s readers.\nPlease check your connection.',
+                      style: AppTextStyles.body.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                  )
-                : widget.auth.currentUser == null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.people_outline,
-                                size: 48,
-                                color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                )
+              : widget.auth.currentUser == null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.people_outline,
+                              size: 48,
+                              color:
+                                  Theme.of(context).colorScheme.outlineVariant,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Sign in to see who\'s reading today',
+                              style: AppTextStyles.subtitle.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Sign in to see who\'s reading today',
-                                style: AppTextStyles.subtitle.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Join the community and encourage others.',
+                              style: AppTextStyles.body.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : _logs.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(48.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.wb_sunny_outlined,
+                                  size: 48,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outlineVariant,
                                 ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Join the community and encourage others.',
-                                style: AppTextStyles.body.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Be the first light today',
+                                  style: AppTextStyles.subtitle.copyWith(
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Read your passage and be an encouragement to others.',
+                                  style: AppTextStyles.body.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                    height: 1.5,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.only(
+                            top: 16.0,
+                            bottom: 48.0,
+                            left: 16,
+                            right: 16,
+                          ),
+                          child: ReadLogList(
+                            logs: _logs,
+                            onToggleLike: _toggleLike,
+                            onAddComment: _addComment,
+                            commenterName:
+                                (widget.auth.currentUser?.displayName ?? '')
+                                    .split(' ')
+                                    .first,
+                            vibrationService: widget.vibrationService,
                           ),
                         ),
-                      )
-                    : _logs.isEmpty 
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(48.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.wb_sunny_outlined,
-                                    size: 48,
-                                    color: Theme.of(context).colorScheme.outlineVariant,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Be the first light today',
-                                    style: AppTextStyles.subtitle.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Read your passage and be an encouragement to others.',
-                                    style: AppTextStyles.body.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                      height: 1.5,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                    : Padding(
-                        padding: const EdgeInsets.only(
-                          top: 16.0,
-                          bottom: 48.0,
-                          left: 16,
-                          right: 16,
-                        ),
-                        child: ReadLogList(
-                          logs: _logs,
-                          onToggleLike: _toggleLike,
-                          onAddComment: _addComment,
-                          commenterName:
-                              (widget.auth.currentUser?.displayName ?? '')
-                                  .split(' ')
-                                  .first,
-                          vibrationService: widget.vibrationService,
-                        ),
-                      ),
         ),
       ),
     );

@@ -91,25 +91,33 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
             : Column(
                 children: [
                   if (_hasNotifications)
-                     Align(
-                       alignment: Alignment.centerRight,
-                       child: Padding(
-                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                         child: TextButton.icon(
-                           onPressed: _isClearing ? null : _clearNotifications,
-                           icon: _isClearing
-                               ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
-                               : const Icon(Icons.clear_all, size: 18),
-                           label: const Text('Clear All'),
-                         ),
-                       ),
-                     ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: TextButton.icon(
+                          onPressed: _isClearing ? null : _clearNotifications,
+                          icon: _isClearing
+                              ? const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.clear_all, size: 18),
+                          label: const Text('Clear All'),
+                        ),
+                      ),
+                    ),
                   Expanded(
                     child: StreamBuilder<List<AppNotification>>(
-                      stream: widget.service.notifications(user.uid).asBroadcastStream(),
+                      stream: widget.service
+                          .notifications(user.uid)
+                          .asBroadcastStream(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
                         }
                         final data = snapshot.data ?? [];
                         final hasNotifications = data.isNotEmpty;
@@ -118,7 +126,8 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                             if (!mounted) {
                               return;
                             }
-                            setState(() => _hasNotifications = hasNotifications);
+                            setState(
+                                () => _hasNotifications = hasNotifications);
                           });
                         }
                         if (data.isEmpty) {
@@ -134,16 +143,20 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                               onTap: () {
                                 final uid = widget.auth.currentUser?.uid;
                                 if (uid != null) {
-                                  final messenger = ScaffoldMessenger.of(context);
+                                  final messenger =
+                                      ScaffoldMessenger.of(context);
                                   setState(() => _readLocally.add(n.id));
                                   unawaited(
-                                    widget.service.markRead(uid, n.id).catchError((
+                                    widget.service
+                                        .markRead(uid, n.id)
+                                        .catchError((
                                       e,
                                       st,
                                     ) {
                                       ErrorLogger.log(e, st);
                                       if (mounted) {
-                                        setState(() => _readLocally.remove(n.id));
+                                        setState(
+                                            () => _readLocally.remove(n.id));
                                         messenger.showSnackBar(
                                           const SnackBar(
                                             content: Text(
@@ -163,7 +176,8 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                                 contentPadding: EdgeInsets.zero,
                                 leading: _icon(n.type, read),
                                 title: Text(_text(n)),
-                                subtitle: n.message != null ? Text(n.message!) : null,
+                                subtitle:
+                                    n.message != null ? Text(n.message!) : null,
                               ),
                             );
                           },

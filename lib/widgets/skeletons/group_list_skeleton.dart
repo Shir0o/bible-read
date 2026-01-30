@@ -17,21 +17,23 @@ class GroupListSkeleton extends StatelessWidget {
           onTap: () {},
           margin: const EdgeInsets.symmetric(vertical: 4.0),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
             child: Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
-                       Skeleton(width: 140, height: 16),
-                       SizedBox(height: 8),
-                       Skeleton(width: 80, height: 12),
+                      Skeleton(width: 140, height: 16),
+                      SizedBox(height: 8),
+                      Skeleton(width: 80, height: 12),
                     ],
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Skeleton(width: 40, height: 12), // "Pending" placeholder or similar
+                const Skeleton(
+                    width: 40, height: 12), // "Pending" placeholder or similar
               ],
             ),
           ),

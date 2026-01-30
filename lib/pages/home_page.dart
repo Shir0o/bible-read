@@ -60,9 +60,12 @@ class HomePage extends StatefulWidget {
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         readingStatusService = readingStatusService ??
-            ReadingStatusService(firestore: firestore ?? FirebaseFirestore.instance, auth: auth ?? FirebaseAuth.instance),
+            ReadingStatusService(
+                firestore: firestore ?? FirebaseFirestore.instance,
+                auth: auth ?? FirebaseAuth.instance),
         readingPlanService = readingPlanService ??
-            ReadingPlanService(firestore: firestore ?? FirebaseFirestore.instance),
+            ReadingPlanService(
+                firestore: firestore ?? FirebaseFirestore.instance),
         vibrationService = vibrationService ?? const VibrationService(),
         googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
         friendlyStreakService = friendlyStreakService ??
@@ -106,6 +109,7 @@ class _HomePageState extends State<HomePage>
 
   /// Whether the page is currently fetching or toggling the read status.
   bool _toggleLoading = false;
+
   /// Whether the page is currently performing its initial data fetch.
   bool _initialLoading = true;
   List<bool> _pastWeek = [];
@@ -116,8 +120,6 @@ class _HomePageState extends State<HomePage>
   FriendlyStreakLinksSummary? _friendStreaks;
   bool _friendStreakLoading = false;
   late BookAchievementRefresher _bookAchievementRefresher;
-
-
 
   // Plan state
   ReadingPlan? _currentPlan;
@@ -234,35 +236,36 @@ class _HomePageState extends State<HomePage>
   Future<void> _loadActivePlan({bool showLoading = true}) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
-    
+
     // Listen to the stream for real-time updates
     widget.readingPlanService.getActivePlans(uid).listen((plans) async {
-       if (plans.isEmpty) {
-         if (!_disposed && mounted) {
-           setState(() {
-             _currentPlan = null;
-             _currentPlanProgress = null;
-             _scheduledDay = null;
-           });
-         }
-         return;
-       }
+      if (plans.isEmpty) {
+        if (!_disposed && mounted) {
+          setState(() {
+            _currentPlan = null;
+            _currentPlanProgress = null;
+            _scheduledDay = null;
+          });
+        }
+        return;
+      }
 
-       // Just take the first one for now as we don't have multi-plan UI yet
-       final progress = plans.first;
-       final plan = await widget.readingPlanService.getPlanById(progress.planId);
-       
-       if (plan != null) {
-          final day = widget.readingPlanService.getScheduledDay(plan, progress.startDate, DateTime.now());
-          
-          if (!_disposed && mounted) {
-            setState(() {
-              _currentPlan = plan;
-              _currentPlanProgress = progress;
-              _scheduledDay = day;
-            });
-          }
-       }
+      // Just take the first one for now as we don't have multi-plan UI yet
+      final progress = plans.first;
+      final plan = await widget.readingPlanService.getPlanById(progress.planId);
+
+      if (plan != null) {
+        final day = widget.readingPlanService
+            .getScheduledDay(plan, progress.startDate, DateTime.now());
+
+        if (!_disposed && mounted) {
+          setState(() {
+            _currentPlan = plan;
+            _currentPlanProgress = progress;
+            _scheduledDay = day;
+          });
+        }
+      }
     });
   }
 
@@ -305,7 +308,7 @@ class _HomePageState extends State<HomePage>
     final prevWeek = List<bool>.from(_pastWeek);
     final prevMonth = List<bool>.from(_pastMonth);
     final prevReadDates = Set<DateTime>.from(_readDates);
-    
+
     // Also track if we successfully marked the plan day
     bool markedPlanDay = false;
 
@@ -358,8 +361,8 @@ class _HomePageState extends State<HomePage>
 
       // Mark plan day if relevant
       if (_currentPlan != null && _scheduledDay != null) {
-        await widget.readingPlanService.markDayComplete(
-            user.uid, _currentPlan!.id, _scheduledDay!.day);
+        await widget.readingPlanService
+            .markDayComplete(user.uid, _currentPlan!.id, _scheduledDay!.day);
         markedPlanDay = true;
       }
 
@@ -382,13 +385,13 @@ class _HomePageState extends State<HomePage>
         debugPrint('Failed to mark reading: $e');
       }
       ErrorLogger.log(e, st);
-      
+
       // Revert plan day if needed (though it's idempotent mostly)
       if (markedPlanDay && _currentPlan != null && _scheduledDay != null) {
-         try {
-           await widget.readingPlanService.unmarkDayComplete(
-               user.uid, _currentPlan!.id, _scheduledDay!.day);
-         } catch (_) { /* ignore rollback errors */ }
+        try {
+          await widget.readingPlanService.unmarkDayComplete(
+              user.uid, _currentPlan!.id, _scheduledDay!.day);
+        } catch (_) {/* ignore rollback errors */}
       }
 
       if (!_disposed && mounted) {
@@ -641,7 +644,7 @@ class _HomePageState extends State<HomePage>
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.dark, // Android: Dark icons
-          statusBarBrightness: Brightness.light,    // iOS: Dark icons
+          statusBarBrightness: Brightness.light, // iOS: Dark icons
         ),
         actions: [
           ProfileButton(
@@ -719,7 +722,8 @@ class _HomePageState extends State<HomePage>
         child: Text(
           'User not signed in.',
           style: AppTextStyles.subtitle.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
       );
@@ -792,10 +796,13 @@ class _HomePageState extends State<HomePage>
                           )
                         : Text(
                             'I have read',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
                           ),
                   ),
                 ),
@@ -866,14 +873,16 @@ class _HomePageState extends State<HomePage>
                         'Reading this week',
                         style: AppTextStyles.body.copyWith(
                           fontSize: 12,
-                          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.6),
                         ),
                       ),
                       const SizedBox(height: 8),
                       Container(
                         height: 10,
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          color: colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: colorScheme.outline.withValues(alpha: 0.1),
@@ -882,8 +891,8 @@ class _HomePageState extends State<HomePage>
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
-                            value: _pastWeek.isEmpty 
-                                ? 0.0 
+                            value: _pastWeek.isEmpty
+                                ? 0.0
                                 : _pastWeek.where((d) => d).length / 7.0,
                             minHeight: 10,
                             backgroundColor: Colors.transparent,
@@ -897,25 +906,25 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Streak Count
               if (_currentStreak > 0)
                 RichText(
-                   text: TextSpan(
-                     style: AppTextStyles.body.copyWith(
-                       fontSize: 13,
-                       color: colorScheme.outline,
-                     ),
-                     children: [
-                       TextSpan(
-                         text: '$_currentStreak',
-                         style: const TextStyle(fontWeight: FontWeight.w600),
-                       ),
-                       TextSpan(text: ' days of reading'),
-                     ],
-                   ),
+                  text: TextSpan(
+                    style: AppTextStyles.body.copyWith(
+                      fontSize: 13,
+                      color: colorScheme.outline,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '$_currentStreak',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      TextSpan(text: ' days of reading'),
+                    ],
+                  ),
                 ),
             ],
             const SizedBox(height: 32),

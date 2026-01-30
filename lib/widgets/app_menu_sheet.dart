@@ -71,8 +71,6 @@ class AppMenuSheet extends StatefulWidget {
   State<AppMenuSheet> createState() => _AppMenuSheetState();
 }
 
-
-
 class _AppMenuSheetState extends State<AppMenuSheet> {
   bool _isAdmin = false;
 
@@ -114,7 +112,8 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
     }
   }
 
-  List<_MenuItem> _buildFullMenuList(FirebaseAuth auth, FirebaseFirestore firestore) {
+  List<_MenuItem> _buildFullMenuList(
+      FirebaseAuth auth, FirebaseFirestore firestore) {
     final items = [
       _MenuItem(
         icon: Icons.person,
@@ -137,15 +136,15 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
         icon: Icons.inbox,
         label: 'Inbox',
         onTap: (context) {
-           Navigator.of(context).push(
+          Navigator.of(context).push(
             MaterialPageRoute(
-               builder: (_) => InboxPage(
-                  auth: auth,
-                  firestore: firestore,
-                  vibrationService: widget.vibrationService,
-               ),
+              builder: (_) => InboxPage(
+                auth: auth,
+                firestore: firestore,
+                vibrationService: widget.vibrationService,
+              ),
             ),
-           );
+          );
         },
       ),
       _MenuItem(
@@ -340,12 +339,15 @@ class _MenuContents extends StatelessWidget {
               const SizedBox(height: 20),
               Builder(
                 builder: (context) {
-                  final double availableWidth = MediaQuery.of(context).size.width;
+                  final double availableWidth =
+                      MediaQuery.of(context).size.width;
                   final bool compact = availableWidth < 360;
                   final double horizontalPadding = 40.0; // 20 on each side
-                  final double contentWidth = availableWidth - horizontalPadding;
-                  
-                  final double baseWidth = compact ? contentWidth : (contentWidth - 16) / 2;
+                  final double contentWidth =
+                      availableWidth - horizontalPadding;
+
+                  final double baseWidth =
+                      compact ? contentWidth : (contentWidth - 16) / 2;
                   final double buttonWidth = compact
                       ? baseWidth
                       : baseWidth.clamp(140.0, 240.0).toDouble();

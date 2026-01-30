@@ -98,7 +98,9 @@ class WeekStreakCalendar extends StatelessWidget {
                       filled
                           ? Icons.check_circle
                           : Icons.radio_button_unchecked,
-                      color: filled ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant,
+                      color: filled
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outlineVariant,
                       size: 20,
                     ),
                   ],

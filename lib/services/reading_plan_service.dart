@@ -20,7 +20,8 @@ class ReadingPlanService {
       final String jsonString =
           await rootBundle.loadString('assets/plans/sample_plans.json');
       final List<dynamic> jsonList = json.decode(jsonString);
-      _cachedPlans = jsonList.map((json) => ReadingPlan.fromJson(json)).toList();
+      _cachedPlans =
+          jsonList.map((json) => ReadingPlan.fromJson(json)).toList();
       return _cachedPlans!;
     } catch (e) {
       print('Error loading reading plans: $e');
@@ -39,7 +40,8 @@ class ReadingPlanService {
   }
 
   /// Starts a reading plan for a user.
-  Future<void> startPlan(String userId, String planId, {DateTime? startDate}) async {
+  Future<void> startPlan(String userId, String planId,
+      {DateTime? startDate}) async {
     final progress = UserPlanProgress(
       planId: planId,
       userId: userId,
@@ -68,7 +70,7 @@ class ReadingPlanService {
       return UserPlanProgress.fromFirestore(doc);
     });
   }
-  
+
   /// Streams all active plans for a user.
   Stream<List<UserPlanProgress>> getActivePlans(String userId) {
     return firestore
@@ -111,13 +113,13 @@ class ReadingPlanService {
 
   /// Unmarks a specific day in the plan.
   Future<void> unmarkDayComplete(String userId, String planId, int day) async {
-     final docRef = firestore
+    final docRef = firestore
         .collection('users')
         .doc(userId)
         .collection('plan_progress')
         .doc(planId);
 
-     await firestore.runTransaction((transaction) async {
+    await firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(docRef);
       if (!snapshot.exists) return;
 
@@ -128,8 +130,8 @@ class ReadingPlanService {
 
         transaction.update(docRef, {
           'completedDays': updatedCompletedDays,
-          // We don't necessarily revert lastReadDate easily without history, 
-          // so we leave it or typically you'd check if it was today. 
+          // We don't necessarily revert lastReadDate easily without history,
+          // so we leave it or typically you'd check if it was today.
           // For simplicity, we leave it.
         });
       }
@@ -157,7 +159,7 @@ class ReadingPlanService {
     final target = DateTime(targetDate.year, targetDate.month, targetDate.day);
 
     final difference = target.difference(start).inDays;
-    
+
     // Day 1 is index 0 in difference (0 days since start = day 1)
     final dayNumber = difference + 1;
 

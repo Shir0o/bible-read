@@ -134,8 +134,9 @@ class _ReadLogPageState extends State<ReadLogPage> {
         key: _viewKey,
         firestore: widget.firestore,
         auth: widget.auth,
-        readingStatusService: widget.readingStatusService ?? 
-            ReadingStatusService(firestore: widget.firestore, auth: widget.auth),
+        readingStatusService: widget.readingStatusService ??
+            ReadingStatusService(
+                firestore: widget.firestore, auth: widget.auth),
         onSendLikeNotification: widget.onSendLikeNotification,
         onSendCommentNotification: widget.onSendCommentNotification,
         dateProvider: widget.dateProvider,

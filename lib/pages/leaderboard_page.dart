@@ -169,8 +169,7 @@ class _GlobalLeaderboardList extends StatelessWidget {
         .limit(50)
         .snapshots()
         .asyncMap((snap) async {
-      final uids =
-          snap.docs.map((d) => d.reference.parent.parent!.id).toList();
+      final uids = snap.docs.map((d) => d.reference.parent.parent!.id).toList();
       final streaks = {
         for (var d in snap.docs)
           d.reference.parent.parent!.id:
@@ -182,7 +181,8 @@ class _GlobalLeaderboardList extends StatelessWidget {
     return StreamBuilder<List<LeaderboardEntry>>(
       stream: stream,
       builder: (context, snapshot) {
-        return _buildList(context, snapshot, auth.currentUser?.uid, friendService);
+        return _buildList(
+            context, snapshot, auth.currentUser?.uid, friendService);
       },
     );
   }
@@ -193,7 +193,8 @@ class LeaderboardEntry {
   final String name;
   final int streak;
 
-  LeaderboardEntry({required this.uid, required this.name, required this.streak});
+  LeaderboardEntry(
+      {required this.uid, required this.name, required this.streak});
 }
 
 Future<List<LeaderboardEntry>> _fetchEntries(
@@ -221,19 +222,24 @@ Future<List<LeaderboardEntry>> _fetchEntries(
   // Fetch Streaks if not preloaded
   final streaks = preloadedStreaks ?? {};
   if (preloadedStreaks == null) {
-     final futures = uniqueUids.map((uid) async {
-       try {
-         final doc = await firestore.collection('users').doc(uid).collection('summary').doc('data').get();
-         if (doc.exists) {
-           streaks[uid] = (doc.data()?['streak'] as num?)?.toInt() ?? 0;
-         } else {
-           streaks[uid] = 0;
-         }
-       } catch (_) {
-         streaks[uid] = 0;
-       }
-     });
-     await Future.wait(futures);
+    final futures = uniqueUids.map((uid) async {
+      try {
+        final doc = await firestore
+            .collection('users')
+            .doc(uid)
+            .collection('summary')
+            .doc('data')
+            .get();
+        if (doc.exists) {
+          streaks[uid] = (doc.data()?['streak'] as num?)?.toInt() ?? 0;
+        } else {
+          streaks[uid] = 0;
+        }
+      } catch (_) {
+        streaks[uid] = 0;
+      }
+    });
+    await Future.wait(futures);
   }
 
   final entries = <LeaderboardEntry>[];
@@ -268,95 +274,109 @@ Widget _buildList(
   }
 
   return StreamBuilder<QuerySnapshot>(
-    stream: currentUserId == null
-        ? const Stream.empty()
-        : friendService.firestore
-            .collection(FriendCollections.users)
-            .doc(currentUserId)
-            .collection(FriendCollections.sentRequests)
-            .snapshots(),
-    builder: (context, sentSnap) {
-       final sentUids = <String>{};
-       if (sentSnap.hasData) {
-         for (var d in sentSnap.data!.docs) {
-           sentUids.add(d.id);
-         }
-       }
+      stream: currentUserId == null
+          ? const Stream.empty()
+          : friendService.firestore
+              .collection(FriendCollections.users)
+              .doc(currentUserId)
+              .collection(FriendCollections.sentRequests)
+              .snapshots(),
+      builder: (context, sentSnap) {
+        final sentUids = <String>{};
+        if (sentSnap.hasData) {
+          for (var d in sentSnap.data!.docs) {
+            sentUids.add(d.id);
+          }
+        }
 
-       return ListView.builder(
-        itemCount: entries.length,
-        itemBuilder: (context, index) {
-          final entry = entries[index];
-          final uid = entry.uid;
-          final isMe = uid == currentUserId;
-          final name = entry.name;
-          final score = entry.streak;
-          final isSent = sentUids.contains(uid);
+        return ListView.builder(
+          itemCount: entries.length,
+          itemBuilder: (context, index) {
+            final entry = entries[index];
+            final uid = entry.uid;
+            final isMe = uid == currentUserId;
+            final name = entry.name;
+            final score = entry.streak;
+            final isSent = sentUids.contains(uid);
 
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor:
-                  isMe ? Theme.of(context).colorScheme.primaryContainer : null,
-              child: Text('${index + 1}'),
-            ),
-            title: Text(name,
-                style: isMe ? const TextStyle(fontWeight: FontWeight.bold) : null),
-            trailing: Text('$score days'),
-            tileColor: isMe ? Theme.of(context).colorScheme.surfaceContainer : null,
-            subtitle: (!isMe)
-                ? Align(
-                    alignment: Alignment.centerLeft,
-                    child: Tooltip(
-                      message: isSent ? 'Friend request sent.' : 'Tap to send a friend request.',
-                      child: Icon(
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundColor: isMe
+                    ? Theme.of(context).colorScheme.primaryContainer
+                    : null,
+                child: Text('${index + 1}'),
+              ),
+              title: Text(name,
+                  style: isMe
+                      ? const TextStyle(fontWeight: FontWeight.bold)
+                      : null),
+              trailing: Text('$score days'),
+              tileColor:
+                  isMe ? Theme.of(context).colorScheme.surfaceContainer : null,
+              subtitle: (!isMe)
+                  ? Align(
+                      alignment: Alignment.centerLeft,
+                      child: Tooltip(
+                        message: isSent
+                            ? 'Friend request sent.'
+                            : 'Tap to send a friend request.',
+                        child: Icon(
                           isSent ? Icons.check : Icons.person_add,
                           size: 16,
                           color: isSent ? Colors.green : null,
+                        ),
                       ),
-                    ),
-                  )
-                : null,
-            onTap: (!isMe && !isSent)
-                ? () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Send friend request'),
-                        content: Text('Send a friend request to $name?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                               if (currentUserId != null) {
-                                 friendService.firestore.collection('users').doc(currentUserId).get().then((snap) {
-                                   final myName = snap.data()?['displayName'] ?? snap.data()?['name'] ?? 'Unknown';
-                                   friendService.sendFriendRequest(
-                                     fromUid: currentUserId,
-                                     fromName: myName,
-                                     toUid: uid,
-                                   ).then((_) {
-                                     if (context.mounted) {
-                                       Navigator.pop(context);
-                                     }
-                                   }).catchError((e) {
+                    )
+                  : null,
+              onTap: (!isMe && !isSent)
+                  ? () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Send friend request'),
+                          content: Text('Send a friend request to $name?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                if (currentUserId != null) {
+                                  friendService.firestore
+                                      .collection('users')
+                                      .doc(currentUserId)
+                                      .get()
+                                      .then((snap) {
+                                    final myName =
+                                        snap.data()?['displayName'] ??
+                                            snap.data()?['name'] ??
+                                            'Unknown';
+                                    friendService
+                                        .sendFriendRequest(
+                                      fromUid: currentUserId,
+                                      fromName: myName,
+                                      toUid: uid,
+                                    )
+                                        .then((_) {
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                      }
+                                    }).catchError((e) {
                                       // ignore
-                                   });
-                                 });
-                               }
-                            },
-                            child: const Text('Send'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                : null,
-          );
-        },
-      );
-    }
-  );
+                                    });
+                                  });
+                                }
+                              },
+                              child: const Text('Send'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  : null,
+            );
+          },
+        );
+      });
 }

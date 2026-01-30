@@ -36,7 +36,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
     super.initState();
     _planService = ReadingPlanService(firestore: widget.firestore);
     _allPlansFuture = _planService.getAvailablePlans();
-    
+
     final user = widget.auth.currentUser;
     if (user != null) {
       _activePlansStream = _planService.getActivePlans(user.uid);
@@ -65,14 +65,14 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
               }
 
               final allPlans = plansSnapshot.data ?? [];
-              
-              // Filter plans: 
+
+              // Filter plans:
               // If a plan is active, we can show it in a "Current Plan" section.
               // All other plans go to "Available Plans".
-              
-              // For "Bible in a Year", typically users only have one active at a time, 
+
+              // For "Bible in a Year", typically users only have one active at a time,
               // but we support multiple.
-              
+
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
@@ -87,24 +87,24 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                     const SizedBox(height: 12),
                     ...activeProgress.map((progress) {
                       final plan = allPlans.firstWhere(
-                        (p) => p.id == progress.planId, 
+                        (p) => p.id == progress.planId,
                         orElse: () => ReadingPlan(
-                          id: 'unknown', 
-                          title: 'Unknown Plan', 
-                          description: '', 
-                          durationDays: 0, 
-                          tags: [], 
-                          schedule: []
-                        ),
+                            id: 'unknown',
+                            title: 'Unknown Plan',
+                            description: '',
+                            durationDays: 0,
+                            tags: [],
+                            schedule: []),
                       );
-                      
+
                       if (plan.id == 'unknown') return const SizedBox.shrink();
 
                       // Calculate next readings
-                      final nextDay = _planService.getNextDueDay(plan, progress);
+                      final nextDay =
+                          _planService.getNextDueDay(plan, progress);
                       // Progress percentage
-                      final percent = plan.durationDays > 0 
-                          ? progress.completedDays.length / plan.durationDays 
+                      final percent = plan.durationDays > 0
+                          ? progress.completedDays.length / plan.durationDays
                           : 0.0;
 
                       return Card(
@@ -112,7 +112,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                         color: colorScheme.secondaryContainer,
                         child: InkWell(
                           onTap: () {
-                             Navigator.of(context).push(
+                            Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => PlanDetailPage(
                                   plan: plan,
@@ -130,14 +130,17 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.auto_stories, color: colorScheme.onSecondaryContainer),
+                                    Icon(Icons.auto_stories,
+                                        color:
+                                            colorScheme.onSecondaryContainer),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         plan.title,
                                         style: AppTextStyles.title.copyWith(
                                           fontSize: 18,
-                                          color: colorScheme.onSecondaryContainer,
+                                          color:
+                                              colorScheme.onSecondaryContainer,
                                         ),
                                       ),
                                     ),
@@ -153,7 +156,8 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                                 const SizedBox(height: 12),
                                 LinearProgressIndicator(
                                   value: percent,
-                                  backgroundColor: colorScheme.surface.withOpacity(0.3),
+                                  backgroundColor:
+                                      colorScheme.surface.withOpacity(0.3),
                                   color: colorScheme.onSecondaryContainer,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
@@ -162,7 +166,8 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                                   Text(
                                     'Up next: Day ${nextDay.day}',
                                     style: AppTextStyles.caption.copyWith(
-                                      color: colorScheme.onSecondaryContainer.withOpacity(0.8),
+                                      color: colorScheme.onSecondaryContainer
+                                          .withOpacity(0.8),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -173,7 +178,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                ] else 
+                                ] else
                                   Text(
                                     'Plan Completed!',
                                     style: AppTextStyles.body.copyWith(
@@ -189,7 +194,6 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                     }),
                     const SizedBox(height: 24),
                   ],
-
                   Text(
                     'Available Plans',
                     style: AppTextStyles.subtitle.copyWith(
@@ -198,8 +202,11 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ...allPlans.where((p) => !activeProgress.any((ap) => ap.planId == p.id)).map((plan) {
-                     return Card(
+                  ...allPlans
+                      .where(
+                          (p) => !activeProgress.any((ap) => ap.planId == p.id))
+                      .map((plan) {
+                    return Card(
                       elevation: 0,
                       color: colorScheme.surfaceContainerHigh,
                       margin: const EdgeInsets.only(bottom: 12),
@@ -258,19 +265,24 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                                   ],
                                 ),
                               ),
-                              Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant),
+                              Icon(Icons.chevron_right,
+                                  color: colorScheme.onSurfaceVariant),
                             ],
                           ),
                         ),
                       ),
                     );
                   }),
-                  
-                  if (allPlans.where((p) => !activeProgress.any((ap) => ap.planId == p.id)).isEmpty && activeProgress.isEmpty)
-                     const Padding(
-                       padding: EdgeInsets.all(16.0),
-                       child: Center(child: Text("No plans available right now.")),
-                     ),
+                  if (allPlans
+                          .where((p) =>
+                              !activeProgress.any((ap) => ap.planId == p.id))
+                          .isEmpty &&
+                      activeProgress.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child:
+                          Center(child: Text("No plans available right now.")),
+                    ),
                 ],
               );
             },

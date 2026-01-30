@@ -52,7 +52,8 @@ class _SkeletonState extends State<Skeleton>
     final colorScheme = Theme.of(context).colorScheme;
     // Use onSurface with transparency to ensure visibility on both
     // surface and surfaceContainerHighest backgrounds.
-    final baseColor = widget.color ?? colorScheme.onSurface.withValues(alpha: 0.1);
+    final baseColor =
+        widget.color ?? colorScheme.onSurface.withValues(alpha: 0.1);
     final highlightColor = colorScheme.onSurface.withValues(alpha: 0.2);
 
     return AnimatedBuilder(

@@ -45,10 +45,10 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
 
     final now = DateTime.now();
     final currentYear = now.year;
-    // Dynamic option for Jan 1 of current year, or next year if deep in the year? 
+    // Dynamic option for Jan 1 of current year, or next year if deep in the year?
     // Simply offering Jan 1 of this year covers late joiners.
     final jan1 = DateTime(currentYear, 1, 1);
-    
+
     // Show dialog
     final DateTime? pickedDate = await showModalBottomSheet<DateTime>(
       context: context,
@@ -72,7 +72,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                   title: const Text('Start Today'),
                   subtitle: Text(_formatDate(now)),
                   onTap: () => Navigator.pop(context, now),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 if (jan1.isBefore(now)) ...[
                   const SizedBox(height: 8),
@@ -81,7 +82,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                     title: const Text('Start on January 1st'),
                     subtitle: const Text('Catch up or join late'),
                     onTap: () => Navigator.pop(context, jan1),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                 ],
                 const SizedBox(height: 8),
@@ -98,7 +100,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                     );
                     if (context.mounted) Navigator.pop(context, customDate);
                   },
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ],
             ),
@@ -108,14 +111,28 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     );
 
     if (pickedDate != null) {
-      await _planService.startPlan(user.uid, widget.plan.id, startDate: pickedDate);
+      await _planService.startPlan(user.uid, widget.plan.id,
+          startDate: pickedDate);
     }
   }
 
   String _formatDate(DateTime date) {
-    // Simple formatter to avoid intl dependency if not already there, 
+    // Simple formatter to avoid intl dependency if not already there,
     // or use if available. Keeping it simple.
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return '${months[date.month - 1]} ${date.day}';
   }
 
@@ -128,7 +145,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         title: Text(widget.plan.title),
         backgroundColor: colorScheme.surface,
         scrolledUnderElevation: 0,
-       ),
+      ),
       backgroundColor: colorScheme.surface,
       body: StreamBuilder<UserPlanProgress?>(
         stream: _progressStream,
@@ -217,7 +234,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                     final day = widget.plan.schedule[index];
                     final isCompleted =
                         progress?.completedDays.contains(day.day) ?? false;
-                    
+
                     return Opacity(
                         opacity: (!isStarted || isCompleted) ? 0.7 : 1.0,
                         child: Card(
@@ -297,9 +314,11 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                                     ),
                                   ),
                                   if (isStarted && !isCompleted)
-                                     Icon(Icons.radio_button_unchecked, color: colorScheme.outline),
+                                    Icon(Icons.radio_button_unchecked,
+                                        color: colorScheme.outline),
                                   if (isStarted && isCompleted)
-                                     Icon(Icons.check_circle, color: colorScheme.primary),
+                                    Icon(Icons.check_circle,
+                                        color: colorScheme.primary),
                                 ],
                               ),
                             ),

@@ -67,7 +67,8 @@ class BadgeIcon extends StatelessWidget {
         if (locked)
           Icon(
             Icons.lock,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             size: 16,
           ),
       ],

@@ -36,26 +36,26 @@ class StreakHistorySkeleton extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // Calendar placeholder
-           CommonStyles.buildCard(
+          CommonStyles.buildCard(
             context: context,
             child: Column(
               children: [
                 Row(
-                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                   children: const [
-                     Skeleton(width: 24, height: 24),
-                     Skeleton(width: 100, height: 20),
-                     Skeleton(width: 24, height: 24),
-                   ],
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: const [
+                    Skeleton(width: 24, height: 24),
+                    Skeleton(width: 100, height: 20),
+                    Skeleton(width: 24, height: 24),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 Wrap(
                   spacing: 12,
                   runSpacing: 12,
                   children: List.generate(
-                    35, 
-                    (index) => const Skeleton(width: 32, height: 32, radius: 16)
-                  ),
+                      35,
+                      (index) =>
+                          const Skeleton(width: 32, height: 32, radius: 16)),
                 ),
               ],
             ),

@@ -51,8 +51,6 @@ class _StreakHistoryViewState extends State<StreakHistoryView>
 
   // ... (rest of methods)
 
-
-
   DateTime _startOfWeek(DateTime date) {
     final normalized = DateTime(date.year, date.month, date.day);
     final weekdayOffset = normalized.weekday % 7;
@@ -290,7 +288,8 @@ class _StreakHistoryViewState extends State<StreakHistoryView>
                     SegmentedButton<_Period>(
                       segments: const [
                         ButtonSegment(value: _Period.week, label: Text('Week')),
-                        ButtonSegment(value: _Period.month, label: Text('Month')),
+                        ButtonSegment(
+                            value: _Period.month, label: Text('Month')),
                       ],
                       selected: {_period},
                       onSelectionChanged: _onPeriodChanged,
