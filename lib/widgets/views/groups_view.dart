@@ -190,12 +190,18 @@ class _GroupsViewState extends State<GroupsView>
                   if (groups.isEmpty) {
                     return RefreshIndicator(
                       onRefresh: _refresh,
-                      child: ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: const [
-                          SizedBox(height: 200),
-                          Center(child: Text('No groups')),
-                        ],
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight: constraints.maxHeight,
+                              ),
+                              child: _buildEmptyState(context),
+                            ),
+                          );
+                        },
                       ),
                     );
                   }
@@ -286,6 +292,44 @@ class _GroupsViewState extends State<GroupsView>
         heroTag: 'groups-fab',
         onPressed: _inProgress ? null : _createGroup,
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.groups_outlined,
+              size: 64,
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No groups found',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Create a group to start reading together.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: _createGroup,
+              icon: const Icon(Icons.add),
+              label: const Text('Create Group'),
+            ),
+          ],
+        ),
       ),
     );
   }

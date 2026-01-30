@@ -35,3 +35,7 @@
 ## 2026-02-23 - Feedback Form Polish
 **Learning:** Multiline text inputs (like descriptions/steps) benefit significantly from 'Clear' buttons and sentence capitalization.
 **Action:** Use `TextCapitalization.sentences` for free-text fields. Implement dynamic `suffixIcon` clear buttons for multiline inputs using controller listeners.
+
+## 2026-02-26 - Scrollable Centered Empty States
+**Learning:** To center content in a `RefreshIndicator` while keeping it scrollable (for pull-to-refresh), `ListView` can be restrictive.
+**Action:** Use `LayoutBuilder` + `SingleChildScrollView` + `ConstrainedBox(minHeight: constraints.maxHeight)` to center content while ensuring physics work.
