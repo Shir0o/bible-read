@@ -12,6 +12,9 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:bible_read/main.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:network_image_mock/network_image_mock.dart';
+
+
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -26,10 +29,12 @@ void main() {
   });
 
   testWidgets('Main page loads', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp(appCheckFailed: false));
-    await tester.pumpAndSettle();
+    await mockNetworkImagesFor(() async {
+      await tester.pumpWidget(const MyApp(appCheckFailed: false));
+      await tester.pumpAndSettle();
 
-    // Verify that MainPage is shown.
-    expect(find.byType(MainPage), findsOneWidget);
+      // Verify that MainPage is shown.
+      expect(find.byType(MainPage), findsOneWidget);
+    });
   });
 }

@@ -20,12 +20,16 @@ class SignupPage extends StatefulWidget {
   /// Service used to trigger vibrations.
   final VibrationService vibrationService;
 
+  /// Optional builder for MainPage to facilitate testing.
+  final Widget Function(BuildContext)? mainPageBuilder;
+
   /// Creates a [SignupPage].
   SignupPage({
     super.key,
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     VibrationService? vibrationService,
+    this.mainPageBuilder,
   })  : auth = auth ?? FirebaseAuth.instance,
         firestore = firestore ?? FirebaseFirestore.instance,
         vibrationService = vibrationService ?? const VibrationService();
@@ -50,7 +54,9 @@ class _SignupPageState extends State<SignupPage> {
             onComplete: () {
               unawaited(widget.vibrationService.mediumImpact());
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => MainPage()),
+                MaterialPageRoute(
+                  builder: widget.mainPageBuilder ?? (_) => MainPage(),
+                ),
               );
             },
           ),

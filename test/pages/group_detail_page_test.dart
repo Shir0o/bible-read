@@ -13,6 +13,7 @@ import 'package:bible_read/services/achievement_service.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/widgets/schedule_item_tile.dart';
+import 'package:bible_read/services/error_logger.dart';
 
 class RecordingGroupService extends GroupService {
   RecordingGroupService({required super.firestore});
@@ -105,6 +106,7 @@ void main() {
   setUp(() {
     firestore = FakeFirebaseFirestore();
     group = const Group(id: 'g1', name: 'Study', ownerUid: 'u1');
+    ErrorLogger.muteForTest = true;
   });
 
   Future<void> pumpUntilSettled(

@@ -7,6 +7,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
+import 'package:bible_read/services/error_logger.dart';
 
 class _AdminRoleStub extends AdminRoleService {
   _AdminRoleStub(this._isAdmin,
@@ -27,6 +28,7 @@ void main() {
     late MockFirebaseAuth auth;
 
     setUp(() {
+      ErrorLogger.muteForTest = true;
       firestore = FakeFirebaseFirestore();
       auth = MockFirebaseAuth(
         signedIn: true,

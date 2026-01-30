@@ -30,6 +30,7 @@ class UserProfilePage extends StatefulWidget {
 
   final VibrationService vibrationService;
   final FeedbackService feedbackService;
+  final Widget Function(BuildContext)? mainPageBuilder;
 
   factory UserProfilePage({
     Key? key,
@@ -39,7 +40,9 @@ class UserProfilePage extends StatefulWidget {
     FirebaseFirestore? firestore,
     FriendService? friendService,
     VibrationService? vibrationService,
+
     FeedbackService? feedbackService,
+    Widget Function(BuildContext)? mainPageBuilder,
   }) {
     final authInstance = auth ?? FirebaseAuth.instance;
     final fs = firestore ?? FirebaseFirestore.instance;
@@ -53,6 +56,7 @@ class UserProfilePage extends StatefulWidget {
       vibrationService: vibrationService ?? const VibrationService(),
       feedbackService:
           feedbackService ?? FeedbackService(firestore: fs, auth: authInstance),
+      mainPageBuilder: mainPageBuilder,
     );
   }
 
@@ -65,6 +69,7 @@ class UserProfilePage extends StatefulWidget {
     required this.friendService,
     required this.vibrationService,
     required this.feedbackService,
+    this.mainPageBuilder,
   });
 
   @override
@@ -105,7 +110,8 @@ class UserProfilePageState extends State<UserProfilePage> {
         await widget.auth.signInWithCredential(credential);
 
         if (mounted) {
-          Navigator.of(context).pushReplacement(animatedPageRoute(MainPage()));
+          final page = widget.mainPageBuilder?.call(context) ?? MainPage();
+          Navigator.of(context).pushReplacement(animatedPageRoute(page));
         }
       } else {
         if (mounted) {
@@ -157,7 +163,8 @@ class UserProfilePageState extends State<UserProfilePage> {
     }
 
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(animatedPageRoute(MainPage()));
+    final page = widget.mainPageBuilder?.call(context) ?? MainPage();
+    Navigator.of(context).pushReplacement(animatedPageRoute(page));
   }
 
   @override
