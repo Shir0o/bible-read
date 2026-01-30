@@ -9,6 +9,7 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:bible_read/pages/signup_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bible_read/services/vibration_service.dart';
 import 'dart:io';
 import 'dart:async';
 
@@ -76,6 +77,16 @@ class RecordingAuth extends MockFirebaseAuth {
   }
 }
 
+class MockVibrationService extends VibrationService {
+  MockVibrationService() : super();
+
+  @override
+  Future<void> lightImpact() async {}
+  
+  @override
+  Future<void> mediumImpact() async {}
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MockHttpOverrides();
@@ -94,7 +105,11 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: SignupPage(auth: auth, firestore: firestore),
+        home: SignupPage(
+          auth: auth, 
+          firestore: firestore,
+          vibrationService: MockVibrationService(),
+        ),
       ),
     );
 
