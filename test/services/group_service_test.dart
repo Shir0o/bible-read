@@ -10,6 +10,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:bible_read/models/group.dart';
 import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:bible_read/services/group_service.dart';
@@ -437,9 +438,15 @@ void main() {
       final g3 = firestore.collection(GroupCollections.groups).doc('g3');
       await g3.set({'name': 'Three', 'ownerUid': 'u3'});
 
-      final groups = await service.allGroups().firstWhere((g) => g.length == 3);
-      final ids = groups.map((g) => g.id).toSet();
-      expect(ids, {'g1', 'g2', 'g3'});
+      // Use emits to verify immediate state, removing brittle firstWhere
+      await expectLater(
+        service.allGroups(),
+        emits(
+          isA<List<Group>>()
+              .having((l) => l.length, 'length', 3)
+              .having((l) => l.map((g) => g.id).toSet(), 'ids', {'g1', 'g2', 'g3'}),
+        ),
+      );
     });
 
     test('groupsForUser streams groups where user is member', () async {
@@ -465,10 +472,14 @@ void main() {
         'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 3)),
       });
 
-      final groups =
-          await service.groupsForUser('u1').firstWhere((g) => g.length == 2);
-      final ids = groups.map((g) => g.id).toSet();
-      expect(ids, {'g1', 'g2'});
+      await expectLater(
+        service.groupsForUser('u1'),
+        emitsThrough(
+          isA<List<Group>>()
+              .having((l) => l.length, 'length', 2)
+              .having((l) => l.map((g) => g.id).toSet(), 'ids', {'g1', 'g2'}),
+        ),
+      );
     });
 
     test('groupsForUser includes owned groups without membership doc',
@@ -476,9 +487,14 @@ void main() {
       final owned = firestore.collection(GroupCollections.groups).doc('g1');
       await owned.set({'name': 'G', 'ownerUid': 'u1'});
 
-      final groups =
-          await service.groupsForUser('u1').firstWhere((g) => g.isNotEmpty);
-      expect(groups.map((g) => g.id), ['g1']);
+      await expectLater(
+        service.groupsForUser('u1'),
+        emitsThrough(
+          isA<List<Group>>()
+              .having((l) => l.length, 'length', 1)
+              .having((l) => l.first.id, 'id', 'g1'),
+        ),
+      );
     });
 
     test('groupsForUser returns owned group without owner membership doc',
@@ -491,9 +507,14 @@ void main() {
         'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
       });
 
-      final groups =
-          await service.groupsForUser('u1').firstWhere((g) => g.isNotEmpty);
-      expect(groups.map((g) => g.id), ['g1']);
+      await expectLater(
+        service.groupsForUser('u1'),
+        emitsThrough(
+          isA<List<Group>>()
+              .having((l) => l.length, 'length', 1)
+              .having((l) => l.first.id, 'id', 'g1'),
+        ),
+      );
     });
 
     test('groupsForUser deduplicates owned membership groups', () async {
@@ -505,10 +526,14 @@ void main() {
         'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
       });
 
-      final groups =
-          await service.groupsForUser('u1').firstWhere((g) => g.isNotEmpty);
-      expect(groups, hasLength(1));
-      expect(groups.first.id, 'g1');
+      await expectLater(
+        service.groupsForUser('u1'),
+        emitsThrough(
+          isA<List<Group>>()
+              .having((l) => l.length, 'length', 1)
+              .having((l) => l.first.id, 'id', 'g1'),
+        ),
+      );
     });
 
     test('memberNames streams display names', () async {
@@ -569,144 +594,6 @@ void main() {
       expect(entries.first.chapters, ['Gen 1']);
     });
 
-    test('groupsForUser logs and returns empty list on stream error', () async {
-      final mockFs = MockFirebaseFirestore();
-      final memberQuery = MockQuery<Map<String, dynamic>>();
-      final groups = MockCollectionReference<Map<String, dynamic>>();
-      final ownerQuery = MockQuery<Map<String, dynamic>>();
-      final ownerSnap = MockQuerySnapshot<Map<String, dynamic>>();
-      final err = Exception('fail');
-
-      when(() => mockFs.collectionGroup(GroupCollections.members))
-          .thenReturn(memberQuery);
-      when(() => memberQuery.where('uid', isEqualTo: 'u1'))
-          .thenReturn(memberQuery);
-      when(() => memberQuery.snapshots()).thenAnswer((_) {
-        // Return a clean stream that throws when listened to?
-        // No, we use StreamController to inject error.
-        return Stream<QuerySnapshot<Map<String, dynamic>>>.error(err);
-      });
-
-      when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
-      when(() => groups.where('ownerUid', isEqualTo: 'u1'))
-          .thenReturn(ownerQuery);
-      when(() => ownerQuery.snapshots())
-          .thenAnswer((_) => Stream.value(ownerSnap));
-      when(() => ownerSnap.docs).thenReturn([]);
-
-      final crash = MockCrashlytics();
-      ErrorLogger.crashlytics = crash;
-      when(() => crash.recordError(any(), any(),
-          reason: any(named: 'reason'),
-          information: any(named: 'information'),
-          printDetails: any(named: 'printDetails'),
-          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
-
-      final svc = GroupService(firestore: mockFs);
-
-      await runZonedGuarded(() async {
-        await expectLater(svc.groupsForUser('u1'), emits(isEmpty));
-      }, (e, st) {
-        // Suppress expected error from stream bubbling
-      });
-
-      verify(() => crash.recordError(err, any(),
-          reason: null,
-          information: any(named: 'information'),
-          printDetails: any(named: 'printDetails'),
-          fatal: false)).called(1);
-    });
-
-    test('allGroups logs and returns empty list on stream error', () async {
-      final mockFs = MockFirebaseFirestore();
-      final groups = MockCollectionReference<Map<String, dynamic>>();
-      final err = Exception('fail');
-
-      when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
-      when(() => groups.snapshots()).thenAnswer(
-          (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err));
-
-      final crash = MockCrashlytics();
-      ErrorLogger.crashlytics = crash;
-      when(() => crash.recordError(any(), any(),
-          reason: any(named: 'reason'),
-          information: any(named: 'information'),
-          printDetails: any(named: 'printDetails'),
-          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
-
-      final svc = GroupService(firestore: mockFs);
-
-      await runZonedGuarded(() async {
-        await expectLater(svc.allGroups(), emits(isEmpty));
-      }, (e, st) {});
-
-      verify(() => crash.recordError(err, any(),
-          reason: null,
-          information: any(named: 'information'),
-          printDetails: any(named: 'printDetails'),
-          fatal: false)).called(1);
-    });
-
-    test('memberNames surfaces stream errors', () async {
-      final mockFs = MockFirebaseFirestore();
-      final groups = MockCollectionReference<Map<String, dynamic>>();
-      final groupDoc = MockDocumentReference<Map<String, dynamic>>();
-      final members = MockCollectionReference<Map<String, dynamic>>();
-      final err = Exception('fail');
-
-      when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
-      when(() => groups.doc('g1')).thenReturn(groupDoc);
-      when(() => groupDoc.collection(GroupCollections.members))
-          .thenReturn(members);
-      when(() => members.snapshots()).thenAnswer(
-          (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err));
-
-      final crash = MockCrashlytics();
-      ErrorLogger.crashlytics = crash;
-      when(() => crash.recordError(any(), any(),
-          reason: any(named: 'reason'),
-          information: any(named: 'information'),
-          printDetails: any(named: 'printDetails'),
-          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
-
-      final svc = GroupService(firestore: mockFs);
-
-      await runZonedGuarded(() async {
-        await expectLater(svc.memberNames('g1'), emitsError(same(err)));
-      }, (e, st) {});
-    });
-
-    test('schedule surfaces stream errors', () async {
-      final mockFs = MockFirebaseFirestore();
-      final groups = MockCollectionReference<Map<String, dynamic>>();
-      final groupDoc = MockDocumentReference<Map<String, dynamic>>();
-      final schedule = MockCollectionReference<Map<String, dynamic>>();
-      final query = MockQuery<Map<String, dynamic>>();
-      final err = Exception('fail');
-
-      when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
-      when(() => groups.doc('g1')).thenReturn(groupDoc);
-      when(() => groupDoc.collection(GroupCollections.schedule))
-          .thenReturn(schedule);
-      when(() => schedule.orderBy('date')).thenReturn(query);
-      when(() => query.snapshots()).thenAnswer(
-          (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err));
-
-      final crash = MockCrashlytics();
-      ErrorLogger.crashlytics = crash;
-      when(() => crash.recordError(any(), any(),
-          reason: any(named: 'reason'),
-          information: any(named: 'information'),
-          printDetails: any(named: 'printDetails'),
-          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
-
-      final svc = GroupService(firestore: mockFs);
-
-      await runZonedGuarded(() async {
-        await expectLater(svc.schedule('g1'), emitsError(same(err)));
-      }, (e, st) {});
-    });
-
     test('createGroup rethrows and logs on error', () async {
       final mockFs = MockFirebaseFirestore();
       final groups = MockCollectionReference<Map<String, dynamic>>();
@@ -730,43 +617,6 @@ void main() {
       await expectLater(
           svc.createGroup(ownerUid: 'u1', name: 'G'), throwsA(same(err)));
 
-      verify(() => crash.recordError(err, any(),
-          reason: null,
-          information: any(named: 'information'),
-          printDetails: any(named: 'printDetails'),
-          fatal: false)).called(1);
-    });
-
-    test('joinGroup rethrows and logs on error', () async {
-      final mockFs = MockFirebaseFirestore();
-      final groups = MockCollectionReference<Map<String, dynamic>>();
-      final groupDoc = MockDocumentReference<Map<String, dynamic>>();
-      final joinRequests = MockCollectionReference<Map<String, dynamic>>();
-      final joinDoc = MockDocumentReference<Map<String, dynamic>>();
-      final err = Exception('fail');
-
-      when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
-      when(() => groups.doc('g1')).thenReturn(groupDoc);
-      when(() => groupDoc.collection(GroupCollections.joinRequests))
-          .thenReturn(joinRequests);
-      when(() => joinRequests.doc('u1')).thenReturn(joinDoc);
-      when(() => joinDoc.set(any())).thenThrow(err);
-
-      final crash = MockCrashlytics();
-      ErrorLogger.crashlytics = crash;
-      when(() => crash.recordError(any(), any(),
-          reason: any(named: 'reason'),
-          information: any(named: 'information'),
-          printDetails: any(named: 'printDetails'),
-          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
-
-      final svc = GroupService(firestore: mockFs);
-
-      await expectLater(svc.joinGroup(groupId: 'g1', uid: 'u1', name: 'Name'),
-          throwsA(same(err)));
-
-      verify(() => joinRequests.doc('u1')).called(1);
-      verify(() => joinDoc.set(any())).called(1);
       verify(() => crash.recordError(err, any(),
           reason: null,
           information: any(named: 'information'),
@@ -807,49 +657,6 @@ void main() {
           fatal: false)).called(1);
     });
 
-    test('leaveGroup rethrows and logs on error', () async {
-      final mockFs = MockFirebaseFirestore();
-      final groups = MockCollectionReference<Map<String, dynamic>>();
-      final groupDoc = MockDocumentReference<Map<String, dynamic>>();
-      final members = MockCollectionReference<Map<String, dynamic>>();
-      final memberDoc = MockDocumentReference<Map<String, dynamic>>();
-      final memberSnap = MockDocumentSnapshot<Map<String, dynamic>>();
-      final groupSnap = MockDocumentSnapshot<Map<String, dynamic>>();
-      final batch = MockWriteBatch();
-
-      when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
-      when(() => groups.doc('g1')).thenReturn(groupDoc);
-      when(() => groupDoc.collection(GroupCollections.members))
-          .thenReturn(members);
-      when(() => members.doc('u1')).thenReturn(memberDoc);
-      when(() => memberDoc.get()).thenAnswer((_) async => memberSnap);
-      when(() => memberSnap.exists).thenReturn(true);
-      when(() => groupDoc.get()).thenAnswer((_) async => groupSnap);
-      when(() => groupSnap.exists).thenReturn(true);
-      when(() => groupSnap.data()).thenReturn({'memberCount': 1});
-      when(() => mockFs.batch()).thenReturn(batch);
-      when(() => batch.commit())
-          .thenAnswer((_) => Future<void>.error(Exception('fail')));
-
-      final crash = MockCrashlytics();
-      ErrorLogger.crashlytics = crash;
-      when(() => crash.recordError(any(), any(),
-          reason: any(named: 'reason'),
-          information: any(named: 'information'),
-          printDetails: any(named: 'printDetails'),
-          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
-
-      final svc = GroupService(firestore: mockFs);
-
-      await expectLater(
-          svc.leaveGroup(groupId: 'g1', uid: 'u1'), throwsException);
-
-      verify(() => crash.recordError(any(), any(),
-          reason: null,
-          information: any(named: 'information'),
-          printDetails: any(named: 'printDetails'),
-          fatal: false)).called(1);
-    });
 
     test('memberDailyCompletion streams progress for group members', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
@@ -1193,6 +1000,237 @@ void main() {
             .doc('u1')
             .get();
         expect(s2.data()?['completed'], 3);
+      });
+    });
+
+    group('Error Handling (requires Mockito)', () {
+      // NOTE: These tests use MockFirebaseFirestore because FakeFirebaseFirestore
+      // does not support easy injection of errors into streams or write operations.
+      // While brittle, these are necessary to ensure the service handles Firestore
+      // outages gracefully.
+
+      test('groupsForUser logs and returns empty list on stream error', () async {
+        final mockFs = MockFirebaseFirestore();
+        final memberQuery = MockQuery<Map<String, dynamic>>();
+        final groups = MockCollectionReference<Map<String, dynamic>>();
+        final ownerQuery = MockQuery<Map<String, dynamic>>();
+        final ownerSnap = MockQuerySnapshot<Map<String, dynamic>>();
+        final err = Exception('fail');
+
+        when(() => mockFs.collectionGroup(GroupCollections.members))
+            .thenReturn(memberQuery);
+        when(() => memberQuery.where('uid', isEqualTo: 'u1'))
+            .thenReturn(memberQuery);
+        when(() => memberQuery.snapshots()).thenAnswer((_) {
+          return Stream<QuerySnapshot<Map<String, dynamic>>>.error(err);
+        });
+
+        when(() => mockFs.collection(GroupCollections.groups))
+            .thenReturn(groups);
+        when(() => groups.where('ownerUid', isEqualTo: 'u1'))
+            .thenReturn(ownerQuery);
+        when(() => ownerQuery.snapshots())
+            .thenAnswer((_) => Stream.value(ownerSnap));
+        when(() => ownerSnap.docs).thenReturn([]);
+
+        final crash = MockCrashlytics();
+        ErrorLogger.crashlytics = crash;
+        when(() => crash.recordError(any(), any(),
+            reason: any(named: 'reason'),
+            information: any(named: 'information'),
+            printDetails: any(named: 'printDetails'),
+            fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+
+        final svc = GroupService(firestore: mockFs);
+
+        await runZonedGuarded(() async {
+          await expectLater(svc.groupsForUser('u1'), emits(isEmpty));
+        }, (e, st) {
+          // Suppress expected error from stream bubbling
+        });
+
+        verify(() => crash.recordError(err, any(),
+            reason: null,
+            information: any(named: 'information'),
+            printDetails: any(named: 'printDetails'),
+            fatal: false)).called(1);
+      });
+
+      test('allGroups logs and returns empty list on stream error', () async {
+        final mockFs = MockFirebaseFirestore();
+        final groups = MockCollectionReference<Map<String, dynamic>>();
+        final err = Exception('fail');
+
+        when(() => mockFs.collection(GroupCollections.groups))
+            .thenReturn(groups);
+        when(() => groups.snapshots()).thenAnswer(
+            (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err));
+
+        final crash = MockCrashlytics();
+        ErrorLogger.crashlytics = crash;
+        when(() => crash.recordError(any(), any(),
+            reason: any(named: 'reason'),
+            information: any(named: 'information'),
+            printDetails: any(named: 'printDetails'),
+            fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+
+        final svc = GroupService(firestore: mockFs);
+
+        await runZonedGuarded(() async {
+          await expectLater(svc.allGroups(), emits(isEmpty));
+        }, (e, st) {});
+
+        verify(() => crash.recordError(err, any(),
+            reason: null,
+            information: any(named: 'information'),
+            printDetails: any(named: 'printDetails'),
+            fatal: false)).called(1);
+      });
+
+      test('memberNames surfaces stream errors', () async {
+        final mockFs = MockFirebaseFirestore();
+        final groups = MockCollectionReference<Map<String, dynamic>>();
+        final groupDoc = MockDocumentReference<Map<String, dynamic>>();
+        final members = MockCollectionReference<Map<String, dynamic>>();
+        final err = Exception('fail');
+
+        when(() => mockFs.collection(GroupCollections.groups))
+            .thenReturn(groups);
+        when(() => groups.doc('g1')).thenReturn(groupDoc);
+        when(() => groupDoc.collection(GroupCollections.members))
+            .thenReturn(members);
+        when(() => members.snapshots()).thenAnswer(
+            (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err));
+
+        final crash = MockCrashlytics();
+        ErrorLogger.crashlytics = crash;
+        when(() => crash.recordError(any(), any(),
+            reason: any(named: 'reason'),
+            information: any(named: 'information'),
+            printDetails: any(named: 'printDetails'),
+            fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+
+        final svc = GroupService(firestore: mockFs);
+
+        await runZonedGuarded(() async {
+          await expectLater(svc.memberNames('g1'), emitsError(same(err)));
+        }, (e, st) {});
+      });
+
+      test('schedule surfaces stream errors', () async {
+        final mockFs = MockFirebaseFirestore();
+        final groups = MockCollectionReference<Map<String, dynamic>>();
+        final groupDoc = MockDocumentReference<Map<String, dynamic>>();
+        final schedule = MockCollectionReference<Map<String, dynamic>>();
+        final query = MockQuery<Map<String, dynamic>>();
+        final err = Exception('fail');
+
+        when(() => mockFs.collection(GroupCollections.groups))
+            .thenReturn(groups);
+        when(() => groups.doc('g1')).thenReturn(groupDoc);
+        when(() => groupDoc.collection(GroupCollections.schedule))
+            .thenReturn(schedule);
+        when(() => schedule.orderBy('date')).thenReturn(query);
+        when(() => query.snapshots()).thenAnswer(
+            (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err));
+
+        final crash = MockCrashlytics();
+        ErrorLogger.crashlytics = crash;
+        when(() => crash.recordError(any(), any(),
+            reason: any(named: 'reason'),
+            information: any(named: 'information'),
+            printDetails: any(named: 'printDetails'),
+            fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+
+        final svc = GroupService(firestore: mockFs);
+
+        await runZonedGuarded(() async {
+          await expectLater(svc.schedule('g1'), emitsError(same(err)));
+        }, (e, st) {});
+      });
+
+      test('joinGroup rethrows and logs on error', () async {
+        final mockFs = MockFirebaseFirestore();
+        final groups = MockCollectionReference<Map<String, dynamic>>();
+        final groupDoc = MockDocumentReference<Map<String, dynamic>>();
+        final joinRequests = MockCollectionReference<Map<String, dynamic>>();
+        final joinDoc = MockDocumentReference<Map<String, dynamic>>();
+        final err = Exception('fail');
+
+        when(() => mockFs.collection(GroupCollections.groups))
+            .thenReturn(groups);
+        when(() => groups.doc('g1')).thenReturn(groupDoc);
+        when(() => groupDoc.collection(GroupCollections.joinRequests))
+            .thenReturn(joinRequests);
+        when(() => joinRequests.doc('u1')).thenReturn(joinDoc);
+        when(() => joinDoc.set(any())).thenThrow(err);
+
+        final crash = MockCrashlytics();
+        ErrorLogger.crashlytics = crash;
+        when(() => crash.recordError(any(), any(),
+            reason: any(named: 'reason'),
+            information: any(named: 'information'),
+            printDetails: any(named: 'printDetails'),
+            fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+
+        final svc = GroupService(firestore: mockFs);
+
+        await expectLater(
+            svc.joinGroup(groupId: 'g1', uid: 'u1', name: 'Name'),
+            throwsA(same(err)));
+
+        verify(() => joinRequests.doc('u1')).called(1);
+        verify(() => joinDoc.set(any())).called(1);
+        verify(() => crash.recordError(err, any(),
+            reason: null,
+            information: any(named: 'information'),
+            printDetails: any(named: 'printDetails'),
+            fatal: false)).called(1);
+      });
+
+      test('leaveGroup rethrows and logs on error', () async {
+        final mockFs = MockFirebaseFirestore();
+        final groups = MockCollectionReference<Map<String, dynamic>>();
+        final groupDoc = MockDocumentReference<Map<String, dynamic>>();
+        final members = MockCollectionReference<Map<String, dynamic>>();
+        final memberDoc = MockDocumentReference<Map<String, dynamic>>();
+        final memberSnap = MockDocumentSnapshot<Map<String, dynamic>>();
+        final groupSnap = MockDocumentSnapshot<Map<String, dynamic>>();
+        final batch = MockWriteBatch();
+
+        when(() => mockFs.collection(GroupCollections.groups))
+            .thenReturn(groups);
+        when(() => groups.doc('g1')).thenReturn(groupDoc);
+        when(() => groupDoc.collection(GroupCollections.members))
+            .thenReturn(members);
+        when(() => members.doc('u1')).thenReturn(memberDoc);
+        when(() => memberDoc.get()).thenAnswer((_) async => memberSnap);
+        when(() => memberSnap.exists).thenReturn(true);
+        when(() => groupDoc.get()).thenAnswer((_) async => groupSnap);
+        when(() => groupSnap.exists).thenReturn(true);
+        when(() => groupSnap.data()).thenReturn({'memberCount': 1});
+        when(() => mockFs.batch()).thenReturn(batch);
+        when(() => batch.commit())
+            .thenAnswer((_) => Future<void>.error(Exception('fail')));
+
+        final crash = MockCrashlytics();
+        ErrorLogger.crashlytics = crash;
+        when(() => crash.recordError(any(), any(),
+            reason: any(named: 'reason'),
+            information: any(named: 'information'),
+            printDetails: any(named: 'printDetails'),
+            fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+
+        final svc = GroupService(firestore: mockFs);
+
+        await expectLater(
+            svc.leaveGroup(groupId: 'g1', uid: 'u1'), throwsException);
+
+        verify(() => crash.recordError(any(), any(),
+            reason: null,
+            information: any(named: 'information'),
+            printDetails: any(named: 'printDetails'),
+            fatal: false)).called(1);
       });
     });
   });
