@@ -20,6 +20,62 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bible_read/services/vibration_service.dart';
 
 import '../helpers/test_read_log_page.dart';
+import 'dart:io';
+import 'dart:async';
+
+class MockHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return MockHttpClient();
+  }
+}
+
+class MockHttpClient extends Fake implements HttpClient {
+  @override
+  bool autoUncompress = true;
+
+  @override
+  Future<HttpClientRequest> getUrl(Uri url) async {
+    return MockHttpClientRequest();
+  }
+}
+
+class MockHttpClientRequest extends Fake implements HttpClientRequest {
+  @override
+  Future<HttpClientResponse> close() async {
+    return MockHttpClientResponse();
+  }
+}
+
+class MockHttpClientResponse extends Fake implements HttpClientResponse {
+  @override
+  int get statusCode => 200;
+
+  @override
+  int get contentLength => 67;
+
+  @override
+  HttpClientResponseCompressionState get compressionState =>
+      HttpClientResponseCompressionState.notCompressed;
+
+  @override
+  StreamSubscription<List<int>> listen(void Function(List<int> event)? onData,
+      {Function? onError, void Function()? onDone, bool? cancelOnError}) {
+    // 1x1 transparent pixel png
+    final List<int> bytes = [
+      0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+      0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+      0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+      0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+      0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
+      0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+      0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+      0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+      0x42, 0x60, 0x82
+    ];
+    return Stream<List<int>>.value(bytes).listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+  }
+}
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -129,6 +185,9 @@ class _RecordingVibrationService extends VibrationService {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  HttpOverrides.global = MockHttpOverrides();
   setupFirebaseCoreMocks();
 
   setUpAll(() async {
@@ -156,6 +215,17 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     // Profile should be shown by default when not authenticated
+    // NOW IT SHOWS WELCOME PAGE FIRST
+    // We expect WelcomePage, then tap "Get Started", then see "Sign in with Google"
+
+    // 1. Verify Welcome Page is shown (checking for Get Started button text)
+    expect(find.text('Get Started'), findsOneWidget);
+
+    // 2. Tap Get Started
+    await tester.tap(find.text('Get Started'));
+    await tester.pumpAndSettle();
+
+    // 3. Now verify UserProfilePage is shown
     expect(find.text('Sign in with Google'), findsOneWidget);
 
     // Profile should be shown when tapping profile or if it's the only page.
