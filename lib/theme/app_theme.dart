@@ -30,6 +30,13 @@ class AppTheme {
   static const Color primary90 = Color(0xFFEADDFF);
   static const Color primary30 = Color(0xFF4F378B);
 
+  // Material 3 Dark Colors
+  static const Color m3DarkSurface = Color(0xFF141218);
+  static const Color m3Primary = Color(0xFFD0BCFF);
+  static const Color m3OnPrimary = Color(0xFF381E72);
+  static const Color m3SurfaceDim = Color(0xFFDED8E1);
+  static const Color m3SurfaceBright = Color(0xFFFEF7FF);
+
   /// Generates a seeded [ColorScheme] to use when dynamic colors are
   /// unavailable.
   static ColorScheme seededColorScheme(Brightness brightness) =>
