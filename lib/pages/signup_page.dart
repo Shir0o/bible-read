@@ -444,16 +444,6 @@ class _SignupPageState extends State<SignupPage> {
                     child: const FaIcon(FontAwesomeIcons.google,
                         size: 20, color: Colors.white),
                   ),
-                  const SizedBox(width: 16),
-                  // Mail Button (Decorative mostly, as we are on email signup)
-                  _SocialButton(
-                    onTap: () {
-                      // Intentionally empty or just feedback
-                      widget.vibrationService.lightImpact();
-                    },
-                    child: const Icon(Icons.mail_outline,
-                        size: 24, color: Colors.white),
-                  ),
                 ],
               ),
 
