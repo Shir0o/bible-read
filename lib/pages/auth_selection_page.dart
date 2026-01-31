@@ -52,7 +52,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
     try {
       final GoogleSignIn googleSignIn = widget.googleSignInProvider();
       final GoogleSignInAccount? account = await googleSignIn.signIn();
-      
+
       if (account != null) {
         final GoogleSignInAuthentication auth = await account.authentication;
         final credential = GoogleAuthProvider.credential(
@@ -63,7 +63,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
         await widget.auth.signInWithCredential(credential);
 
         // Navigation is handled by the auth stream in MainPage, but if we need
-        // to force a refresh or navigation we can do it here. 
+        // to force a refresh or navigation we can do it here.
         // In MainPage logic, once auth changes, it rebuilds.
       } else {
         if (mounted) {
@@ -138,171 +138,177 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
               ),
             ),
           ),
-          
+
           // Content
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
                 children: [
-                   // Push content to bottom
-                   const Spacer(),
-                   
-                   // Title
-                   Text(
-                     'Join the Community',
-                     textAlign: TextAlign.center,
-                     style: GoogleFonts.inter(
-                       fontSize: 32,
-                       fontWeight: FontWeight.bold,
-                       height: 1.1,
-                       color: Colors.white,
-                       shadows: [
-                          Shadow(
-                           offset: const Offset(0, 2),
-                           blurRadius: 4,
-                           color: Colors.black.withValues(alpha: 0.5),
-                         ),
-                       ],
-                     ),
-                   ),
-                   const SizedBox(height: 8),
-                   
-                   // Description
-                   Padding(
-                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                     child: Text(
-                       'Sign up to track your progress and connect with your reading group.',
-                       textAlign: TextAlign.center,
-                       style: GoogleFonts.inter(
-                         fontSize: 16,
-                         fontWeight: FontWeight.w500,
-                         color: const Color(0xFFDED8E1).withValues(alpha: 0.8), // m3-surface-dim
-                       ),
-                     ),
-                   ),
-                   const SizedBox(height: 32),
-                   
-                   // Continue with Google Button
-                   SizedBox(
-                     height: 56,
-                     width: double.infinity,
-                     child: ElevatedButton(
-                       onPressed: _handleGoogleSignIn,
-                       style: ElevatedButton.styleFrom(
-                         backgroundColor: Colors.white,
-                         foregroundColor: Colors.black,
-                         elevation: 4,
-                         shadowColor: Colors.black.withValues(alpha: 0.3),
-                         shape: RoundedRectangleBorder(
-                           borderRadius: BorderRadius.circular(28),
-                         ),
-                       ),
-                       child: _isSigningIn 
-                         ? const SizedBox(
-                             height: 24, 
-                             width: 24, 
-                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black)
-                           )
-                         : Row(
-                             mainAxisAlignment: MainAxisAlignment.center,
-                             children: [
-                               const FaIcon(FontAwesomeIcons.google, size: 20, color: Colors.black),
-                               const SizedBox(width: 12),
-                               Text(
-                                 'Continue with Google',
-                                 style: GoogleFonts.inter(
-                                   fontSize: 16,
-                                   fontWeight: FontWeight.bold,
-                                 ),
-                               ),
-                             ],
-                           ),
-                     ),
-                   ),
-                   const SizedBox(height: 12),
-                   
-                   // Sign up with email Button
-                   SizedBox(
-                     height: 56,
-                     width: double.infinity,
-                     child: ElevatedButton(
-                       onPressed: () {
-                         unawaited(widget.vibrationService.mediumImpact());
-                         Navigator.of(context).push(
-                           animatedPageRoute(
-                             SignupPage(
-                               auth: widget.auth,
-                               firestore: widget.firestore,
-                               googleSignInProvider: widget.googleSignInProvider,
-                               mainPageBuilder: widget.mainPageBuilder,
-                             ),
-                           ),
-                         );
-                       },
-                       style: ElevatedButton.styleFrom(
-                         backgroundColor: const Color(0xFFD0BCFF), // m3-dark-primary
-                         foregroundColor: const Color(0xFF381E72), // m3-dark-on-primary
-                         elevation: 4,
-                         shadowColor: Colors.black.withValues(alpha: 0.3),
-                         shape: RoundedRectangleBorder(
-                           borderRadius: BorderRadius.circular(28),
-                         ),
-                       ),
-                       child: Row(
-                         mainAxisAlignment: MainAxisAlignment.center,
-                         children: [
-                           const Icon(Icons.mail_outline, size: 24),
-                           const SizedBox(width: 12),
-                           Text(
-                             'Sign up with email',
-                             style: GoogleFonts.inter(
-                               fontSize: 16,
-                               fontWeight: FontWeight.bold,
-                             ),
-                           ),
-                         ],
-                       ),
-                     ),
-                   ),
-                   const SizedBox(height: 32),
-                   
-                   // Login Link
-                   Row(
-                     mainAxisAlignment: MainAxisAlignment.center,
-                     children: [
-                       Text(
-                         'Already have an account? ',
-                         style: GoogleFonts.inter(
-                           fontSize: 14,
-                           color: const Color(0xFFDED8E1).withValues(alpha: 0.7),
-                         ),
-                       ),
-                       GestureDetector(
-                         onTap: () {
-                           unawaited(widget.vibrationService.lightImpact());
-                           Navigator.of(context).push(
-                             animatedPageRoute(
-                               LoginPage(
-                                 auth: widget.auth,
-                               ),
-                             ),
-                           );
-                         },
-                         child: Text(
-                           'Log in',
-                           style: GoogleFonts.inter(
-                             fontSize: 14,
-                             fontWeight: FontWeight.bold,
-                             color: const Color(0xFFD0BCFF),
-                           ),
-                         ),
-                       ),
-                     ],
-                   ),
-                   
-                   // Bottom Padding
-                   const SizedBox(height: 32),
+                  // Push content to bottom
+                  const Spacer(),
+
+                  // Title
+                  Text(
+                    'Join the Community',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      height: 1.1,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          offset: const Offset(0, 2),
+                          blurRadius: 4,
+                          color: Colors.black.withValues(alpha: 0.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Description
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(
+                      'Sign up to track your progress and connect with your reading group.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFFDED8E1)
+                            .withValues(alpha: 0.8), // m3-surface-dim
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Continue with Google Button
+                  SizedBox(
+                    height: 56,
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _handleGoogleSignIn,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        elevation: 4,
+                        shadowColor: Colors.black.withValues(alpha: 0.3),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                      ),
+                      child: _isSigningIn
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.black))
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const FaIcon(FontAwesomeIcons.google,
+                                    size: 20, color: Colors.black),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Continue with Google',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Sign up with email Button
+                  SizedBox(
+                    height: 56,
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        unawaited(widget.vibrationService.mediumImpact());
+                        Navigator.of(context).push(
+                          animatedPageRoute(
+                            SignupPage(
+                              auth: widget.auth,
+                              firestore: widget.firestore,
+                              googleSignInProvider: widget.googleSignInProvider,
+                              mainPageBuilder: widget.mainPageBuilder,
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color(0xFFD0BCFF), // m3-dark-primary
+                        foregroundColor:
+                            const Color(0xFF381E72), // m3-dark-on-primary
+                        elevation: 4,
+                        shadowColor: Colors.black.withValues(alpha: 0.3),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.mail_outline, size: 24),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Sign up with email',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Login Link
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Already have an account? ',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: const Color(0xFFDED8E1).withValues(alpha: 0.7),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          unawaited(widget.vibrationService.lightImpact());
+                          Navigator.of(context).push(
+                            animatedPageRoute(
+                              LoginPage(
+                                auth: widget.auth,
+                                googleSignInProvider:
+                                    widget.googleSignInProvider,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Log in',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFFD0BCFF),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Bottom Padding
+                  const SizedBox(height: 32),
                 ],
               ),
             ),

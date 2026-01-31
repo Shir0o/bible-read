@@ -53,7 +53,8 @@ class MockHttpClientResponse extends Fake implements HttpClientResponse {
   @override
   StreamSubscription<List<int>> listen(void Function(List<int> event)? onData,
       {Function? onError, void Function()? onDone, bool? cancelOnError}) {
-    return Stream<List<int>>.empty().listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+    return Stream<List<int>>.empty().listen(onData,
+        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 }
 
@@ -84,7 +85,7 @@ class MockVibrationService extends VibrationService {
 
   @override
   Future<void> lightImpact() async {}
-  
+
   @override
   Future<void> mediumImpact() async {}
 }
@@ -115,7 +116,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: SignupPage(
-          auth: auth, 
+          auth: auth,
           firestore: firestore,
           vibrationService: MockVibrationService(),
           googleSignInProvider: () => FakeGoogleSignIn(),
@@ -140,10 +141,10 @@ void main() {
       find.byKey(const Key('signupEmailField')),
       'user@example.com',
     );
-    
+
     // Enter Password
     await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
-    
+
     // Tap Create Account
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
     await tester.pumpAndSettle();
@@ -151,13 +152,13 @@ void main() {
     expect(auth.createCalled, isTrue);
     expect(auth.email, 'user@example.com');
     expect(auth.password, 'pw');
-    
+
     final uid = auth.currentUser!.uid;
     final doc = await firestore.collection('users').doc(uid).get();
     expect(doc.exists, isTrue);
     expect(doc.data()!['name'], 'Test User');
     expect(doc.data()!['email'], 'user@example.com');
-    
+
     // Check if display name was updated
     expect(auth.currentUser!.displayName, 'Test User');
 

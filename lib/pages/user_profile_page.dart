@@ -40,7 +40,6 @@ class UserProfilePage extends StatefulWidget {
     FirebaseFirestore? firestore,
     FriendService? friendService,
     VibrationService? vibrationService,
-
     FeedbackService? feedbackService,
     Widget Function(BuildContext)? mainPageBuilder,
   }) {

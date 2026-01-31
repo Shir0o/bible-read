@@ -29,19 +29,19 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Future<GoogleSignInUserData?> signIn() async {
     return user;
   }
-  
-  @override 
+
+  @override
   Future<GoogleSignInUserData?> signInSilently() async => user;
-  
+
   @override
   Future<bool> isSignedIn() async => user != null;
 
   @override
   Future<void> clearAuthCache({required String token}) async {}
-  
+
   @override
   Future<void> disconnect() async {}
-  
+
   @override
   Future<void> signOut() async {}
 
@@ -49,7 +49,8 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Stream<GoogleSignInUserData?>? get userDataEvents => null;
 
   @override
-  Future<GoogleSignInTokenData> getTokens({required String email, bool? shouldRecoverAuth}) async {
+  Future<GoogleSignInTokenData> getTokens(
+      {required String email, bool? shouldRecoverAuth}) async {
     return GoogleSignInTokenData(idToken: 'token', accessToken: 'access');
   }
 
@@ -57,7 +58,9 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
   Future<bool> requestScopes(List<String> scopes) async => true;
 
   @override
-  Future<bool> canAccessScopes(List<String> scopes, {String? accessToken}) async => true;
+  Future<bool> canAccessScopes(List<String> scopes,
+          {String? accessToken}) async =>
+      true;
 }
 
 class MockVibrationService extends VibrationService {
@@ -95,7 +98,10 @@ void main() {
       ));
 
       expect(find.text('Join the Community'), findsOneWidget);
-      expect(find.text('Sign up to track your progress and connect with your reading group.'), findsOneWidget);
+      expect(
+          find.text(
+              'Sign up to track your progress and connect with your reading group.'),
+          findsOneWidget);
       expect(find.text('Continue with Google'), findsOneWidget);
       expect(find.text('Sign up with email'), findsOneWidget);
       expect(find.text('Log in'), findsOneWidget);

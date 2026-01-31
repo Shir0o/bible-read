@@ -14,8 +14,6 @@ import 'package:bible_read/pages/main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:network_image_mock/network_image_mock.dart';
 
-
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();

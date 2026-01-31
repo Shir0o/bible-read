@@ -128,39 +128,43 @@ void main() {
   });
 
   testWidgets('email sign-in button vibrates', (tester) async {
-    final vibration = _RecordingVibrationService();
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UserProfilePage(
-          auth: MockFirebaseAuth(),
-          firestore: FakeFirebaseFirestore(),
-          vibrationService: vibration,
+    await mockNetworkImagesFor(() async {
+      final vibration = _RecordingVibrationService();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UserProfilePage(
+            auth: MockFirebaseAuth(),
+            firestore: FakeFirebaseFirestore(),
+            vibrationService: vibration,
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Email Sign In'));
-    await tester.pumpAndSettle();
-    expect(vibration.lightCount, 1);
+      await tester.tap(find.text('Email Sign In'));
+      await tester.pumpAndSettle();
+      expect(vibration.lightCount, 1);
+    });
   });
 
   testWidgets('email sign-up button vibrates', (tester) async {
-    final vibration = _RecordingVibrationService();
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UserProfilePage(
-          auth: MockFirebaseAuth(),
-          firestore: FakeFirebaseFirestore(),
-          vibrationService: vibration,
+    await mockNetworkImagesFor(() async {
+      final vibration = _RecordingVibrationService();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UserProfilePage(
+            auth: MockFirebaseAuth(),
+            firestore: FakeFirebaseFirestore(),
+            vibrationService: vibration,
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Email Sign Up'));
-    await tester.pumpAndSettle();
-    expect(vibration.lightCount, 1);
+      await tester.tap(find.text('Email Sign Up'));
+      await tester.pumpAndSettle();
+      expect(vibration.lightCount, 1);
+    });
   });
 
   testWidgets('successful sign in navigates to main page', (tester) async {
@@ -322,9 +326,9 @@ void main() {
             user: account,
             auth: auth,
             mainPageBuilder: (_) => MainPage(
-               auth: auth,
-               firestore: FakeFirebaseFirestore(),
-               messaging: FakeFirebaseMessaging(null),
+              auth: auth,
+              firestore: FakeFirebaseFirestore(),
+              messaging: FakeFirebaseMessaging(null),
             ),
           ),
         ),

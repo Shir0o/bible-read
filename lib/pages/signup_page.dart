@@ -42,7 +42,7 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  
+
   bool _isPasswordVisible = false;
   bool _loading = false;
   bool _isGoogleSigningIn = false;
@@ -65,7 +65,7 @@ class _SignupPageState extends State<SignupPage> {
 
   Future<void> _submit() async {
     if (_loading || _isGoogleSigningIn) return;
-    
+
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -80,7 +80,7 @@ class _SignupPageState extends State<SignupPage> {
     setState(() {
       _loading = true;
     });
-    
+
     unawaited(widget.vibrationService.mediumImpact());
 
     try {
@@ -108,7 +108,7 @@ class _SignupPageState extends State<SignupPage> {
           context,
           vibrationService: widget.vibrationService,
         ));
-        
+
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: widget.mainPageBuilder ?? (_) => MainPage(),
@@ -139,7 +139,7 @@ class _SignupPageState extends State<SignupPage> {
     try {
       final GoogleSignIn googleSignIn = widget.googleSignInProvider();
       final GoogleSignInAccount? account = await googleSignIn.signIn();
-      
+
       if (account != null) {
         final GoogleSignInAuthentication auth = await account.authentication;
         final credential = GoogleAuthProvider.credential(
@@ -148,22 +148,21 @@ class _SignupPageState extends State<SignupPage> {
         );
 
         await widget.auth.signInWithCredential(credential);
-        
+
         // Navigation is handled by auth stream listener in MainPage usually,
         // but since we are pushing this page, we might want to pop or replace.
         // If we are here, we are likely not authenticated yet.
         // Once authenticated, MainPage stream builder will update.
         // However, if we pushed this page, we should probably pop/replace to main page.
-        
-        if (mounted) {
-             Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: widget.mainPageBuilder ?? (_) => MainPage(),
-              ),
-              (route) => false,
-            );
-        }
 
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: widget.mainPageBuilder ?? (_) => MainPage(),
+            ),
+            (route) => false,
+          );
+        }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -318,9 +317,13 @@ class _SignupPageState extends State<SignupPage> {
                             decoration: inputDecoration.copyWith(
                               labelText: 'Password',
                               suffixIcon: IconButton(
-                                tooltip: _isPasswordVisible ? 'Hide password' : 'Show password',
+                                tooltip: _isPasswordVisible
+                                    ? 'Hide password'
+                                    : 'Show password',
                                 icon: Icon(
-                                  _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                                  _isPasswordVisible
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
                                   color: grey400,
                                   size: 20,
                                 ),
@@ -342,9 +345,12 @@ class _SignupPageState extends State<SignupPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
                       child: RichText(
                         text: TextSpan(
-                          style: GoogleFonts.inter(fontSize: 12, color: grey400),
+                          style:
+                              GoogleFonts.inter(fontSize: 12, color: grey400),
                           children: [
-                            const TextSpan(text: 'By creating an account, you agree to our '),
+                            const TextSpan(
+                                text:
+                                    'By creating an account, you agree to our '),
                             TextSpan(
                               text: 'Terms of Service',
                               style: GoogleFonts.inter(
@@ -384,20 +390,20 @@ class _SignupPageState extends State<SignupPage> {
                             borderRadius: BorderRadius.circular(24),
                           ),
                         ),
-                        child: _loading 
-                          ? const SizedBox(
-                              height: 24, 
-                              width: 24, 
-                              child: CircularProgressIndicator(strokeWidth: 2, color: darkOnPrimary)
-                            )
-                          : Text(
-                              'Create Account',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.5,
+                        child: _loading
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: darkOnPrimary))
+                            : Text(
+                                'Create Account',
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
-                            ),
                       ),
                     ),
                   ],
@@ -435,16 +441,18 @@ class _SignupPageState extends State<SignupPage> {
                   // Google Button
                   _SocialButton(
                     onTap: _handleGoogleSignIn,
-                    child: const FaIcon(FontAwesomeIcons.google, size: 20, color: Colors.white),
+                    child: const FaIcon(FontAwesomeIcons.google,
+                        size: 20, color: Colors.white),
                   ),
                   const SizedBox(width: 16),
                   // Mail Button (Decorative mostly, as we are on email signup)
                   _SocialButton(
                     onTap: () {
-                       // Intentionally empty or just feedback
-                       widget.vibrationService.lightImpact();
+                      // Intentionally empty or just feedback
+                      widget.vibrationService.lightImpact();
                     },
-                    child: const Icon(Icons.mail_outline, size: 24, color: Colors.white),
+                    child: const Icon(Icons.mail_outline,
+                        size: 24, color: Colors.white),
                   ),
                 ],
               ),
@@ -464,14 +472,15 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                   GestureDetector(
                     onTap: () {
-                       unawaited(widget.vibrationService.lightImpact());
-                       Navigator.of(context).push(
-                         animatedPageRoute(
-                           LoginPage(
-                             auth: widget.auth,
-                           ),
-                         ),
-                       );
+                      unawaited(widget.vibrationService.lightImpact());
+                      Navigator.of(context).push(
+                        animatedPageRoute(
+                          LoginPage(
+                            auth: widget.auth,
+                            googleSignInProvider: widget.googleSignInProvider,
+                          ),
+                        ),
+                      );
                     },
                     child: Text(
                       'Log in',

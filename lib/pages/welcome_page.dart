@@ -59,7 +59,8 @@ class WelcomePage extends StatelessWidget {
           // Content
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -74,7 +75,7 @@ class WelcomePage extends StatelessWidget {
                         height: 1.1,
                         color: Colors.white,
                         shadows: [
-                           Shadow(
+                          Shadow(
                             offset: const Offset(0, 2),
                             blurRadius: 4,
                             color: Colors.black.withOpacity(0.5),
@@ -94,7 +95,7 @@ class WelcomePage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Description
                   Text(
                     'Experience the Bible in community. Create shared schedules, discuss insights, and keep your friends accountable every day.',
@@ -102,7 +103,8 @@ class WelcomePage extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFFDED8E1).withOpacity(0.9), // m3-surface-dim
+                      color: const Color(0xFFDED8E1)
+                          .withOpacity(0.9), // m3-surface-dim
                       height: 1.5,
                     ),
                   ),
@@ -114,12 +116,15 @@ class WelcomePage extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: onGetStarted,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEADDFF), // m3-primary-container
-                        foregroundColor: const Color(0xFF21005D), // m3-on-primary-container
+                        backgroundColor:
+                            const Color(0xFFEADDFF), // m3-primary-container
+                        foregroundColor:
+                            const Color(0xFF21005D), // m3-on-primary-container
                         elevation: 4,
                         shadowColor: Colors.black.withOpacity(0.3),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28), // rounded-full
+                          borderRadius:
+                              BorderRadius.circular(28), // rounded-full
                         ),
                       ),
                       child: Text(
@@ -145,7 +150,8 @@ class WelcomePage extends StatelessWidget {
                           width: 1,
                         ),
                         backgroundColor: Colors.transparent,
-                        foregroundColor: const Color(0xFFD0BCFF), // m3-dark-tertiary
+                        foregroundColor:
+                            const Color(0xFFD0BCFF), // m3-dark-tertiary
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(24),
                         ),

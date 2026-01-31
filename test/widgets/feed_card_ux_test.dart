@@ -5,7 +5,8 @@ import 'package:bible_read/models/read_log.dart';
 import 'package:bible_read/models/comment.dart';
 
 void main() {
-  testWidgets('FeedCard comment input has correct UX properties', (tester) async {
+  testWidgets('FeedCard comment input has correct UX properties',
+      (tester) async {
     final log = ReadLog(
       uid: 'user1',
       name: 'Bob',
@@ -46,20 +47,25 @@ void main() {
     final textField = tester.widget<TextField>(textFieldFinder);
 
     // Check capitalization
-    expect(textField.textCapitalization, TextCapitalization.sentences, reason: 'Should capitalize sentences');
+    expect(textField.textCapitalization, TextCapitalization.sentences,
+        reason: 'Should capitalize sentences');
 
     // Check input action
-    expect(textField.textInputAction, TextInputAction.send, reason: 'Should show send action');
+    expect(textField.textInputAction, TextInputAction.send,
+        reason: 'Should show send action');
 
     // Check keyboard type
-    expect(textField.keyboardType, TextInputType.multiline, reason: 'Should be multiline');
+    expect(textField.keyboardType, TextInputType.multiline,
+        reason: 'Should be multiline');
 
     // Check minLines/maxLines (optional but good)
     expect(textField.minLines, 1);
-    expect(textField.maxLines, inInclusiveRange(3, 5)); // Allow some flexibility
+    expect(
+        textField.maxLines, inInclusiveRange(3, 5)); // Allow some flexibility
   });
 
-  testWidgets('FeedCard comment input shows clear button when text is entered', (tester) async {
+  testWidgets('FeedCard comment input shows clear button when text is entered',
+      (tester) async {
     final log = ReadLog(
       uid: 'user1',
       name: 'Bob',

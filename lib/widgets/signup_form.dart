@@ -178,7 +178,6 @@ class _SignupFormState extends State<SignupForm> {
             ),
             obscureText: !_isConfirmPasswordVisible,
           ),
-
           const SizedBox(height: 8),
           AnimatedActionButton(
             onPressed: _submit,
