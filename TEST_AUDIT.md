@@ -2,32 +2,47 @@
 
 ## 1. Test Integrity Audit
 
-### Shallow Assertions & Brittle Tests
+### Shallow Assertions
 *   **`test/services/group_service_test.dart`**:
-    *   **Issue:** Tests like `memberNames streams display names` and `schedule streams list of entries` use `stream.first`. This assumes the stream emits the correct data immediately as its first event. In real scenarios (or even complex mock scenarios), streams might emit an initial empty state or loading state.
-    *   **Risk:** Tests are flaky or false positives if the stream emits an initial default value before the actual data.
-*   **`test/pages/groups_page_test.dart`**:
-    *   **Issue:** The test `lists all groups from service` relies on the `GroupsView` fallback logic (adding owner +1) to assert `'1 member'` for a malformed group. While valid as a regression test, it conflates "standard behavior" with "corruption recovery" without explicit separation.
+    *   **Issue:** The test `createGroup creates group and owner member` checks for the existence of specific fields (`name`, `ownerUid`, `memberCount`) but does not assert the *absence* of unexpected fields or strictly validate the document structure. This allows "data pollution" (unexpected fields) to go unnoticed.
+    *   **Remediation:** Refactor to use deep map equality checks against the entire document data.
 
-### Architectural Test Debt
-*   **`lib/widgets/views/groups_view.dart`**:
-    *   **Issue:** **N+1 Query Problem**. The view subscribes to the `members` subcollection for *every* group in the list to calculate the "live" member count.
-    *   **Risk:** This is a performance bottleneck. Tests using `pumpAndSettle` might hang or time out if the number of groups increases, as it waits for all these streams to settle.
+### Mocks & Isolation
+*   **`test/services/group_service_test.dart` (Error Handling)**:
+    *   **Issue:** The "Error Handling" group heavily relies on `MockFirebaseFirestore` and mocks internal method chains (e.g., `collection().doc().set()`). This makes the tests "tautological" (testing the mock setup) and brittle to implementation changes (e.g., adding `orderBy` or changing a query).
+    *   **Risk:** Refactoring the service implementation will likely break these tests even if the logic remains correct.
+
+### Flakiness Risk
+*   **Stream Tests**: Tests like `memberNames streams display names` use `expectLater` with `emitsThrough`, which is good, but some older tests or potential future tests might rely on `stream.first`. The audit confirms `emitsThrough` is largely used, which mitigates this, but vigilance is required.
 
 ## 2. Gap Analysis
 
-### Edge Cases
-*   **`ReferenceParser` (Ambiguity):** Input like `"Gen 1-2-3"` is parsed as `"Gen 1"` to `"Gen 3"` (ignoring the middle `2`). This behavior is implicit and untested.
-*   **`GroupService` (Validation):** `createGroup` accepts any string for `name`, including empty strings (if bypassed by UI) or extremely long strings, which might fail in Firestore or UI rendering.
+### Edge Cases & Input Validation
+*   **`GroupService.createGroup`**:
+    *   **Issue:** The method accepts any string for `name` and writes it to Firestore.
+    *   **Scenario:** Passing an empty string `""` or whitespace `"   "`.
+    *   **Outcome:** Creates a group with an invisible name. This causes UI issues and data integrity problems.
+    *   **Missing Test:** Ensure `createGroup` throws `ArgumentError` for invalid names.
+*   **`ReferenceParser`**:
+    *   **Issue:** Ambiguous ranges like `"Gen 1-2-3"`.
+    *   **Outcome:** Parsed as range `Gen 1` to `Gen 3`, skipping `2`. This is implicit behavior that might confuse users expecting a list `1, 2, 3`.
 
 ### Logic Branches
-*   **`GroupsView` (Corruption Recovery):** The logic `final adjusted = hasOwner ? liveCount : liveCount + 1` is critical for self-healing group counts but lacks a dedicated, named test case ensuring it *only* activates when necessary.
+*   **`GroupService._ensureMemberCount`**:
+    *   **Issue:** This private method is called in `approveJoinRequest` and `leaveGroup`. It performs a self-healing fix if `memberCount` is missing.
+    *   **Coverage:** While covered implicitly by "seeds memberCount when missing" tests, it lacks explicit isolation to ensure it handles race conditions or partial failures (though difficult to test without extensive mocking).
+
+### Architectural Test Debt
+*   **`GroupsView`**:
+    *   **Issue:** N+1 Query Problem (subscribing to `members` for every group).
+    *   **Risk:** Performance degradation not captured by current widget tests which often use small datasets.
 
 ## 3. Proposed New Tests
 
 | Priority | Component | Scenario | Input | Expected Outcome |
 | :--- | :--- | :--- | :--- | :--- |
-| **High** | `GroupService` | Stream Consistency | `memberNames` | Stream emits correct list eventually using `emitsThrough`, robust to initial empty states. |
-| **Medium** | `ReferenceParser` | Ambiguous Range | `"Gen 1-2-3"` | Parses deterministically (e.g., `Gen 1`..`Gen 3` or invalid). |
-| **Medium** | `GroupService` | Input Validation | `createGroup(name: "")` | Throws `ArgumentError` or similar (requires code change). |
-| **Low** | `GroupsView` | Performance | List with 100 groups | Renders without crashing or timing out (verifies N+1 impact). |
+| **High** | `GroupService` | Input Validation | `createGroup(name: "")` | Throws `ArgumentError`. |
+| **High** | `GroupService` | Input Validation | `createGroup(name: "   ")` | Throws `ArgumentError`. |
+| **Medium** | `GroupService` | Input Validation | `joinGroup(name: "")` | Throws `ArgumentError`. |
+| **Medium** | `ReferenceParser` | Ambiguity | `"Gen 1-2-3"` | Verification of current behavior (range expansion) to prevent regression or decide on change. |
+| **Low** | `GroupsView` | Performance | List of 100 groups | Benchmark test (integration) to measure frame build time. |

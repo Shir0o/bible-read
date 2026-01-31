@@ -61,10 +61,11 @@ void main() {
       final doc =
           await firestore.collection(GroupCollections.groups).doc(id).get();
       expect(doc.exists, isTrue);
-      expect(doc.data()?['name'], 'Test');
-      expect(doc.data()?['ownerUid'], 'u1');
-      expect(doc.data()?['memberCount'], 1);
-      expect(doc.data()?.containsKey('isPublic'), isFalse);
+      expect(doc.data(), {
+        'name': 'Test',
+        'ownerUid': 'u1',
+        'memberCount': 1,
+      });
 
       final member = await firestore
           .collection(GroupCollections.groups)
@@ -73,9 +74,22 @@ void main() {
           .doc('u1')
           .get();
       expect(member.exists, isTrue);
-      expect(member.data()?['uid'], 'u1');
-      expect(member.data()?['role'], 'owner');
-      expect(member.data()?['joinedAt'], isA<Timestamp>());
+      expect(member.data(), {
+        'uid': 'u1',
+        'role': 'owner',
+        'joinedAt': isA<Timestamp>(),
+      });
+    });
+
+    test('createGroup throws ArgumentError when name is empty', () {
+      expect(
+        () => service.createGroup(ownerUid: 'u1', name: ''),
+        throwsArgumentError,
+      );
+      expect(
+        () => service.createGroup(ownerUid: 'u1', name: '   '),
+        throwsArgumentError,
+      );
     });
 
     test('createGroup uses correct name fallback', () async {

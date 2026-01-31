@@ -56,10 +56,13 @@ class GroupService {
     required String ownerUid,
     required String name,
   }) async {
+    if (name.trim().isEmpty) {
+      throw ArgumentError('Group name cannot be empty');
+    }
     try {
       final doc = firestore.collection(GroupCollections.groups).doc();
       await doc.set({
-        'name': name,
+        'name': name.trim(),
         'ownerUid': ownerUid,
         'memberCount': 1,
       });
