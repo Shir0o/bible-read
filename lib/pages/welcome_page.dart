@@ -70,8 +70,8 @@ class WelcomePage extends StatelessWidget {
                     textAlign: TextAlign.center,
                     text: TextSpan(
                       style: GoogleFonts.inter(
-                        fontSize: 40,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
                         height: 1.1,
                         color: Colors.white,
                         shadows: [
@@ -101,10 +101,9 @@ class WelcomePage extends StatelessWidget {
                     'Experience the Bible in community. Create shared schedules, discuss insights, and keep your friends accountable every day.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFFDED8E1)
-                          .withOpacity(0.9), // m3-surface-dim
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFFCAC4D0), // m3-surface-variant
                       height: 1.5,
                     ),
                   ),

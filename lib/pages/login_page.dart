@@ -242,11 +242,10 @@ class _LoginPageState extends State<LoginPage> {
                     'Welcome back',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
-                      fontSize: 30, // 3xl
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       height: 1.1,
-                      letterSpacing: -0.025,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -418,7 +417,7 @@ class _LoginPageState extends State<LoginPage> {
                               'Login',
                               style: GoogleFonts.inter(
                                 fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -439,7 +438,7 @@ class _LoginPageState extends State<LoginPage> {
                             'or',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w400,
                               color: m3SurfaceDim.withValues(alpha: 0.6),
                             ),
                           ),
@@ -482,7 +481,7 @@ class _LoginPageState extends State<LoginPage> {
                                   'Sign in with Google',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
-                                    fontWeight: FontWeight.w500,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
@@ -523,7 +522,7 @@ class _LoginPageState extends State<LoginPage> {
                             'Sign up',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
                               color: darkPrimary,
                             ),
                           ),

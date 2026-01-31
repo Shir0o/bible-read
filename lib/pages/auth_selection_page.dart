@@ -174,12 +174,11 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                     child: Text(
                       'Sign up to track your progress and connect with your reading group.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFFDED8E1)
-                            .withValues(alpha: 0.8), // m3-surface-dim
-                      ),
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFFCAC4D0),
+                    ),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -215,7 +214,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                                   'Continue with Google',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
@@ -262,7 +261,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                             'Sign up with email',
                             style: GoogleFonts.inter(
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -279,7 +278,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                         'Already have an account? ',
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          color: const Color(0xFFDED8E1).withValues(alpha: 0.7),
+                          color: const Color(0xFFCAC4D0),
                         ),
                       ),
                       GestureDetector(
@@ -299,7 +298,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                           'Log in',
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
                             color: const Color(0xFFD0BCFF),
                           ),
                         ),

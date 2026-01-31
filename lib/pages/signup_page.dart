@@ -269,7 +269,7 @@ class _SignupPageState extends State<SignupPage> {
                       'Join the community to start reading together.',
                       style: GoogleFonts.inter(
                         fontSize: 14,
-                        color: grey400,
+                        color: const Color(0xFFCAC4D0),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -400,7 +400,7 @@ class _SignupPageState extends State<SignupPage> {
                                 'Create Account',
                                 style: GoogleFonts.inter(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -424,7 +424,7 @@ class _SignupPageState extends State<SignupPage> {
                         'Or continue with',
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          color: Colors.grey[600],
+                          color: const Color(0xFFCAC4D0),
                         ),
                       ),
                     ),
@@ -457,7 +457,7 @@ class _SignupPageState extends State<SignupPage> {
                     'Already have an account? ',
                     style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: grey400,
+                      color: const Color(0xFFCAC4D0),
                     ),
                   ),
                   GestureDetector(
@@ -476,7 +476,7 @@ class _SignupPageState extends State<SignupPage> {
                       'Log in',
                       style: GoogleFonts.inter(
                         fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         color: darkPrimary,
                       ),
                     ),
