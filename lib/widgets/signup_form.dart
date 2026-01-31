@@ -43,7 +43,7 @@ class _SignupFormState extends State<SignupForm> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmController = TextEditingController();
   bool _loading = false;
-  bool _monthlySummaryEnabled = true;
+
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
@@ -95,7 +95,6 @@ class _SignupFormState extends State<SignupForm> {
       await widget.firestore.collection('users').doc(user.uid).set({
         'name': user.displayName ?? '',
         'email': user.email?.toLowerCase(),
-        'emailPrefs': {'monthlySummary': _monthlySummaryEnabled},
       });
 
       if (mounted) {
@@ -179,21 +178,7 @@ class _SignupFormState extends State<SignupForm> {
             ),
             obscureText: !_isConfirmPasswordVisible,
           ),
-          const SizedBox(height: 16),
-          CheckboxListTile(
-            value: _monthlySummaryEnabled,
-            onChanged: (value) {
-              setState(() {
-                _monthlySummaryEnabled = value ?? true;
-              });
-            },
-            title: const Text('Receive monthly summary emails'),
-            subtitle: const Text(
-              'We will email you a monthly summary of your reading progress. '
-              'You can opt out anytime in your profile settings.',
-            ),
-            controlAffinity: ListTileControlAffinity.leading,
-          ),
+
           const SizedBox(height: 8),
           AnimatedActionButton(
             onPressed: _submit,

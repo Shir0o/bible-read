@@ -226,8 +226,8 @@ void main() {
     await tester.tap(find.text('Get Started'));
     await tester.pumpAndSettle();
 
-    // 3. Now verify UserProfilePage is shown
-    expect(find.text('Sign in with Google'), findsOneWidget);
+    // 3. Now verify AuthSelectionPage is shown
+    expect(find.text('Continue with Google'), findsOneWidget);
 
     // Profile should be shown when tapping profile or if it's the only page.
     if (find.byIcon(Icons.person).evaluate().isNotEmpty) {
@@ -236,7 +236,7 @@ void main() {
 
       await tester.pump(const Duration(milliseconds: 500));
     }
-    expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
   });
 
   testWidgets('tapping protected drawer item when signed out has no effect', (
