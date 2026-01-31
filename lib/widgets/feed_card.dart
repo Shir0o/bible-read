@@ -33,9 +33,20 @@ class _FeedCardState extends State<FeedCard>
   bool _isSending = false;
 
   @override
+  void initState() {
+    super.initState();
+    _commentController.addListener(_onTextChanged);
+  }
+
+  @override
   void dispose() {
+    _commentController.removeListener(_onTextChanged);
     _commentController.dispose();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {});
   }
 
   void _toggleExpanded() {
@@ -277,10 +288,11 @@ class _FeedCardState extends State<FeedCard>
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.only(left: 16, right: 8),
                           decoration: BoxDecoration(
                             color: colorScheme.surface,
                             borderRadius: BorderRadius.circular(20),
@@ -290,6 +302,11 @@ class _FeedCardState extends State<FeedCard>
                           ),
                           child: TextField(
                             controller: _commentController,
+                            textCapitalization: TextCapitalization.sentences,
+                            keyboardType: TextInputType.multiline,
+                            minLines: 1,
+                            maxLines: 4,
+                            textInputAction: TextInputAction.send,
                             decoration: InputDecoration(
                               hintText: 'Write a word of encouragement...',
                               hintStyle: TextStyle(
@@ -298,6 +315,18 @@ class _FeedCardState extends State<FeedCard>
                               isDense: true,
                               contentPadding:
                                   const EdgeInsets.symmetric(vertical: 12),
+                              suffixIcon: _commentController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear, size: 20),
+                                      tooltip: 'Clear comment',
+                                      onPressed: _commentController.clear,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                        minWidth: 32,
+                                        minHeight: 32,
+                                      ),
+                                    )
+                                  : null,
                             ),
                             style: const TextStyle(fontSize: 13),
                             onSubmitted: (_) => _submitComment(),
