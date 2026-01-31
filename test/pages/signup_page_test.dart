@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:bible_read/pages/signup_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:bible_read/services/notification_preferences_service.dart';
 import 'dart:io';
 import 'dart:async';
 
@@ -94,6 +94,8 @@ class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
   Future<String?> getToken({String? vapidKey}) async => 'fake_token';
 }
 
+class FakeGoogleSignIn extends Fake implements GoogleSignIn {}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MockHttpOverrides();
@@ -116,6 +118,7 @@ void main() {
           auth: auth, 
           firestore: firestore,
           vibrationService: MockVibrationService(),
+          googleSignInProvider: () => FakeGoogleSignIn(),
           mainPageBuilder: (_) => MainPage(
             auth: auth, // Pass same auth so it sees logged in user
             firestore: firestore,
@@ -126,21 +129,38 @@ void main() {
       ),
     );
 
+    // Enter Full Name
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Full Name'),
+      'Test User',
+    );
+
+    // Enter Email
     await tester.enterText(
       find.byKey(const Key('signupEmailField')),
       'user@example.com',
     );
+    
+    // Enter Password
     await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
-    await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
-    await tester.tap(find.widgetWithText(FilledButton, 'Sign Up'));
+    
+    // Tap Create Account
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
     await tester.pumpAndSettle();
 
     expect(auth.createCalled, isTrue);
     expect(auth.email, 'user@example.com');
     expect(auth.password, 'pw');
+    
     final uid = auth.currentUser!.uid;
     final doc = await firestore.collection('users').doc(uid).get();
     expect(doc.exists, isTrue);
+    expect(doc.data()!['name'], 'Test User');
+    expect(doc.data()!['email'], 'user@example.com');
+    
+    // Check if display name was updated
+    expect(auth.currentUser!.displayName, 'Test User');
+
     expect(find.byType(MainPage), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));

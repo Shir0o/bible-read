@@ -234,6 +234,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                              SignupPage(
                                auth: widget.auth,
                                firestore: widget.firestore,
+                               googleSignInProvider: widget.googleSignInProvider,
                                mainPageBuilder: widget.mainPageBuilder,
                              ),
                            ),
