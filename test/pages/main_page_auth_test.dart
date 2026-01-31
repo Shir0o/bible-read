@@ -1,3 +1,4 @@
+import 'package:bible_read/pages/auth_selection_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
@@ -248,7 +249,7 @@ void main() {
 
     // 1. WelcomePage
     expect(find.byType(WelcomePage), findsOneWidget);
-    expect(find.byType(UserProfilePage), findsNothing);
+    expect(find.byType(AuthSelectionPage), findsNothing);
 
     // 2. Tap Get Started
     await tester.tap(find.text('Get Started'));
@@ -256,7 +257,7 @@ void main() {
 
     // 3. UserProfilePage
     expect(find.byType(WelcomePage), findsNothing);
-    expect(find.byType(UserProfilePage), findsOneWidget);
+    expect(find.byType(AuthSelectionPage), findsOneWidget);
 
     // 4. Back
     await tester.binding.handlePopRoute();
@@ -264,6 +265,6 @@ void main() {
 
     // 5. WelcomePage again
     expect(find.byType(WelcomePage), findsOneWidget);
-    expect(find.byType(UserProfilePage), findsNothing);
+    expect(find.byType(AuthSelectionPage), findsNothing);
   });
 }
