@@ -39,3 +39,7 @@
 ## 2026-02-26 - Scrollable Centered Empty States
 **Learning:** To center content in a `RefreshIndicator` while keeping it scrollable (for pull-to-refresh), `ListView` can be restrictive.
 **Action:** Use `LayoutBuilder` + `SingleChildScrollView` + `ConstrainedBox(minHeight: constraints.maxHeight)` to center content while ensuring physics work.
+
+## 2026-02-27 - Social Input Polish
+**Learning:** Chat-like inputs should grow with content but have a maximum height to preserve context.
+**Action:** Use `minLines: 1`, `maxLines: 4`, and `TextInputType.multiline` for inline comment fields, combined with `TextCapitalization.sentences`.
