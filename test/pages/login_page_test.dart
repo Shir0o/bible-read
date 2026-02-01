@@ -1,5 +1,6 @@
 import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/main_page.dart';
+import 'package:bible_read/services/error_logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -16,6 +17,7 @@ class RecordingAuth extends MockFirebaseAuth {
   String? email;
   String? password;
   bool signInWithCredentialCalled = false;
+  Exception? errorOnSignIn;
 
   @override
   Future<UserCredential> signInWithEmailAndPassword({
@@ -25,6 +27,9 @@ class RecordingAuth extends MockFirebaseAuth {
     signInCalled = true;
     this.email = email;
     this.password = password;
+    if (errorOnSignIn != null) {
+      return Future.error(errorOnSignIn!);
+    }
     return super.signInWithEmailAndPassword(email: email, password: password);
   }
 
@@ -41,6 +46,7 @@ void main() {
 
   setUpAll(() async {
     await Firebase.initializeApp();
+    ErrorLogger.muteForTest = true;
   });
 
   group('LoginPage', () {
@@ -81,7 +87,9 @@ void main() {
           ),
         ));
 
-        await tester.tap(find.text('Sign in with Google'));
+        final googleButton = find.text('Continue with Google');
+        await tester.ensureVisible(googleButton);
+        await tester.tap(googleButton);
         // Trigger the async gap
         await tester.pump();
 
@@ -137,6 +145,29 @@ void main() {
 
         // State: obscured
         expect(isObscured(), isTrue);
+      });
+    });
+
+    testWidgets('shows error snackbar on sign in failure', (tester) async {
+      await mockNetworkImagesFor(() async {
+        final auth = RecordingAuth();
+        auth.errorOnSignIn = FirebaseAuthException(code: 'user-not-found');
+
+        await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+
+        await tester.enterText(
+            find.byKey(const Key('loginEmailField')), 'fail@test.com');
+        await tester.enterText(
+            find.byKey(const Key('loginPasswordField')), 'wrong');
+        await tester.tap(find.text('Login'));
+        await tester.pump(); // Start future
+        await tester.pump(); // Resolve future (error)
+
+        // Wait for snackbar animation
+        await tester.pumpAndSettle();
+
+        expect(find.text('Failed to sign in. Please check credentials.'),
+            findsOneWidget);
       });
     });
   });
