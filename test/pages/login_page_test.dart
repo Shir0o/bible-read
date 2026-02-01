@@ -40,6 +40,15 @@ class RecordingAuth extends MockFirebaseAuth {
   }
 }
 
+class TestMainPage extends StatelessWidget {
+  const TestMainPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Text('Test Main Page'));
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
@@ -56,7 +65,12 @@ void main() {
         final auth = RecordingAuth();
         SharedPreferences.setMockInitialValues({});
 
-        await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+        await tester.pumpWidget(MaterialApp(
+          home: LoginPage(
+            auth: auth,
+            mainPageBuilder: (_) => const TestMainPage(),
+          ),
+        ));
 
         await tester.enterText(
             find.byKey(const Key('loginEmailField')), 'user@example.com');
@@ -69,7 +83,7 @@ void main() {
         expect(auth.signInCalled, isTrue);
         expect(auth.email, 'user@example.com');
         expect(auth.password, 'pw');
-        expect(find.byType(MainPage), findsOneWidget);
+        expect(find.byType(TestMainPage), findsOneWidget);
       });
     });
 
@@ -84,6 +98,7 @@ void main() {
           home: LoginPage(
             auth: auth,
             googleSignInProvider: () => googleSignIn,
+            mainPageBuilder: (_) => const TestMainPage(),
           ),
         ));
 
@@ -95,7 +110,7 @@ void main() {
 
         expect(auth.signInWithCredentialCalled, isTrue);
         await tester.pumpAndSettle();
-        expect(find.byType(MainPage), findsOneWidget);
+        expect(find.byType(TestMainPage), findsOneWidget);
       });
     });
 
