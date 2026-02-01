@@ -125,31 +125,33 @@ class _FeedCardState extends State<FeedCard>
                             ),
                             const SizedBox(height: 6),
                             // Reading status row
-                            Row(
-                              children: [
-                                // Leading green check icon
-                                Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: colorScheme.tertiaryContainer,
+                            MergeSemantics(
+                              child: Row(
+                                children: [
+                                  // Leading green check icon
+                                  Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: colorScheme.tertiaryContainer,
+                                    ),
+                                    child: Icon(
+                                      Icons.check,
+                                      size: 14,
+                                      color: colorScheme.onTertiaryContainer,
+                                    ),
                                   ),
-                                  child: Icon(
-                                    Icons.check,
-                                    size: 14,
-                                    color: colorScheme.onTertiaryContainer,
+                                  const SizedBox(width: 8),
+                                  // Text: "Read today"
+                                  Text(
+                                    'Read today',
+                                    style: AppTextStyles.body.copyWith(
+                                      fontSize: 14,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                // Text: "Read today"
-                                Text(
-                                  'Read today',
-                                  style: AppTextStyles.body.copyWith(
-                                    fontSize: 14,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -209,6 +211,7 @@ class _FeedCardState extends State<FeedCard>
                             : colorScheme.onSurfaceVariant,
                         backgroundColor:
                             isLiked ? colorScheme.primaryContainer : null,
+                        isSelected: isLiked,
                         onTap: () {
                           (widget.vibrationService ?? const VibrationService())
                               .lightImpact();
@@ -225,6 +228,7 @@ class _FeedCardState extends State<FeedCard>
                             ? '${widget.log.comments.length}'
                             : 'Comment',
                         color: colorScheme.onSurfaceVariant,
+                        isSelected: false,
                         onTap: () {
                           if (!_isExpanded) {
                             _toggleExpanded();
@@ -336,6 +340,7 @@ class _FeedCardState extends State<FeedCard>
                       const SizedBox(width: 8),
                       // Send Button
                       IconButton.filled(
+                        tooltip: 'Send comment',
                         onPressed: _isSending ? null : _submitComment,
                         style: IconButton.styleFrom(
                           backgroundColor: colorScheme.primaryContainer,
@@ -381,6 +386,7 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final Color? backgroundColor;
+  final bool? isSelected;
 
   const _ActionButton({
     required this.icon,
@@ -388,33 +394,40 @@ class _ActionButton extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.backgroundColor,
+    this.isSelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: backgroundColor ?? Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
+    return Semantics(
+      button: true,
+      enabled: true,
+      label: label,
+      selected: isSelected,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: backgroundColor ?? Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
