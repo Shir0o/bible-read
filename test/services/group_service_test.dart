@@ -58,6 +58,8 @@ void main() {
     test('createGroup creates group and owner member', () async {
       final id = await service.createGroup(ownerUid: 'u1', name: 'Test');
 
+      expect(id, isNotEmpty);
+
       final doc =
           await firestore.collection(GroupCollections.groups).doc(id).get();
       expect(doc.exists, isTrue);
@@ -74,11 +76,16 @@ void main() {
           .doc('u1')
           .get();
       expect(member.exists, isTrue);
-      expect(member.data(), {
-        'uid': 'u1',
-        'role': 'owner',
-        'joinedAt': isA<Timestamp>(),
-      });
+
+      final data = member.data()!;
+      expect(data['uid'], 'u1');
+      expect(data['role'], 'owner');
+      expect(data['joinedAt'], isA<Timestamp>());
+      // Verify timestamp is recent (within 1 minute)
+      final joinedAt = (data['joinedAt'] as Timestamp).toDate();
+      expect(joinedAt.difference(DateTime.now()).inMinutes.abs(), lessThan(1));
+      // Ensure no unexpected fields
+      expect(data.keys.length, 3);
     });
 
     test('createGroup throws ArgumentError when name is empty', () {
