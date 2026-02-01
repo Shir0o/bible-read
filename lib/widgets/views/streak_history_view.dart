@@ -218,42 +218,49 @@ class _StreakHistoryViewState extends State<StreakHistoryView>
     DateTime end,
   ) async {
     final readingCollection = userDocRef.collection('reading');
-    final futures = <Future<DocumentSnapshot<Map<String, dynamic>>>>[];
+    final startKey =
+        '${start.year}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')}';
+    final endKey =
+        '${end.year}-${end.month.toString().padLeft(2, '0')}-${end.day.toString().padLeft(2, '0')}';
+
+    final querySnapshot = await readingCollection
+        .where(FieldPath.documentId, isGreaterThanOrEqualTo: startKey)
+        .where(FieldPath.documentId, isLessThanOrEqualTo: endKey)
+        .get();
+
+    final readingDataMap = {
+      for (var doc in querySnapshot.docs) doc.id: doc.data()
+    };
+
+    final result = <DateTime>{};
     final dates = <DateTime>[];
-    final keys = <String>[];
+    final uid = userDocRef.id;
+    final fallbacks = <Future<DocumentSnapshot<Map<String, dynamic>>>>[];
+    final fallbackIdx = <int>[];
+
     final totalDays = end.difference(start).inDays;
     for (int offset = 0; offset <= totalDays; offset++) {
       final day = DateTime(start.year, start.month, start.day + offset);
       final key =
           '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-      futures.add(readingCollection.doc(key).get());
       dates.add(day);
-      keys.add(key);
-    }
-    final snaps = await Future.wait(futures);
-    final result = <DateTime>{};
-    for (int i = 0; i < snaps.length; i++) {
-      if (snaps[i].data()?['read'] == true) {
-        result.add(dates[i]);
-      }
-    }
 
-    final uid = userDocRef.id;
-    final fallbacks = <Future<DocumentSnapshot<Map<String, dynamic>>>>[];
-    final fallbackIdx = <int>[];
-    for (int i = 0; i < dates.length; i++) {
-      if (!result.contains(dates[i])) {
+      if (readingDataMap.containsKey(key) &&
+          readingDataMap[key]?['read'] == true) {
+        result.add(day);
+      } else {
         fallbacks.add(
           widget.firestore
               .collection('read_logs')
-              .doc(keys[i])
+              .doc(key)
               .collection('entries')
               .doc(uid)
               .get(),
         );
-        fallbackIdx.add(i);
+        fallbackIdx.add(dates.length - 1);
       }
     }
+
     if (fallbacks.isNotEmpty) {
       final fbSnaps = await Future.wait(fallbacks);
       for (int j = 0; j < fbSnaps.length; j++) {
