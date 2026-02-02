@@ -3,10 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 
 class WelcomePage extends StatelessWidget {
   final VoidCallback onGetStarted;
+  final VoidCallback onLogin;
 
   const WelcomePage({
     super.key,
     required this.onGetStarted,
+    required this.onLogin,
   });
 
   @override
@@ -142,7 +144,7 @@ class WelcomePage extends StatelessWidget {
                   SizedBox(
                     height: 48,
                     child: OutlinedButton(
-                      onPressed: onGetStarted,
+                      onPressed: onLogin,
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(
                           color: Colors.white.withOpacity(0.2),

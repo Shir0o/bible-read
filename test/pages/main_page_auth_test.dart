@@ -1,4 +1,5 @@
 import 'package:bible_read/pages/auth_selection_page.dart';
+import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
@@ -266,5 +267,13 @@ void main() {
     // 5. WelcomePage again
     expect(find.byType(WelcomePage), findsOneWidget);
     expect(find.byType(AuthSelectionPage), findsNothing);
+
+    // 6. Tap "I already have an account"
+    await tester.tap(find.text('I already have an account'));
+    await tester.pumpAndSettle();
+
+    // 7. Verify LoginPage
+    expect(find.byType(LoginPage), findsOneWidget);
+    expect(find.byType(WelcomePage), findsNothing);
   });
 }

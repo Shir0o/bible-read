@@ -17,6 +17,8 @@ import 'dart:async';
 import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
 import 'package:bible_read/pages/auth_selection_page.dart';
+import 'package:bible_read/pages/login_page.dart'; // Added
+import 'package:bible_read/widgets/animated_page_route.dart'; // Added
 import 'friends_page.dart';
 import 'achievements_page.dart';
 import 'challenges_page.dart';
@@ -379,6 +381,17 @@ class _MainPageState extends State<MainPage> {
               setState(() {
                 _showAuthSelection = true;
               });
+            },
+            onLogin: () {
+              unawaited(widget.vibrationService.lightImpact());
+              Navigator.of(context).push(
+                animatedPageRoute(
+                  LoginPage(
+                    auth: widget.auth,
+                    googleSignInProvider: widget.googleSignInProvider,
+                  ),
+                ),
+              );
             },
           );
         }
