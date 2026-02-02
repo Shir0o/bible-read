@@ -43,3 +43,7 @@
 ## 2026-02-27 - Social Input Polish
 **Learning:** Chat-like inputs should grow with content but have a maximum height to preserve context.
 **Action:** Use `minLines: 1`, `maxLines: 4`, and `TextInputType.multiline` for inline comment fields, combined with `TextCapitalization.sentences`.
+
+## 2026-03-01 - Social Login Accessibility
+**Learning:** Icon-only social login buttons are invisible to screen readers without explicit labels.
+**Action:** Wrap icon-only `InkWell` buttons in `Semantics(button: true, label: 'Sign in with X')` and include a `Tooltip` for mouse users.
