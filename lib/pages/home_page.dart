@@ -646,12 +646,7 @@ class _HomePageState extends State<HomePage>
           statusBarIconBrightness: Brightness.dark, // Android: Dark icons
           statusBarBrightness: Brightness.light, // iOS: Dark icons
         ),
-        actions: [
-          ProfileButton(
-            auth: widget.auth,
-            vibrationService: widget.vibrationService,
-          ),
-        ],
+        actions: [],
       ),
       body: SkeletonLoader(
         loading: _initialLoading,

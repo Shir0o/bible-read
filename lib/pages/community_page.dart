@@ -19,6 +19,8 @@ import '../widgets/common_styles.dart';
 
 // Needed import for NotificationCenterPage in navigation
 import 'notification_center_page.dart';
+import 'inbox_page.dart';
+import '../widgets/navigation_menu_scope.dart';
 
 class CommunityPage extends StatefulWidget {
   final FirebaseAuth auth;
@@ -229,22 +231,28 @@ class _CommunityPageState extends State<CommunityPage> {
                   child: Row(
                     children: [
                       // Avatar
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: colorScheme.surfaceContainerHighest,
-                          image: user.photoURL != null
-                              ? DecorationImage(
-                                  image: CachedNetworkImageProvider(user.photoURL!),
-                                  fit: BoxFit.cover,
-                                )
+                      GestureDetector(
+                        onTap: () {
+                          widget.vibrationService.lightImpact();
+                          NavigationMenuScope.maybeOf(context)?.showMenu(context);
+                        },
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: colorScheme.surfaceContainerHighest,
+                            image: user.photoURL != null
+                                ? DecorationImage(
+                                    image: CachedNetworkImageProvider(user.photoURL!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          child: user.photoURL == null
+                              ? Icon(Icons.person, color: colorScheme.onSurfaceVariant)
                               : null,
                         ),
-                        child: user.photoURL == null
-                            ? Icon(Icons.person, color: colorScheme.onSurfaceVariant)
-                            : null,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -286,17 +294,18 @@ class _CommunityPageState extends State<CommunityPage> {
                             size: 20,
                           ),
                           onPressed: () {
-                             // Assuming standard nav to notifications
+                             // Navigate to Inbox
+                             widget.vibrationService.lightImpact();
                              Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => NotificationCenterPage(
-                                  service: NotificationService(firestore: widget.firestore),
-                                  auth: widget.auth,
-                                  vibrationService: widget.vibrationService,
-                                ),
-                              ),
-                            );
+                               context,
+                               MaterialPageRoute(
+                                 builder: (_) => InboxPage(
+                                   auth: widget.auth,
+                                   firestore: widget.firestore,
+                                   vibrationService: widget.vibrationService,
+                                 ),
+                               ),
+                             );
                           },
                           padding: EdgeInsets.zero,
                         ),
