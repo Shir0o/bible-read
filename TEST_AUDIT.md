@@ -1,48 +1,53 @@
 # Stress Audit Report
 
-## 1. Test Integrity Audit
+**Date:** October 26, 2023
+**Auditor:** Jules (Senior Test Architect)
+
+## Objective 1: Test Integrity Audit
 
 ### Shallow Assertions
-- **File**: `test/services/group_service_test.dart`
-- **Test**: `createGroup creates group and owner member`
-- **Issue**: Only checks `memberCount` and existence. Does not verify `joinedAt` is a valid timestamp, nor that the group ID is non-empty.
-- **File**: `test/models/group_test.dart`
-- **Test**: `fromFirestore handles missing fields`
-- **Issue**: Asserts that critical fields like `ownerUid` default to empty strings, masking potential data corruption issues.
+*   **Location:** `GroupService` tests (e.g., `recalcProgressForUserInGroup`).
+*   **Issue:** Some tests verify that a value was written (e.g., `count: 2`) but do not fully verify the surrounding state or side effects on the `progressSummary` in all edge cases.
+*   **Risk:** Low. The critical path seems covered, but subtle state corruptions might be missed.
 
 ### Mocks & Isolation
-- **File**: `test/services/group_service_test.dart`
-- **Issue**: Heavy use of `MockFirebaseFirestore` for error scenarios creates "tautological tests" that verify the mock setup rather than the service's reaction to real Firestore behavior.
+*   **Location:** `test/services/group_service_test.dart` (Error Handling group).
+*   **Issue:** Tests heavily mock the `FirebaseFirestore` call chain (collection -> doc -> collection -> ...). This matches the implementation exactly ("tautological testing").
+*   **Risk:** Medium. Refactoring the service implementation (e.g., changing how references are built) will break these tests even if logic remains correct.
 
 ### Brittleness
-- **File**: `test/pages/login_page_test.dart`
-- **Issue**: Uses `find.text('Login')` which will break if copy changes.
-- **File**: `test/widgets/feed_card_ux_test.dart`
-- **Issue**: `expect(textField.maxLines, inInclusiveRange(3, 5))` is loose and might miss unintended layout changes.
+*   **Location:** `ReferenceParser` (`normalizeOne` vs `_parseEndpoint`).
+*   **Issue:** Logic for parsing "Book Chapter" strings is duplicated between `normalizeOne` and `_parseEndpoint`.
+*   **Risk:** High. Inconsistencies have been found (see Gap Analysis) where one method rejects input that the other coerces.
 
 ### Flakiness Risk
-- **File**: `test/services/group_service_test.dart`
-- **Issue**: Tests relying on `FieldValue.serverTimestamp()` are compared against `isA<Timestamp>()` rather than approximate time ranges.
+*   **Location:** `GroupService` (streams).
+*   **Issue:** Some tests rely on `emitsThrough` or `firstWhere`, which can be flaky if the stream emits unexpected intermediate values.
+*   **Risk:** Low. `fake_cloud_firestore` is generally deterministic.
 
-## 2. Gap Analysis
+## Objective 2: Gap Analysis
 
-### Edge Cases
-- **Group Creation**: No test for group names containing only whitespace.
-- **Group Leaving**: No test for what happens when the *owner* leaves the group. Current logic allows it, leaving the group "headless".
+### Data Integrity (Critical)
+*   **Scenario:** Inputting "Gen 0".
+*   **Current Behavior:** `ReferenceParser.parseChaptersList('Gen 0')` silently coerces this to "Genesis 1". `ReferenceParser.normalizeOne('Gen 0')` correctly identifies it as invalid ("Gen 0").
+*   **Impact:** Users typing typos might get valid but incorrect data saved to their schedule without warning.
 
-### Negative Testing
-- **Login Failure**: `LoginPage` has zero coverage for failed login attempts (e.g., wrong password, network error).
-- **Join Group**: No test for attempting to join a group one is already a member of.
+### Missing Scenarios
+*   **Reversed Ranges:** "John 5-3". The code supports this (swaps to 3-5), but no test explicitly verifies it. This is a "hidden feature" that could regress.
+*   **Partial Failures:** `GroupService.deleteGroup` performs best-effort cleanup. No tests verify that the main group document is still deleted even if a subcollection delete fails.
 
-### Logic Branches
-- **GroupService**: `_ensureMemberCount` logic is only implicitly tested.
-- **GroupService**: `fixMemberProgressSummariesForUser` error handling is swallow-only.
+## Test Debt Summary
 
-## 3. Proposed New Tests
-
-| Priority | Scenario | Input | Expected Outcome |
+| Priority | Component | Issue | Remediation |
 | :--- | :--- | :--- | :--- |
-| **High** | Login Failure | Incorrect email/password | Show error snackbar/message "Failed to sign in. Please check credentials." |
-| **High** | Owner Leaves Group | `leaveGroup` called by owner | Throw `StateError` or prevent action |
-| **Medium** | Re-join Group | `joinGroup` by existing member | Throw error or return success without duplicate request |
-| **Medium** | Empty Group Name | `createGroup` with `"   "` | Throw `ArgumentError` |
+| **High** | `ReferenceParser` | Silent coercion of "Chapter 0" to "Chapter 1". | Refactor `_parseEndpoint` to reject invalid chapters strictuly. |
+| **Medium** | `ReferenceParser` | Logic duplication between `normalizeOne` and `_parseEndpoint`. | Refactor to share parsing logic (out of scope for immediate fix but noted). |
+| **Low** | `GroupService` | Brittle mock-heavy error tests. | Use a wrapper or facade for Firestore if refactoring later. |
+
+## Proposed New Tests
+
+| Scenario | Input | Expected Outcome | Rationale |
+| :--- | :--- | :--- | :--- |
+| **Zero Chapter** | `ReferenceParser.parseChaptersList('Gen 0')` | `['Gen 0']` (Invalid/Raw) | Prevent silent data corruption where 0 becomes 1. |
+| **Reversed Range** | `ReferenceParser.parseChaptersList('John 5-3')` | `['John 3', 'John 4', 'John 5']` | Ensure robust handling of user typos/ranges. |
+| **Mixed Invalid** | `ReferenceParser.parseChaptersList('Gen 0; Ex 1')` | `['Gen 0', 'Exodus 1']` | Verify mixed valid/invalid inputs are handled safely. |

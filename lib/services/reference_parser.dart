@@ -489,7 +489,7 @@ class ReferenceParser {
     } else {
       chapter = int.tryParse(chapStr) ?? 1;
     }
-    if (chapter < 1) chapter = 1;
+    if (chapter < 1) return null;
     if (chapter > chapters) chapter = chapters;
     final idx = _bookOrder.indexOf(displayBook);
     if (idx == -1) return null;
