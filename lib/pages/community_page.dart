@@ -21,6 +21,8 @@ import '../widgets/common_styles.dart';
 import 'notification_center_page.dart';
 import 'inbox_page.dart';
 import '../widgets/navigation_menu_scope.dart';
+import '../widgets/skeletons/friends_activity_skeleton.dart';
+import '../widgets/sliver_skeleton_loader.dart';
 
 class CommunityPage extends StatefulWidget {
   final FirebaseAuth auth;
@@ -498,36 +500,41 @@ class _CommunityPageState extends State<CommunityPage> {
               ),
 
               // Friends Activity List
-              if (_loadingLogs)
-                const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())))
-              else if (_friendLogs.isEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Center(
-                      child: Text(
-                        'No recent activity from friends.',
-                        style: AppTextStyles.body.copyWith(color: colorScheme.onSurfaceVariant),
-                      ),
-                    ),
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final log = _friendLogs[index];
-                        return _ActivityItem(
-                          log: log,
-                          onLike: () => _toggleLike(log.uid),
-                        );
-                      },
-                      childCount: _friendLogs.length,
-                    ),
-                  ),
+              SliverSkeletonLoader(
+                loading: _loadingLogs,
+                skeleton: const SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  sliver: FriendsActivitySkeleton(),
                 ),
+                child: _friendLogs.isEmpty
+                    ? SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Center(
+                            child: Text(
+                              'No recent activity from friends.',
+                              style: AppTextStyles.body.copyWith(
+                                  color: colorScheme.onSurfaceVariant),
+                            ),
+                          ),
+                        ),
+                      )
+                    : SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final log = _friendLogs[index];
+                              return _ActivityItem(
+                                log: log,
+                                onLike: () => _toggleLike(log.uid),
+                              );
+                            },
+                            childCount: _friendLogs.length,
+                          ),
+                        ),
+                      ),
+              ),
               
               const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
             ],
