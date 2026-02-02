@@ -166,4 +166,26 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
   });
+
+  testWidgets('Social button has correct semantics and tooltip', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SignupPage(
+          auth: RecordingAuth(),
+          firestore: FakeFirebaseFirestore(),
+          vibrationService: MockVibrationService(),
+          googleSignInProvider: () => FakeGoogleSignIn(),
+        ),
+      ),
+    );
+
+    // Verify Tooltip matches label
+    expect(find.byTooltip('Sign in with Google'), findsOneWidget);
+
+    // Verify Semantics
+    // We look for a Semantics widget with the specific label
+    final semanticHandle = tester.ensureSemantics();
+    expect(find.bySemanticsLabel('Sign in with Google'), findsOneWidget);
+    semanticHandle.dispose();
+  });
 }

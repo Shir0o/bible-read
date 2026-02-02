@@ -441,6 +441,7 @@ class _SignupPageState extends State<SignupPage> {
                   // Google Button
                   _SocialButton(
                     onTap: _handleGoogleSignIn,
+                    label: 'Sign in with Google',
                     child: const FaIcon(FontAwesomeIcons.google,
                         size: 20, color: Colors.white),
                   ),
@@ -495,23 +496,35 @@ class _SignupPageState extends State<SignupPage> {
 class _SocialButton extends StatelessWidget {
   final VoidCallback onTap;
   final Widget child;
+  final String label;
 
-  const _SocialButton({required this.onTap, required this.child});
+  const _SocialButton({
+    required this.onTap,
+    required this.child,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        height: 48,
-        width: 48,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.grey[800]!),
+    return Semantics(
+      button: true,
+      label: label,
+      child: Tooltip(
+        message: label,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            height: 48,
+            width: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.grey[800]!),
+            ),
+            alignment: Alignment.center,
+            child: child,
+          ),
         ),
-        alignment: Alignment.center,
-        child: child,
       ),
     );
   }
