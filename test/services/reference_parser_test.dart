@@ -121,6 +121,27 @@ void main() {
       expect(result, equals(['Genesis 1', 'Genesis 2', 'Genesis 3']));
       expect(result.every(isCanonical), isTrue);
     });
+
+    test('handles reversed ranges', () {
+      final result = ReferenceParser.parseChaptersList('John 5-3');
+      expect(
+        result,
+        equals(
+          <String>[
+            'John 3',
+            'John 4',
+            'John 5',
+          ],
+        ),
+      );
+      expect(result.every(isCanonical), isTrue);
+    });
+
+    test('preserves invalid chapter 0 instead of coercing to 1', () {
+      // Previously coerced to 'Genesis 1'. Now should fall back to raw input.
+      final result = ReferenceParser.parseChaptersList('Gen 0');
+      expect(result, equals(['Gen 0']));
+    });
   });
 
   group('ReferenceParser.nextChapter', () {
