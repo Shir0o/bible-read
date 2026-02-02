@@ -29,6 +29,7 @@ import '../services/friend_service.dart';
 import '../services/friendly_streak_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/group_service.dart';
+import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import 'app_check_error_page.dart';
@@ -125,6 +126,7 @@ class _MainPageState extends State<MainPage> {
   late final FriendService _friendService;
   late final GroupService _groupService;
   late final FriendlyStreakService _friendlyStreakService;
+  late final ReadingPlanService _readingPlanService;
   late final ReadingStatusService _readingStatusService;
   late final List<Widget> _pages;
   late final Stream<User?> _authStream;
@@ -141,6 +143,7 @@ class _MainPageState extends State<MainPage> {
         ReadingStatusService(firestore: widget.firestore, auth: widget.auth);
     _friendService = FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
+    _readingPlanService = ReadingPlanService(firestore: widget.firestore);
     _friendlyStreakService = FriendlyStreakService(
       firestore: widget.firestore,
     );
@@ -164,6 +167,7 @@ class _MainPageState extends State<MainPage> {
         firestore: widget.firestore,
         groupService: _groupService,
         friendService: _friendService,
+        readingPlanService: _readingPlanService,
         readingStatusService: _readingStatusService,
         vibrationService: widget.vibrationService,
         readLogBuilder: widget.readLogPageBuilder,

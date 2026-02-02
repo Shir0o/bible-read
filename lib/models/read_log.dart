@@ -22,6 +22,9 @@ class ReadLog {
   /// Whether this entry belongs to the first reader of the day.
   final bool firstReader;
 
+  /// Time when the user read.
+  final DateTime? timestamp;
+
   const ReadLog({
     required this.uid,
     required this.name,
@@ -29,6 +32,7 @@ class ReadLog {
     required this.comments,
     required this.liked,
     required this.firstReader,
+    this.timestamp,
   });
 
   /// Creates a copy of this log with the given fields updated.
@@ -37,6 +41,7 @@ class ReadLog {
     List<Comment>? comments,
     bool? liked,
     bool? firstReader,
+    DateTime? timestamp,
   }) {
     return ReadLog(
       uid: uid,
@@ -45,6 +50,7 @@ class ReadLog {
       comments: comments ?? this.comments,
       liked: liked ?? this.liked,
       firstReader: firstReader ?? this.firstReader,
+      timestamp: timestamp ?? this.timestamp,
     );
   }
 
@@ -79,6 +85,7 @@ class ReadLog {
       comments: comments,
       liked: liked,
       firstReader: firstReaderUid != null && doc.id == firstReaderUid,
+      timestamp: (data['timestamp'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -92,6 +99,11 @@ class ReadLog {
             .toList(),
         liked: json['liked'] as bool? ?? false,
         firstReader: json['firstReader'] as bool? ?? false,
+        timestamp: json['timestamp'] != null
+            ? (json['timestamp'] is Timestamp
+                ? (json['timestamp'] as Timestamp).toDate()
+                : DateTime.tryParse(json['timestamp'].toString()))
+            : null,
       );
 
   /// Converts this log to JSON.
@@ -102,5 +114,6 @@ class ReadLog {
         'comments': comments.map((c) => c.toJson()).toList(),
         'liked': liked,
         'firstReader': firstReader,
+        'timestamp': timestamp?.toIso8601String(),
       };
 }
