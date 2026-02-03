@@ -131,6 +131,7 @@ void main() {
     await tester.tap(find.text('Create New Group'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'New');
+    await tester.pump(); // Rebuild for button state
     await tester.tap(find.text('Create'));
     await tester.pumpAndSettle();
 
@@ -150,6 +151,7 @@ void main() {
     await tester.tap(find.text('Create New Group'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'New');
+    await tester.pump(); // Rebuild for button state
     await tester.tap(find.text('Create'));
     await tester.pumpAndSettle();
 
@@ -206,5 +208,57 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
     expect(tester.takeException(), isNull);
     expect(vibration.lightCount, 2);
+  });
+
+  testWidgets('create button disabled when empty and enabled when typed',
+      (tester) async {
+    final service = RecordingGroupService(firestore: firestore);
+    await pumpPage(tester, service);
+
+    await tester.tap(find.text('Join or Create Group'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create New Group'));
+    await tester.pumpAndSettle();
+
+    // Initially disabled
+    final createButtonFinder = find.widgetWithText(TextButton, 'Create');
+    expect(tester.widget<TextButton>(createButtonFinder).onPressed, isNull);
+
+    // Type something
+    await tester.enterText(find.byType(TextField), 'My Group');
+    await tester.pump();
+
+    // Now enabled
+    expect(tester.widget<TextButton>(createButtonFinder).onPressed, isNotNull);
+
+    // Clear it
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pump();
+
+    // Disabled again
+    expect(tester.widget<TextButton>(createButtonFinder).onPressed, isNull);
+  });
+
+  testWidgets('clear button clears text', (tester) async {
+    final service = RecordingGroupService(firestore: firestore);
+    await pumpPage(tester, service);
+
+    await tester.tap(find.text('Join or Create Group'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create New Group'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Mistake');
+    await tester.pump();
+
+    expect(find.text('Mistake'), findsOneWidget);
+    final clearButton = find.byIcon(Icons.clear);
+    expect(clearButton, findsOneWidget);
+
+    await tester.tap(clearButton);
+    await tester.pump();
+
+    expect(find.text('Mistake'), findsNothing);
+    expect(find.text(''), findsOneWidget); // Empty text field content
   });
 }

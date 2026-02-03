@@ -68,29 +68,57 @@ class _GroupsPageState extends State<GroupsPage> {
     final name = await showDialog<String>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Create Group'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(labelText: 'Group Name'),
-            textCapitalization: TextCapitalization.sentences,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                unawaited(widget.vibrationService.lightImpact());
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                unawaited(widget.vibrationService.lightImpact());
-                Navigator.of(context).pop(controller.text.trim());
-              },
-              child: const Text('Create'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final isNotEmpty = controller.text.trim().isNotEmpty;
+            return AlertDialog(
+              title: const Text('Create Group'),
+              content: TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Group Name',
+                  suffixIcon: isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          tooltip: 'Clear name',
+                          onPressed: () {
+                            controller.clear();
+                            setState(() {});
+                          },
+                        )
+                      : null,
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.done,
+                onChanged: (_) => setState(() {}),
+                onSubmitted: (value) {
+                  if (isNotEmpty) {
+                    unawaited(widget.vibrationService.lightImpact());
+                    Navigator.of(context).pop(value.trim());
+                  }
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    unawaited(widget.vibrationService.lightImpact());
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: isNotEmpty
+                      ? () {
+                          unawaited(widget.vibrationService.lightImpact());
+                          Navigator.of(context).pop(controller.text.trim());
+                        }
+                      : null,
+                  child: const Text('Create'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
