@@ -43,6 +43,14 @@ void main() {
   setUpAll(() async {
     registerFallbackValue(<String, dynamic>{});
     registerFallbackValue(SetOptions(merge: true));
+    
+    // Mock Crashlytics channel
+    const channel = MethodChannel('plugins.flutter.io/firebase_crashlytics');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+      return null;
+    });
+
     await Firebase.initializeApp();
   });
 
@@ -88,13 +96,13 @@ void main() {
       expect(data.keys.length, 3);
     });
 
-    test('createGroup throws ArgumentError when name is empty', () {
-      expect(
-        () => service.createGroup(ownerUid: 'u1', name: ''),
+    test('createGroup throws ArgumentError when name is empty', () async {
+      await expectLater(
+        service.createGroup(ownerUid: 'u1', name: ''),
         throwsArgumentError,
       );
-      expect(
-        () => service.createGroup(ownerUid: 'u1', name: '   '),
+      await expectLater(
+        service.createGroup(ownerUid: 'u1', name: '   '),
         throwsArgumentError,
       );
     });
@@ -1110,11 +1118,7 @@ void main() {
 
         final svc = GroupService(firestore: mockFs);
 
-        await runZonedGuarded(() async {
-          await expectLater(svc.groupsForUser('u1'), emits(isEmpty));
-        }, (e, st) {
-          // Suppress expected error from stream bubbling
-        });
+        await expectLater(svc.groupsForUser('u1'), emits(isEmpty));
 
         verify(() => crash.recordError(err, any(),
             reason: null,

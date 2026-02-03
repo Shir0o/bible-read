@@ -503,18 +503,19 @@ class GroupService {
       final sub =
           firestore.collection(GroupCollections.groups).snapshots().listen(
         (snap) async {
+          if (controller.isClosed) return;
           try {
             controller.add(
               snap.docs.map(Group.fromFirestore).toList(),
             );
           } catch (e, st) {
             await _safeLog(e, st);
-            controller.add(<Group>[]);
+            if (!controller.isClosed) controller.add(<Group>[]);
           }
         },
         onError: (e, st) async {
           await _safeLog(e, st);
-          controller.add(<Group>[]);
+          if (!controller.isClosed) controller.add(<Group>[]);
         },
       );
 
@@ -539,6 +540,7 @@ class GroupService {
       var ownerGroups = <Group>[];
 
       Future<void> emit() async {
+        if (controller.isClosed) return;
         final merged = <String, Group>{};
         for (final g in memberGroups) {
           merged[g.id] = g;
@@ -546,7 +548,9 @@ class GroupService {
         for (final g in ownerGroups) {
           merged[g.id] = g;
         }
-        controller.add(merged.values.toList());
+        if (!controller.isClosed) {
+          controller.add(merged.values.toList());
+        }
       }
 
       Future<void> handleMember(
@@ -695,6 +699,7 @@ class GroupService {
       bool progressDenied = false;
 
       Future<void> emit() async {
+        if (controller.isClosed) return;
         final members = latestMembers;
         final progress = latestProgress;
         if (members == null) return;
@@ -716,6 +721,7 @@ class GroupService {
             }
             final resolved = await _fetchUserInfos(
                 order.where((uid) => !providedNames.containsKey(uid)).toList());
+            if (controller.isClosed) return;
             controller.add([
               for (final uid in order)
                 GroupMemberProgressData(
@@ -731,10 +737,14 @@ class GroupService {
           final list = await _buildMemberDailyCompletion(
               members, progress, includeUid,
               groupId: groupId, date: targetDate);
-          controller.add(list);
+          if (!controller.isClosed) {
+            controller.add(list);
+          }
         } catch (e, st) {
           await _safeLog(e, st);
-          controller.addError(e, st);
+          if (!controller.isClosed) {
+            controller.addError(e, st);
+          }
         }
       }
 
@@ -743,7 +753,9 @@ class GroupService {
           latestMembers = snap;
           unawaited(emit());
         },
-        onError: controller.addError,
+        onError: (e, st) {
+          if (!controller.isClosed) controller.addError(e, st);
+        },
       );
 
       final progSub = progressSnaps.listen(
@@ -874,15 +886,17 @@ class GroupService {
             totalItems += ch;
           }
           if (totalItems == 0) {
-            controller.add([
-              for (final uid in order)
-                GroupMemberProgressData(
-                  uid: uid,
-                  name: providedNames[uid] ?? resolvedNames[uid]?.name ?? uid,
-                  photoUrl: resolvedNames[uid]?.photoUrl,
-                  completion: 0.0,
-                )
-            ]);
+            if (!controller.isClosed) {
+              controller.add([
+                for (final uid in order)
+                  GroupMemberProgressData(
+                    uid: uid,
+                    name: providedNames[uid] ?? resolvedNames[uid]?.name ?? uid,
+                    photoUrl: resolvedNames[uid]?.photoUrl,
+                    completion: 0.0,
+                  )
+              ]);
+            }
             return;
           }
 
@@ -897,33 +911,41 @@ class GroupService {
             counts[uid] = c;
           }
 
-          controller.add([
-            for (final uid in order)
-              GroupMemberProgressData(
-                uid: uid,
-                name: providedNames[uid] ?? resolvedNames[uid]?.name ?? uid,
-                photoUrl: resolvedNames[uid]?.photoUrl,
-                completion: ((counts[uid] ?? 0) / totalItems).clamp(0.0, 1.0),
-              )
-          ]);
+          if (!controller.isClosed) {
+            controller.add([
+              for (final uid in order)
+                GroupMemberProgressData(
+                  uid: uid,
+                  name: providedNames[uid] ?? resolvedNames[uid]?.name ?? uid,
+                  photoUrl: resolvedNames[uid]?.photoUrl,
+                  completion: ((counts[uid] ?? 0) / totalItems).clamp(0.0, 1.0),
+                )
+            ]);
+          }
         } catch (e, st) {
           await _safeLog(e, st);
-          controller.addError(e, st);
+          if (!controller.isClosed) controller.addError(e, st);
         }
       }
 
       final subMembers = membersSnaps.listen((snap) {
         latestMembers = snap;
         unawaited(emit());
-      }, onError: controller.addError);
+      }, onError: (e, st) {
+        if (!controller.isClosed) controller.addError(e, st);
+      });
       final subSched = scheduleSnaps.listen((snap) {
         latestSchedule = snap;
         unawaited(emit());
-      }, onError: controller.addError);
+      }, onError: (e, st) {
+        if (!controller.isClosed) controller.addError(e, st);
+      });
       final subEntries = entriesSnaps.listen((snap) {
         latestEntries = snap;
         unawaited(emit());
-      }, onError: controller.addError);
+      }, onError: (e, st) {
+        if (!controller.isClosed) controller.addError(e, st);
+      });
 
       controller.onCancel = () {
         subMembers.cancel();

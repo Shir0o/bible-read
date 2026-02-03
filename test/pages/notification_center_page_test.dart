@@ -49,6 +49,14 @@ Future<void> _renderType(WidgetTester tester, NotificationType type) async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  setUpAll(() {
+    const channel = MethodChannel('plugins.flutter.io/firebase_crashlytics');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+      return null;
+    });
+  });
+
   testWidgets('maps notification types to icons and text', (tester) async {
     final iconMap = {
       NotificationType.like: Icons.thumb_up,

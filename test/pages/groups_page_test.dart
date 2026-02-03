@@ -209,14 +209,21 @@ void main() {
     final service = RecordingGroupService(firestore: firestore);
     await pumpPage(tester, service);
 
-    expect(find.text('No groups found'), findsOneWidget);
+    expect(find.text('You haven\'t joined any groups yet.'), findsOneWidget);
     expect(
-      find.text('Create a group to start reading together.'),
+      find.text('Join or Create Group'),
       findsOneWidget,
     );
-    expect(find.text('Create Group'), findsOneWidget);
+    expect(find.byIcon(Icons.add_circle), findsOneWidget);
 
-    await tester.tap(find.text('Create Group'));
+    await tester.tap(find.text('Join or Create Group'));
+    await tester.pumpAndSettle();
+    
+    // Verify Bottom Sheet options
+    expect(find.text('Create New Group'), findsOneWidget);
+    expect(find.text('Find a Group'), findsOneWidget);
+
+    await tester.tap(find.text('Create New Group'));
     await tester.pumpAndSettle();
 
     expect(find.byType(AlertDialog), findsOneWidget);
