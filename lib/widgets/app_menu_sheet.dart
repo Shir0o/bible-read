@@ -12,7 +12,7 @@ import '../services/vibration_service.dart';
 import '../services/friend_service.dart';
 import 'animated_page_route.dart';
 import '../pages/inbox_page.dart';
-import '../pages/challenges_page.dart';
+
 import '../pages/user_profile_page.dart';
 import '../services/google_sign_in_factory.dart';
 
@@ -150,18 +150,7 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
       _MenuItem(
         icon: Icons.emoji_events,
         label: 'Challenges',
-        onTap: (context) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ChallengesPage(
-                auth: auth,
-                firestore: firestore,
-                friendService: FriendService(firestore: firestore),
-                vibrationService: widget.vibrationService,
-              ),
-            ),
-          );
-        },
+        index: 5,
       ),
       _MenuItem(
         icon: Icons.leaderboard,
