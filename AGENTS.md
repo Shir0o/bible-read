@@ -117,6 +117,7 @@ If you modify Cloud Functions code in `functions/`, run `npm run lint` and `npm 
 
 ## Agent workflow
 
+- Before doing any work, fetch and pull from git for any upstream changes.
 - Explore `README.md` and existing Dart sources for context before editing.
 - Write or update documentation when introducing new features or behaviour.
 - **UI/UX Changes**: If a change involves UI/UX, you **MUST** provide a wireframe (using the `generate_image` tool) as part of the proposed implementation plan for user review.
