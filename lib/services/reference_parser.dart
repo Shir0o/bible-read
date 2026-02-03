@@ -246,6 +246,12 @@ class ReferenceParser {
   /// Returns the canonical list of books in Genesis-to-Revelation order.
   static List<String> get allBooks => _allBooks;
 
+  /// Parses the book name from a reference (e.g. "Genesis 1" -> "Genesis").
+  static String? parseBook(String reference) {
+    final ref = _parseEndpoint(reference);
+    return ref?.book;
+  }
+
   /// Looks up the number of chapters in [book]. Returns `null` when the book
   /// cannot be resolved to a known entry.
   static int? chapterCount(String book) {
