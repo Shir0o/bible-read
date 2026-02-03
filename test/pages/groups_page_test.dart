@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/pages/groups_page.dart';
+import 'package:bible_read/pages/create_group_page.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 
@@ -138,7 +139,7 @@ void main() {
     expect(find.text('Other'), findsOneWidget);
   });
 
-  testWidgets('create group success shows snackbar', (tester) async {
+  testWidgets('navigates to create group page', (tester) async {
     final service = RecordingGroupService(firestore: firestore);
     await pumpPage(tester, service);
 
@@ -146,36 +147,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Create New Group'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'New');
-    await tester.pump(); // Rebuild for button state
-    await tester.tap(find.text('Create'));
-    await tester.pumpAndSettle();
 
-    expect(service.createdName, 'New');
-    expect(service.createdOwner, 'u1');
-    expect(find.text('Group created'), findsOneWidget);
-    expect(vibration.lightCount, 2);
-  });
-
-  testWidgets('create group failure shows error', (tester) async {
-    final service = RecordingGroupService(firestore: firestore)
-      ..failCreate = true;
-    await pumpPage(tester, service);
-
-    await tester.tap(find.text('Join or Create Group'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Create New Group'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'New');
-    await tester.pump(); // Rebuild for button state
-    await tester.tap(find.text('Create'));
-    await tester.pumpAndSettle();
-
-    expect(
-      find.text('Failed to create group. Please try again.'),
-      findsOneWidget,
-    );
-    expect(vibration.lightCount, 2);
+    expect(find.byType(CreateGroupPage), findsOneWidget);
+    expect(find.text('New Group Plan'), findsOneWidget);
   });
 
   testWidgets('shows empty state with create button when no groups exist',
@@ -200,81 +174,6 @@ void main() {
     await tester.tap(find.text('Create New Group'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsOneWidget);
-    expect(
-        find.descendant(
-            of: find.byType(AlertDialog), matching: find.text('Create Group')),
-        findsOneWidget);
-    expect(find.byType(TextField), findsOneWidget);
-  });
-
-  testWidgets('cancel create disposes controller safely', (tester) async {
-    final service = RecordingGroupService(firestore: firestore);
-    await pumpPage(tester, service);
-
-    await tester.tap(find.text('Join or Create Group'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Create New Group'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Cancel'));
-    await tester.pumpAndSettle();
-
-    expect(service.createdName, isNull);
-    expect(service.createdOwner, isNull);
-    expect(find.byType(AlertDialog), findsNothing);
-    expect(tester.takeException(), isNull);
-    expect(vibration.lightCount, 2);
-  });
-
-  testWidgets('create button disabled when empty and enabled when typed',
-      (tester) async {
-    final service = RecordingGroupService(firestore: firestore);
-    await pumpPage(tester, service);
-
-    await tester.tap(find.text('Join or Create Group'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Create New Group'));
-    await tester.pumpAndSettle();
-
-    // Initially disabled
-    final createButtonFinder = find.widgetWithText(TextButton, 'Create');
-    expect(tester.widget<TextButton>(createButtonFinder).onPressed, isNull);
-
-    // Type something
-    await tester.enterText(find.byType(TextField), 'My Group');
-    await tester.pump();
-
-    // Now enabled
-    expect(tester.widget<TextButton>(createButtonFinder).onPressed, isNotNull);
-
-    // Clear it
-    await tester.enterText(find.byType(TextField), '');
-    await tester.pump();
-
-    // Disabled again
-    expect(tester.widget<TextButton>(createButtonFinder).onPressed, isNull);
-  });
-
-  testWidgets('clear button clears text', (tester) async {
-    final service = RecordingGroupService(firestore: firestore);
-    await pumpPage(tester, service);
-
-    await tester.tap(find.text('Join or Create Group'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Create New Group'));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(find.byType(TextField), 'Mistake');
-    await tester.pump();
-
-    expect(find.text('Mistake'), findsOneWidget);
-    final clearButton = find.byIcon(Icons.clear);
-    expect(clearButton, findsOneWidget);
-
-    await tester.tap(clearButton);
-    await tester.pump();
-
-    expect(find.text('Mistake'), findsNothing);
-    expect(find.text(''), findsOneWidget); // Empty text field content
+    expect(find.byType(CreateGroupPage), findsOneWidget);
   });
 }
