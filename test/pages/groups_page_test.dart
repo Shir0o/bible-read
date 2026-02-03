@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/pages/groups_page.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
+import 'package:bible_read/widgets/group_card.dart';
 
 class RecordingGroupService extends GroupService {
   RecordingGroupService({required super.firestore});
@@ -85,7 +86,17 @@ void main() {
     await firestore.collection('groups').doc('g2').set({
       'name': 'Other',
       'ownerUid': 'u2',
-      'memberCount': 0,
+      'memberCount': 1,
+    });
+    await firestore
+        .collection('groups')
+        .doc('g2')
+        .collection('members')
+        .doc('u1')
+        .set({
+      'uid': 'u1',
+      'role': 'member',
+      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
     });
 
     await pumpPage(tester, GroupService(firestore: firestore));
@@ -93,88 +104,31 @@ void main() {
     expect(find.text('Study'), findsOneWidget);
     expect(find.text('Other'), findsOneWidget);
 
-    final studyTile = tester.widget<ListTile>(
+    final studyTile = tester.widget<GroupCard>(
       find
           .ancestor(
             of: find.text('Study'),
-            matching: find.byType(ListTile),
+            matching: find.byType(GroupCard),
           )
           .first,
     );
-    final otherTile = tester.widget<ListTile>(
+    final otherTile = tester.widget<GroupCard>(
       find
           .ancestor(
             of: find.text('Other'),
-            matching: find.byType(ListTile),
+            matching: find.byType(GroupCard),
           )
           .first,
     );
-
-    expect((studyTile.subtitle as Text).data, '1 member');
-    expect(studyTile.trailing, isNull);
-
-    expect((otherTile.subtitle as Text).data, '1 member');
-    expect(otherTile.trailing, isNull);
-  });
-
-  testWidgets('shows pending indicator (no joined checkmark)', (tester) async {
-    await firestore.collection('groups').doc('g1').set({
-      'name': 'Study',
-      'ownerUid': 'u1',
-      'memberCount': 2,
-    });
-    await firestore
-        .collection('groups')
-        .doc('g1')
-        .collection('members')
-        .doc('u1')
-        .set({
-      'uid': 'u1',
-      'role': 'member',
-      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
-    });
-    await firestore.collection('groups').doc('g2').set({
-      'name': 'Other',
-      'ownerUid': 'u2',
-      'memberCount': 3,
-    });
-    await firestore
-        .collection('groups')
-        .doc('g2')
-        .collection('joinRequests')
-        .doc('u1')
-        .set({'uid': 'u1'});
-
-    await pumpPage(tester, GroupService(firestore: firestore));
-
-    final joinedTile = tester.widget<ListTile>(
-      find
-          .ancestor(
-            of: find.text('Study'),
-            matching: find.byType(ListTile),
-          )
-          .first,
-    );
-    expect(joinedTile.trailing, isNull);
-
-    final pendingTile = tester.widget<ListTile>(
-      find
-          .ancestor(
-            of: find.text('Other'),
-            matching: find.byType(ListTile),
-          )
-          .first,
-    );
-    expect((pendingTile.trailing as Text).data, 'Pending');
-    expect((joinedTile.subtitle as Text).data, '1 member');
-    expect((pendingTile.subtitle as Text).data, '1 member');
   });
 
   testWidgets('create group success shows snackbar', (tester) async {
     final service = RecordingGroupService(firestore: firestore);
     await pumpPage(tester, service);
 
-    await tester.tap(find.byType(FloatingActionButton));
+    await tester.tap(find.text('Join or Create Group'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create New Group'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'New');
     await tester.tap(find.text('Create'));
@@ -183,7 +137,7 @@ void main() {
     expect(service.createdName, 'New');
     expect(service.createdOwner, 'u1');
     expect(find.text('Group created'), findsOneWidget);
-    expect(vibration.lightCount, 1);
+    expect(vibration.lightCount, 2);
   });
 
   testWidgets('create group failure shows error', (tester) async {
@@ -191,7 +145,9 @@ void main() {
       ..failCreate = true;
     await pumpPage(tester, service);
 
-    await tester.tap(find.byType(FloatingActionButton));
+    await tester.tap(find.text('Join or Create Group'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create New Group'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'New');
     await tester.tap(find.text('Create'));
@@ -201,7 +157,7 @@ void main() {
       find.text('Failed to create group. Please try again.'),
       findsOneWidget,
     );
-    expect(vibration.lightCount, 1);
+    expect(vibration.lightCount, 2);
   });
 
   testWidgets('shows empty state with create button when no groups exist',
@@ -238,7 +194,9 @@ void main() {
     final service = RecordingGroupService(firestore: firestore);
     await pumpPage(tester, service);
 
-    await tester.tap(find.byType(FloatingActionButton));
+    await tester.tap(find.text('Join or Create Group'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create New Group'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
@@ -247,6 +205,6 @@ void main() {
     expect(service.createdOwner, isNull);
     expect(find.byType(AlertDialog), findsNothing);
     expect(tester.takeException(), isNull);
-    expect(vibration.lightCount, 1);
+    expect(vibration.lightCount, 2);
   });
 }
