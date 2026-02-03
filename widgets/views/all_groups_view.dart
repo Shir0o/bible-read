@@ -14,12 +14,12 @@ import '../skeletons/group_list_skeleton.dart';
 import '../../pages/group_detail_page.dart';
 
 /// View that lists all groups, suitable for embedding in a TabBarView.
-class GroupsView extends StatefulWidget {
+class AllGroupsView extends StatefulWidget {
   final GroupService groupService;
   final FirebaseAuth auth;
   final VibrationService vibrationService;
 
-  const GroupsView({
+  const AllGroupsView({
     super.key,
     required this.groupService,
     required this.auth,
@@ -27,10 +27,10 @@ class GroupsView extends StatefulWidget {
   });
 
   @override
-  State<GroupsView> createState() => _GroupsViewState();
+  State<AllGroupsView> createState() => _AllGroupsViewState();
 }
 
-class _GroupsViewState extends State<GroupsView>
+class _AllGroupsViewState extends State<AllGroupsView>
     with AutomaticKeepAliveClientMixin {
   bool _inProgress = false;
   int _refreshTick = 0;
