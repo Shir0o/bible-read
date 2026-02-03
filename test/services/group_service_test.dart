@@ -44,7 +44,7 @@ void main() {
   setUpAll(() async {
     registerFallbackValue(<String, dynamic>{});
     registerFallbackValue(SetOptions(merge: true));
-    
+
     // Mock Crashlytics channel
     const channel = MethodChannel('plugins.flutter.io/firebase_crashlytics');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -1108,6 +1108,17 @@ void main() {
         when(() => ownerQuery.snapshots())
             .thenAnswer((_) => Stream.value(ownerSnap));
         when(() => ownerSnap.docs).thenReturn([]);
+
+        final joinQuery = MockQuery<Map<String, dynamic>>();
+        final joinSnap = MockQuerySnapshot<Map<String, dynamic>>();
+
+        when(() => mockFs.collectionGroup(GroupCollections.joinRequests))
+            .thenReturn(joinQuery);
+        when(() => joinQuery.where('uid', isEqualTo: 'u1'))
+            .thenReturn(joinQuery);
+        when(() => joinQuery.snapshots())
+            .thenAnswer((_) => Stream.value(joinSnap));
+        when(() => joinSnap.docs).thenReturn([]);
 
         final crash = MockCrashlytics();
         ErrorLogger.crashlytics = crash;

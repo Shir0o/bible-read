@@ -535,9 +535,15 @@ class GroupService {
         .where('ownerUid', isEqualTo: uid)
         .snapshots();
 
+    final joinRequestSnaps = firestore
+        .collectionGroup(GroupCollections.joinRequests)
+        .where('uid', isEqualTo: uid)
+        .snapshots();
+
     return Stream<List<Group>>.multi((controller) {
       var memberGroups = <Group>[];
       var ownerGroups = <Group>[];
+      var pendingGroups = <Group>[];
 
       Future<void> emit() async {
         if (controller.isClosed) return;
@@ -546,6 +552,9 @@ class GroupService {
           merged[g.id] = g;
         }
         for (final g in ownerGroups) {
+          merged[g.id] = g;
+        }
+        for (final g in pendingGroups) {
           merged[g.id] = g;
         }
         if (!controller.isClosed) {
@@ -581,6 +590,24 @@ class GroupService {
         await emit();
       }
 
+      Future<void> handleJoinRequest(
+          QuerySnapshot<Map<String, dynamic>> snap) async {
+        try {
+          final futures = snap.docs
+              .map((doc) => doc.reference.parent.parent)
+              .whereType<DocumentReference<Map<String, dynamic>>>()
+              .map((parent) => parent.get())
+              .toList();
+          final docs = await Future.wait(futures);
+          pendingGroups =
+              docs.where((doc) => doc.exists).map(Group.fromFirestore).toList();
+        } catch (e, st) {
+          await _safeLog(e, st);
+          pendingGroups = <Group>[];
+        }
+        await emit();
+      }
+
       final sub1 = memberSnaps.listen(
         (snap) => unawaited(handleMember(snap)),
         onError: (e, st) async {
@@ -597,10 +624,19 @@ class GroupService {
           await emit();
         },
       );
+      final sub3 = joinRequestSnaps.listen(
+        (snap) => unawaited(handleJoinRequest(snap)),
+        onError: (e, st) async {
+          await _safeLog(e, st);
+          pendingGroups = <Group>[];
+          await emit();
+        },
+      );
 
       controller.onCancel = () {
         sub1.cancel();
         sub2.cancel();
+        sub3.cancel();
       };
     });
   }
@@ -1060,7 +1096,9 @@ class GroupService {
       for (var i = 0; i < order.length; i++)
         GroupMemberProgressData(
           uid: order[i],
-          name: providedNames[order[i]] ?? resolvedNames[order[i]]?.name ?? order[i],
+          name: providedNames[order[i]] ??
+              resolvedNames[order[i]]?.name ??
+              order[i],
           photoUrl: resolvedNames[order[i]]?.photoUrl,
           completion: completions[i],
         )
@@ -1307,6 +1345,7 @@ class GroupService {
     }
   }
 }
+
 class _UserInfo {
   final String name;
   final String? photoUrl;

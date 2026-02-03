@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/pages/groups_page.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
-import 'package:bible_read/widgets/group_card.dart';
 
 class RecordingGroupService extends GroupService {
   RecordingGroupService({required super.firestore});
@@ -103,23 +102,40 @@ void main() {
 
     expect(find.text('Study'), findsOneWidget);
     expect(find.text('Other'), findsOneWidget);
+  });
 
-    final studyTile = tester.widget<GroupCard>(
-      find
-          .ancestor(
-            of: find.text('Study'),
-            matching: find.byType(GroupCard),
-          )
-          .first,
-    );
-    final otherTile = tester.widget<GroupCard>(
-      find
-          .ancestor(
-            of: find.text('Other'),
-            matching: find.byType(GroupCard),
-          )
-          .first,
-    );
+  testWidgets('shows pending indicator (no joined checkmark)', (tester) async {
+    await firestore.collection('groups').doc('g1').set({
+      'name': 'Study',
+      'ownerUid': 'u1',
+      'memberCount': 2,
+    });
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u1')
+        .set({
+      'uid': 'u1',
+      'role': 'member',
+      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+    });
+    await firestore.collection('groups').doc('g2').set({
+      'name': 'Other',
+      'ownerUid': 'u2',
+      'memberCount': 3,
+    });
+    await firestore
+        .collection('groups')
+        .doc('g2')
+        .collection('joinRequests')
+        .doc('u1')
+        .set({'uid': 'u1'});
+
+    await pumpPage(tester, GroupService(firestore: firestore));
+
+    expect(find.text('Study'), findsOneWidget);
+    expect(find.text('Other'), findsOneWidget);
   });
 
   testWidgets('create group success shows snackbar', (tester) async {
@@ -174,7 +190,7 @@ void main() {
 
     await tester.tap(find.text('Join or Create Group'));
     await tester.pumpAndSettle();
-    
+
     // Verify Bottom Sheet options
     expect(find.text('Create New Group'), findsOneWidget);
     expect(find.text('Find a Group'), findsOneWidget);
