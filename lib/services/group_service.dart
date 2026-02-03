@@ -426,6 +426,34 @@ class GroupService {
     }
   }
 
+  /// Update multiple schedule entries for [groupId] using a batch.
+  Future<void> updateScheduleBatch({
+    required String groupId,
+    required List<GroupSchedule> schedules,
+  }) async {
+    try {
+      final batch = firestore.batch();
+      for (final schedule in schedules) {
+        final docId = _dateId(schedule.date);
+        final utcDate = DateTime.utc(
+            schedule.date.year, schedule.date.month, schedule.date.day);
+        final docRef = firestore
+            .collection(GroupCollections.groups)
+            .doc(groupId)
+            .collection(GroupCollections.schedule)
+            .doc(docId);
+        batch.set(docRef, {
+          'date': Timestamp.fromDate(utcDate),
+          'chapters': schedule.chapters,
+        });
+      }
+      await batch.commit();
+    } catch (e, st) {
+      await _safeLog(e, st);
+      rethrow;
+    }
+  }
+
   /// Delete the schedule entry on [date] for [groupId].
   Future<void> deleteSchedule({
     required String groupId,

@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/group.dart';
-import '../services/error_logger.dart';
+
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
@@ -13,6 +13,7 @@ import '../widgets/group_card.dart';
 
 import '../pages/group_detail_page.dart';
 import '../pages/all_groups_page.dart';
+import '../pages/create_group_page.dart';
 
 class GroupsPage extends StatefulWidget {
   final GroupService groupService;
@@ -49,106 +50,6 @@ class _GroupsPageState extends State<GroupsPage> {
     }
   }
 
-  Future<void> _createGroup() async {
-    final controller = TextEditingController();
-    var disposed = false;
-
-    void disposeController() {
-      if (disposed) {
-        return;
-      }
-      disposed = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
-    }
-
-    final user = widget.auth.currentUser;
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            final isNotEmpty = controller.text.trim().isNotEmpty;
-            return AlertDialog(
-              title: const Text('Create Group'),
-              content: TextField(
-                controller: controller,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: 'Group Name',
-                  suffixIcon: isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          tooltip: 'Clear name',
-                          onPressed: () {
-                            controller.clear();
-                            setState(() {});
-                          },
-                        )
-                      : null,
-                ),
-                textCapitalization: TextCapitalization.sentences,
-                textInputAction: TextInputAction.done,
-                onChanged: (_) => setState(() {}),
-                onSubmitted: (value) {
-                  if (isNotEmpty) {
-                    unawaited(widget.vibrationService.lightImpact());
-                    Navigator.of(context).pop(value.trim());
-                  }
-                },
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    unawaited(widget.vibrationService.lightImpact());
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: isNotEmpty
-                      ? () {
-                          unawaited(widget.vibrationService.lightImpact());
-                          Navigator.of(context).pop(controller.text.trim());
-                        }
-                      : null,
-                  child: const Text('Create'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-    if (user == null || name == null || name.isEmpty || !mounted) {
-      disposeController();
-      return;
-    }
-
-    try {
-      await widget.groupService.createGroup(ownerUid: user.uid, name: name);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Group created')));
-      }
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to create group: $e');
-      }
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to create group. Please try again.'),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {}
-      disposeController();
-    }
-  }
-
   Future<void> _openGroup(Group group) async {
     unawaited(widget.vibrationService.lightImpact());
     final deleted = await Navigator.of(context).push<bool>(
@@ -182,7 +83,15 @@ class _GroupsPageState extends State<GroupsPage> {
                 title: const Text('Create New Group'),
                 onTap: () {
                   Navigator.pop(context);
-                  _createGroup();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CreateGroupPage(
+                        groupService: widget.groupService,
+                        auth: widget.auth,
+                      ),
+                    ),
+                  );
                 },
               ),
               ListTile(
