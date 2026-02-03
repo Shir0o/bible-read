@@ -120,7 +120,6 @@ void main() {
       final groupId = 'g1';
       final now = DateTime.now();
       final date = DateTime.utc(now.year, now.month, now.day);
-      final did = dateId(date);
 
       // Setup Group with member but NO Schedule and NO Progress
       await firestore.collection('groups').doc(groupId).set({

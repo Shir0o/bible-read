@@ -55,7 +55,8 @@ class ProfileSummaryCard extends StatelessWidget {
                       : Icon(
                           Icons.person_outline,
                           size: 32,
-                          color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.5),
                         ),
                 ),
               ),
@@ -90,7 +91,7 @@ class ProfileSummaryCard extends StatelessWidget {
                       'View Profile',
                       style: AppTextStyles.body.copyWith(
                         fontSize: 12,
-                        color: colorScheme.primary.withOpacity(0.8),
+                        color: colorScheme.primary.withValues(alpha: 0.8),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -98,7 +99,7 @@ class ProfileSummaryCard extends StatelessWidget {
                     Icon(
                       Icons.chevron_right_rounded,
                       size: 16,
-                      color: colorScheme.primary.withOpacity(0.8),
+                      color: colorScheme.primary.withValues(alpha: 0.8),
                     ),
                   ],
                 ),

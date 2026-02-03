@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/reading_plan.dart';
 import '../services/reading_plan_service.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/skeleton_loader.dart';
+
 import 'plan_detail_page.dart';
 
 class ReadingPlansPage extends StatefulWidget {
@@ -71,7 +71,7 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
-                    color: colorScheme.outlineVariant.withOpacity(0.5),
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                   ),
                 ),
                 child: InkWell(

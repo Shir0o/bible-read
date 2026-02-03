@@ -201,5 +201,5 @@ void main() {
   };
 
   File('assets/plans/sample_plans.json').writeAsStringSync(jsonEncode([plan]));
-  print('Generated plan with ${schedule.length} days.');
+  stdout.writeln('Generated plan with ${schedule.length} days.');
 }

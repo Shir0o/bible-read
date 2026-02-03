@@ -10,7 +10,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 
 import 'package:bible_read/pages/main_page.dart';
-import 'package:bible_read/pages/read_log_page.dart';
+
 import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/pages/leaderboard_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
@@ -787,7 +787,7 @@ void main() {
     final now = DateTime.now();
     final dateKey =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    
+
     // Ensure parent doc exists for FakeFirestore
     await fakeFirestore.collection('read_logs').doc(dateKey).set({});
 
@@ -829,7 +829,7 @@ void main() {
 
     // Verify loading is done
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    
+
     // Check if empty state is shown (debug)
     if (find.text('No recent activity from friends.').evaluate().isNotEmpty) {
       fail('Friends activity list is empty, expected "Owner"');
@@ -856,10 +856,6 @@ void main() {
   testWidgets('calls sendCommentNotification when a comment is submitted', (
     tester,
   ) async {
-    bool wasCalled = false;
-    String? calledUid;
-    String? calledName;
-
     final fakeFirestore = FakeFirebaseFirestore();
     final commenter = MockUser(
       uid: 'commenter123',
@@ -899,9 +895,7 @@ void main() {
             required String ownerUid,
             required String commenterName,
           }) async {
-            wasCalled = true;
-            calledUid = ownerUid;
-            calledName = commenterName;
+            // No-op
           },
         ),
       ),

@@ -156,8 +156,8 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                                 const SizedBox(height: 12),
                                 LinearProgressIndicator(
                                   value: percent,
-                                  backgroundColor:
-                                      colorScheme.surface.withOpacity(0.3),
+                                  backgroundColor: colorScheme.surface
+                                      .withValues(alpha: 0.3),
                                   color: colorScheme.onSecondaryContainer,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
@@ -167,7 +167,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                                     'Up next: Day ${nextDay.day}',
                                     style: AppTextStyles.caption.copyWith(
                                       color: colorScheme.onSecondaryContainer
-                                          .withOpacity(0.8),
+                                          .withValues(alpha: 0.8),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -213,7 +213,8 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(
-                          color: colorScheme.outlineVariant.withOpacity(0.5),
+                          color:
+                              colorScheme.outlineVariant.withValues(alpha: 0.5),
                         ),
                       ),
                       child: InkWell(

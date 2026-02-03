@@ -2,7 +2,7 @@ import 'package:bible_read/pages/community_page.dart';
 import 'package:bible_read/pages/journey_page.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
-import 'package:bible_read/widgets/app_menu_sheet.dart';
+
 import 'package:bible_read/widgets/navigation_menu_scope.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -14,7 +14,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'dart:async';
 
-import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
 import 'package:bible_read/pages/auth_selection_page.dart';
 import 'package:bible_read/pages/login_page.dart'; // Added
@@ -26,7 +25,7 @@ import 'streak_history_page.dart';
 import 'friendly_streak_page.dart';
 import '../services/admin_role_service.dart';
 import '../services/friend_service.dart';
-import '../services/friendly_streak_service.dart';
+
 import '../services/google_sign_in_factory.dart';
 import '../services/group_service.dart';
 import '../services/reading_plan_service.dart';
@@ -35,7 +34,6 @@ import '../services/vibration_service.dart';
 import 'app_check_error_page.dart';
 import 'leaderboard_page.dart';
 import 'read_log_page.dart';
-import 'notification_center_page.dart';
 
 typedef SendLikeNotification = Future<void> Function({
   required String ownerUid,
@@ -112,8 +110,6 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   static const int _homeIndex = 0;
-  static const int _communityIndex = 1;
-  static const int _journeyIndex = 2;
 
   int _selectedIndex = _homeIndex;
 
@@ -125,7 +121,7 @@ class _MainPageState extends State<MainPage> {
   late final AdminRoleService _adminRoleService;
   late final FriendService _friendService;
   late final GroupService _groupService;
-  late final FriendlyStreakService _friendlyStreakService;
+
   late final ReadingPlanService _readingPlanService;
   late final ReadingStatusService _readingStatusService;
   late final List<Widget> _pages;
@@ -144,9 +140,7 @@ class _MainPageState extends State<MainPage> {
     _friendService = FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
     _readingPlanService = ReadingPlanService(firestore: widget.firestore);
-    _friendlyStreakService = FriendlyStreakService(
-      firestore: widget.firestore,
-    );
+
     _adminRoleService = AdminRoleService(
       firestore: widget.firestore,
       auth: widget.auth,
@@ -366,7 +360,7 @@ class _MainPageState extends State<MainPage> {
           if (_showAuthSelection) {
             return PopScope(
               canPop: false,
-              onPopInvoked: (didPop) {
+              onPopInvokedWithResult: (didPop, result) {
                 if (didPop) return;
                 setState(() {
                   _showAuthSelection = false;
@@ -417,7 +411,7 @@ class _MainPageState extends State<MainPage> {
 
         return PopScope(
           canPop: _navigationHistory.length <= 1,
-          onPopInvoked: (didPop) {
+          onPopInvokedWithResult: (didPop, result) {
             if (didPop) return;
             setState(() {
               _navigationHistory.removeLast();

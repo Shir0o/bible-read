@@ -19,13 +19,12 @@ import '../services/group_book_achievement_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../models/reading_plan.dart';
-import '../models/reading_plan_progress.dart';
+
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
 import 'read_log_page.dart';
-import '../widgets/profile_button.dart';
 
 /// Landing page that displays reading progress and loads user data from
 /// Firestore when the app starts.
@@ -115,15 +114,13 @@ class _HomePageState extends State<HomePage>
   List<bool> _pastWeek = [];
   List<bool> _pastMonth = [];
   Set<DateTime> _readDates = {};
-  int? _streakFreezesLeft;
   int _currentStreak = 0;
-  FriendlyStreakLinksSummary? _friendStreaks;
-  bool _friendStreakLoading = false;
+
   late BookAchievementRefresher _bookAchievementRefresher;
 
   // Plan state
   ReadingPlan? _currentPlan;
-  UserPlanProgress? _currentPlanProgress;
+
   ReadingPlanDay? _scheduledDay;
 
   late final AnimationController _animationController;
@@ -188,7 +185,6 @@ class _HomePageState extends State<HomePage>
           _pastWeek = status.pastWeek;
           _pastMonth = status.pastMonth;
           _readDates = status.readDates;
-          _streakFreezesLeft = status.graceCreditsAvailable;
           _currentStreak = status.streak;
         });
       }
@@ -210,27 +206,14 @@ class _HomePageState extends State<HomePage>
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) {
       if (!_disposed && mounted) {
-        setState(() {
-          _friendStreaks = null;
-          _friendStreakLoading = false;
-        });
+        setState(() {});
       }
       return;
     }
 
-    if (showLoading && !_disposed && mounted) {
-      setState(() {
-        _friendStreakLoading = true;
-      });
-    }
+    if (showLoading && !_disposed && mounted) {}
 
-    final summary = await widget.friendlyStreakService.fetchLinks(uid);
-    if (!_disposed && mounted) {
-      setState(() {
-        _friendStreaks = summary;
-        _friendStreakLoading = false;
-      });
-    }
+    await widget.friendlyStreakService.fetchLinks(uid);
   }
 
   Future<void> _loadActivePlan({bool showLoading = true}) async {
@@ -243,7 +226,7 @@ class _HomePageState extends State<HomePage>
         if (!_disposed && mounted) {
           setState(() {
             _currentPlan = null;
-            _currentPlanProgress = null;
+
             _scheduledDay = null;
           });
         }
@@ -261,35 +244,11 @@ class _HomePageState extends State<HomePage>
         if (!_disposed && mounted) {
           setState(() {
             _currentPlan = plan;
-            _currentPlanProgress = progress;
             _scheduledDay = day;
           });
         }
       }
     });
-  }
-
-  /// Cleans and updates the cached summary document without scanning the entire
-  /// reading collection. Removes outdated entries, ensures the summary document
-  /// exists and resets the streak if a day was missed.
-  Future<bool> _updateSummary({bool showErrorSnackBar = true}) async {
-    final user = widget.auth.currentUser;
-    if (user == null) return false;
-
-    try {
-      final stats = await widget.readingStatusService.updateSummary();
-      await _checkAchievements(user.uid, stats.streak, stats.totalReadDays);
-      return true;
-    } catch (e, st) {
-      return _handleRefreshError(
-        e,
-        st,
-        logPrefix: 'Failed to update summary',
-        snackBarMessage: 'Failed to update summary. Please try again.',
-        showErrorSnackBar: showErrorSnackBar,
-        onAfterError: () => unawaited(_loadReadStatus(showLoading: false)),
-      );
-    }
   }
 
   /// Marks the current day as read. Optimistically updates local state and
@@ -565,38 +524,6 @@ class _HomePageState extends State<HomePage>
           ),
         );
       }
-    }
-  }
-
-  Future<void> _performRefresh() async {
-    try {
-      await widget.auth.currentUser?.reload();
-      final googleSignIn = widget.googleSignInProvider();
-      final googleAccount = await googleSignIn.signInSilently();
-      final firebaseUser = widget.auth.currentUser;
-      if (googleAccount != null && firebaseUser != null) {
-        await firebaseUser.updateDisplayName(googleAccount.displayName);
-        await firebaseUser.reload();
-      }
-      final summarySuccess = await _updateSummary(showErrorSnackBar: false);
-      if (!summarySuccess) {
-        throw Exception('Summary refresh failed');
-      }
-
-      final achievementsSuccess = await _refreshBookAchievementsForUser(
-        showErrorSnackBar: false,
-      );
-      if (!achievementsSuccess) {
-        throw Exception('Book achievements refresh failed');
-      }
-      await _loadReadStatus();
-      await _loadFriendlyStreak(showLoading: false);
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Refresh failed: $e');
-      }
-      ErrorLogger.log(e, st);
-      rethrow;
     }
   }
 

@@ -42,7 +42,8 @@ void main() {
     // It should have label "Encourage" and selected: true.
     final encourageSemanticsFinder = find.byWidgetPredicate((widget) {
       if (widget is Semantics) {
-        return widget.properties.label == 'Encourage' && widget.properties.selected == true;
+        return widget.properties.label == 'Encourage' &&
+            widget.properties.selected == true;
       }
       return false;
     });
@@ -53,12 +54,14 @@ void main() {
     final encourageData = encourageNode.getSemanticsData();
 
     // We expect it to have button flag
-    expect(encourageData.hasFlag(SemanticsFlag.isButton), isTrue, reason: 'Encourage should be a button');
+    expect(encourageData.hasFlag(SemanticsFlag.isButton), isTrue,
+        reason: 'Encourage should be a button');
     // We expect it to be enabled
-    expect(encourageData.hasFlag(SemanticsFlag.isEnabled), isTrue, reason: 'Encourage should be enabled');
+    expect(encourageData.hasFlag(SemanticsFlag.isEnabled), isTrue,
+        reason: 'Encourage should be enabled');
     // We expect it to be selected (because liked=true)
-    expect(encourageData.hasFlag(SemanticsFlag.isSelected), isTrue, reason: 'Encourage should be selected');
-
+    expect(encourageData.hasFlag(SemanticsFlag.isSelected), isTrue,
+        reason: 'Encourage should be selected');
 
     // 2. Check "Comment" button semantics
     // It should have label "Comment" (or "0" if using count logic, here empty comments so "Comment")
@@ -74,10 +77,13 @@ void main() {
     final commentNode = tester.getSemantics(commentSemanticsFinder);
     final commentData = commentNode.getSemanticsData();
 
-    expect(commentData.hasFlag(SemanticsFlag.isButton), isTrue, reason: 'Comment should be a button');
-    expect(commentData.hasFlag(SemanticsFlag.isEnabled), isTrue, reason: 'Comment should be enabled');
+    expect(commentData.hasFlag(SemanticsFlag.isButton), isTrue,
+        reason: 'Comment should be a button');
+    expect(commentData.hasFlag(SemanticsFlag.isEnabled), isTrue,
+        reason: 'Comment should be enabled');
     // It should NOT be selected
-    expect(commentData.hasFlag(SemanticsFlag.isSelected), isFalse, reason: 'Comment should not be selected');
+    expect(commentData.hasFlag(SemanticsFlag.isSelected), isFalse,
+        reason: 'Comment should not be selected');
   });
 
   testWidgets('FeedCard send button has tooltip', (tester) async {
@@ -125,7 +131,7 @@ void main() {
   });
 
   testWidgets('FeedCard Read today uses MergeSemantics', (tester) async {
-     final log = ReadLog(
+    final log = ReadLog(
       uid: 'user1',
       name: 'Bob',
       liked: false,
@@ -158,7 +164,8 @@ void main() {
     // Find MergeSemantics wrapping the Read today row.
     // We can look for MergeSemantics ancestor of "Read today" text.
     final readTodayText = find.text('Read today');
-    final mergeSemantics = find.ancestor(of: readTodayText, matching: find.byType(MergeSemantics));
+    final mergeSemantics =
+        find.ancestor(of: readTodayText, matching: find.byType(MergeSemantics));
     expect(mergeSemantics, findsOneWidget);
   });
 }

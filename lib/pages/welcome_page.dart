@@ -33,7 +33,7 @@ class WelcomePage extends StatelessWidget {
                   end: Alignment.topCenter,
                   colors: [
                     const Color(0xFF1D0033),
-                    const Color(0xFF2A0038).withOpacity(0.9),
+                    const Color(0xFF2A0038).withValues(alpha: 0.9),
                     Colors.transparent,
                   ],
                   stops: const [0.0, 0.4, 1.0],
@@ -49,8 +49,8 @@ class WelcomePage extends StatelessWidget {
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    Colors.black.withOpacity(0.8),
-                    Colors.black.withOpacity(0.4),
+                    Colors.black.withValues(alpha: 0.8),
+                    Colors.black.withValues(alpha: 0.4),
                     Colors.transparent,
                   ],
                   stops: const [0.0, 0.3, 1.0],
@@ -80,7 +80,7 @@ class WelcomePage extends StatelessWidget {
                           Shadow(
                             offset: const Offset(0, 2),
                             blurRadius: 4,
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                           ),
                         ],
                       ),
@@ -122,7 +122,7 @@ class WelcomePage extends StatelessWidget {
                         foregroundColor:
                             const Color(0xFF21005D), // m3-on-primary-container
                         elevation: 4,
-                        shadowColor: Colors.black.withOpacity(0.3),
+                        shadowColor: Colors.black.withValues(alpha: 0.3),
                         shape: RoundedRectangleBorder(
                           borderRadius:
                               BorderRadius.circular(28), // rounded-full
@@ -147,7 +147,7 @@ class WelcomePage extends StatelessWidget {
                       onPressed: onLogin,
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           width: 1,
                         ),
                         backgroundColor: Colors.transparent,

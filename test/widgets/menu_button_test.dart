@@ -65,5 +65,6 @@ void main() {
 
     expect(menuService.lightCount, 1);
     expect(find.byType(AppMenuSheet), findsNothing);
+    expect(lastIndex, 5); // Challenges index
   });
 }

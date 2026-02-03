@@ -7,8 +7,7 @@ import '../services/error_logger.dart';
 import '../services/friend_service.dart';
 import '../services/friendly_streak_service.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/navigation_menu_scope.dart';
-import 'friends_page.dart';
+
 import 'invite_streak_page.dart';
 
 class FriendlyStreakView extends StatefulWidget {
@@ -29,11 +28,6 @@ class FriendlyStreakView extends StatefulWidget {
 
 class _FriendlyStreakViewState extends State<FriendlyStreakView> {
   FriendlyStreakLinksSummary _summary = FriendlyStreakLinksSummary.empty;
-  int _currentStreak = 0;
-  int _longestStreak = 0;
-  int _totalReadDays = 0;
-  int? _remainingGraceCredits;
-  bool _isLoading = true;
   bool _loadError = false;
 
   @override
@@ -46,7 +40,6 @@ class _FriendlyStreakViewState extends State<FriendlyStreakView> {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) {
       setState(() {
-        _isLoading = false;
         _summary = FriendlyStreakLinksSummary.empty;
         _loadError = false;
       });
@@ -54,7 +47,6 @@ class _FriendlyStreakViewState extends State<FriendlyStreakView> {
     }
 
     setState(() {
-      _isLoading = true;
       _loadError = false;
     });
 
@@ -66,33 +58,18 @@ class _FriendlyStreakViewState extends State<FriendlyStreakView> {
           .doc('data')
           .get();
       final friendSummaryFuture = widget.friendlyStreakService.fetchLinks(uid);
-      final summaryDoc = await summaryFuture;
+      await summaryFuture;
       final friendSummary = await friendSummaryFuture;
-      final data = summaryDoc.data() ?? {};
-      final now = DateTime.now();
-      final currentMonthKey =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}';
-      int? remainingGraceCredits;
-      if (data['graceCreditsMonth'] == currentMonthKey &&
-          data['graceCreditsAvailable'] is int) {
-        remainingGraceCredits = data['graceCreditsAvailable'] as int;
-      }
 
       if (!mounted) return;
       setState(() {
-        _currentStreak = data['streak'] ?? 0;
-        _longestStreak = data['longestStreak'] ?? _currentStreak;
-        _totalReadDays = data['totalReadDays'] ?? 0;
-        _remainingGraceCredits = remainingGraceCredits;
         _summary = friendSummary;
-        _isLoading = false;
         _loadError = false;
       });
     } catch (e, st) {
       ErrorLogger.log(e, st);
       if (!mounted) return;
       setState(() {
-        _isLoading = false;
         _loadError = true;
       });
     }

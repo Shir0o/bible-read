@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,8 +10,7 @@ import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/group_card.dart';
-import '../widgets/skeleton_loader.dart';
-import '../widgets/skeletons/group_list_skeleton.dart';
+
 import '../pages/group_detail_page.dart';
 import '../pages/all_groups_page.dart';
 
@@ -35,7 +33,6 @@ class GroupsPage extends StatefulWidget {
 }
 
 class _GroupsPageState extends State<GroupsPage> {
-  bool _inProgress = false;
   int _refreshTick = 0;
 
   Future<void> _refresh() async {
@@ -126,7 +123,7 @@ class _GroupsPageState extends State<GroupsPage> {
       disposeController();
       return;
     }
-    setState(() => _inProgress = true);
+
     try {
       await widget.groupService.createGroup(ownerUid: user.uid, name: name);
       if (mounted) {
@@ -147,9 +144,7 @@ class _GroupsPageState extends State<GroupsPage> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _inProgress = false);
-      }
+      if (mounted) {}
       disposeController();
     }
   }
@@ -237,37 +232,37 @@ class _GroupsPageState extends State<GroupsPage> {
                   stream: widget.groupService.groupsForUser(user.uid),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return Center(child: Text('Error loading groups: ${snapshot.error}'));
+                      return Center(
+                          child:
+                              Text('Error loading groups: ${snapshot.error}'));
                     }
                     if (!snapshot.hasData) {
                       return const Center(child: CircularProgressIndicator());
                     }
                     final groups = snapshot.data!;
                     if (groups.isEmpty) {
-                      return LayoutBuilder(
-                          builder: (context, constraints) {
-                            return SingleChildScrollView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minHeight: constraints.maxHeight,
-                                ),
-                                child: Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(32),
-                                    child: Text(
-                                      'You haven\'t joined any groups yet.',
-                                      style: AppTextStyles.body.copyWith(
-                                        color: colorScheme.onSurfaceVariant,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
+                      return LayoutBuilder(builder: (context, constraints) {
+                        return SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                            ),
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(32),
+                                child: Text(
+                                  'You haven\'t joined any groups yet.',
+                                  style: AppTextStyles.body.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ),
-                            );
-                          }
-                      );
+                            ),
+                          ),
+                        );
+                      });
                     }
                     return ListView.builder(
                       padding: const EdgeInsets.all(16),

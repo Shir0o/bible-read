@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/reading_plan.dart';
@@ -24,7 +25,9 @@ class ReadingPlanService {
           jsonList.map((json) => ReadingPlan.fromJson(json)).toList();
       return _cachedPlans!;
     } catch (e) {
-      print('Error loading reading plans: $e');
+      if (kDebugMode) {
+        print('Error loading reading plans: $e');
+      }
       return [];
     }
   }

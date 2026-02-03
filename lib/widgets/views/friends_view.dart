@@ -9,7 +9,7 @@ import '../skeleton_loader.dart';
 import '../skeletons/friends_skeleton.dart';
 import '../../services/error_logger.dart';
 import '../../pages/add_friend_page.dart';
-import '../../pages/friend_requests_page.dart'; // Needed for direct navigation or extraction
+// Needed for direct navigation or extraction
 
 /// View that lists current friends, suitable for embedding in a TabBarView.
 class FriendsView extends StatefulWidget {
@@ -149,7 +149,8 @@ class _FriendsViewState extends State<FriendsView>
             Icon(
               Icons.groups_outlined,
               size: 64,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
