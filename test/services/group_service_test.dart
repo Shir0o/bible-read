@@ -179,6 +179,7 @@ void main() {
       expect(request.data()?['name'], 'User');
       expect(request.data()?['requestedAt'], isA<Timestamp>());
 
+      // Verify owner gets the notification with correct fields
       final notifSnap = await firestore
           .collection(NotificationCollections.users)
           .doc('u1')
@@ -189,6 +190,32 @@ void main() {
       expect(data['type'], NotificationType.groupJoinRequest.name);
       expect(data['fromUid'], 'u2');
       expect(data['senderUid'], 'u2');
+      expect(data['groupId'], 'g1');
+      expect(data['message'], 'User requested to join your group');
+      expect(data['read'], false);
+      expect(data['timestamp'], isA<Timestamp>());
+
+      // Verify unrelated users do NOT get notified
+      final unrelatedSnap = await firestore
+          .collection(NotificationCollections.users)
+          .doc('u3')
+          .collection(NotificationCollections.notifications)
+          .get();
+      expect(unrelatedSnap.docs, isEmpty);
+    });
+
+    test('joinGroup throws StateError when group does not exist', () async {
+      await expectLater(
+        service.joinGroup(groupId: 'missing', uid: 'u1', name: 'User'),
+        throwsStateError,
+      );
+
+      final requests = await firestore
+          .collection(GroupCollections.groups)
+          .doc('missing')
+          .collection(GroupCollections.joinRequests)
+          .get();
+      expect(requests.docs, isEmpty);
     });
 
     test('approveJoinRequest moves member and removes request', () async {
@@ -1229,9 +1256,14 @@ void main() {
         final joinDoc = MockDocumentReference<Map<String, dynamic>>();
         final err = Exception('fail');
 
+        final groupSnap = MockDocumentSnapshot<Map<String, dynamic>>();
+        when(() => groupSnap.exists).thenReturn(true);
+        when(() => groupSnap.data()).thenReturn({'ownerUid': 'owner'});
+
         when(() => mockFs.collection(GroupCollections.groups))
             .thenReturn(groups);
         when(() => groups.doc('g1')).thenReturn(groupDoc);
+        when(() => groupDoc.get()).thenAnswer((_) async => groupSnap);
         when(() => groupDoc.collection(GroupCollections.joinRequests))
             .thenReturn(joinRequests);
         when(() => joinRequests.doc('u1')).thenReturn(joinDoc);

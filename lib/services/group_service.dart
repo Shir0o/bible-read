@@ -124,6 +124,15 @@ class GroupService {
     required String name,
   }) async {
     try {
+      final groupSnap = await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .get();
+
+      if (!groupSnap.exists) {
+        throw StateError('Group does not exist');
+      }
+
       await firestore
           .collection(GroupCollections.groups)
           .doc(groupId)
@@ -135,10 +144,6 @@ class GroupService {
         'requestedAt': FieldValue.serverTimestamp(),
       });
 
-      final groupSnap = await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .get();
       final ownerUid = groupSnap.data()?['ownerUid'] as String?;
       if (ownerUid != null && ownerUid != uid) {
         // Deterministic ID to avoid duplicates per requester per group.
