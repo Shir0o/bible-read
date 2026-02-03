@@ -1,0 +1,669 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+
+import '../models/group.dart';
+import '../models/group_schedule.dart';
+import '../services/group_service.dart';
+import '../services/reference_parser.dart';
+import '../widgets/common_styles.dart';
+import 'group_detail_page.dart';
+
+class CreateGroupPage extends StatefulWidget {
+  final GroupService groupService;
+  final FirebaseAuth auth;
+
+  CreateGroupPage({
+    super.key,
+    GroupService? groupService,
+    FirebaseAuth? auth,
+  })  : groupService = groupService ?? GroupService(),
+        auth = auth ?? FirebaseAuth.instance;
+
+  @override
+  State<CreateGroupPage> createState() => _CreateGroupPageState();
+}
+
+class _CreateGroupPageState extends State<CreateGroupPage> {
+  final List<String> _selectedBooks = [];
+  DateTime _startDate = DateTime.now();
+  DateTime? _endDate;
+  bool _isDaily = true; // true = Daily, false = Weekdays
+  final TextEditingController _searchController = TextEditingController();
+  bool _isCreating = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  int get _totalChapters {
+    int count = 0;
+    for (final book in _selectedBooks) {
+      count += ReferenceParser.chapterCount(book) ?? 0;
+    }
+    return count;
+  }
+
+  double get _pace {
+    if (_endDate == null || _totalChapters == 0) return 0;
+    int days = 0;
+    DateTime current = _startDate;
+    // Simple day counting based on frequency
+    while (!current.isAfter(_endDate!)) {
+      if (_isDaily || (current.weekday >= 1 && current.weekday <= 5)) {
+        days++;
+      }
+      current = current.add(const Duration(days: 1));
+    }
+    if (days == 0) return 0;
+    return _totalChapters / days;
+  }
+
+  void _addBook(String book) {
+    if (!_selectedBooks.contains(book)) {
+      setState(() {
+        _selectedBooks.add(book);
+        _searchController.clear();
+      });
+    }
+  }
+
+  void _removeBook(String book) {
+    setState(() {
+      _selectedBooks.remove(book);
+    });
+  }
+
+  Future<void> _selectDate(bool isStart) async {
+    final initialDate = isStart ? _startDate : (_endDate ?? _startDate);
+    final firstDate = isStart ? DateTime.now().subtract(const Duration(days: 365)) : _startDate;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStart) {
+          _startDate = picked;
+          if (_endDate != null && _endDate!.isBefore(_startDate)) {
+            _endDate = null;
+          }
+        } else {
+          _endDate = picked;
+        }
+      });
+    }
+  }
+
+  Future<void> _createSchedule() async {
+    if (_selectedBooks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one book.')),
+      );
+      return;
+    }
+    if (_endDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an end date.')),
+      );
+      return;
+    }
+
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+
+    setState(() => _isCreating = true);
+
+    try {
+      // 1. Create Group
+      // Generate a name like "Genesis, Exodus Plan"
+      String name = "Reading Plan";
+      if (_selectedBooks.isNotEmpty) {
+        if (_selectedBooks.length <= 2) {
+          name = "${_selectedBooks.join(', ')} Plan";
+        } else {
+          name = "${_selectedBooks.take(2).join(', ')} & more Plan";
+        }
+      }
+
+      final groupId = await widget.groupService.createGroup(
+        ownerUid: user.uid,
+        name: name,
+      );
+
+      // 2. Generate Schedule
+      final List<GroupSchedule> scheduleList = [];
+      final allChapters = <String>[];
+      for (final book in _selectedBooks) {
+        final count = ReferenceParser.chapterCount(book) ?? 0;
+        for (int i = 1; i <= count; i++) {
+          allChapters.add('$book $i');
+        }
+      }
+
+      int chapterIndex = 0;
+      DateTime currentDate = _startDate;
+      // Safety break to prevent infinite loops if something goes wrong
+      int safetyLimit = 365 * 5;
+
+      while (chapterIndex < allChapters.length && safetyLimit > 0) {
+        safetyLimit--;
+
+        // Check if today is a reading day
+        if (!_isDaily && (currentDate.weekday == 6 || currentDate.weekday == 7)) {
+           // Skip weekend
+           currentDate = currentDate.add(const Duration(days: 1));
+           continue;
+        }
+
+        // Determine how many chapters for this day
+        // We re-calculate pace remaining dynamically to distribute evenly?
+        // Or just use the fixed average pace?
+        // Let's distribute evenly.
+        // Remaining chapters / Remaining reading days
+        // But "Remaining reading days" is hard to know exactly without iterating to EndDate.
+        // Let's iterate until EndDate.
+
+        // Actually, the user SET the EndDate. So we must fit chapters into that duration.
+        // If we run out of days, we dump the rest on the last day? Or extend?
+        // The design implies "Pace" is calculated.
+
+        // Let's use a simpler approach:
+        // Calculate total reading days between Start and End.
+        int totalReadingDays = 0;
+        DateTime d = _startDate;
+        while (!d.isAfter(_endDate!)) {
+           if (_isDaily || (d.weekday >= 1 && d.weekday <= 5)) {
+             totalReadingDays++;
+           }
+           d = d.add(const Duration(days: 1));
+        }
+
+        if (totalReadingDays == 0) totalReadingDays = 1; // Prevent division by zero
+
+        // Distribute chapters
+        // We can use the 'Bresenham's line algorithm' concept for even distribution
+        // or just simple division.
+        // chaptersPerDay = totalChapters / totalReadingDays.
+        // We can keep a float accumulator.
+
+        final chaptersForToday = <String>[];
+        // However, we are iterating day by day here.
+        // Let's pre-calculate the distribution.
+
+        // This logic is slightly complex to do inside the loop.
+        // Let's restart the distribution logic.
+        break;
+      }
+
+      // Better Distribution Logic
+      DateTime d = _startDate;
+      int readingDaysCount = 0;
+      final readingDays = <DateTime>[];
+      while (!d.isAfter(_endDate!)) {
+         if (_isDaily || (d.weekday >= 1 && d.weekday <= 5)) {
+           readingDays.add(d);
+         }
+         d = d.add(const Duration(days: 1));
+      }
+
+      if (readingDays.isEmpty) {
+        // Fallback: just put everything on start date
+        readingDays.add(_startDate);
+      }
+
+      int totalChapters = allChapters.length;
+      int chaptersAssigned = 0;
+
+      for (int i = 0; i < readingDays.length; i++) {
+        final date = readingDays[i];
+        // Calculate how many chapters for this day
+        // Remaining chapters / Remaining days
+        int remainingDays = readingDays.length - i;
+        int remainingChapters = totalChapters - chaptersAssigned;
+        int count = (remainingChapters / remainingDays).ceil();
+
+        if (count > remainingChapters) count = remainingChapters;
+
+        if (count > 0) {
+          final dailyChapters = allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
+          scheduleList.add(GroupSchedule(date: date, chapters: dailyChapters));
+          chaptersAssigned += count;
+        }
+      }
+
+      // If any chapters remain (shouldn't happen with ceil logic, but safely check), add to last day
+      if (chaptersAssigned < totalChapters && scheduleList.isNotEmpty) {
+        final last = scheduleList.last;
+        final extra = allChapters.sublist(chaptersAssigned);
+        // We need to update the last entry. Firestore set will overwrite, so we just modify the list object locally and push.
+        // Use a new object
+        scheduleList[scheduleList.length - 1] = GroupSchedule(
+          date: last.date,
+          chapters: [...last.chapters, ...extra]
+        );
+      } else if (chaptersAssigned < totalChapters && scheduleList.isEmpty) {
+        // Only happens if readingDays was empty? dealt with above.
+      }
+
+      // 3. Upload Schedule
+      await widget.groupService.updateScheduleBatch(
+        groupId: groupId,
+        schedules: scheduleList,
+      );
+
+      if (!mounted) return;
+
+      // 4. Navigate to Group
+      // We push replacement so the user can't "back" into the create page
+      final group = Group(
+        id: groupId,
+        name: name,
+        ownerUid: user.uid,
+        memberCount: 1,
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GroupDetailPage(
+            group: group,
+            groupService: widget.groupService,
+            auth: widget.auth,
+          ),
+        ),
+      );
+
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create group: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCreating = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      appBar: AppBar(
+        title: const Text('New Group Plan'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Reading Plan Section
+                    Text(
+                      'Reading Plan',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Select the books you'll be reading together.",
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Search Box
+                    Autocomplete<String>(
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return const Iterable<String>.empty();
+                        }
+                        return ReferenceParser.allBooks.where((String option) {
+                          return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                        });
+                      },
+                      onSelected: (String selection) {
+                        _addBook(selection);
+                      },
+                      fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+                         return TextField(
+                           controller: controller,
+                           focusNode: focusNode,
+                           onEditingComplete: onEditingComplete,
+                           decoration: InputDecoration(
+                             hintText: 'Search for a book...',
+                             prefixIcon: const Icon(Icons.search),
+                             border: OutlineInputBorder(
+                               borderRadius: BorderRadius.circular(16),
+                             ),
+                             filled: true,
+                             fillColor: colorScheme.surfaceContainerHighest,
+                           ),
+                         );
+                      },
+                      optionsViewBuilder: (context, onSelected, options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4,
+                            borderRadius: BorderRadius.circular(8),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxHeight: 200, maxWidth: 300), // Approximate width
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: options.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  final String option = options.elementAt(index);
+                                  return InkWell(
+                                    onTap: () {
+                                      onSelected(option);
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Text(option),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Selected Books Chips
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _selectedBooks.map((book) {
+                        return InputChip(
+                          label: Text(book),
+                          selected: true,
+                          selectedColor: colorScheme.primary,
+                          labelStyle: TextStyle(color: colorScheme.onPrimary),
+                          onDeleted: () => _removeBook(book),
+                          deleteIconColor: colorScheme.onPrimary.withOpacity(0.8),
+                          checkmarkColor: colorScheme.onPrimary,
+                        );
+                      }).toList(),
+                    ),
+                    if (_selectedBooks.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: colorScheme.outlineVariant),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, color: colorScheme.primary),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text.rich(
+                                TextSpan(
+                                  text: 'This selection contains approximately ',
+                                  style: TextStyle(color: colorScheme.onSurface),
+                                  children: [
+                                    TextSpan(
+                                      text: '$_totalChapters chapters',
+                                      style: TextStyle(
+                                        color: colorScheme.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const TextSpan(text: '.'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 24),
+
+                    // Timeline Section
+                    Text(
+                      'Timeline',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Set your start and end dates.",
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _selectDate(true),
+                            child: InputDecorator(
+                              decoration: const InputDecoration(
+                                labelText: 'Start',
+                                border: OutlineInputBorder(),
+                                suffixIcon: Icon(Icons.calendar_today),
+                              ),
+                              child: Text(
+                                "${_startDate.month}/${_startDate.day}/${_startDate.year}",
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _selectDate(false),
+                            child: InputDecorator(
+                              decoration: const InputDecoration(
+                                labelText: 'End',
+                                border: OutlineInputBorder(),
+                                suffixIcon: Icon(Icons.calendar_today),
+                              ),
+                              child: Text(
+                                _endDate == null
+                                    ? 'mm/dd/yyyy'
+                                    : "${_endDate!.month}/${_endDate!.day}/${_endDate!.year}",
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Frequency',
+                      style: theme.textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 8),
+                    // Frequency Options
+                    Container(
+                      decoration: BoxDecoration(
+                        border: _isDaily ? Border.all(color: colorScheme.primary) : Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(12),
+                        color: _isDaily ? colorScheme.primaryContainer.withOpacity(0.4) : null,
+                      ),
+                      child: RadioListTile<bool>(
+                        value: true,
+                        groupValue: _isDaily,
+                        onChanged: (val) => setState(() => _isDaily = val!),
+                        title: const Text('Daily'),
+                        subtitle: const Text('Every single day'),
+                        secondary: Icon(Icons.calendar_view_day, color: _isDaily ? colorScheme.primary : colorScheme.onSurfaceVariant),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: !_isDaily ? Border.all(color: colorScheme.primary) : Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(12),
+                        color: !_isDaily ? colorScheme.primaryContainer.withOpacity(0.4) : null,
+                      ),
+                      child: RadioListTile<bool>(
+                        value: false,
+                        groupValue: _isDaily,
+                        onChanged: (val) => setState(() => _isDaily = val!),
+                        title: const Text('Weekdays'),
+                        subtitle: const Text('Mon - Fri only'),
+                        secondary: Icon(Icons.date_range, color: !_isDaily ? colorScheme.primary : colorScheme.onSurfaceVariant),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_endDate != null)
+                      Row(
+                        children: [
+                          Icon(Icons.speed, size: 16, color: colorScheme.secondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Pace: ~${_pace.toStringAsFixed(1)} chapters / day',
+                            style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.secondary),
+                          ),
+                        ],
+                      ),
+
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 24),
+
+                    // Members Section
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Members',
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              "Invite your reading group.",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                        FilledButton.icon(
+                          onPressed: () {
+                             ScaffoldMessenger.of(context).showSnackBar(
+                               const SnackBar(content: Text('Link copied to clipboard (simulation)')),
+                             );
+                          },
+                          icon: const Icon(Icons.link, size: 18),
+                          label: const Text('Copy Link'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: colorScheme.primaryContainer,
+                            foregroundColor: colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      enabled: false,
+                      decoration: InputDecoration(
+                        hintText: 'Find people...',
+                        prefixIcon: const Icon(Icons.person_search),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                        filled: true,
+                        fillColor: colorScheme.surface,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Placeholder Invite Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                         onPressed: () {},
+                         icon: const Icon(Icons.contact_page),
+                         label: const Text('Invite from Contacts'),
+                         style: FilledButton.styleFrom(
+                            backgroundColor: colorScheme.primaryContainer,
+                            foregroundColor: colorScheme.onPrimaryContainer,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+            ),
+
+            // Create Button
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    colorScheme.surface,
+                    colorScheme.surface.withOpacity(0.0),
+                  ],
+                ),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _isCreating ? null : _createSchedule,
+                  icon: _isCreating
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.add),
+                  label: Text(_isCreating ? 'Creating...' : 'Create Schedule'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
