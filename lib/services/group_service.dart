@@ -49,6 +49,19 @@ class GroupService {
     } catch (_) {}
   }
 
+  static String? _resolveDisplayName(Map<String, dynamic> data) {
+    final n = (data['name'] as String?)?.trim();
+    final dn = (data['displayName'] as String?)?.trim();
+    final em = (data['email'] as String?)?.trim();
+    if (n != null && n.isNotEmpty) return n;
+    if (dn != null && dn.isNotEmpty) return dn;
+    if (em != null && em.isNotEmpty) {
+      final at = em.indexOf('@');
+      return at > 0 ? em.substring(0, at) : em;
+    }
+    return null;
+  }
+
   /// Create a new group owned by [ownerUid] with [name].
   ///
   /// Returns the id of the created group.
@@ -79,19 +92,8 @@ class GroupService {
             await firestore.collection('users').doc(ownerUid).get();
         final data = userSnap.data();
         if (data != null) {
-          final n = (data['name'] as String?)?.trim();
-          final dn = (data['displayName'] as String?)?.trim();
-          final em = (data['email'] as String?)?.trim();
-          String? chosen = n?.isNotEmpty == true
-              ? n
-              : dn?.isNotEmpty == true
-                  ? dn
-                  : (em?.isNotEmpty == true
-                      ? (em!.contains('@')
-                          ? em.substring(0, em.indexOf('@'))
-                          : em)
-                      : null);
-          if (chosen != null && chosen.isNotEmpty) {
+          final chosen = _resolveDisplayName(data);
+          if (chosen != null) {
             await doc
                 .collection(GroupCollections.members)
                 .doc(ownerUid)
@@ -721,9 +723,9 @@ class GroupService {
         final results = await Future.wait(futures);
         for (final query in results) {
           for (final user in query.docs) {
-            final userName = user.data()['name'] as String?;
-            if (userName != null && userName.isNotEmpty) {
-              names.add(userName);
+            final chosen = _resolveDisplayName(user.data());
+            if (chosen != null) {
+              names.add(chosen);
             }
           }
         }
@@ -1165,20 +1167,9 @@ class GroupService {
     for (final query in results) {
       for (final user in query.docs) {
         final data = user.data();
-        final userName = (data['name'] as String?)?.trim();
-        final displayName = (data['displayName'] as String?)?.trim();
-        final email = (data['email'] as String?)?.trim();
+        final chosen = _resolveDisplayName(data);
         final photoUrl = (data['photoURL'] as String?)?.trim();
-        String? chosen;
-        if (userName != null && userName.isNotEmpty) {
-          chosen = userName;
-        } else if (displayName != null && displayName.isNotEmpty) {
-          chosen = displayName;
-        } else if (email != null && email.isNotEmpty) {
-          final at = email.indexOf('@');
-          chosen = at > 0 ? email.substring(0, at) : email;
-        }
-        if (chosen != null && chosen.isNotEmpty) {
+        if (chosen != null) {
           infos[user.id] = _UserInfo(chosen, photoUrl);
         }
       }
