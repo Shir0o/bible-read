@@ -13,14 +13,13 @@ import '../services/book_achievement_refresher.dart';
 import '../services/error_logger.dart';
 import '../services/group_book_achievement_service.dart';
 import '../services/group_service.dart';
-import '../services/reference_parser.dart';
 import '../services/vibration_service.dart';
-import '../widgets/animated_page_route.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/group_members_section.dart';
 import '../widgets/schedule_item_tile.dart';
 import '../widgets/section_header.dart';
 import '../widgets/vibration_button.dart';
+import 'edit_group_page.dart';
 import 'group_join_requests_page.dart';
 
 typedef GroupDatePicker = Future<DateTime?> Function({
@@ -115,13 +114,6 @@ class GroupDetailPage extends StatefulWidget {
 }
 
 class _GroupDetailPageState extends State<GroupDetailPage> {
-  List<GroupSchedule>? _scheduleOverride;
-  List<GroupSchedule>? _latestSchedule;
-  List<GroupSchedule>? _lastFetchedSchedule;
-  late final TextEditingController _nameController;
-  bool _editMode = false;
-  bool _isSavingName = false;
-  late String _groupName;
   late Stream<List<GroupMemberProgressData>> _memberOverallStream;
   late Stream<List<GroupSchedule>> _scheduleStream;
   final Map<String, bool> _pendingReadOverrides = <String, bool>{};
@@ -134,34 +126,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   final Map<String, bool> _latestBaseDoneSnapshots = <String, bool>{};
   final Map<String, int> _latestChapterCountSnapshots = <String, int>{};
   int _nextPendingOpId = 0;
-  bool _isDeleting = false;
-  bool _pendingScheduleSync = false;
   StreamSubscription<Set<String>>? _achievementSubscription;
   Set<String> _unlockedAchievementIds = <String>{};
   late BookAchievementRefresher _bookAchievementRefresher;
 
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-
-  bool _schedulesMatch(List<GroupSchedule> a, List<GroupSchedule> b) {
-    if (identical(a, b)) {
-      return true;
-    }
-    if (a.length != b.length) {
-      return false;
-    }
-    for (var i = 0; i < a.length; i++) {
-      final first = a[i];
-      final second = b[i];
-      if (_dateKey(first.date) != _dateKey(second.date)) {
-        return false;
-      }
-      if (!listEquals(first.chapters, second.chapters)) {
-        return false;
-      }
-    }
-    return true;
-  }
 
   Map<int, bool> _ensureChapterOverrideMap(String dateKey) =>
       _pendingChapterOverrides.putIfAbsent(dateKey, () => <int, bool>{});
@@ -281,65 +251,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         debugPrint('Failed to refresh book achievements: $error');
       }
       ErrorLogger.log(error, stackTrace);
-    }
-  }
-
-  Future<void> _confirmDeleteGroup() async {
-    final user = widget.auth.currentUser;
-    if (user == null || user.uid != widget.group.ownerUid) {
-      return;
-    }
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Group'),
-        content: Text(
-          'Are you sure you want to delete "${widget.group.name}"? This cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true || !mounted) {
-      return;
-    }
-
-    unawaited(widget.vibrationService.lightImpact());
-    setState(() => _isDeleting = true);
-
-    bool success = false;
-    try {
-      await widget.groupService.deleteGroup(
-        groupId: widget.group.id,
-        ownerUid: user.uid,
-      );
-      success = true;
-    } catch (e, st) {
-      await ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to delete group')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isDeleting = false);
-      }
-    }
-
-    if (success && mounted) {
-      Navigator.of(context).pop(true);
     }
   }
 
@@ -466,8 +377,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       achievementService: widget.achievementService,
       groupBookAchievementService: widget.groupBookAchievementService,
     );
-    _groupName = widget.group.name;
-    _nameController = TextEditingController(text: _groupName);
     _memberOverallStream = widget.groupService.memberOverallCompletion(
       widget.group.id,
       includeUid: widget.auth.currentUser?.uid,
@@ -512,77 +421,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   @override
   void dispose() {
     _achievementSubscription?.cancel();
-    _nameController.dispose();
     super.dispose();
-  }
-
-  Future<void> _deleteSchedule(GroupSchedule schedule) async {
-    unawaited(widget.vibrationService.mediumImpact());
-    final previous = _scheduleOverride ?? _latestSchedule;
-    final updated = List<GroupSchedule>.from(previous ?? <GroupSchedule>[])
-      ..removeWhere((s) => _dateKey(s.date) == _dateKey(schedule.date));
-    if (mounted) {
-      setState(() {
-        _scheduleOverride = updated;
-      });
-    }
-    try {
-      await widget.groupService.deleteSchedule(
-        groupId: widget.group.id,
-        date: schedule.date,
-      );
-      if (mounted) {
-        setState(() {
-          _latestSchedule = updated;
-          _pendingScheduleSync = true;
-          _scheduleOverride = null;
-        });
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Entry deleted')));
-      }
-    } catch (e, st) {
-      if (kDebugMode) debugPrint('Failed to delete schedule: $e');
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        setState(() {
-          _scheduleOverride = previous;
-        });
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Delete failed')));
-      }
-    }
-  }
-
-  Future<void> _saveGroupName() async {
-    final newName = _nameController.text.trim();
-    if (newName.isEmpty || newName == _groupName || _isSavingName) return;
-    setState(() => _isSavingName = true);
-    try {
-      await widget.groupService.updateGroupName(
-        groupId: widget.group.id,
-        name: newName,
-      );
-      if (!mounted) return;
-      setState(() {
-        _groupName = newName;
-        _isSavingName = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Group name updated')));
-    } catch (e, st) {
-      if (kDebugMode) debugPrint('Failed to update group name: $e');
-      ErrorLogger.log(e, st);
-      if (!mounted) return;
-      setState(() => _isSavingName = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to update name')));
-    }
   }
 
   Future<bool> _toggleMyReadForDate(DateTime date, bool read) async {
@@ -944,78 +783,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     }());
   }
 
-  Future<void> _editSchedule([GroupSchedule? schedule]) async {
-    final result = await Navigator.of(context).push<GroupSchedule>(
-      animatedPageRoute(
-        _EditScheduleDialog(
-          schedule: schedule,
-          vibrationService: widget.vibrationService,
-          datePicker: widget.datePicker,
-        ),
-      ),
-    );
-
-    if (result != null) {
-      final previous = _scheduleOverride ?? _latestSchedule;
-      final updated = List<GroupSchedule>.from(previous ?? <GroupSchedule>[]);
-      if (schedule == null) {
-        updated.add(result);
-      } else {
-        final index = updated.indexWhere((s) => s.date == schedule.date);
-        if (index != -1) {
-          updated[index] = result;
-        } else {
-          updated.add(result);
-        }
-      }
-      updated.sort((a, b) => a.date.compareTo(b.date));
-      if (mounted) {
-        setState(() {
-          _scheduleOverride = updated;
-        });
-      }
-      final dateChanged = schedule != null && schedule.date != result.date;
-      final newSchedule = List<GroupSchedule>.from(updated)
-        ..sort((a, b) => a.date.compareTo(b.date));
-
-      unawaited(() async {
-        try {
-          if (dateChanged) {
-            await widget.groupService.deleteSchedule(
-              groupId: widget.group.id,
-              date: schedule.date,
-            );
-          }
-          await widget.groupService.updateSchedule(
-            groupId: widget.group.id,
-            schedule: result,
-          );
-          if (mounted) {
-            setState(() {
-              _latestSchedule = newSchedule;
-              _pendingScheduleSync = true;
-              _scheduleOverride = null;
-            });
-          }
-        } catch (e, st) {
-          if (kDebugMode) {
-            debugPrint('Failed to update schedule: $e');
-          }
-          ErrorLogger.log(e, st);
-          if (mounted) {
-            setState(() {
-              _scheduleOverride = previous;
-            });
-            // ignore: use_build_context_synchronously
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Failed to update schedule')),
-            );
-          }
-        }
-      }());
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
@@ -1038,11 +805,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         final isMember = isOwner || (memberDoc?.exists ?? false);
         final hasAdminPrivileges =
             isOwner || role == 'admin' || role == 'owner';
-        final canEditSchedule = hasAdminPrivileges && _editMode;
+
         return Scaffold(
           appBar: CommonStyles.buildAppBar(
             context,
-            _groupName,
+            widget.group.name, // Use widget.group.name as it updates from firestore stream usually, but here group is static.
+            // If group name updates in EditGroupPage, we want to reflect it.
+            // But this widget might not rebuild if group param doesn't change.
+            // For now, assume it's fine or user navigates back and forth.
             actions: hasAdminPrivileges
                 ? [
                     // Join requests action for owners/admins.
@@ -1063,104 +833,31 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       },
                     ),
                     IconButton(
-                      icon: Icon(_editMode ? Icons.check : Icons.edit),
-                      tooltip: _editMode ? 'Done' : 'Edit',
+                      icon: const Icon(Icons.edit),
+                      tooltip: 'Edit Group Plan',
                       onPressed: () {
-                        setState(() {
-                          _editMode = !_editMode;
-                        });
+                        unawaited(widget.vibrationService.lightImpact());
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => EditGroupPage(
+                              group: widget.group,
+                              groupService: widget.groupService,
+                              auth: widget.auth,
+                              vibrationService: widget.vibrationService,
+                            ),
+                          ),
+                        );
                       },
                     ),
                   ]
                 : null,
           ),
-          floatingActionButton: hasAdminPrivileges && _editMode
-              ? FloatingActionButton(
-                  heroTag: 'group-detail-fab',
-                  onPressed: () {
-                    unawaited(widget.vibrationService.lightImpact());
-                    _editSchedule();
-                  },
-                  child: const Icon(Icons.add),
-                )
-              : null,
           body: Container(
             decoration: CommonStyles.backgroundDecoration(
                 Theme.of(context).colorScheme),
             padding: const EdgeInsets.all(16),
             child: ListView(
               children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: _editMode && hasAdminPrivileges
-                      ? Column(
-                          key: const ValueKey('admin-controls'),
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SectionHeader('Group'),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    key: const Key('group-name-field'),
-                                    controller: _nameController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Group name',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                SizedBox(
-                                  height: 56,
-                                  child: ElevatedButton(
-                                    key: const Key('save-group-name-button'),
-                                    onPressed:
-                                        _isSavingName ? null : _saveGroupName,
-                                    child: _isSavingName
-                                        ? const SizedBox(
-                                            height: 16,
-                                            width: 16,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : const Text('Save'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            if (isOwner) ...[
-                              FilledButton(
-                                key: const Key('delete-group-button'),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Theme.of(
-                                    context,
-                                  ).colorScheme.error,
-                                  foregroundColor: Theme.of(
-                                    context,
-                                  ).colorScheme.onError,
-                                ),
-                                onPressed:
-                                    _isDeleting ? null : _confirmDeleteGroup,
-                                child: _isDeleting
-                                    ? const SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : const Text('Delete group'),
-                              ),
-                              const SizedBox(height: 16),
-                            ],
-                          ],
-                        )
-                      : const SizedBox.shrink(),
-                ),
                 if (!isOwner && user != null && !isMember)
                   StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                     stream: widget.groupService.firestore
@@ -1217,7 +914,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       );
                     },
                   ),
-                // Join requests moved to a dedicated page via the app bar action.
                 GroupMembersSection(
                   key: const ValueKey('group-members-section'),
                   title: 'Members',
@@ -1230,54 +926,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     if (snapshot.hasError) {
                       return const Text('Failed to load schedule');
                     }
-                    List<GroupSchedule>? baseSchedule;
-                    if (snapshot.hasData) {
-                      final fetched = List<GroupSchedule>.from(snapshot.data!);
-                      final previousFetched = _lastFetchedSchedule;
-                      if (_pendingScheduleSync) {
-                        final latest = _latestSchedule;
-                        final matchesLatest =
-                            latest != null && _schedulesMatch(fetched, latest);
-                        final matchesPrevious = previousFetched != null &&
-                            _schedulesMatch(fetched, previousFetched);
-                        if (matchesLatest) {
-                          _latestSchedule = fetched;
-                          baseSchedule = fetched;
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (!mounted || !_pendingScheduleSync) {
-                              return;
-                            }
-                            setState(() {
-                              _pendingScheduleSync = false;
-                            });
-                          });
-                        } else if (!matchesPrevious) {
-                          _latestSchedule = fetched;
-                          baseSchedule = fetched;
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (!mounted || !_pendingScheduleSync) {
-                              return;
-                            }
-                            setState(() {
-                              _pendingScheduleSync = false;
-                            });
-                          });
-                        } else {
-                          baseSchedule = latest ?? fetched;
-                        }
-                      } else {
-                        _latestSchedule = fetched;
-                        baseSchedule = fetched;
-                      }
-                      _lastFetchedSchedule = fetched;
-                    } else {
-                      baseSchedule = _latestSchedule;
-                    }
-
-                    final schedule = _scheduleOverride ?? baseSchedule;
-                    if (schedule == null) {
+                    if (!snapshot.hasData) {
                       return const Center(child: CircularProgressIndicator());
                     }
+                    final schedule = snapshot.data!;
                     final hasEntries = schedule.isNotEmpty;
 
                     final children = <Widget>[];
@@ -1291,13 +943,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           final s = e.value;
                           final baseTile = ScheduleItemTile(
                             schedule: s,
-                            onEdit:
-                                canEditSchedule ? () => _editSchedule(s) : null,
-                            onDelete: canEditSchedule
-                                ? () => _deleteSchedule(s)
-                                : null,
+                            onEdit: null, // Removed inline edit
+                            onDelete: null, // Removed inline delete
                           );
-                          if (user == null || !isMember || canEditSchedule) {
+                          if (user == null || !isMember) {
                             return baseTile;
                           }
                           final dateKey = _dateKey(s.date);
@@ -1439,12 +1088,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
                                   return ScheduleItemTile(
                                     schedule: s,
-                                    onEdit: canEditSchedule
-                                        ? () => _editSchedule(s)
-                                        : null,
-                                    onDelete: canEditSchedule
-                                        ? () => _deleteSchedule(s)
-                                        : null,
+                                    onEdit: null,
+                                    onDelete: null,
                                     currentUserRead: currentUserRead,
                                     onToggleRead: onToggleRead,
                                     checkedChapters: displayChecked,
@@ -1481,101 +1126,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           ),
         );
       },
-    );
-  }
-}
-
-class _EditScheduleDialog extends StatefulWidget {
-  const _EditScheduleDialog({
-    this.schedule,
-    this.vibrationService = const VibrationService(),
-    required this.datePicker,
-  });
-
-  final GroupSchedule? schedule;
-  final VibrationService vibrationService;
-  final GroupDatePicker datePicker;
-
-  @override
-  State<_EditScheduleDialog> createState() => _EditScheduleDialogState();
-}
-
-class _EditScheduleDialogState extends State<_EditScheduleDialog> {
-  late DateTime _selected;
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = widget.schedule?.date ?? DateTime.now();
-    _controller = TextEditingController(
-      text: widget.schedule?.chapters.join(', ') ?? '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickDate() async {
-    final picked = await widget.datePicker(
-      context: context,
-      initialDate: _selected,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) {
-      setState(() {
-        _selected = picked;
-      });
-    }
-  }
-
-  void _save() {
-    final chapters = ReferenceParser.parseChaptersList(_controller.text);
-    Navigator.of(
-      context,
-    ).pop(GroupSchedule(date: _selected, chapters: chapters));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.schedule == null ? 'Add Schedule' : 'Edit Schedule'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _controller,
-            decoration: const InputDecoration(
-              labelText: 'Chapters to read',
-              helperText:
-                  'Separate with commas, semicolons, or ranges (e.g., John 3-4; Psalm 23)',
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            key: const ValueKey('schedule-date-button'),
-            onPressed: _pickDate,
-            child: Text(_selected.toIso8601String().split('T').first),
-          ),
-        ],
-      ),
-      actions: [
-        VibrationButton(
-          vibrationService: widget.vibrationService,
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        VibrationButton(
-          key: const ValueKey('schedule-save-button'),
-          vibrationService: widget.vibrationService,
-          onPressed: _save,
-          child: const Text('Save'),
-        ),
-      ],
     );
   }
 }

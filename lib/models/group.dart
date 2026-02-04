@@ -14,12 +14,16 @@ class Group {
   /// Number of members currently in the group.
   final int memberCount;
 
+  /// Whether the group is public and visible in search results.
+  final bool isPublic;
+
   /// Creates a [Group].
   const Group({
     required this.id,
     required this.name,
     required this.ownerUid,
     this.memberCount = 0,
+    this.isPublic = false,
   });
 
   /// Reads a [Group] from a Firestore document.
@@ -30,6 +34,7 @@ class Group {
       name: data['name'] as String? ?? '',
       ownerUid: data['ownerUid'] as String? ?? '',
       memberCount: (data['memberCount'] as num?)?.toInt() ?? 0,
+      isPublic: data['isPublic'] as bool? ?? false,
     );
   }
 
@@ -38,6 +43,7 @@ class Group {
         'name': name,
         'ownerUid': ownerUid,
         'memberCount': memberCount,
+        'isPublic': isPublic,
       };
 
   @override
@@ -48,7 +54,8 @@ class Group {
         other.id == id &&
         other.name == name &&
         other.ownerUid == ownerUid &&
-        other.memberCount == memberCount;
+        other.memberCount == memberCount &&
+        other.isPublic == isPublic;
   }
 
   @override
@@ -56,6 +63,7 @@ class Group {
     return id.hashCode ^
         name.hashCode ^
         ownerUid.hashCode ^
-        memberCount.hashCode;
+        memberCount.hashCode ^
+        isPublic.hashCode;
   }
 }

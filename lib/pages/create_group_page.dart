@@ -7,6 +7,7 @@ import '../models/group.dart';
 import '../models/group_schedule.dart';
 import '../services/group_service.dart';
 import '../services/reference_parser.dart';
+import '../services/schedule_generator.dart';
 import '../widgets/common_styles.dart';
 import 'group_detail_page.dart';
 
@@ -137,119 +138,12 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       );
 
       // 2. Generate Schedule
-      final List<GroupSchedule> scheduleList = [];
-      final allChapters = <String>[];
-      for (final book in _selectedBooks) {
-        final count = ReferenceParser.chapterCount(book) ?? 0;
-        for (int i = 1; i <= count; i++) {
-          allChapters.add('$book $i');
-        }
-      }
-
-      int chapterIndex = 0;
-      DateTime currentDate = _startDate;
-      // Safety break to prevent infinite loops if something goes wrong
-      int safetyLimit = 365 * 5;
-
-      while (chapterIndex < allChapters.length && safetyLimit > 0) {
-        safetyLimit--;
-
-        // Check if today is a reading day
-        if (!_isDaily && (currentDate.weekday == 6 || currentDate.weekday == 7)) {
-           // Skip weekend
-           currentDate = currentDate.add(const Duration(days: 1));
-           continue;
-        }
-
-        // Determine how many chapters for this day
-        // We re-calculate pace remaining dynamically to distribute evenly?
-        // Or just use the fixed average pace?
-        // Let's distribute evenly.
-        // Remaining chapters / Remaining reading days
-        // But "Remaining reading days" is hard to know exactly without iterating to EndDate.
-        // Let's iterate until EndDate.
-
-        // Actually, the user SET the EndDate. So we must fit chapters into that duration.
-        // If we run out of days, we dump the rest on the last day? Or extend?
-        // The design implies "Pace" is calculated.
-
-        // Let's use a simpler approach:
-        // Calculate total reading days between Start and End.
-        int totalReadingDays = 0;
-        DateTime d = _startDate;
-        while (!d.isAfter(_endDate!)) {
-           if (_isDaily || (d.weekday >= 1 && d.weekday <= 5)) {
-             totalReadingDays++;
-           }
-           d = d.add(const Duration(days: 1));
-        }
-
-        if (totalReadingDays == 0) totalReadingDays = 1; // Prevent division by zero
-
-        // Distribute chapters
-        // We can use the 'Bresenham's line algorithm' concept for even distribution
-        // or just simple division.
-        // chaptersPerDay = totalChapters / totalReadingDays.
-        // We can keep a float accumulator.
-
-        final chaptersForToday = <String>[];
-        // However, we are iterating day by day here.
-        // Let's pre-calculate the distribution.
-
-        // This logic is slightly complex to do inside the loop.
-        // Let's restart the distribution logic.
-        break;
-      }
-
-      // Better Distribution Logic
-      DateTime d = _startDate;
-      int readingDaysCount = 0;
-      final readingDays = <DateTime>[];
-      while (!d.isAfter(_endDate!)) {
-         if (_isDaily || (d.weekday >= 1 && d.weekday <= 5)) {
-           readingDays.add(d);
-         }
-         d = d.add(const Duration(days: 1));
-      }
-
-      if (readingDays.isEmpty) {
-        // Fallback: just put everything on start date
-        readingDays.add(_startDate);
-      }
-
-      int totalChapters = allChapters.length;
-      int chaptersAssigned = 0;
-
-      for (int i = 0; i < readingDays.length; i++) {
-        final date = readingDays[i];
-        // Calculate how many chapters for this day
-        // Remaining chapters / Remaining days
-        int remainingDays = readingDays.length - i;
-        int remainingChapters = totalChapters - chaptersAssigned;
-        int count = (remainingChapters / remainingDays).ceil();
-
-        if (count > remainingChapters) count = remainingChapters;
-
-        if (count > 0) {
-          final dailyChapters = allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
-          scheduleList.add(GroupSchedule(date: date, chapters: dailyChapters));
-          chaptersAssigned += count;
-        }
-      }
-
-      // If any chapters remain (shouldn't happen with ceil logic, but safely check), add to last day
-      if (chaptersAssigned < totalChapters && scheduleList.isNotEmpty) {
-        final last = scheduleList.last;
-        final extra = allChapters.sublist(chaptersAssigned);
-        // We need to update the last entry. Firestore set will overwrite, so we just modify the list object locally and push.
-        // Use a new object
-        scheduleList[scheduleList.length - 1] = GroupSchedule(
-          date: last.date,
-          chapters: [...last.chapters, ...extra]
-        );
-      } else if (chaptersAssigned < totalChapters && scheduleList.isEmpty) {
-        // Only happens if readingDays was empty? dealt with above.
-      }
+      final scheduleList = ScheduleGenerator.generateSchedule(
+        books: _selectedBooks,
+        startDate: _startDate,
+        endDate: _endDate!,
+        isDaily: _isDaily,
+      );
 
       // 3. Upload Schedule
       await widget.groupService.updateScheduleBatch(

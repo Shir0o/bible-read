@@ -20,6 +20,7 @@ class RecordingGroupService extends GroupService {
   Future<String> createGroup({
     required String ownerUid,
     required String name,
+    bool isPublic = false,
   }) async {
     if (failCreate) {
       throw FirebaseException(plugin: 'firestore');

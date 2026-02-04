@@ -55,6 +55,7 @@ class GroupService {
   Future<String> createGroup({
     required String ownerUid,
     required String name,
+    bool isPublic = false,
   }) async {
     if (name.trim().isEmpty) {
       throw ArgumentError('Group name cannot be empty');
@@ -65,6 +66,7 @@ class GroupService {
         'name': name.trim(),
         'ownerUid': ownerUid,
         'memberCount': 1,
+        'isPublic': isPublic,
       });
       await doc.collection(GroupCollections.members).doc(ownerUid).set({
         'uid': ownerUid,
@@ -1220,6 +1222,31 @@ class GroupService {
       await _safeLog(e, st);
       rethrow;
     }
+  }
+
+  /// Update the group's public status.
+  Future<void> updateGroupPublicStatus({
+    required String groupId,
+    required bool isPublic,
+  }) async {
+    try {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .set({'isPublic': isPublic}, SetOptions(merge: true));
+    } catch (e, st) {
+      await _safeLog(e, st);
+      rethrow;
+    }
+  }
+
+  /// Remove a member from the group.
+  Future<void> kickMember({
+    required String groupId,
+    required String uid,
+  }) async {
+    // Re-use leaveGroup logic as it handles cleanup.
+    return leaveGroup(groupId: groupId, uid: uid);
   }
 
   /// Permanently delete a group and its subcollections. Only the owner should
