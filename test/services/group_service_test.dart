@@ -653,6 +653,47 @@ void main() {
       );
     });
 
+    test('memberNames falls back to displayName or email when name is missing',
+        () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+
+      // Member 1: Has name in users (Normal case)
+      await firestore.collection('users').doc('u1').set({'name': 'Alice'});
+      await groupRef.collection(GroupCollections.members).doc('m1').set({
+        'uid': 'u1',
+        'role': 'owner',
+      });
+
+      // Member 2: Has displayName in users (Fallback case 1)
+      await firestore.collection('users').doc('u2').set({'displayName': 'Bob'});
+      await groupRef.collection(GroupCollections.members).doc('m2').set({
+        'uid': 'u2',
+        'role': 'member',
+      });
+
+      // Member 3: Has email in users (Fallback case 2)
+      await firestore
+          .collection('users')
+          .doc('u3')
+          .set({'email': 'charlie@test.com'});
+      await groupRef.collection(GroupCollections.members).doc('m3').set({
+        'uid': 'u3',
+        'role': 'member',
+      });
+
+      await expectLater(
+        service.memberNames('g1'),
+        emitsThrough(
+          isA<List<String>>().having(
+            (l) => l.toSet(),
+            'names',
+            {'Alice', 'Bob', 'charlie'},
+          ),
+        ),
+      );
+    });
+
     test('schedule streams list of entries', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
