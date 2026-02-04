@@ -43,22 +43,31 @@ class GroupCard extends StatelessWidget {
                 ? 'No Daily Goal'
                 : 'Daily Goal: Read ${chapters.length} ${chapters.length == 1 ? "Chapter" : "Chapters"}';
 
-            return GestureDetector(
-              onTap: onTap,
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.1),
+            return Semantics(
+              label:
+                  'Group ${group.name}, $readingText, ${(groupCompletion * 100).toInt()}% complete',
+              button: true,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Material(
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    side: BorderSide(
+                      color:
+                          colorScheme.outlineVariant.withValues(alpha: 0.1),
+                    ),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: onTap,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -137,7 +146,10 @@ class GroupCard extends StatelessWidget {
                         _buildMemberStack(context, members),
                       ],
                     ),
-                  ],
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             );
