@@ -59,9 +59,18 @@ void main() {
         name: 'Test',
         ownerUid: 'u1',
         memberCount: 5,
+        isPublic: true,
       );
       final map = group.toFirestore();
-      expect(map, {'name': 'Test', 'ownerUid': 'u1', 'memberCount': 5});
+      expect(
+        map,
+        {
+          'name': 'Test',
+          'ownerUid': 'u1',
+          'memberCount': 5,
+          'isPublic': true,
+        },
+      );
     });
   });
 }
