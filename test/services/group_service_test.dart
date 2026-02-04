@@ -76,6 +76,7 @@ void main() {
         'name': 'Test',
         'ownerUid': 'u1',
         'memberCount': 1,
+        'isPublic': false,
       });
 
       final member = await firestore
