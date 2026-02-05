@@ -1256,43 +1256,43 @@ class GroupService {
 
       // Delete members
       final members = await groupRef.collection(GroupCollections.members).get();
-      for (final doc in members.docs) {
+      await Future.wait(members.docs.map((doc) async {
         try {
           await doc.reference.delete();
         } catch (_) {}
-      }
+      }));
 
       // Delete schedule
       final sched = await groupRef.collection(GroupCollections.schedule).get();
-      for (final doc in sched.docs) {
+      await Future.wait(sched.docs.map((doc) async {
         try {
           await doc.reference.delete();
         } catch (_) {}
-      }
+      }));
 
       // Delete join requests
       final requests =
           await groupRef.collection(GroupCollections.joinRequests).get();
-      for (final doc in requests.docs) {
+      await Future.wait(requests.docs.map((doc) async {
         try {
           await doc.reference.delete();
         } catch (_) {}
-      }
+      }));
 
       // Delete progress entries (progress/{dateId}/entries/* and date docs)
       final progressDates = await groupRef.collection('progress').get();
-      for (final dateDoc in progressDates.docs) {
+      await Future.wait(progressDates.docs.map((dateDoc) async {
         try {
           final entries = await dateDoc.reference.collection('entries').get();
-          for (final entry in entries.docs) {
+          await Future.wait(entries.docs.map((entry) async {
             try {
               await entry.reference.delete();
             } catch (_) {}
-          }
+          }));
           // Delete the date document itself
           await dateDoc.reference.delete();
         } catch (_) {}
-      }
+      }));
 
       // Finally delete the group document
       await groupRef.delete();
@@ -1372,7 +1372,7 @@ class GroupService {
 
       if (repairFutures.isNotEmpty) {
         final repairedCounts = await Future.wait(repairFutures);
-        total += repairedCounts.fold(0, (sum, c) => sum + c);
+        total += repairedCounts.fold(0, (acc, c) => acc + c);
       }
 
       final summaryRef = groupRef
