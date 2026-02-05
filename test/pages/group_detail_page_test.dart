@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/models/group.dart';
-import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/pages/group_detail_page.dart';
 import 'package:bible_read/pages/edit_group_page.dart';
 import 'package:bible_read/services/achievement_service.dart';
@@ -106,7 +105,8 @@ void main() {
     await pumpUntilSettled(tester);
   }
 
-  testWidgets('tapping Edit navigates to EditGroupPage for admins', (tester) async {
+  testWidgets('tapping Edit navigates to EditGroupPage for admins',
+      (tester) async {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     await firestore
         .collection('groups')

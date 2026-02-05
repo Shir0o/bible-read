@@ -15,7 +15,7 @@ class FriendlyStreakView extends StatefulWidget {
   final FirebaseAuth auth;
   final FriendlyStreakService friendlyStreakService;
 
-  FriendlyStreakView({
+  const FriendlyStreakView({
     super.key,
     required this.firestore,
     required this.auth,

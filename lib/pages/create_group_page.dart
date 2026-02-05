@@ -80,7 +80,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
 
   Future<void> _selectDate(bool isStart) async {
     final initialDate = isStart ? _startDate : (_endDate ?? _startDate);
-    final firstDate = isStart ? DateTime.now().subtract(const Duration(days: 365)) : _startDate;
+    final firstDate = isStart
+        ? DateTime.now().subtract(const Duration(days: 365))
+        : _startDate;
     final picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -123,7 +125,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     try {
       // 1. Create Group
       // Generate a name like "Genesis, Exodus Plan"
-      String name = "Reading Plan";
+      String name = 'Reading Plan';
       if (_selectedBooks.isNotEmpty) {
         if (_selectedBooks.length <= 2) {
           name = "${_selectedBooks.join(', ')} Plan";
@@ -172,7 +174,6 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
           ),
         ),
       );
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -233,27 +234,30 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                           return const Iterable<String>.empty();
                         }
                         return ReferenceParser.allBooks.where((String option) {
-                          return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                          return option
+                              .toLowerCase()
+                              .contains(textEditingValue.text.toLowerCase());
                         });
                       },
                       onSelected: (String selection) {
                         _addBook(selection);
                       },
-                      fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
-                         return TextField(
-                           controller: controller,
-                           focusNode: focusNode,
-                           onEditingComplete: onEditingComplete,
-                           decoration: InputDecoration(
-                             hintText: 'Search for a book...',
-                             prefixIcon: const Icon(Icons.search),
-                             border: OutlineInputBorder(
-                               borderRadius: BorderRadius.circular(16),
-                             ),
-                             filled: true,
-                             fillColor: colorScheme.surfaceContainerHighest,
-                           ),
-                         );
+                      fieldViewBuilder:
+                          (context, controller, focusNode, onEditingComplete) {
+                        return TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          onEditingComplete: onEditingComplete,
+                          decoration: InputDecoration(
+                            hintText: 'Search for a book...',
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            filled: true,
+                            fillColor: colorScheme.surfaceContainerHighest,
+                          ),
+                        );
                       },
                       optionsViewBuilder: (context, onSelected, options) {
                         return Align(
@@ -262,13 +266,16 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                             elevation: 4,
                             borderRadius: BorderRadius.circular(8),
                             child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxHeight: 200, maxWidth: 300), // Approximate width
+                              constraints: const BoxConstraints(
+                                  maxHeight: 200,
+                                  maxWidth: 300), // Approximate width
                               child: ListView.builder(
                                 padding: EdgeInsets.zero,
                                 shrinkWrap: true,
                                 itemCount: options.length,
                                 itemBuilder: (BuildContext context, int index) {
-                                  final String option = options.elementAt(index);
+                                  final String option =
+                                      options.elementAt(index);
                                   return InkWell(
                                     onTap: () {
                                       onSelected(option);
@@ -298,7 +305,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                           selectedColor: colorScheme.primary,
                           labelStyle: TextStyle(color: colorScheme.onPrimary),
                           onDeleted: () => _removeBook(book),
-                          deleteIconColor: colorScheme.onPrimary.withOpacity(0.8),
+                          deleteIconColor:
+                              colorScheme.onPrimary.withOpacity(0.8),
                           checkmarkColor: colorScheme.onPrimary,
                         );
                       }).toList(),
@@ -313,13 +321,16 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.info_outline, color: colorScheme.primary),
+                            Icon(Icons.info_outline,
+                                color: colorScheme.primary),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text.rich(
                                 TextSpan(
-                                  text: 'This selection contains approximately ',
-                                  style: TextStyle(color: colorScheme.onSurface),
+                                  text:
+                                      'This selection contains approximately ',
+                                  style:
+                                      TextStyle(color: colorScheme.onSurface),
                                   children: [
                                     TextSpan(
                                       text: '$_totalChapters chapters',
@@ -352,7 +363,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Set your start and end dates.",
+                      'Set your start and end dates.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -371,7 +382,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                                 suffixIcon: Icon(Icons.calendar_today),
                               ),
                               child: Text(
-                                "${_startDate.month}/${_startDate.day}/${_startDate.year}",
+                                '${_startDate.month}/${_startDate.day}/${_startDate.year}',
                               ),
                             ),
                           ),
@@ -389,7 +400,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                               child: Text(
                                 _endDate == null
                                     ? 'mm/dd/yyyy'
-                                    : "${_endDate!.month}/${_endDate!.day}/${_endDate!.year}",
+                                    : '${_endDate!.month}/${_endDate!.day}/${_endDate!.year}',
                               ),
                             ),
                           ),
@@ -399,15 +410,21 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                     const SizedBox(height: 16),
                     Text(
                       'Frequency',
-                      style: theme.textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(color: colorScheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 8),
                     // Frequency Options
                     Container(
                       decoration: BoxDecoration(
-                        border: _isDaily ? Border.all(color: colorScheme.primary) : Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                        border: _isDaily
+                            ? Border.all(color: colorScheme.primary)
+                            : Border.all(
+                                color: colorScheme.outline.withOpacity(0.3)),
                         borderRadius: BorderRadius.circular(12),
-                        color: _isDaily ? colorScheme.primaryContainer.withOpacity(0.4) : null,
+                        color: _isDaily
+                            ? colorScheme.primaryContainer.withOpacity(0.4)
+                            : null,
                       ),
                       child: RadioListTile<bool>(
                         value: true,
@@ -415,17 +432,27 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         onChanged: (val) => setState(() => _isDaily = val!),
                         title: const Text('Daily'),
                         subtitle: const Text('Every single day'),
-                        secondary: Icon(Icons.calendar_view_day, color: _isDaily ? colorScheme.primary : colorScheme.onSurfaceVariant),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        secondary: Icon(Icons.calendar_view_day,
+                            color: _isDaily
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Container(
                       decoration: BoxDecoration(
-                        border: !_isDaily ? Border.all(color: colorScheme.primary) : Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                        border: !_isDaily
+                            ? Border.all(color: colorScheme.primary)
+                            : Border.all(
+                                color: colorScheme.outline.withOpacity(0.3)),
                         borderRadius: BorderRadius.circular(12),
-                        color: !_isDaily ? colorScheme.primaryContainer.withOpacity(0.4) : null,
+                        color: !_isDaily
+                            ? colorScheme.primaryContainer.withOpacity(0.4)
+                            : null,
                       ),
                       child: RadioListTile<bool>(
                         value: false,
@@ -433,20 +460,27 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         onChanged: (val) => setState(() => _isDaily = val!),
                         title: const Text('Weekdays'),
                         subtitle: const Text('Mon - Fri only'),
-                        secondary: Icon(Icons.date_range, color: !_isDaily ? colorScheme.primary : colorScheme.onSurfaceVariant),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        secondary: Icon(Icons.date_range,
+                            color: !_isDaily
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                     const SizedBox(height: 16),
                     if (_endDate != null)
                       Row(
                         children: [
-                          Icon(Icons.speed, size: 16, color: colorScheme.secondary),
+                          Icon(Icons.speed,
+                              size: 16, color: colorScheme.secondary),
                           const SizedBox(width: 4),
                           Text(
                             'Pace: ~${_pace.toStringAsFixed(1)} chapters / day',
-                            style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.secondary),
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: colorScheme.secondary),
                           ),
                         ],
                       ),
@@ -470,7 +504,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                               ),
                             ),
                             Text(
-                              "Invite your reading group.",
+                              'Invite your reading group.',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                               ),
@@ -479,9 +513,11 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         ),
                         FilledButton.icon(
                           onPressed: () {
-                             ScaffoldMessenger.of(context).showSnackBar(
-                               const SnackBar(content: Text('Link copied to clipboard (simulation)')),
-                             );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Link copied to clipboard (simulation)')),
+                            );
                           },
                           icon: const Icon(Icons.link, size: 18),
                           label: const Text('Copy Link'),
@@ -498,7 +534,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                       decoration: InputDecoration(
                         hintText: 'Find people...',
                         prefixIcon: const Icon(Icons.person_search),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30)),
                         filled: true,
                         fillColor: colorScheme.surface,
                       ),
@@ -508,14 +545,14 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                         onPressed: () {},
-                         icon: const Icon(Icons.contact_page),
-                         label: const Text('Invite from Contacts'),
-                         style: FilledButton.styleFrom(
-                            backgroundColor: colorScheme.primaryContainer,
-                            foregroundColor: colorScheme.onPrimaryContainer,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                         ),
+                        onPressed: () {},
+                        icon: const Icon(Icons.contact_page),
+                        label: const Text('Invite from Contacts'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colorScheme.primaryContainer,
+                          foregroundColor: colorScheme.onPrimaryContainer,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -542,15 +579,19 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                 child: FilledButton.icon(
                   onPressed: _isCreating ? null : _createSchedule,
                   icon: _isCreating
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.add),
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.add),
                   label: Text(_isCreating ? 'Creating...' : 'Create Schedule'),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    textStyle: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

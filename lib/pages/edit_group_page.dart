@@ -45,7 +45,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
   late DateTime _startDate;
   DateTime? _endDate;
   bool _isDaily = true;
-  late DateTime _originalStartDate; // To check if start date is manipulated (though disabled)
+  late DateTime
+      _originalStartDate; // To check if start date is manipulated (though disabled)
 
   // Settings State
   late bool _isPublic;
@@ -68,7 +69,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
   Future<void> _loadData() async {
     try {
       // Load Schedule to determine plan
-      final schedule = await widget.groupService.schedule(widget.group.id).first;
+      final schedule =
+          await widget.groupService.schedule(widget.group.id).first;
 
       if (schedule.isNotEmpty) {
         _startDate = schedule.first.date;
@@ -78,10 +80,10 @@ class _EditGroupPageState extends State<EditGroupPage> {
         // Infer books
         final books = <String>{};
         for (final s in schedule) {
-           for (final chap in s.chapters) {
-             final book = ReferenceParser.parseBook(chap);
-             if (book != null) books.add(book);
-           }
+          for (final chap in s.chapters) {
+            final book = ReferenceParser.parseBook(chap);
+            if (book != null) books.add(book);
+          }
         }
         _selectedBooks.addAll(books);
 
@@ -90,7 +92,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
         // Or check if any weekend exists.
         bool hasWeekend = false;
         for (final s in schedule) {
-          if (s.date.weekday == DateTime.saturday || s.date.weekday == DateTime.sunday) {
+          if (s.date.weekday == DateTime.saturday ||
+              s.date.weekday == DateTime.sunday) {
             hasWeekend = true;
             break;
           }
@@ -117,7 +120,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
       setState(() {
         _isLoading = false;
       });
-
     } catch (e, st) {
       if (mounted) {
         ErrorLogger.log(e, st);
@@ -211,14 +213,18 @@ class _EditGroupPageState extends State<EditGroupPage> {
       // For now, we will just use updateScheduleBatch. Stale days (e.g. if we shortened the plan) will remain.
       // Ideally, we should fetch existing schedule again, identify dates NOT in new schedule, and delete them.
 
-      final currentSchedule = await widget.groupService.schedule(widget.group.id).first;
-      final newDateKeys = newSchedule.map((s) => '${s.date.year}-${s.date.month}-${s.date.day}').toSet();
+      final currentSchedule =
+          await widget.groupService.schedule(widget.group.id).first;
+      final newDateKeys = newSchedule
+          .map((s) => '${s.date.year}-${s.date.month}-${s.date.day}')
+          .toSet();
 
       // Find dates to delete (dates in current but not in new)
       for (final s in currentSchedule) {
         final key = '${s.date.year}-${s.date.month}-${s.date.day}';
         if (!newDateKeys.contains(key)) {
-          await widget.groupService.deleteSchedule(groupId: widget.group.id, date: s.date);
+          await widget.groupService
+              .deleteSchedule(groupId: widget.group.id, date: s.date);
         }
       }
 
@@ -241,7 +247,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
         );
         Navigator.pop(context);
       }
-
     } catch (e, st) {
       ErrorLogger.log(e, st);
       if (mounted) {
@@ -392,7 +397,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Modify the books in your plan.",
+                      'Modify the books in your plan.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -406,11 +411,14 @@ class _EditGroupPageState extends State<EditGroupPage> {
                           return const Iterable<String>.empty();
                         }
                         return ReferenceParser.allBooks.where((String option) {
-                          return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                          return option
+                              .toLowerCase()
+                              .contains(textEditingValue.text.toLowerCase());
                         });
                       },
                       onSelected: _addBook,
-                      fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+                      fieldViewBuilder:
+                          (context, controller, focusNode, onEditingComplete) {
                         return TextField(
                           controller: controller,
                           focusNode: focusNode,
@@ -433,13 +441,15 @@ class _EditGroupPageState extends State<EditGroupPage> {
                             elevation: 4,
                             borderRadius: BorderRadius.circular(8),
                             child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxHeight: 200, maxWidth: 300),
+                              constraints: const BoxConstraints(
+                                  maxHeight: 200, maxWidth: 300),
                               child: ListView.builder(
                                 padding: EdgeInsets.zero,
                                 shrinkWrap: true,
                                 itemCount: options.length,
                                 itemBuilder: (BuildContext context, int index) {
-                                  final String option = options.elementAt(index);
+                                  final String option =
+                                      options.elementAt(index);
                                   return InkWell(
                                     onTap: () => onSelected(option),
                                     child: Padding(
@@ -467,9 +477,11 @@ class _EditGroupPageState extends State<EditGroupPage> {
                           selectedColor: colorScheme.primary,
                           labelStyle: TextStyle(color: colorScheme.onPrimary),
                           onDeleted: () => _removeBook(book),
-                          deleteIconColor: colorScheme.onPrimary.withOpacity(0.8),
+                          deleteIconColor:
+                              colorScheme.onPrimary.withOpacity(0.8),
                           checkmarkColor: colorScheme.onPrimary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
                         );
                       }).toList(),
                     ),
@@ -484,13 +496,16 @@ class _EditGroupPageState extends State<EditGroupPage> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.info_outline, color: colorScheme.primary),
+                            Icon(Icons.info_outline,
+                                color: colorScheme.primary),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text.rich(
                                 TextSpan(
-                                  text: 'This selection contains approximately ',
-                                  style: TextStyle(color: colorScheme.onSurface),
+                                  text:
+                                      'This selection contains approximately ',
+                                  style:
+                                      TextStyle(color: colorScheme.onSurface),
                                   children: [
                                     TextSpan(
                                       text: '$_totalChapters chapters',
@@ -523,7 +538,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Adjust your schedule dates.",
+                      'Adjust your schedule dates.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -539,7 +554,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
                               decoration: const InputDecoration(
                                 labelText: 'Start',
                                 border: OutlineInputBorder(),
-                                enabled: false, // Visual only, interaction blocked by not having onTap
+                                enabled:
+                                    false, // Visual only, interaction blocked by not having onTap
                               ),
                               child: Text(
                                 "${_startDate.year}-${_startDate.month.toString().padLeft(2, '0')}-${_startDate.day.toString().padLeft(2, '0')}",
@@ -569,13 +585,19 @@ class _EditGroupPageState extends State<EditGroupPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    const Text('Frequency', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text('Frequency',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Container(
                       decoration: BoxDecoration(
-                        border: _isDaily ? Border.all(color: colorScheme.primary) : Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                        border: _isDaily
+                            ? Border.all(color: colorScheme.primary)
+                            : Border.all(
+                                color: colorScheme.outline.withOpacity(0.3)),
                         borderRadius: BorderRadius.circular(12),
-                        color: _isDaily ? colorScheme.primaryContainer.withOpacity(0.4) : null,
+                        color: _isDaily
+                            ? colorScheme.primaryContainer.withOpacity(0.4)
+                            : null,
                       ),
                       child: RadioListTile<bool>(
                         value: true,
@@ -583,17 +605,27 @@ class _EditGroupPageState extends State<EditGroupPage> {
                         onChanged: (val) => setState(() => _isDaily = val!),
                         title: const Text('Daily'),
                         subtitle: const Text('Every single day'),
-                        secondary: Icon(Icons.calendar_view_day, color: _isDaily ? colorScheme.primary : colorScheme.onSurfaceVariant),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        secondary: Icon(Icons.calendar_view_day,
+                            color: _isDaily
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Container(
                       decoration: BoxDecoration(
-                        border: !_isDaily ? Border.all(color: colorScheme.primary) : Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                        border: !_isDaily
+                            ? Border.all(color: colorScheme.primary)
+                            : Border.all(
+                                color: colorScheme.outline.withOpacity(0.3)),
                         borderRadius: BorderRadius.circular(12),
-                        color: !_isDaily ? colorScheme.primaryContainer.withOpacity(0.4) : null,
+                        color: !_isDaily
+                            ? colorScheme.primaryContainer.withOpacity(0.4)
+                            : null,
                       ),
                       child: RadioListTile<bool>(
                         value: false,
@@ -601,9 +633,14 @@ class _EditGroupPageState extends State<EditGroupPage> {
                         onChanged: (val) => setState(() => _isDaily = val!),
                         title: const Text('Weekdays'),
                         subtitle: const Text('Mon - Fri only'),
-                        secondary: Icon(Icons.date_range, color: !_isDaily ? colorScheme.primary : colorScheme.onSurfaceVariant),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        secondary: Icon(Icons.date_range,
+                            color: !_isDaily
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
 
@@ -626,7 +663,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                               ),
                             ),
                             Text(
-                              "Manage group participants.",
+                              'Manage group participants.',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                               ),
@@ -640,7 +677,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
                           style: FilledButton.styleFrom(
                             backgroundColor: colorScheme.primaryContainer,
                             foregroundColor: colorScheme.onPrimaryContainer,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                           ),
                         ),
                       ],
@@ -658,47 +696,67 @@ class _EditGroupPageState extends State<EditGroupPage> {
                         itemBuilder: (context, index) {
                           final member = _members[index];
                           final isMe = member.uid == user?.uid;
-                          final isMemberOwner = member.uid == widget.group.ownerUid;
+                          final isMemberOwner =
+                              member.uid == widget.group.ownerUid;
                           // In our simplified logic, owner is admin.
                           final role = isMemberOwner ? 'Group Owner' : 'Member';
 
                           return Container(
                             decoration: BoxDecoration(
                               color: colorScheme.surface,
-                              border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
-                              borderRadius: BorderRadius.circular(50), // pill shape
+                              border: Border.all(
+                                  color: colorScheme.outlineVariant
+                                      .withOpacity(0.5)),
+                              borderRadius:
+                                  BorderRadius.circular(50), // pill shape
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 8),
                             child: Row(
                               children: [
                                 CircleAvatar(
                                   radius: 20,
-                                  backgroundColor: colorScheme.tertiaryContainer,
+                                  backgroundColor:
+                                      colorScheme.tertiaryContainer,
                                   backgroundImage: member.photoUrl != null
-                                    ? CachedNetworkImageProvider(member.photoUrl!)
-                                    : null,
+                                      ? CachedNetworkImageProvider(
+                                          member.photoUrl!)
+                                      : null,
                                   child: member.photoUrl == null
-                                    ? Text(
-                                        member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
-                                        style: TextStyle(color: colorScheme.onTertiaryContainer),
-                                      )
-                                    : null,
+                                      ? Text(
+                                          member.name.isNotEmpty
+                                              ? member.name[0].toUpperCase()
+                                              : '?',
+                                          style: TextStyle(
+                                              color: colorScheme
+                                                  .onTertiaryContainer),
+                                        )
+                                      : null,
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text(member.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                                      Text(role, style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                                      Text(member.name,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w500)),
+                                      Text(role,
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: colorScheme
+                                                  .onSurfaceVariant)),
                                     ],
                                   ),
                                 ),
                                 if (isOwner && !isMe)
                                   IconButton(
-                                    icon: const Icon(Icons.remove_circle_outline),
+                                    icon:
+                                        const Icon(Icons.remove_circle_outline),
                                     color: colorScheme.onSurfaceVariant,
-                                    onPressed: () => _kickMember(member.uid, member.name),
+                                    onPressed: () =>
+                                        _kickMember(member.uid, member.name),
                                   ),
                               ],
                             ),
@@ -720,7 +778,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Visibility and archival options.",
+                      'Visibility and archival options.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -731,7 +789,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: colorScheme.surface,
-                        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
+                        border: Border.all(
+                            color: colorScheme.outlineVariant.withOpacity(0.5)),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
@@ -742,11 +801,15 @@ class _EditGroupPageState extends State<EditGroupPage> {
                               children: [
                                 const Text(
                                   'Public Group',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500),
                                 ),
                                 Text(
                                   'Visible in community search results',
-                                  style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      color: colorScheme.onSurfaceVariant),
                                 ),
                               ],
                             ),
@@ -769,9 +832,11 @@ class _EditGroupPageState extends State<EditGroupPage> {
                           label: const Text('Archive Group'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: colorScheme.error,
-                            side: BorderSide(color: colorScheme.error.withOpacity(0.5)),
+                            side: BorderSide(
+                                color: colorScheme.error.withOpacity(0.5)),
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
                           ),
                         ),
                       ),
@@ -800,15 +865,19 @@ class _EditGroupPageState extends State<EditGroupPage> {
                 child: FilledButton.icon(
                   onPressed: _isSaving ? null : _saveChanges,
                   icon: _isSaving
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.save),
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.save),
                   label: Text(_isSaving ? 'Saving...' : 'Save Changes'),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    textStyle: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

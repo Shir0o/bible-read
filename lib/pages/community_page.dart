@@ -9,7 +9,7 @@ import '../models/group.dart';
 import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../models/read_log.dart';
-import '../models/reading_plan.dart'; // Kept for compatibility if needed, though mostly replaced
+// Kept for compatibility if needed, though mostly replaced
 import '../services/error_logger.dart';
 import '../services/friend_service.dart';
 import '../services/group_service.dart';
@@ -463,8 +463,8 @@ class _CommunityPageState extends State<CommunityPage> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.1)),
+        border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.1)),
       ),
       padding: const EdgeInsets.all(24),
       alignment: Alignment.center,
@@ -512,8 +512,8 @@ class _GroupProgressCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.1)),
+        border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -542,88 +542,96 @@ class _GroupProgressCard extends StatelessWidget {
 
                     if (members.isEmpty) {
                       return Container(
-                         decoration: BoxDecoration(
-                           color: colorScheme.surfaceContainer,
-                           borderRadius: BorderRadius.circular(16),
-                         ),
-                         child: Icon(Icons.groups, color: colorScheme.primary),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainer,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Icon(Icons.groups, color: colorScheme.primary),
                       );
                     }
 
                     return Stack(
                       children: [
                         // Background card effect
-                         Positioned.fill(
-                           child: Transform.rotate(
-                             angle: 0.1,
-                             child: Container(
-                               decoration: BoxDecoration(
-                                 color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                                 borderRadius: BorderRadius.circular(16),
-                               ),
-                             ),
-                           ),
-                         ),
-                         Container(
-                           decoration: BoxDecoration(
-                             color: colorScheme.surfaceContainerLow,
-                             borderRadius: BorderRadius.circular(16),
-                             border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                           ),
-                           padding: const EdgeInsets.all(8),
-                           child: GridView.builder(
-                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                               crossAxisCount: 2,
-                               crossAxisSpacing: 4,
-                               mainAxisSpacing: 4,
-                             ),
-                             itemCount: displayMembers.length > 4 ? 4 : displayMembers.length,
-                             physics: const NeverScrollableScrollPhysics(),
-                             itemBuilder: (context, index) {
-                               if (index == 3 && extraCount > 0) {
-                                 return Container(
-                                   decoration: BoxDecoration(
-                                     color: colorScheme.primaryContainer,
-                                     shape: BoxShape.circle,
-                                   ),
-                                   alignment: Alignment.center,
-                                   child: Text(
-                                     '+$extraCount',
-                                     style: TextStyle(
-                                       fontSize: 10,
-                                       fontWeight: FontWeight.bold,
-                                       color: colorScheme.onPrimaryContainer,
-                                     ),
-                                   ),
-                                 );
-                               }
-                               final m = displayMembers[index];
-                               return Container(
-                                 decoration: BoxDecoration(
-                                   shape: BoxShape.circle,
-                                   image: m.photoUrl != null
-                                       ? DecorationImage(
-                                           image: CachedNetworkImageProvider(m.photoUrl!),
-                                           fit: BoxFit.cover,
-                                         )
-                                       : null,
-                                   color: colorScheme.surfaceContainerHighest,
-                                 ),
-                                 alignment: Alignment.center,
-                                 child: m.photoUrl == null
-                                     ? Text(
-                                         m.name.isNotEmpty ? m.name[0].toUpperCase() : '?',
-                                         style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: colorScheme.onSurfaceVariant,
-                                         ),
-                                       )
-                                     : null,
-                               );
-                             },
-                           ),
-                         ),
+                        Positioned.fill(
+                          child: Transform.rotate(
+                            angle: 0.1,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest
+                                    .withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1)),
+                          ),
+                          padding: const EdgeInsets.all(8),
+                          child: GridView.builder(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 4,
+                              mainAxisSpacing: 4,
+                            ),
+                            itemCount: displayMembers.length > 4
+                                ? 4
+                                : displayMembers.length,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemBuilder: (context, index) {
+                              if (index == 3 && extraCount > 0) {
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primaryContainer,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '+$extraCount',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                );
+                              }
+                              final m = displayMembers[index];
+                              return Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  image: m.photoUrl != null
+                                      ? DecorationImage(
+                                          image: CachedNetworkImageProvider(
+                                              m.photoUrl!),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null,
+                                  color: colorScheme.surfaceContainerHighest,
+                                ),
+                                alignment: Alignment.center,
+                                child: m.photoUrl == null
+                                    ? Text(
+                                        m.name.isNotEmpty
+                                            ? m.name[0].toUpperCase()
+                                            : '?',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      )
+                                    : null,
+                              );
+                            },
+                          ),
+                        ),
                       ],
                     );
                   },
@@ -644,13 +652,14 @@ class _GroupProgressCard extends StatelessWidget {
 
                     if (schedule.isNotEmpty) {
                       // Find index of today or next upcoming
-                      final index = schedule.indexWhere((s) => !s.date.isBefore(today));
+                      final index =
+                          schedule.indexWhere((s) => !s.date.isBefore(today));
                       if (index != -1) {
-                         if (schedule[index].date.isAtSameMomentAs(today)) {
-                           currentDay = index + 1;
-                         } else {
-                           currentDay = index + 1; // Upcoming
-                         }
+                        if (schedule[index].date.isAtSameMomentAs(today)) {
+                          currentDay = index + 1;
+                        } else {
+                          currentDay = index + 1; // Upcoming
+                        }
                       } else {
                         // All in past
                         currentDay = totalDays;
@@ -670,7 +679,8 @@ class _GroupProgressCard extends StatelessWidget {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                 color: colorScheme.secondaryContainer,
                                 borderRadius: BorderRadius.circular(4),
@@ -696,12 +706,14 @@ class _GroupProgressCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         StreamBuilder<List<GroupMemberProgressData>>(
-                          stream: groupService.memberOverallCompletion(group.id, includeUid: user.uid),
+                          stream: groupService.memberOverallCompletion(group.id,
+                              includeUid: user.uid),
                           builder: (context, progressSnap) {
                             final members = progressSnap.data ?? [];
                             final myProgress = members.firstWhere(
                               (m) => m.uid == user.uid,
-                              orElse: () => GroupMemberProgressData(uid: '', name: '', completion: 0.0),
+                              orElse: () => GroupMemberProgressData(
+                                  uid: '', name: '', completion: 0.0),
                             );
                             final percent = myProgress.completion;
 
@@ -709,7 +721,8 @@ class _GroupProgressCard extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       '${(percent * 100).toInt()}% of Schedule',
@@ -727,8 +740,10 @@ class _GroupProgressCard extends StatelessWidget {
                                   child: LinearProgressIndicator(
                                     value: percent,
                                     minHeight: 8,
-                                    backgroundColor: colorScheme.surfaceContainerHighest,
-                                    valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                                    backgroundColor:
+                                        colorScheme.surfaceContainerHighest,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        colorScheme.primary),
                                   ),
                                 ),
                               ],
@@ -765,7 +780,8 @@ class _GroupProgressCard extends StatelessWidget {
                 backgroundColor: colorScheme.secondaryContainer,
                 foregroundColor: colorScheme.onSecondaryContainer,
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 textStyle: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
@@ -802,8 +818,8 @@ class _ActivityItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.1)),
+        border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.1)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -833,14 +849,18 @@ class _ActivityItem extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: isComment ? colorScheme.tertiary : colorScheme.primary,
+                    color:
+                        isComment ? colorScheme.tertiary : colorScheme.primary,
                     shape: BoxShape.circle,
-                    border: Border.all(color: colorScheme.surfaceContainer, width: 2),
+                    border: Border.all(
+                        color: colorScheme.surfaceContainer, width: 2),
                   ),
                   child: Icon(
                     isComment ? Icons.chat_bubble : Icons.check,
                     size: 10,
-                    color: isComment ? colorScheme.onTertiary : colorScheme.onPrimary,
+                    color: isComment
+                        ? colorScheme.onTertiary
+                        : colorScheme.onPrimary,
                   ),
                 ),
               ),
@@ -862,7 +882,8 @@ class _ActivityItem extends StatelessWidget {
                       if (isComment) ...[
                         const TextSpan(text: ' commented on '),
                         TextSpan(
-                            text: 'daily reading', // Placeholder since we don't have book ref
+                            text:
+                                'daily reading', // Placeholder since we don't have book ref
                             style: TextStyle(
                                 color: colorScheme.primary,
                                 fontWeight: FontWeight.w600)),
@@ -882,11 +903,12 @@ class _ActivityItem extends StatelessWidget {
                     margin: const EdgeInsets.only(top: 8),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color:
-                          colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      color: colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: colorScheme.outlineVariant.withValues(alpha: 0.1)),
+                          color: colorScheme.outlineVariant
+                              .withValues(alpha: 0.1)),
                     ),
                     child: Text(
                       '"${log.comments.last.message}"',

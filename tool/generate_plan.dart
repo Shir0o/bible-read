@@ -191,13 +191,13 @@ void main() {
   }
 
   final plan = {
-    "id": "bible_in_a_year_4_1",
-    "title": "Bible in a Year (4 OT, 1 NT)",
-    "description":
-        "Read through the entire Bible with 4 Old Testament chapters and 1 New Testament chapter daily.",
-    "durationDays": schedule.length,
-    "tags": ["Full Bible", "Yearly", "4 OT + 1 NT"],
-    "schedule": schedule,
+    'id': 'bible_in_a_year_4_1',
+    'title': 'Bible in a Year (4 OT, 1 NT)',
+    'description':
+        'Read through the entire Bible with 4 Old Testament chapters and 1 New Testament chapter daily.',
+    'durationDays': schedule.length,
+    'tags': ['Full Bible', 'Yearly', '4 OT + 1 NT'],
+    'schedule': schedule,
   };
 
   File('assets/plans/sample_plans.json').writeAsStringSync(jsonEncode([plan]));

@@ -1,4 +1,3 @@
-import 'package:bible_read/models/group.dart';
 import 'package:bible_read/pages/community_page.dart';
 import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/group_service.dart';
@@ -29,14 +28,16 @@ void main() {
   setUp(() {
     firestore = FakeFirebaseFirestore();
     auth = MockFirebaseAuth(
-      mockUser: MockUser(uid: 'u1', displayName: 'Test User', photoURL: 'http://photo.url'),
+      mockUser: MockUser(
+          uid: 'u1', displayName: 'Test User', photoURL: 'http://photo.url'),
       signedIn: true,
     );
     vibration = _RecordingVibrationService();
     groupService = GroupService(firestore: firestore);
     friendService = FriendService(firestore: firestore);
     readingPlanService = ReadingPlanService(firestore: firestore);
-    readingStatusService = ReadingStatusService(firestore: firestore, auth: auth);
+    readingStatusService =
+        ReadingStatusService(firestore: firestore, auth: auth);
   });
 
   Future<void> pumpPage(WidgetTester tester) async {
@@ -50,8 +51,10 @@ void main() {
           readingPlanService: readingPlanService,
           readingStatusService: readingStatusService,
           vibrationService: vibration,
-          onSendLikeNotification: ({required ownerUid, required likerName}) async {},
-          onSendCommentNotification: ({required ownerUid, required commenterName}) async {},
+          onSendLikeNotification: (
+              {required ownerUid, required likerName}) async {},
+          onSendCommentNotification: (
+              {required ownerUid, required commenterName}) async {},
           dateProvider: () => DateTime(2024, 1, 1),
         ),
       ),
@@ -94,7 +97,12 @@ void main() {
       'name': 'Test User',
     });
     // Setup schedule
-    await firestore.collection('groups').doc('g1').collection('schedule').doc('2024-01-01').set({
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('schedule')
+        .doc('2024-01-01')
+        .set({
       'date': Timestamp.fromDate(DateTime(2024, 1, 1)),
       'chapters': ['Gen 1'],
     });
@@ -108,18 +116,33 @@ void main() {
 
   testWidgets('renders friends activity including self', (tester) async {
     // Setup friend
-    await firestore.collection('users').doc('u1').collection('friends').doc('f1').set({
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('friends')
+        .doc('f1')
+        .set({
       'uid': 'f1',
       'status': 'accepted',
     });
 
     // Setup logs
     final dateKey = '2024-01-01';
-    await firestore.collection('read_logs').doc(dateKey).collection('entries').doc('u1').set({
+    await firestore
+        .collection('read_logs')
+        .doc(dateKey)
+        .collection('entries')
+        .doc('u1')
+        .set({
       'name': 'Test',
       'timestamp': Timestamp.now(),
     });
-    await firestore.collection('read_logs').doc(dateKey).collection('entries').doc('f1').set({
+    await firestore
+        .collection('read_logs')
+        .doc(dateKey)
+        .collection('entries')
+        .doc('f1')
+        .set({
       'name': 'Friend',
       'timestamp': Timestamp.now(),
     });
@@ -135,11 +158,22 @@ void main() {
 
   testWidgets('renders commented activity', (tester) async {
     final dateKey = '2024-01-01';
-    await firestore.collection('read_logs').doc(dateKey).collection('entries').doc('u1').set({
+    await firestore
+        .collection('read_logs')
+        .doc(dateKey)
+        .collection('entries')
+        .doc('u1')
+        .set({
       'name': 'Test',
       'timestamp': Timestamp.now(),
     });
-    await firestore.collection('read_logs').doc(dateKey).collection('entries').doc('u1').collection('comments').add({
+    await firestore
+        .collection('read_logs')
+        .doc(dateKey)
+        .collection('entries')
+        .doc('u1')
+        .collection('comments')
+        .add({
       'uid': 'u1',
       'name': 'Test',
       'message': 'Great chapter',
@@ -148,7 +182,8 @@ void main() {
 
     await pumpPage(tester);
 
-    expect(find.textContaining('commented on', findRichText: true), findsOneWidget);
+    expect(find.textContaining('commented on', findRichText: true),
+        findsOneWidget);
     expect(find.text('"Great chapter"'), findsOneWidget);
     expect(find.byIcon(Icons.chat_bubble), findsOneWidget);
   });

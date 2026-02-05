@@ -64,3 +64,6 @@ key.properties
 test_output*.txt
 test_results.txt
 .env
+
+.gemini/
+gha-creds-*.json

@@ -282,7 +282,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                     const Padding(
                       padding: EdgeInsets.all(16.0),
                       child:
-                          Center(child: Text("No plans available right now.")),
+                          Center(child: Text('No plans available right now.')),
                     ),
                 ],
               );
