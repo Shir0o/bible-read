@@ -72,7 +72,7 @@ void main() {
         ));
 
         await tester.enterText(
-            find.byKey(const Key('loginEmailField')), 'user@example.com');
+            find.byKey(const Key('loginEmailField')), 'user@my-company.com');
         await tester.enterText(
             find.byKey(const Key('loginPasswordField')), 'pw');
         // Button text is 'Login' in new UI
@@ -80,7 +80,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(auth.signInCalled, isTrue);
-        expect(auth.email, 'user@example.com');
+        expect(auth.email, 'user@my-company.com');
         expect(auth.password, 'pw');
         expect(find.byType(TestMainPage), findsOneWidget);
       });
@@ -180,8 +180,46 @@ void main() {
         // Wait for snackbar animation
         await tester.pumpAndSettle();
 
-        expect(find.text('Failed to sign in. Please check credentials.'),
+        expect(find.widgetWithText(SnackBar, 'Failed to sign in. Please check credentials.'),
             findsOneWidget);
+        expect(auth.signInCalled, isTrue);
+      });
+    });
+
+    testWidgets('shows error when fields are empty', (tester) async {
+      await mockNetworkImagesFor(() async {
+        final auth = RecordingAuth();
+        await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+
+        // Tap login without entering anything
+        await tester.tap(find.text('Login'));
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(SnackBar, 'Please fill in all fields'),
+            findsOneWidget);
+        expect(auth.signInCalled, isFalse);
+      });
+    });
+
+    testWidgets('shows error when email is invalid', (tester) async {
+      await mockNetworkImagesFor(() async {
+        final auth = RecordingAuth();
+        await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+
+        await tester.enterText(
+            find.byKey(const Key('loginEmailField')), 'invalid-email');
+        await tester.enterText(
+            find.byKey(const Key('loginPasswordField')), 'password');
+        await tester.tap(find.text('Login'));
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        expect(
+            find.widgetWithText(
+                SnackBar, 'Please enter a valid email address'),
+            findsOneWidget);
+        expect(auth.signInCalled, isFalse);
       });
     });
   });
