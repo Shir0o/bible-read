@@ -4,23 +4,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/group.dart';
-import '../models/group_schedule.dart';
 import '../services/group_service.dart';
 import '../services/reference_parser.dart';
 import '../services/schedule_generator.dart';
-import '../widgets/common_styles.dart';
+import '../services/vibration_service.dart';
 import 'group_detail_page.dart';
 
 class CreateGroupPage extends StatefulWidget {
   final GroupService groupService;
   final FirebaseAuth auth;
+  final VibrationService vibrationService;
 
   CreateGroupPage({
     super.key,
     GroupService? groupService,
     FirebaseAuth? auth,
+    VibrationService? vibrationService,
   })  : groupService = groupService ?? GroupService(),
-        auth = auth ?? FirebaseAuth.instance;
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<CreateGroupPage> createState() => _CreateGroupPageState();
@@ -79,6 +81,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   }
 
   Future<void> _selectDate(bool isStart) async {
+    unawaited(widget.vibrationService.lightImpact());
     final initialDate = isStart ? _startDate : (_endDate ?? _startDate);
     final firstDate = isStart
         ? DateTime.now().subtract(const Duration(days: 365))
@@ -278,11 +281,17 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                                       options.elementAt(index);
                                   return InkWell(
                                     onTap: () {
+                                      unawaited(widget.vibrationService
+                                          .lightImpact());
                                       onSelected(option);
                                     },
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: Text(option),
+                                    child: Semantics(
+                                      button: true,
+                                      label: 'Add $option',
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Text(option),
+                                      ),
                                     ),
                                   );
                                 },
@@ -429,7 +438,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                       child: RadioListTile<bool>(
                         value: true,
                         groupValue: _isDaily,
-                        onChanged: (val) => setState(() => _isDaily = val!),
+                        onChanged: (val) {
+                          unawaited(widget.vibrationService.lightImpact());
+                          setState(() => _isDaily = val!);
+                        },
                         title: const Text('Daily'),
                         subtitle: const Text('Every single day'),
                         secondary: Icon(Icons.calendar_view_day,
@@ -457,7 +469,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                       child: RadioListTile<bool>(
                         value: false,
                         groupValue: _isDaily,
-                        onChanged: (val) => setState(() => _isDaily = val!),
+                        onChanged: (val) {
+                          unawaited(widget.vibrationService.lightImpact());
+                          setState(() => _isDaily = val!);
+                        },
                         title: const Text('Weekdays'),
                         subtitle: const Text('Mon - Fri only'),
                         secondary: Icon(Icons.date_range,
@@ -577,7 +592,12 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: _isCreating ? null : _createSchedule,
+                  onPressed: _isCreating
+                      ? null
+                      : () {
+                          unawaited(widget.vibrationService.mediumImpact());
+                          _createSchedule();
+                        },
                   icon: _isCreating
                       ? const SizedBox(
                           width: 24,

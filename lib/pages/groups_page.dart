@@ -88,6 +88,7 @@ class _GroupsPageState extends State<GroupsPage> {
                       builder: (context) => CreateGroupPage(
                         groupService: widget.groupService,
                         auth: widget.auth,
+                        vibrationService: widget.vibrationService,
                       ),
                     ),
                   );
