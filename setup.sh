@@ -1,6 +1,6 @@
 # 1. Install Linux dependencies required by Flutter
 sudo apt-get update
-sudo apt-get install -y curl git unzip xz-utils zip libglu1-mesa
+sudo apt-get install -y curl git unzip xz-utils zip libglu1-mesa libgtk-3-dev mesa-utils
 
 # 2. Download the Flutter SDK into the home directory
 cd /home/jules
