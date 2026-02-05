@@ -1,17 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import '../../services/error_logger.dart';
 import '../../services/vibration_service.dart';
 
-import '../../services/achievement_service.dart';
-import '../../models/achievement.dart';
 
 import '../common_styles.dart';
 import '../../models/comment.dart';
-import '../read_log_list.dart';
 import '../read_log_list.dart';
 import '../../services/reading_status_service.dart';
 import '../../models/read_log.dart';

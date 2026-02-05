@@ -1,5 +1,4 @@
 import 'package:bible_read/pages/login_page.dart';
-import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';

@@ -18,7 +18,6 @@ import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/badge_icon.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {

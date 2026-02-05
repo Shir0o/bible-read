@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/friend_service.dart';
-import '../services/error_logger.dart';
 
 class LeaderboardPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -173,7 +172,7 @@ class _GlobalLeaderboardList extends StatelessWidget {
       final streaks = {
         for (var d in snap.docs)
           d.reference.parent.parent!.id:
-              (d.data() as Map<String, dynamic>)['streak'] as int? ?? 0
+              (d.data())['streak'] as int? ?? 0
       };
       return _fetchEntries(firestore, uids, preloadedStreaks: streaks);
     });

@@ -11,7 +11,7 @@ class AchievementsView extends StatelessWidget {
   final FirebaseAuth auth;
   final AchievementService achievementService;
 
-  AchievementsView({
+  const AchievementsView({
     super.key,
     required this.auth,
     required this.achievementService,

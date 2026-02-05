@@ -64,8 +64,8 @@ void main() {
   });
 
   test('updateShouldNotify reacts to property changes', () {
-    final onNavigate = (int _) {};
-    final alternateOnNavigate = (int _) {};
+    void onNavigate(int _) {}
+    void alternateOnNavigate(int _) {}
     final baseVibration = const VibrationService();
     final differentVibration = _MockVibrationService();
     final baseAdminService = _MockAdminRoleService();
@@ -129,7 +129,7 @@ void main() {
   testWidgets('showMenu forwards dependencies to AppMenuSheet', (tester) async {
     final vibrationService = _RecordingVibrationService();
     final adminRoleService = _MockAdminRoleService();
-    final onNavigate = (int _) {};
+    void onNavigate(int _) {}
     late NavigationMenuScope scope;
     late BuildContext childContext;
 
