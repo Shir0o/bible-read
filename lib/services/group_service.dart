@@ -1323,24 +1323,56 @@ class GroupService {
       if (!memberSnap.exists && !isOwner) return;
 
       final progressDates = await groupRef.collection('progress').get();
-      int total = 0;
-      for (final dateDoc in progressDates.docs) {
+
+      // Fetch all entries in parallel to avoid sequential round-trips.
+      final entryFutures = progressDates.docs.map((dateDoc) async {
         try {
           final entryRef = dateDoc.reference.collection('entries').doc(uid);
-          final entrySnap = await entryRef.get();
-          if (!entrySnap.exists) continue;
-          int? count = (entrySnap.data()?['count'] as num?)?.toInt();
-          if (count == null) {
-            final itemsSnap = await entryRef.collection('items').get();
-            count = itemsSnap.docs.length;
-            try {
-              await entryRef.set({'count': count}, SetOptions(merge: true));
-            } catch (_) {}
-          }
-          total += count;
+          final snap = await entryRef.get();
+          return MapEntry(entryRef, snap);
         } catch (e, st) {
           await _safeLog(e, st);
+          return null;
         }
+      });
+
+      final entryResults = await Future.wait(entryFutures);
+
+      int total = 0;
+      final repairFutures = <Future<int>>[];
+
+      for (final result in entryResults) {
+        if (result == null) continue;
+        final entryRef = result.key;
+        final entrySnap = result.value;
+
+        if (!entrySnap.exists) continue;
+
+        final count = (entrySnap.data()?['count'] as num?)?.toInt();
+        if (count != null) {
+          total += count;
+        } else {
+          // If 'count' is missing, calculate it from 'items' subcollection.
+          // We do this in parallel for all missing entries.
+          repairFutures.add(() async {
+            try {
+              final itemsSnap = await entryRef.collection('items').get();
+              final c = itemsSnap.docs.length;
+              try {
+                await entryRef.set({'count': c}, SetOptions(merge: true));
+              } catch (_) {}
+              return c;
+            } catch (e, st) {
+              await _safeLog(e, st);
+              return 0;
+            }
+          }());
+        }
+      }
+
+      if (repairFutures.isNotEmpty) {
+        final repairedCounts = await Future.wait(repairFutures);
+        total += repairedCounts.fold(0, (sum, c) => sum + c);
       }
 
       final summaryRef = groupRef
