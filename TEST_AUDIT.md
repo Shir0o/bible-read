@@ -1,47 +1,50 @@
-# Test Integrity Audit & Gap Analysis
+# Stress Audit Report
 
 ## 1. Test Debt Summary
 
-### Duplicated Logic
+### Heavy Mocking & Brittleness
 - **Risk**: Moderate
-- **Location**: `GroupService`
-- **Details**: Name resolution logic (choosing between `name`, `displayName`, and `email`) is duplicated in `createGroup` and `_fetchUserInfos`. `memberNames` uses a simplified version that only checks `name`, leading to inconsistencies.
-- **Impact**: Changes to name display logic must be applied in 3 places.
+- **Location**: `test/services/group_service_test.dart`
+- **Details**: The error handling tests rely on deep mocking of Firestore internals (`MockCollectionReference`, `MockDocumentReference`, etc.). This makes the tests brittle to changes in the Firestore SDK or internal implementation details.
+- **Recommendation**: Refactor to use a wrapper around Firestore or accept that these tests are integration-heavy and might need maintenance.
 
-### Heavy Mocking
-- **Risk**: Low
-- **Location**: `test/services/group_service_test.dart` (Error Handling group)
-- **Details**: The error handling tests use verbose `Mockito` setups to simulate Firestore exceptions. While necessary for coverage, they are brittle to API changes in the underlying Firestore library.
+### Shallow Assertions
+- **Risk**: Low to Moderate
+- **Location**: `test/widgets/group_card_test.dart`
+- **Details**: The test verifies that "35%" is displayed, which implicitly tests the average calculation logic within the UI widget. While this works, it entangles UI testing with business logic validation. If the calculation logic changes or becomes more complex, the UI test might fail confusingly.
+- **Recommendation**: Isolate logic testing in model/service tests and have the widget test verify that it displays what it is given (if possible) or clearly document the dependency.
 
-### Silent Failures
+### Missing Negative Testing
 - **Risk**: High
-- **Location**: `GroupService.deleteGroup`
-- **Details**: The method swallows exceptions when deleting subcollection documents. If a deletion fails (e.g., due to permissions), the group document is still deleted, leaving orphaned subcollection data.
-- **Remediation**: Tests should verify that partial failures are at least logged or handled more robustly.
-
-### Shallow Assertions (ReferenceParser)
-- **Risk**: Low
-- **Location**: `ReferenceParser`
-- **Details**: `normalizeOne` returns the raw input for chapter 0 (e.g., "Gen 0"), which is technically invalid but preserved. This might be a design choice but warrants review.
+- **Location**: `test/pages/login_page_test.dart`
+- **Details**: Existing tests cover the "happy path" (successful login) and a generic "failure" path. They do not verify:
+    -   Empty input fields.
+    -   Invalid email formats.
+    -   Specific error messages for different failure modes.
+- **Recommendation**: Expand test coverage to include these negative scenarios.
 
 ## 2. Gap Analysis
 
-### Inconsistent User Name Display
-- **Scenario**: A user signs up with Google and has a `displayName` but no `name` field in their `users` document.
-- **Current Behavior**:
-    -   `memberNames` stream: Ignores the user (returns nothing).
-    -   `memberDailyCompletion` stream: correctly falls back to `displayName`.
-- **Expected Behavior**: `memberNames` should also fall back to `displayName` and `email`.
+### Input Validation
+- **Scenario**: User enters an invalid email address (e.g., "plainaddress").
+- **Current Behavior**: The app attempts to send this to Firebase Auth, which likely rejects it, but the UI feedback is a generic "Failed to sign in" or similar, rather than a proactive validation error.
+- **Missing Code**: `LoginPage` lacks local validation logic.
 
-### Partial Delete Failure
-- **Scenario**: `deleteGroup` encounters an error deleting a member document.
-- **Current Behavior**: The error is caught and ignored; the function proceeds to delete the group.
-- **Missing Test**: No test simulates this partial failure state to verify data integrity or logging.
+### Edge Cases
+- **Scenario**: `ReferenceParser` handling of "Chapter 0".
+- **Current Behavior**: Returns raw input "Gen 0" instead of flagging it as invalid or normalizing it to a safe default.
+- **Missing Test**: No test case specifically targets this edge behavior in `ReferenceParser`.
+
+### Partial Failures
+- **Scenario**: `GroupService.deleteGroup` failing halfway through deleting subcollections.
+- **Current Behavior**: The operation might leave orphaned documents if a delete fails.
+- **Missing Test**: No simulation of partial failure.
 
 ## 3. Proposed New Tests
 
 | Priority | Component | Scenario | Input | Expected Outcome |
 | :--- | :--- | :--- | :--- | :--- |
-| **High** | `GroupService` | Member name fallback | User with only `displayName` | `memberNames` returns `displayName` |
-| **Medium** | `GroupService` | Partial delete failure | `delete()` throws on subcollection item | Error logged, group deleted (or transaction aborted) |
-| **Low** | `ReferenceParser` | Invalid chapter 0 | "Gen 0" | Returns `null` or formatted error (instead of raw string) |
+| **High** | `LoginPage` | Input Validation | Empty email/password | SnackBar: "Please fill in all fields" |
+| **High** | `LoginPage` | Input Validation | Invalid email format | SnackBar: "Please enter a valid email address" |
+| **Medium** | `GroupService` | Partial Failure | `deleteGroup` throws on subcollection | Error logged, potentially cleanup triggered |
+| **Low** | `ReferenceParser` | Invalid Chapter | "Gen 0" | Returns safe default or error indication |
