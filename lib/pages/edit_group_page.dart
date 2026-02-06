@@ -551,9 +551,11 @@ class _EditGroupPageState extends State<EditGroupPage> {
                           child: Opacity(
                             opacity: 0.6,
                             child: InputDecorator(
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Start',
-                                border: OutlineInputBorder(),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                                 enabled:
                                     false, // Visual only, interaction blocked by not having onTap
                               ),
@@ -565,18 +567,27 @@ class _EditGroupPageState extends State<EditGroupPage> {
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: GestureDetector(
-                            onTap: _selectEndDate,
-                            child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'End',
-                                border: OutlineInputBorder(),
-                                suffixIcon: Icon(Icons.calendar_today),
-                              ),
-                              child: Text(
-                                _endDate == null
-                                    ? 'Select Date'
-                                    : "${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}",
+                          child: Semantics(
+                            button: true,
+                            label: _endDate == null
+                                ? 'Select end date'
+                                : 'Select end date, current selection: ${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}',
+                            child: InkWell(
+                              onTap: _selectEndDate,
+                              borderRadius: BorderRadius.circular(16),
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: 'End',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  suffixIcon: const Icon(Icons.calendar_today),
+                                ),
+                                child: Text(
+                                  _endDate == null
+                                      ? 'Select Date'
+                                      : "${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}",
+                                ),
                               ),
                             ),
                           ),
