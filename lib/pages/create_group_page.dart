@@ -382,34 +382,51 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                     Row(
                       children: [
                         Expanded(
-                          child: GestureDetector(
-                            onTap: () => _selectDate(true),
-                            child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'Start',
-                                border: OutlineInputBorder(),
-                                suffixIcon: Icon(Icons.calendar_today),
-                              ),
-                              child: Text(
-                                '${_startDate.month}/${_startDate.day}/${_startDate.year}',
+                          child: Semantics(
+                            button: true,
+                            label:
+                                'Select start date, current selection: ${_startDate.month}/${_startDate.day}/${_startDate.year}',
+                            child: InkWell(
+                              onTap: () => _selectDate(true),
+                              borderRadius: BorderRadius.circular(16),
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: 'Start',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  suffixIcon: const Icon(Icons.calendar_today),
+                                ),
+                                child: Text(
+                                  '${_startDate.month}/${_startDate.day}/${_startDate.year}',
+                                ),
                               ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: GestureDetector(
-                            onTap: () => _selectDate(false),
-                            child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'End',
-                                border: OutlineInputBorder(),
-                                suffixIcon: Icon(Icons.calendar_today),
-                              ),
-                              child: Text(
-                                _endDate == null
-                                    ? 'mm/dd/yyyy'
-                                    : '${_endDate!.month}/${_endDate!.day}/${_endDate!.year}',
+                          child: Semantics(
+                            button: true,
+                            label: _endDate == null
+                                ? 'Select end date'
+                                : 'Select end date, current selection: ${_endDate!.month}/${_endDate!.day}/${_endDate!.year}',
+                            child: InkWell(
+                              onTap: () => _selectDate(false),
+                              borderRadius: BorderRadius.circular(16),
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: 'End',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  suffixIcon: const Icon(Icons.calendar_today),
+                                ),
+                                child: Text(
+                                  _endDate == null
+                                      ? 'mm/dd/yyyy'
+                                      : '${_endDate!.month}/${_endDate!.day}/${_endDate!.year}',
+                                ),
                               ),
                             ),
                           ),

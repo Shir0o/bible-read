@@ -47,3 +47,7 @@
 ## 2026-03-01 - Social Login Accessibility
 **Learning:** Icon-only social login buttons are invisible to screen readers without explicit labels.
 **Action:** Wrap icon-only `InkWell` buttons in `Semantics(button: true, label: 'Sign in with X')` and include a `Tooltip` for mouse users.
+
+## 2026-03-02 - Date Picker Accessibility
+**Learning:** `GestureDetector` on input fields provides no visual feedback (ripple) and poor accessibility (no 'button' trait).
+**Action:** Wrap tappable `InputDecorator` fields in `Semantics` (button: true) + `InkWell` (with matching border radius) for better touch feedback and screen reader support.
