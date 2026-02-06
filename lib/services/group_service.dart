@@ -261,18 +261,18 @@ class GroupService {
       } catch (_) {}
       try {
         final dates = await groupRef.collection('progress').get();
-        for (final d in dates.docs) {
+        await Future.wait(dates.docs.map((d) async {
           try {
             final entryRef = d.reference.collection('entries').doc(uid);
             final items = await entryRef.collection('items').get();
-            for (final it in items.docs) {
+            await Future.wait(items.docs.map((it) async {
               try {
                 await it.reference.delete();
               } catch (_) {}
-            }
+            }));
             await entryRef.delete();
           } catch (_) {}
-        }
+        }));
       } catch (_) {}
     } catch (e, st) {
       await _safeLog(e, st);
