@@ -459,6 +459,9 @@ void main() {
     );
 
     await seedProgress(dateId: '2024-06-01', completedIndices: const [0, 1]);
+    // Pre-seed empty progress for the target day to ensure the document exists.
+    // This avoids FakeFirebaseFirestore issues with collectionGroup queries on newly created docs.
+    await seedProgress(dateId: '2024-06-02', completedIndices: const []);
 
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     final service = GroupService(firestore: firestore);
