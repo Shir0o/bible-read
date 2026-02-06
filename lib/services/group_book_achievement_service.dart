@@ -156,18 +156,6 @@ class GroupBookAchievementService {
       return checked;
     }
 
-    // If no items found, rely on summary fields again (handles cases where items subcollection is empty but done=true)
-    // Note: We already checked done/count above. But if they were false/small, and items are empty, we return empty.
-    // However, original code had a specific logic order.
-    // "if checked.isNotEmpty return checked. else if done... return all."
-    // My new logic: "if done return all. else fetch items. return items."
-
-    // Edge case: done=true, but items=[1].
-    // Original: returns [1].
-    // New: returns [1, ... N].
-    // Correctness: If done=true, user marked day as done. We should credit all.
-    // So new logic is arguably "more correct" or at least acceptable optimization.
-
     return checked;
   }
 
