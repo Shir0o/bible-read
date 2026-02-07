@@ -7,13 +7,11 @@ import 'package:flutter/services.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
-import '../models/group_schedule.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../services/reference_parser.dart';
 import '../services/schedule_generator.dart';
 import '../services/vibration_service.dart';
-import '../widgets/common_styles.dart';
 
 class EditGroupPage extends StatefulWidget {
   final Group group;

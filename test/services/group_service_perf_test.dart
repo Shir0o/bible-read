@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -44,12 +42,15 @@ void main() {
       var opCount = 0;
 
       for (var i = 0; i < 365; i++) {
-        final dateId = '2024-${(i ~/ 30 + 1).toString().padLeft(2, '0')}-${(i % 30 + 1).toString().padLeft(2, '0')}';
+        final dateId =
+            '2024-${(i ~/ 30 + 1).toString().padLeft(2, '0')}-${(i % 30 + 1).toString().padLeft(2, '0')}';
         final dateRef = groupRef.collection('progress').doc(dateId);
         batch.set(dateRef, <String, dynamic>{});
 
         final entryRef = dateRef.collection('entries').doc('u1');
-        batch.set(entryRef, <String, dynamic>{'count': 1}); // Assume count exists to focus on read speed
+        batch.set(entryRef, <String, dynamic>{
+          'count': 1
+        }); // Assume count exists to focus on read speed
 
         opCount += 2;
         if (opCount >= batchSize) {
@@ -66,7 +67,8 @@ void main() {
       await service.recalcProgressForUserInGroup(groupId: 'g1', uid: 'u1');
       stopwatch.stop();
 
-      print('recalcProgressForUserInGroup took: ${stopwatch.elapsedMilliseconds}ms');
+      print(
+          'recalcProgressForUserInGroup took: ${stopwatch.elapsedMilliseconds}ms');
 
       // Verify result
       final summary = await groupRef

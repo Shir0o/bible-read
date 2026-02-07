@@ -17,7 +17,7 @@ void main() {
       service = GroupBookAchievementService(firestore: firestore);
     });
 
-    String _dateId(DateTime date) {
+    String dateId0(DateTime date) {
       final y = date.year.toString().padLeft(4, '0');
       final m = date.month.toString().padLeft(2, '0');
       final d = date.day.toString().padLeft(2, '0');
@@ -44,7 +44,7 @@ void main() {
 
         for (var i = 0; i < 100; i++) {
           final date = startDate.add(Duration(days: i));
-          final dateId = _dateId(date);
+          final dateId = dateId0(date);
 
           // Schedule
           final scheduleRef = groupRef.collection('schedule').doc(dateId);
