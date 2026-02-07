@@ -335,19 +335,17 @@ class _LoginPageState extends State<LoginPage> {
                               child: Semantics(
                                 key: const Key('forgotPasswordSemantics'),
                                 button: true,
-                                      final BorderRadius borderRadius = BorderRadius.circular(4);
-                                      return Semantics(
-                                        key: const Key('forgotPasswordSemantics'),
-                                        button: true,
-                                        label: 'Forgot password',
-                                        excludeSemantics: true,
-                                        child: Tooltip(
-                                          message: 'Forgot password',
-                                          child: Material(
-                                            type: MaterialType.transparency,
-                                            child: InkWell(
-                                              borderRadius: borderRadius,
-                                              onTap: () {
+                                label: 'Forgot password',
+                                excludeSemantics: true,
+                                child: Tooltip(
+                                  message: 'Forgot password',
+                                  child: Material(
+                                    type: MaterialType.transparency,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(4),
+                                      onTap: () {
+                                        unawaited(widget.vibrationService
+                                            .lightImpact());
                                         // TODO: Implement forgot password
                                       },
                                       child: Padding(
