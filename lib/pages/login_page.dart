@@ -332,17 +332,35 @@ class _LoginPageState extends State<LoginPage> {
                             child: Padding(
                               padding: const EdgeInsets.only(
                                   top: 12.0), // -mt-1 in HTML but cleaner here
-                              child: GestureDetector(
-                                onTap: () {
-                                  // TODO: Implement forgot password
-                                },
-                                child: Text(
-                                  'Forgot Password?',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14, // text-sm
-                                    fontWeight:
-                                        FontWeight.w600, // font-semibold
-                                    color: AppTheme.m3Primary,
+                              child: Semantics(
+                                key: const Key('forgotPasswordSemantics'),
+                                button: true,
+                                label: 'Forgot password',
+                                excludeSemantics: true,
+                                child: Tooltip(
+                                  message: 'Forgot password',
+                                  child: Material(
+                                    type: MaterialType.transparency,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(4),
+                                      onTap: () {
+                                        unawaited(widget.vibrationService
+                                            .lightImpact());
+                                        // TODO: Implement forgot password
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                          'Forgot Password?',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14, // text-sm
+                                            fontWeight:
+                                                FontWeight.w600, // font-semibold
+                                            color: AppTheme.m3Primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -485,30 +503,46 @@ class _LoginPageState extends State<LoginPage> {
                                         .withValues(alpha: 0.6),
                                   ),
                                 ),
-                                GestureDetector(
-                                  onTap: () {
-                                    unawaited(widget.vibrationService
-                                        .lightImpact());
-                                    Navigator.of(context).push(
-                                      animatedPageRoute(
-                                        SignupPage(
-                                          auth: widget.auth,
-                                          firestore: widget.firestore,
-                                          googleSignInProvider:
-                                              widget.googleSignInProvider,
-                                          mainPageBuilder:
-                                              widget.mainPageBuilder,
+                                Semantics(
+                                  key: const Key('signUpSemantics'),
+                                  button: true,
+                                  label: 'Sign up',
+                                  excludeSemantics: true,
+                                  child: Tooltip(
+                                    message: 'Sign up',
+                                    child: Material(
+                                      type: MaterialType.transparency,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(4),
+                                        onTap: () {
+                                          unawaited(widget.vibrationService
+                                              .lightImpact());
+                                          Navigator.of(context).push(
+                                            animatedPageRoute(
+                                              SignupPage(
+                                                auth: widget.auth,
+                                                firestore: widget.firestore,
+                                                googleSignInProvider:
+                                                    widget.googleSignInProvider,
+                                                mainPageBuilder:
+                                                    widget.mainPageBuilder,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(4.0),
+                                          child: Text(
+                                            'Sign up',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              fontWeight:
+                                                  FontWeight.bold, // font-bold
+                                              color: AppTheme.m3Primary,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    );
-                                  },
-                                  child: Text(
-                                    'Sign up',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight:
-                                          FontWeight.bold, // font-bold
-                                      color: AppTheme.m3Primary,
                                     ),
                                   ),
                                 ),

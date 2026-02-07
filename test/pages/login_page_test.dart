@@ -1,4 +1,5 @@
 import 'package:bible_read/pages/login_page.dart';
+import 'package:bible_read/pages/signup_page.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -220,6 +221,36 @@ void main() {
                 SnackBar, 'Please enter a valid email address'),
             findsOneWidget);
         expect(auth.signInCalled, isFalse);
+      });
+    });
+
+    testWidgets('verifies semantics for Forgot Password and Sign up links',
+        (tester) async {
+      await mockNetworkImagesFor(() async {
+        final auth = RecordingAuth();
+        await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+
+        final forgotPasswordFinder = find.byKey(const Key('forgotPasswordSemantics'));
+        final signUpFinder = find.byKey(const Key('signUpSemantics'));
+
+        // Verify Forgot Password semantics
+        final forgotPasswordSemantics = tester.getSemantics(forgotPasswordFinder);
+        final forgotPasswordData = forgotPasswordSemantics.getSemanticsData();
+        expect(forgotPasswordData.hasFlag(SemanticsFlag.isButton), isTrue);
+        expect(forgotPasswordData.label, 'Forgot password');
+
+        // Verify Sign up semantics
+        final signUpSemantics = tester.getSemantics(signUpFinder);
+        final signUpData = signUpSemantics.getSemanticsData();
+        expect(signUpData.hasFlag(SemanticsFlag.isButton), isTrue);
+        expect(signUpData.label, 'Sign up');
+
+        // Verify Sign up navigation
+        await tester.ensureVisible(signUpFinder);
+        await tester.tap(signUpFinder);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(SignupPage), findsOneWidget);
       });
     });
   });
