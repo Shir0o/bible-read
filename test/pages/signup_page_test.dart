@@ -1,6 +1,7 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -187,5 +188,49 @@ void main() {
     final semanticHandle = tester.ensureSemantics();
     expect(find.bySemanticsLabel('Sign in with Google'), findsOneWidget);
     semanticHandle.dispose();
+  });
+
+  testWidgets('Terms and Privacy links have tap recognizers', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SignupPage(
+          auth: RecordingAuth(),
+          firestore: FakeFirebaseFirestore(),
+          vibrationService: MockVibrationService(),
+          googleSignInProvider: () => FakeGoogleSignIn(),
+        ),
+      ),
+    );
+
+    // Find the RichText widget that contains "Terms of Service" and "Privacy Policy"
+    final richTextFinder = find.byWidgetPredicate((widget) {
+      if (widget is RichText && widget.text is TextSpan) {
+        final span = widget.text as TextSpan;
+        final children = span.children;
+        if (children == null) return false;
+
+        bool hasTerms = children
+            .any((c) => c is TextSpan && c.text == 'Terms of Service');
+        bool hasPrivacy =
+            children.any((c) => c is TextSpan && c.text == 'Privacy Policy');
+        return hasTerms && hasPrivacy;
+      }
+      return false;
+    });
+
+    expect(richTextFinder, findsOneWidget);
+
+    final richText = tester.widget<RichText>(richTextFinder);
+    final textSpan = richText.text as TextSpan;
+
+    final termsSpan = textSpan.children!
+        .firstWhere((c) => (c as TextSpan).text == 'Terms of Service') as TextSpan;
+    expect(termsSpan.recognizer, isNotNull);
+    expect(termsSpan.recognizer, isA<TapGestureRecognizer>());
+
+    final privacySpan = textSpan.children!
+        .firstWhere((c) => (c as TextSpan).text == 'Privacy Policy') as TextSpan;
+    expect(privacySpan.recognizer, isNotNull);
+    expect(privacySpan.recognizer, isA<TapGestureRecognizer>());
   });
 }

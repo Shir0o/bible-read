@@ -12,8 +12,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter/gestures.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SignupPage extends StatefulWidget {
   final FirebaseAuth auth;
@@ -47,11 +49,25 @@ class _SignupPageState extends State<SignupPage> {
   bool _loading = false;
   bool _isGoogleSigningIn = false;
 
+  late TapGestureRecognizer _termsRecognizer;
+  late TapGestureRecognizer _privacyRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsRecognizer = TapGestureRecognizer()
+      ..onTap = () => _launchUrl('https://example.com/terms');
+    _privacyRecognizer = TapGestureRecognizer()
+      ..onTap = () => _launchUrl('https://example.com/privacy');
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _termsRecognizer.dispose();
+    _privacyRecognizer.dispose();
     super.dispose();
   }
 
@@ -61,6 +77,11 @@ class _SignupPageState extends State<SignupPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Failed to sign up. Please try again.')),
     );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    await launchUrl(uri);
   }
 
   Future<void> _submit() async {
@@ -357,7 +378,7 @@ class _SignupPageState extends State<SignupPage> {
                                 color: darkPrimary,
                                 decoration: TextDecoration.underline,
                               ),
-                              // TODO: Add tap handler
+                              recognizer: _termsRecognizer,
                             ),
                             const TextSpan(text: ' and '),
                             TextSpan(
@@ -366,7 +387,7 @@ class _SignupPageState extends State<SignupPage> {
                                 color: darkPrimary,
                                 decoration: TextDecoration.underline,
                               ),
-                              // TODO: Add tap handler
+                              recognizer: _privacyRecognizer,
                             ),
                             const TextSpan(text: '.'),
                           ],

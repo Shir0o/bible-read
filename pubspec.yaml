@@ -55,6 +55,7 @@ dependencies:
   custom_refresh_indicator: ^4.0.1
   dynamic_color: ^1.7.0
   google_fonts: ^6.3.3
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
