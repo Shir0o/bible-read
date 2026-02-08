@@ -17,6 +17,8 @@ class RecordingAuth extends MockFirebaseAuth {
   String? email;
   String? password;
   bool signInWithCredentialCalled = false;
+  bool sendPasswordResetEmailCalled = false;
+  String? resetEmail;
   Exception? errorOnSignIn;
 
   @override
@@ -37,6 +39,16 @@ class RecordingAuth extends MockFirebaseAuth {
   Future<UserCredential> signInWithCredential(AuthCredential? credential) {
     signInWithCredentialCalled = true;
     return super.signInWithCredential(credential);
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail(
+      {required String email, ActionCodeSettings? actionCodeSettings}) async {
+    sendPasswordResetEmailCalled = true;
+    resetEmail = email;
+    await Future.delayed(const Duration(milliseconds: 10));
+    return super.sendPasswordResetEmail(
+        email: email, actionCodeSettings: actionCodeSettings);
   }
 }
 
@@ -230,11 +242,13 @@ void main() {
         final auth = RecordingAuth();
         await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
 
-        final forgotPasswordFinder = find.byKey(const Key('forgotPasswordSemantics'));
+        final forgotPasswordFinder =
+            find.byKey(const Key('forgotPasswordSemantics'));
         final signUpFinder = find.byKey(const Key('signUpSemantics'));
 
         // Verify Forgot Password semantics
-        final forgotPasswordSemantics = tester.getSemantics(forgotPasswordFinder);
+        final forgotPasswordSemantics =
+            tester.getSemantics(forgotPasswordFinder);
         final forgotPasswordData = forgotPasswordSemantics.getSemanticsData();
         expect(forgotPasswordData.hasFlag(SemanticsFlag.isButton), isTrue);
         expect(forgotPasswordData.label, 'Forgot password');
@@ -251,6 +265,47 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(SignupPage), findsOneWidget);
+      });
+    });
+
+    testWidgets('allows user to reset password', (tester) async {
+      await mockNetworkImagesFor(() async {
+        final auth = RecordingAuth();
+        await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+
+        final forgotPasswordFinder =
+            find.byKey(const Key('forgotPasswordSemantics'));
+
+        // Tap Forgot Password
+        await tester.ensureVisible(forgotPasswordFinder);
+        await tester.tap(forgotPasswordFinder);
+        await tester.pumpAndSettle();
+
+        // Check if dialog appears
+        expect(find.text('Reset Password'), findsOneWidget);
+
+        // Enter email
+        await tester.enterText(
+            find.descendant(
+                of: find.byType(AlertDialog), matching: find.byType(TextField)),
+            'reset@test.com');
+        await tester.pump();
+
+        // Tap Send Link
+        await tester.tap(find.text('Send Link'));
+        await tester.pump(); // Trigger tap and setState
+        await tester.pump(const Duration(milliseconds: 100)); // Allow future to complete
+        await tester.pumpAndSettle(); // Allow dialog to close
+
+        // Verify API call
+        expect(auth.sendPasswordResetEmailCalled, isTrue);
+        expect(auth.resetEmail, 'reset@test.com');
+
+        // Verify Success SnackBar
+        expect(find.widgetWithText(SnackBar, 'Password reset email sent'),
+            findsOneWidget);
+        // Verify dialog closed
+        expect(find.text('Reset Password'), findsNothing);
       });
     });
   });

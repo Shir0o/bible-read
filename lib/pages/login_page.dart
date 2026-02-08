@@ -174,6 +174,21 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _handleForgotPassword() async {
+    final initialEmail =
+        _isValidEmail(_emailController.text) ? _emailController.text : '';
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return _ForgotPasswordDialog(
+          auth: widget.auth,
+          initialEmail: initialEmail,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -346,7 +361,7 @@ class _LoginPageState extends State<LoginPage> {
                                       onTap: () {
                                         unawaited(widget.vibrationService
                                             .lightImpact());
-                                        // TODO: Implement forgot password
+                                        _handleForgotPassword();
                                       },
                                       child: Padding(
                                         padding: const EdgeInsets.all(8.0),
@@ -636,5 +651,113 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ],
     );
+  }
+}
+
+class _ForgotPasswordDialog extends StatefulWidget {
+  final FirebaseAuth auth;
+  final String initialEmail;
+
+  const _ForgotPasswordDialog({
+    required this.auth,
+    required this.initialEmail,
+  });
+
+  @override
+  State<_ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
+}
+
+class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
+  late TextEditingController _controller;
+  bool _sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialEmail);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Reset Password'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+              'Enter your email address to receive a password reset link.'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _controller,
+            keyboardType: TextInputType.emailAddress,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Email',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _sending ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _sending ? null : _send,
+          child: _sending
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Send Link'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _send() async {
+    final email = _controller.text.trim();
+    if (email.isEmpty || !RegExp(r"^[a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9-]+\.[a-zA-Z]+$").hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
+    }
+
+    setState(() {
+      _sending = true;
+    });
+
+    try {
+      await widget.auth.sendPasswordResetEmail(email: email);
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password reset email sent')),
+        );
+      }
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to send reset email: $e');
+      }
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Failed to send reset email. Please try again.')),
+        );
+        setState(() {
+          _sending = false;
+        });
+      }
+    }
   }
 }
