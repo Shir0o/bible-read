@@ -65,29 +65,44 @@ class _AllGroupsViewState extends State<AllGroupsView>
     final name = await showDialog<String>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Create Group'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(labelText: 'Group Name'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                unawaited(widget.vibrationService.lightImpact());
-                Navigator.of(context).pop();
+        return StatefulBuilder(builder: (context, setState) {
+          final isEnabled = controller.text.trim().isNotEmpty;
+          return AlertDialog(
+            title: const Text('Create Group'),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.done,
+              decoration: const InputDecoration(labelText: 'Group Name'),
+              onChanged: (_) => setState(() {}),
+              onSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  unawaited(widget.vibrationService.lightImpact());
+                  Navigator.of(context).pop(value.trim());
+                }
               },
-              child: const Text('Cancel'),
             ),
-            TextButton(
-              onPressed: () {
-                unawaited(widget.vibrationService.lightImpact());
-                Navigator.of(context).pop(controller.text.trim());
-              },
-              child: const Text('Create'),
-            ),
-          ],
-        );
+            actions: [
+              TextButton(
+                onPressed: () {
+                  unawaited(widget.vibrationService.lightImpact());
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: isEnabled
+                    ? () {
+                        unawaited(widget.vibrationService.lightImpact());
+                        Navigator.of(context).pop(controller.text.trim());
+                      }
+                    : null,
+                child: const Text('Create'),
+              ),
+            ],
+          );
+        });
       },
     );
     if (user == null || name == null || name.isEmpty || !mounted) {
