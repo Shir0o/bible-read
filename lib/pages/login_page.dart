@@ -174,6 +174,40 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _handleForgotPassword() async {
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your email address first')),
+      );
+      return;
+    }
+
+    if (!_isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
+    }
+
+    try {
+      await widget.auth.sendPasswordResetEmail(email: email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Password reset email sent to $email')),
+        );
+      }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to send password reset email')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -346,7 +380,7 @@ class _LoginPageState extends State<LoginPage> {
                                       onTap: () {
                                         unawaited(widget.vibrationService
                                             .lightImpact());
-                                        // TODO: Implement forgot password
+                                        _handleForgotPassword();
                                       },
                                       child: Padding(
                                         padding: const EdgeInsets.all(8.0),

@@ -18,6 +18,9 @@ class RecordingAuth extends MockFirebaseAuth {
   String? password;
   bool signInWithCredentialCalled = false;
   Exception? errorOnSignIn;
+  bool sendPasswordResetEmailCalled = false;
+  String? resetEmail;
+  Exception? errorOnReset;
 
   @override
   Future<UserCredential> signInWithEmailAndPassword({
@@ -37,6 +40,18 @@ class RecordingAuth extends MockFirebaseAuth {
   Future<UserCredential> signInWithCredential(AuthCredential? credential) {
     signInWithCredentialCalled = true;
     return super.signInWithCredential(credential);
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail({
+    required String email,
+    ActionCodeSettings? actionCodeSettings,
+  }) async {
+    sendPasswordResetEmailCalled = true;
+    resetEmail = email;
+    if (errorOnReset != null) {
+      throw errorOnReset!;
+    }
   }
 }
 
@@ -251,6 +266,80 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(SignupPage), findsOneWidget);
+      });
+    });
+
+    group('Forgot Password', () {
+      testWidgets('successfully sends password reset email', (tester) async {
+        await mockNetworkImagesFor(() async {
+          final auth = RecordingAuth();
+          await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+
+          const testEmail = 'reset@test.com';
+          await tester.enterText(
+              find.byKey(const Key('loginEmailField')), testEmail);
+
+          await tester.tap(find.byKey(const Key('forgotPasswordSemantics')));
+          await tester.pump(); // Trigger the async call
+          await tester.pumpAndSettle();
+
+          expect(auth.sendPasswordResetEmailCalled, isTrue);
+          expect(auth.resetEmail, testEmail);
+          expect(find.widgetWithText(SnackBar, 'Password reset email sent to $testEmail'),
+              findsOneWidget);
+        });
+      });
+
+      testWidgets('shows error when email is empty', (tester) async {
+        await mockNetworkImagesFor(() async {
+          final auth = RecordingAuth();
+          await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+
+          // Email field is empty by default
+          await tester.tap(find.byKey(const Key('forgotPasswordSemantics')));
+          await tester.pumpAndSettle();
+
+          expect(auth.sendPasswordResetEmailCalled, isFalse);
+          expect(find.widgetWithText(SnackBar, 'Please enter your email address first'),
+              findsOneWidget);
+        });
+      });
+
+      testWidgets('shows error when email is invalid', (tester) async {
+        await mockNetworkImagesFor(() async {
+          final auth = RecordingAuth();
+          await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+
+          await tester.enterText(
+              find.byKey(const Key('loginEmailField')), 'invalid-email');
+
+          await tester.tap(find.byKey(const Key('forgotPasswordSemantics')));
+          await tester.pumpAndSettle();
+
+          expect(auth.sendPasswordResetEmailCalled, isFalse);
+          expect(find.widgetWithText(SnackBar, 'Please enter a valid email address'),
+              findsOneWidget);
+        });
+      });
+
+      testWidgets('shows error when sendPasswordResetEmail fails', (tester) async {
+        await mockNetworkImagesFor(() async {
+          final auth = RecordingAuth();
+          auth.errorOnReset = FirebaseAuthException(code: 'user-not-found');
+
+          await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+
+          await tester.enterText(
+              find.byKey(const Key('loginEmailField')), 'error@test.com');
+
+          await tester.tap(find.byKey(const Key('forgotPasswordSemantics')));
+          await tester.pump();
+          await tester.pumpAndSettle();
+
+          expect(auth.sendPasswordResetEmailCalled, isTrue);
+          expect(find.widgetWithText(SnackBar, 'Failed to send password reset email'),
+              findsOneWidget);
+        });
       });
     });
   });
