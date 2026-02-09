@@ -109,7 +109,7 @@ class _AchievementSummaryState extends State<AchievementSummary> {
                       auth: widget.auth,
                       firestore: widget.firestore,
                     ),
-                  ),
+              borderRadius: BorderRadius.circular(8),
                 );
               },
               child: Padding(
