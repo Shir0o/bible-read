@@ -1,8 +1,6 @@
-import 'package:bible_read/models/group.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/widgets/views/all_groups_view.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,8 +31,10 @@ void main() {
     fakeFirestore = FakeFirebaseFirestore();
 
     // Stub GroupService methods
-    when(() => mockGroupService.allGroups()).thenAnswer((_) => Stream.value([]));
-    when(() => mockGroupService.groupsForUser(any())).thenAnswer((_) => Stream.value([]));
+    when(() => mockGroupService.allGroups())
+        .thenAnswer((_) => Stream.value([]));
+    when(() => mockGroupService.groupsForUser(any()))
+        .thenAnswer((_) => Stream.value([]));
     when(() => mockGroupService.firestore).thenReturn(fakeFirestore);
     // Stub fixMemberProgressSummariesForUser as it is called in init
     when(() => mockGroupService.fixMemberProgressSummariesForUser(any()))
@@ -72,13 +72,18 @@ void main() {
     // Since "Create Group" is also on the empty state button, we expect 2 or need to be specific.
     // Let's verify the AlertDialog exists.
     expect(find.byType(AlertDialog), findsOneWidget);
-    expect(find.descendant(of: find.byType(AlertDialog), matching: find.text('Create Group')), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(AlertDialog), matching: find.text('Create Group')),
+        findsOneWidget);
 
     expect(find.byType(TextField), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
 
     // The "Create" button in the dialog
-    final createButtonFinder = find.descendant(of: find.byType(AlertDialog), matching: find.widgetWithText(TextButton, 'Create'));
+    final createButtonFinder = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(TextButton, 'Create'));
     expect(createButtonFinder, findsOneWidget);
 
     // Initial State: Create button should be disabled
@@ -97,7 +102,8 @@ void main() {
 
     // Tap Create
     await tester.tap(createButtonFinder);
-    await tester.pumpAndSettle(); // Wait for dialog to close and async operations
+    await tester
+        .pumpAndSettle(); // Wait for dialog to close and async operations
 
     // Verify createGroup called
     verify(() => mockGroupService.createGroup(
@@ -109,8 +115,9 @@ void main() {
     verify(() => mockVibrationService.lightImpact()).called(greaterThan(0));
   });
 
-  testWidgets('Create Group button disabled when empty', (WidgetTester tester) async {
-     // Arrange
+  testWidgets('Create Group button disabled when empty',
+      (WidgetTester tester) async {
+    // Arrange
     when(() => mockGroupService.createGroup(
           ownerUid: any(named: 'ownerUid'),
           name: any(named: 'name'),
@@ -124,7 +131,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify disabled initially
-    final createButtonFinder = find.descendant(of: find.byType(AlertDialog), matching: find.widgetWithText(TextButton, 'Create'));
+    final createButtonFinder = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(TextButton, 'Create'));
     final TextButton createButton = tester.widget(createButtonFinder);
     expect(createButton.onPressed, isNull);
 
@@ -133,11 +142,13 @@ void main() {
     await tester.pump();
 
     // Still disabled for whitespace
-    final createButtonWhitespace = tester.widget<TextButton>(createButtonFinder);
+    final createButtonWhitespace =
+        tester.widget<TextButton>(createButtonFinder);
     expect(createButtonWhitespace.onPressed, isNull);
   });
 
-  testWidgets('Create Group dialog cancels correctly', (WidgetTester tester) async {
+  testWidgets('Create Group dialog cancels correctly',
+      (WidgetTester tester) async {
     // Act
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();
