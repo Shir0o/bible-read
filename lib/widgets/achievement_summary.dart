@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/achievement.dart';
 import '../services/achievement_service.dart';
+import '../pages/achievements_page.dart';
 import 'badge_icon.dart';
 import 'success_animation.dart';
 import '../models/achievement_definition.dart';
@@ -62,32 +65,59 @@ class _AchievementSummaryState extends State<AchievementSummary> {
           });
         }
         _lastCount = count;
-        if (count == 0) {
-          return const Text('No achievements yet');
-        }
-        return Column(
-          children: [
-            Text(
-              'Achievements',
-              style: Theme.of(context).textTheme.titleMedium,
+
+        final Widget content = count == 0
+            ? const Text('No achievements yet')
+            : Column(
+                children: [
+                  Text(
+                    'Achievements',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      BadgeIcon(
+                        imageUrl: allAchievements
+                            .firstWhere((a) => a.id == 'streak7')
+                            .imageUrl,
+                        iconData: allAchievements
+                            .firstWhere((a) => a.id == 'streak7')
+                            .icon,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 4),
+                      Text('$count'),
+                    ],
+                  ),
+                ],
+              );
+
+        return Semantics(
+          label: 'View achievements',
+          button: true,
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () {
+                unawaited(widget.vibrationService.lightImpact());
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AchievementsPage(
+                      auth: widget.auth,
+                      firestore: widget.firestore,
+                    ),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: content,
+              ),
             ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                BadgeIcon(
-                  imageUrl: allAchievements
-                      .firstWhere((a) => a.id == 'streak7')
-                      .imageUrl,
-                  iconData:
-                      allAchievements.firstWhere((a) => a.id == 'streak7').icon,
-                  size: 24,
-                ),
-                const SizedBox(width: 4),
-                Text('$count'),
-              ],
-            ),
-          ],
+          ),
         );
       },
     );
