@@ -233,4 +233,42 @@ void main() {
     expect(privacySpan.recognizer, isNotNull);
     expect(privacySpan.recognizer, isA<TapGestureRecognizer>());
   });
+
+  testWidgets('Log in link has correct semantics and tooltip', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SignupPage(
+          auth: RecordingAuth(),
+          firestore: FakeFirebaseFirestore(),
+          vibrationService: MockVibrationService(),
+          googleSignInProvider: () => FakeGoogleSignIn(),
+        ),
+      ),
+    );
+
+    // Scroll to the bottom to ensure the link is visible
+    final loginTextFinder = find.text('Log in');
+
+    // Ensure it is visible by scrolling
+    await tester.dragUntilVisible(
+      loginTextFinder,
+      find.byType(SingleChildScrollView),
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify Semantics
+    final semanticsHandle = tester.ensureSemantics();
+    expect(
+      tester.getSemantics(find.byKey(const Key('loginLinkSemantics'))),
+      matchesSemantics(
+        label: 'Log in',
+        isButton: true,
+      ),
+    );
+    semanticsHandle.dispose();
+
+    // Verify Tooltip
+    expect(find.byTooltip('Log in'), findsOneWidget);
+  });
 }
