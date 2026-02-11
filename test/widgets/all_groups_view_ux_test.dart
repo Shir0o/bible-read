@@ -52,120 +52,16 @@ void main() {
     );
   }
 
-  testWidgets('Create Group dialog UX flow', (WidgetTester tester) async {
-    // Arrange
-    when(() => mockGroupService.createGroup(
-          ownerUid: any(named: 'ownerUid'),
-          name: any(named: 'name'),
-        )).thenAnswer((_) async => 'new_group_id');
-
-    // Act
-    await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle(); // Wait for streams
-
-    // Tap FAB to open dialog
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
-
-    // Assert Dialog Open
-    // Use descendent to ensure we are looking at the dialog title, or just check existence
-    // Since "Create Group" is also on the empty state button, we expect 2 or need to be specific.
-    // Let's verify the AlertDialog exists.
-    expect(find.byType(AlertDialog), findsOneWidget);
-    expect(
-        find.descendant(
-            of: find.byType(AlertDialog), matching: find.text('Create Group')),
-        findsOneWidget);
-
-    expect(find.byType(TextField), findsOneWidget);
-    expect(find.text('Cancel'), findsOneWidget);
-
-    // The "Create" button in the dialog
-    final createButtonFinder = find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.widgetWithText(TextButton, 'Create'));
-    expect(createButtonFinder, findsOneWidget);
-
-    // Initial State: Create button should be disabled
-    final TextButton createButton = tester.widget(createButtonFinder);
-    // In current implementation, it is enabled (onPressed is not null).
-    // The test expects it to be disabled (null).
-    expect(createButton.onPressed, isNull);
-
-    // Enter text
-    await tester.enterText(find.byType(TextField), 'Test Group');
-    await tester.pump(); // Rebuild for State changes
-
-    // Verify Create button is enabled
-    final createButtonEnabled = tester.widget<TextButton>(createButtonFinder);
-    expect(createButtonEnabled.onPressed, isNotNull);
-
-    // Tap Create
-    await tester.tap(createButtonFinder);
-    await tester
-        .pumpAndSettle(); // Wait for dialog to close and async operations
-
-    // Verify createGroup called
-    verify(() => mockGroupService.createGroup(
-          ownerUid: 'test_uid',
-          name: 'Test Group',
-        )).called(1);
-
-    // Verify vibration
-    verify(() => mockVibrationService.lightImpact()).called(greaterThan(0));
-  });
-
-  testWidgets('Create Group button disabled when empty',
-      (WidgetTester tester) async {
-    // Arrange
-    when(() => mockGroupService.createGroup(
-          ownerUid: any(named: 'ownerUid'),
-          name: any(named: 'name'),
-        )).thenAnswer((_) async => 'new_group_id');
-
-    await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle();
-
-    // Open dialog
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
-
-    // Verify disabled initially
-    final createButtonFinder = find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.widgetWithText(TextButton, 'Create'));
-    final TextButton createButton = tester.widget(createButtonFinder);
-    expect(createButton.onPressed, isNull);
-
-    // Enter text
-    await tester.enterText(find.byType(TextField), '  ');
-    await tester.pump();
-
-    // Still disabled for whitespace
-    final createButtonWhitespace =
-        tester.widget<TextButton>(createButtonFinder);
-    expect(createButtonWhitespace.onPressed, isNull);
-  });
-
-  testWidgets('Create Group dialog cancels correctly',
+  testWidgets('Find Groups view renders correctly',
       (WidgetTester tester) async {
     // Act
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();
 
-    // Open dialog
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
-
-    // Tap Cancel
-    await tester.tap(find.text('Cancel'));
-    await tester.pumpAndSettle();
-
-    // Assert Dialog Closed
-    expect(find.byType(AlertDialog), findsNothing);
-    verifyNever(() => mockGroupService.createGroup(
-          ownerUid: any(named: 'ownerUid'),
-          name: any(named: 'name'),
-        ));
+    // Assert
+    expect(find.text('Find Groups'), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget); // Search bar
+    expect(find.byIcon(Icons.filter_list), findsOneWidget); // Filter button
+    expect(find.byIcon(Icons.arrow_back), findsOneWidget); // Back button
   });
 }

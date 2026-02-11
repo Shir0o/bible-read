@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
-import '../widgets/common_styles.dart';
 import '../widgets/views/all_groups_view.dart';
 
 /// Page that lists all groups (Browse/Find Groups).
@@ -29,16 +28,11 @@ class AllGroupsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CommonStyles.buildAppBar(
-        context,
-        'Find Groups',
-      ),
-      body: AllGroupsView(
-        groupService: groupService,
-        auth: auth,
-        vibrationService: vibrationService,
-      ),
+    // The AllGroupsView handles the Scaffold and its own app bar / header.
+    return AllGroupsView(
+      groupService: groupService,
+      auth: auth,
+      vibrationService: vibrationService,
     );
   }
 }

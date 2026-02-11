@@ -1028,6 +1028,55 @@ class GroupService {
     });
   }
 
+  /// Fetch a limited list of members for a group, including their display names
+  /// and photo URLs. Useful for displaying group cards.
+  Future<List<GroupMemberProgressData>> getGroupMembersBasic(
+    String groupId, {
+    int limit = 4,
+  }) async {
+    try {
+      final membersRef = firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.members);
+
+      final snap = await membersRef.limit(limit).get();
+
+      final order = <String>[];
+      final providedNames = <String, String>{};
+      final missingUids = <String>[];
+
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        final uid = (data['uid'] as String?) ?? doc.id;
+        if (uid.isEmpty) continue;
+        order.add(uid);
+
+        final name = data['name'] as String?;
+        if (name != null && name.isNotEmpty) {
+          providedNames[uid] = name;
+        } else {
+          missingUids.add(uid);
+        }
+      }
+
+      final resolvedNames = await _fetchUserInfos(missingUids);
+
+      return [
+        for (final uid in order)
+          GroupMemberProgressData(
+            uid: uid,
+            name: providedNames[uid] ?? resolvedNames[uid]?.name ?? uid,
+            photoUrl: resolvedNames[uid]?.photoUrl,
+            completion: 0.0,
+          )
+      ];
+    } catch (e, st) {
+      await _safeLog(e, st);
+      return [];
+    }
+  }
+
   Future<List<GroupMemberProgressData>> _buildMemberDailyCompletion(
     QuerySnapshot<Map<String, dynamic>> membersSnap,
     QuerySnapshot<Map<String, dynamic>> progressSnap,

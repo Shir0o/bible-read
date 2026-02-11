@@ -1,19 +1,16 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+
 import '../../models/group.dart';
-import '../../services/error_logger.dart';
 import '../../services/group_service.dart';
 import '../../services/vibration_service.dart';
 import '../common_styles.dart';
-import '../skeleton_loader.dart';
-import '../skeletons/group_list_skeleton.dart';
+import '../find_group_card.dart';
 import '../../pages/group_detail_page.dart';
 
-/// View that lists all groups, suitable for embedding in a TabBarView.
+/// View that lists all groups (Browse/Find Groups).
 class AllGroupsView extends StatefulWidget {
   final GroupService groupService;
   final FirebaseAuth auth;
@@ -32,287 +29,178 @@ class AllGroupsView extends StatefulWidget {
 
 class _AllGroupsViewState extends State<AllGroupsView>
     with AutomaticKeepAliveClientMixin {
-  bool _inProgress = false;
-  int _refreshTick = 0;
-
-  Future<void> _refresh() async {
-    try {
-      await widget.auth.currentUser?.reload();
-      final uid = widget.auth.currentUser?.uid;
-      if (uid != null) {
-        // Validate and fix cached member progress for joined/owned groups.
-        await widget.groupService.fixMemberProgressSummariesForUser(uid);
-      }
-    } catch (_) {}
-    if (mounted) {
-      setState(() => _refreshTick++);
-    }
-  }
-
-  Future<void> _createGroup() async {
-    final controller = TextEditingController();
-    var disposed = false;
-
-    void disposeController() {
-      if (disposed) {
-        return;
-      }
-      disposed = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
-    }
-
-    final user = widget.auth.currentUser;
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(builder: (context, setState) {
-          final isEnabled = controller.text.trim().isNotEmpty;
-          return AlertDialog(
-            title: const Text('Create Group'),
-            content: TextField(
-              controller: controller,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.done,
-              decoration: const InputDecoration(labelText: 'Group Name'),
-              onChanged: (_) => setState(() {}),
-              onSubmitted: (value) {
-                if (value.trim().isNotEmpty) {
-                  unawaited(widget.vibrationService.lightImpact());
-                  Navigator.of(context).pop(value.trim());
-                }
-              },
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  unawaited(widget.vibrationService.lightImpact());
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: isEnabled
-                    ? () {
-                        unawaited(widget.vibrationService.lightImpact());
-                        Navigator.of(context).pop(controller.text.trim());
-                      }
-                    : null,
-                child: const Text('Create'),
-              ),
-            ],
-          );
-        });
-      },
-    );
-    if (user == null || name == null || name.isEmpty || !mounted) {
-      disposeController();
-      return;
-    }
-    setState(() => _inProgress = true);
-    try {
-      await widget.groupService.createGroup(ownerUid: user.uid, name: name);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Group created')));
-      }
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to create group: $e');
-      }
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to create group. Please try again.'),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _inProgress = false);
-      }
-      disposeController();
-    }
-  }
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   Future<void> _openGroup(Group group) async {
     unawaited(widget.vibrationService.lightImpact());
-    final deleted = await Navigator.of(context).push<bool>(
+    // Navigate to GroupDetailPage where user can see details and join
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => GroupDetailPage(
           group: group,
           groupService: widget.groupService,
           auth: widget.auth,
+          vibrationService: widget.vibrationService,
         ),
       ),
     );
-    if (!mounted || deleted != true) {
-      return;
-    }
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Group deleted')));
   }
 
-  @override
   @override
   bool get wantKeepAlive => true;
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final user = widget.auth.currentUser;
+
     return Scaffold(
-      body: Container(
-        decoration:
-            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
-        child: user == null
-            ? RefreshIndicator(
-                onRefresh: _refresh,
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
-                    SizedBox(height: 200),
-                    Center(child: Text('Please sign in')),
-                  ],
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () {
+                      unawaited(widget.vibrationService.lightImpact());
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  Expanded(
+                    child: Text(
+                      'Find Groups',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.title.copyWith(fontSize: 20),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.filter_list),
+                    onPressed: () {
+                      unawaited(widget.vibrationService.lightImpact());
+                      // Placeholder for filter options
+                    },
+                  ),
+                ],
+              ),
+            ),
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.trim().toLowerCase();
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search groups',
+                  prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
+                  filled: true,
+                  fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
                 ),
-              )
-            : StreamBuilder<List<Group>>(
-                key: ValueKey('all-groups-$_refreshTick'),
+              ),
+            ),
+            // Content
+            Expanded(
+              child: StreamBuilder<List<Group>>(
                 stream: widget.groupService.allGroups(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
-                    return RefreshIndicator(
-                      onRefresh: _refresh,
-                      child: ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: const [
-                          SizedBox(height: 200),
-                          Center(child: Text('Failed to load groups')),
-                        ],
-                      ),
-                    );
+                    return Center(child: Text('Error: ${snapshot.error}'));
                   }
                   if (!snapshot.hasData) {
-                    return SkeletonLoader(
-                      loading: true,
-                      skeleton: const GroupListSkeleton(),
-                      child: const SizedBox.shrink(),
-                    );
+                    return const Center(child: CircularProgressIndicator());
                   }
-                  final groups = snapshot.data!;
-                  if (groups.isEmpty) {
-                    return RefreshIndicator(
-                      onRefresh: _refresh,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minHeight: constraints.maxHeight,
-                              ),
-                              child: _buildEmptyState(context),
-                            ),
-                          );
-                        },
-                      ),
-                    );
+
+                  final allGroups = snapshot.data!;
+                  
+                  // Filter logic:
+                  // 1. Must be public or user explicitly searches for it (not implemented here, assuming generic search).
+                  // 2. Name contains query.
+                  final filtered = allGroups.where((g) {
+                    final nameMatch = g.name.toLowerCase().contains(_searchQuery);
+                    return g.isPublic && nameMatch;
+                  }).toList();
+
+                  if (user == null) {
+                    return _buildGroupList(filtered);
                   }
-                  return SkeletonLoader(
-                    loading: false,
-                    skeleton: const GroupListSkeleton(),
-                    child: StreamBuilder<List<Group>>(
-                      key: ValueKey('my-groups-$_refreshTick'),
-                      stream: widget.groupService.groupsForUser(user.uid),
-                      builder: (context, mySnap) {
-                        return StreamBuilder<
-                            QuerySnapshot<Map<String, dynamic>>>(
-                          stream: widget.groupService.firestore
-                              .collectionGroup(GroupCollections.joinRequests)
-                              .where('uid', isEqualTo: user.uid)
-                              .snapshots(),
-                          builder: (context, reqSnap) {
-                            final pending = reqSnap.hasData
-                                ? reqSnap.data!.docs
-                                    .map((d) => d.reference.parent.parent?.id)
-                                    .whereType<String>()
-                                    .toSet()
-                                : <String>{};
-                            return RefreshIndicator(
-                              onRefresh: _refresh,
-                              child: ListView.separated(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                itemCount: groups.length,
-                                separatorBuilder: (_, __) =>
-                                    const Divider(height: 0),
-                                itemBuilder: (context, index) {
-                                  final g = groups[index];
-                                  return StreamBuilder<
-                                      QuerySnapshot<Map<String, dynamic>>>(
-                                    stream: widget.groupService.firestore
-                                        .collection(GroupCollections.groups)
-                                        .doc(g.id)
-                                        .collection(GroupCollections.members)
-                                        .snapshots(),
-                                    builder: (context, memberSnap) {
-                                      final docs =
-                                          memberSnap.data?.docs ?? const [];
-                                      final liveCount = docs.length;
-                                      // Ensure the owner appears in count even if their member doc is missing.
-                                      final hasOwner = docs.any((d) =>
-                                          d.id == g.ownerUid ||
-                                          (d.data()['uid'] as String?) ==
-                                              g.ownerUid);
-                                      final adjusted =
-                                          hasOwner ? liveCount : liveCount + 1;
-                                      final count =
-                                          (memberSnap.hasData && adjusted > 0)
-                                              ? adjusted
-                                              : g.memberCount;
-                                      return CommonStyles.buildTappableCard(
-                                        context: context,
-                                        onTap: () => _openGroup(g),
-                                        margin: const EdgeInsets.symmetric(
-                                            vertical: 4.0),
-                                        child: ListTile(
-                                          contentPadding: EdgeInsets.zero,
-                                          title: Text(g.name),
-                                          subtitle: Text(
-                                            '$count member${count == 1 ? '' : 's'}',
-                                          ),
-                                          trailing: pending.contains(g.id)
-                                              ? const Text('Pending')
-                                              : null,
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+
+                  // We filter out groups the user has already joined to keep the list clean for "Finding"
+                  return StreamBuilder<List<Group>>(
+                    stream: widget.groupService.groupsForUser(user.uid),
+                    builder: (context, myGroupsSnap) {
+                      final myGroups = myGroupsSnap.data ?? [];
+                      final myGroupIds = myGroups.map((g) => g.id).toSet();
+
+                      final availableGroups = filtered.where((g) => !myGroupIds.contains(g.id)).toList();
+
+                      if (availableGroups.isEmpty) {
+                        return _buildEmptyState(context);
+                      }
+                      
+                      return _buildGroupList(availableGroups);
+                    },
                   );
                 },
               ),
+            ),
+          ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'groups-fab',
-        onPressed: _inProgress ? null : _createGroup,
-        child: const Icon(Icons.add),
-      ),
+    );
+  }
+  
+  Widget _buildGroupList(List<Group> groups) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16, left: 4),
+          child: Text(
+            'RECOMMENDED FOR YOU',
+            style: AppTextStyles.subtitle.copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurfaceVariant,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        ...groups.map((group) => FindGroupCard(
+          group: group,
+          groupService: widget.groupService,
+          onJoin: () => _openGroup(group),
+        )),
+      ],
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -320,30 +208,23 @@ class _AllGroupsViewState extends State<AllGroupsView>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.groups_outlined,
+              Icons.search_off,
               size: 64,
-              color:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+              color: colorScheme.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
               'No groups found',
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: theme.textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Create a group to start reading together.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+              'Try adjusting your search or come back later.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _createGroup,
-              icon: const Icon(Icons.add),
-              label: const Text('Create Group'),
             ),
           ],
         ),
