@@ -509,7 +509,7 @@ class _SignupPageState extends State<SignupPage> {
                             padding: const EdgeInsets.all(4.0),
                             child: Text(
                               'Log in',
-                            padding: const EdgeInsets.all(12.0),
+                              style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: darkPrimary,
