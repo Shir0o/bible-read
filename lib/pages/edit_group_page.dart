@@ -764,6 +764,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                                     icon:
                                         const Icon(Icons.remove_circle_outline),
                                     color: colorScheme.onSurfaceVariant,
+                                    tooltip: 'Remove ${member.name}',
                                     onPressed: () =>
                                         _kickMember(member.uid, member.name),
                                   ),
@@ -795,39 +796,33 @@ class _EditGroupPageState extends State<EditGroupPage> {
                     const SizedBox(height: 16),
 
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      clipBehavior: Clip.hardEdge,
                       decoration: BoxDecoration(
                         color: colorScheme.surface,
                         border: Border.all(
-                            color: colorScheme.outlineVariant.withOpacity(0.5)),
+                            color: colorScheme.outlineVariant
+                                .withValues(alpha: 0.5)),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Public Group',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500),
-                                ),
-                                Text(
-                                  'Visible in community search results',
-                                  style: TextStyle(
-                                      fontSize: 14,
-                                      color: colorScheme.onSurfaceVariant),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch(
-                            value: _isPublic,
-                            onChanged: (val) => setState(() => _isPublic = val),
-                          ),
-                        ],
+                      child: SwitchListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        title: const Text(
+                          'Public Group',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w500),
+                        ),
+                        subtitle: Text(
+                          'Visible in community search results',
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: colorScheme.onSurfaceVariant),
+                        ),
+                        value: _isPublic,
+                        onChanged: (val) {
+                          unawaited(widget.vibrationService.lightImpact());
+                          setState(() => _isPublic = val);
+                        },
                       ),
                     ),
                     const SizedBox(height: 16),

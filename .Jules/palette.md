@@ -51,3 +51,7 @@
 ## 2026-03-02 - Date Picker Accessibility
 **Learning:** `GestureDetector` on input fields provides no visual feedback (ripple) and poor accessibility (no 'button' trait).
 **Action:** Wrap tappable `InputDecorator` fields in `Semantics` (button: true) + `InkWell` (with matching border radius) for better touch feedback and screen reader support.
+
+## 2026-03-03 - Switch Accessibility
+**Learning:** Standard `Switch` widgets often lack context for screen readers and haptic feedback for touch.
+**Action:** Prefer `SwitchListTile` which merges semantics and increases touch target. Add `unawaited(HapticFeedback.lightImpact())` to `onChanged` for tactile confirmation.
