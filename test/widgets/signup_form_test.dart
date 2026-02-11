@@ -259,7 +259,9 @@ void main() {
     var semantics = tester.getSemantics(passwordToggleFinder);
     var data = semantics.getSemanticsData();
     expect(data.tooltip, 'Show password');
+    // ignore: deprecated_member_use
     expect(data.hasFlag(SemanticsFlag.isButton), isTrue);
+    // ignore: deprecated_member_use
     expect(data.hasFlag(SemanticsFlag.isEnabled), isTrue);
     expect(data.hasAction(SemanticsAction.tap), isTrue);
 
@@ -270,7 +272,9 @@ void main() {
     semantics = tester.getSemantics(passwordToggleFinder);
     data = semantics.getSemanticsData();
     expect(data.tooltip, 'Hide password');
+    // ignore: deprecated_member_use
     expect(data.hasFlag(SemanticsFlag.isButton), isTrue);
+    // ignore: deprecated_member_use
     expect(data.hasFlag(SemanticsFlag.isEnabled), isTrue);
     expect(data.hasAction(SemanticsAction.tap), isTrue);
 

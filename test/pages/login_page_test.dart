@@ -154,6 +154,7 @@ void main() {
         var semantics = tester.getSemantics(toggleButtonFinder);
         var data = semantics.getSemanticsData();
         expect(data.tooltip, 'Show password');
+        // ignore: deprecated_member_use
         expect(data.hasFlag(SemanticsFlag.isButton), isTrue);
 
         // Tap to show
@@ -193,7 +194,9 @@ void main() {
         // Wait for snackbar animation
         await tester.pumpAndSettle();
 
-        expect(find.widgetWithText(SnackBar, 'Failed to sign in. Please check credentials.'),
+        expect(
+            find.widgetWithText(
+                SnackBar, 'Failed to sign in. Please check credentials.'),
             findsOneWidget);
         expect(auth.signInCalled, isTrue);
       });
@@ -229,8 +232,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(
-            find.widgetWithText(
-                SnackBar, 'Please enter a valid email address'),
+            find.widgetWithText(SnackBar, 'Please enter a valid email address'),
             findsOneWidget);
         expect(auth.signInCalled, isFalse);
       });
@@ -250,12 +252,14 @@ void main() {
         final forgotPasswordSemantics =
             tester.getSemantics(forgotPasswordFinder);
         final forgotPasswordData = forgotPasswordSemantics.getSemanticsData();
+        // ignore: deprecated_member_use
         expect(forgotPasswordData.hasFlag(SemanticsFlag.isButton), isTrue);
         expect(forgotPasswordData.label, 'Forgot password');
 
         // Verify Sign up semantics
         final signUpSemantics = tester.getSemantics(signUpFinder);
         final signUpData = signUpSemantics.getSemanticsData();
+        // ignore: deprecated_member_use
         expect(signUpData.hasFlag(SemanticsFlag.isButton), isTrue);
         expect(signUpData.label, 'Sign up');
 
@@ -294,7 +298,8 @@ void main() {
         // Tap Send Link
         await tester.tap(find.text('Send Link'));
         await tester.pump(); // Trigger tap and setState
-        await tester.pump(const Duration(milliseconds: 100)); // Allow future to complete
+        await tester.pump(
+            const Duration(milliseconds: 100)); // Allow future to complete
         await tester.pumpAndSettle(); // Allow dialog to close
 
         // Verify API call

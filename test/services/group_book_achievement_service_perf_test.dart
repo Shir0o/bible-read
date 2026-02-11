@@ -86,13 +86,11 @@ void main() {
         await batch.commit();
       }
 
-      print('Seeding complete. Starting benchmark...');
       final stopwatch = Stopwatch()..start();
 
       final result = await service.completedChaptersByBook(userId);
 
       stopwatch.stop();
-      print('completedChaptersByBook took: ${stopwatch.elapsedMilliseconds}ms');
 
       // Verification (sanity check)
       // 2 groups * 50 entries each = 100 entries.

@@ -315,7 +315,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                           labelStyle: TextStyle(color: colorScheme.onPrimary),
                           onDeleted: () => _removeBook(book),
                           deleteIconColor:
-                              colorScheme.onPrimary.withOpacity(0.8),
+                              colorScheme.onPrimary.withValues(alpha: 0.8),
                           checkmarkColor: colorScheme.onPrimary,
                         );
                       }).toList(),
@@ -446,15 +446,19 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         border: _isDaily
                             ? Border.all(color: colorScheme.primary)
                             : Border.all(
-                                color: colorScheme.outline.withOpacity(0.3)),
+                                color:
+                                    colorScheme.outline.withValues(alpha: 0.3)),
                         borderRadius: BorderRadius.circular(12),
                         color: _isDaily
-                            ? colorScheme.primaryContainer.withOpacity(0.4)
+                            ? colorScheme.primaryContainer
+                                .withValues(alpha: 0.4)
                             : null,
                       ),
                       child: RadioListTile<bool>(
                         value: true,
+                        // ignore: deprecated_member_use
                         groupValue: _isDaily,
+                        // ignore: deprecated_member_use
                         onChanged: (val) {
                           unawaited(widget.vibrationService.lightImpact());
                           setState(() => _isDaily = val!);
@@ -477,15 +481,19 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         border: !_isDaily
                             ? Border.all(color: colorScheme.primary)
                             : Border.all(
-                                color: colorScheme.outline.withOpacity(0.3)),
+                                color:
+                                    colorScheme.outline.withValues(alpha: 0.3)),
                         borderRadius: BorderRadius.circular(12),
                         color: !_isDaily
-                            ? colorScheme.primaryContainer.withOpacity(0.4)
+                            ? colorScheme.primaryContainer
+                                .withValues(alpha: 0.4)
                             : null,
                       ),
                       child: RadioListTile<bool>(
                         value: false,
+                        // ignore: deprecated_member_use
                         groupValue: _isDaily,
+                        // ignore: deprecated_member_use
                         onChanged: (val) {
                           unawaited(widget.vibrationService.lightImpact());
                           setState(() => _isDaily = val!);
@@ -602,7 +610,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                   end: Alignment.topCenter,
                   colors: [
                     colorScheme.surface,
-                    colorScheme.surface.withOpacity(0.0),
+                    colorScheme.surface.withValues(alpha: 0.0),
                   ],
                 ),
               ),

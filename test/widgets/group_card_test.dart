@@ -11,7 +11,8 @@ class FakeGroupService extends GroupService {
   FakeGroupService() : super(firestore: FakeFirebaseFirestore());
 
   @override
-  Stream<List<GroupMemberProgressData>> memberOverallCompletion(String groupId, {String? includeUid}) {
+  Stream<List<GroupMemberProgressData>> memberOverallCompletion(String groupId,
+      {String? includeUid}) {
     return Stream.value([
       const GroupMemberProgressData(uid: 'u1', name: 'User 1', completion: 0.5),
       const GroupMemberProgressData(uid: 'u2', name: 'User 2', completion: 0.2),
@@ -31,13 +32,10 @@ void main() {
     groupService = FakeGroupService();
   });
 
-  testWidgets('GroupCard renders correctly with InkWell and Semantics', (tester) async {
-    final group = Group(
-      id: 'g1',
-      name: 'Test Group',
-      ownerUid: 'u1',
-      memberCount: 2
-    );
+  testWidgets('GroupCard renders correctly with InkWell and Semantics',
+      (tester) async {
+    final group =
+        Group(id: 'g1', name: 'Test Group', ownerUid: 'u1', memberCount: 2);
 
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
@@ -55,7 +53,8 @@ void main() {
     // Verify content
     expect(find.text('Test Group'), findsOneWidget);
     expect(find.text('35%'), findsOneWidget);
-    expect(find.textContaining('Reading: Genesis 1, Genesis 2'), findsOneWidget);
+    expect(
+        find.textContaining('Reading: Genesis 1, Genesis 2'), findsOneWidget);
 
     // Verify InkWell exists (Visual feedback)
     expect(find.byType(InkWell), findsOneWidget);
@@ -66,6 +65,7 @@ void main() {
 
     final semantics = tester.getSemantics(find.byType(InkWell));
     // Verify it is a button
+    // ignore: deprecated_member_use
     expect(semantics.hasFlag(SemanticsFlag.isButton), isTrue);
 
     // We expect the label to be meaningful.

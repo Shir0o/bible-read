@@ -36,7 +36,7 @@ void main() {
       });
 
       // Populate 365 days of progress
-      print('Seeding 365 days of data...');
+
       final batchSize = 500;
       var batch = firestore.batch();
       var opCount = 0;
@@ -60,15 +60,11 @@ void main() {
         }
       }
       await batch.commit();
-      print('Seeding complete.');
 
       // Benchmark
       final stopwatch = Stopwatch()..start();
       await service.recalcProgressForUserInGroup(groupId: 'g1', uid: 'u1');
       stopwatch.stop();
-
-      print(
-          'recalcProgressForUserInGroup took: ${stopwatch.elapsedMilliseconds}ms');
 
       // Verify result
       final summary = await groupRef

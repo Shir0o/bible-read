@@ -73,7 +73,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
       if (schedule.isNotEmpty) {
         _startDate = schedule.first.date;
         _endDate = schedule.last.date;
-        _originalStartDate = _startDate;
 
         final books = <String>{};
         for (final s in schedule) {
@@ -95,11 +94,12 @@ class _EditGroupPageState extends State<EditGroupPage> {
         _isDaily = hasWeekend;
       } else {
         _startDate = DateTime.now();
-        _originalStartDate = _startDate;
+
         _isDaily = true;
       }
 
       _isPublic = widget.group.isPublic;
+      _originalStartDate = _startDate;
 
       final members = await widget.groupService
           .memberOverallCompletion(widget.group.id)
@@ -348,15 +348,18 @@ class _EditGroupPageState extends State<EditGroupPage> {
                     delegate: SliverChildListDelegate([
                       _buildReadingPlanSection(colorScheme, textTheme),
                       const SizedBox(height: 24),
-                      Divider(color: colorScheme.outlineVariant.withOpacity(0.3)),
+                      Divider(
+                          color: colorScheme.outlineVariant.withOpacity(0.3)),
                       const SizedBox(height: 24),
                       _buildTimelineSection(colorScheme, textTheme),
                       const SizedBox(height: 24),
-                      Divider(color: colorScheme.outlineVariant.withOpacity(0.3)),
+                      Divider(
+                          color: colorScheme.outlineVariant.withOpacity(0.3)),
                       const SizedBox(height: 24),
                       _buildMembersSection(colorScheme, textTheme),
                       const SizedBox(height: 24),
-                      Divider(color: colorScheme.outlineVariant.withOpacity(0.3)),
+                      Divider(
+                          color: colorScheme.outlineVariant.withOpacity(0.3)),
                       const SizedBox(height: 24),
                       _buildGroupSettingsSection(colorScheme, textTheme),
                       const SizedBox(height: 100), // Space for bottom button
@@ -414,7 +417,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 48.0), // Balance back button
+                    padding: const EdgeInsets.only(
+                        right: 48.0), // Balance back button
                     child: Text(
                       'Edit Group Plan',
                       style: textTheme.titleLarge?.copyWith(
@@ -694,35 +698,23 @@ class _EditGroupPageState extends State<EditGroupPage> {
             Expanded(
               child: Opacity(
                 opacity: 0.6,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: 'Start',
-                        labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: colorScheme.outlineVariant.withOpacity(0.5),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: colorScheme.outlineVariant.withOpacity(0.5),
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 16),
-                      ),
-                      child: Text(
-                        "${_startDate.year}-${_startDate.month.toString().padLeft(2, '0')}-${_startDate.day.toString().padLeft(2, '0')}",
-                        style: textTheme.bodyLarge,
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Start',
+                    labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: colorScheme.outlineVariant.withOpacity(0.5),
                       ),
                     ),
-                  ],
+                    enabled: false, // Visual only
+                  ),
+                  child: Text(
+                    "${_startDate.year}-${_startDate.month.toString().padLeft(2, '0')}-${_startDate.day.toString().padLeft(2, '0')}",
+                    style: textTheme.bodyLarge,
+                  ),
                 ),
               ),
             ),
@@ -775,6 +767,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
 
         const SizedBox(height: 24),
 
+        // Frequency
         Text(
           'Frequency',
           style: textTheme.titleMedium?.copyWith(
@@ -820,8 +813,9 @@ class _EditGroupPageState extends State<EditGroupPage> {
     final borderColor = isSelected
         ? colorScheme.primary
         : colorScheme.outlineVariant.withOpacity(0.5);
-    final backgroundColor =
-        isSelected ? colorScheme.primaryContainer.withOpacity(0.2) : null; // Adjusted opacity
+    final backgroundColor = isSelected
+        ? colorScheme.primaryContainer.withOpacity(0.2)
+        : null; // Adjusted opacity
     final iconColor =
         isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant;
 
@@ -939,7 +933,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
           ],
         ),
         const SizedBox(height: 24),
-
         if (_members.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 20),

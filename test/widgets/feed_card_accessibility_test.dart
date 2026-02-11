@@ -54,12 +54,15 @@ void main() {
     final encourageData = encourageNode.getSemanticsData();
 
     // We expect it to have button flag
+    // ignore: deprecated_member_use
     expect(encourageData.hasFlag(SemanticsFlag.isButton), isTrue,
         reason: 'Encourage should be a button');
     // We expect it to be enabled
+    // ignore: deprecated_member_use
     expect(encourageData.hasFlag(SemanticsFlag.isEnabled), isTrue,
         reason: 'Encourage should be enabled');
     // We expect it to be selected (because liked=true)
+    // ignore: deprecated_member_use
     expect(encourageData.hasFlag(SemanticsFlag.isSelected), isTrue,
         reason: 'Encourage should be selected');
 
@@ -77,11 +80,14 @@ void main() {
     final commentNode = tester.getSemantics(commentSemanticsFinder);
     final commentData = commentNode.getSemanticsData();
 
+    // ignore: deprecated_member_use
     expect(commentData.hasFlag(SemanticsFlag.isButton), isTrue,
         reason: 'Comment should be a button');
+    // ignore: deprecated_member_use
     expect(commentData.hasFlag(SemanticsFlag.isEnabled), isTrue,
         reason: 'Comment should be enabled');
     // It should NOT be selected
+    // ignore: deprecated_member_use
     expect(commentData.hasFlag(SemanticsFlag.isSelected), isFalse,
         reason: 'Comment should not be selected');
   });
