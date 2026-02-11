@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
@@ -43,8 +45,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
   late DateTime _startDate;
   DateTime? _endDate;
   bool _isDaily = true;
-  late DateTime
-      _originalStartDate; // To check if start date is manipulated (though disabled)
+  late DateTime _originalStartDate;
 
   // Settings State
   late bool _isPublic;
@@ -66,7 +67,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
 
   Future<void> _loadData() async {
     try {
-      // Load Schedule to determine plan
       final schedule =
           await widget.groupService.schedule(widget.group.id).first;
 
@@ -75,7 +75,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
         _endDate = schedule.last.date;
         _originalStartDate = _startDate;
 
-        // Infer books
         final books = <String>{};
         for (final s in schedule) {
           for (final chap in s.chapters) {
@@ -85,9 +84,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
         }
         _selectedBooks.addAll(books);
 
-        // Infer Frequency (check for missing weekends)
-        // If we find missing weekends in a long enough schedule, assume Weekdays.
-        // Or check if any weekend exists.
         bool hasWeekend = false;
         for (final s in schedule) {
           if (s.date.weekday == DateTime.saturday ||
@@ -97,27 +93,24 @@ class _EditGroupPageState extends State<EditGroupPage> {
           }
         }
         _isDaily = hasWeekend;
-        // Edge case: if the schedule is short and happens to be M-F, we might guess wrong.
-        // But defaults to Daily is safer unless proven otherwise.
       } else {
         _startDate = DateTime.now();
         _originalStartDate = _startDate;
         _isDaily = true;
       }
 
-      // Load Settings
       _isPublic = widget.group.isPublic;
 
-      // Load Members
-      // memberOverallCompletion gives us the list with avatars
       final members = await widget.groupService
           .memberOverallCompletion(widget.group.id)
           .first;
       _members = members;
 
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } catch (e, st) {
       if (mounted) {
         ErrorLogger.log(e, st);
@@ -153,7 +146,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
   }
 
   Future<void> _selectEndDate() async {
-    final firstDate = _startDate; // Can end on start date
+    final firstDate = _startDate;
     final picked = await showDatePicker(
       context: context,
       initialDate: _endDate ?? _startDate.add(const Duration(days: 30)),
@@ -185,7 +178,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
     unawaited(widget.vibrationService.lightImpact());
 
     try {
-      // 1. Generate New Schedule
       final newSchedule = ScheduleGenerator.generateSchedule(
         books: _selectedBooks,
         startDate: _startDate,
@@ -193,31 +185,12 @@ class _EditGroupPageState extends State<EditGroupPage> {
         isDaily: _isDaily,
       );
 
-      // 2. Update Schedule
-      // We overwrite. First clear old schedule if we want to be clean?
-      // updateScheduleBatch overwrites by dateId.
-      // If the new schedule is shorter than the old one, we need to delete the extra future days.
-      // Or we can delete all future schedule entries first.
-      // For now, let's just overwrite. Deleting old schedule entirely is risky for progress history.
-      // A robust "Edit Plan" usually asks if you want to keep history.
-      // Here we assume "Reschedule" from Start Date means "Overwrite".
-
-      // Strategy: Delete all schedule entries for this group, then write new ones.
-      // This ensures no stale days remain.
-      // WARNING: This clears progress for days that are removed or changed?
-      // GroupService.deleteGroup deletes everything.
-      // We don't have "deleteAllSchedule".
-      // We will loop through existing schedule and delete? That's slow.
-      // For now, we will just use updateScheduleBatch. Stale days (e.g. if we shortened the plan) will remain.
-      // Ideally, we should fetch existing schedule again, identify dates NOT in new schedule, and delete them.
-
       final currentSchedule =
           await widget.groupService.schedule(widget.group.id).first;
       final newDateKeys = newSchedule
           .map((s) => '${s.date.year}-${s.date.month}-${s.date.day}')
           .toSet();
 
-      // Find dates to delete (dates in current but not in new)
       for (final s in currentSchedule) {
         final key = '${s.date.year}-${s.date.month}-${s.date.day}';
         if (!newDateKeys.contains(key)) {
@@ -231,7 +204,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
         schedules: newSchedule,
       );
 
-      // 3. Update Settings
       if (_isPublic != widget.group.isPublic) {
         await widget.groupService.updateGroupPublicStatus(
           groupId: widget.group.id,
@@ -288,7 +260,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
           ownerUid: widget.auth.currentUser!.uid,
         );
         if (mounted) {
-          // Go back twice (Edit -> Detail -> List)
           Navigator.of(context).popUntil((route) => route.isFirst);
         }
       } catch (e, st) {
@@ -328,8 +299,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
           groupId: widget.group.id,
           uid: uid,
         );
-        // Refresh list locally or rely on setState if stream updates
-        // Since we loaded members once in initState via .first, we should remove locally
         setState(() {
           _members.removeWhere((m) => m.uid == uid);
         });
@@ -345,9 +314,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
   }
 
   void _copyLink() {
-    // For now, we simulate a link copy since we don't have deep linking set up yet.
-    // Or maybe we do, but the prompt implies simple "Copy Link".
-    // We'll copy the Group ID or a dummy link.
     Clipboard.setData(ClipboardData(text: 'Join my group: ${widget.group.id}'));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Link copied to clipboard')),
@@ -364,534 +330,846 @@ class _EditGroupPageState extends State<EditGroupPage> {
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final user = widget.auth.currentUser;
-    final isOwner = user?.uid == widget.group.ownerUid;
+    final textTheme = GoogleFonts.interTextTheme(theme.textTheme);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        title: const Text('Edit Group Plan'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+      body: Stack(
+        children: [
+          // Content
+          Positioned.fill(
+            child: CustomScrollView(
+              slivers: [
+                const SliverToBoxAdapter(
+                    child: SizedBox(height: 80)), // Space for header
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildReadingPlanSection(colorScheme, textTheme),
+                      const SizedBox(height: 24),
+                      Divider(color: colorScheme.outlineVariant.withOpacity(0.3)),
+                      const SizedBox(height: 24),
+                      _buildTimelineSection(colorScheme, textTheme),
+                      const SizedBox(height: 24),
+                      Divider(color: colorScheme.outlineVariant.withOpacity(0.3)),
+                      const SizedBox(height: 24),
+                      _buildMembersSection(colorScheme, textTheme),
+                      const SizedBox(height: 24),
+                      Divider(color: colorScheme.outlineVariant.withOpacity(0.3)),
+                      const SizedBox(height: 24),
+                      _buildGroupSettingsSection(colorScheme, textTheme),
+                      const SizedBox(height: 100), // Space for bottom button
+                    ]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _buildHeader(context, colorScheme, textTheme),
+          ),
+
+          // Bottom Button
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _buildSaveButton(colorScheme, textTheme),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(
+      BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          height: 72,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: colorScheme.surface.withOpacity(0.8),
+            border: Border(
+              bottom: BorderSide(
+                color: colorScheme.outlineVariant.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 48.0), // Balance back button
+                    child: Text(
+                      'Edit Group Plan',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.normal,
+                        color: colorScheme.onSurface,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      body: SafeArea(
-        child: Column(
+    );
+  }
+
+  Widget _buildReadingPlanSection(
+      ColorScheme colorScheme, TextTheme textTheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title and Subtitle
+        Text(
+          'Reading Plan',
+          style: textTheme.headlineMedium?.copyWith(
+            color: colorScheme.primary,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Modify the books in your plan.',
+          style: textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Search Input
+        Autocomplete<String>(
+          optionsBuilder: (TextEditingValue textEditingValue) {
+            if (textEditingValue.text.isEmpty) {
+              return const Iterable<String>.empty();
+            }
+            return ReferenceParser.allBooks.where((String option) {
+              return option
+                  .toLowerCase()
+                  .contains(textEditingValue.text.toLowerCase());
+            });
+          },
+          onSelected: _addBook,
+          fieldViewBuilder:
+              (context, controller, focusNode, onEditingComplete) {
+            return TextField(
+              controller: controller,
+              focusNode: focusNode,
+              onEditingComplete: onEditingComplete,
+              style: textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Add another book...',
+                hintStyle: textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                suffixIcon: Icon(
+                  Icons.arrow_drop_down,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(
+                    color: colorScheme.outline.withOpacity(0.3),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(
+                    color: colorScheme.outline.withOpacity(0.3),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: colorScheme.surface,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              ),
+            );
+          },
+          optionsViewBuilder: (context, onSelected, options) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(16),
+                color: colorScheme.surfaceContainerHighest,
+                child: ConstrainedBox(
+                  constraints:
+                      const BoxConstraints(maxHeight: 200, maxWidth: 300),
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    itemCount: options.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final String option = options.elementAt(index);
+                      return InkWell(
+                        onTap: () => onSelected(option),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            option,
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+
+        const SizedBox(height: 16),
+
+        // Selected Books Chips
+        if (_selectedBooks.isNotEmpty)
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: _selectedBooks.map((book) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.book,
+                      size: 18,
+                      color: colorScheme.onPrimary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      book,
+                      style: textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onPrimary,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () => _removeBook(book),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: colorScheme.onPrimary.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          size: 16,
+                          color: colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+
+        if (_selectedBooks.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          // Info Box
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              border: Border.all(
+                  color: colorScheme.outlineVariant.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: colorScheme.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      text: 'This selection contains approximately ',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurface,
+                        height: 1.5,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: '$_totalChapters chapters',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const TextSpan(text: '.'),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTimelineSection(ColorScheme colorScheme, TextTheme textTheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title and Subtitle
+        Text(
+          'Timeline',
+          style: textTheme.headlineMedium?.copyWith(
+            color: colorScheme.primary,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Adjust your schedule dates.',
+          style: textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        Row(
           children: [
+            // Start Date
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+              child: Opacity(
+                opacity: 0.6,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // --- Reading Plan ---
-                    Text(
-                      'Reading Plan',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Modify the books in your plan.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Search
-                    Autocomplete<String>(
-                      optionsBuilder: (TextEditingValue textEditingValue) {
-                        if (textEditingValue.text.isEmpty) {
-                          return const Iterable<String>.empty();
-                        }
-                        return ReferenceParser.allBooks.where((String option) {
-                          return option
-                              .toLowerCase()
-                              .contains(textEditingValue.text.toLowerCase());
-                        });
-                      },
-                      onSelected: _addBook,
-                      fieldViewBuilder:
-                          (context, controller, focusNode, onEditingComplete) {
-                        return TextField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          onEditingComplete: onEditingComplete,
-                          decoration: InputDecoration(
-                            hintText: 'Add another book...',
-                            prefixIcon: const Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            filled: true,
-                            fillColor: colorScheme.surfaceContainerHighest,
-                          ),
-                        );
-                      },
-                      optionsViewBuilder: (context, onSelected, options) {
-                        return Align(
-                          alignment: Alignment.topLeft,
-                          child: Material(
-                            elevation: 4,
-                            borderRadius: BorderRadius.circular(8),
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                  maxHeight: 200, maxWidth: 300),
-                              child: ListView.builder(
-                                padding: EdgeInsets.zero,
-                                shrinkWrap: true,
-                                itemCount: options.length,
-                                itemBuilder: (BuildContext context, int index) {
-                                  final String option =
-                                      options.elementAt(index);
-                                  return InkWell(
-                                    onTap: () => onSelected(option),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: Text(option),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Chips
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _selectedBooks.map((book) {
-                        return InputChip(
-                          label: Text(book),
-                          selected: true,
-                          selectedColor: colorScheme.primary,
-                          labelStyle: TextStyle(color: colorScheme.onPrimary),
-                          onDeleted: () => _removeBook(book),
-                          deleteIconColor:
-                              colorScheme.onPrimary.withOpacity(0.8),
-                          checkmarkColor: colorScheme.onPrimary,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        );
-                      }).toList(),
-                    ),
-
-                    if (_selectedBooks.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: colorScheme.outlineVariant),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.info_outline,
-                                color: colorScheme.primary),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text.rich(
-                                TextSpan(
-                                  text:
-                                      'This selection contains approximately ',
-                                  style:
-                                      TextStyle(color: colorScheme.onSurface),
-                                  children: [
-                                    TextSpan(
-                                      text: '$_totalChapters chapters',
-                                      style: TextStyle(
-                                        color: colorScheme.primary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const TextSpan(text: '.'),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: 24),
-                    const Divider(),
-                    const SizedBox(height: 24),
-
-                    // --- Timeline ---
-                    Text(
-                      'Timeline',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Adjust your schedule dates.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Opacity(
-                            opacity: 0.6,
-                            child: InputDecorator(
-                              decoration: InputDecoration(
-                                labelText: 'Start',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                enabled:
-                                    false, // Visual only, interaction blocked by not having onTap
-                              ),
-                              child: Text(
-                                "${_startDate.year}-${_startDate.month.toString().padLeft(2, '0')}-${_startDate.day.toString().padLeft(2, '0')}",
-                              ),
-                            ),
+                    InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Start',
+                        labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: colorScheme.outlineVariant.withOpacity(0.5),
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Semantics(
-                            button: true,
-                            label: _endDate == null
-                                ? 'Select end date'
-                                : 'Select end date, current selection: ${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}',
-                            child: InkWell(
-                              onTap: _selectEndDate,
-                              borderRadius: BorderRadius.circular(16),
-                              child: InputDecorator(
-                                decoration: InputDecoration(
-                                  labelText: 'End',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  suffixIcon: const Icon(Icons.calendar_today),
-                                ),
-                                child: Text(
-                                  _endDate == null
-                                      ? 'Select Date'
-                                      : "${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}",
-                                ),
-                              ),
-                            ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: colorScheme.outlineVariant.withOpacity(0.5),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    const Text('Frequency',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: _isDaily
-                            ? Border.all(color: colorScheme.primary)
-                            : Border.all(
-                                color: colorScheme.outline.withOpacity(0.3)),
-                        borderRadius: BorderRadius.circular(12),
-                        color: _isDaily
-                            ? colorScheme.primaryContainer.withOpacity(0.4)
-                            : null,
-                      ),
-                      child: RadioListTile<bool>(
-                        value: true,
-                        groupValue: _isDaily,
-                        onChanged: (val) => setState(() => _isDaily = val!),
-                        title: const Text('Daily'),
-                        subtitle: const Text('Every single day'),
-                        secondary: Icon(Icons.calendar_view_day,
-                            color: _isDaily
-                                ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant),
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 4),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                            horizontal: 16, vertical: 16),
+                      ),
+                      child: Text(
+                        "${_startDate.year}-${_startDate.month.toString().padLeft(2, '0')}-${_startDate.day.toString().padLeft(2, '0')}",
+                        style: textTheme.bodyLarge,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: !_isDaily
-                            ? Border.all(color: colorScheme.primary)
-                            : Border.all(
-                                color: colorScheme.outline.withOpacity(0.3)),
-                        borderRadius: BorderRadius.circular(12),
-                        color: !_isDaily
-                            ? colorScheme.primaryContainer.withOpacity(0.4)
-                            : null,
-                      ),
-                      child: RadioListTile<bool>(
-                        value: false,
-                        groupValue: _isDaily,
-                        onChanged: (val) => setState(() => _isDaily = val!),
-                        title: const Text('Weekdays'),
-                        subtitle: const Text('Mon - Fri only'),
-                        secondary: Icon(Icons.date_range,
-                            color: !_isDaily
-                                ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 4),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-                    const Divider(),
-                    const SizedBox(height: 24),
-
-                    // --- Members ---
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Members',
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              'Manage group participants.',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                        FilledButton.icon(
-                          onPressed: _copyLink,
-                          icon: const Icon(Icons.link, size: 18),
-                          label: const Text('Copy Link'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: colorScheme.primaryContainer,
-                            foregroundColor: colorScheme.onPrimaryContainer,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    if (_members.isEmpty)
-                      const Text('No members loaded')
-                    else
-                      ListView.separated(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemCount: _members.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final member = _members[index];
-                          final isMe = member.uid == user?.uid;
-                          final isMemberOwner =
-                              member.uid == widget.group.ownerUid;
-                          // In our simplified logic, owner is admin.
-                          final role = isMemberOwner ? 'Group Owner' : 'Member';
-
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: colorScheme.surface,
-                              border: Border.all(
-                                  color: colorScheme.outlineVariant
-                                      .withOpacity(0.5)),
-                              borderRadius:
-                                  BorderRadius.circular(50), // pill shape
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 8),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor:
-                                      colorScheme.tertiaryContainer,
-                                  backgroundImage: member.photoUrl != null
-                                      ? CachedNetworkImageProvider(
-                                          member.photoUrl!)
-                                      : null,
-                                  child: member.photoUrl == null
-                                      ? Text(
-                                          member.name.isNotEmpty
-                                              ? member.name[0].toUpperCase()
-                                              : '?',
-                                          style: TextStyle(
-                                              color: colorScheme
-                                                  .onTertiaryContainer),
-                                        )
-                                      : null,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(member.name,
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w500)),
-                                      Text(role,
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: colorScheme
-                                                  .onSurfaceVariant)),
-                                    ],
-                                  ),
-                                ),
-                                if (isOwner && !isMe)
-                                  IconButton(
-                                    icon:
-                                        const Icon(Icons.remove_circle_outline),
-                                    color: colorScheme.onSurfaceVariant,
-                                    onPressed: () =>
-                                        _kickMember(member.uid, member.name),
-                                  ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-
-                    const SizedBox(height: 24),
-                    const Divider(),
-                    const SizedBox(height: 24),
-
-                    // --- Group Settings ---
-                    Text(
-                      'Group Settings',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Visibility and archival options.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        border: Border.all(
-                            color: colorScheme.outlineVariant.withOpacity(0.5)),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Public Group',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500),
-                                ),
-                                Text(
-                                  'Visible in community search results',
-                                  style: TextStyle(
-                                      fontSize: 14,
-                                      color: colorScheme.onSurfaceVariant),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch(
-                            value: _isPublic,
-                            onChanged: (val) => setState(() => _isPublic = val),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    if (isOwner)
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _archiveGroup,
-                          icon: const Icon(Icons.inventory_2),
-                          label: const Text('Archive Group'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: colorScheme.error,
-                            side: BorderSide(
-                                color: colorScheme.error.withOpacity(0.5)),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16)),
-                          ),
-                        ),
-                      ),
-
-                    const SizedBox(height: 32),
                   ],
                 ),
               ),
             ),
-
-            // Save Button
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    colorScheme.surface,
-                    colorScheme.surface.withOpacity(0.0),
-                  ],
-                ),
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _isSaving ? null : _saveChanges,
-                  icon: _isSaving
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.save),
-                  label: Text(_isSaving ? 'Saving...' : 'Save Changes'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+            const SizedBox(width: 16),
+            // End Date
+            Expanded(
+              child: Semantics(
+                button: true,
+                label: _endDate == null
+                    ? 'Select end date'
+                    : 'Select end date, current selection: ${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}',
+                child: InkWell(
+                  onTap: _selectEndDate,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'End',
+                      labelStyle: TextStyle(color: colorScheme.primary),
+                      floatingLabelBehavior: FloatingLabelBehavior.always,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: colorScheme.primary),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: colorScheme.primary),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            BorderSide(color: colorScheme.primary, width: 2),
+                      ),
+                      suffixIcon: Icon(Icons.calendar_today,
+                          color: colorScheme.onSurfaceVariant),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
                     ),
-                    textStyle: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                    child: Text(
+                      _endDate == null
+                          ? 'Select Date'
+                          : "${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}",
+                      style: textTheme.bodyLarge,
+                    ),
                   ),
                 ),
               ),
             ),
           ],
+        ),
+
+        const SizedBox(height: 24),
+
+        Text(
+          'Frequency',
+          style: textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Frequency Cards
+        _buildFrequencyCard(
+          colorScheme: colorScheme,
+          textTheme: textTheme,
+          title: 'Daily',
+          subtitle: 'Every single day',
+          icon: Icons.calendar_view_day,
+          isSelected: _isDaily,
+          onTap: () => setState(() => _isDaily = true),
+        ),
+        const SizedBox(height: 12),
+        _buildFrequencyCard(
+          colorScheme: colorScheme,
+          textTheme: textTheme,
+          title: 'Weekdays',
+          subtitle: 'Mon - Fri only',
+          icon: Icons.date_range,
+          isSelected: !_isDaily,
+          onTap: () => setState(() => _isDaily = false),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFrequencyCard({
+    required ColorScheme colorScheme,
+    required TextTheme textTheme,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final borderColor = isSelected
+        ? colorScheme.primary
+        : colorScheme.outlineVariant.withOpacity(0.5);
+    final backgroundColor =
+        isSelected ? colorScheme.primaryContainer.withOpacity(0.2) : null; // Adjusted opacity
+    final iconColor =
+        isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          border: Border.all(color: borderColor),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            // Radio Indicator
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                  width: 2,
+                ),
+                color: isSelected ? colorScheme.primary : null,
+              ),
+              child: isSelected
+                  ? Center(
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: colorScheme.onPrimary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 16),
+            Icon(icon, color: iconColor, size: 24),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMembersSection(ColorScheme colorScheme, TextTheme textTheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Members',
+                  style: textTheme.headlineMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Manage group participants.',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            FilledButton.icon(
+              onPressed: _copyLink,
+              icon: const Icon(Icons.link, size: 18),
+              label: const Text('Copy Link'),
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.primaryContainer,
+                foregroundColor: colorScheme.onPrimaryContainer,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: const StadiumBorder(),
+                textStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        if (_members.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: Text(
+                'No members loaded',
+                style: textTheme.bodyMedium
+                    ?.copyWith(color: colorScheme.onSurfaceVariant),
+              ),
+            ),
+          )
+        else
+          ListView.separated(
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            itemCount: _members.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final member = _members[index];
+              final isMe = member.uid == widget.auth.currentUser?.uid;
+              final isMemberOwner = member.uid == widget.group.ownerUid;
+              final role = isMemberOwner ? 'Group Admin' : 'Member';
+              final isOwner =
+                  widget.group.ownerUid == widget.auth.currentUser?.uid;
+
+              return Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withOpacity(0.2),
+                  ),
+                  borderRadius: BorderRadius.circular(50), // Pill shape
+                ),
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: isMemberOwner
+                          ? colorScheme.tertiaryContainer
+                          : colorScheme.secondaryContainer,
+                      backgroundImage: member.photoUrl != null
+                          ? CachedNetworkImageProvider(member.photoUrl!)
+                          : null,
+                      child: member.photoUrl == null
+                          ? Text(
+                              member.name.isNotEmpty
+                                  ? member.name[0].toUpperCase()
+                                  : '?',
+                              style: TextStyle(
+                                color: isMemberOwner
+                                    ? colorScheme.onTertiaryContainer
+                                    : colorScheme.onSecondaryContainer,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            member.name,
+                            style: textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            role,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isOwner && !isMe)
+                      IconButton(
+                        icon: const Icon(Icons.remove_circle_outline),
+                        color: colorScheme.onSurfaceVariant,
+                        tooltip: 'Remove member',
+                        onPressed: () => _kickMember(member.uid, member.name),
+                      ),
+                    if (isMe) ...[
+                      // Maybe show something for yourself? or nothing.
+                    ]
+                  ],
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildGroupSettingsSection(
+      ColorScheme colorScheme, TextTheme textTheme) {
+    final isOwner = widget.auth.currentUser?.uid == widget.group.ownerUid;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Group Settings',
+          style: textTheme.headlineMedium?.copyWith(
+            color: colorScheme.primary,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Visibility and archival options.',
+          style: textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Public Group Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border.all(
+              color: colorScheme.outlineVariant.withOpacity(0.3),
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Public Group',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 18,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Visible in community search results',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _isPublic,
+                activeColor: colorScheme.primary,
+                onChanged: (val) => setState(() => _isPublic = val),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        if (isOwner)
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _archiveGroup,
+              icon: Icon(Icons.inventory_2, color: colorScheme.tertiary),
+              label: Text('Archive Group',
+                  style: TextStyle(color: colorScheme.tertiary)),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(
+                  color: colorScheme.tertiary.withOpacity(0.3),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                textStyle: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSaveButton(ColorScheme colorScheme, TextTheme textTheme) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [
+            colorScheme.surface,
+            colorScheme.surface.withOpacity(0.0),
+          ],
+        ),
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: FilledButton.icon(
+          onPressed: _isSaving ? null : _saveChanges,
+          icon: _isSaving
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.save),
+          label: Text(_isSaving ? 'Saving...' : 'Save Changes'),
+          style: FilledButton.styleFrom(
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            textStyle: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
         ),
       ),
     );
