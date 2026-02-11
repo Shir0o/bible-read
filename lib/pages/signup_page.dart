@@ -482,24 +482,41 @@ class _SignupPageState extends State<SignupPage> {
                       color: const Color(0xFFCAC4D0),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      unawaited(widget.vibrationService.lightImpact());
-                      Navigator.of(context).push(
-                        animatedPageRoute(
-                          LoginPage(
-                            auth: widget.auth,
-                            googleSignInProvider: widget.googleSignInProvider,
+                  Semantics(
+                    key: const Key('loginLinkSemantics'),
+                    button: true,
+                    label: 'Log in',
+                    excludeSemantics: true,
+                    child: Tooltip(
+                      message: 'Log in',
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(4),
+                          onTap: () {
+                            unawaited(widget.vibrationService.lightImpact());
+                            Navigator.of(context).push(
+                              animatedPageRoute(
+                                LoginPage(
+                                  auth: widget.auth,
+                                  googleSignInProvider:
+                                      widget.googleSignInProvider,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: Text(
+                              'Log in',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: darkPrimary,
+                              ),
+                            ),
                           ),
                         ),
-                      );
-                    },
-                    child: Text(
-                      'Log in',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: darkPrimary,
                       ),
                     ),
                   ),
