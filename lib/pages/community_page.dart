@@ -18,7 +18,7 @@ import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/navigation_menu_scope.dart';
-import 'group_detail_page.dart';
+import 'full_schedule_page.dart';
 import 'groups_page.dart';
 import 'inbox_page.dart';
 
@@ -765,7 +765,7 @@ class _GroupProgressCard extends StatelessWidget {
                 vibrationService.lightImpact();
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => GroupDetailPage(
+                    builder: (_) => FullSchedulePage(
                       group: group,
                       groupService: groupService,
                       auth: FirebaseAuth.instance,

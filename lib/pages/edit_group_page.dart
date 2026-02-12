@@ -45,7 +45,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
   late DateTime _startDate;
   DateTime? _endDate;
   bool _isDaily = true;
-  late DateTime _originalStartDate;
 
   // Settings State
   late bool _isPublic;
@@ -99,7 +98,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
       }
 
       _isPublic = widget.group.isPublic;
-      _originalStartDate = _startDate;
 
       final members = await widget.groupService
           .memberOverallCompletion(widget.group.id)
@@ -349,17 +347,20 @@ class _EditGroupPageState extends State<EditGroupPage> {
                       _buildReadingPlanSection(colorScheme, textTheme),
                       const SizedBox(height: 24),
                       Divider(
-                          color: colorScheme.outlineVariant.withOpacity(0.3)),
+                          color: colorScheme.outlineVariant
+                              .withValues(alpha: 0.3)),
                       const SizedBox(height: 24),
                       _buildTimelineSection(colorScheme, textTheme),
                       const SizedBox(height: 24),
                       Divider(
-                          color: colorScheme.outlineVariant.withOpacity(0.3)),
+                          color: colorScheme.outlineVariant
+                              .withValues(alpha: 0.3)),
                       const SizedBox(height: 24),
                       _buildMembersSection(colorScheme, textTheme),
                       const SizedBox(height: 24),
                       Divider(
-                          color: colorScheme.outlineVariant.withOpacity(0.3)),
+                          color: colorScheme.outlineVariant
+                              .withValues(alpha: 0.3)),
                       const SizedBox(height: 24),
                       _buildGroupSettingsSection(colorScheme, textTheme),
                       const SizedBox(height: 100), // Space for bottom button
@@ -399,10 +400,10 @@ class _EditGroupPageState extends State<EditGroupPage> {
           height: 72,
           padding: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
-            color: colorScheme.surface.withOpacity(0.8),
+            color: colorScheme.surface.withValues(alpha: 0.8),
             border: Border(
               bottom: BorderSide(
-                color: colorScheme.outlineVariant.withOpacity(0.3),
+                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -486,7 +487,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
               decoration: InputDecoration(
                 hintText: 'Add another book...',
                 hintStyle: textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
                 prefixIcon: Icon(
                   Icons.search,
@@ -499,13 +500,13 @@ class _EditGroupPageState extends State<EditGroupPage> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.3),
+                    color: colorScheme.outline.withValues(alpha: 0.3),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.3),
+                    color: colorScheme.outline.withValues(alpha: 0.3),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
@@ -572,7 +573,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -604,7 +605,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                       child: Container(
                         padding: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
-                          color: colorScheme.onPrimary.withOpacity(0.1),
+                          color: colorScheme.onPrimary.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -628,7 +629,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
             decoration: BoxDecoration(
               color: colorScheme.surface,
               border: Border.all(
-                  color: colorScheme.outlineVariant.withOpacity(0.3)),
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(24),
             ),
             child: Row(
@@ -706,7 +707,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: colorScheme.outlineVariant.withOpacity(0.5),
+                        color:
+                            colorScheme.outlineVariant.withValues(alpha: 0.5),
                       ),
                     ),
                     enabled: false, // Visual only
@@ -812,9 +814,9 @@ class _EditGroupPageState extends State<EditGroupPage> {
   }) {
     final borderColor = isSelected
         ? colorScheme.primary
-        : colorScheme.outlineVariant.withOpacity(0.5);
+        : colorScheme.outlineVariant.withValues(alpha: 0.5);
     final backgroundColor = isSelected
-        ? colorScheme.primaryContainer.withOpacity(0.2)
+        ? colorScheme.primaryContainer.withValues(alpha: 0.2)
         : null; // Adjusted opacity
     final iconColor =
         isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant;
@@ -962,7 +964,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
                   border: Border.all(
-                    color: colorScheme.outlineVariant.withOpacity(0.2),
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.2),
                   ),
                   borderRadius: BorderRadius.circular(50), // Pill shape
                 ),
@@ -1062,7 +1064,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             border: Border.all(
-              color: colorScheme.outlineVariant.withOpacity(0.3),
+              color: colorScheme.outlineVariant.withValues(alpha: 0.3),
             ),
             borderRadius: BorderRadius.circular(16),
           ),
@@ -1093,7 +1095,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
               ),
               Switch(
                 value: _isPublic,
-                activeColor: colorScheme.primary,
+                activeTrackColor: colorScheme.primary,
                 onChanged: (val) => setState(() => _isPublic = val),
               ),
             ],
@@ -1111,7 +1113,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                   style: TextStyle(color: colorScheme.tertiary)),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(
-                  color: colorScheme.tertiary.withOpacity(0.3),
+                  color: colorScheme.tertiary.withValues(alpha: 0.3),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -1136,7 +1138,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
           end: Alignment.topCenter,
           colors: [
             colorScheme.surface,
-            colorScheme.surface.withOpacity(0.0),
+            colorScheme.surface.withValues(alpha: 0.0),
           ],
         ),
       ),

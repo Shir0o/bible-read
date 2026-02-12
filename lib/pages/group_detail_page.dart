@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
@@ -15,9 +17,6 @@ import '../services/group_book_achievement_service.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/group_members_section.dart';
-import '../widgets/schedule_item_tile.dart';
-import '../widgets/section_header.dart';
 import '../widgets/vibration_button.dart';
 import 'edit_group_page.dart';
 import 'group_join_requests_page.dart';
@@ -52,6 +51,9 @@ class GroupDetailPage extends StatefulWidget {
   /// Aggregates completed chapters across joined groups.
   final GroupBookAchievementService groupBookAchievementService;
 
+  /// Date to consider as "today" (for testing).
+  final DateTime? currentDate;
+
   /// Creates a [GroupDetailPage].
   factory GroupDetailPage({
     Key? key,
@@ -62,6 +64,7 @@ class GroupDetailPage extends StatefulWidget {
     GroupDatePicker? datePicker,
     AchievementService? achievementService,
     GroupBookAchievementService? groupBookAchievementService,
+    DateTime? currentDate,
   }) {
     final resolvedGroupService = groupService ?? GroupService();
     final resolvedAchievementService = achievementService ??
@@ -81,6 +84,7 @@ class GroupDetailPage extends StatefulWidget {
       datePicker: datePicker ?? _defaultDatePicker,
       achievementService: resolvedAchievementService,
       groupBookAchievementService: resolvedGroupBookAchievementService,
+      currentDate: currentDate,
     );
   }
 
@@ -93,6 +97,7 @@ class GroupDetailPage extends StatefulWidget {
     required this.datePicker,
     required this.achievementService,
     required this.groupBookAchievementService,
+    this.currentDate,
   });
 
   static Future<DateTime?> _defaultDatePicker({
@@ -114,7 +119,6 @@ class GroupDetailPage extends StatefulWidget {
 }
 
 class _GroupDetailPageState extends State<GroupDetailPage> {
-  late Stream<List<GroupMemberProgressData>> _memberOverallStream;
   late Stream<List<GroupSchedule>> _scheduleStream;
   final Map<String, bool> _pendingReadOverrides = <String, bool>{};
   final Map<String, Map<int, bool>> _pendingChapterOverrides =
@@ -130,6 +134,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   Set<String> _unlockedAchievementIds = <String>{};
   late BookAchievementRefresher _bookAchievementRefresher;
 
+  DateTime get _now => widget.currentDate ?? DateTime.now();
+
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
@@ -138,16 +144,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
   Map<int, int> _ensureChapterOpsMap(String dateKey) =>
       _pendingChapterOps.putIfAbsent(dateKey, () => <int, int>{});
-
-  void _applyChapterOverride(
-    String dateKey,
-    int chapterIndex,
-    bool value,
-    int opId,
-  ) {
-    _ensureChapterOverrideMap(dateKey)[chapterIndex] = value;
-    _ensureChapterOpsMap(dateKey)[chapterIndex] = opId;
-  }
 
   void _removeChapterOverride(String dateKey, int chapterIndex) {
     final overrides = _pendingChapterOverrides[dateKey];
@@ -377,10 +373,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       achievementService: widget.achievementService,
       groupBookAchievementService: widget.groupBookAchievementService,
     );
-    _memberOverallStream = widget.groupService.memberOverallCompletion(
-      widget.group.id,
-      includeUid: widget.auth.currentUser?.uid,
-    );
     _scheduleStream = widget.groupService.schedule(widget.group.id);
     _refreshAchievementSubscription();
   }
@@ -401,10 +393,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         if (groupChanged) {
           _scheduleStream = widget.groupService.schedule(widget.group.id);
         }
-        _memberOverallStream = widget.groupService.memberOverallCompletion(
-          widget.group.id,
-          includeUid: currentUid,
-        );
       });
     }
     if (uidChanged || achievementServiceChanged) {
@@ -453,104 +441,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       return true;
     } catch (e, st) {
       if (kDebugMode) debugPrint('Failed to toggle read: $e');
-      ErrorLogger.log(e, st);
-      if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update read status')),
-      );
-      return false;
-    }
-  }
-
-  Future<bool> _toggleMyChapterForDate(
-    DateTime date,
-    int chapterIndex,
-    bool read,
-  ) async {
-    final user = widget.auth.currentUser;
-    if (user == null) return false;
-    try {
-      final target = DateTime(date.year, date.month, date.day);
-      final dateKey =
-          '${target.year}-${target.month.toString().padLeft(2, '0')}-${target.day.toString().padLeft(2, '0')}';
-      final db = widget.groupService.firestore;
-      final base = db
-          .collection(GroupCollections.groups)
-          .doc(widget.group.id)
-          .collection('progress')
-          .doc(dateKey)
-          .collection('entries')
-          .doc(user.uid);
-      final itemDoc = base.collection('items').doc(chapterIndex.toString());
-      final summaryDoc = db
-          .collection(GroupCollections.groups)
-          .doc(widget.group.id)
-          .collection('progressSummary')
-          .doc('data')
-          .collection('entries')
-          .doc(user.uid);
-
-      await db.runTransaction((tx) async {
-        final snapshots =
-            await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-          tx.get(itemDoc),
-          tx.get(base),
-          tx.get(summaryDoc),
-        ]);
-        final itemSnap = snapshots[0];
-        final baseSnap = snapshots[1];
-        final summarySnap = snapshots[2];
-        final nowTs = Timestamp.now();
-        final prevCompleted =
-            (summarySnap.data()?['completed'] as num?)?.toInt() ?? 0;
-
-        if (read) {
-          if (itemSnap.exists) return; // already checked
-          tx.set(itemDoc, {'done': true, 'ts': nowTs});
-          final prevCount = (baseSnap.data()?['count'] as num?)?.toInt() ?? 0;
-          final baseData = {
-            'done': true,
-            'ts': nowTs,
-            'uid': user.uid,
-            'groupId': widget.group.id,
-            'dateId': dateKey,
-            'count': prevCount + 1,
-          };
-          if (baseSnap.exists) {
-            tx.update(base, baseData);
-          } else {
-            tx.set(base, baseData);
-          }
-          tx.set(
-              summaryDoc,
-              {
-                'completed': prevCompleted + 1,
-              },
-              SetOptions(merge: true));
-        } else {
-          if (!itemSnap.exists) return; // already unchecked
-          tx.delete(itemDoc);
-          final prevCount = (baseSnap.data()?['count'] as num?)?.toInt() ?? 0;
-          final newCount = prevCount > 0 ? prevCount - 1 : 0;
-          if (baseSnap.exists) {
-            if (newCount == 0) {
-              tx.delete(base);
-            } else {
-              tx.update(base, {'count': newCount, 'ts': nowTs});
-            }
-          }
-          final newCompleted = prevCompleted > 0 ? prevCompleted - 1 : 0;
-          tx.set(
-              summaryDoc,
-              {
-                'completed': newCompleted,
-              },
-              SetOptions(merge: true));
-        }
-      });
-      return true;
-    } catch (e, st) {
-      if (kDebugMode) debugPrint('Failed to toggle chapter: $e');
       ErrorLogger.log(e, st);
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -667,39 +557,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     }
   }
 
-  void _handleChapterToggle({
-    required GroupSchedule schedule,
-    required int chapterIndex,
-    required bool read,
-  }) {
-    final dateKey = _dateKey(schedule.date);
-    final opId = _nextPendingOpId++;
-
-    setState(() {
-      _applyChapterOverride(dateKey, chapterIndex, read, opId);
-    });
-
-    unawaited(() async {
-      final success = await _toggleMyChapterForDate(
-        schedule.date,
-        chapterIndex,
-        read,
-      );
-      if (!mounted) return;
-      if (_pendingChapterOps[dateKey]?[chapterIndex] != opId) {
-        return;
-      }
-      if (success) {
-        _scheduleChapterOverrideCleanup(dateKey);
-        if (read) {
-          await _refreshBookAchievements(completionTimestamp: DateTime.now());
-        }
-      } else {
-        setState(() => _removeChapterOverride(dateKey, chapterIndex));
-      }
-    }());
-  }
-
   void _handleScheduleReadToggle({
     required GroupSchedule schedule,
     required bool read,
@@ -755,7 +612,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           }
         }
         if (read) {
-          await _refreshBookAchievements(completionTimestamp: DateTime.now());
+          await _refreshBookAchievements(completionTimestamp: _now);
         }
         return;
       }
@@ -809,13 +666,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         return Scaffold(
           appBar: CommonStyles.buildAppBar(
             context,
-            widget.group.name, // Use widget.group.name as it updates from firestore stream usually, but here group is static.
-            // If group name updates in EditGroupPage, we want to reflect it.
-            // But this widget might not rebuild if group param doesn't change.
-            // For now, assume it's fine or user navigates back and forth.
+            widget.group.name,
             actions: hasAdminPrivileges
                 ? [
-                    // Join requests action for owners/admins.
                     IconButton(
                       icon: const Icon(Icons.group_add_outlined),
                       tooltip: 'Join requests',
@@ -854,278 +707,636 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           ),
           body: Container(
             decoration: CommonStyles.backgroundDecoration(
-                Theme.of(context).colorScheme),
-            padding: const EdgeInsets.all(16),
-            child: ListView(
-              children: [
-                if (!isOwner && user != null && !isMember)
-                  StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                    stream: widget.groupService.firestore
-                        .collection(GroupCollections.groups)
-                        .doc(widget.group.id)
-                        .collection(GroupCollections.joinRequests)
-                        .doc(user.uid)
-                        .snapshots(),
-                    builder: (context, reqSnapshot) {
-                      final isPending = reqSnapshot.data?.exists ?? false;
-                      if (isPending) {
-                        return const Padding(
-                          padding: EdgeInsets.only(bottom: 16),
-                          child: Text('Join request pending'),
-                        );
-                      }
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          VibrationButton(
-                            vibrationService: widget.vibrationService,
-                            onPressed: () async {
-                              try {
-                                await widget.groupService.joinGroup(
-                                  groupId: widget.group.id,
-                                  uid: user.uid,
-                                  name: user.displayName ?? '',
-                                );
-                                if (!mounted) return;
-                                // ignore: use_build_context_synchronously
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Join request sent'),
-                                  ),
-                                );
-                              } catch (e, st) {
-                                if (kDebugMode) {
-                                  debugPrint('Failed to join group: $e');
-                                }
-                                ErrorLogger.log(e, st);
-                                if (!mounted) return;
-                                // ignore: use_build_context_synchronously
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Failed to join group'),
-                                  ),
-                                );
-                              }
-                            },
-                            child: const Text('Join Group'),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      );
-                    },
-                  ),
-                GroupMembersSection(
-                  key: const ValueKey('group-members-section'),
-                  title: 'Members',
-                  membersStream: _memberOverallStream,
-                ),
-                const SectionHeader('Schedule'),
-                StreamBuilder<List<GroupSchedule>>(
-                  stream: _scheduleStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return const Text('Failed to load schedule');
-                    }
-                    if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    final schedule = snapshot.data!;
-                    final hasEntries = schedule.isNotEmpty;
-
-                    final children = <Widget>[];
-
-                    if (!hasEntries) {
-                      children.add(const Text('No schedule'));
-                    } else {
-                      final user = widget.auth.currentUser;
-                      children.addAll(
-                        schedule.asMap().entries.map((e) {
-                          final s = e.value;
-                          final baseTile = ScheduleItemTile(
-                            schedule: s,
-                            onEdit: null, // Removed inline edit
-                            onDelete: null, // Removed inline delete
-                          );
-                          if (user == null || !isMember) {
-                            return baseTile;
-                          }
-                          final dateKey = _dateKey(s.date);
-                          final entryRef = widget.groupService.firestore
+              Theme.of(context).colorScheme,
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: StreamBuilder<List<GroupSchedule>>(
+                stream: _scheduleStream,
+                builder: (context, snapshot) {
+                  final schedule = snapshot.data ?? [];
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Join Request UI for non-members
+                      if (!isOwner && user != null && !isMember)
+                        StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                          stream: widget.groupService.firestore
                               .collection(GroupCollections.groups)
                               .doc(widget.group.id)
-                              .collection('progress')
-                              .doc(dateKey)
-                              .collection('entries')
-                              .doc(user.uid);
-
-                          return StreamBuilder<
-                              DocumentSnapshot<Map<String, dynamic>>>(
-                            stream: entryRef.snapshots(),
-                            builder: (context, entrySnap) {
-                              final entryData = entrySnap.data?.data();
-                              final baseDone = entryData?['done'] == true;
-                              return StreamBuilder<
-                                  QuerySnapshot<Map<String, dynamic>>>(
-                                stream:
-                                    entryRef.collection('items').snapshots(),
-                                builder: (context, itemsSnap) {
-                                  final rawChecked = <int>{};
-                                  for (final d
-                                      in itemsSnap.data?.docs ?? const []) {
-                                    final idx = int.tryParse(d.id);
-                                    if (idx != null) rawChecked.add(idx);
-                                  }
-
-                                  final rawCheckedSnapshot = Set<int>.from(
-                                    rawChecked,
-                                  );
-                                  final totalChapters = s.chapters.length;
-                                  final hasChapters = totalChapters > 0;
-
-                                  _latestRawCheckedSnapshots[dateKey] =
-                                      Set<int>.from(rawCheckedSnapshot);
-                                  _latestBaseDoneSnapshots[dateKey] = baseDone;
-                                  _latestChapterCountSnapshots[dateKey] =
-                                      totalChapters;
-
-                                  final pendingReadOverrideExists =
-                                      _pendingReadOverrides.containsKey(
-                                    dateKey,
-                                  );
-                                  final pendingChapterOverrideExists =
-                                      (_pendingChapterOverrides[dateKey]
-                                              ?.isNotEmpty ??
-                                          false);
-
-                                  if (pendingReadOverrideExists ||
-                                      pendingChapterOverrideExists) {
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((
-                                      _,
-                                    ) {
-                                      if (!mounted) return;
-                                      final hasPendingChapterOverride =
-                                          (_pendingChapterOverrides[dateKey]
-                                                  ?.isNotEmpty ??
-                                              false);
-                                      final hasPendingReadOverride =
-                                          _pendingReadOverrides.containsKey(
-                                        dateKey,
-                                      );
-                                      if (hasPendingChapterOverride) {
-                                        _resolvePendingChapterOverridesFromSnapshot(
-                                          dateKey: dateKey,
-                                          rawChecked: rawCheckedSnapshot,
-                                        );
-                                      }
-                                      if (hasPendingReadOverride) {
-                                        _resolvePendingReadOverrideFromSnapshot(
-                                          dateKey: dateKey,
-                                          hasChapters: hasChapters,
-                                          totalChapters: totalChapters,
-                                          rawChecked: rawCheckedSnapshot,
-                                          baseDone: baseDone,
-                                        );
-                                      }
-                                    });
-                                  }
-
-                                  final displayChecked = Set<int>.from(
-                                    rawCheckedSnapshot,
-                                  );
-                                  final pendingChapterOverride =
-                                      _pendingChapterOverrides[dateKey];
-                                  if (pendingChapterOverride != null) {
-                                    pendingChapterOverride.forEach((
-                                      chapterIndex,
-                                      value,
-                                    ) {
-                                      if (value) {
-                                        displayChecked.add(chapterIndex);
-                                      } else {
-                                        displayChecked.remove(chapterIndex);
-                                      }
-                                    });
-                                  }
-
-                                  final allChecked = hasChapters &&
-                                      displayChecked.length >= totalChapters;
-                                  final pendingRead =
-                                      _pendingReadOverrides[dateKey];
-
-                                  bool? currentUserRead;
-                                  ValueChanged<bool>? onToggleRead;
-                                  if (hasChapters) {
-                                    currentUserRead = pendingRead ?? allChecked;
-                                    onToggleRead = (value) {
-                                      if (value ==
-                                          (pendingRead ?? allChecked)) {
-                                        return;
-                                      }
-                                      _handleScheduleReadToggle(
-                                        schedule: s,
-                                        read: value,
-                                        currentlyChecked: Set<int>.from(
-                                          rawChecked,
-                                        ),
-                                        hasChapters: true,
-                                      );
-                                    };
-                                  } else {
-                                    currentUserRead = pendingRead ?? baseDone;
-                                    onToggleRead = (value) {
-                                      if (value == (pendingRead ?? baseDone)) {
-                                        return;
-                                      }
-                                      _handleScheduleReadToggle(
-                                        schedule: s,
-                                        read: value,
-                                        currentlyChecked: const <int>{},
-                                        hasChapters: false,
-                                      );
-                                    };
-                                  }
-
-                                  return ScheduleItemTile(
-                                    schedule: s,
-                                    onEdit: null,
-                                    onDelete: null,
-                                    currentUserRead: currentUserRead,
-                                    onToggleRead: onToggleRead,
-                                    checkedChapters: displayChecked,
-                                    onToggleChapter: (chapterIndex, v) {
-                                      if (v ==
-                                          displayChecked.contains(
-                                            chapterIndex,
-                                          )) {
-                                        return;
-                                      }
-                                      _handleChapterToggle(
-                                        schedule: s,
-                                        chapterIndex: chapterIndex,
-                                        read: v,
-                                      );
-                                    },
-                                  );
-                                },
+                              .collection(GroupCollections.joinRequests)
+                              .doc(user.uid)
+                              .snapshots(),
+                          builder: (context, reqSnapshot) {
+                            final isPending = reqSnapshot.data?.exists ?? false;
+                            if (isPending) {
+                              return const Padding(
+                                padding: EdgeInsets.only(bottom: 24),
+                                child: Text('Join request pending',
+                                    textAlign: TextAlign.center),
                               );
-                            },
-                          );
-                        }),
-                      );
-                    }
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: children,
-                    );
-                  },
-                ),
-              ],
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 24),
+                              child: VibrationButton(
+                                vibrationService: widget.vibrationService,
+                                onPressed: () async {
+                                  try {
+                                    await widget.groupService.joinGroup(
+                                      groupId: widget.group.id,
+                                      uid: user.uid,
+                                      name: user.displayName ?? '',
+                                    );
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Join request sent'),
+                                      ),
+                                    );
+                                  } catch (e, st) {
+                                    if (kDebugMode) {
+                                      debugPrint('Failed to join group: $e');
+                                    }
+                                    ErrorLogger.log(e, st);
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Failed to join group'),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: const Text('Join Group'),
+                              ),
+                            );
+                          },
+                        ),
+                      _buildGroupProgress(context, schedule),
+                      const SizedBox(height: 24),
+                      _buildTodaysReading(context, schedule,
+                          isMember: isMember),
+                      const SizedBox(height: 24),
+                      _buildMembersList(context),
+                      const SizedBox(height: 24),
+                      _buildFullScheduleButton(context),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         );
       },
     );
+  }
+
+  Widget _buildGroupProgress(
+      BuildContext context, List<GroupSchedule> schedule) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // Calculate progress
+    int totalChapters = 0;
+    int completedChapters = 0;
+    final now = _now;
+    final today = DateTime(now.year, now.month, now.day);
+
+    String? currentBook;
+
+    for (var s in schedule) {
+      totalChapters += s.chapters.length;
+      if (s.date.isBefore(today) || s.date.isAtSameMomentAs(today)) {
+        completedChapters += s.chapters.length;
+      }
+      if (s.date.isAtSameMomentAs(today) && s.chapters.isNotEmpty) {
+        // Simple parsing: assuming format "Book Chapter"
+        final firstChapter = s.chapters.first;
+        final parts = firstChapter.split(' ');
+        if (parts.length > 1) {
+          // Handle "1 John" cases
+          if (int.tryParse(parts[0]) != null && parts.length > 2) {
+            currentBook = '${parts[0]} ${parts[1]}';
+          } else {
+            currentBook = parts[0];
+          }
+        } else {
+          currentBook = parts[0];
+        }
+      }
+    }
+
+    final percent = totalChapters > 0 ? completedChapters / totalChapters : 0.0;
+    final percentDisplay = (percent * 100).round();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'GROUP PROGRESS',
+                    style: GoogleFonts.plusJakartaSans(
+                      textStyle: theme.textTheme.labelSmall,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.2,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$percentDisplay%',
+                    style: GoogleFonts.plusJakartaSans(
+                      textStyle: theme.textTheme.displaySmall,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'On Track',
+                  style: GoogleFonts.plusJakartaSans(
+                    textStyle: theme.textTheme.labelSmall,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: percent,
+              minHeight: 16,
+              backgroundColor:
+                  colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            currentBook != null
+                ? 'The group is $percentDisplay% through the Book of $currentBook.'
+                : 'The group is $percentDisplay% through the reading plan.',
+            style: GoogleFonts.plusJakartaSans(
+              textStyle: theme.textTheme.bodyMedium,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTodaysReading(BuildContext context, List<GroupSchedule> schedule,
+      {required bool isMember}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final now = _now;
+    final today = DateTime(now.year, now.month, now.day);
+
+    final todaySchedule = schedule.where((s) {
+      final sDate = DateTime(s.date.year, s.date.month, s.date.day);
+      return sDate.isAtSameMomentAs(today);
+    }).firstOrNull;
+
+    if (todaySchedule == null) {
+      return const SizedBox.shrink();
+    }
+
+    final dateString = _formatDate(now);
+    final readingTitle = todaySchedule.chapters.join(', ');
+
+    // Logic for "My Read Status"
+    final dateKey = _dateKey(todaySchedule.date);
+    final entryRef = widget.groupService.firestore
+        .collection(GroupCollections.groups)
+        .doc(widget.group.id)
+        .collection('progress')
+        .doc(dateKey)
+        .collection('entries')
+        .doc(widget.auth.currentUser?.uid);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Today's Reading",
+          style: GoogleFonts.plusJakartaSans(
+            textStyle: theme.textTheme.titleMedium,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              Text(
+                dateString,
+                style: GoogleFonts.plusJakartaSans(
+                  textStyle: theme.textTheme.bodySmall,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                readingTitle,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  textStyle: theme.textTheme.headlineSmall,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Subtitle placeholder if needed
+              // Text('Life in the Spirit', ...),
+              const SizedBox(height: 24),
+
+              if (isMember)
+                // Read Button Logic
+                StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  stream: entryRef.snapshots(),
+                  builder: (context, entrySnap) {
+                    final entryData = entrySnap.data?.data();
+                    final baseDone = entryData?['done'] == true;
+
+                    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        stream: entryRef.collection('items').snapshots(),
+                        builder: (context, itemsSnap) {
+                          final rawChecked = <int>{};
+                          for (final d in itemsSnap.data?.docs ?? const []) {
+                            final idx = int.tryParse(d.id);
+                            if (idx != null) rawChecked.add(idx);
+                          }
+
+                          final rawCheckedSnapshot = Set<int>.from(rawChecked);
+                          final totalChapters = todaySchedule.chapters.length;
+                          final hasChapters = totalChapters > 0;
+
+                          // Update snapshots for override logic
+                          _latestRawCheckedSnapshots[dateKey] =
+                              Set<int>.from(rawCheckedSnapshot);
+                          _latestBaseDoneSnapshots[dateKey] = baseDone;
+                          _latestChapterCountSnapshots[dateKey] = totalChapters;
+
+                          // Check for pending overrides
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted) return;
+                            final hasPendingChapterOverride =
+                                (_pendingChapterOverrides[dateKey]
+                                        ?.isNotEmpty ??
+                                    false);
+                            final hasPendingReadOverride =
+                                _pendingReadOverrides.containsKey(dateKey);
+                            if (hasPendingChapterOverride) {
+                              _resolvePendingChapterOverridesFromSnapshot(
+                                dateKey: dateKey,
+                                rawChecked: rawCheckedSnapshot,
+                              );
+                            }
+                            if (hasPendingReadOverride) {
+                              _resolvePendingReadOverrideFromSnapshot(
+                                dateKey: dateKey,
+                                hasChapters: hasChapters,
+                                totalChapters: totalChapters,
+                                rawChecked: rawCheckedSnapshot,
+                                baseDone: baseDone,
+                              );
+                            }
+                          });
+
+                          final pendingRead = _pendingReadOverrides[dateKey];
+                          // Determine effective read status
+                          final isRead = hasChapters
+                              ? (pendingRead ??
+                                  (totalChapters > 0 &&
+                                      rawCheckedSnapshot.length >=
+                                          totalChapters))
+                              : (pendingRead ?? baseDone);
+
+                          return SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                unawaited(
+                                    widget.vibrationService.lightImpact());
+                                _handleScheduleReadToggle(
+                                  schedule: todaySchedule,
+                                  read: !isRead,
+                                  currentlyChecked: rawCheckedSnapshot,
+                                  hasChapters: hasChapters,
+                                );
+                              },
+                              icon: Icon(
+                                Icons.check_circle,
+                                color: isRead
+                                    ? colorScheme.onPrimary
+                                    : colorScheme.onPrimary
+                                        .withValues(alpha: 0.7),
+                                fill: isRead
+                                    ? 1.0
+                                    : 0.0, // Material Symbols fill if supported
+                              ),
+                              label: Text(isRead ? 'Read' : 'Mark as Read'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isRead
+                                    ? colorScheme.primary
+                                    : colorScheme.primary.withValues(
+                                        alpha: 0.8), // Purple Expressive
+                                foregroundColor: colorScheme.onPrimary,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                elevation: isRead ? 0 : 4,
+                                textStyle: GoogleFonts.plusJakartaSans(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          );
+                        });
+                  },
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMembersList(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Members',
+              style: GoogleFonts.plusJakartaSans(
+                textStyle: theme.textTheme.titleMedium,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            StreamBuilder<List<GroupMemberProgressData>>(
+              stream: widget.groupService.memberDailyCompletion(
+                widget.group.id,
+                date: _now,
+              ),
+              builder: (context, snapshot) {
+                final count = snapshot.data?.length ?? 0;
+                return Text(
+                  '$count Members',
+                  style: GoogleFonts.plusJakartaSans(
+                    textStyle: theme.textTheme.bodySmall,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: StreamBuilder<List<GroupMemberProgressData>>(
+            stream: widget.groupService.memberDailyCompletion(
+              widget.group.id,
+              date: _now,
+            ),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('Failed to load members'));
+              }
+              if (!snapshot.hasData) {
+                return const Center(
+                    child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator()));
+              }
+              final members = snapshot.data!;
+              if (members.isEmpty) {
+                return const Padding(
+                    padding: EdgeInsets.all(16), child: Text('No members'));
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: members.length,
+                separatorBuilder: (context, index) => Divider(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+                  height: 1,
+                ),
+                itemBuilder: (context, index) {
+                  final member = members[index];
+                  final isRead = member.completion >= 1.0;
+
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: ClipOval(
+                            child: member.photoUrl != null
+                                ? CachedNetworkImage(
+                                    imageUrl: member.photoUrl!,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) =>
+                                        const Icon(Icons.person),
+                                    errorWidget: (context, url, error) =>
+                                        const Icon(Icons.person),
+                                  )
+                                : const Icon(Icons.person),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                member.name,
+                                style: GoogleFonts.plusJakartaSans(
+                                  textStyle: theme.textTheme.bodyLarge,
+                                  fontWeight: FontWeight.w500,
+                                  color: isRead
+                                      ? colorScheme.onSurface
+                                      : colorScheme.onSurface
+                                          .withValues(alpha: 0.8),
+                                ),
+                              ),
+                              Text(
+                                isRead ? 'Read today' : 'Not yet',
+                                style: GoogleFonts.plusJakartaSans(
+                                  textStyle: theme.textTheme.bodySmall,
+                                  fontWeight: FontWeight.w500,
+                                  color: isRead
+                                      ? colorScheme.primary
+                                      : colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isRead
+                                ? colorScheme.primary.withValues(alpha: 0.2)
+                                : Colors.transparent,
+                            border: isRead
+                                ? null
+                                : Border.all(
+                                    color: colorScheme.outline
+                                        .withValues(alpha: 0.3),
+                                  ),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              isRead ? Icons.check : Icons.hourglass_empty,
+                              size: 18,
+                              color: isRead
+                                  ? colorScheme.primary
+                                  : colorScheme.outline.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFullScheduleButton(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return SizedBox(
+      width: double.infinity,
+      child: TextButton.icon(
+        onPressed: () {
+          unawaited(widget.vibrationService.lightImpact());
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Full schedule view coming soon')),
+          );
+        },
+        icon: Icon(Icons.calendar_month, color: colorScheme.primary),
+        label: Text('View Full Schedule',
+            style: TextStyle(color: colorScheme.primary)),
+        style: TextButton.styleFrom(
+          backgroundColor:
+              colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          textStyle: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+    return '${months[date.month - 1]} ${date.day}';
   }
 }

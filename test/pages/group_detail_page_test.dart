@@ -12,7 +12,6 @@ import 'package:bible_read/pages/edit_group_page.dart';
 import 'package:bible_read/services/achievement_service.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
-import 'package:bible_read/widgets/schedule_item_tile.dart';
 import 'package:bible_read/services/error_logger.dart';
 
 class RecordingGroupService extends GroupService {
@@ -90,6 +89,7 @@ void main() {
     required MockFirebaseAuth auth,
     VibrationService? vibrationService,
     GroupDatePicker? datePicker,
+    DateTime? currentDate,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -99,6 +99,7 @@ void main() {
           auth: auth,
           vibrationService: vibrationService,
           datePicker: datePicker,
+          currentDate: currentDate,
         ),
       ),
     );
@@ -165,7 +166,7 @@ void main() {
     await pumpUntilSettled(tester);
   }
 
-  testWidgets('displays members and schedule', (tester) async {
+  testWidgets('displays members and schedule for today', (tester) async {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     final members =
         firestore.collection('groups').doc('g1').collection('members');
@@ -196,18 +197,17 @@ void main() {
       tester,
       service: GroupService(firestore: firestore),
       auth: auth,
-      datePicker: ({
-        required BuildContext context,
-        required DateTime initialDate,
-        required DateTime firstDate,
-        required DateTime lastDate,
-      }) async =>
-          DateTime(2020, 1, 2),
+      currentDate: DateTime(2020, 1, 1),
     );
 
+    // Members list
     expect(find.text('Owner'), findsOneWidget);
     expect(find.text('Alice'), findsOneWidget);
-    expect(find.text('2020-01-01', skipOffstage: false), findsWidgets);
+    
+    // Today's Reading
+    expect(find.text('Gen 1'), findsOneWidget);
+    // Date formatting: January 1
+    expect(find.text('January 1'), findsOneWidget);
   });
 
   testWidgets('Edit button hidden for non-admins', (tester) async {
@@ -249,6 +249,11 @@ void main() {
       vibrationService: vibration,
     );
 
+    await tester.scrollUntilVisible(
+      find.text('Join Group'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('Join Group'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
@@ -277,6 +282,11 @@ void main() {
       vibrationService: _RecordingVibrationService(),
     );
 
+    await tester.scrollUntilVisible(
+      find.text('Join Group'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('Join Group'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
@@ -379,20 +389,17 @@ void main() {
       isFalse,
     );
 
-    await pumpPage(tester, service: service, auth: auth);
-
-    final chipFinder = find.widgetWithText(FilterChip, 'Ruth 4');
-    expect(chipFinder, findsOneWidget);
-
-    final scrollable = find.byType(Scrollable).last;
-    await tester.fling(scrollable, const Offset(0, -600), 1000);
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      chipFinder,
-      200,
-      scrollable: scrollable,
+    await pumpPage(
+      tester, 
+      service: service, 
+      auth: auth,
+      currentDate: DateTime(2024, 6, 2),
     );
-    await tester.tap(chipFinder);
+
+    final readButton = find.text('Mark as Read');
+    expect(readButton, findsOneWidget);
+
+    await tester.tap(readButton);
     await tester.pump();
     await pumpUntilSettled(tester);
 
@@ -460,7 +467,6 @@ void main() {
 
     await seedProgress(dateId: '2024-06-01', completedIndices: const [0, 1]);
     // Pre-seed empty progress for the target day to ensure the document exists.
-    // This avoids FakeFirebaseFirestore issues with collectionGroup queries on newly created docs.
     await seedProgress(dateId: '2024-06-02', completedIndices: const []);
 
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
@@ -475,21 +481,17 @@ void main() {
       isFalse,
     );
 
-    await pumpPage(tester, service: service, auth: auth);
-
-    final scheduleTileFinder = find.ancestor(
-      of: find.text('2024-06-02'),
-      matching: find.byType(ScheduleItemTile),
-    );
-    final checkboxFinder = find.descendant(
-      of: scheduleTileFinder,
-      matching: find.byType(Checkbox),
+    await pumpPage(
+      tester, 
+      service: service, 
+      auth: auth,
+      currentDate: DateTime(2024, 6, 2),
     );
 
-    expect(checkboxFinder, findsOneWidget);
-    expect(tester.widget<Checkbox>(checkboxFinder).value, isFalse);
+    final readButton = find.text('Mark as Read');
+    expect(readButton, findsOneWidget);
 
-    await tester.tap(checkboxFinder);
+    await tester.tap(readButton);
     await tester.pump();
     await pumpUntilSettled(tester);
 
@@ -518,31 +520,14 @@ void main() {
       tester,
       service: GroupService(firestore: firestore),
       auth: auth,
+      currentDate: DateTime(2024, 7, 1),
     );
 
-    final scheduleTileFinder = find.ancestor(
-      of: find.text('2024-07-01'),
-      matching: find.byType(ScheduleItemTile),
-    );
-
-    expect(scheduleTileFinder, findsOneWidget);
-    expect(
-      find.descendant(of: scheduleTileFinder, matching: find.byType(Checkbox)),
-      findsNothing,
-    );
-    expect(
-      find.descendant(
-        of: scheduleTileFinder,
-        matching: find.byType(FilterChip),
-      ),
-      findsNothing,
-    );
-    expect(
-      find.descendant(
-        of: scheduleTileFinder,
-        matching: find.text('Gen 1, Gen 2'),
-      ),
-      findsOneWidget,
-    );
+    // Verify schedule content is shown
+    expect(find.text('Gen 1, Gen 2'), findsOneWidget);
+    
+    // Verify "Mark as Read" button is NOT shown for non-members
+    expect(find.widgetWithText(ElevatedButton, 'Mark as Read'), findsNothing);
+    expect(find.widgetWithText(ElevatedButton, 'Read'), findsNothing);
   });
 }
