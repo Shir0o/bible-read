@@ -184,6 +184,7 @@ class _LoginPageState extends State<LoginPage> {
         return _ForgotPasswordDialog(
           auth: widget.auth,
           initialEmail: initialEmail,
+          vibrationService: widget.vibrationService,
         );
       },
     );
@@ -657,10 +658,12 @@ class _LoginPageState extends State<LoginPage> {
 class _ForgotPasswordDialog extends StatefulWidget {
   final FirebaseAuth auth;
   final String initialEmail;
+  final VibrationService vibrationService;
 
   const _ForgotPasswordDialog({
     required this.auth,
     required this.initialEmail,
+    required this.vibrationService,
   });
 
   @override
@@ -697,6 +700,8 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
             controller: _controller,
             keyboardType: TextInputType.emailAddress,
             autofocus: true,
+            textInputAction: TextInputAction.send,
+            onSubmitted: (_) => _send(),
             decoration: const InputDecoration(
               labelText: 'Email',
               border: OutlineInputBorder(),
@@ -725,7 +730,10 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
 
   Future<void> _send() async {
     final email = _controller.text.trim();
-    if (email.isEmpty || !RegExp(r"^[a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9-]+\.[a-zA-Z]+$").hasMatch(email)) {
+    if (email.isEmpty ||
+        !RegExp(r"^[a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9-]+\.[a-zA-Z]+$")
+            .hasMatch(email)) {
+      unawaited(widget.vibrationService.heavyImpact());
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid email address')),
       );
@@ -739,12 +747,14 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
     try {
       await widget.auth.sendPasswordResetEmail(email: email);
       if (mounted) {
+        unawaited(widget.vibrationService.mediumImpact());
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Password reset email sent')),
         );
       }
     } catch (e, st) {
+      unawaited(widget.vibrationService.heavyImpact());
       if (kDebugMode) {
         debugPrint('Failed to send reset email: $e');
       }
