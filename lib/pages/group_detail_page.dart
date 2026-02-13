@@ -20,6 +20,7 @@ import '../widgets/common_styles.dart';
 import '../widgets/vibration_button.dart';
 import 'edit_group_page.dart';
 import 'group_join_requests_page.dart';
+import 'full_schedule_page.dart';
 
 typedef GroupDatePicker = Future<DateTime?> Function({
   required BuildContext context,
@@ -1299,8 +1300,15 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       child: TextButton.icon(
         onPressed: () {
           unawaited(widget.vibrationService.lightImpact());
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Full schedule view coming soon')),
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => FullSchedulePage(
+                group: widget.group,
+                groupService: widget.groupService,
+                auth: widget.auth,
+                vibrationService: widget.vibrationService,
+              ),
+            ),
           );
         },
         icon: Icon(Icons.calendar_month, color: colorScheme.primary),
