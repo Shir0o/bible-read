@@ -73,10 +73,19 @@ class MonthStreakCalendar extends StatelessWidget {
       rows[weekRow].children[weekdayIndex] = Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Icon(
-            filled ? Icons.circle : Icons.circle_outlined,
-            size: 12,
-            color: filled ? colorScheme.primary : colorScheme.outlineVariant,
+          child: Semantics(
+            label:
+                '${_monthName(month.month)} $day, ${filled ? "Read" : "Not read"}',
+            excludeSemantics: true,
+            child: Tooltip(
+              message: filled ? 'Read' : 'Not read',
+              child: Icon(
+                filled ? Icons.circle : Icons.circle_outlined,
+                size: 12,
+                color:
+                    filled ? colorScheme.primary : colorScheme.outlineVariant,
+              ),
+            ),
           ),
         ),
       );
@@ -100,6 +109,7 @@ class MonthStreakCalendar extends StatelessWidget {
               if (showNavigation)
                 IconButton(
                   icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Previous month',
                   onPressed: onPrevious,
                 ),
               Text(
@@ -109,6 +119,7 @@ class MonthStreakCalendar extends StatelessWidget {
               if (showNavigation)
                 IconButton(
                   icon: const Icon(Icons.arrow_forward),
+                  tooltip: 'Next month',
                   onPressed: _isCurrentMonth() ? null : onNext,
                 ),
             ],

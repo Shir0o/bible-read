@@ -50,6 +50,15 @@ class WeekStreakCalendar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const fullDays = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday'
+    ];
 
     return CommonStyles.buildCard(
       context: context,
@@ -62,6 +71,7 @@ class WeekStreakCalendar extends StatelessWidget {
               if (showNavigation)
                 IconButton(
                   icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Previous week',
                   onPressed: onPrevious,
                 ),
               Text(
@@ -71,6 +81,7 @@ class WeekStreakCalendar extends StatelessWidget {
               if (showNavigation)
                 IconButton(
                   icon: const Icon(Icons.arrow_forward),
+                  tooltip: 'Next week',
                   onPressed: _isCurrentWeek() ? null : onNext,
                 ),
             ],
@@ -87,23 +98,30 @@ class WeekStreakCalendar extends StatelessWidget {
               final filled = readDates.any((d) => _isSameDay(d, date));
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Column(
-                  children: [
-                    Text(
-                      days[i],
-                      style: AppTextStyles.body.copyWith(fontSize: 10),
-                    ),
-                    const SizedBox(height: 4),
-                    Icon(
-                      filled
-                          ? Icons.check_circle
-                          : Icons.radio_button_unchecked,
-                      color: filled
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outlineVariant,
-                      size: 20,
-                    ),
-                  ],
+                child: Semantics(
+                  label: '${fullDays[i]}, ${filled ? "Read" : "Not read"}',
+                  excludeSemantics: true,
+                  child: Column(
+                    children: [
+                      Text(
+                        days[i],
+                        style: AppTextStyles.body.copyWith(fontSize: 10),
+                      ),
+                      const SizedBox(height: 4),
+                      Tooltip(
+                        message: filled ? 'Read' : 'Not read',
+                        child: Icon(
+                          filled
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: filled
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outlineVariant,
+                          size: 20,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }),
