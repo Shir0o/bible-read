@@ -1,6 +1,7 @@
 import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/signup_page.dart';
 import 'package:bible_read/services/error_logger.dart';
+import 'package:bible_read/services/vibration_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,8 +10,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in_mocks/google_sign_in_mocks.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:network_image_mock/network_image_mock.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class MockVibrationService extends Mock implements VibrationService {}
 
 class RecordingAuth extends MockFirebaseAuth {
   bool signInCalled = false;
@@ -275,7 +279,13 @@ void main() {
     testWidgets('allows user to reset password', (tester) async {
       await mockNetworkImagesFor(() async {
         final auth = RecordingAuth();
-        await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+        final vibrationService = MockVibrationService();
+        when(() => vibrationService.mediumImpact()).thenAnswer((_) async {});
+        when(() => vibrationService.lightImpact()).thenAnswer((_) async {});
+
+        await tester.pumpWidget(MaterialApp(
+            home:
+                LoginPage(auth: auth, vibrationService: vibrationService)));
 
         final forgotPasswordFinder =
             find.byKey(const Key('forgotPasswordSemantics'));
@@ -295,9 +305,9 @@ void main() {
             'reset@test.com');
         await tester.pump();
 
-        // Tap Send Link
-        await tester.tap(find.text('Send Link'));
-        await tester.pump(); // Trigger tap and setState
+        // Submit via keyboard
+        await tester.testTextInput.receiveAction(TextInputAction.send);
+        await tester.pump(); // Trigger setState
         await tester.pump(
             const Duration(milliseconds: 100)); // Allow future to complete
         await tester.pumpAndSettle(); // Allow dialog to close
@@ -309,8 +319,52 @@ void main() {
         // Verify Success SnackBar
         expect(find.widgetWithText(SnackBar, 'Password reset email sent'),
             findsOneWidget);
+        // Verify haptic feedback
+        verify(() => vibrationService.mediumImpact()).called(1);
         // Verify dialog closed
         expect(find.text('Reset Password'), findsNothing);
+      });
+    });
+
+    testWidgets(
+        'triggers heavy impact vibration on invalid email in reset dialog',
+        (tester) async {
+      await mockNetworkImagesFor(() async {
+        final auth = RecordingAuth();
+        final vibrationService = MockVibrationService();
+        when(() => vibrationService.heavyImpact()).thenAnswer((_) async {});
+        when(() => vibrationService.lightImpact()).thenAnswer((_) async {});
+
+        await tester.pumpWidget(MaterialApp(
+            home:
+                LoginPage(auth: auth, vibrationService: vibrationService)));
+
+        final forgotPasswordFinder =
+            find.byKey(const Key('forgotPasswordSemantics'));
+
+        // Tap Forgot Password
+        await tester.ensureVisible(forgotPasswordFinder);
+        await tester.tap(forgotPasswordFinder);
+        await tester.pumpAndSettle();
+
+        // Enter invalid email
+        await tester.enterText(
+            find.descendant(
+                of: find.byType(AlertDialog), matching: find.byType(TextField)),
+            'invalid-email');
+        await tester.pump();
+
+        // Tap Send Link
+        await tester.tap(find.text('Send Link'));
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        // Verify haptic feedback
+        verify(() => vibrationService.heavyImpact()).called(1);
+        // Verify error SnackBar
+        expect(
+            find.widgetWithText(SnackBar, 'Please enter a valid email address'),
+            findsOneWidget);
       });
     });
   });
