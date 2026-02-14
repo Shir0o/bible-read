@@ -1198,89 +1198,104 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 itemBuilder: (context, index) {
                   final member = members[index];
                   final isRead = member.completion >= 1.0;
+                  final statusText = isRead ? 'Read today' : 'Not yet';
 
-                  return Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.3),
+                  return Semantics(
+                    label: '${member.name}, $statusText',
+                    container: true,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: ClipOval(
+                              child: member.photoUrl != null
+                                  ? CachedNetworkImage(
+                                      imageUrl: member.photoUrl!,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) =>
+                                          const Icon(Icons.person),
+                                      errorWidget: (context, url, error) =>
+                                          const Icon(Icons.person),
+                                    )
+                                  : const Icon(Icons.person),
                             ),
                           ),
-                          child: ClipOval(
-                            child: member.photoUrl != null
-                                ? CachedNetworkImage(
-                                    imageUrl: member.photoUrl!,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) =>
-                                        const Icon(Icons.person),
-                                    errorWidget: (context, url, error) =>
-                                        const Icon(Icons.person),
-                                  )
-                                : const Icon(Icons.person),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                member.name,
-                                style: GoogleFonts.plusJakartaSans(
-                                  textStyle: theme.textTheme.bodyLarge,
-                                  fontWeight: FontWeight.w500,
-                                  color: isRead
-                                      ? colorScheme.onSurface
-                                      : colorScheme.onSurface
-                                          .withValues(alpha: 0.8),
-                                ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Semantics(
+                              excludeSemantics: true,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    member.name,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      textStyle: theme.textTheme.bodyLarge,
+                                      fontWeight: FontWeight.w500,
+                                      color: isRead
+                                          ? colorScheme.onSurface
+                                          : colorScheme.onSurface
+                                              .withValues(alpha: 0.8),
+                                    ),
+                                  ),
+                                  Text(
+                                    statusText,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      textStyle: theme.textTheme.bodySmall,
+                                      fontWeight: FontWeight.w500,
+                                      color: isRead
+                                          ? colorScheme.primary
+                                          : colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                isRead ? 'Read today' : 'Not yet',
-                                style: GoogleFonts.plusJakartaSans(
-                                  textStyle: theme.textTheme.bodySmall,
-                                  fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Tooltip(
+                            message: isRead
+                                ? 'Completed reading for today'
+                                : 'Has not read today',
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isRead
+                                    ? colorScheme.primary
+                                        .withValues(alpha: 0.2)
+                                    : Colors.transparent,
+                                border: isRead
+                                    ? null
+                                    : Border.all(
+                                        color: colorScheme.outline
+                                            .withValues(alpha: 0.3),
+                                      ),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  isRead ? Icons.check : Icons.hourglass_empty,
+                                  size: 18,
                                   color: isRead
                                       ? colorScheme.primary
-                                      : colorScheme.onSurfaceVariant,
+                                      : colorScheme.outline
+                                          .withValues(alpha: 0.5),
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isRead
-                                ? colorScheme.primary.withValues(alpha: 0.2)
-                                : Colors.transparent,
-                            border: isRead
-                                ? null
-                                : Border.all(
-                                    color: colorScheme.outline
-                                        .withValues(alpha: 0.3),
-                                  ),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              isRead ? Icons.check : Icons.hourglass_empty,
-                              size: 18,
-                              color: isRead
-                                  ? colorScheme.primary
-                                  : colorScheme.outline.withValues(alpha: 0.5),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },
