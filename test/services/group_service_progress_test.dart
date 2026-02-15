@@ -79,11 +79,29 @@ void main() {
           .doc(did)
           .collection('entries')
           .doc('u1')
+          .set({'count': 1});
+
+      await firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('progress')
+          .doc(did)
+          .collection('entries')
+          .doc('u1')
           .collection('items')
           .doc('i1')
           .set({'checked': true});
 
       // u2: 2 items checked (100%)
+      await firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('progress')
+          .doc(did)
+          .collection('entries')
+          .doc('u2')
+          .set({'count': 2});
+
       await firestore
           .collection('groups')
           .doc(groupId)
