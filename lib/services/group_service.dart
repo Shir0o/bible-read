@@ -1154,39 +1154,25 @@ class GroupService {
     }
 
     // Compute completion as itemsChecked / totalItems.
-    // Backwards compatibility: if an entry exists but has no items, treat as 100%.
-    final futures = <Future<double>>[];
-    for (final uid in order) {
-      futures.add(() async {
-        if (totalItems == 0) return 0.0;
-        try {
-          final itemsSnap = await firestore
-              .collection(GroupCollections.groups)
-              .doc(groupId)
-              .collection('progress')
-              .doc(dateId)
-              .collection('entries')
-              .doc(uid)
-              .collection('items')
-              .get();
-          final count = itemsSnap.docs.length;
-          return (count / totalItems).clamp(0.0, 1.0);
-        } catch (_) {
-          // If we cannot read items (permissions or missing), treat as 0%.
-          return 0.0;
-        }
-      }());
+    // We assume the 'count' field on the entry document is accurate.
+    // This avoids N+1 queries to fetch the 'items' subcollection.
+    final counts = <String, int>{};
+    for (final doc in progressSnap.docs) {
+      final uid = doc.id;
+      final data = doc.data();
+      final count = (data['count'] as num?)?.toInt();
+      if (count != null) {
+        counts[uid] = count;
+      }
     }
-    final completions = await Future.wait(futures);
+
     return [
-      for (var i = 0; i < order.length; i++)
+      for (final uid in order)
         GroupMemberProgressData(
-          uid: order[i],
-          name: providedNames[order[i]] ??
-              resolvedNames[order[i]]?.name ??
-              order[i],
-          photoUrl: resolvedNames[order[i]]?.photoUrl,
-          completion: completions[i],
+          uid: uid,
+          name: providedNames[uid] ?? resolvedNames[uid]?.name ?? uid,
+          photoUrl: resolvedNames[uid]?.photoUrl,
+          completion: ((counts[uid] ?? 0) / totalItems).clamp(0.0, 1.0),
         )
     ];
   }
