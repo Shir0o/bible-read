@@ -811,11 +811,25 @@ void main() {
           .doc(dateId)
           .collection('entries')
           .doc('u1')
+          .set({'count': 1}); // Optimized logic relies on 'count'
+
+      await groupRef
+          .collection('progress')
+          .doc(dateId)
+          .collection('entries')
+          .doc('u1')
           .collection('items')
           .doc('Gen 1')
           .set({});
 
       // Progress: u2 read 2 chapters (100%)
+      await groupRef
+          .collection('progress')
+          .doc(dateId)
+          .collection('entries')
+          .doc('u2')
+          .set({'count': 2}); // Optimized logic relies on 'count'
+
       await groupRef
           .collection('progress')
           .doc(dateId)
