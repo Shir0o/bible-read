@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/widgets/read_status_section.dart';
@@ -98,5 +99,37 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('info icon has accessible label', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ReadStatusSection(
+            toggleLoading: false,
+            readToday: false,
+            readDates: {},
+            streakFreezesLeft: 1,
+          ),
+        ),
+      ),
+    );
+
+    // Should find by Tooltip
+    final iconButton = find.byTooltip('About streak freezes');
+    expect(iconButton, findsOneWidget);
+
+    // Should be a button in semantics
+    final semantics = tester.getSemantics(iconButton);
+    final data = semantics.getSemanticsData();
+
+    expect(data.tooltip, 'About streak freezes');
+    // ignore: deprecated_member_use
+    expect(data.hasFlag(SemanticsFlag.isButton), isTrue);
+    // ignore: deprecated_member_use
+    expect(data.hasFlag(SemanticsFlag.isEnabled), isTrue);
+    // ignore: deprecated_member_use
+    expect(data.hasFlag(SemanticsFlag.isFocusable), isTrue);
+    expect(data.hasAction(SemanticsAction.tap), isTrue);
   });
 }

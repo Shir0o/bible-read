@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'read_switch_tile.dart';
 import '../services/vibration_service.dart';
@@ -40,8 +42,12 @@ class ReadStatusSection extends StatelessWidget {
             children: [
               Text('Streak freezes left: $streakFreezesLeft'),
               const SizedBox(width: 4),
-              InkWell(
-                onTap: () {
+              IconButton(
+                icon: const Icon(Icons.info_outline, size: 16),
+                tooltip: 'About streak freezes',
+                visualDensity: VisualDensity.compact,
+                onPressed: () {
+                  unawaited(vibrationService?.lightImpact());
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
@@ -58,7 +64,6 @@ class ReadStatusSection extends StatelessWidget {
                     ),
                   );
                 },
-                child: const Icon(Icons.info_outline, size: 16),
               ),
             ],
           ),
