@@ -51,3 +51,7 @@
 ## 2026-03-02 - Date Picker Accessibility
 **Learning:** `GestureDetector` on input fields provides no visual feedback (ripple) and poor accessibility (no 'button' trait).
 **Action:** Wrap tappable `InputDecorator` fields in `Semantics` (button: true) + `InkWell` (with matching border radius) for better touch feedback and screen reader support.
+
+## 2026-03-03 - Group Member List Accessibility
+**Learning:** Complex list items (Avatar + Text + Icon) are fragmented for screen readers, requiring multiple swipes per item.
+**Action:** Wrap the entire list item `Row` in a `Semantics(container: true, label: "...")` widget to aggregate the information into a single, cohesive announcement. Exclude child semantics to reduce noise.
