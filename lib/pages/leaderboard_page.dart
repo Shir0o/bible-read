@@ -206,14 +206,27 @@ Future<List<LeaderboardEntry>> _fetchEntries(
   final uniqueUids = uids.toSet().toList();
 
   final usersData = <String, Map<String, dynamic>>{};
-  final userFutures = uniqueUids.map((uid) async {
+  // Batch user requests in chunks of 30 (Firestore limit for whereIn)
+  const chunkSize = 30;
+  final chunks = <List<String>>[];
+  for (var i = 0; i < uniqueUids.length; i += chunkSize) {
+    chunks.add(uniqueUids.sublist(
+      i,
+      i + chunkSize > uniqueUids.length ? uniqueUids.length : i + chunkSize,
+    ));
+  }
+
+  final userFutures = chunks.map((chunk) async {
     try {
-      final doc = await firestore.collection('users').doc(uid).get();
-      if (doc.exists) {
-        usersData[uid] = doc.data()!;
+      final querySnap = await firestore
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+      for (final doc in querySnap.docs) {
+        usersData[doc.id] = doc.data();
       }
     } catch (_) {
-      // ignore
+      // ignore failures for this chunk
     }
   });
   await Future.wait(userFutures);
