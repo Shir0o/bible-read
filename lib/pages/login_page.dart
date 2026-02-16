@@ -306,6 +306,7 @@ class _LoginPageState extends State<LoginPage> {
                                   keyboardType: TextInputType.emailAddress,
                                   autofillHints: [AutofillHints.email],
                                   textInputAction: TextInputAction.next,
+                                  autofocus: true,
                                 ),
                                 const SizedBox(height: 16), // gap-4
 
@@ -586,6 +587,7 @@ class _LoginPageState extends State<LoginPage> {
     TextInputType? keyboardType,
     List<String>? autofillHints,
     TextInputAction? textInputAction,
+    bool autofocus = false,
     Widget? suffixIcon,
     ValueChanged<String>? onSubmitted,
   }) {
@@ -619,6 +621,7 @@ class _LoginPageState extends State<LoginPage> {
           keyboardType: keyboardType,
           autofillHints: autofillHints,
           textInputAction: textInputAction,
+          autofocus: autofocus,
           onFieldSubmitted: onSubmitted,
           style: GoogleFonts.inter(color: Colors.white),
           decoration: InputDecoration(
