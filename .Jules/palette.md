@@ -55,3 +55,7 @@
 ## 2026-03-03 - Group Member List Accessibility
 **Learning:** Complex list items (Avatar + Text + Icon) are fragmented for screen readers, requiring multiple swipes per item.
 **Action:** Wrap the entire list item `Row` in a `Semantics(container: true, label: "...")` widget to aggregate the information into a single, cohesive announcement. Exclude child semantics to reduce noise.
+
+## 2024-05-22 - Nested Interactive Elements
+**Learning:** Avoid nesting `InkWell` widgets or buttons inside other interactive elements like cards. It creates confusing semantics (buttons inside buttons) and unpredictable gesture behavior.
+**Action:** Always structure interactive lists or cards so that secondary actions (like 'Like' or 'Comment') are siblings to the primary tap target, not children. Use `Semantics(excludeFromSemantics: true)` on inner `InkWell` widgets if wrapping them with a custom `Semantics` node to prevent duplicate accessible nodes.

@@ -93,16 +93,15 @@ class _FeedCardState extends State<FeedCard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Main Tappable Area
+          // Main Tappable Area (Header)
           InkWell(
             onTap: _toggleExpanded,
-            borderRadius: BorderRadius.vertical(
-              top: const Radius.circular(24),
-              bottom: _isExpanded ? Radius.zero : const Radius.circular(24),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(24),
             ),
             // Light, airy layout with generous padding
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -194,51 +193,53 @@ class _FeedCardState extends State<FeedCard>
                       ],
                     ),
                   ],
-
-                  // Bottom action row
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      // Encourage Action
-                      _ActionButton(
-                        icon: isLiked
-                            ? Icons.favorite_rounded
-                            : Icons.favorite_border_rounded,
-                        label: 'Encourage',
-                        // Warm dynamic color if liked
-                        color: isLiked
-                            ? colorScheme.primary
-                            : colorScheme.onSurfaceVariant,
-                        backgroundColor:
-                            isLiked ? colorScheme.primaryContainer : null,
-                        isSelected: isLiked,
-                        onTap: () {
-                          (widget.vibrationService ?? const VibrationService())
-                              .lightImpact();
-                          widget.onToggleLike();
-                        },
-                      ),
-                      const SizedBox(width: 12),
-
-                      // Comment Action
-                      _ActionButton(
-                        icon: Icons.chat_bubble_outline_rounded,
-                        // Count e.g. "1"
-                        label: widget.log.comments.isNotEmpty
-                            ? '${widget.log.comments.length}'
-                            : 'Comment',
-                        color: colorScheme.onSurfaceVariant,
-                        isSelected: false,
-                        onTap: () {
-                          if (!_isExpanded) {
-                            _toggleExpanded();
-                          }
-                        },
-                      ),
-                    ],
-                  ),
                 ],
               ),
+            ),
+          ),
+
+          // Action Row (Siblings to InkWell for better touch targets/a11y)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Row(
+              children: [
+                // Encourage Action
+                _ActionButton(
+                  icon: isLiked
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  label: 'Encourage',
+                  // Warm dynamic color if liked
+                  color: isLiked
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                  backgroundColor:
+                      isLiked ? colorScheme.primaryContainer : null,
+                  isSelected: isLiked,
+                  onTap: () {
+                    (widget.vibrationService ?? const VibrationService())
+                        .lightImpact();
+                    widget.onToggleLike();
+                  },
+                ),
+                const SizedBox(width: 12),
+
+                // Comment Action
+                _ActionButton(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  // Count e.g. "1"
+                  label: widget.log.comments.isNotEmpty
+                      ? '${widget.log.comments.length}'
+                      : 'Comment',
+                  color: colorScheme.onSurfaceVariant,
+                  isSelected: false,
+                  onTap: () {
+                    if (!_isExpanded) {
+                      _toggleExpanded();
+                    }
+                  },
+                ),
+              ],
             ),
           ),
 
@@ -404,8 +405,10 @@ class _ActionButton extends StatelessWidget {
       enabled: true,
       label: label,
       selected: isSelected,
+      onTap: onTap,
       child: InkWell(
         onTap: onTap,
+        excludeFromSemantics: true,
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
