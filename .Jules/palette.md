@@ -59,3 +59,7 @@
 ## 2024-05-22 - Nested Interactive Elements
 **Learning:** Avoid nesting `InkWell` widgets or buttons inside other interactive elements like cards. It creates confusing semantics (buttons inside buttons) and unpredictable gesture behavior.
 **Action:** Always structure interactive lists or cards so that secondary actions (like 'Like' or 'Comment') are siblings to the primary tap target, not children. Use `Semantics(excludeFromSemantics: true)` on inner `InkWell` widgets if wrapping them with a custom `Semantics` node to prevent duplicate accessible nodes.
+
+## 2026-03-04 - Custom Radio Button Accessibility
+**Learning:** Custom selection cards (e.g., Frequency) built with `InkWell` are inaccessible unless explicitly marked as radio buttons.
+**Action:** Wrap custom radio widgets in `Semantics(checked: isSelected, inMutuallyExclusiveGroup: true, button: true, label: ...)` and verify states with screen reader tests. Add haptic feedback for better interaction.

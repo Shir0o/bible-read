@@ -821,69 +821,79 @@ class _EditGroupPageState extends State<EditGroupPage> {
     final iconColor =
         isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          border: Border.all(color: borderColor),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            // Radio Indicator
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
-                  width: 2,
+    return Semantics(
+      checked: isSelected,
+      inMutuallyExclusiveGroup: true,
+      button: true,
+      label: '$title, $subtitle',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () {
+          widget.vibrationService.lightImpact();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            border: Border.all(color: borderColor),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              // Radio Indicator
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant,
+                    width: 2,
+                  ),
+                  color: isSelected ? colorScheme.primary : null,
                 ),
-                color: isSelected ? colorScheme.primary : null,
-              ),
-              child: isSelected
-                  ? Center(
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: colorScheme.onPrimary,
-                          shape: BoxShape.circle,
+                child: isSelected
+                    ? Center(
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: colorScheme.onPrimary,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 16),
-            Icon(icon, color: iconColor, size: 24),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+                      )
+                    : null,
               ),
-            ),
-          ],
+              const SizedBox(width: 16),
+              Icon(icon, color: iconColor, size: 24),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -896,27 +906,30 @@ class _EditGroupPageState extends State<EditGroupPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Members',
-                  style: textTheme.headlineMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: -0.5,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Members',
+                    style: textTheme.headlineMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: -0.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Manage group participants.',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontSize: 16,
+                  const SizedBox(height: 4),
+                  Text(
+                    'Manage group participants.',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            const SizedBox(width: 16),
             FilledButton.icon(
               onPressed: _copyLink,
               icon: const Icon(Icons.link, size: 18),
