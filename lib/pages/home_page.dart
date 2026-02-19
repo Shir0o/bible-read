@@ -254,6 +254,7 @@ class _HomePageState extends State<HomePage>
   /// Marks the current day as read. Optimistically updates local state and
   /// writes the change to Firestore, rolling back on failure.
   Future<void> _toggleReadStatus() async {
+    unawaited(widget.vibrationService.mediumImpact());
     if (_readToday) return;
 
     final user = widget.auth.currentUser;
@@ -705,27 +706,41 @@ class _HomePageState extends State<HomePage>
                 SizedBox(
                   width: double.infinity,
                   height: 64,
-                  child: FilledButton(
-                    onPressed: _toggleLoading ? null : _toggleReadStatus,
-                    child: _toggleLoading
-                        ? SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: colorScheme.onPrimary,
-                            ),
-                          )
-                        : Text(
-                            'I have read',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                  child: Semantics(
+                    button: true,
+                    label: "Mark today's reading as complete",
+                    child: Tooltip(
+                      message: 'Mark as read',
+                      child: FilledButton(
+                        onPressed: _toggleLoading ? null : _toggleReadStatus,
+                        child: _toggleLoading
+                            ? SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: colorScheme.onPrimary,
                                 ),
-                          ),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.check, color: Colors.black),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'I have read',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
                   ),
                 ),
               ] else ...[
@@ -753,28 +768,42 @@ class _HomePageState extends State<HomePage>
                 SizedBox(
                   width: double.infinity,
                   height: 64,
-                  child: FilledButton.tonal(
-                    onPressed: _toggleLoading ? null : _toggleReadStatus,
-                    style: FilledButton.styleFrom(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.5,
+                  child: Semantics(
+                    button: true,
+                    label: 'Mark daily reading as complete',
+                    child: Tooltip(
+                      message: 'Mark as read',
+                      child: FilledButton.tonal(
+                        onPressed: _toggleLoading ? null : _toggleReadStatus,
+                        style: FilledButton.styleFrom(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        child: _toggleLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check),
+                                  SizedBox(width: 8),
+                                  Text('Yes, I read'),
+                                ],
+                              ),
                       ),
                     ),
-                    child: _toggleLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : const Text('Yes, I read'),
                   ),
                 ),
               ],
