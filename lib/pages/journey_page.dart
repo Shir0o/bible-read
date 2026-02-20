@@ -36,7 +36,7 @@ class _JourneyPageState extends State<JourneyPage>
       body: SafeArea(
         child: Column(
           children: [
-            JourneyHeader(auth: widget.auth),
+            JourneyHeader(auth: widget.auth, firestore: widget.firestore),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.only(bottom: 24),

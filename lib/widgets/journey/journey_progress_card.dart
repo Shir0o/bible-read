@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../skeleton.dart';
 
 import '../../models/reading_plan.dart';
 import '../../models/reading_plan_progress.dart';
@@ -89,7 +90,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
             stream: _activePlansStream,
             builder: (context, activeSnapshot) {
               if (activeSnapshot.hasError) {
-                return const Card(
+                return Card(
                     child: Padding(
                         padding: EdgeInsets.all(16),
                         child: Text("Error loading plan")));
@@ -104,10 +105,10 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                           ConnectionState.waiting &&
                       activeProgressList.isEmpty) {
                     // Show loading skeleton if no data yet
-                    return const Card(
+                    return Card(
                       child: SizedBox(
                           height: 200,
-                          child: Center(child: CircularProgressIndicator())),
+                          child: _buildSkeletonCard(colorScheme)),
                     );
                   }
 
@@ -137,6 +138,51 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
               );
             },
           ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildSkeletonCard(ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      height: 200,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+        ),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Skeleton(width: 80, height: 100, radius: 16),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Skeleton(width: 150, height: 20),
+                    const SizedBox(height: 12),
+                    Row(children: [
+                        const Skeleton(width: 60, height: 16),
+                        const SizedBox(width: 8),
+                        const Skeleton(width: 100, height: 12),
+                    ]),
+                    const SizedBox(height: 16),
+                    const Skeleton(width: double.infinity, height: 8),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Skeleton(width: double.infinity, height: 48, radius: 16),
         ],
       ),
     );
