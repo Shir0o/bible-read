@@ -38,7 +38,6 @@ class _AddFriendPageState extends State<AddFriendPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.auth.currentUser;
     return Scaffold(
       appBar: CommonStyles.buildAppBar(context, 'Add Friend'),
       body: Container(

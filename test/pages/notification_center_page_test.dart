@@ -23,8 +23,6 @@ class FakeVibrationService implements VibrationService {
   @override
   Future<void> heavyImpact() async {}
   @override
-  Future<void> selectionClick() async {}
-  @override
   Future<void> tap() async {}
 }
 
