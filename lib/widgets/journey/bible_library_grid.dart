@@ -6,7 +6,7 @@ import '../../models/achievement_definition.dart';
 import '../../services/achievement_service.dart';
 import '../../services/reference_parser.dart';
 import '../../theme/app_theme.dart';
-import '../views/book_tracker_view.dart';
+import '../../pages/bible_progress_page.dart';
 
 class BibleLibraryGrid extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -139,12 +139,9 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => Scaffold(
-                        appBar: AppBar(title: const Text('Bible Library')),
-                        body: BookTrackerView(
-                          firestore: widget.firestore,
-                          auth: widget.auth,
-                        ),
+                      builder: (_) => BibleProgressPage(
+                        firestore: widget.firestore,
+                        auth: widget.auth,
                       ),
                     ),
                   );
