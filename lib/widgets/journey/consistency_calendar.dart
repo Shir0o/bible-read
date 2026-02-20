@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../skeleton.dart';
 
 import '../../theme/app_theme.dart';
 
@@ -217,28 +218,6 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                 ),
                 const SizedBox(height: 16),
 
-                // Days of week
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) {
-                    return SizedBox(
-                      width: 32,
-                      child: Center(
-                        child: Text(
-                          day,
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 8),
-
-                // Calendar Grid
                 _buildCalendarGrid(colorScheme),
 
                 const SizedBox(height: 16),
@@ -299,9 +278,53 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
 
   Widget _buildCalendarGrid(ColorScheme colorScheme) {
     if (_loading) {
-      return const SizedBox(
-        height: 200,
-        child: Center(child: CircularProgressIndicator()),
+      return Table(
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: [
+          // Header row
+          TableRow(
+            children: ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) {
+              return SizedBox(
+                width: 32,
+                child: Center(
+                  child: Text(
+                    day,
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const TableRow(children: [
+            SizedBox(height: 8),
+            SizedBox(height: 8),
+            SizedBox(height: 8),
+            SizedBox(height: 8),
+            SizedBox(height: 8),
+            SizedBox(height: 8),
+            SizedBox(height: 8),
+          ]),
+          // Skeleton rows
+          for (int i = 0; i < 5; i++)
+            TableRow(
+              children: List.generate(7, (index) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4),
+                    child: Skeleton(
+                      width: 32,
+                      height: 32,
+                      radius: 16,
+                    ),
+                  ),
+                );
+              }),
+            ),
+        ],
       );
     }
 
@@ -314,12 +337,12 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
     final prevMonthDays =
         DateTime(_currentMonth.year, _currentMonth.month, 0).day;
 
-    final widgets = <Widget>[];
+    final cells = <Widget>[];
 
     // Previous month days
     for (int i = 0; i < weekdayOffset; i++) {
       final dayNum = prevMonthDays - weekdayOffset + i + 1;
-      widgets.add(
+      cells.add(
         SizedBox(
           width: 32,
           height: 32,
@@ -342,7 +365,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
       final isRead = _readDates.any((d) => _isSameDay(d, date));
       final isToday = _isSameDay(DateTime.now(), date);
 
-      widgets.add(
+      cells.add(
         Container(
           width: 32,
           height: 32,
@@ -371,10 +394,10 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
     }
 
     // Next month days (fill row)
-    final remainingCells = 7 - (widgets.length % 7);
+    final remainingCells = 7 - (cells.length % 7);
     if (remainingCells < 7) {
       for (int i = 1; i <= remainingCells; i++) {
-        widgets.add(
+        cells.add(
           SizedBox(
             width: 32,
             height: 32,
@@ -392,18 +415,62 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
       }
     }
 
-    return Wrap(
-      spacing: (MediaQuery.of(context).size.width -
-              (AppSpacing.hPadding * 2) -
-              40 -
-              (32 * 7)) /
-          6, // Dynamic spacing? No, just use MainAxisAlignment.spaceBetween logic in a Grid/Wrap
-      // Actually Wrap spacing is fixed.
-      // Better to use a GridView or Table.
-      // Table works well for calendar.
-      runSpacing: 8,
-      alignment: WrapAlignment.spaceBetween,
-      children: widgets,
+    final rows = <TableRow>[];
+
+    // Header Row
+    rows.add(
+      TableRow(
+        children: ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) {
+          return SizedBox(
+            width: 32,
+            child: Center(
+              child: Text(
+                day,
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+
+    // Spacer Row
+    rows.add(
+      const TableRow(children: [
+        SizedBox(height: 8),
+        SizedBox(height: 8),
+        SizedBox(height: 8),
+        SizedBox(height: 8),
+        SizedBox(height: 8),
+        SizedBox(height: 8),
+        SizedBox(height: 8),
+      ]),
+    );
+
+    // Day Rows
+    for (int i = 0; i < cells.length; i += 7) {
+      final rowCells = cells.sublist(i, i + 7);
+      rows.add(
+        TableRow(
+          children: rowCells.map((cell) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: cell,
+              ),
+            );
+          }).toList(),
+        ),
+      );
+    }
+
+    return Table(
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      children: rows,
     );
   }
 }

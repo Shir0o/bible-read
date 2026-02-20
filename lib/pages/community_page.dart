@@ -22,6 +22,8 @@ import 'full_schedule_page.dart';
 import 'groups_page.dart';
 import 'notification_center_page.dart';
 import '../services/notification_service.dart';
+import '../widgets/skeletons/friends_activity_skeleton.dart';
+import '../models/app_notification.dart';
 
 class CommunityPage extends StatefulWidget {
   final FirebaseAuth auth;
@@ -284,60 +286,70 @@ class _CommunityPageState extends State<CommunityPage> {
                         ),
                       ),
                       // Notification Button
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: colorScheme.surfaceContainer,
-                          border: Border.all(
-                              color: colorScheme.outlineVariant
-                                  .withValues(alpha: 0.1)),
-                        ),
-                        child: Stack(
-                          children: [
-                            Center(
-                              child: IconButton(
-                                icon: Icon(
-                                  Icons.notifications_outlined,
-                                  color: colorScheme.onSurfaceVariant,
-                                  size: 20,
+                      StreamBuilder<List<AppNotification>>(
+                        stream: NotificationService(firestore: widget.firestore)
+                            .notifications(user.uid),
+                        builder: (context, snapshot) {
+                          final unreadCount =
+                              snapshot.data?.where((n) => !n.read).length ?? 0;
+                          return Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: colorScheme.surfaceContainer,
+                              border: Border.all(
+                                  color: colorScheme.outlineVariant
+                                      .withValues(alpha: 0.1)),
+                            ),
+                            child: Stack(
+                              children: [
+                                Center(
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.notifications_outlined,
+                                      color: colorScheme.onSurfaceVariant,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      widget.vibrationService.lightImpact();
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              NotificationCenterPage(
+                                            service: NotificationService(
+                                                firestore: widget.firestore),
+                                            auth: widget.auth,
+                                            vibrationService:
+                                                widget.vibrationService,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    padding: EdgeInsets.zero,
+                                  ),
                                 ),
-                                onPressed: () {
-                                  widget.vibrationService.lightImpact();
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => NotificationCenterPage(
-                                        service: NotificationService(
-                                            firestore: widget.firestore),
-                                        auth: widget.auth,
-                                        vibrationService:
-                                            widget.vibrationService,
+                                if (unreadCount > 0)
+                                  Positioned(
+                                    top: 10,
+                                    right: 10,
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.tertiary,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                            color: colorScheme.surfaceContainer,
+                                            width: 2),
                                       ),
                                     ),
-                                  );
-                                },
-                                padding: EdgeInsets.zero,
-                              ),
+                                  ),
+                              ],
                             ),
-                            Positioned(
-                              top: 10,
-                              right: 10,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: colorScheme.tertiary,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: colorScheme.surfaceContainer,
-                                      width: 2),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -416,12 +428,7 @@ class _CommunityPageState extends State<CommunityPage> {
               ),
 
               // Friends Activity List
-              if (_loadingLogs)
-                const SliverToBoxAdapter(
-                    child: Center(
-                        child: Padding(
-                            padding: EdgeInsets.all(20),
-                            child: CircularProgressIndicator())))
+                            if (_loadingLogs) const FriendsActivitySkeleton()
               else if (_friendLogs.isEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
