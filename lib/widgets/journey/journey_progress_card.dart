@@ -89,7 +89,10 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
             stream: _activePlansStream,
             builder: (context, activeSnapshot) {
               if (activeSnapshot.hasError) {
-                return const Card(child: Padding(padding: EdgeInsets.all(16), child: Text("Error loading plan")));
+                return const Card(
+                    child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text("Error loading plan")));
               }
 
               final activeProgressList = activeSnapshot.data ?? [];
@@ -97,11 +100,15 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
               return FutureBuilder<List<ReadingPlan>>(
                 future: _allPlansFuture,
                 builder: (context, plansSnapshot) {
-                  if (plansSnapshot.connectionState == ConnectionState.waiting && activeProgressList.isEmpty) {
-                     // Show loading skeleton if no data yet
-                     return const Card(
-                       child: SizedBox(height: 200, child: Center(child: CircularProgressIndicator())),
-                     );
+                  if (plansSnapshot.connectionState ==
+                          ConnectionState.waiting &&
+                      activeProgressList.isEmpty) {
+                    // Show loading skeleton if no data yet
+                    return const Card(
+                      child: SizedBox(
+                          height: 200,
+                          child: Center(child: CircularProgressIndicator())),
+                    );
                   }
 
                   final allPlans = plansSnapshot.data ?? [];
@@ -113,7 +120,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                   if (activeProgressList.isNotEmpty) {
                     activeProgress = activeProgressList.first;
                     try {
-                      activePlan = allPlans.firstWhere((p) => p.id == activeProgress!.planId);
+                      activePlan = allPlans
+                          .firstWhere((p) => p.id == activeProgress!.planId);
                     } catch (e) {
                       // Plan not found in available plans (maybe deleted or specialized)
                     }
@@ -123,7 +131,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                     return _buildNoActivePlanCard(context, colorScheme);
                   }
 
-                  return _buildActivePlanCard(context, colorScheme, activePlan, activeProgress);
+                  return _buildActivePlanCard(
+                      context, colorScheme, activePlan, activeProgress);
                 },
               );
             },
@@ -139,7 +148,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
       color: colorScheme.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.2)),
+        side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.2)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -159,9 +169,9 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
             const SizedBox(height: 16),
             FilledButton.tonal(
               onPressed: () {
-                 // Open plans tab or navigate
-                 // Since we removed tabs, we might need a way to browse plans.
-                 // For now, let's just leave it as is or show a dialog.
+                // Open plans tab or navigate
+                // Since we removed tabs, we might need a way to browse plans.
+                // For now, let's just leave it as is or show a dialog.
               },
               child: const Text("Browse Plans"),
             ),
@@ -227,7 +237,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                         color: colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+                          color:
+                              colorScheme.outlineVariant.withValues(alpha: 0.2),
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -253,7 +264,10 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                         children: [
                           Text(
                             plan.title,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
                                   height: 1.2,
@@ -330,15 +344,15 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                   height: 48,
                   child: FilledButton.tonal(
                     onPressed: () {
-                       Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => PlanDetailPage(
-                              plan: plan,
-                              firestore: widget.firestore,
-                              auth: widget.auth,
-                            ),
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => PlanDetailPage(
+                            plan: plan,
+                            firestore: widget.firestore,
+                            auth: widget.auth,
                           ),
-                        );
+                        ),
+                      );
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: colorScheme.secondaryContainer,

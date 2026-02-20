@@ -49,7 +49,8 @@ class _ActivityItemSkeleton extends StatelessWidget {
                   width: double.infinity,
                   height: 36,
                   radius: 12,
-                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.3),
                 ),
               ],
             ),

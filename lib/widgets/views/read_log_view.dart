@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import '../../services/error_logger.dart';
 import '../../services/vibration_service.dart';
 
-
 import '../common_styles.dart';
 import '../../models/comment.dart';
 import '../read_log_list.dart';

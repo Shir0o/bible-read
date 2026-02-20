@@ -67,10 +67,12 @@ void main() {
     await pumpUntilSettled(tester);
   }
 
-  testWidgets('members list items have accessible semantic labels', (tester) async {
+  testWidgets('members list items have accessible semantic labels',
+      (tester) async {
     // Setup group and members
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
-    final members = firestore.collection('groups').doc('g1').collection('members');
+    final members =
+        firestore.collection('groups').doc('g1').collection('members');
 
     // User 1: Read today
     await members.doc('u1').set({

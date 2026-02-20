@@ -25,33 +25,66 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
   late final Stream<Set<String>> _unlockedIdsStream;
 
   static const Map<String, List<String>> _categories = {
-    'Pentateuch': [
-      'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy'
-    ],
+    'Pentateuch': ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy'],
     'History': [
-      'Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel', '1 Kings', '2 Kings',
-      '1 Chronicles', '2 Chronicles', 'Ezra', 'Nehemiah', 'Esther'
+      'Joshua',
+      'Judges',
+      'Ruth',
+      '1 Samuel',
+      '2 Samuel',
+      '1 Kings',
+      '2 Kings',
+      '1 Chronicles',
+      '2 Chronicles',
+      'Ezra',
+      'Nehemiah',
+      'Esther'
     ],
-    'Poetry': [
-      'Job', 'Psalm', 'Proverbs', 'Ecclesiastes', 'Song of Songs'
-    ],
+    'Poetry': ['Job', 'Psalm', 'Proverbs', 'Ecclesiastes', 'Song of Songs'],
     'Prophecy (OT)': [
-      'Isaiah', 'Jeremiah', 'Lamentations', 'Ezekiel', 'Daniel', 'Hosea',
-      'Joel', 'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk',
-      'Zephaniah', 'Haggai', 'Zechariah', 'Malachi'
+      'Isaiah',
+      'Jeremiah',
+      'Lamentations',
+      'Ezekiel',
+      'Daniel',
+      'Hosea',
+      'Joel',
+      'Amos',
+      'Obadiah',
+      'Jonah',
+      'Micah',
+      'Nahum',
+      'Habakkuk',
+      'Zephaniah',
+      'Haggai',
+      'Zechariah',
+      'Malachi'
     ],
-    'Gospels & Acts': [
-      'Matthew', 'Mark', 'Luke', 'John', 'Acts'
-    ],
+    'Gospels & Acts': ['Matthew', 'Mark', 'Luke', 'John', 'Acts'],
     'Epistles': [
-      'Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians',
-      'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians',
-      '1 Timothy', '2 Timothy', 'Titus', 'Philemon', 'Hebrews', 'James',
-      '1 Peter', '2 Peter', '1 John', '2 John', '3 John', 'Jude'
+      'Romans',
+      '1 Corinthians',
+      '2 Corinthians',
+      'Galatians',
+      'Ephesians',
+      'Philippians',
+      'Colossians',
+      '1 Thessalonians',
+      '2 Thessalonians',
+      '1 Timothy',
+      '2 Timothy',
+      'Titus',
+      'Philemon',
+      'Hebrews',
+      'James',
+      '1 Peter',
+      '2 Peter',
+      '1 John',
+      '2 John',
+      '3 John',
+      'Jude'
     ],
-    'Prophecy (NT)': [
-      'Revelation'
-    ],
+    'Prophecy (NT)': ['Revelation'],
   };
 
   @override
@@ -68,73 +101,140 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
 
   String _getAbbreviation(String book) {
     switch (book) {
-      case 'Genesis': return 'Gen';
-      case 'Exodus': return 'Exo';
-      case 'Leviticus': return 'Lev';
-      case 'Numbers': return 'Num';
-      case 'Deuteronomy': return 'Deu';
-      case 'Joshua': return 'Jos';
-      case 'Judges': return 'Jud';
-      case 'Ruth': return 'Rut';
-      case '1 Samuel': return '1Sa';
-      case '2 Samuel': return '2Sa';
-      case '1 Kings': return '1Ki';
-      case '2 Kings': return '2Ki';
-      case '1 Chronicles': return '1Ch';
-      case '2 Chronicles': return '2Ch';
-      case 'Ezra': return 'Ezr';
-      case 'Nehemiah': return 'Neh';
-      case 'Esther': return 'Est';
-      case 'Job': return 'Job';
-      case 'Psalm': return 'Psa';
-      case 'Proverbs': return 'Pro';
-      case 'Ecclesiastes': return 'Ecc';
-      case 'Song of Songs': return 'Sol'; // Commonly 'Sol' or 'Son'
-      case 'Isaiah': return 'Isa';
-      case 'Jeremiah': return 'Jer';
-      case 'Lamentations': return 'Lam';
-      case 'Ezekiel': return 'Eze';
-      case 'Daniel': return 'Dan';
-      case 'Hosea': return 'Hos';
-      case 'Joel': return 'Joe';
-      case 'Amos': return 'Amo';
-      case 'Obadiah': return 'Oba';
-      case 'Jonah': return 'Jon';
-      case 'Micah': return 'Mic';
-      case 'Nahum': return 'Nah';
-      case 'Habakkuk': return 'Hab';
-      case 'Zephaniah': return 'Zep';
-      case 'Haggai': return 'Hag';
-      case 'Zechariah': return 'Zec';
-      case 'Malachi': return 'Mal';
-      case 'Matthew': return 'Mat';
-      case 'Mark': return 'Mar';
-      case 'Luke': return 'Luk';
-      case 'John': return 'Joh';
-      case 'Acts': return 'Act';
-      case 'Romans': return 'Rom';
-      case '1 Corinthians': return '1Co';
-      case '2 Corinthians': return '2Co';
-      case 'Galatians': return 'Gal';
-      case 'Ephesians': return 'Eph';
-      case 'Philippians': return 'Phi';
-      case 'Colossians': return 'Col';
-      case '1 Thessalonians': return '1Th';
-      case '2 Thessalonians': return '2Th';
-      case '1 Timothy': return '1Ti';
-      case '2 Timothy': return '2Ti';
-      case 'Titus': return 'Tit';
-      case 'Philemon': return 'Phm';
-      case 'Hebrews': return 'Heb';
-      case 'James': return 'Jam';
-      case '1 Peter': return '1Pe';
-      case '2 Peter': return '2Pe';
-      case '1 John': return '1Jo';
-      case '2 John': return '2Jo';
-      case '3 John': return '3Jo';
-      case 'Jude': return 'Jud';
-      case 'Revelation': return 'Rev';
-      default: return book.substring(0, 3);
+      case 'Genesis':
+        return 'Gen';
+      case 'Exodus':
+        return 'Exo';
+      case 'Leviticus':
+        return 'Lev';
+      case 'Numbers':
+        return 'Num';
+      case 'Deuteronomy':
+        return 'Deu';
+      case 'Joshua':
+        return 'Jos';
+      case 'Judges':
+        return 'Jud';
+      case 'Ruth':
+        return 'Rut';
+      case '1 Samuel':
+        return '1Sa';
+      case '2 Samuel':
+        return '2Sa';
+      case '1 Kings':
+        return '1Ki';
+      case '2 Kings':
+        return '2Ki';
+      case '1 Chronicles':
+        return '1Ch';
+      case '2 Chronicles':
+        return '2Ch';
+      case 'Ezra':
+        return 'Ezr';
+      case 'Nehemiah':
+        return 'Neh';
+      case 'Esther':
+        return 'Est';
+      case 'Job':
+        return 'Job';
+      case 'Psalm':
+        return 'Psa';
+      case 'Proverbs':
+        return 'Pro';
+      case 'Ecclesiastes':
+        return 'Ecc';
+      case 'Song of Songs':
+        return 'Sol'; // Commonly 'Sol' or 'Son'
+      case 'Isaiah':
+        return 'Isa';
+      case 'Jeremiah':
+        return 'Jer';
+      case 'Lamentations':
+        return 'Lam';
+      case 'Ezekiel':
+        return 'Eze';
+      case 'Daniel':
+        return 'Dan';
+      case 'Hosea':
+        return 'Hos';
+      case 'Joel':
+        return 'Joe';
+      case 'Amos':
+        return 'Amo';
+      case 'Obadiah':
+        return 'Oba';
+      case 'Jonah':
+        return 'Jon';
+      case 'Micah':
+        return 'Mic';
+      case 'Nahum':
+        return 'Nah';
+      case 'Habakkuk':
+        return 'Hab';
+      case 'Zephaniah':
+        return 'Zep';
+      case 'Haggai':
+        return 'Hag';
+      case 'Zechariah':
+        return 'Zec';
+      case 'Malachi':
+        return 'Mal';
+      case 'Matthew':
+        return 'Mat';
+      case 'Mark':
+        return 'Mar';
+      case 'Luke':
+        return 'Luk';
+      case 'John':
+        return 'Joh';
+      case 'Acts':
+        return 'Act';
+      case 'Romans':
+        return 'Rom';
+      case '1 Corinthians':
+        return '1Co';
+      case '2 Corinthians':
+        return '2Co';
+      case 'Galatians':
+        return 'Gal';
+      case 'Ephesians':
+        return 'Eph';
+      case 'Philippians':
+        return 'Phi';
+      case 'Colossians':
+        return 'Col';
+      case '1 Thessalonians':
+        return '1Th';
+      case '2 Thessalonians':
+        return '2Th';
+      case '1 Timothy':
+        return '1Ti';
+      case '2 Timothy':
+        return '2Ti';
+      case 'Titus':
+        return 'Tit';
+      case 'Philemon':
+        return 'Phm';
+      case 'Hebrews':
+        return 'Heb';
+      case 'James':
+        return 'Jam';
+      case '1 Peter':
+        return '1Pe';
+      case '2 Peter':
+        return '2Pe';
+      case '1 John':
+        return '1Jo';
+      case '2 John':
+        return '2Jo';
+      case '3 John':
+        return '3Jo';
+      case 'Jude':
+        return 'Jud';
+      case 'Revelation':
+        return 'Rev';
+      default:
+        return book.substring(0, 3);
     }
   }
 
@@ -178,7 +278,10 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
                     padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
                     child: Row(
                       children: [
-                        Expanded(child: Divider(color: colorScheme.outlineVariant.withValues(alpha: 0.5))),
+                        Expanded(
+                            child: Divider(
+                                color: colorScheme.outlineVariant
+                                    .withValues(alpha: 0.5))),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Text(
@@ -190,7 +293,10 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
                             ),
                           ),
                         ),
-                        Expanded(child: Divider(color: colorScheme.outlineVariant.withValues(alpha: 0.5))),
+                        Expanded(
+                            child: Divider(
+                                color: colorScheme.outlineVariant
+                                    .withValues(alpha: 0.5))),
                       ],
                     ),
                   ),
@@ -198,7 +304,8 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 5,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
@@ -207,7 +314,8 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final book = entry.value[index];
-                        final achievementId = AchievementDefinition.bookAchievementId(book);
+                        final achievementId =
+                            AchievementDefinition.bookAchievementId(book);
                         final isUnlocked = unlockedIds.contains(achievementId);
                         final abbr = _getAbbreviation(book);
 
@@ -215,7 +323,8 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
                           book: book,
                           abbr: abbr,
                           isUnlocked: isUnlocked,
-                          onTap: () => _handleBookTap(book, achievementId, isUnlocked),
+                          onTap: () =>
+                              _handleBookTap(book, achievementId, isUnlocked),
                         );
                       },
                       childCount: entry.value.length,
@@ -231,7 +340,8 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
     );
   }
 
-  Future<void> _handleBookTap(String book, String achievementId, bool isUnlocked) async {
+  Future<void> _handleBookTap(
+      String book, String achievementId, bool isUnlocked) async {
     final user = widget.auth.currentUser;
     if (user == null) return;
 

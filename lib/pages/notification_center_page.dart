@@ -90,11 +90,13 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
               style: TextButton.styleFrom(
                 foregroundColor: colorScheme.primary,
                 textStyle: const TextStyle(fontWeight: FontWeight.w600),
-                backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                backgroundColor:
+                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               child: _markingAllRead
                   ? SizedBox(
@@ -116,7 +118,8 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
               stream: widget.service.notifications(user.uid),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return const Center(child: Text('Error loading notifications'));
+                  return const Center(
+                      child: Text('Error loading notifications'));
                 }
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
@@ -131,7 +134,8 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                         Icon(
                           Icons.notifications_none_outlined,
                           size: 64,
-                          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.5),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -242,12 +246,12 @@ class _NotificationItemState extends State<_NotificationItem> {
   void didUpdateWidget(_NotificationItem oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.notification.fromUid != oldWidget.notification.fromUid) {
-       if (widget.notification.fromUid != null) {
-         _userFuture = widget.service.firestore
+      if (widget.notification.fromUid != null) {
+        _userFuture = widget.service.firestore
             .collection('users')
             .doc(widget.notification.fromUid)
             .get();
-       }
+      }
     }
   }
 
@@ -255,7 +259,8 @@ class _NotificationItemState extends State<_NotificationItem> {
     if (!widget.notification.read) {
       // Mark as read
       try {
-        await widget.service.markRead(widget.auth.currentUser!.uid, widget.notification.id);
+        await widget.service
+            .markRead(widget.auth.currentUser!.uid, widget.notification.id);
       } catch (e) {
         // Ignore error
       }
@@ -306,7 +311,7 @@ class _NotificationItemState extends State<_NotificationItem> {
         break;
       case NotificationType.groupJoinRequest:
         if (widget.notification.groupId != null) {
-           await Navigator.of(context).push(
+          await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => GroupJoinRequestsPage(
                 groupId: widget.notification.groupId!,
@@ -396,14 +401,14 @@ class _NotificationItemState extends State<_NotificationItem> {
                 errorWidget: (context, url, error) => _buildInitials(name),
               );
             } else {
-               return _buildInitials(name);
+              return _buildInitials(name);
             }
           }
           return const Icon(Icons.person, size: 20);
         },
       );
     } else {
-       avatarContent = _buildSystemIcon(context);
+      avatarContent = _buildSystemIcon(context);
     }
 
     return Stack(
@@ -533,13 +538,13 @@ class _NotificationItemState extends State<_NotificationItem> {
     String text = widget.notification.message ?? _getDefaultMessage();
 
     if (widget.notification.fromUid != null) {
-       return FutureBuilder<DocumentSnapshot>(
+      return FutureBuilder<DocumentSnapshot>(
         future: _userFuture,
         builder: (context, snapshot) {
           String displayName = 'Someone';
           if (snapshot.hasData && snapshot.data!.exists) {
             final data = snapshot.data!.data() as Map<String, dynamic>?;
-             displayName = data?['name'] as String? ?? 'Someone';
+            displayName = data?['name'] as String? ?? 'Someone';
           }
 
           return RichText(
@@ -558,19 +563,21 @@ class _NotificationItemState extends State<_NotificationItem> {
     );
   }
 
-  List<InlineSpan> _buildTextSpans(BuildContext context, String name, String rawMessage) {
+  List<InlineSpan> _buildTextSpans(
+      BuildContext context, String name, String rawMessage) {
     final colorScheme = Theme.of(context).colorScheme;
-    final boldStyle = TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface);
+    final boldStyle =
+        TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface);
 
     if (rawMessage.startsWith(name)) {
-       return [
-         TextSpan(text: name, style: boldStyle),
-         TextSpan(text: rawMessage.substring(name.length)),
-       ];
+      return [
+        TextSpan(text: name, style: boldStyle),
+        TextSpan(text: rawMessage.substring(name.length)),
+      ];
     }
 
     if (widget.notification.message == null) {
-       switch (widget.notification.type) {
+      switch (widget.notification.type) {
         case NotificationType.like:
           return [
             TextSpan(text: name, style: boldStyle),
@@ -578,18 +585,18 @@ class _NotificationItemState extends State<_NotificationItem> {
           ];
         case NotificationType.comment:
           return [
-             TextSpan(text: name, style: boldStyle),
-             const TextSpan(text: ' commented on your reading'),
+            TextSpan(text: name, style: boldStyle),
+            const TextSpan(text: ' commented on your reading'),
           ];
         case NotificationType.friendRequest:
           return [
-             TextSpan(text: name, style: boldStyle),
-             const TextSpan(text: ' sent you a friend request'),
+            TextSpan(text: name, style: boldStyle),
+            const TextSpan(text: ' sent you a friend request'),
           ];
-         case NotificationType.nudge:
+        case NotificationType.nudge:
           return [
-             TextSpan(text: name, style: boldStyle),
-             const TextSpan(text: ' nudged you to read'),
+            TextSpan(text: name, style: boldStyle),
+            const TextSpan(text: ' nudged you to read'),
           ];
         default:
           break;

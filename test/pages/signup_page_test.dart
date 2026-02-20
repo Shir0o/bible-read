@@ -168,7 +168,8 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('Social button has correct semantics and tooltip', (tester) async {
+  testWidgets('Social button has correct semantics and tooltip',
+      (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: SignupPage(
@@ -209,8 +210,8 @@ void main() {
         final children = span.children;
         if (children == null) return false;
 
-        bool hasTerms = children
-            .any((c) => c is TextSpan && c.text == 'Terms of Service');
+        bool hasTerms =
+            children.any((c) => c is TextSpan && c.text == 'Terms of Service');
         bool hasPrivacy =
             children.any((c) => c is TextSpan && c.text == 'Privacy Policy');
         return hasTerms && hasPrivacy;
@@ -224,12 +225,14 @@ void main() {
     final textSpan = richText.text as TextSpan;
 
     final termsSpan = textSpan.children!
-        .firstWhere((c) => (c as TextSpan).text == 'Terms of Service') as TextSpan;
+            .firstWhere((c) => (c as TextSpan).text == 'Terms of Service')
+        as TextSpan;
     expect(termsSpan.recognizer, isNotNull);
     expect(termsSpan.recognizer, isA<TapGestureRecognizer>());
 
     final privacySpan = textSpan.children!
-        .firstWhere((c) => (c as TextSpan).text == 'Privacy Policy') as TextSpan;
+            .firstWhere((c) => (c as TextSpan).text == 'Privacy Policy')
+        as TextSpan;
     expect(privacySpan.recognizer, isNotNull);
     expect(privacySpan.recognizer, isA<TapGestureRecognizer>());
   });

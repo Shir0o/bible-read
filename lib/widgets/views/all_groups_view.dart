@@ -109,9 +109,11 @@ class _AllGroupsViewState extends State<AllGroupsView>
                 },
                 decoration: InputDecoration(
                   hintText: 'Search groups',
-                  prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
+                  prefixIcon:
+                      Icon(Icons.search, color: colorScheme.onSurfaceVariant),
                   filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  fillColor: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.3),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
                     borderSide: BorderSide.none,
@@ -133,12 +135,13 @@ class _AllGroupsViewState extends State<AllGroupsView>
                   }
 
                   final allGroups = snapshot.data!;
-                  
+
                   // Filter logic:
                   // 1. Must be public or user explicitly searches for it (not implemented here, assuming generic search).
                   // 2. Name contains query.
                   final filtered = allGroups.where((g) {
-                    final nameMatch = g.name.toLowerCase().contains(_searchQuery);
+                    final nameMatch =
+                        g.name.toLowerCase().contains(_searchQuery);
                     return g.isPublic && nameMatch;
                   }).toList();
 
@@ -153,12 +156,14 @@ class _AllGroupsViewState extends State<AllGroupsView>
                       final myGroups = myGroupsSnap.data ?? [];
                       final myGroupIds = myGroups.map((g) => g.id).toSet();
 
-                      final availableGroups = filtered.where((g) => !myGroupIds.contains(g.id)).toList();
+                      final availableGroups = filtered
+                          .where((g) => !myGroupIds.contains(g.id))
+                          .toList();
 
                       if (availableGroups.isEmpty) {
                         return _buildEmptyState(context);
                       }
-                      
+
                       return _buildGroupList(availableGroups);
                     },
                   );
@@ -170,7 +175,7 @@ class _AllGroupsViewState extends State<AllGroupsView>
       ),
     );
   }
-  
+
   Widget _buildGroupList(List<Group> groups) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -190,10 +195,10 @@ class _AllGroupsViewState extends State<AllGroupsView>
           ),
         ),
         ...groups.map((group) => FindGroupCard(
-          group: group,
-          groupService: widget.groupService,
-          onJoin: () => _openGroup(group),
-        )),
+              group: group,
+              groupService: widget.groupService,
+              onJoin: () => _openGroup(group),
+            )),
       ],
     );
   }
@@ -222,8 +227,8 @@ class _AllGroupsViewState extends State<AllGroupsView>
             Text(
               'Try adjusting your search or come back later.',
               style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                color: colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

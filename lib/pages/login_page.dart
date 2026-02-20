@@ -371,8 +371,8 @@ class _LoginPageState extends State<LoginPage> {
                                           'Forgot Password?',
                                           style: GoogleFonts.inter(
                                             fontSize: 14, // text-sm
-                                            fontWeight:
-                                                FontWeight.w600, // font-semibold
+                                            fontWeight: FontWeight
+                                                .w600, // font-semibold
                                             color: AppTheme.m3Primary,
                                           ),
                                         ),
@@ -422,8 +422,7 @@ class _LoginPageState extends State<LoginPage> {
 
                           // OR Divider
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 24.0),
+                            padding: const EdgeInsets.symmetric(vertical: 24.0),
                             child: Row(
                               children: [
                                 Expanded(
@@ -484,8 +483,7 @@ class _LoginPageState extends State<LoginPage> {
                                       children: [
                                         // Google Icon
                                         FaIcon(FontAwesomeIcons.google,
-                                            size: 20,
-                                            color: Color(0xFF1F1F1F)),
+                                            size: 20, color: Color(0xFF1F1F1F)),
                                         const SizedBox(width: 12),
                                         Text(
                                           'Continue with Google',
@@ -506,8 +504,8 @@ class _LoginPageState extends State<LoginPage> {
 
                           // Sign up link
                           Padding(
-                            padding: const EdgeInsets.only(
-                                bottom: 40.0, top: 20),
+                            padding:
+                                const EdgeInsets.only(bottom: 40.0, top: 20),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -607,8 +605,8 @@ class _LoginPageState extends State<LoginPage> {
               borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(12)), // rounded-t-xl
               border: Border(
-                  bottom: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.2))),
+                  bottom:
+                      BorderSide(color: Colors.white.withValues(alpha: 0.2))),
             ),
           ),
         ),
@@ -637,8 +635,8 @@ class _LoginPageState extends State<LoginPage> {
             filled: true,
             fillColor: Colors.transparent,
             border: const UnderlineInputBorder(
-              borderSide: BorderSide
-                  .none, // Handled by background overlay border
+              borderSide:
+                  BorderSide.none, // Handled by background overlay border
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
             enabledBorder: const UnderlineInputBorder(

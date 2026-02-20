@@ -392,5 +392,4 @@ class FriendService {
               );
             }).toList());
   }
-
 }

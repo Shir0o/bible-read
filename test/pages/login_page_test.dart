@@ -284,8 +284,7 @@ void main() {
         when(() => vibrationService.lightImpact()).thenAnswer((_) async {});
 
         await tester.pumpWidget(MaterialApp(
-            home:
-                LoginPage(auth: auth, vibrationService: vibrationService)));
+            home: LoginPage(auth: auth, vibrationService: vibrationService)));
 
         final forgotPasswordFinder =
             find.byKey(const Key('forgotPasswordSemantics'));
@@ -336,8 +335,7 @@ void main() {
         when(() => vibrationService.lightImpact()).thenAnswer((_) async {});
 
         await tester.pumpWidget(MaterialApp(
-            home:
-                LoginPage(auth: auth, vibrationService: vibrationService)));
+            home: LoginPage(auth: auth, vibrationService: vibrationService)));
 
         final forgotPasswordFinder =
             find.byKey(const Key('forgotPasswordSemantics'));

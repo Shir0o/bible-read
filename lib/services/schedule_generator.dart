@@ -64,7 +64,8 @@ class ScheduleGenerator {
       if (count > remainingChapters) count = remainingChapters;
 
       if (count > 0) {
-        final dailyChapters = allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
+        final dailyChapters =
+            allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
         scheduleList.add(GroupSchedule(date: date, chapters: dailyChapters));
         chaptersAssigned += count;
       }
@@ -78,12 +79,12 @@ class ScheduleGenerator {
 
     // If chaptersAssigned < totalChapters (shouldn't happen with ceil), add to last day.
     if (chaptersAssigned < totalChapters && scheduleList.isNotEmpty) {
-       final last = scheduleList.last;
-       final extra = allChapters.sublist(chaptersAssigned);
-       scheduleList[scheduleList.length - 1] = GroupSchedule(
-         date: last.date,
-         chapters: [...last.chapters, ...extra],
-       );
+      final last = scheduleList.last;
+      final extra = allChapters.sublist(chaptersAssigned);
+      scheduleList[scheduleList.length - 1] = GroupSchedule(
+        date: last.date,
+        chapters: [...last.chapters, ...extra],
+      );
     }
 
     return scheduleList;

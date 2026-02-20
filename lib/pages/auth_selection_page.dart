@@ -174,11 +174,11 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                     child: Text(
                       'Sign up to track your progress and connect with your reading group.',
                       textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFFCAC4D0),
-                    ),
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xFFCAC4D0),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),

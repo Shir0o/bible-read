@@ -40,73 +40,140 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
   String _getAbbreviation(String book) {
     // Custom abbreviations to match design style (3-4 chars)
     switch (book) {
-      case 'Genesis': return 'Gen';
-      case 'Exodus': return 'Exo';
-      case 'Leviticus': return 'Lev';
-      case 'Numbers': return 'Num';
-      case 'Deuteronomy': return 'Deu';
-      case 'Joshua': return 'Jos';
-      case 'Judges': return 'Jud';
-      case 'Ruth': return 'Rut';
-      case '1 Samuel': return '1Sa';
-      case '2 Samuel': return '2Sa';
-      case '1 Kings': return '1Ki';
-      case '2 Kings': return '2Ki';
-      case '1 Chronicles': return '1Ch';
-      case '2 Chronicles': return '2Ch';
-      case 'Ezra': return 'Ezr';
-      case 'Nehemiah': return 'Neh';
-      case 'Esther': return 'Est';
-      case 'Job': return 'Job';
-      case 'Psalm': return 'Psa';
-      case 'Proverbs': return 'Pro';
-      case 'Ecclesiastes': return 'Ecc';
-      case 'Song of Songs': return 'Son';
-      case 'Isaiah': return 'Isa';
-      case 'Jeremiah': return 'Jer';
-      case 'Lamentations': return 'Lam';
-      case 'Ezekiel': return 'Eze';
-      case 'Daniel': return 'Dan';
-      case 'Hosea': return 'Hos';
-      case 'Joel': return 'Joe';
-      case 'Amos': return 'Amo';
-      case 'Obadiah': return 'Oba';
-      case 'Jonah': return 'Jon';
-      case 'Micah': return 'Mic';
-      case 'Nahum': return 'Nah';
-      case 'Habakkuk': return 'Hab';
-      case 'Zephaniah': return 'Zep';
-      case 'Haggai': return 'Hag';
-      case 'Zechariah': return 'Zec';
-      case 'Malachi': return 'Mal';
-      case 'Matthew': return 'Mat';
-      case 'Mark': return 'Mar';
-      case 'Luke': return 'Luk';
-      case 'John': return 'Joh';
-      case 'Acts': return 'Act';
-      case 'Romans': return 'Rom';
-      case '1 Corinthians': return '1Co';
-      case '2 Corinthians': return '2Co';
-      case 'Galatians': return 'Gal';
-      case 'Ephesians': return 'Eph';
-      case 'Philippians': return 'Phi';
-      case 'Colossians': return 'Col';
-      case '1 Thessalonians': return '1Th';
-      case '2 Thessalonians': return '2Th';
-      case '1 Timothy': return '1Ti';
-      case '2 Timothy': return '2Ti';
-      case 'Titus': return 'Tit';
-      case 'Philemon': return 'Phm';
-      case 'Hebrews': return 'Heb';
-      case 'James': return 'Jam';
-      case '1 Peter': return '1Pe';
-      case '2 Peter': return '2Pe';
-      case '1 John': return '1Jo';
-      case '2 John': return '2Jo';
-      case '3 John': return '3Jo';
-      case 'Jude': return 'Jud';
-      case 'Revelation': return 'Rev';
-      default: return book.substring(0, 3);
+      case 'Genesis':
+        return 'Gen';
+      case 'Exodus':
+        return 'Exo';
+      case 'Leviticus':
+        return 'Lev';
+      case 'Numbers':
+        return 'Num';
+      case 'Deuteronomy':
+        return 'Deu';
+      case 'Joshua':
+        return 'Jos';
+      case 'Judges':
+        return 'Jud';
+      case 'Ruth':
+        return 'Rut';
+      case '1 Samuel':
+        return '1Sa';
+      case '2 Samuel':
+        return '2Sa';
+      case '1 Kings':
+        return '1Ki';
+      case '2 Kings':
+        return '2Ki';
+      case '1 Chronicles':
+        return '1Ch';
+      case '2 Chronicles':
+        return '2Ch';
+      case 'Ezra':
+        return 'Ezr';
+      case 'Nehemiah':
+        return 'Neh';
+      case 'Esther':
+        return 'Est';
+      case 'Job':
+        return 'Job';
+      case 'Psalm':
+        return 'Psa';
+      case 'Proverbs':
+        return 'Pro';
+      case 'Ecclesiastes':
+        return 'Ecc';
+      case 'Song of Songs':
+        return 'Son';
+      case 'Isaiah':
+        return 'Isa';
+      case 'Jeremiah':
+        return 'Jer';
+      case 'Lamentations':
+        return 'Lam';
+      case 'Ezekiel':
+        return 'Eze';
+      case 'Daniel':
+        return 'Dan';
+      case 'Hosea':
+        return 'Hos';
+      case 'Joel':
+        return 'Joe';
+      case 'Amos':
+        return 'Amo';
+      case 'Obadiah':
+        return 'Oba';
+      case 'Jonah':
+        return 'Jon';
+      case 'Micah':
+        return 'Mic';
+      case 'Nahum':
+        return 'Nah';
+      case 'Habakkuk':
+        return 'Hab';
+      case 'Zephaniah':
+        return 'Zep';
+      case 'Haggai':
+        return 'Hag';
+      case 'Zechariah':
+        return 'Zec';
+      case 'Malachi':
+        return 'Mal';
+      case 'Matthew':
+        return 'Mat';
+      case 'Mark':
+        return 'Mar';
+      case 'Luke':
+        return 'Luk';
+      case 'John':
+        return 'Joh';
+      case 'Acts':
+        return 'Act';
+      case 'Romans':
+        return 'Rom';
+      case '1 Corinthians':
+        return '1Co';
+      case '2 Corinthians':
+        return '2Co';
+      case 'Galatians':
+        return 'Gal';
+      case 'Ephesians':
+        return 'Eph';
+      case 'Philippians':
+        return 'Phi';
+      case 'Colossians':
+        return 'Col';
+      case '1 Thessalonians':
+        return '1Th';
+      case '2 Thessalonians':
+        return '2Th';
+      case '1 Timothy':
+        return '1Ti';
+      case '2 Timothy':
+        return '2Ti';
+      case 'Titus':
+        return 'Tit';
+      case 'Philemon':
+        return 'Phm';
+      case 'Hebrews':
+        return 'Heb';
+      case 'James':
+        return 'Jam';
+      case '1 Peter':
+        return '1Pe';
+      case '2 Peter':
+        return '2Pe';
+      case '1 John':
+        return '1Jo';
+      case '2 John':
+        return '2Jo';
+      case '3 John':
+        return '3Jo';
+      case 'Jude':
+        return 'Jud';
+      case 'Revelation':
+        return 'Rev';
+      default:
+        return book.substring(0, 3);
     }
   }
 
@@ -159,7 +226,6 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
           StreamBuilder<Set<String>>(
             stream: _unlockedIdsStream,
             builder: (context, snapshot) {
-
               // We'll show a grid of the first N books or all books?
               // Design shows 2 rows of 4 = 8 items. "See All" implies truncated list.
               // I'll show the first 8-12 books or maybe just a horizontal scroll?
@@ -201,8 +267,8 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isHighlighted
-                             ? colorScheme.primary.withValues(alpha: 0.2)
-                             : colorScheme.outlineVariant.withValues(alpha: 0.2),
+                            ? colorScheme.primary.withValues(alpha: 0.2)
+                            : colorScheme.outlineVariant.withValues(alpha: 0.2),
                       ),
                     ),
                     child: Column(

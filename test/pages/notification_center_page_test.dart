@@ -103,7 +103,8 @@ void main() {
       expect(find.text('Earlier this week'), findsOneWidget);
 
       // Use findRichText: true (default) but verifying separately to be safe with RichText splitting
-      expect(find.text('User 2 liked your reading', findRichText: true), findsOneWidget);
+      expect(find.text('User 2 liked your reading', findRichText: true),
+          findsOneWidget);
       // user3 not seeded, so name defaults to "Someone" but message is "User 3 commented".
       // _buildTextSpans checks if message starts with name. "User 3 commented".startsWith("Someone") is false.
       // So it renders raw message.

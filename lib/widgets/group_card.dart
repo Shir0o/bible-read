@@ -55,8 +55,7 @@ class GroupCard extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                     side: BorderSide(
-                      color:
-                          colorScheme.outlineVariant.withValues(alpha: 0.1),
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.1),
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
@@ -68,84 +67,85 @@ class GroupCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Header
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                group.name,
-                                style: AppTextStyles.title.copyWith(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      group.name,
+                                      style: AppTextStyles.title.copyWith(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      readingText,
+                                      style: AppTextStyles.body.copyWith(
+                                        color: colorScheme.primary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                readingText,
-                                style: AppTextStyles.body.copyWith(
-                                  color: colorScheme.primary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              const SizedBox(width: 16),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '${(groupCompletion * 100).toInt()}%',
+                                    style: AppTextStyles.title.copyWith(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Group Goal',
+                                    style: AppTextStyles.body.copyWith(
+                                      fontSize: 10,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '${(groupCompletion * 100).toInt()}%',
-                              style: AppTextStyles.title.copyWith(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          const SizedBox(height: 16),
+                          // Progress Bar
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: LinearProgressIndicator(
+                              value: groupCompletion,
+                              minHeight: 8,
+                              backgroundColor:
+                                  colorScheme.surfaceContainerHighest,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  colorScheme.primary),
                             ),
-                            Text(
-                              'Group Goal',
-                              style: AppTextStyles.body.copyWith(
-                                fontSize: 10,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Progress Bar
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LinearProgressIndicator(
-                        value: groupCompletion,
-                        minHeight: 8,
-                        backgroundColor: colorScheme.surfaceContainerHighest,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Footer
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          dailyGoalText,
-                          style: AppTextStyles.body.copyWith(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurfaceVariant,
                           ),
-                        ),
-                        // Member Stack
-                        _buildMemberStack(context, members),
-                      ],
-                    ),
+                          const SizedBox(height: 16),
+                          // Footer
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                dailyGoalText,
+                                style: AppTextStyles.body.copyWith(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              // Member Stack
+                              _buildMemberStack(context, members),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -174,58 +174,58 @@ class GroupCard extends StatelessWidget {
       child: Stack(
         alignment: Alignment.centerRight,
         children: [
-           // We need to render them in reverse order so the first one is on top
-           // But Stack paints bottom-up.
-           // If we want [1][2][3], and 1 overlaps 2...
-           // Actually, standard stacks usually have the last item on top.
-           // The design shows: Leftmost is on top? Or Rightmost?
-           // Design: [1] [2] [3] [+4]
-           // It looks like [1] is fully visible, [2] is behind [1]?
-           // No, usually subsequent items overlap previous ones in Stacks.
-           // In design: 1 overlaps 2? No, 2 overlaps 1.
-           // Actually, let's look at the image.
-           // User 1 is leftmost. User 2 is to the right of User 1, overlapping User 1?
-           // No, usually it's `Flex` with negative margin.
-           
-           Row(
-             mainAxisSize: MainAxisSize.min,
-             children: [
-               for (int i = 0; i < displayMembers.length; i++)
-                 Align(
-                   widthFactor: 0.7, // Overlap
-                   alignment: Alignment.centerLeft,
-                   child: _buildAvatar(context, displayMembers[i]),
-                 ),
-               if (remainder > 0)
-                 Align(
-                   widthFactor: 1.0, // Last one doesn't need to overlap next
-                   alignment: Alignment.centerLeft,
-                   child: Container(
-                     width: 32,
-                     height: 32,
-                     decoration: BoxDecoration(
-                       shape: BoxShape.circle,
-                       color: colorScheme.surfaceContainerHighest,
-                       border: Border.all(color: colorScheme.surface, width: 2),
-                     ),
-                     alignment: Alignment.center,
-                     child: Text(
-                       '+$remainder',
-                       style: TextStyle(
-                         fontSize: 10,
-                         fontWeight: FontWeight.bold,
-                         color: colorScheme.onSurfaceVariant,
-                       ),
-                     ),
-                   ),
-                 ),
-             ],
-           ),
+          // We need to render them in reverse order so the first one is on top
+          // But Stack paints bottom-up.
+          // If we want [1][2][3], and 1 overlaps 2...
+          // Actually, standard stacks usually have the last item on top.
+          // The design shows: Leftmost is on top? Or Rightmost?
+          // Design: [1] [2] [3] [+4]
+          // It looks like [1] is fully visible, [2] is behind [1]?
+          // No, usually subsequent items overlap previous ones in Stacks.
+          // In design: 1 overlaps 2? No, 2 overlaps 1.
+          // Actually, let's look at the image.
+          // User 1 is leftmost. User 2 is to the right of User 1, overlapping User 1?
+          // No, usually it's `Flex` with negative margin.
+
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (int i = 0; i < displayMembers.length; i++)
+                Align(
+                  widthFactor: 0.7, // Overlap
+                  alignment: Alignment.centerLeft,
+                  child: _buildAvatar(context, displayMembers[i]),
+                ),
+              if (remainder > 0)
+                Align(
+                  widthFactor: 1.0, // Last one doesn't need to overlap next
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: colorScheme.surfaceContainerHighest,
+                      border: Border.all(color: colorScheme.surface, width: 2),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '+$remainder',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
   }
-  
+
   Widget _buildAvatar(BuildContext context, GroupMemberProgressData member) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
