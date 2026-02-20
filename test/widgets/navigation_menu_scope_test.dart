@@ -24,7 +24,6 @@ void main() {
       MaterialApp(
         home: NavigationMenuScope(
           onNavigate: (_) {},
-          friendlyStreakIndex: 1,
           friendsIndex: 2,
           child: Builder(
             builder: (context) {
@@ -73,14 +72,12 @@ void main() {
 
     NavigationMenuScope buildScope({
       ValueChanged<int>? navigate,
-      int friendlyIndex = 1,
       int friendsIndex = 2,
       VibrationService? vibrationService,
       AdminRoleService? adminRoleService,
     }) {
       return NavigationMenuScope(
         onNavigate: navigate ?? onNavigate,
-        friendlyStreakIndex: friendlyIndex,
         friendsIndex: friendsIndex,
         vibrationService: vibrationService ?? baseVibration,
         adminRoleService: adminRoleService,
@@ -93,11 +90,6 @@ void main() {
     expect(
       buildScope(
               navigate: alternateOnNavigate, adminRoleService: baseAdminService)
-          .updateShouldNotify(baseScope),
-      isTrue,
-    );
-    expect(
-      buildScope(friendlyIndex: 3, adminRoleService: baseAdminService)
           .updateShouldNotify(baseScope),
       isTrue,
     );
@@ -142,7 +134,6 @@ void main() {
         home: Scaffold(
           body: NavigationMenuScope(
             onNavigate: onNavigate,
-            friendlyStreakIndex: 1,
             friendsIndex: 2,
             vibrationService: vibrationService,
             adminRoleService: adminRoleService,
