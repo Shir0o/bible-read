@@ -1,3 +1,32 @@
+# Release 1.22.0
+
+This release introduces a dedicated group search view, accessibility improvements across the app, and a major audit of test debt to ensure ongoing platform stability.
+
+## Highlights
+
+*   **Find Groups:** A new dedicated search interface for discovering reading groups.
+*   **Full Reading Schedule:** A new screen to visualize the entire reading plan for a group.
+*   **A11y & UX:** Improved accessibility for calendars, signup forms, and member lists, along with streamlined login haptics.
+*   **Test Audit:** Remediated significant test debt and added gap coverage for core services.
+
+## Features & Enhancements
+
+*   **Group Management:** Refactored group detail navigation and optimized member daily completion calculations.
+*   **Find Groups View:** Added search functionality and a new group card design with basic member data fetching.
+*   **Full Schedule Page:** Introduced a dedicated page for group schedules, removing redundant optimistic update logic.
+*   **Removal of Exercise Challenges:** Streamlined the app by removing the exercise challenges feature and related assets.
+
+## Accessibility (a11y)
+
+*   **Streak Calendars:** Enhanced contrast and labels for reading progress visualization.
+*   **Forms:** Improved `SignupForm` and `LoginForm` with better interaction hints and assistive technology support.
+*   **Member Lists:** Verified and improved local hierarchy and labels in the Group Member List.
+
+## Stability & Integrity
+
+*   **Test Remediation:** Performed a stress audit of the test suite, fixing 60+ failing tests and improving mocking patterns for `GroupService` and `LeaderboardPage`.
+*   **Skeleton Loaders:** Refined loading states and restored the "Thank you for being here" screen for a smoother onboarding experience.
+
 # Release 1.21.0
 
 This release introduces a refined visual experience with font updates and expressiveness, implements the "Bible in a Year" reading plan, and streamlines the app by removing email summary features.
