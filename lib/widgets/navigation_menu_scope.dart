@@ -12,7 +12,6 @@ class NavigationMenuScope extends InheritedWidget {
     super.key,
     required super.child,
     required this.onNavigate,
-    required this.friendlyStreakIndex,
     required this.friendsIndex,
     this.vibrationService = const VibrationService(),
     this.adminRoleService,
@@ -22,9 +21,6 @@ class NavigationMenuScope extends InheritedWidget {
 
   /// Invoked when a menu item is selected.
   final ValueChanged<int> onNavigate;
-
-  /// Index of the friendly streak page within the main navigation stack.
-  final int friendlyStreakIndex;
 
   /// Index of the friends page within the main navigation stack.
   final int friendsIndex;
@@ -70,7 +66,6 @@ class NavigationMenuScope extends InheritedWidget {
   @override
   bool updateShouldNotify(NavigationMenuScope oldWidget) {
     return onNavigate != oldWidget.onNavigate ||
-        friendlyStreakIndex != oldWidget.friendlyStreakIndex ||
         friendsIndex != oldWidget.friendsIndex ||
         vibrationService != oldWidget.vibrationService ||
         adminRoleService != oldWidget.adminRoleService ||

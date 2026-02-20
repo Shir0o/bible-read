@@ -11,7 +11,8 @@ import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
 import '../services/friend_service.dart';
 import 'animated_page_route.dart';
-import '../pages/inbox_page.dart';
+import '../pages/notification_center_page.dart';
+import '../services/notification_service.dart';
 
 import '../pages/user_profile_page.dart';
 import '../services/google_sign_in_factory.dart';
@@ -133,14 +134,14 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
         },
       ),
       _MenuItem(
-        icon: Icons.inbox,
-        label: 'Inbox',
+        icon: Icons.notifications,
+        label: 'Notifications',
         onTap: (context) {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => InboxPage(
+              builder: (_) => NotificationCenterPage(
+                service: NotificationService(firestore: firestore),
                 auth: auth,
-                firestore: firestore,
                 vibrationService: widget.vibrationService,
               ),
             ),

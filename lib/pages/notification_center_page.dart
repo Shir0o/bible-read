@@ -1,21 +1,23 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../models/app_notification.dart';
-import '../../models/notification_preferences.dart';
-import '../../services/error_logger.dart';
-import '../../services/notification_service.dart';
-import '../../services/seasonal_challenge_service.dart';
-import '../../pages/achievements_page.dart';
-import '../../pages/friend_requests_page.dart';
-import '../../pages/seasonal_challenges_page.dart';
-import '../../services/group_service.dart';
-import '../../pages/group_join_requests_page.dart';
-import '../../services/friend_service.dart';
-import '../../services/vibration_service.dart';
+import '../models/app_notification.dart';
+import '../models/notification_preferences.dart';
+import '../services/error_logger.dart';
+import '../services/notification_service.dart';
+import '../services/seasonal_challenge_service.dart';
+import '../services/vibration_service.dart';
+import '../services/group_service.dart';
+import '../services/friend_service.dart';
 import '../widgets/common_styles.dart';
+import 'achievements_page.dart';
+import 'friend_requests_page.dart';
+import 'seasonal_challenges_page.dart';
+import 'group_join_requests_page.dart';
 
 class NotificationCenterPage extends StatefulWidget {
   final NotificationService service;
@@ -34,42 +36,31 @@ class NotificationCenterPage extends StatefulWidget {
 }
 
 class _NotificationCenterPageState extends State<NotificationCenterPage> {
-  final _readLocally = <String>{};
-  bool _isClearing = false;
-  bool _hasNotifications = false;
+  bool _markingAllRead = false;
 
-  Future<void> _clearNotifications() async {
+  Future<void> _markAllAsRead() async {
     final uid = widget.auth.currentUser?.uid;
-    if (uid == null || _isClearing || !_hasNotifications) {
-      return;
-    }
+    if (uid == null || _markingAllRead) return;
 
-    setState(() => _isClearing = true);
-    final messenger = ScaffoldMessenger.of(context);
-
+    setState(() => _markingAllRead = true);
     try {
       unawaited(widget.vibrationService.mediumImpact());
-      await widget.service.clearNotifications(uid);
-      if (!mounted) {
-        return;
+      await widget.service.markAllRead(uid);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('All notifications marked as read')),
+        );
       }
-      setState(() {
-        _readLocally.clear();
-      });
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Notifications cleared')),
-      );
     } catch (e, st) {
       ErrorLogger.log(e, st);
-      if (!mounted) {
-        return;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to mark all as read')),
+        );
       }
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Failed to clear notifications')),
-      );
     } finally {
       if (mounted) {
-        setState(() => _isClearing = false);
+        setState(() => _markingAllRead = false);
       }
     }
   }
@@ -77,177 +68,208 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
   @override
   Widget build(BuildContext context) {
     final user = widget.auth.currentUser;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    // We wrap content in Scaffold to ensure ScaffoldMessenger works correctly
-    // when this page is used standalone or in tests that expect a Scaffold.
-    // However, if embedded in a TabBarView inside a Scaffold, nested Scaffold is okay.
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration:
-            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
-        child: user == null
-            ? const Center(child: Text('Please sign in'))
-            : Column(
-                children: [
-                  if (_hasNotifications)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: TextButton.icon(
-                          onPressed: _isClearing ? null : _clearNotifications,
-                          icon: _isClearing
-                              ? const SizedBox(
-                                  width: 12,
-                                  height: 12,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2))
-                              : const Icon(Icons.clear_all, size: 18),
-                          label: const Text('Clear All'),
-                        ),
-                      ),
-                    ),
-                  Expanded(
-                    child: StreamBuilder<List<AppNotification>>(
-                      stream: widget.service
-                          .notifications(user.uid)
-                          .asBroadcastStream(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
-                        final data = snapshot.data ?? [];
-                        final hasNotifications = data.isNotEmpty;
-                        if (hasNotifications != _hasNotifications) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (!mounted) {
-                              return;
-                            }
-                            setState(
-                                () => _hasNotifications = hasNotifications);
-                          });
-                        }
-                        if (data.isEmpty) {
-                          return const Center(child: Text('No notifications'));
-                        }
-                        return ListView.builder(
-                          itemCount: data.length,
-                          itemBuilder: (context, index) {
-                            final n = data[index];
-                            final read = n.read || _readLocally.contains(n.id);
-                            return CommonStyles.buildTappableCard(
-                              context: context,
-                              onTap: () {
-                                final uid = widget.auth.currentUser?.uid;
-                                if (uid != null) {
-                                  final messenger =
-                                      ScaffoldMessenger.of(context);
-                                  setState(() => _readLocally.add(n.id));
-                                  unawaited(
-                                    widget.service
-                                        .markRead(uid, n.id)
-                                        .catchError((
-                                      e,
-                                      st,
-                                    ) {
-                                      ErrorLogger.log(e, st);
-                                      if (mounted) {
-                                        setState(
-                                            () => _readLocally.remove(n.id));
-                                        messenger.showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Failed to mark notification as read.',
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    }),
-                                  );
-                                }
-                                if (context.mounted) {
-                                  unawaited(_navigate(context, n));
-                                }
-                              },
-                              child: ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                leading: _icon(n.type, read),
-                                title: Text(_text(n)),
-                                subtitle:
-                                    n.message != null ? Text(n.message!) : null,
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
+      backgroundColor: colorScheme.surface,
+      appBar: AppBar(
+        backgroundColor: colorScheme.surface,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        title: Text(
+          'Notifications',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: TextButton(
+              onPressed: _markingAllRead ? null : _markAllAsRead,
+              style: TextButton.styleFrom(
+                foregroundColor: colorScheme.primary,
+                textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
+              child: _markingAllRead
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.primary,
+                      ),
+                    )
+                  : const Text('Mark all as read'),
+            ),
+          ),
+        ],
       ),
+      body: user == null
+          ? const Center(child: Text('Please sign in'))
+          : StreamBuilder<List<AppNotification>>(
+              stream: widget.service.notifications(user.uid),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Error loading notifications'));
+                }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final notifications = snapshot.data!;
+                if (notifications.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.notifications_none_outlined,
+                          size: 64,
+                          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No notifications yet',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                // Group notifications
+                final newNotifications = <AppNotification>[];
+                final earlierNotifications = <AppNotification>[];
+
+                final now = DateTime.now();
+                final oneWeekAgo = now.subtract(const Duration(days: 7));
+
+                for (final n in notifications) {
+                  if (!n.read) {
+                    newNotifications.add(n);
+                  } else if (n.timestamp.isAfter(oneWeekAgo)) {
+                    earlierNotifications.add(n);
+                  }
+                }
+
+                return ListView(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  children: [
+                    if (newNotifications.isNotEmpty) ...[
+                      _buildSectionHeader(context, 'New'),
+                      ...newNotifications.map((n) => _NotificationItem(
+                            key: ValueKey(n.id),
+                            notification: n,
+                            service: widget.service,
+                            auth: widget.auth,
+                            vibrationService: widget.vibrationService,
+                          )),
+                    ],
+                    if (earlierNotifications.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      _buildSectionHeader(context, 'Earlier this week'),
+                      ...earlierNotifications.map((n) => _NotificationItem(
+                            key: ValueKey(n.id),
+                            notification: n,
+                            service: widget.service,
+                            auth: widget.auth,
+                            vibrationService: widget.vibrationService,
+                          )),
+                    ],
+                  ],
+                );
+              },
+            ),
     );
   }
 
-  Widget _icon(NotificationType type, bool read) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final color = read ? colorScheme.onSurfaceVariant : colorScheme.primary;
-    switch (type) {
-      case NotificationType.like:
-        return Icon(Icons.thumb_up, color: color);
-      case NotificationType.nudge:
-        return Icon(Icons.notifications_active, color: color);
-      case NotificationType.signup:
-        return Icon(Icons.person_add, color: color);
-      case NotificationType.achievement:
-        return Icon(Icons.emoji_events, color: color);
-      case NotificationType.friendRequest:
-        return Icon(Icons.person_add_alt, color: color);
-      case NotificationType.comment:
-        return Icon(Icons.comment, color: color);
-      case NotificationType.groupJoinRequest:
-        return Icon(Icons.group_add, color: color);
-      case NotificationType.groupScheduleUpdate:
-        return Icon(Icons.schedule, color: color);
-      case NotificationType.seasonalChallenge:
-        return Icon(Icons.eco, color: color);
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              letterSpacing: 0.5,
+            ),
+      ),
+    );
+  }
+}
+
+class _NotificationItem extends StatefulWidget {
+  final AppNotification notification;
+  final NotificationService service;
+  final FirebaseAuth auth;
+  final VibrationService vibrationService;
+
+  const _NotificationItem({
+    super.key,
+    required this.notification,
+    required this.service,
+    required this.auth,
+    required this.vibrationService,
+  });
+
+  @override
+  State<_NotificationItem> createState() => _NotificationItemState();
+}
+
+class _NotificationItemState extends State<_NotificationItem> {
+  late Future<DocumentSnapshot> _userFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.notification.fromUid != null) {
+      _userFuture = widget.service.firestore
+          .collection('users')
+          .doc(widget.notification.fromUid)
+          .get();
     }
   }
 
-  String _text(AppNotification n) {
-    switch (n.type) {
-      case NotificationType.like:
-        return 'Someone liked your reading';
-      case NotificationType.nudge:
-        return 'You were nudged to read';
-      case NotificationType.signup:
-        return 'New signup';
-      case NotificationType.achievement:
-        return 'Achievement unlocked';
-      case NotificationType.friendRequest:
-        return n.message?.isNotEmpty == true
-            ? n.message!
-            : 'You received a friend request';
-      case NotificationType.comment:
-        return 'New comment on your reading';
-      case NotificationType.groupJoinRequest:
-        return n.message?.isNotEmpty == true
-            ? n.message!
-            : 'You received a group join request';
-      case NotificationType.groupScheduleUpdate:
-        return 'Group schedule updated';
-      case NotificationType.seasonalChallenge:
-        return 'Seasonal challenge reward ready';
+  @override
+  void didUpdateWidget(_NotificationItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.notification.fromUid != oldWidget.notification.fromUid) {
+       if (widget.notification.fromUid != null) {
+         _userFuture = widget.service.firestore
+            .collection('users')
+            .doc(widget.notification.fromUid)
+            .get();
+       }
     }
   }
 
-  Future<void> _navigate(BuildContext context, AppNotification n) async {
-    switch (n.type) {
+  Future<void> _handleTap(BuildContext context) async {
+    if (!widget.notification.read) {
+      // Mark as read
+      try {
+        await widget.service.markRead(widget.auth.currentUser!.uid, widget.notification.id);
+      } catch (e) {
+        // Ignore error
+      }
+    }
+
+    if (!context.mounted) return;
+    unawaited(widget.vibrationService.lightImpact());
+    await _navigate(context);
+  }
+
+  Future<void> _navigate(BuildContext context) async {
+    switch (widget.notification.type) {
       case NotificationType.achievement:
-        if (!context.mounted) return;
-        unawaited(widget.vibrationService.lightImpact());
         await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => AchievementsPage(
@@ -262,8 +284,6 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
           firestore: widget.service.firestore,
           notificationService: widget.service,
         );
-        if (!context.mounted) return;
-        unawaited(widget.vibrationService.lightImpact());
         await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => FriendRequestsPage(
@@ -274,8 +294,6 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
         );
         break;
       case NotificationType.seasonalChallenge:
-        if (!context.mounted) return;
-        unawaited(widget.vibrationService.lightImpact());
         await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => SeasonalChallengesPage(
@@ -287,42 +305,12 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
           ),
         );
         break;
-      case NotificationType.like:
-      case NotificationType.nudge:
-      case NotificationType.signup:
-      case NotificationType.comment:
-      case NotificationType.groupScheduleUpdate:
-        break;
       case NotificationType.groupJoinRequest:
-        try {
-          final gid = n.groupId;
-          if (gid == null) {
-            final messenger = ScaffoldMessenger.of(context);
-            messenger.showSnackBar(
-              const SnackBar(
-                content: Text('Open the group to manage join requests.'),
-              ),
-            );
-            break;
-          }
-          final snap = await widget.service.firestore
-              .collection('groups')
-              .doc(gid)
-              .get();
-          if (!context.mounted) return;
-          if (!snap.exists) {
-            final messenger = ScaffoldMessenger.of(context);
-            messenger.showSnackBar(
-              const SnackBar(content: Text('Group not found')),
-            );
-            break;
-          }
-          if (!context.mounted) return;
-          unawaited(widget.vibrationService.lightImpact());
-          await Navigator.of(context).push(
+        if (widget.notification.groupId != null) {
+           await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => GroupJoinRequestsPage(
-                groupId: gid,
+                groupId: widget.notification.groupId!,
                 groupService: GroupService(
                   firestore: widget.service.firestore,
                   notificationService: widget.service,
@@ -331,10 +319,307 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
               ),
             ),
           );
-        } catch (e, st) {
-          ErrorLogger.log(e, st);
         }
         break;
+      default:
+        break;
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isUnread = !widget.notification.read;
+
+    return Material(
+      color: isUnread
+          ? colorScheme.surfaceContainerHigh.withValues(alpha: 0.5)
+          : Colors.transparent,
+      child: InkWell(
+        onTap: () => _handleTap(context),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildAvatar(context),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildMessage(context),
+                    const SizedBox(height: 4),
+                    Text(
+                      _timeAgo(widget.notification.timestamp),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isUnread)
+                Container(
+                  margin: const EdgeInsets.only(top: 8, left: 8),
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    Widget avatarContent;
+    if (widget.notification.fromUid != null) {
+      avatarContent = FutureBuilder<DocumentSnapshot>(
+        future: _userFuture,
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data!.exists) {
+            final data = snapshot.data!.data() as Map<String, dynamic>?;
+            final photoUrl = data?['photoUrl'] as String?;
+            final name = data?['name'] as String?;
+
+            if (photoUrl != null) {
+              return CachedNetworkImage(
+                imageUrl: photoUrl,
+                fit: BoxFit.cover,
+                errorWidget: (context, url, error) => _buildInitials(name),
+              );
+            } else {
+               return _buildInitials(name);
+            }
+          }
+          return const Icon(Icons.person, size: 20);
+        },
+      );
+    } else {
+       avatarContent = _buildSystemIcon(context);
+    }
+
+    return Stack(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: colorScheme.surfaceContainerHighest,
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Center(child: avatarContent),
+        ),
+        Positioned(
+          bottom: -2,
+          right: -2,
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: _getBadgeColor(context),
+              shape: BoxShape.circle,
+              border: Border.all(color: colorScheme.surface, width: 2),
+            ),
+            child: Icon(
+              _getBadgeIcon(),
+              size: 10,
+              color: _getBadgeIconColor(context),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInitials(String? name) {
+    if (name == null || name.isEmpty) return const Icon(Icons.person, size: 20);
+    return Text(
+      name[0].toUpperCase(),
+      style: const TextStyle(fontWeight: FontWeight.bold),
+    );
+  }
+
+  Widget _buildSystemIcon(BuildContext context) {
+    IconData icon;
+    switch (widget.notification.type) {
+      case NotificationType.achievement:
+        icon = Icons.emoji_events;
+        break;
+      case NotificationType.seasonalChallenge:
+        icon = Icons.eco;
+        break;
+      case NotificationType.groupScheduleUpdate:
+        icon = Icons.calendar_today;
+        break;
+      default:
+        icon = Icons.notifications;
+    }
+    return Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant);
+  }
+
+  IconData _getBadgeIcon() {
+    switch (widget.notification.type) {
+      case NotificationType.like:
+        return Icons.favorite;
+      case NotificationType.comment:
+        return Icons.chat_bubble;
+      case NotificationType.friendRequest:
+      case NotificationType.groupJoinRequest:
+      case NotificationType.signup:
+        return Icons.person_add;
+      case NotificationType.nudge:
+        return Icons.notifications_active;
+      case NotificationType.achievement:
+        return Icons.emoji_events;
+      case NotificationType.groupScheduleUpdate:
+        return Icons.calendar_today;
+      case NotificationType.seasonalChallenge:
+        return Icons.eco;
+    }
+  }
+
+  Color _getBadgeColor(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    switch (widget.notification.type) {
+      case NotificationType.like:
+      case NotificationType.comment:
+        return colorScheme.tertiary;
+      case NotificationType.friendRequest:
+      case NotificationType.groupJoinRequest:
+        return colorScheme.primary;
+      case NotificationType.achievement:
+      case NotificationType.seasonalChallenge:
+        return colorScheme.secondary;
+      default:
+        return colorScheme.surfaceContainerHighest;
+    }
+  }
+
+  Color _getBadgeIconColor(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    switch (widget.notification.type) {
+      case NotificationType.like:
+      case NotificationType.comment:
+        return colorScheme.onTertiary;
+      case NotificationType.friendRequest:
+      case NotificationType.groupJoinRequest:
+        return colorScheme.onPrimary;
+      case NotificationType.achievement:
+      case NotificationType.seasonalChallenge:
+        return colorScheme.onSecondary;
+      default:
+        return colorScheme.onSurfaceVariant;
+    }
+  }
+
+  Widget _buildMessage(BuildContext context) {
+    // If the message is generated by the server and contains the name,
+    // we might just return the message.
+    // However, if the message is "sent you a friend request" and we want "Name sent you...",
+    // we need to combine them.
+    // AppNotification.message usually contains the full text if provided by server.
+
+    String text = widget.notification.message ?? _getDefaultMessage();
+
+    if (widget.notification.fromUid != null) {
+       return FutureBuilder<DocumentSnapshot>(
+        future: _userFuture,
+        builder: (context, snapshot) {
+          String displayName = 'Someone';
+          if (snapshot.hasData && snapshot.data!.exists) {
+            final data = snapshot.data!.data() as Map<String, dynamic>?;
+             displayName = data?['name'] as String? ?? 'Someone';
+          }
+
+          return RichText(
+            text: TextSpan(
+              style: Theme.of(context).textTheme.bodyMedium,
+              children: _buildTextSpans(context, displayName, text),
+            ),
+          );
+        },
+      );
+    }
+
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.bodyMedium,
+    );
+  }
+
+  List<InlineSpan> _buildTextSpans(BuildContext context, String name, String rawMessage) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final boldStyle = TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface);
+
+    if (rawMessage.startsWith(name)) {
+       return [
+         TextSpan(text: name, style: boldStyle),
+         TextSpan(text: rawMessage.substring(name.length)),
+       ];
+    }
+
+    if (widget.notification.message == null) {
+       switch (widget.notification.type) {
+        case NotificationType.like:
+          return [
+            TextSpan(text: name, style: boldStyle),
+            const TextSpan(text: ' liked your progress'),
+          ];
+        case NotificationType.comment:
+          return [
+             TextSpan(text: name, style: boldStyle),
+             const TextSpan(text: ' commented on your reading'),
+          ];
+        case NotificationType.friendRequest:
+          return [
+             TextSpan(text: name, style: boldStyle),
+             const TextSpan(text: ' sent you a friend request'),
+          ];
+         case NotificationType.nudge:
+          return [
+             TextSpan(text: name, style: boldStyle),
+             const TextSpan(text: ' nudged you to read'),
+          ];
+        default:
+          break;
+      }
+    }
+
+    return [TextSpan(text: rawMessage)];
+  }
+
+  String _getDefaultMessage() {
+    switch (widget.notification.type) {
+      case NotificationType.achievement:
+        return 'Achievement unlocked!';
+      case NotificationType.seasonalChallenge:
+        return 'Seasonal challenge update';
+      case NotificationType.groupScheduleUpdate:
+        return 'Group schedule updated';
+      case NotificationType.groupJoinRequest:
+        return 'New group join request';
+      default:
+        return 'New notification';
+    }
+  }
+
+  String _timeAgo(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'just now';
   }
 }

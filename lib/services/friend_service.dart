@@ -3,7 +3,6 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'error_logger.dart';
 import '../models/app_notification.dart';
-import '../models/friend_streak_link.dart';
 import '../models/notification_preferences.dart';
 import 'notification_service.dart';
 
@@ -25,12 +24,6 @@ class FriendCollections {
 
   /// Sub-collection recording nudge history.
   static const String nudges = 'nudges';
-
-  /// Sub-collection containing active streak links for a user.
-  static const String friendStreakLinks = 'friendStreakLinks';
-
-  /// Sub-collection containing pending streak invites for a user.
-  static const String friendStreakInvites = 'friendStreakInvites';
 }
 
 /// Represents a pending friend request.
@@ -92,9 +85,6 @@ enum NudgeResult {
 
 /// Provides helper methods for friend request CRUD operations.
 class FriendService {
-  /// Maximum number of active streak links allowed per user.
-  static const int maxActiveStreakLinks = 5;
-
   /// Firestore instance used for database operations.
   final FirebaseFirestore firestore;
 
@@ -125,10 +115,6 @@ class FriendService {
         _deleteFn =
             deleteFriendRequestPairFn ?? _defaultDeleteFriendRequestPair,
         _nudgeFn = sendNudgeNotificationFn ?? _defaultSendNudgeNotification;
-
-  /// Error thrown when a user attempts to exceed the streak link limit.
-  static StreakLinkLimitReachedException streakLimitException() =>
-      const StreakLinkLimitReachedException();
 
   /// Default implementation that invokes the Cloud Function.
   static Future<void> _defaultAcceptFriendRequest({
@@ -407,222 +393,4 @@ class FriendService {
             }).toList());
   }
 
-  /// Sends a paired streak invite from [fromUid] to [toUid].
-  Future<void> sendStreakInvite({
-    required String fromUid,
-    required String fromName,
-    required String toUid,
-    required String toName,
-  }) async {
-    if (fromUid == toUid) {
-      throw ArgumentError('Cannot invite yourself to a streak.');
-    }
-
-    await _assertFriendship(fromUid, toUid);
-    await _assertLinkNotActive(fromUid, toUid);
-    await _ensureLinkLimit(fromUid);
-
-    final now = Timestamp.now();
-    final batch = firestore.batch();
-    batch.set(
-      _streakInvitesRef(fromUid).doc(toUid),
-      _buildPendingLinkData(
-        ownerUid: fromUid,
-        partnerUid: toUid,
-        partnerName: toName,
-        initiatedBy: fromUid,
-        timestamp: now,
-      ),
-      SetOptions(merge: true),
-    );
-    batch.set(
-      _streakInvitesRef(toUid).doc(fromUid),
-      _buildPendingLinkData(
-        ownerUid: toUid,
-        partnerUid: fromUid,
-        partnerName: fromName,
-        initiatedBy: fromUid,
-        timestamp: now,
-      ),
-      SetOptions(merge: true),
-    );
-    await batch.commit();
-  }
-
-  /// Accepts or declines a streak invite from [partnerUid].
-  Future<void> respondToStreakInvite({
-    required String currentUid,
-    required String partnerUid,
-    required bool accept,
-  }) async {
-    if (accept) {
-      await _ensureLinkLimit(currentUid);
-      await _ensureLinkLimit(partnerUid);
-    }
-
-    final now = Timestamp.now();
-    await firestore.runTransaction((transaction) async {
-      final currentInviteRef = _streakInvitesRef(currentUid).doc(partnerUid);
-      final partnerInviteRef = _streakInvitesRef(partnerUid).doc(currentUid);
-
-      final currentInvite = await transaction.get(currentInviteRef);
-      final partnerInvite = await transaction.get(partnerInviteRef);
-      if (!currentInvite.exists || !partnerInvite.exists) {
-        throw StateError('Streak invite no longer exists.');
-      }
-
-      if (accept) {
-        final currentLinkRef = _streakLinksRef(currentUid).doc(partnerUid);
-        final partnerLinkRef = _streakLinksRef(partnerUid).doc(currentUid);
-
-        transaction.set(
-          currentLinkRef,
-          _buildAcceptedLinkData(
-            ownerUid: currentUid,
-            partnerUid: partnerUid,
-            partnerName: currentInvite.data()?['partnerName'] as String?,
-            initiatedBy:
-                currentInvite.data()?['initiatedBy'] as String? ?? partnerUid,
-            timestamp: now,
-          ),
-          SetOptions(merge: true),
-        );
-        transaction.set(
-          partnerLinkRef,
-          _buildAcceptedLinkData(
-            ownerUid: partnerUid,
-            partnerUid: currentUid,
-            partnerName: partnerInvite.data()?['partnerName'] as String?,
-            initiatedBy:
-                currentInvite.data()?['initiatedBy'] as String? ?? partnerUid,
-            timestamp: now,
-          ),
-          SetOptions(merge: true),
-        );
-      }
-
-      transaction.delete(currentInviteRef);
-      transaction.delete(partnerInviteRef);
-    });
-  }
-
-  /// Stream of active streak links for [uid].
-  Stream<List<FriendStreakLink>> activeStreakLinks(String uid) {
-    return _streakLinksRef(uid).snapshots().map((snapshot) => snapshot.docs
-        .map((doc) => FriendStreakLink.fromDoc(doc, ownerUid: uid))
-        .where((link) => link.isActive)
-        .toList());
-  }
-
-  /// Stream of pending streak invites for [uid].
-  Stream<List<FriendStreakLink>> pendingStreakInvites(
-    String uid, {
-    bool actionableOnly = false,
-  }) {
-    return _streakInvitesRef(uid).snapshots().map((snapshot) {
-      return snapshot.docs
-          .map((doc) => FriendStreakLink.fromDoc(doc, ownerUid: uid))
-          .where((link) => link.isPending)
-          .where((link) => actionableOnly ? link.isIncoming : true)
-          .toList();
-    });
-  }
-
-  CollectionReference<Map<String, dynamic>> _streakLinksRef(String uid) {
-    return firestore
-        .collection(FriendCollections.users)
-        .doc(uid)
-        .collection(FriendCollections.friendStreakLinks);
-  }
-
-  CollectionReference<Map<String, dynamic>> _streakInvitesRef(String uid) {
-    return firestore
-        .collection(FriendCollections.users)
-        .doc(uid)
-        .collection(FriendCollections.friendStreakInvites);
-  }
-
-  Map<String, dynamic> _buildPendingLinkData({
-    required String ownerUid,
-    required String partnerUid,
-    required String? partnerName,
-    required String initiatedBy,
-    required Timestamp timestamp,
-  }) {
-    return FriendStreakLink(
-      partnerUid: partnerUid,
-      partnerName: partnerName,
-      initiatedBy: initiatedBy,
-      status: FriendStreakStatus.pending,
-      currentStreak: 0,
-      lastUserCovered: null,
-      lastPartnerCovered: null,
-      createdAt: timestamp.toDate(),
-      updatedAt: timestamp.toDate(),
-      ownerUid: ownerUid,
-    ).toFirestore();
-  }
-
-  Map<String, dynamic> _buildAcceptedLinkData({
-    required String ownerUid,
-    required String partnerUid,
-    required String? partnerName,
-    required String initiatedBy,
-    required Timestamp timestamp,
-  }) {
-    return FriendStreakLink(
-      partnerUid: partnerUid,
-      partnerName: partnerName,
-      initiatedBy: initiatedBy,
-      status: FriendStreakStatus.active,
-      currentStreak: 0,
-      lastUserCovered: null,
-      lastPartnerCovered: null,
-      createdAt: timestamp.toDate(),
-      updatedAt: timestamp.toDate(),
-      ownerUid: ownerUid,
-    ).toFirestore();
-  }
-
-  Future<void> _ensureLinkLimit(String uid) async {
-    final snapshot = await _streakLinksRef(uid)
-        .where('status', isEqualTo: FriendStreakStatus.active.name)
-        .get();
-    if (snapshot.docs.length >= maxActiveStreakLinks) {
-      throw streakLimitException();
-    }
-  }
-
-  Future<void> _assertFriendship(String fromUid, String toUid) async {
-    final doc = await firestore
-        .collection(FriendCollections.users)
-        .doc(fromUid)
-        .collection(FriendCollections.friends)
-        .doc(toUid)
-        .get();
-    if (!doc.exists) {
-      throw StateError('Cannot start a streak with a non-friend.');
-    }
-  }
-
-  Future<void> _assertLinkNotActive(String fromUid, String toUid) async {
-    final doc = await _streakLinksRef(fromUid).doc(toUid).get();
-    if (doc.exists && doc.data()?['status'] == FriendStreakStatus.active.name) {
-      throw StateError('You already have an active streak with this friend.');
-    }
-  }
-}
-
-/// Error thrown when a user exceeds the paired streak limit.
-class StreakLinkLimitReachedException implements Exception {
-  /// Message describing the limit violation.
-  final String message;
-
-  /// Creates the exception.
-  const StreakLinkLimitReachedException([
-    this.message = 'You already have five active streak links.',
-  ]);
-
-  @override
-  String toString() => message;
 }

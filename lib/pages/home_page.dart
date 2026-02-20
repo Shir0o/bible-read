@@ -12,18 +12,18 @@ import '../models/achievement.dart';
 import '../services/achievement_service.dart';
 import '../services/book_achievement_refresher.dart';
 import '../services/error_logger.dart';
-import '../services/friend_streak_link_service.dart';
-import '../services/friendly_streak_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/group_book_achievement_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../models/reading_plan.dart';
 
+import '../services/notification_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
+import 'notification_center_page.dart';
 import 'read_log_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
@@ -51,10 +51,8 @@ class HomePage extends StatefulWidget {
     ReadingStatusService? readingStatusService,
     VibrationService? vibrationService,
     GoogleSignIn Function()? googleSignInProvider,
-    FriendlyStreakService? friendlyStreakService,
     AchievementService? achievementService,
     GroupBookAchievementService? groupBookAchievementService,
-    FriendStreakLinkService? friendStreakLinkService,
     ReadingPlanService? readingPlanService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
@@ -67,14 +65,10 @@ class HomePage extends StatefulWidget {
                 firestore: firestore ?? FirebaseFirestore.instance),
         vibrationService = vibrationService ?? const VibrationService(),
         googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-        friendlyStreakService = friendlyStreakService ??
-            FriendlyStreakService(firestore: firestore),
         achievementService =
             achievementService ?? AchievementService(firestore: firestore),
         groupBookAchievementService = groupBookAchievementService ??
-            GroupBookAchievementService(firestore: firestore),
-        friendStreakLinkService = friendStreakLinkService ??
-            FriendStreakLinkService(firestore: firestore);
+            GroupBookAchievementService(firestore: firestore);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -82,17 +76,11 @@ class HomePage extends StatefulWidget {
   /// Service used for read-toggle haptics.
   final VibrationService vibrationService;
 
-  /// Service responsible for loading friends' streaks.
-  final FriendlyStreakService friendlyStreakService;
-
   /// Service responsible for unlocking achievements.
   final AchievementService achievementService;
 
   /// Aggregates reading progress across groups for book badges.
   final GroupBookAchievementService groupBookAchievementService;
-
-  /// Service that fans read coverage events out to friend streak links.
-  final FriendStreakLinkService friendStreakLinkService;
 
   /// Service for managing reading plans.
   final ReadingPlanService readingPlanService;
@@ -141,7 +129,6 @@ class _HomePageState extends State<HomePage>
   Future<void> _loadInitialData() async {
     await Future.wait([
       _loadReadStatus(showLoading: false),
-      _loadFriendlyStreak(showLoading: false),
       _loadActivePlan(showLoading: false),
     ]);
     if (!_disposed && mounted) {
@@ -156,7 +143,6 @@ class _HomePageState extends State<HomePage>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.auth != widget.auth) {
       unawaited(_loadReadStatus());
-      unawaited(_loadFriendlyStreak());
       unawaited(_loadActivePlan());
     }
     if (oldWidget.achievementService != widget.achievementService ||
@@ -200,20 +186,6 @@ class _HomePageState extends State<HomePage>
         });
       }
     }
-  }
-
-  Future<void> _loadFriendlyStreak({bool showLoading = true}) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) {
-      if (!_disposed && mounted) {
-        setState(() {});
-      }
-      return;
-    }
-
-    if (showLoading && !_disposed && mounted) {}
-
-    await widget.friendlyStreakService.fetchLinks(uid);
   }
 
   Future<void> _loadActivePlan({bool showLoading = true}) async {
@@ -327,14 +299,7 @@ class _HomePageState extends State<HomePage>
       }
 
       // Update summary collection (lightweight update)
-      final summary = await _updateSummaryWithToday();
-      if (summary != null) {
-        await widget.friendStreakLinkService.recordCoverage(
-          user.uid,
-          summary.coveredDate,
-          summary.coveredViaGrace,
-        );
-      }
+      await _updateSummaryWithToday();
       await _refreshBookAchievementsForUser();
 
       // Removed success animation after backend success to reduce noise.
@@ -574,7 +539,23 @@ class _HomePageState extends State<HomePage>
           statusBarIconBrightness: Brightness.dark, // Android: Dark icons
           statusBarBrightness: Brightness.light, // iOS: Dark icons
         ),
-        actions: [],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {
+              unawaited(widget.vibrationService.lightImpact());
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => NotificationCenterPage(
+                    service: NotificationService(firestore: widget.firestore),
+                    auth: widget.auth,
+                    vibrationService: widget.vibrationService,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SkeletonLoader(
         loading: _initialLoading,

@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bible_read/models/friend_streak_link.dart';
 import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/notification_service.dart'
     show NotificationService, NotificationCollections;
@@ -101,23 +100,6 @@ void main() {
           .collection(FriendCollections.friends)
           .doc(first)
           .set({'name': 'Friend'});
-    }
-
-    Future<void> seedActiveLink(String owner, String partner) async {
-      await firestore
-          .collection(FriendCollections.users)
-          .doc(owner)
-          .collection(FriendCollections.friendStreakLinks)
-          .doc(partner)
-          .set({
-        'partnerUid': partner,
-        'partnerName': 'Friend',
-        'initiatedBy': owner,
-        'status': FriendStreakStatus.active.name,
-        'currentStreak': 1,
-        'createdAt': Timestamp.now(),
-        'updatedAt': Timestamp.now(),
-      });
     }
 
     group('sendFriendRequest', () {
@@ -615,156 +597,6 @@ void main() {
       final friends = await friendService.friends(uid).first;
       expect(friends.length, 1);
       expect(friends.first.uid, friendUid);
-    });
-
-    group('streak invites', () {
-      test('sendStreakInvite creates docs for both users', () async {
-        await seedFriendship('a', 'b');
-
-        await friendService.sendStreakInvite(
-          fromUid: 'a',
-          fromName: 'Alice',
-          toUid: 'b',
-          toName: 'Bob',
-        );
-
-        final outgoing = await firestore
-            .collection(FriendCollections.users)
-            .doc('a')
-            .collection(FriendCollections.friendStreakInvites)
-            .doc('b')
-            .get();
-        final incoming = await firestore
-            .collection(FriendCollections.users)
-            .doc('b')
-            .collection(FriendCollections.friendStreakInvites)
-            .doc('a')
-            .get();
-
-        expect(outgoing.exists, isTrue);
-        expect(incoming.exists, isTrue);
-        expect(incoming.data()?['initiatedBy'], 'a');
-      });
-
-      test('respondToStreakInvite accepts invite and creates links', () async {
-        await seedFriendship('a', 'b');
-
-        await friendService.sendStreakInvite(
-          fromUid: 'a',
-          fromName: 'Alice',
-          toUid: 'b',
-          toName: 'Bob',
-        );
-
-        await friendService.respondToStreakInvite(
-          currentUid: 'b',
-          partnerUid: 'a',
-          accept: true,
-        );
-
-        final linkB = await firestore
-            .collection(FriendCollections.users)
-            .doc('b')
-            .collection(FriendCollections.friendStreakLinks)
-            .doc('a')
-            .get();
-        final inviteB = await firestore
-            .collection(FriendCollections.users)
-            .doc('b')
-            .collection(FriendCollections.friendStreakInvites)
-            .doc('a')
-            .get();
-
-        expect(linkB.exists, isTrue);
-        expect(linkB.data()?['status'], FriendStreakStatus.active.name);
-        expect(inviteB.exists, isFalse);
-      });
-
-      test('sendStreakInvite throws when at max limit', () async {
-        await seedFriendship('a', 'b');
-        for (var i = 0; i < FriendService.maxActiveStreakLinks; i++) {
-          await seedActiveLink('a', 'seed$i');
-        }
-
-        expect(
-          () => friendService.sendStreakInvite(
-            fromUid: 'a',
-            fromName: 'Alice',
-            toUid: 'b',
-            toName: 'Bob',
-          ),
-          throwsA(isA<StreakLinkLimitReachedException>()),
-        );
-      });
-
-      test('respondToStreakInvite enforces limit for current user', () async {
-        await seedFriendship('a', 'b');
-        await friendService.sendStreakInvite(
-          fromUid: 'a',
-          fromName: 'Alice',
-          toUid: 'b',
-          toName: 'Bob',
-        );
-        for (var i = 0; i < FriendService.maxActiveStreakLinks; i++) {
-          await seedActiveLink('b', 'friend$i');
-        }
-
-        expect(
-          () => friendService.respondToStreakInvite(
-            currentUid: 'b',
-            partnerUid: 'a',
-            accept: true,
-          ),
-          throwsA(isA<StreakLinkLimitReachedException>()),
-        );
-      });
-
-      test('pendingStreakInvites emits actionable incoming invites', () async {
-        await seedFriendship('a', 'b');
-        final expectation = expectLater(
-          friendService.pendingStreakInvites('b', actionableOnly: true),
-          emitsThrough(
-            predicate<List<FriendStreakLink>>(
-              (links) => links.any((link) => link.partnerUid == 'a'),
-            ),
-          ),
-        );
-
-        await friendService.sendStreakInvite(
-          fromUid: 'a',
-          fromName: 'Alice',
-          toUid: 'b',
-          toName: 'Bob',
-        );
-
-        await expectation;
-      });
-
-      test('activeStreakLinks emits after acceptance', () async {
-        await seedFriendship('a', 'b');
-        final expectation = expectLater(
-          friendService.activeStreakLinks('b'),
-          emitsThrough(
-            predicate<List<FriendStreakLink>>(
-              (links) => links.any((link) => link.partnerUid == 'a'),
-            ),
-          ),
-        );
-
-        await friendService.sendStreakInvite(
-          fromUid: 'a',
-          fromName: 'Alice',
-          toUid: 'b',
-          toName: 'Bob',
-        );
-        await friendService.respondToStreakInvite(
-          currentUid: 'b',
-          partnerUid: 'a',
-          accept: true,
-        );
-
-        await expectation;
-      });
     });
   });
 }

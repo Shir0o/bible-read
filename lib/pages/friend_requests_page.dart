@@ -6,7 +6,6 @@ import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/friend_request_widget.dart';
-import '../widgets/friend_streak_invite_list.dart';
 
 /// Page that lists all pending friend requests for the current user.
 class FriendRequestsPage extends StatelessWidget {
@@ -52,28 +51,11 @@ class FriendRequestsPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Friend requests',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
                     Expanded(
                       child: FriendRequestWidget(
                         service: friendService,
                         currentUid: user.uid,
                         currentName: user.displayName ?? 'Unknown',
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Streak invites',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: FriendStreakInviteList(
-                        service: friendService,
-                        currentUid: user.uid,
                       ),
                     ),
                   ],

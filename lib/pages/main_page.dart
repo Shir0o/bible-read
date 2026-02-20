@@ -22,7 +22,6 @@ import 'friends_page.dart';
 import 'achievements_page.dart';
 import 'challenges_page.dart';
 import 'streak_history_page.dart';
-import 'friendly_streak_page.dart';
 import '../services/admin_role_service.dart';
 import '../services/friend_service.dart';
 
@@ -306,15 +305,6 @@ class _MainPageState extends State<MainPage> {
                         firestore: widget.firestore,
                       )));
           break;
-        case 8: // Friendly Streak
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => FriendlyStreakPage(
-                        auth: widget.auth,
-                        firestore: widget.firestore,
-                      )));
-          break;
         case 10: // Sign Out
           unawaited(widget.auth.signOut());
           setState(() {
@@ -420,7 +410,6 @@ class _MainPageState extends State<MainPage> {
           },
           child: NavigationMenuScope(
             onNavigate: _navigateFromMenu,
-            friendlyStreakIndex: 0,
             friendsIndex: 0,
             vibrationService: widget.vibrationService,
             adminRoleService: _adminRoleService,

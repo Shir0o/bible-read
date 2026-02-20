@@ -20,7 +20,8 @@ import '../widgets/common_styles.dart';
 import '../widgets/navigation_menu_scope.dart';
 import 'full_schedule_page.dart';
 import 'groups_page.dart';
-import 'inbox_page.dart';
+import 'notification_center_page.dart';
+import '../services/notification_service.dart';
 
 class CommunityPage extends StatefulWidget {
   final FirebaseAuth auth;
@@ -307,9 +308,10 @@ class _CommunityPageState extends State<CommunityPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => InboxPage(
+                                      builder: (_) => NotificationCenterPage(
+                                        service: NotificationService(
+                                            firestore: widget.firestore),
                                         auth: widget.auth,
-                                        firestore: widget.firestore,
                                         vibrationService:
                                             widget.vibrationService,
                                       ),
