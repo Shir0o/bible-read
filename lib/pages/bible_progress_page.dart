@@ -2,18 +2,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'dart:async';
+
 import '../services/achievement_service.dart';
+import '../services/vibration_service.dart';
 import '../models/achievement_definition.dart';
 import '../models/achievement.dart';
 
 class BibleProgressPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final VibrationService vibrationService;
 
   const BibleProgressPage({
     super.key,
     required this.firestore,
     required this.auth,
+    this.vibrationService = const VibrationService(),
   });
 
   @override
@@ -235,6 +240,8 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
+    unawaited(widget.vibrationService.lightImpact());
+
     if (isUnlocked) {
       final confirmed = await showDialog<bool>(
         context: context,
@@ -255,6 +262,7 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
       );
 
       if (confirmed == true) {
+        unawaited(widget.vibrationService.mediumImpact());
         await _achievementService.removeAchievement(user.uid, achievementId);
       }
       return;
@@ -279,6 +287,7 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
     );
 
     if (confirmed == true) {
+      unawaited(widget.vibrationService.mediumImpact());
       await _achievementService.unlockAchievement(
         user.uid,
         Achievement(
@@ -309,66 +318,73 @@ class _BookGridItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isUnlocked ? colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          border: isUnlocked
-              ? null
-              : Border.all(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                ),
-          boxShadow: isUnlocked
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              : null,
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            if (isUnlocked)
-              Positioned(
-                top: 6,
-                right: 6,
-                child: Icon(
-                  Icons.check,
-                  size: 14,
-                  color: colorScheme.onPrimary,
-                  weight: 700, // bold
-                ),
-              ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return Semantics(
+      label: book,
+      checked: isUnlocked,
+      button: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: ExcludeSemantics(
+          child: Container(
+            decoration: BoxDecoration(
+              color: isUnlocked ? colorScheme.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              border: isUnlocked
+                  ? null
+                  : Border.all(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ),
+              boxShadow: isUnlocked
+                  ? [
+                      BoxShadow(
+                        color: colorScheme.primary.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      )
+                    ]
+                  : null,
+            ),
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-                Icon(
-                  Icons.menu_book_rounded, // or book_2
-                  color: isUnlocked
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSurfaceVariant,
-                  size: 24,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  abbr,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: isUnlocked
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
+                if (isUnlocked)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Icon(
+                      Icons.check,
+                      size: 14,
+                      color: colorScheme.onPrimary,
+                      weight: 700, // bold
+                    ),
                   ),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.menu_book_rounded, // or book_2
+                      color: isUnlocked
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurfaceVariant,
+                      size: 24,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      abbr,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isUnlocked
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

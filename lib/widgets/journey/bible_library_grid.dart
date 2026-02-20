@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../models/achievement_definition.dart';
 import '../../services/achievement_service.dart';
 import '../../services/reference_parser.dart';
 import '../../theme/app_theme.dart';
@@ -160,8 +159,6 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
           StreamBuilder<Set<String>>(
             stream: _unlockedIdsStream,
             builder: (context, snapshot) {
-              final unlockedIds = snapshot.data ?? {};
-
               // We'll show a grid of the first N books or all books?
               // Design shows 2 rows of 4 = 8 items. "See All" implies truncated list.
               // I'll show the first 8-12 books or maybe just a horizontal scroll?
@@ -181,8 +178,6 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                 itemCount: booksToShow.length,
                 itemBuilder: (context, index) {
                   final book = booksToShow[index];
-                  final achievementId = AchievementDefinition.bookAchievementId(book);
-                  final isUnlocked = unlockedIds.contains(achievementId);
                   final abbr = _getAbbreviation(book);
 
                   // Design has different colors.

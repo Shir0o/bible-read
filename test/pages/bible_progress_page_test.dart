@@ -3,6 +3,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/pages/bible_progress_page.dart';
 import 'package:bible_read/models/achievement_definition.dart';
@@ -104,5 +105,39 @@ void main() {
         .doc(achievementId)
         .get();
     expect(doc.exists, isFalse);
+  });
+
+  testWidgets('BibleProgressPage items have correct semantics', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(uid: 'u1');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    await tester.pumpWidget(
+      MaterialApp(home: BibleProgressPage(firestore: firestore, auth: auth)),
+    );
+    await tester.pumpAndSettle();
+
+    // Find the semantic node for 'Genesis'
+    final semantics = tester.getSemantics(find.bySemanticsLabel('Genesis'));
+
+    // Verify properties
+    // ignore: deprecated_member_use
+    expect(semantics.hasFlag(SemanticsFlag.isButton), isTrue);
+    // ignore: deprecated_member_use
+    expect(semantics.hasFlag(SemanticsFlag.isChecked), isFalse);
+    expect(semantics.label, 'Genesis');
+
+    // Tap to mark as read
+    await tester.tap(find.bySemanticsLabel('Genesis'));
+    await tester.pumpAndSettle();
+
+    // Confirm dialog
+    await tester.tap(find.text('Confirm'));
+    await tester.pumpAndSettle();
+
+    // Verify checked state updates
+    final updatedSemantics = tester.getSemantics(find.bySemanticsLabel('Genesis'));
+    // ignore: deprecated_member_use
+    expect(updatedSemantics.hasFlag(SemanticsFlag.isChecked), isTrue);
   });
 }
