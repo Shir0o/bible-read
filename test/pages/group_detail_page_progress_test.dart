@@ -48,20 +48,29 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Correctly shows Actual Group Progress (25%) instead of Time Progress', (tester) async {
+  testWidgets(
+      'Correctly shows Actual Group Progress (25%) instead of Time Progress',
+      (tester) async {
     // 1. Setup Group
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
 
     // 2. Setup Members (u1, u2)
-    final membersRef = firestore.collection('groups').doc('g1').collection('members');
-    await membersRef.doc('u1').set({'uid': 'u1', 'name': 'User 1', 'role': 'owner'});
-    await membersRef.doc('u2').set({'uid': 'u2', 'name': 'User 2', 'role': 'member'});
+    final membersRef =
+        firestore.collection('groups').doc('g1').collection('members');
+    await membersRef
+        .doc('u1')
+        .set({'uid': 'u1', 'name': 'User 1', 'role': 'owner'});
+    await membersRef
+        .doc('u2')
+        .set({'uid': 'u2', 'name': 'User 2', 'role': 'member'});
 
     // 3. Setup Schedule (100 days, 1 chapter/day)
-    final scheduleRef = firestore.collection('groups').doc('g1').collection('schedule');
+    final scheduleRef =
+        firestore.collection('groups').doc('g1').collection('schedule');
     for (int i = 0; i < 100; i++) {
       final date = DateTime(2024, 1, 1).add(Duration(days: i));
-      final dateId = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final dateId =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       await scheduleRef.doc(dateId).set({
         'date': Timestamp.fromDate(date),
         'chapters': ['Ch $i'],

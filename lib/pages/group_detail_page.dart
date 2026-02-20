@@ -1290,8 +1290,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: isRead
-                                    ? colorScheme.primary
-                                        .withValues(alpha: 0.2)
+                                    ? colorScheme.primary.withValues(alpha: 0.2)
                                     : Colors.transparent,
                                 border: isRead
                                     ? null

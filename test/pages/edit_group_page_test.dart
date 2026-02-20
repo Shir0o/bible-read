@@ -46,12 +46,17 @@ void main() {
   testWidgets('renders all sections', (tester) async {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     // Add owner member so they show up
-    await firestore.collection('groups').doc('g1').collection('members').doc('u1').set({
-        'uid': 'u1',
-        'name': 'Owner',
-        'photoUrl': null,
-        'role': 'owner',
-        'joinedAt': Timestamp.now(),
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u1')
+        .set({
+      'uid': 'u1',
+      'name': 'Owner',
+      'photoUrl': null,
+      'role': 'owner',
+      'joinedAt': Timestamp.now(),
     });
 
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
@@ -63,15 +68,18 @@ void main() {
     final scrollableFinder = find.byType(Scrollable).first;
 
     final timelineFinder = find.text('Timeline');
-    await tester.scrollUntilVisible(timelineFinder, 500, scrollable: scrollableFinder);
+    await tester.scrollUntilVisible(timelineFinder, 500,
+        scrollable: scrollableFinder);
     expect(timelineFinder, findsOneWidget);
 
     final membersFinder = find.text('Members');
-    await tester.scrollUntilVisible(membersFinder, 500, scrollable: scrollableFinder);
+    await tester.scrollUntilVisible(membersFinder, 500,
+        scrollable: scrollableFinder);
     expect(membersFinder, findsOneWidget);
 
     final settingsFinder = find.text('Group Settings');
-    await tester.scrollUntilVisible(settingsFinder, 500, scrollable: scrollableFinder);
+    await tester.scrollUntilVisible(settingsFinder, 500,
+        scrollable: scrollableFinder);
     expect(settingsFinder, findsOneWidget);
 
     expect(find.text('Save Changes'), findsOneWidget);

@@ -53,7 +53,8 @@ void main() {
       expect(editableTextFinder, findsOneWidget);
 
       final editableText = tester.widget<EditableText>(editableTextFinder);
-      expect(editableText.focusNode.hasFocus, isTrue, reason: 'Email field should have focus');
+      expect(editableText.focusNode.hasFocus, isTrue,
+          reason: 'Email field should have focus');
     });
   });
 }

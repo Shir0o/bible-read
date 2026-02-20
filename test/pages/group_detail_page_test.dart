@@ -203,7 +203,7 @@ void main() {
     // Members list
     expect(find.text('Owner'), findsOneWidget);
     expect(find.text('Alice'), findsOneWidget);
-    
+
     // Today's Reading
     expect(find.text('Gen 1'), findsOneWidget);
     // Date formatting: January 1
@@ -390,8 +390,8 @@ void main() {
     );
 
     await pumpPage(
-      tester, 
-      service: service, 
+      tester,
+      service: service,
       auth: auth,
       currentDate: DateTime(2024, 6, 2),
     );
@@ -482,8 +482,8 @@ void main() {
     );
 
     await pumpPage(
-      tester, 
-      service: service, 
+      tester,
+      service: service,
       auth: auth,
       currentDate: DateTime(2024, 6, 2),
     );
@@ -525,7 +525,7 @@ void main() {
 
     // Verify schedule content is shown
     expect(find.text('Gen 1, Gen 2'), findsOneWidget);
-    
+
     // Verify "Mark as Read" button is NOT shown for non-members
     expect(find.widgetWithText(ElevatedButton, 'Mark as Read'), findsNothing);
     expect(find.widgetWithText(ElevatedButton, 'Read'), findsNothing);

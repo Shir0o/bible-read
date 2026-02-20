@@ -13,7 +13,8 @@ void main() {
       expect(schedule, isEmpty);
     });
 
-    test('generateSchedule returns empty list for end date before start date', () {
+    test('generateSchedule returns empty list for end date before start date',
+        () {
       final schedule = ScheduleGenerator.generateSchedule(
         books: ['Genesis'],
         startDate: DateTime(2023, 1, 2),

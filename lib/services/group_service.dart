@@ -261,18 +261,28 @@ class GroupService {
       } catch (_) {}
       try {
         final dates = await groupRef.collection('progress').get();
+        final refsToDelete = <DocumentReference>[];
         await Future.wait(dates.docs.map((d) async {
           try {
             final entryRef = d.reference.collection('entries').doc(uid);
+            refsToDelete.add(entryRef);
             final items = await entryRef.collection('items').get();
-            await Future.wait(items.docs.map((it) async {
-              try {
-                await it.reference.delete();
-              } catch (_) {}
-            }));
-            await entryRef.delete();
+            for (final it in items.docs) {
+              refsToDelete.add(it.reference);
+            }
           } catch (_) {}
         }));
+        if (refsToDelete.isNotEmpty) {
+          for (var i = 0; i < refsToDelete.length; i += 500) {
+            final end =
+                (i + 500 < refsToDelete.length) ? i + 500 : refsToDelete.length;
+            final batch = firestore.batch();
+            for (final ref in refsToDelete.sublist(i, end)) {
+              batch.delete(ref);
+            }
+            await batch.commit();
+          }
+        }
       } catch (_) {}
     } catch (e, st) {
       await _safeLog(e, st);

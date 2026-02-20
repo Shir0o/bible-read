@@ -106,13 +106,13 @@ class _SliverSkeletonLoaderState extends State<SliverSkeletonLoader> {
     // However, for slivers, switching children might cause scroll jumps.
     // A simple unconditional switch is safest for now, or we can use SliverAnimatedOpacity if needed.
     // Given the request is about timing, let's stick to state switching first.
-    
+
     // To support animation, we can use SliverCrossFade or similar, but standard Flutter
     // lacks a direct "SliverAnimatedSwitcher".
-    
+
     // We can use a trick: SliverToBoxAdapter for non-sliver content, but our content IS sliver (SliverList).
     // So we just return the correct sliver.
-    
+
     return _showSkeleton ? widget.skeleton : widget.child;
   }
 }

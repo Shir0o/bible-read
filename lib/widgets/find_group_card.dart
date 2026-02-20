@@ -71,15 +71,15 @@ class _FindGroupCardState extends State<FindGroupCard> {
                   if (chapters.isNotEmpty) {
                     final first = chapters.first;
                     // Simply show the first chapter reference or similar
-                    readingText = first; 
+                    readingText = first;
                     // If multiple chapters, maybe add "..."
                     if (chapters.length > 1) {
                       readingText += '...';
                     }
                   } else {
-                     readingText = 'Bible Reading Group';
+                    readingText = 'Bible Reading Group';
                   }
-                  
+
                   return Text(
                     readingText,
                     style: AppTextStyles.body.copyWith(
@@ -104,19 +104,20 @@ class _FindGroupCardState extends State<FindGroupCard> {
                 builder: (context, snapshot) {
                   final members = snapshot.data ?? [];
                   if (members.isEmpty) {
-                     if (widget.group.memberCount > 0) {
-                        return Text(
-                          '${widget.group.memberCount} members',
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        );
-                     }
-                     return const SizedBox.shrink();
+                    if (widget.group.memberCount > 0) {
+                      return Text(
+                        '${widget.group.memberCount} members',
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
                   }
-                  return _buildMemberStack(context, members, widget.group.memberCount);
+                  return _buildMemberStack(
+                      context, members, widget.group.memberCount);
                 },
               ),
               // Join Button
@@ -128,7 +129,8 @@ class _FindGroupCardState extends State<FindGroupCard> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                 ),
                 child: const Text(
                   'Join Group',
@@ -145,15 +147,17 @@ class _FindGroupCardState extends State<FindGroupCard> {
     );
   }
 
-  Widget _buildMemberStack(BuildContext context, List<GroupMemberProgressData> members, int totalCount) {
+  Widget _buildMemberStack(BuildContext context,
+      List<GroupMemberProgressData> members, int totalCount) {
     final displayMembers = members.take(3).toList();
     final remainder = totalCount > 3 ? totalCount - 3 : 0;
-    
+
     final double avatarSize = 32.0;
-    final double overlap = 12.0; 
-    
+    final double overlap = 12.0;
+
     final int itemCount = displayMembers.length + (remainder > 0 ? 1 : 0);
-    final double width = avatarSize + ((itemCount - 1) * (avatarSize - overlap));
+    final double width =
+        avatarSize + ((itemCount - 1) * (avatarSize - overlap));
 
     return SizedBox(
       height: avatarSize,
@@ -175,7 +179,8 @@ class _FindGroupCardState extends State<FindGroupCard> {
     );
   }
 
-  Widget _buildAvatar(BuildContext context, GroupMemberProgressData member, double size) {
+  Widget _buildAvatar(
+      BuildContext context, GroupMemberProgressData member, double size) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Container(
@@ -207,7 +212,7 @@ class _FindGroupCardState extends State<FindGroupCard> {
   }
 
   Widget _buildCountBubble(BuildContext context, int count, double size) {
-     final theme = Theme.of(context);
+    final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Container(
       width: size,

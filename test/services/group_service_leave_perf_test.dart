@@ -71,7 +71,7 @@ void main() {
 
         // Add items for the entry
         for (var i = 0; i < 3; i++) {
-            await entryRef.collection('items').doc('item$i').set({});
+          await entryRef.collection('items').doc('item$i').set({});
         }
       }
 
@@ -85,16 +85,18 @@ void main() {
       print('leaveGroup took: ${stopwatch.elapsedMilliseconds}ms');
 
       // Verify deletion
-      final memberSnap = await groupRef.collection('members').doc('leaver').get();
+      final memberSnap =
+          await groupRef.collection('members').doc('leaver').get();
       expect(memberSnap.exists, false);
 
       // Verify progress cleanup
       // Check a few dates to ensure 'leaver' entries are gone
       final progressDates = await groupRef.collection('progress').get();
       for (final dateDoc in progressDates.docs) {
-          final entryRef = dateDoc.reference.collection('entries').doc('leaver');
-          final entrySnap = await entryRef.get();
-          expect(entrySnap.exists, false, reason: 'Entry for leaver should be deleted in date ${dateDoc.id}');
+        final entryRef = dateDoc.reference.collection('entries').doc('leaver');
+        final entrySnap = await entryRef.get();
+        expect(entrySnap.exists, false,
+            reason: 'Entry for leaver should be deleted in date ${dateDoc.id}');
       }
     });
   });

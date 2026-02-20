@@ -171,8 +171,7 @@ class _GlobalLeaderboardList extends StatelessWidget {
       final uids = snap.docs.map((d) => d.reference.parent.parent!.id).toList();
       final streaks = {
         for (var d in snap.docs)
-          d.reference.parent.parent!.id:
-              (d.data())['streak'] as int? ?? 0
+          d.reference.parent.parent!.id: (d.data())['streak'] as int? ?? 0
       };
       return _fetchEntries(firestore, uids, preloadedStreaks: streaks);
     });

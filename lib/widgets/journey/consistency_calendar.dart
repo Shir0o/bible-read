@@ -32,7 +32,8 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
 
   void _changeMonth(int delta) {
     setState(() {
-      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + delta, 1);
+      _currentMonth =
+          DateTime(_currentMonth.year, _currentMonth.month + delta, 1);
     });
     _loadStats();
   }
@@ -49,7 +50,8 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
       final start = DateTime(_currentMonth.year, _currentMonth.month, 1);
       final end = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
 
-      final readDates = await _queryRange(widget.firestore.collection('users').doc(uid), start, end);
+      final readDates = await _queryRange(
+          widget.firestore.collection('users').doc(uid), start, end);
 
       if (mounted) {
         setState(() {
@@ -126,8 +128,18 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
 
   String _monthName(int month) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return months[month - 1];
   }
@@ -139,7 +151,8 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final now = DateTime.now();
-    final isCurrentMonth = now.year == _currentMonth.year && now.month == _currentMonth.month;
+    final isCurrentMonth =
+        now.year == _currentMonth.year && now.month == _currentMonth.month;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.hPadding),
@@ -190,7 +203,8 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                         const SizedBox(width: 16),
                         IconButton(
                           icon: const Icon(Icons.chevron_right),
-                          onPressed: isCurrentMonth ? null : () => _changeMonth(1),
+                          onPressed:
+                              isCurrentMonth ? null : () => _changeMonth(1),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                           style: IconButton.styleFrom(
@@ -237,7 +251,8 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                       colorScheme,
                       label: 'Missed',
                       color: Colors.transparent,
-                      borderColor: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      borderColor:
+                          colorScheme.outlineVariant.withValues(alpha: 0.5),
                     ),
                     const SizedBox(width: 16),
                     _buildLegendItem(
@@ -256,7 +271,8 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
     );
   }
 
-  Widget _buildLegendItem(ColorScheme colorScheme, {required String label, required Color color, Color? borderColor}) {
+  Widget _buildLegendItem(ColorScheme colorScheme,
+      {required String label, required Color color, Color? borderColor}) {
     return Row(
       children: [
         Container(
@@ -283,39 +299,41 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
 
   Widget _buildCalendarGrid(ColorScheme colorScheme) {
     if (_loading) {
-       return const SizedBox(
-         height: 200,
-         child: Center(child: CircularProgressIndicator()),
-       );
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
 
     final firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
-    final daysInMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
+    final daysInMonth =
+        DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
     final weekdayOffset = firstDay.weekday % 7;
 
     // Previous month filler
-    final prevMonthDays = DateTime(_currentMonth.year, _currentMonth.month, 0).day;
+    final prevMonthDays =
+        DateTime(_currentMonth.year, _currentMonth.month, 0).day;
 
     final widgets = <Widget>[];
 
     // Previous month days
     for (int i = 0; i < weekdayOffset; i++) {
-       final dayNum = prevMonthDays - weekdayOffset + i + 1;
-       widgets.add(
-         SizedBox(
-           width: 32,
-           height: 32,
-           child: Center(
-             child: Text(
-               '$dayNum',
-               style: TextStyle(
-                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                 fontSize: 12,
-               ),
-             ),
-           ),
-         ),
-       );
+      final dayNum = prevMonthDays - weekdayOffset + i + 1;
+      widgets.add(
+        SizedBox(
+          width: 32,
+          height: 32,
+          child: Center(
+            child: Text(
+              '$dayNum',
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      );
     }
 
     // Current month days
@@ -343,7 +361,8 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                     ? colorScheme.onPrimary
                     : (isToday ? colorScheme.primary : colorScheme.onSurface),
                 fontSize: 12,
-                fontWeight: isRead || isToday ? FontWeight.bold : FontWeight.normal,
+                fontWeight:
+                    isRead || isToday ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ),
@@ -355,26 +374,30 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
     final remainingCells = 7 - (widgets.length % 7);
     if (remainingCells < 7) {
       for (int i = 1; i <= remainingCells; i++) {
-         widgets.add(
-           SizedBox(
-             width: 32,
-             height: 32,
-             child: Center(
-               child: Text(
-                 '$i',
-                 style: TextStyle(
-                   color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                   fontSize: 12,
-                 ),
-               ),
-             ),
-           ),
-         );
+        widgets.add(
+          SizedBox(
+            width: 32,
+            height: 32,
+            child: Center(
+              child: Text(
+                '$i',
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+        );
       }
     }
 
     return Wrap(
-      spacing: (MediaQuery.of(context).size.width - (AppSpacing.hPadding * 2) - 40 - (32 * 7)) / 6, // Dynamic spacing? No, just use MainAxisAlignment.spaceBetween logic in a Grid/Wrap
+      spacing: (MediaQuery.of(context).size.width -
+              (AppSpacing.hPadding * 2) -
+              40 -
+              (32 * 7)) /
+          6, // Dynamic spacing? No, just use MainAxisAlignment.spaceBetween logic in a Grid/Wrap
       // Actually Wrap spacing is fixed.
       // Better to use a GridView or Table.
       // Table works well for calendar.

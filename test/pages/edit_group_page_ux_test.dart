@@ -35,7 +35,8 @@ void main() {
   });
 
   Future<void> pumpPage(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1080, 2400); // Set a large mobile screen size
+    tester.view.physicalSize =
+        const Size(1080, 2400); // Set a large mobile screen size
     tester.view.devicePixelRatio = 3.0;
 
     await tester.pumpWidget(
@@ -51,7 +52,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Frequency cards have correct semantics and haptic feedback', (tester) async {
+  testWidgets('Frequency cards have correct semantics and haptic feedback',
+      (tester) async {
     final handle = tester.ensureSemantics();
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -65,18 +67,21 @@ void main() {
     // Scroll to Frequency section
     final scrollableFinder = find.byType(Scrollable).first;
     final frequencyFinder = find.text('Frequency');
-    await tester.scrollUntilVisible(frequencyFinder, 500, scrollable: scrollableFinder);
+    await tester.scrollUntilVisible(frequencyFinder, 500,
+        scrollable: scrollableFinder);
 
     expect(frequencyFinder, findsOneWidget);
 
     // Find the cards by semantics label
     final dailyCard = find.bySemanticsLabel(RegExp(r'Daily, Every single day'));
-    final weekdaysCard = find.bySemanticsLabel(RegExp(r'Weekdays, Mon - Fri only'));
+    final weekdaysCard =
+        find.bySemanticsLabel(RegExp(r'Weekdays, Mon - Fri only'));
 
     expect(dailyCard, findsOneWidget);
 
     // Ensure visible before interacting, centering it to avoid bottom button
-    await tester.scrollUntilVisible(weekdaysCard, 500, scrollable: scrollableFinder);
+    await tester.scrollUntilVisible(weekdaysCard, 500,
+        scrollable: scrollableFinder);
 
     // Manually ensure visible with alignment to center it
     final ScrollableState scrollable = tester.state(scrollableFinder);
@@ -90,26 +95,28 @@ void main() {
     final dailySemantics = find.byWidgetPredicate((widget) {
       if (widget is Semantics) {
         return widget.properties.label?.contains('Daily') == true &&
-               widget.properties.checked == true &&
-               widget.properties.inMutuallyExclusiveGroup == true;
+            widget.properties.checked == true &&
+            widget.properties.inMutuallyExclusiveGroup == true;
       }
       return false;
     });
 
-    expect(dailySemantics, findsOneWidget, reason: 'Daily card should have correct semantics (checked)');
+    expect(dailySemantics, findsOneWidget,
+        reason: 'Daily card should have correct semantics (checked)');
 
     // Verify Semantics for "Weekdays" (should be unchecked)
     final weekdaysSemantics = find.byWidgetPredicate((widget) {
       if (widget is Semantics) {
         return widget.properties.label?.contains('Weekdays') == true &&
-               widget.properties.label?.contains('Mon - Fri only') == true &&
-               widget.properties.checked == false &&
-               widget.properties.inMutuallyExclusiveGroup == true;
+            widget.properties.label?.contains('Mon - Fri only') == true &&
+            widget.properties.checked == false &&
+            widget.properties.inMutuallyExclusiveGroup == true;
       }
       return false;
     });
 
-    expect(weekdaysSemantics, findsOneWidget, reason: 'Weekdays card should have correct semantics (unchecked)');
+    expect(weekdaysSemantics, findsOneWidget,
+        reason: 'Weekdays card should have correct semantics (unchecked)');
 
     // Test Interaction and Haptics
     await tester.tap(weekdaysCard);
@@ -122,7 +129,7 @@ void main() {
     final weekdaysSemanticsChecked = find.byWidgetPredicate((widget) {
       if (widget is Semantics) {
         return widget.properties.label?.contains('Weekdays') == true &&
-               widget.properties.checked == true;
+            widget.properties.checked == true;
       }
       return false;
     });
