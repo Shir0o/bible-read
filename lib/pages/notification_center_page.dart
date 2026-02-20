@@ -13,7 +13,6 @@ import '../services/seasonal_challenge_service.dart';
 import '../services/vibration_service.dart';
 import '../services/group_service.dart';
 import '../services/friend_service.dart';
-import '../widgets/common_styles.dart';
 import 'achievements_page.dart';
 import 'friend_requests_page.dart';
 import 'seasonal_challenges_page.dart';
