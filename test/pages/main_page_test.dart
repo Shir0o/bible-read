@@ -413,11 +413,6 @@ void main() {
     await selectMenuItem('Friends', 4);
     await selectMenuItem('Achievements', 6);
     await selectMenuItem('History', 7);
-    await selectMenuItem(
-      'Friendly Streak',
-      8,
-      expectedTitle: 'Friendly streak',
-    );
   });
 
   testWidgets('bottom navigation visible on non-core pages', (tester) async {

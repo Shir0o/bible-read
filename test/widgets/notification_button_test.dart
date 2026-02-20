@@ -11,14 +11,13 @@ import 'package:bible_read/pages/notification_center_page.dart';
 import 'package:bible_read/services/vibration_service.dart';
 
 class FakeNotificationService extends NotificationService {
-  FakeNotificationService({required Stream<List<AppNotification>> stream})
-      : stream = stream.asBroadcastStream(),
-        super(firestore: FakeFirebaseFirestore());
+  FakeNotificationService({this.data = const []})
+      : super(firestore: FakeFirebaseFirestore());
 
-  final Stream<List<AppNotification>> stream;
+  final List<AppNotification> data;
 
   @override
-  Stream<List<AppNotification>> notifications(String uid) => stream;
+  Stream<List<AppNotification>> notifications(String uid) => Stream.value(data);
 }
 
 class _RecordingVibrationService extends VibrationService {
@@ -36,7 +35,7 @@ void main() {
   testWidgets('renders new icon and tooltip', (tester) async {
     final auth =
         MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-    final service = FakeNotificationService(stream: Stream.value([]));
+    final service = FakeNotificationService(data: []);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -71,7 +70,7 @@ void main() {
       read: true,
       senderUid: 'b',
     );
-    final service = FakeNotificationService(stream: Stream.value([n1, n2]));
+    final service = FakeNotificationService(data: [n1, n2]);
     final vibrationService = _RecordingVibrationService();
 
     await tester.pumpWidget(
@@ -100,7 +99,7 @@ void main() {
 
   testWidgets('renders nothing when not signed in', (tester) async {
     final auth = MockFirebaseAuth(signedIn: false);
-    final service = FakeNotificationService(stream: Stream.value([]));
+    final service = FakeNotificationService(data: []);
 
     await tester.pumpWidget(
       MaterialApp(

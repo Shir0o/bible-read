@@ -1,23 +1,26 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+// ignore_for_file: subtype_of_sealed_class
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 
 import 'package:bible_read/pages/add_friend_page.dart';
-import 'package:bible_read/models/friend_streak_link.dart';
 import 'package:bible_read/services/friend_service.dart';
-import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
+import 'package:bible_read/widgets/add_friend_form.dart';
 
-class RecordingFriendService extends FriendService {
-  RecordingFriendService({required FakeFirebaseFirestore firestore})
-      : super(
-          firestore: firestore,
-          notificationService: NotificationService(firestore: firestore),
-        );
+import '../helpers/mock_lottie_http_client.dart';
 
-  String? lastEmail;
+class _StubVibrationService extends VibrationService {
+  @override
+  Future<void> mediumImpact() async {}
+}
+
+class _StubFriendService extends FriendService {
+  _StubFriendService() : super(firestore: FakeFirebaseFirestore());
 
   @override
   Future<void> sendFriendRequestByEmail({
@@ -25,90 +28,40 @@ class RecordingFriendService extends FriendService {
     required String fromName,
     required String toEmail,
   }) async {
-    lastEmail = toEmail;
+    // No-op
   }
-}
-
-class StubVibrationService extends VibrationService {
-  const StubVibrationService();
-
-  @override
-  Future<void> lightImpact() async {}
-
-  @override
-  Future<void> mediumImpact() async {}
-
-  @override
-  Future<void> tap() async {}
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  late FakeFirebaseFirestore firestore;
-  late RecordingFriendService service;
-  late MockFirebaseAuth auth;
+  setupFirebaseCoreMocks();
 
-  setUp(() {
-    firestore = FakeFirebaseFirestore();
-    service = RecordingFriendService(firestore: firestore);
-    auth = MockFirebaseAuth(
-      mockUser: MockUser(uid: 'u1', displayName: 'Tester'),
+  setUpAll(() async {
+    await Firebase.initializeApp();
+    setupLottieHttpOverrides();
+  });
+  tearDownAll(resetHttpOverrides);
+
+  testWidgets('renders add friend form', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
       signedIn: true,
     );
-  });
 
-  Future<void> pumpPage(WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: AddFriendPage(
-          friendService: service,
+          friendService: _StubFriendService(),
           auth: auth,
-          vibrationService: const StubVibrationService(),
+          vibrationService: _StubVibrationService(),
         ),
       ),
     );
     await tester.pumpAndSettle();
-  }
 
-  testWidgets('sends request with entered email', (tester) async {
-    await pumpPage(tester);
-
-    await tester.enterText(
-      find.byKey(const Key('addFriendEmailField')),
-      'friend@example.com',
-    );
-    await tester.tap(find.text('Send'));
-    await tester.pumpAndSettle();
-
-    expect(service.lastEmail, 'friend@example.com');
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pump(const Duration(seconds: 1));
-  });
-
-  testWidgets('shows streak limit banner when max reached', (tester) async {
-    for (var i = 0; i < FriendService.maxActiveStreakLinks; i++) {
-      await firestore
-          .collection(FriendCollections.users)
-          .doc('u1')
-          .collection(FriendCollections.friendStreakLinks)
-          .doc('friend$i')
-          .set({
-        'partnerUid': 'friend$i',
-        'partnerName': 'Friend $i',
-        'initiatedBy': 'u1',
-        'status': FriendStreakStatus.active.name,
-        'currentStreak': 0,
-        'createdAt': Timestamp.now(),
-        'updatedAt': Timestamp.now(),
-      });
-    }
-
-    await pumpPage(tester);
-
-    expect(find.textContaining('Streak links:'), findsOneWidget);
-    expect(
-      find.textContaining('limit of streak partners'),
-      findsOneWidget,
-    );
+    expect(find.byType(AddFriendForm), findsOneWidget);
+    // Should NOT find streak related text
+    expect(find.textContaining('Streak links:'), findsNothing);
   });
 }

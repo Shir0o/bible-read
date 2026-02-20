@@ -11,10 +11,8 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/services/reading_status_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
-import 'package:bible_read/services/friendly_streak_service.dart';
 import 'package:bible_read/services/achievement_service.dart';
 import 'package:bible_read/services/group_book_achievement_service.dart';
-import 'package:bible_read/services/friend_streak_link_service.dart';
 import 'package:bible_read/widgets/skeletons/home_page_skeleton.dart'; // Import for type check
 import '../helpers/mock_lottie_http_client.dart';
 
@@ -27,15 +25,6 @@ class _StubVibrationService extends VibrationService {
   }
 }
 
-class _StubFriendlyStreakService extends FriendlyStreakService {
-  _StubFriendlyStreakService() : super(firestore: FakeFirebaseFirestore());
-
-  @override
-  Future<FriendlyStreakLinksSummary> fetchLinks(String uid) async {
-    return FriendlyStreakLinksSummary.empty;
-  }
-}
-
 class _StubAchievementService extends AchievementService {
   _StubAchievementService() : super(firestore: FakeFirebaseFirestore());
 }
@@ -43,10 +32,6 @@ class _StubAchievementService extends AchievementService {
 class _StubGroupBookAchievementService extends GroupBookAchievementService {
   _StubGroupBookAchievementService()
       : super(firestore: FakeFirebaseFirestore());
-}
-
-class _StubFriendStreakLinkService extends FriendStreakLinkService {
-  _StubFriendStreakLinkService() : super(firestore: FakeFirebaseFirestore());
 }
 
 void main() {
@@ -75,10 +60,8 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          friendlyStreakService: _StubFriendlyStreakService(),
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
-          friendStreakLinkService: _StubFriendStreakLinkService(),
         ),
       ),
     );
@@ -117,10 +100,8 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          friendlyStreakService: _StubFriendlyStreakService(),
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
-          friendStreakLinkService: _StubFriendStreakLinkService(),
         ),
       ),
     );
@@ -149,10 +130,8 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: vibrationService,
-          friendlyStreakService: _StubFriendlyStreakService(),
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
-          friendStreakLinkService: _StubFriendStreakLinkService(),
         ),
       ),
     );
@@ -223,10 +202,8 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          friendlyStreakService: _StubFriendlyStreakService(),
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
-          friendStreakLinkService: _StubFriendStreakLinkService(),
         ),
       ),
     );
@@ -257,10 +234,8 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          friendlyStreakService: _StubFriendlyStreakService(),
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
-          friendStreakLinkService: _StubFriendStreakLinkService(),
           readingStatusService: slowReadingService,
         ),
       ),

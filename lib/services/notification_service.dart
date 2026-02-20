@@ -55,6 +55,26 @@ class NotificationService {
         .set(n.toFirestore());
   }
 
+  /// Marks all notifications for [uid] as read.
+  Future<void> markAllRead(String uid) async {
+    final query = await firestore
+        .collection(NotificationCollections.users)
+        .doc(uid)
+        .collection(NotificationCollections.notifications)
+        .where('read', isEqualTo: false)
+        .get();
+
+    if (query.docs.isEmpty) {
+      return;
+    }
+
+    final batch = firestore.batch();
+    for (final doc in query.docs) {
+      batch.set(doc.reference, {'read': true}, SetOptions(merge: true));
+    }
+    await batch.commit();
+  }
+
   /// Deletes every notification for [uid].
   Future<void> clearNotifications(String uid) async {
     final query = await firestore
