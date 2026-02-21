@@ -60,35 +60,44 @@ class MonthStreakCalendar extends StatelessWidget {
     final weekdayOffset = firstDay.weekday % 7;
 
     final rows = <TableRow>[];
-    for (int i = 0; i < ((totalDays + weekdayOffset + 6) / 7).floor(); i++) {
-      rows.add(TableRow(children: List.filled(7, const SizedBox.shrink())));
-    }
+    final totalCells = totalDays + weekdayOffset;
+    final totalWeeks = (totalCells / 7).ceil();
 
-    for (int day = 1; day <= totalDays; day++) {
-      final date = DateTime(month.year, month.month, day);
-      final filled = readDates.any((d) => _isSameDay(d, date));
-      final index = weekdayOffset + day - 1;
-      final weekRow = index ~/ 7;
-      final weekdayIndex = index % 7;
-      rows[weekRow].children[weekdayIndex] = Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Semantics(
-            label:
-                '${_monthName(month.month)} $day, ${filled ? "Read" : "Not read"}',
-            excludeSemantics: true,
-            child: Tooltip(
-              message: filled ? 'Read' : 'Not read',
-              child: Icon(
-                filled ? Icons.circle : Icons.circle_outlined,
-                size: 12,
-                color:
-                    filled ? colorScheme.primary : colorScheme.outlineVariant,
+    for (int w = 0; w < totalWeeks; w++) {
+      final List<Widget> weekWidgets = [];
+      for (int d = 0; d < 7; d++) {
+        final cellIndex = w * 7 + d;
+        final day = cellIndex - weekdayOffset + 1;
+
+        if (day < 1 || day > totalDays) {
+          weekWidgets.add(const SizedBox.shrink());
+        } else {
+          final date = DateTime(month.year, month.month, day);
+          final filled = readDates.any((d) => _isSameDay(d, date));
+          weekWidgets.add(
+            Semantics(
+              label:
+                  '${_monthName(month.month)} $day, ${filled ? "Read" : "Not read"}',
+              excludeSemantics: true,
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 48),
+                alignment: Alignment.center,
+                child: Tooltip(
+                  message: filled ? 'Read' : 'Not read',
+                  child: Icon(
+                    filled ? Icons.circle : Icons.circle_outlined,
+                    size: 16,
+                    color: filled
+                        ? colorScheme.primary
+                        : colorScheme.outlineVariant,
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-      );
+          );
+        }
+      }
+      rows.add(TableRow(children: weekWidgets));
     }
 
     return rows;
@@ -112,9 +121,14 @@ class MonthStreakCalendar extends StatelessWidget {
                   tooltip: 'Previous month',
                   onPressed: onPrevious,
                 ),
-              Text(
-                _monthLabel,
-                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
+              Flexible(
+                child: Text(
+                  _monthLabel,
+                  style:
+                      AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               if (showNavigation)
                 IconButton(
@@ -127,15 +141,16 @@ class MonthStreakCalendar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Table(
-                defaultColumnWidth: const FixedColumnWidth(32),
-                children: [
-                  TableRow(
-                    children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-                        .map(
-                          (d) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Center(
+              Expanded(
+                child: Table(
+                  // Removed defaultColumnWidth to allow flexible sizing
+                  children: [
+                    TableRow(
+                      children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+                          .map(
+                            (d) => Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(vertical: 4),
                               child: Text(
                                 d,
                                 style: AppTextStyles.body.copyWith(
@@ -143,12 +158,12 @@ class MonthStreakCalendar extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                  ..._buildRows(Theme.of(context).colorScheme),
-                ],
+                          )
+                          .toList(),
+                    ),
+                    ..._buildRows(Theme.of(context).colorScheme),
+                  ],
+                ),
               ),
             ],
           ),
