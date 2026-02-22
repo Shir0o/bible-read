@@ -419,66 +419,74 @@ class _BookGridItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isUnlocked ? colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          border: isUnlocked
-              ? null
-              : Border.all(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                ),
-          boxShadow: isUnlocked
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              : null,
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            if (isUnlocked)
-              Positioned(
-                top: 6,
-                right: 6,
-                child: Icon(
-                  Icons.check,
-                  size: 14,
-                  color: colorScheme.onPrimary,
-                  weight: 700, // bold
-                ),
-              ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return Tooltip(
+      message: isUnlocked ? '$book (Completed)' : book,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Semantics(
+          label: '$book, ${isUnlocked ? "Completed" : "Not completed"}',
+          button: true,
+          excludeSemantics: true,
+          child: Container(
+            decoration: BoxDecoration(
+              color: isUnlocked ? colorScheme.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              border: isUnlocked
+                  ? null
+                  : Border.all(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ),
+              boxShadow: isUnlocked
+                  ? [
+                      BoxShadow(
+                        color: colorScheme.primary.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      )
+                    ]
+                  : null,
+            ),
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-                Icon(
-                  Icons.menu_book_rounded, // or book_2
-                  color: isUnlocked
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSurfaceVariant,
-                  size: 24,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  abbr,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: isUnlocked
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
+                if (isUnlocked)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Icon(
+                      Icons.check,
+                      size: 14,
+                      color: colorScheme.onPrimary,
+                      weight: 700, // bold
+                    ),
                   ),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.menu_book_rounded, // or book_2
+                      color: isUnlocked
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurfaceVariant,
+                      size: 24,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      abbr,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isUnlocked
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
