@@ -1,3 +1,26 @@
+# Release 1.23.0
+
+This release introduces a new Bible Progress page for detailed book tracking, a redesigned Journey experience, and a centralized Notification Center. It also includes critical stability fixes for iOS startup.
+
+## Highlights
+
+*   **Bible Progress:** A new dedicated view to track your progress through every book of the Bible.
+*   **Journey Redesign:** A completely overhauled Journey page with improved layouts and visual storytelling.
+*   **Notification Center:** A central hub to manage all your app notifications in one place.
+*   **iOS Stability:** Resolved a critical issue that caused the app to hang on a blank screen during startup on iOS devices.
+
+## Features & Enhancements
+
+*   **Progress Tracking:** Added the `BibleProgressPage` to visualize completion across the Old and New Testaments.
+*   **Navigation:** Integrated the new Notification Center and refreshed the Journey tab.
+*   **Infrastructure:** Standardized iOS `AppDelegate` initialization to ensure reliable plugin registration.
+*   **Cleanup:** Removed legacy "Friendly Streak" features to streamline the core experience.
+
+## Stability
+
+*   **Critical Fix:** Corrected Firebase initialization flow on iOS to prevent startup hangs.
+*   **Tests:** Updated test suite to reflect navigation and progress tracking changes.
+
 # Release 1.22.0
 
 This release introduces a dedicated group search view, accessibility improvements across the app, and a major audit of test debt to ensure ongoing platform stability.
