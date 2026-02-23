@@ -67,3 +67,7 @@
 ## 2026-03-05 - Calendar Accessibility
 **Learning:** Dense grids (like calendars) often have tiny touch targets (e.g., 12px icons) that are hard to explore with screen readers.
 **Action:** Enforce accessible touch targets (min 48x48dp) using `Container` constraints inside `Semantics` wrappers, even for non-interactive status indicators, and allow layout to flex to fill available width.
+
+## 2026-03-06 - Misleading Interactivity & Tooltips
+**Learning:** List items that look tappable (ripple effect) but do nothing create confusion. Also, FABs must have tooltips for accessibility.
+**Action:** Use `CommonStyles.buildCard` (without InkWell) for non-interactive items. Ensure every `FloatingActionButton` has a `tooltip`.
