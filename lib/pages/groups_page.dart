@@ -9,6 +9,7 @@ import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/group_card.dart';
+import '../widgets/skeletons/group_list_skeleton.dart';
 
 import '../pages/group_detail_page.dart';
 import '../pages/all_groups_page.dart';
@@ -146,7 +147,7 @@ class _GroupsPageState extends State<GroupsPage> {
                               Text('Error loading groups: ${snapshot.error}'));
                     }
                     if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const GroupListSkeleton();
                     }
                     final groups = snapshot.data!;
                     if (groups.isEmpty) {

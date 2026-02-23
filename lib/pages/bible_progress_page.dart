@@ -24,9 +24,9 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
   late final AchievementService _achievementService;
   late final Stream<Set<String>> _unlockedIdsStream;
 
-  static const Map<String, List<String>> _categories = {
-    'Pentateuch': ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy'],
-    'History': [
+  static const List<MapEntry<String, List<String>>> _categories = [
+    MapEntry('Pentateuch', ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']),
+    MapEntry('History', [
       'Joshua',
       'Judges',
       'Ruth',
@@ -39,9 +39,9 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
       'Ezra',
       'Nehemiah',
       'Esther'
-    ],
-    'Poetry': ['Job', 'Psalm', 'Proverbs', 'Ecclesiastes', 'Song of Songs'],
-    'Prophecy (OT)': [
+    ]),
+    MapEntry('Poetry', ['Job', 'Psalm', 'Proverbs', 'Ecclesiastes', 'Song of Songs']),
+    MapEntry('Prophecy', [
       'Isaiah',
       'Jeremiah',
       'Lamentations',
@@ -59,9 +59,9 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
       'Haggai',
       'Zechariah',
       'Malachi'
-    ],
-    'Gospels & Acts': ['Matthew', 'Mark', 'Luke', 'John', 'Acts'],
-    'Epistles': [
+    ]),
+    MapEntry('Gospels & Acts', ['Matthew', 'Mark', 'Luke', 'John', 'Acts']),
+    MapEntry('Epistles', [
       'Romans',
       '1 Corinthians',
       '2 Corinthians',
@@ -83,9 +83,9 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
       '2 John',
       '3 John',
       'Jude'
-    ],
-    'Prophecy (NT)': ['Revelation'],
-  };
+    ]),
+    MapEntry('Prophecy', ['Revelation']),
+  ];
 
   @override
   void initState() {
@@ -272,7 +272,7 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
 
           return CustomScrollView(
             slivers: [
-              for (final entry in _categories.entries) ...[
+              for (final entry in _categories) ...[
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
@@ -419,72 +419,74 @@ class _BookGridItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Tooltip(
-      message: isUnlocked ? '$book (Completed)' : book,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Semantics(
-          label: '$book, ${isUnlocked ? "Completed" : "Not completed"}',
-          button: true,
-          excludeSemantics: true,
-          child: Container(
-            decoration: BoxDecoration(
-              color: isUnlocked ? colorScheme.primary : Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-              border: isUnlocked
-                  ? null
-                  : Border.all(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+    return RepaintBoundary(
+      child: Tooltip(
+        message: isUnlocked ? '$book (Completed)' : book,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Semantics(
+            label: '$book, ${isUnlocked ? "Completed" : "Not completed"}',
+            button: true,
+            excludeSemantics: true,
+            child: Container(
+              decoration: BoxDecoration(
+                color: isUnlocked ? colorScheme.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                border: isUnlocked
+                    ? null
+                    : Border.all(
+                        color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      ),
+                boxShadow: isUnlocked
+                    ? [
+                        BoxShadow(
+                          color: colorScheme.primary.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        )
+                      ]
+                    : null,
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (isUnlocked)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Icon(
+                        Icons.check,
+                        size: 14,
+                        color: colorScheme.onPrimary,
+                        weight: 700, // bold
+                      ),
                     ),
-              boxShadow: isUnlocked
-                  ? [
-                      BoxShadow(
-                        color: colorScheme.primary.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      )
-                    ]
-                  : null,
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                if (isUnlocked)
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: Icon(
-                      Icons.check,
-                      size: 14,
-                      color: colorScheme.onPrimary,
-                      weight: 700, // bold
-                    ),
-                  ),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.menu_book_rounded, // or book_2
-                      color: isUnlocked
-                          ? colorScheme.onPrimary
-                          : colorScheme.onSurfaceVariant,
-                      size: 24,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      abbr,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.menu_book_rounded, // or book_2
                         color: isUnlocked
                             ? colorScheme.onPrimary
                             : colorScheme.onSurfaceVariant,
+                        size: 24,
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      const SizedBox(height: 2),
+                      Text(
+                        abbr,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isUnlocked
+                              ? colorScheme.onPrimary
+                              : colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
