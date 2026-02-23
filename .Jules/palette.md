@@ -63,3 +63,7 @@
 ## 2026-03-04 - Custom Radio Button Accessibility
 **Learning:** Custom selection cards (e.g., Frequency) built with `InkWell` are inaccessible unless explicitly marked as radio buttons.
 **Action:** Wrap custom radio widgets in `Semantics(checked: isSelected, inMutuallyExclusiveGroup: true, button: true, label: ...)` and verify states with screen reader tests. Add haptic feedback for better interaction.
+
+## 2026-03-05 - Calendar Accessibility
+**Learning:** Dense grids (like calendars) often have tiny touch targets (e.g., 12px icons) that are hard to explore with screen readers.
+**Action:** Enforce accessible touch targets (min 48x48dp) using `Container` constraints inside `Semantics` wrappers, even for non-interactive status indicators, and allow layout to flex to fill available width.
