@@ -93,7 +93,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                 return Card(
                     child: Padding(
                         padding: EdgeInsets.all(16),
-                        child: Text("Error loading plan")));
+                        child: Text('Error loading plan')));
               }
 
               final activeProgressList = activeSnapshot.data ?? [];
@@ -107,8 +107,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                     // Show loading skeleton if no data yet
                     return Card(
                       child: SizedBox(
-                          height: 200,
-                          child: _buildSkeletonCard(colorScheme)),
+                          height: 200, child: _buildSkeletonCard(colorScheme)),
                     );
                   }
 
@@ -143,7 +142,6 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
     );
   }
 
-
   Widget _buildSkeletonCard(ColorScheme colorScheme) {
     return Container(
       width: double.infinity,
@@ -170,9 +168,9 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                     const Skeleton(width: 150, height: 20),
                     const SizedBox(height: 12),
                     Row(children: [
-                        const Skeleton(width: 60, height: 16),
-                        const SizedBox(width: 8),
-                        const Skeleton(width: 100, height: 12),
+                      const Skeleton(width: 60, height: 16),
+                      const SizedBox(width: 8),
+                      const Skeleton(width: 100, height: 12),
                     ]),
                     const SizedBox(height: 16),
                     const Skeleton(width: double.infinity, height: 8),
@@ -204,12 +202,12 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
             const Icon(Icons.auto_stories, size: 48),
             const SizedBox(height: 16),
             const Text(
-              "Start a Reading Plan",
+              'Start a Reading Plan',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 8),
             const Text(
-              "Choose a plan to track your daily reading progress.",
+              'Choose a plan to track your daily reading progress.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -219,7 +217,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                 // Since we removed tabs, we might need a way to browse plans.
                 // For now, let's just leave it as is or show a dialog.
               },
-              child: const Text("Browse Plans"),
+              child: const Text('Browse Plans'),
             ),
           ],
         ),
@@ -374,7 +372,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                             child: LinearProgressIndicator(
                               value: percent,
                               minHeight: 8,
-                              backgroundColor: colorScheme.surfaceVariant,
+                              backgroundColor:
+                                  colorScheme.surfaceContainerHighest,
                               color: colorScheme.primary,
                             ),
                           ),
