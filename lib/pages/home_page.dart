@@ -706,8 +706,6 @@ class _HomePageState extends State<HomePage>
                             : Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.check, color: Colors.black),
-                                  const SizedBox(width: 8),
                                   Text(
                                     'I have read',
                                     style: Theme.of(context)

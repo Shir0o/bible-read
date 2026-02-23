@@ -537,113 +537,30 @@ class _GroupProgressCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar Stack
-              SizedBox(
+              // Group Icon
+              Container(
                 width: 80,
-                height: 80,
-                child: StreamBuilder<List<GroupMemberProgressData>>(
-                  stream: groupService.memberDailyCompletion(group.id),
-                  builder: (context, snapshot) {
-                    final members = snapshot.data ?? [];
-                    // Limit to 4 avatars for display
-                    final displayMembers = members.take(4).toList();
-                    final extraCount = members.length - 3;
-
-                    if (members.isEmpty) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(Icons.groups, color: colorScheme.primary),
-                      );
-                    }
-
-                    return Stack(
-                      children: [
-                        // Background card effect
-                        Positioned.fill(
-                          child: Transform.rotate(
-                            angle: 0.1,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest
-                                    .withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.1)),
-                          ),
-                          padding: const EdgeInsets.all(8),
-                          child: GridView.builder(
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 4,
-                              mainAxisSpacing: 4,
-                            ),
-                            itemCount: displayMembers.length > 4
-                                ? 4
-                                : displayMembers.length,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemBuilder: (context, index) {
-                              if (index == 3 && extraCount > 0) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.primaryContainer,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '+$extraCount',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: colorScheme.onPrimaryContainer,
-                                    ),
-                                  ),
-                                );
-                              }
-                              final m = displayMembers[index];
-                              return Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  image: m.photoUrl != null
-                                      ? DecorationImage(
-                                          image: CachedNetworkImageProvider(
-                                              m.photoUrl!),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null,
-                                  color: colorScheme.surfaceContainerHighest,
-                                ),
-                                alignment: Alignment.center,
-                                child: m.photoUrl == null
-                                    ? Text(
-                                        m.name.isNotEmpty
-                                            ? m.name[0].toUpperCase()
-                                            : '?',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: colorScheme.onSurfaceVariant,
-                                        ),
-                                      )
-                                    : null,
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                height: 100,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.groups,
+                    size: 36,
+                    color: colorScheme.primary.withValues(alpha: 0.8),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
