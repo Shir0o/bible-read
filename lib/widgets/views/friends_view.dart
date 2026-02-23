@@ -78,6 +78,7 @@ class _FriendsViewState extends State<FriendsView>
           ? null
           : FloatingActionButton(
               heroTag: 'friends-fab',
+              tooltip: 'Add friend',
               onPressed: () {
                 unawaited(widget.vibrationService.lightImpact());
                 Navigator.of(context).push(
@@ -111,9 +112,8 @@ class _FriendsViewState extends State<FriendsView>
                   : ListView(
                       children: snapshot.data!
                           .map(
-                            (f) => CommonStyles.buildTappableCard(
+                            (f) => CommonStyles.buildCard(
                               context: context,
-                              onTap: () {},
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
