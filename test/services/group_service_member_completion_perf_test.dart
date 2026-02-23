@@ -1,7 +1,6 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/services/group_service.dart';
-import 'package:bible_read/models/group_schedule.dart';
 
 void main() {
   test('memberDailyCompletion benchmark', () async {
