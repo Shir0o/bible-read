@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockFriendService extends Mock implements FriendService {}
+
 class MockVibrationService extends Mock implements VibrationService {}
 
 void main() {
@@ -19,14 +20,17 @@ void main() {
     auth = MockFirebaseAuth(signedIn: true);
     vibrationService = MockVibrationService();
 
-    when(() => friendService.nudgedToday(any())).thenAnswer((_) => Stream.value({}));
+    when(() => friendService.nudgedToday(any()))
+        .thenAnswer((_) => Stream.value({}));
   });
 
-  testWidgets('FriendsView UX: List items should not be tappable (no ripple)', (tester) async {
+  testWidgets('FriendsView UX: List items should not be tappable (no ripple)',
+      (tester) async {
     final friends = [
       const Friend(uid: 'f1', name: 'Alice'),
     ];
-    when(() => friendService.friends(any())).thenAnswer((_) => Stream.value(friends));
+    when(() => friendService.friends(any()))
+        .thenAnswer((_) => Stream.value(friends));
 
     await tester.pumpWidget(MaterialApp(
       home: FriendsView(
@@ -48,13 +52,16 @@ void main() {
     // CommonStyles.buildTappableCard puts InkWell directly inside Card.
     // CommonStyles.buildCard puts Padding directly inside Card.
     // We expect Padding (meaning no ripple on the card itself).
-    expect(child, isA<Padding>(), reason: 'Card child should be Padding, not InkWell');
-    expect(child, isNot(isA<InkWell>()), reason: 'Card child should NOT be InkWell');
+    expect(child, isA<Padding>(),
+        reason: 'Card child should be Padding, not InkWell');
+    expect(child, isNot(isA<InkWell>()),
+        reason: 'Card child should NOT be InkWell');
   });
 
   testWidgets('FriendsView UX: FAB has tooltip', (tester) async {
     final friends = <Friend>[];
-    when(() => friendService.friends(any())).thenAnswer((_) => Stream.value(friends));
+    when(() => friendService.friends(any()))
+        .thenAnswer((_) => Stream.value(friends));
 
     await tester.pumpWidget(MaterialApp(
       home: FriendsView(

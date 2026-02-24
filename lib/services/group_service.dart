@@ -273,15 +273,7 @@ class GroupService {
           } catch (_) {}
         }));
         if (refsToDelete.isNotEmpty) {
-          for (var i = 0; i < refsToDelete.length; i += 500) {
-            final end =
-                (i + 500 < refsToDelete.length) ? i + 500 : refsToDelete.length;
-            final batch = firestore.batch();
-            for (final ref in refsToDelete.sublist(i, end)) {
-              batch.delete(ref);
-            }
-            await batch.commit();
-          }
+          await _deleteInBatches(refsToDelete);
         }
       } catch (_) {}
     } catch (e, st) {
@@ -1299,51 +1291,80 @@ class GroupService {
         throw StateError('Only the group owner can delete this group.');
       }
 
-      // Delete members
+      final refsToDelete = <DocumentReference>[];
+
+      // Members
       final members = await groupRef.collection(GroupCollections.members).get();
-      await Future.wait(members.docs.map((doc) async {
-        try {
-          await doc.reference.delete();
-        } catch (_) {}
-      }));
+      refsToDelete.addAll(members.docs.map((d) => d.reference));
 
-      // Delete schedule
+      // Schedule
       final sched = await groupRef.collection(GroupCollections.schedule).get();
-      await Future.wait(sched.docs.map((doc) async {
-        try {
-          await doc.reference.delete();
-        } catch (_) {}
-      }));
+      refsToDelete.addAll(sched.docs.map((d) => d.reference));
 
-      // Delete join requests
+      // Join requests
       final requests =
           await groupRef.collection(GroupCollections.joinRequests).get();
-      await Future.wait(requests.docs.map((doc) async {
-        try {
-          await doc.reference.delete();
-        } catch (_) {}
-      }));
+      refsToDelete.addAll(requests.docs.map((d) => d.reference));
 
-      // Delete progress entries (progress/{dateId}/entries/* and date docs)
+      // Delete what we have so far
+      if (refsToDelete.isNotEmpty) {
+        await _deleteInBatches(refsToDelete);
+      }
+
+      // Progress entries (progress/{dateId}/entries/* and date docs)
       final progressDates = await groupRef.collection('progress').get();
-      await Future.wait(progressDates.docs.map((dateDoc) async {
-        try {
-          final entries = await dateDoc.reference.collection('entries').get();
-          await Future.wait(entries.docs.map((entry) async {
-            try {
-              await entry.reference.delete();
-            } catch (_) {}
-          }));
-          // Delete the date document itself
-          await dateDoc.reference.delete();
-        } catch (_) {}
-      }));
+      final allDateDocs = progressDates.docs;
+
+      // Process in chunks to limit concurrency and batch size
+      const chunkSize = 50;
+      for (var i = 0; i < allDateDocs.length; i += chunkSize) {
+        final end = (i + chunkSize < allDateDocs.length)
+            ? i + chunkSize
+            : allDateDocs.length;
+        final chunk = allDateDocs.sublist(i, end);
+
+        final chunkRefs = <DocumentReference>[];
+
+        // Fetch entries for this chunk in parallel
+        final entriesSnapshots = await Future.wait(chunk.map((d) async {
+          try {
+            return await d.reference.collection('entries').get();
+          } catch (_) {
+            return null;
+          }
+        }));
+
+        for (final snap in entriesSnapshots) {
+          if (snap != null) {
+            chunkRefs.addAll(snap.docs.map((d) => d.reference));
+          }
+        }
+
+        // Also delete the date docs in this chunk
+        chunkRefs.addAll(chunk.map((d) => d.reference));
+
+        if (chunkRefs.isNotEmpty) {
+          await _deleteInBatches(chunkRefs);
+        }
+      }
 
       // Finally delete the group document
       await groupRef.delete();
     } catch (e, st) {
       await _safeLog(e, st);
       rethrow;
+    }
+  }
+
+  Future<void> _deleteInBatches(List<DocumentReference> refs) async {
+    const batchSize = 500;
+    for (var i = 0; i < refs.length; i += batchSize) {
+      final batch = firestore.batch();
+      final end = (i + batchSize < refs.length) ? i + batchSize : refs.length;
+      for (var j = i; j < end; j++) {
+        batch.delete(refs[j]);
+      }
+      await batch.commit();
     }
   }
 

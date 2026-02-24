@@ -1,88 +1,91 @@
-// ignore_for_file: avoid_print
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
-
 import 'package:bible_read/services/group_service.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-  setupFirebaseCoreMocks();
+  test('deleteGroup benchmark', () async {
+    final firestore = FakeFirebaseFirestore();
+    final service = GroupService(firestore: firestore);
 
-  setUpAll(() async {
-    registerFallbackValue(<String, dynamic>{});
-    registerFallbackValue(SetOptions(merge: true));
-    await Firebase.initializeApp();
-  });
+    const groupId = 'g1';
+    const ownerUid = 'owner1';
+    const days = 100; // 100 days of history
+    const members = 20; // 20 members
 
-  group('GroupService Delete Performance', () {
-    late FakeFirebaseFirestore firestore;
-    late GroupService service;
-
-    setUp(() {
-      firestore = FakeFirebaseFirestore();
-      service = GroupService(firestore: firestore);
+    // Create group
+    await firestore.collection('groups').doc(groupId).set({
+      'name': 'Benchmark Group',
+      'ownerUid': ownerUid,
+      'memberCount': members,
     });
 
-    test('deleteGroup handles large group deletion', () async {
-      // Setup
-      final groupRef = firestore.collection('groups').doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'owner'});
+    // Populate Data
+    print('Populating data...');
+    var batch = firestore.batch();
+    int opCount = 0;
 
-      print('Seeding data...');
+    // Members
+    for (var m = 0; m < members; m++) {
+      batch.set(
+          firestore
+              .collection('groups')
+              .doc(groupId)
+              .collection('members')
+              .doc('user_$m'),
+          {'uid': 'user_$m', 'role': 'member'});
+      opCount++;
+    }
 
-      // 1. Members: 50 members
-      for (var i = 0; i < 50; i++) {
-        await groupRef.collection('members').doc('u$i').set({
-          'uid': 'u$i',
-          'role': i == 0 ? 'owner' : 'member',
-        });
+    // Progress
+    for (var d = 0; d < days; d++) {
+      final dateId =
+          '2023-01-${d.toString().padLeft(2, '0')}'; // Simplified dateId
+      final dateRef = firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('progress')
+          .doc(dateId);
+
+      batch.set(dateRef, {'id': dateId});
+      opCount++;
+
+      for (var m = 0; m < members; m++) {
+        final entryRef = dateRef.collection('entries').doc('user_$m');
+        batch.set(entryRef, {'count': 1, 'done': true});
+        opCount++;
+
+        // Also add items subcollection to make it realistic
+        batch.set(entryRef.collection('items').doc('item1'), {'done': true});
+        opCount++;
       }
 
-      // 2. Schedule: 365 days
-      final scheduleBatch = firestore.batch();
-      for (var i = 0; i < 365; i++) {
-        final dateId =
-            '2024-${(i ~/ 30 + 1).toString().padLeft(2, '0')}-${(i % 30 + 1).toString().padLeft(2, '0')}';
-        scheduleBatch.set(groupRef.collection('schedule').doc(dateId), {
-          'date': Timestamp.now(),
-          'chapters': ['Gen 1']
-        });
+      if (opCount > 400) {
+        await batch.commit();
+        batch = firestore.batch();
+        opCount = 0;
       }
-      await scheduleBatch.commit();
+    }
+    if (opCount > 0) {
+      await batch.commit();
+    }
 
-      // 3. Progress: 100 days, 10 members each
-      // Creating nested structure: progress/{dateId}/entries/{uid}
-      for (var d = 0; d < 100; d++) {
-        final dateId =
-            '2024-${(d ~/ 30 + 1).toString().padLeft(2, '0')}-${(d % 30 + 1).toString().padLeft(2, '0')}';
-        final dateRef = groupRef.collection('progress').doc(dateId);
-        await dateRef.set({}); // Create date doc
+    print('Data populated. Starting deleteGroup...');
 
-        for (var m = 0; m < 10; m++) {
-          await dateRef.collection('entries').doc('u$m').set({'count': 1});
-        }
-      }
+    final stopwatch = Stopwatch()..start();
+    await service.deleteGroup(groupId: groupId, ownerUid: ownerUid);
+    stopwatch.stop();
 
-      print('Seeding complete.');
+    print('Benchmark time: ${stopwatch.elapsedMilliseconds}ms');
 
-      // Benchmark
-      final stopwatch = Stopwatch()..start();
-      await service.deleteGroup(groupId: 'g1', ownerUid: 'owner');
-      stopwatch.stop();
+    // Verify everything is deleted
+    final groupDoc = await firestore.collection('groups').doc(groupId).get();
+    expect(groupDoc.exists, false);
 
-      print('deleteGroup took: ${stopwatch.elapsedMilliseconds}ms');
-
-      // Verify deletion
-      final groupSnap = await groupRef.get();
-      expect(groupSnap.exists, false);
-
-      final membersSnap = await groupRef.collection('members').get();
-      expect(membersSnap.docs.isEmpty, true);
-    });
+    final progressDocs = await firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('progress')
+        .get();
+    expect(progressDocs.docs.isEmpty, true);
   });
 }
