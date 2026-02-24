@@ -57,9 +57,16 @@ class SeasonalChallengeService {
   /// Returns the currently active season, if any.
   Future<Season?> fetchActiveSeason() async {
     try {
-      final snapshot =
-          await firestore.collection(SeasonalChallengePaths.seasons).get();
       final now = _clock();
+      // Only fetch seasons that haven't ended yet (or end today).
+      // This avoids fetching potentially thousands of past seasons.
+      final startOfToday = DateTime(now.year, now.month, now.day);
+      final snapshot = await firestore
+          .collection(SeasonalChallengePaths.seasons)
+          .where('endDate',
+              isGreaterThanOrEqualTo: Timestamp.fromDate(startOfToday))
+          .get();
+
       Season? active;
       for (final doc in snapshot.docs) {
         final season = Season.fromFirestore(doc);
