@@ -25,7 +25,8 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
   late final Stream<Set<String>> _unlockedIdsStream;
 
   static const List<MapEntry<String, List<String>>> _categories = [
-    MapEntry('Pentateuch', ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']),
+    MapEntry('Pentateuch',
+        ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']),
     MapEntry('History', [
       'Joshua',
       'Judges',
@@ -40,7 +41,8 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
       'Nehemiah',
       'Esther'
     ]),
-    MapEntry('Poetry', ['Job', 'Psalm', 'Proverbs', 'Ecclesiastes', 'Song of Songs']),
+    MapEntry('Poetry',
+        ['Job', 'Psalm', 'Proverbs', 'Ecclesiastes', 'Song of Songs']),
     MapEntry('Prophecy', [
       'Isaiah',
       'Jeremiah',
@@ -436,7 +438,8 @@ class _BookGridItem extends StatelessWidget {
                 border: isUnlocked
                     ? null
                     : Border.all(
-                        color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                        color:
+                            colorScheme.outlineVariant.withValues(alpha: 0.5),
                       ),
                 boxShadow: isUnlocked
                     ? [

@@ -428,7 +428,8 @@ class _CommunityPageState extends State<CommunityPage> {
               ),
 
               // Friends Activity List
-                            if (_loadingLogs) const FriendsActivitySkeleton()
+              if (_loadingLogs)
+                const FriendsActivitySkeleton()
               else if (_friendLogs.isEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
