@@ -234,30 +234,44 @@ class _CommunityPageState extends State<CommunityPage> {
                   child: Row(
                     children: [
                       // Avatar
-                      GestureDetector(
-                        onTap: () {
-                          widget.vibrationService.lightImpact();
-                          NavigationMenuScope.maybeOf(context)
-                              ?.showMenu(context);
-                        },
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
+                      Semantics(
+                        button: true,
+                        label: 'Open menu',
+                        child: Tooltip(
+                          message: 'Open menu',
+                          child: Material(
                             color: colorScheme.surfaceContainerHighest,
-                            image: user.photoURL != null
-                                ? DecorationImage(
+                            shape: const CircleBorder(),
+                            clipBehavior: Clip.antiAlias,
+                            child: user.photoURL != null
+                                ? Ink.image(
                                     image: CachedNetworkImageProvider(
                                         user.photoURL!),
                                     fit: BoxFit.cover,
+                                    width: 40,
+                                    height: 40,
+                                    child: InkWell(
+                                      onTap: () {
+                                        widget.vibrationService.lightImpact();
+                                        NavigationMenuScope.maybeOf(context)
+                                            ?.showMenu(context);
+                                      },
+                                    ),
                                   )
-                                : null,
+                                : InkWell(
+                                    onTap: () {
+                                      widget.vibrationService.lightImpact();
+                                      NavigationMenuScope.maybeOf(context)
+                                          ?.showMenu(context);
+                                    },
+                                    child: SizedBox(
+                                      width: 40,
+                                      height: 40,
+                                      child: Icon(Icons.person,
+                                          color: colorScheme.onSurfaceVariant),
+                                    ),
+                                  ),
                           ),
-                          child: user.photoURL == null
-                              ? Icon(Icons.person,
-                                  color: colorScheme.onSurfaceVariant)
-                              : null,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -306,6 +320,7 @@ class _CommunityPageState extends State<CommunityPage> {
                               children: [
                                 Center(
                                   child: IconButton(
+                                    tooltip: 'Notifications',
                                     icon: Icon(
                                       Icons.notifications_outlined,
                                       color: colorScheme.onSurfaceVariant,
