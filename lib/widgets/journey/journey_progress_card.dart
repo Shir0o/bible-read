@@ -1,43 +1,43 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../skeleton.dart';
 
 import '../../models/reading_plan.dart';
 import '../../models/reading_plan_progress.dart';
 import '../../pages/plan_detail_page.dart';
 import '../../services/reading_plan_service.dart';
-import '../../theme/app_theme.dart';
-import '../views/reading_plans_view.dart';
+import '../skeleton.dart';
 
 class JourneyProgressCard extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final ReadingPlanService readingPlanService;
 
-  const JourneyProgressCard({
+  JourneyProgressCard({
     super.key,
     required this.firestore,
     required this.auth,
-  });
+    ReadingPlanService? readingPlanService,
+  }) : readingPlanService =
+            readingPlanService ?? ReadingPlanService(firestore: firestore);
 
   @override
   State<JourneyProgressCard> createState() => _JourneyProgressCardState();
 }
 
 class _JourneyProgressCardState extends State<JourneyProgressCard> {
-  late final ReadingPlanService _planService;
   late Future<List<ReadingPlan>> _allPlansFuture;
   late Stream<List<UserPlanProgress>> _activePlansStream;
 
   @override
   void initState() {
     super.initState();
-    _planService = ReadingPlanService(firestore: widget.firestore);
-    _allPlansFuture = _planService.getAvailablePlans();
+    _allPlansFuture = widget.readingPlanService.getAvailablePlans();
 
     final user = widget.auth.currentUser;
     if (user != null) {
-      _activePlansStream = _planService.getActivePlans(user.uid);
+      _activePlansStream =
+          widget.readingPlanService.getActivePlans(user.uid);
     } else {
       _activePlansStream = Stream.value([]);
     }
@@ -48,116 +48,82 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.hPadding),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'My Personal Journey',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => Scaffold(
-                        appBar: AppBar(title: const Text('Reading Plans')),
-                        body: ReadingPlansView(
-                          firestore: widget.firestore,
-                          auth: widget.auth,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                child: Text(
-                  'Details',
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          StreamBuilder<List<UserPlanProgress>>(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: FutureBuilder<List<ReadingPlan>>(
+        future: _allPlansFuture,
+        builder: (context, plansSnapshot) {
+          return StreamBuilder<List<UserPlanProgress>>(
             stream: _activePlansStream,
-            builder: (context, activeSnapshot) {
-              if (activeSnapshot.hasError) {
-                return Card(
-                    child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text('Error loading plan')));
+            builder: (context, progressSnapshot) {
+              // 1. Loading
+              if (plansSnapshot.connectionState == ConnectionState.waiting ||
+                  progressSnapshot.connectionState == ConnectionState.waiting) {
+                return _buildLoadingSkeleton(context);
               }
 
-              final activeProgressList = activeSnapshot.data ?? [];
+              // 2. Data Check
+              final plans = plansSnapshot.data ?? [];
+              final userProgressList = progressSnapshot.data ?? [];
 
-              return FutureBuilder<List<ReadingPlan>>(
-                future: _allPlansFuture,
-                builder: (context, plansSnapshot) {
-                  if (plansSnapshot.connectionState ==
-                          ConnectionState.waiting &&
-                      activeProgressList.isEmpty) {
-                    // Show loading skeleton if no data yet
-                    return Card(
-                      child: SizedBox(
-                          height: 200, child: _buildSkeletonCard(colorScheme)),
-                    );
+              // 3. Find Active Plan
+              ReadingPlan? activePlan;
+              UserPlanProgress? activeProgress;
+
+              // Helper to track a completed plan as fallback
+              ReadingPlan? fallbackPlan;
+              UserPlanProgress? fallbackProgress;
+
+              for (final prog in userProgressList) {
+                try {
+                  final p = plans.firstWhere((pl) => pl.id == prog.planId);
+                  if (prog.completedDays.length < p.durationDays) {
+                    activePlan = p;
+                    activeProgress = prog;
+                    break;
+                  } else if (fallbackPlan == null) {
+                    fallbackPlan = p;
+                    fallbackProgress = prog;
                   }
+                } catch (_) {
+                  // Plan might have been deleted or not loaded
+                }
+              }
 
-                  final allPlans = plansSnapshot.data ?? [];
+              if (activePlan == null) {
+                activePlan = fallbackPlan;
+                activeProgress = fallbackProgress;
+              }
 
-                  // Find the first active plan
-                  UserPlanProgress? activeProgress;
-                  ReadingPlan? activePlan;
+              // 4. No Active Plan (and no completed plan to show)
+              if (activePlan == null || activeProgress == null) {
+                return _buildNoActivePlanCard(context, colorScheme);
+              }
 
-                  if (activeProgressList.isNotEmpty) {
-                    activeProgress = activeProgressList.first;
-                    try {
-                      activePlan = allPlans
-                          .firstWhere((p) => p.id == activeProgress!.planId);
-                    } catch (e) {
-                      // Plan not found in available plans (maybe deleted or specialized)
-                    }
-                  }
-
-                  if (activePlan == null || activeProgress == null) {
-                    return _buildNoActivePlanCard(context, colorScheme);
-                  }
-
-                  return _buildActivePlanCard(
-                      context, colorScheme, activePlan, activeProgress);
-                },
+              // 5. Active Plan Card
+              return _buildActivePlanCard(
+                context,
+                colorScheme,
+                activePlan,
+                activeProgress,
               );
             },
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSkeletonCard(ColorScheme colorScheme) {
+  Widget _buildLoadingSkeleton(BuildContext context) {
     return Container(
-      width: double.infinity,
-      height: 200,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
-        ),
-      ),
+      height: 180,
       padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Column(
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Skeleton(width: 80, height: 100, radius: 16),
               const SizedBox(width: 16),
@@ -166,12 +132,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Skeleton(width: 150, height: 20),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      const Skeleton(width: 60, height: 16),
-                      const SizedBox(width: 8),
-                      const Skeleton(width: 100, height: 12),
-                    ]),
+                    const SizedBox(height: 8),
+                    const Skeleton(width: 100, height: 12),
                     const SizedBox(height: 16),
                     const Skeleton(width: double.infinity, height: 8),
                   ],
