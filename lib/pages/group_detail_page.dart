@@ -747,6 +747,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                       groupId: widget.group.id,
                                       uid: user.uid,
                                       name: user.displayName ?? '',
+                                      photoUrl: user.photoURL,
                                     );
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(

@@ -193,7 +193,8 @@ void main() {
       final summaryDoc = await userDoc.collection('summary').doc('data').get();
       expect(summaryDoc.exists, isTrue);
       expect(summaryDoc.data()?['streak'], expectedStreak);
-      expect(summaryDoc.data()?['longestStreak'], longestOffsets.length);
+      // Longest streak now consistently includes days covered by grace credits.
+      expect(summaryDoc.data()?['longestStreak'], expectedStreak);
       expect(summaryDoc.data()?['totalReadDays'], expectedReadDays);
     });
 

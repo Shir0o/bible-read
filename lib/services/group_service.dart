@@ -86,18 +86,24 @@ class GroupService {
         'role': 'owner',
         'joinedAt': FieldValue.serverTimestamp(),
       });
-      // Best-effort: populate owner's display name on member record.
+      // Best-effort: populate owner's display name and photo on member record.
       try {
         final userSnap =
             await firestore.collection('users').doc(ownerUid).get();
         final data = userSnap.data();
         if (data != null) {
           final chosen = _resolveDisplayName(data);
-          if (chosen != null) {
+          final photoUrl = (data['photoURL'] as String?)?.trim();
+          final updates = <String, dynamic>{};
+          if (chosen != null) updates['name'] = chosen;
+          if (photoUrl != null && photoUrl.isNotEmpty) {
+            updates['photoUrl'] = photoUrl;
+          }
+          if (updates.isNotEmpty) {
             await doc
                 .collection(GroupCollections.members)
                 .doc(ownerUid)
-                .set({'name': chosen}, SetOptions(merge: true));
+                .set(updates, SetOptions(merge: true));
           }
         }
       } catch (e, st) {
@@ -117,8 +123,10 @@ class GroupService {
     required String groupId,
     required String uid,
     required String name,
+    String? photoUrl,
   }) {
-    return requestJoin(groupId: groupId, uid: uid, name: name);
+    return requestJoin(
+        groupId: groupId, uid: uid, name: name, photoUrl: photoUrl);
   }
 
   /// Create a join request for [uid] on [groupId].
@@ -126,6 +134,7 @@ class GroupService {
     required String groupId,
     required String uid,
     required String name,
+    String? photoUrl,
   }) async {
     try {
       final groupSnap = await firestore
@@ -137,16 +146,21 @@ class GroupService {
         throw StateError('Group does not exist');
       }
 
+      final data = <String, dynamic>{
+        'uid': uid,
+        'name': name,
+        'requestedAt': FieldValue.serverTimestamp(),
+      };
+      if (photoUrl != null && photoUrl.isNotEmpty) {
+        data['photoUrl'] = photoUrl;
+      }
+
       await firestore
           .collection(GroupCollections.groups)
           .doc(groupId)
           .collection(GroupCollections.joinRequests)
           .doc(uid)
-          .set({
-        'uid': uid,
-        'name': name,
-        'requestedAt': FieldValue.serverTimestamp(),
-      });
+          .set(data);
 
       final ownerUid = groupSnap.data()?['ownerUid'] as String?;
       if (ownerUid != null && ownerUid != uid) {
@@ -188,6 +202,7 @@ class GroupService {
           groupRef.collection(GroupCollections.joinRequests).doc(uid);
       final requestSnap = await requestRef.get();
       final name = requestSnap.data()?['name'] as String?;
+      final photoUrl = requestSnap.data()?['photoUrl'] as String?;
 
       final memberRef = groupRef.collection(GroupCollections.members).doc(uid);
       final memberSnap = await memberRef.get();
@@ -198,6 +213,9 @@ class GroupService {
       };
       if (name != null && name.isNotEmpty) {
         data['name'] = name;
+      }
+      if (photoUrl != null && photoUrl.isNotEmpty) {
+        data['photoUrl'] = photoUrl;
       }
       final batch = firestore.batch();
       batch.set(memberRef, data, SetOptions(merge: true));
@@ -914,6 +932,7 @@ class GroupService {
           // Build order and names similar to daily completion.
           final order = <String>[];
           final providedNames = <String, String>{};
+          final providedPhotos = <String, String>{};
           final missingUids = <String>[];
           for (final doc in latestMembers!.docs) {
             final data = doc.data();
@@ -925,6 +944,10 @@ class GroupService {
               providedNames[uid] = name;
             } else {
               missingUids.add(uid);
+            }
+            final photoUrl = data['photoUrl'] as String?;
+            if (photoUrl != null && photoUrl.isNotEmpty) {
+              providedPhotos[uid] = photoUrl;
             }
           }
 
@@ -952,7 +975,7 @@ class GroupService {
             missingUids.add(includeUid);
           }
 
-          final resolvedNames = await _fetchUserInfos(missingUids);
+          final resolvedInfos = await _fetchUserInfos(missingUids);
 
           // Total scheduled items = sum of all chapter counts.
           int totalItems = 0;
@@ -966,8 +989,9 @@ class GroupService {
                 for (final uid in order)
                   GroupMemberProgressData(
                     uid: uid,
-                    name: providedNames[uid] ?? resolvedNames[uid]?.name ?? uid,
-                    photoUrl: resolvedNames[uid]?.photoUrl,
+                    name: providedNames[uid] ?? resolvedInfos[uid]?.name ?? uid,
+                    photoUrl:
+                        providedPhotos[uid] ?? resolvedInfos[uid]?.photoUrl,
                     completion: 0.0,
                   )
               ]);
@@ -991,8 +1015,8 @@ class GroupService {
               for (final uid in order)
                 GroupMemberProgressData(
                   uid: uid,
-                  name: providedNames[uid] ?? resolvedNames[uid]?.name ?? uid,
-                  photoUrl: resolvedNames[uid]?.photoUrl,
+                  name: providedNames[uid] ?? resolvedInfos[uid]?.name ?? uid,
+                  photoUrl: providedPhotos[uid] ?? resolvedInfos[uid]?.photoUrl,
                   completion: ((counts[uid] ?? 0) / totalItems).clamp(0.0, 1.0),
                 )
             ]);
@@ -1046,6 +1070,7 @@ class GroupService {
 
       final order = <String>[];
       final providedNames = <String, String>{};
+      final providedPhotos = <String, String>{};
       final missingUids = <String>[];
 
       for (final doc in snap.docs) {
@@ -1060,16 +1085,20 @@ class GroupService {
         } else {
           missingUids.add(uid);
         }
+        final photoUrl = data['photoUrl'] as String?;
+        if (photoUrl != null && photoUrl.isNotEmpty) {
+          providedPhotos[uid] = photoUrl;
+        }
       }
 
-      final resolvedNames = await _fetchUserInfos(missingUids);
+      final resolvedInfos = await _fetchUserInfos(missingUids);
 
       return [
         for (final uid in order)
           GroupMemberProgressData(
             uid: uid,
-            name: providedNames[uid] ?? resolvedNames[uid]?.name ?? uid,
-            photoUrl: resolvedNames[uid]?.photoUrl,
+            name: providedNames[uid] ?? resolvedInfos[uid]?.name ?? uid,
+            photoUrl: providedPhotos[uid] ?? resolvedInfos[uid]?.photoUrl,
             completion: 0.0,
           )
       ];
@@ -1088,6 +1117,7 @@ class GroupService {
   }) async {
     final order = <String>[];
     final providedNames = <String, String>{};
+    final providedPhotos = <String, String>{};
     final missingUids = <String>[];
 
     for (final doc in membersSnap.docs) {
@@ -1102,6 +1132,10 @@ class GroupService {
         providedNames[uid] = name;
       } else {
         missingUids.add(uid);
+      }
+      final photoUrl = data['photoUrl'] as String?;
+      if (photoUrl != null && photoUrl.isNotEmpty) {
+        providedPhotos[uid] = photoUrl;
       }
     }
 
@@ -1131,7 +1165,7 @@ class GroupService {
       missingUids.add(includeUid);
     }
 
-    final resolvedNames = await _fetchUserInfos(missingUids);
+    final resolvedInfos = await _fetchUserInfos(missingUids);
 
     // Determine total schedule items (chapters) for the date.
     final dateId = _dateId(date);
@@ -1148,8 +1182,8 @@ class GroupService {
         for (final uid in order)
           GroupMemberProgressData(
             uid: uid,
-            name: providedNames[uid] ?? resolvedNames[uid]?.name ?? uid,
-            photoUrl: resolvedNames[uid]?.photoUrl,
+            name: providedNames[uid] ?? resolvedInfos[uid]?.name ?? uid,
+            photoUrl: providedPhotos[uid] ?? resolvedInfos[uid]?.photoUrl,
             completion: 0.0,
           )
       ];
@@ -1172,8 +1206,8 @@ class GroupService {
       for (final uid in order)
         GroupMemberProgressData(
           uid: uid,
-          name: providedNames[uid] ?? resolvedNames[uid]?.name ?? uid,
-          photoUrl: resolvedNames[uid]?.photoUrl,
+          name: providedNames[uid] ?? resolvedInfos[uid]?.name ?? uid,
+          photoUrl: providedPhotos[uid] ?? resolvedInfos[uid]?.photoUrl,
           completion: ((counts[uid] ?? 0) / totalItems).clamp(0.0, 1.0),
         )
     ];

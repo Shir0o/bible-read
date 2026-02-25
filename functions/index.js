@@ -831,29 +831,36 @@ exports.generateScheduleDays = onCall({ region: 'us-central1' }, async (req) => 
   });
 
   const sortedDates = Array.from(generatedDates).sort();
-  for (const dateKey of sortedDates) {
-    const scheduleRef = groupRef.collection('schedule').doc(dateKey);
-    const snap = await scheduleRef.get();
-    const entry = scheduleUpdates.get(dateKey);
-    const chapterArray = Array.from(entry?.chapters ?? []);
+  if (sortedDates.length > 0) {
+    const refs = sortedDates.map((dk) => groupRef.collection('schedule').doc(dk));
+    const snaps = await db.getAll(...refs);
+    const batch = db.batch();
 
-    if (!snap.exists) {
-      await scheduleRef.set({
-        date: entry
-          ? admin.firestore.Timestamp.fromDate(entry.date)
-          : admin.firestore.Timestamp.fromDate(new Date(dateKey)),
-        chapters: chapterArray,
-        _source: 'auto',
-      });
-    } else {
-      const existing = Array.isArray(snap.data()?.chapters) ? snap.data().chapters : [];
-      const merged = Array.from(new Set(existing.concat(chapterArray)));
-      const update = { chapters: merged };
-      if (!snap.data()?._source) {
-        update._source = 'auto';
+    for (let i = 0; i < sortedDates.length; i += 1) {
+      const dateKey = sortedDates[i];
+      const snap = snaps[i];
+      const entry = scheduleUpdates.get(dateKey);
+      const chapterArray = Array.from(entry?.chapters ?? []);
+
+      if (!snap.exists) {
+        batch.set(refs[i], {
+          date: entry
+            ? admin.firestore.Timestamp.fromDate(entry.date)
+            : admin.firestore.Timestamp.fromDate(new Date(dateKey)),
+          chapters: chapterArray,
+          _source: 'auto',
+        });
+      } else {
+        const existing = Array.isArray(snap.data()?.chapters) ? snap.data().chapters : [];
+        const merged = Array.from(new Set(existing.concat(chapterArray)));
+        const update = { chapters: merged };
+        if (!snap.data()?._source) {
+          update._source = 'auto';
+        }
+        batch.set(refs[i], update, { merge: true });
       }
-      await scheduleRef.set(update, { merge: true });
     }
+    await batch.commit();
   }
 
   for (const update of templateUpdates) {

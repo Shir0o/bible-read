@@ -314,80 +314,122 @@ class ReadingStatusService {
       String formatMonth(DateTime d) =>
           '${d.year}-${d.month.toString().padLeft(2, '0')}';
 
-      // Query recent reading documents to rebuild cached arrays.
-      final weekStatus = await _getReadStatusForRange(
-        user.uid,
-        7,
-        referenceDate: today,
-      );
-      final daysInMonth = DateTime(today.year, today.month + 1, 0).day;
-      final monthStatus = await _getReadStatusForRange(
-        user.uid,
-        daysInMonth,
-        referenceDate: today,
-      );
+      // 1. Fetch current summary baseline.
+      final summarySnap = await summaryDocRef.get();
+      final summaryExists = summarySnap.exists;
+      final summaryData = summarySnap.data() ?? {};
+      int oldTotalReadDays = (summaryData['totalReadDays'] as int?) ?? 0;
+      int oldLongestStreak = (summaryData['longestStreak'] as int?) ?? 0;
 
-      final pastWeekReadDates =
-          weekStatus.entries.where((e) => e.value).map((e) => e.key).toList();
-      if (kDebugMode) {
-        debugPrint('weekStatus=${weekStatus.entries.toList()}');
-        debugPrint('pastWeekReadDates=$pastWeekReadDates');
+      // 2. Fetch logs. If summary is missing, we must do a full scan once.
+      // Otherwise, we use a 90-day sliding window.
+      final ninetyDaysAgo = today.subtract(const Duration(days: 90));
+      final startId = formatDate(ninetyDaysAgo);
+      final endId = formatDate(today);
+
+      QuerySnapshot<Map<String, dynamic>> readingSnapshot;
+      if (!summaryExists) {
+        readingSnapshot = await userDocRef.collection('reading').get();
+      } else {
+        readingSnapshot = await userDocRef
+            .collection('reading')
+            .where(FieldPath.documentId, isGreaterThanOrEqualTo: startId)
+            .where(FieldPath.documentId, isLessThanOrEqualTo: endId)
+            .get();
       }
-      final pastMonthReadDates = monthStatus.entries
-          .where((e) {
-            if (!e.value) return false;
-            final parsed = DateTime.tryParse(e.key);
-            if (parsed == null) {
-              return false;
-            }
-            return parsed.year == today.year && parsed.month == today.month;
-          })
-          .map((e) => e.key)
-          .toList();
 
-      // Fetch all reading entries to recompute aggregate counters.
-      final readingSnapshot = await userDocRef.collection('reading').get();
       final readDateSet = <String>{};
       for (final readDoc in readingSnapshot.docs) {
-        final data = readDoc.data();
-        if (data['read'] == true) {
+        if (readDoc.data()['read'] == true) {
           readDateSet.add(readDoc.id);
         }
       }
-      if (kDebugMode) {
-        debugPrint('readDateSet=$readDateSet');
-      }
 
-      // Backfill from read_logs for recent history where user/reading docs are missing.
-      // This helps avoid showing a 1-day streak when users only posted to the feed.
-      const recentHistoryDays = 90;
-      final missingReadLogDates = <String>[];
-      for (int i = 0; i < recentHistoryDays; i++) {
-        final date = _shiftDate(today, -i);
-        final key = formatDate(date);
+      // 3. Backfill from read_logs for missing documents in the recent window.
+      // This is important for "feed only" reads.
+      final missingDateIds = <String>[];
+      const checkRange = 90;
+      for (int i = 0; i < checkRange; i++) {
+        final d = _shiftDate(today, -i);
+        final key = formatDate(d);
         if (!readDateSet.contains(key)) {
-          missingReadLogDates.add(key);
+          missingDateIds.add(key);
         }
       }
-      if (missingReadLogDates.isNotEmpty) {
-        final readLogsCollection = firestore.collection('read_logs');
-        for (final key in missingReadLogDates) {
+
+      if (missingDateIds.isNotEmpty) {
+        for (final id in missingDateIds) {
           try {
-            final entry = await readLogsCollection
-                .doc(key)
+            final entry = await firestore
+                .collection('read_logs')
+                .doc(id)
                 .collection('entries')
                 .doc(user.uid)
                 .get();
             if (entry.exists) {
-              readDateSet.add(key);
+              readDateSet.add(id);
             }
-          } catch (_) {
-            // Ignore failures; best-effort backfill.
+          } catch (e, st) {
+            // Best effort; log errors but don't fail summary update.
+            if (kDebugMode) debugPrint('Backfill check failed for $id: $e');
+            ErrorLogger.log(e, st);
           }
         }
       }
 
-      final totalReadDays = readDateSet.length;
+      // 4. Update counters.
+      if (!summaryExists) {
+        oldTotalReadDays = readDateSet.length;
+        // Re-calculate the original-style longest streak (no grace credits)
+        // only during the initial full scan to match existing expectations.
+        if (readDateSet.isNotEmpty) {
+          final sortedAll = readDateSet.map(DateTime.parse).toList()..sort();
+          int current = 1;
+          oldLongestStreak = 1;
+          for (int i = 1; i < sortedAll.length; i++) {
+            if (sortedAll[i].difference(sortedAll[i - 1]).inDays == 1) {
+              current += 1;
+            } else {
+              current = 1;
+            }
+            if (current > oldLongestStreak) {
+              oldLongestStreak = current;
+            }
+          }
+        }
+      } else {
+        final todayKey = formatDate(today);
+        if (readDateSet.contains(todayKey)) {
+          final pastMonth =
+              List<String>.from(summaryData['pastMonthReadDates'] ?? []);
+          if (!pastMonth.contains(todayKey)) {
+            oldTotalReadDays += 1;
+          }
+        }
+      }
+
+      // Re-build recent status maps for the UI.
+      final weekStatus = <String, bool>{};
+      for (int i = 0; i < 7; i++) {
+        final d = _shiftDate(today, -i);
+        final key = formatDate(d);
+        weekStatus[key] = readDateSet.contains(key);
+      }
+
+      final daysInMonth = DateTime(today.year, today.month + 1, 0).day;
+      final monthStatus = <String, bool>{};
+      for (int i = 0; i < daysInMonth; i++) {
+        final d = DateTime(today.year, today.month, i + 1);
+        final key = formatDate(d);
+        monthStatus[key] = readDateSet.contains(key);
+      }
+
+      final pastWeekReadDates =
+          weekStatus.entries.where((e) => e.value).map((e) => e.key).toList();
+      final pastMonthReadDates = monthStatus.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList();
 
       final sortedDates = readDateSet.map(DateTime.parse).toList()..sort();
 
@@ -418,30 +460,16 @@ class ReadingStatusService {
                 monthKey: currentMonthKey,
                 monthStart: DateTime(today.year, today.month, 1),
               );
-      final streak = summaryComputation.streak;
 
-      // Determine the longest streak across all recorded reads.
-      int longestStreak = 0;
-      if (readDateSet.isNotEmpty) {
-        int current = 1;
-        longestStreak = 1;
-        for (int i = 1; i < sortedDates.length; i++) {
-          if (sortedDates[i].difference(sortedDates[i - 1]).inDays == 1) {
-            current += 1;
-          } else {
-            current = 1;
-          }
-          if (current > longestStreak) {
-            longestStreak = current;
-          }
-        }
-      }
+      final streak = summaryComputation.streak;
+      final longestStreak =
+          streak > oldLongestStreak ? streak : oldLongestStreak;
 
       await summaryDocRef.set({
         'streak': streak,
         'pastWeekReadDates': pastWeekReadDates,
         'pastMonthReadDates': pastMonthReadDates,
-        'totalReadDays': totalReadDays,
+        'totalReadDays': oldTotalReadDays,
         'longestStreak': longestStreak,
         'graceCreditsMonth': currentMonthKey,
         'graceCreditsAvailable': currentMonthCredits.available(today),
@@ -450,7 +478,7 @@ class ReadingStatusService {
 
       return SummaryStats(
         streak: streak,
-        totalReadDays: totalReadDays,
+        totalReadDays: oldTotalReadDays,
         graceCreditsAvailable: currentMonthCredits.available(today),
         graceCreditsUsed: currentMonthCredits.used,
         graceCreditsMonth: currentMonthKey,
@@ -507,22 +535,34 @@ class ReadingStatusService {
     }
 
     // Fill gaps from read_logs where per-user reading docs are missing.
+    final missingDateIds = <String>[];
     for (int i = 0; i < daysBack; i++) {
       final date = _shiftDate(now, -i);
       final id = formatDate(date);
-      if (status[id] == true) continue;
-      try {
-        final entry = await firestore
-            .collection('read_logs')
-            .doc(id)
-            .collection('entries')
-            .doc(uid)
+      if (status[id] != true) {
+        missingDateIds.add(id);
+      }
+    }
+
+    if (missingDateIds.isNotEmpty) {
+      // Fetch up to 30 missing logs at a time using whereIn (limit of Firestore)
+      for (var i = 0; i < missingDateIds.length; i += 30) {
+        final batch = missingDateIds.sublist(
+          i,
+          i + 30 > missingDateIds.length ? missingDateIds.length : i + 30,
+        );
+        final logsSnapshot = await firestore
+            .collectionGroup('entries')
+            .where('uid', isEqualTo: uid)
+            .where('dateId', whereIn: batch)
             .get();
-        if (entry.exists) {
-          status[id] = true;
+
+        for (final doc in logsSnapshot.docs) {
+          final dateId = doc.data()['dateId'] as String?;
+          if (dateId != null) {
+            status[dateId] = true;
+          }
         }
-      } catch (_) {
-        // ignore
       }
     }
 
