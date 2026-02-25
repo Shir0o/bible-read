@@ -5,7 +5,7 @@ import 'package:bible_read/models/group.dart';
 import 'package:bible_read/models/group_member_progress.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import '../helpers/pump_app.dart';
+import '../helpers/pump_golden.dart';
 
 class FakeGroupService extends GroupService {
   FakeGroupService() : super(firestore: FakeFirebaseFirestore());
@@ -31,28 +31,23 @@ void main() {
       memberCount: 5,
     );
 
-    await tester.pumpApp(
-      Scaffold(
-        body: Center(
-          child: SizedBox(
-            width: 500,
-            child: GroupCard(
-              group: group,
-              groupService: FakeGroupService(),
-              onTap: () {},
-            ),
-          ),
+    await tester.pumpGolden(
+      SizedBox(
+        width: 500,
+        child: GroupCard(
+          group: group,
+          groupService: FakeGroupService(),
+          onTap: () {},
         ),
       ),
+      brightness: Brightness.light,
     );
 
     await tester.pumpAndSettle();
 
-    // Verify visual elements instead of golden file for now
-    expect(find.byType(GroupCard), findsOneWidget);
-    // await expectLater(
-    //   find.byType(GroupCard),
-    //   matchesGoldenFile('goldens/group_card.png'),
-    // );
+    await expectLater(
+      find.byType(GroupCard),
+      matchesGoldenFile('goldens/group_card.png'),
+    );
   });
 }
