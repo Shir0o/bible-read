@@ -66,6 +66,7 @@ class MainPage extends StatefulWidget {
   final VibrationService vibrationService;
   final ReadingStatusService? readingStatusService;
   final bool appCheckFailed;
+  final FirebaseFunctions? functions;
 
   // Expose onNavigate for testing overrides if needed, though usually not passed
   final bool Function(int)? onNavigate;
@@ -94,6 +95,7 @@ class MainPage extends StatefulWidget {
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
+    this.functions,
     this.onNavigate,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
@@ -152,7 +154,7 @@ class _MainPageState extends State<MainPage> {
         firestore: widget.firestore,
         auth: widget.auth,
         readingStatusService: _readingStatusService,
-        functions: FirebaseFunctions.instance,
+        functions: widget.functions ?? FirebaseFunctions.instance,
         googleSignInProvider: widget.googleSignInProvider,
       ),
       CommunityPage(
@@ -169,9 +171,8 @@ class _MainPageState extends State<MainPage> {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) return;
               await user.getIdToken(true);
-              final callable = FirebaseFunctions.instanceFor(
-                region: 'us-central1',
-              ).httpsCallable('sendLikeNotification');
+              final functions = widget.functions ?? FirebaseFunctions.instanceFor(region: 'us-central1');
+              final callable = functions.httpsCallable('sendLikeNotification');
               await callable.call({
                 'ownerUid': ownerUid,
                 'likerName': likerName,
@@ -182,9 +183,8 @@ class _MainPageState extends State<MainPage> {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) return;
               await user.getIdToken(true);
-              final callable = FirebaseFunctions.instanceFor(
-                region: 'us-central1',
-              ).httpsCallable('sendCommentNotification');
+              final functions = widget.functions ?? FirebaseFunctions.instanceFor(region: 'us-central1');
+              final callable = functions.httpsCallable('sendCommentNotification');
               await callable.call({
                 'ownerUid': ownerUid,
                 'commenterName': commenterName,
