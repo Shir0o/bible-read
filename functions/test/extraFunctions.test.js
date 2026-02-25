@@ -52,6 +52,7 @@ class FakeDoc {
     this.exists = true;
   }
 
+
   collection(name) {
     if (!this._collections.has(name)) {
       this._collections.set(name, new FakeCollection(name, this));
@@ -110,6 +111,9 @@ class FakeFirestore {
   constructor() {
     this.collections = new Map();
   }
+
+  async getAll(...refs) { return Promise.all(refs.map(ref => ref.get())); }
+  batch() { return { set: (ref, data, options) => ref.set(data, options), update: (ref, data) => ref.update(data), delete: (ref) => {}, commit: async () => {} }; }
 
   collection(name) {
     if (!this.collections.has(name)) {

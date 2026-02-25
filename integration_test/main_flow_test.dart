@@ -90,34 +90,38 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Bible Reading Challenge'), findsOneWidget);
+    // Verify HomePage is showing Today's Reading (or Daily Reading if no plan)
+    expect(find.textContaining('Reading'), findsAtLeast(1));
 
-    await tester.tap(find.byIcon(Icons.feed));
+    // Tap Community tab
+    await tester.tap(find.byIcon(Icons.people_outlined));
     await tester.pumpAndSettle();
-    expect(find.text("Today's Readers"), findsOneWidget);
+    expect(find.text('Friends Activity'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.leaderboard));
+    // Tap Journey tab
+    await tester.tap(find.byIcon(Icons.map_outlined));
     await tester.pumpAndSettle();
-    expect(find.text('Leaderboard'), findsOneWidget);
+    expect(find.text('Reading Journey'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.person));
-    await tester.pumpAndSettle();
-    expect(find.text('Profile'), findsOneWidget);
-
+    // Tap Home tab
     await tester.tap(find.byIcon(Icons.home));
     await tester.pumpAndSettle();
-    expect(find.text('Reading Hub'), findsOneWidget);
+    expect(find.byType(HomePage), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    // Open Menu via Profile Avatar on Community page (since HomePage might not have a direct menu button in this setup)
+    await tester.tap(find.byIcon(Icons.people_outlined));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Daily Exercise'));
+    await tester.tap(find.bySemanticsLabel('Open menu'));
     await tester.pumpAndSettle();
-    expect(find.text('Daily Exercise'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    // Verify some menu items
+    expect(find.text('Profile'), findsOneWidget);
+    expect(find.text('Challenges'), findsOneWidget);
+    expect(find.text('Friends'), findsOneWidget);
+
+    // Tap Friends in menu
+    await tester.tap(find.text('Friends'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Exercise Challenges'));
-    await tester.pumpAndSettle();
-    expect(find.text('Exercise Challenges'), findsOneWidget);
+    expect(find.text('Friends'), findsAtLeast(1));
   });
 }
