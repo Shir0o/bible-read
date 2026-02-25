@@ -5,6 +5,7 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/friends_page.dart';
 import 'package:google_sign_in_mocks/google_sign_in_mocks.dart';
+import 'package:mocktail/mocktail.dart';
 import '../helpers/pump_app.dart';
 import '../helpers/firebase_seeder.dart';
 import '../helpers/mocks.dart';
@@ -16,9 +17,13 @@ void main() {
     final auth = MockFirebaseAuth(signedIn: true);
     final firestore = FakeFirebaseFirestore();
     final messaging = MockFirebaseMessaging();
+    final functions = MockFirebaseFunctions();
     final vibration = StubVibrationService();
     final seeder = FirebaseSeeder(firestore);
     final currentUser = auth.currentUser!;
+
+    // Stub messaging
+    when(() => messaging.getToken()).thenAnswer((_) async => 'fake_token');
 
     // Seed current user
     await seeder.seedUser(uid: currentUser.uid, name: 'Alice');
@@ -31,16 +36,21 @@ void main() {
         auth: auth,
         firestore: firestore,
         messaging: messaging,
+        functions: functions,
+        sendLikeNotification: ({required ownerUid, required likerName}) async {},
+        sendCommentNotification: ({required ownerUid, required commenterName}) async {},
         vibrationService: vibration,
         googleSignInProvider: () => MockGoogleSignIn(),
       ),
     );
     await tester.pumpAndSettle();
 
-    // Open Menu (assuming standard hamburger icon)
-    // If ResponsiveScaffold uses a specific icon or key, we might need to adjust.
-    // Usually Icons.menu.
-    await tester.tap(find.byIcon(Icons.menu));
+    // Navigate to Community (where the menu is accessible)
+    await tester.tap(find.text('Community'));
+    await tester.pumpAndSettle();
+
+    // Tap Profile Avatar to open menu
+    await tester.tap(find.bySemanticsLabel('Open menu'));
     await tester.pumpAndSettle();
 
     // Tap "Friends" in menu
@@ -56,7 +66,7 @@ void main() {
     // Common pattern: FAB with person_add or AppBar action.
     final addBtn = find.byIcon(Icons.person_add);
     if (addBtn.evaluate().isNotEmpty) {
-      await tester.tap(addBtn);
+      await tester.tap(addBtn.first);
     } else {
       // Maybe text "Add Friend"?
        await tester.tap(find.text('Add Friend'));
@@ -71,13 +81,18 @@ void main() {
     await tester.enterText(find.byType(TextField), 'bob@example.com');
     await tester.pump();
 
-    // Tap Send (Button text might be "Send Request" or "Add")
+    // Tap Send (Button text might be "Send", "Send Request" or "Add")
     // Use generic search if unsure
-    final sendBtn = find.text('Send Request');
+    final sendBtn = find.text('Send');
     if (sendBtn.evaluate().isNotEmpty) {
         await tester.tap(sendBtn);
     } else {
-        await tester.tap(find.text('Add'));
+        final sendRequestBtn = find.text('Send Request');
+        if (sendRequestBtn.evaluate().isNotEmpty) {
+            await tester.tap(sendRequestBtn);
+        } else {
+            await tester.tap(find.text('Add'));
+        }
     }
     await tester.pumpAndSettle();
 
@@ -85,9 +100,20 @@ void main() {
     // "Friend request sent!" or similar.
     expect(find.textContaining('sent'), findsOneWidget);
 
+    // Wait for success animation to clear (2 seconds in success_animation.dart)
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
     // Verify Firestore
-    final requests = await firestore.collection('users').doc('bob_uid').collection('friend_requests').get();
+    final requests = await firestore
+        .collection('users')
+        .doc('bob_uid')
+        .collection('friendRequestsReceived')
+        .get();
     expect(requests.docs.length, 1);
-    expect(requests.docs.first.data()['fromUid'], currentUser.uid);
+    expect(requests.docs.first.data()['fromUid'], isNull); // It uses docId as fromUid now
+    // Actually, sendFriendRequest uses fromUid as docId in receivedRequests.
+    // Let's check receivedRequests docId.
+    expect(requests.docs.first.id, currentUser.uid);
   });
 }

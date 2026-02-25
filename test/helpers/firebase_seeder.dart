@@ -1,5 +1,6 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:bible_read/models/group_schedule.dart';
 
 class FirebaseSeeder {
   final FakeFirebaseFirestore firestore;
@@ -80,9 +81,24 @@ class FirebaseSeeder {
     // Seed chapters
     for (int i = 1; i <= 100; i++) {
         await firestore.collection('reading_plans').doc(planId).collection('items').doc(i.toString()).set({
-            'ref': 'Gen ',
-            'desc': 'Description ',
+            'ref': 'Gen $i',
+            'desc': 'Description $i',
         });
+    }
+  }
+
+  Future<void> seedGroupSchedule({
+    required String groupId,
+    required List<GroupSchedule> schedule,
+  }) async {
+    for (final s in schedule) {
+      final dateKey = '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
+      await firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('schedule')
+          .doc(dateKey)
+          .set(s.toFirestore());
     }
   }
 }

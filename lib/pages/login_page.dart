@@ -537,6 +537,8 @@ class _LoginPageState extends State<LoginPage> {
                                               SignupPage(
                                                 auth: widget.auth,
                                                 firestore: widget.firestore,
+                                                vibrationService:
+                                                    widget.vibrationService,
                                                 googleSignInProvider:
                                                     widget.googleSignInProvider,
                                                 mainPageBuilder:

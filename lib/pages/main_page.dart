@@ -346,6 +346,25 @@ class _MainPageState extends State<MainPage> {
         }
 
         final user = snapshot.data;
+
+        Widget buildMainPage(BuildContext context) {
+          return MainPage(
+            auth: widget.auth,
+            firestore: widget.firestore,
+            messaging: widget.messaging,
+            functions: widget.functions,
+            vibrationService: widget.vibrationService,
+            googleSignInProvider: widget.googleSignInProvider,
+            readingStatusService: widget.readingStatusService,
+            leaderboardPageBuilder: widget.leaderboardPageBuilder,
+            readLogPageBuilder: widget.readLogPageBuilder,
+            sendLikeNotification: widget.sendLikeNotification,
+            sendCommentNotification: widget.sendCommentNotification,
+            appCheckFailed: widget.appCheckFailed,
+            onNavigate: widget.onNavigate,
+          );
+        }
+
         if (user == null) {
           if (_showAuthSelection) {
             return PopScope(
@@ -361,6 +380,7 @@ class _MainPageState extends State<MainPage> {
                 firestore: widget.firestore,
                 googleSignInProvider: widget.googleSignInProvider,
                 vibrationService: widget.vibrationService,
+                mainPageBuilder: buildMainPage,
               ),
             );
           }
@@ -376,7 +396,10 @@ class _MainPageState extends State<MainPage> {
                 animatedPageRoute(
                   LoginPage(
                     auth: widget.auth,
+                    firestore: widget.firestore,
                     googleSignInProvider: widget.googleSignInProvider,
+                    vibrationService: widget.vibrationService,
+                    mainPageBuilder: buildMainPage,
                   ),
                 ),
               );
