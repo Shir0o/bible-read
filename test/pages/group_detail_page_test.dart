@@ -27,6 +27,7 @@ class RecordingGroupService extends GroupService {
     required String groupId,
     required String uid,
     required String name,
+    String? photoUrl,
   }) async {
     joinedGroupId = groupId;
     joinedUid = uid;
@@ -37,7 +38,8 @@ class RecordingGroupService extends GroupService {
         message: 'Failed to join group',
       );
     }
-    await super.joinGroup(groupId: groupId, uid: uid, name: name);
+    await super.joinGroup(
+        groupId: groupId, uid: uid, name: name, photoUrl: photoUrl);
   }
 }
 
