@@ -12,7 +12,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginPage extends StatefulWidget {
@@ -192,6 +191,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       backgroundColor: AppTheme.m3DarkSurface,
       body: Stack(
@@ -269,7 +270,7 @@ class _LoginPageState extends State<LoginPage> {
                           Text(
                             'Welcome back',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
+                            style: textTheme.headlineMedium?.copyWith(
                               fontSize: 30, // 3xl
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -285,7 +286,7 @@ class _LoginPageState extends State<LoginPage> {
                             child: Text(
                               'Join your community in daily Scripture reading',
                               textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
+                              style: textTheme.bodyMedium?.copyWith(
                                 fontSize: 16, // text-base
                                 color: AppTheme.m3SurfaceDim
                                     .withValues(alpha: 0.7),
@@ -300,6 +301,7 @@ class _LoginPageState extends State<LoginPage> {
                               children: [
                                 // Email or Username
                                 _buildStyledInput(
+                                  context: context,
                                   controller: _emailController,
                                   label: 'Email or Username',
                                   key: const Key('loginEmailField'),
@@ -312,6 +314,7 @@ class _LoginPageState extends State<LoginPage> {
 
                                 // Password
                                 _buildStyledInput(
+                                  context: context,
                                   controller: _passwordController,
                                   label: 'Password',
                                   key: const Key('loginPasswordField'),
@@ -369,7 +372,7 @@ class _LoginPageState extends State<LoginPage> {
                                         padding: const EdgeInsets.all(8.0),
                                         child: Text(
                                           'Forgot Password?',
-                                          style: GoogleFonts.inter(
+                                          style: textTheme.bodyMedium?.copyWith(
                                             fontSize: 14, // text-sm
                                             fontWeight: FontWeight
                                                 .w600, // font-semibold
@@ -410,7 +413,7 @@ class _LoginPageState extends State<LoginPage> {
                                           color: AppTheme.m3OnPrimary))
                                   : Text(
                                       'Login',
-                                      style: GoogleFonts.inter(
+                                      style: textTheme.labelLarge?.copyWith(
                                         fontSize: 16, // text-base
                                         fontWeight:
                                             FontWeight.bold, // font-bold
@@ -434,7 +437,7 @@ class _LoginPageState extends State<LoginPage> {
                                       horizontal: 16),
                                   child: Text(
                                     'OR',
-                                    style: GoogleFonts.inter(
+                                    style: textTheme.labelSmall?.copyWith(
                                       fontSize: 12, // text-xs
                                       fontWeight: FontWeight.bold, // font-bold
                                       color: AppTheme.m3SurfaceDim
@@ -487,12 +490,13 @@ class _LoginPageState extends State<LoginPage> {
                                         const SizedBox(width: 12),
                                         Text(
                                           'Continue with Google',
-                                          style: GoogleFonts.inter(
+                                          style: textTheme.labelLarge?.copyWith(
                                             fontSize: 16, // text-base
                                             fontWeight: FontWeight
                                                 .w600, // font-semibold
                                             letterSpacing:
                                                 -0.025, // tracking-tight
+                                            color: const Color(0xFF1F1F1F),
                                           ),
                                         ),
                                       ],
@@ -511,7 +515,7 @@ class _LoginPageState extends State<LoginPage> {
                               children: [
                                 Text(
                                   "Don't have an account? ",
-                                  style: GoogleFonts.inter(
+                                  style: textTheme.bodyMedium?.copyWith(
                                     fontSize: 14, // text-sm
                                     fontWeight: FontWeight.w500, // font-medium
                                     color: AppTheme.m3SurfaceDim
@@ -551,7 +555,7 @@ class _LoginPageState extends State<LoginPage> {
                                           padding: const EdgeInsets.all(4.0),
                                           child: Text(
                                             'Sign up',
-                                            style: GoogleFonts.inter(
+                                            style: textTheme.bodyMedium?.copyWith(
                                               fontSize: 14,
                                               fontWeight:
                                                   FontWeight.bold, // font-bold
@@ -580,6 +584,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildStyledInput({
+    required BuildContext context,
     required TextEditingController controller,
     required String label,
     Key? key,
@@ -591,11 +596,7 @@ class _LoginPageState extends State<LoginPage> {
     Widget? suffixIcon,
     ValueChanged<String>? onSubmitted,
   }) {
-    // Replicating the HTML style:
-    // relative w-full
-    // absolute inset-0 bg-white/5 rounded-t-xl pointer-events-none border-b border-white/20
-    // input peer block w-full rounded-t-xl border-b-2 border-transparent bg-transparent px-4 pt-6 pb-2 ...
-    // label ...
+    final textTheme = Theme.of(context).textTheme;
 
     return Stack(
       children: [
@@ -623,14 +624,14 @@ class _LoginPageState extends State<LoginPage> {
           textInputAction: textInputAction,
           autofocus: autofocus,
           onFieldSubmitted: onSubmitted,
-          style: GoogleFonts.inter(color: Colors.white),
+          style: textTheme.bodyMedium?.copyWith(color: Colors.white),
           decoration: InputDecoration(
             labelText: label,
-            labelStyle: GoogleFonts.inter(
+            labelStyle: textTheme.bodyMedium?.copyWith(
               color: AppTheme.m3SurfaceDim.withValues(alpha: 0.6),
               fontWeight: FontWeight.w500,
             ),
-            floatingLabelStyle: GoogleFonts.inter(
+            floatingLabelStyle: textTheme.bodyMedium?.copyWith(
               color: AppTheme.m3Primary,
               fontWeight: FontWeight.w500,
             ),
