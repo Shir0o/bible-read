@@ -71,3 +71,7 @@
 ## 2026-03-06 - Misleading Interactivity & Tooltips
 **Learning:** List items that look tappable (ripple effect) but do nothing create confusion. Also, FABs must have tooltips for accessibility.
 **Action:** Use `CommonStyles.buildCard` (without InkWell) for non-interactive items. Ensure every `FloatingActionButton` has a `tooltip`.
+
+## 2026-03-07 - Golden Tests for Widget Variants
+**Learning:** Golden tests are essential for catching visual regressions across themes (Light/Dark) and text scales.
+**Action:** Use a helper like `pumpGolden` to standardize test setup (Surface size, MediaQuery, Theme). Always test at least Light, Dark, and a larger text scale (e.g., 1.5x) for complex widgets.
