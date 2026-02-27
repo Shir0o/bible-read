@@ -7,6 +7,7 @@ import 'package:bible_read/services/google_sign_in_factory.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/theme/app_theme.dart';
 import 'package:bible_read/widgets/animated_page_route.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -199,9 +200,16 @@ class _LoginPageState extends State<LoginPage> {
         children: [
           // Background Image
           Positioned.fill(
-            child: Image.network(
-              'https://lh3.googleusercontent.com/aida-public/AB6AXuCfzrtAkMN22RwB2ZiqvZ7-a-u3c-1Q3SYe1V6xrgX8oGAGl0fcdKTFGezJhbpHXu8o1n3ePffi_ZF79ajNqZfUsXddI-13tqUsvWaaiNgLKefDYXK0KgRmpDPKA_meuN2OR1SNZqMAEjz6CXvzG7W7A6V3Do9bc_HOxoFH-5RLqbVZek6jTgqM-ERrpHdie1ASqWaBbJxXCKiQDVcL0TkaFmAp07o9oaHvgLprritLLT8kmwNubpE4Xl6s2ETlB0C7b6HWAgBESSe6',
+            child: CachedNetworkImage(
+              imageUrl:
+                  'https://lh3.googleusercontent.com/aida-public/AB6AXuCfzrtAkMN22RwB2ZiqvZ7-a-u3c-1Q3SYe1V6xrgX8oGAGl0fcdKTFGezJhbpHXu8o1n3ePffi_ZF79ajNqZfUsXddI-13tqUsvWaaiNgLKefDYXK0KgRmpDPKA_meuN2OR1SNZqMAEjz6CXvzG7W7A6V3Do9bc_HOxoFH-5RLqbVZek6jTgqM-ERrpHdie1ASqWaBbJxXCKiQDVcL0TkaFmAp07o9oaHvgLprritLLT8kmwNubpE4Xl6s2ETlB0C7b6HWAgBESSe6',
               fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                color: const Color(0xFF141218), // m3-dark-surface
+              ),
+              errorWidget: (context, url, error) => Container(
+                color: const Color(0xFF141218), // Fallback color
+              ),
             ),
           ),
           // Gradient 1 (Dark Overlay)
