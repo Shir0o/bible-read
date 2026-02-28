@@ -36,8 +36,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
 
     final user = widget.auth.currentUser;
     if (user != null) {
-      _activePlansStream =
-          widget.readingPlanService.getActivePlans(user.uid);
+      _activePlansStream = widget.readingPlanService.getActivePlans(user.uid);
     } else {
       _activePlansStream = Stream.value([]);
     }
@@ -115,7 +114,6 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
 
   Widget _buildLoadingSkeleton(BuildContext context) {
     return Container(
-      height: 180,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHigh,
