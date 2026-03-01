@@ -350,7 +350,7 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
     if (isUnlocked) {
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => AlertDialog.adaptive(
           title: Text('Mark $book as unread?'),
           content: Text('This will remove the achievement for reading $book.'),
           actions: [
@@ -374,7 +374,7 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AlertDialog.adaptive(
         title: Text('Complete $book?'),
         content: Text('Mark $book as read?'),
         actions: [
