@@ -21,14 +21,14 @@ async function migrateUser(uid) {
   const userRef = db.collection('users').doc(uid);
 
   const dayDocs = await userRef.collection('reading').listDocuments();
-  for (const oldRef of dayDocs) {
+  await Promise.all(dayDocs.map(async (oldRef) => {
     const oldKey = oldRef.id;
     const newKey = padKey(oldKey);
-    if (oldKey === newKey) continue;
+    if (oldKey === newKey) return;
     const data = (await oldRef.get()).data();
     await userRef.collection('reading').doc(newKey).set(data || {});
     await oldRef.delete();
-  }
+  }));
 
   const summaryRef = userRef.collection('summary').doc('data');
   const snap = await summaryRef.get();
@@ -44,57 +44,57 @@ async function migrateUser(uid) {
 
 async function migrateReadLogs() {
   const logDocs = await db.collection('read_logs').listDocuments();
-  for (const oldDoc of logDocs) {
+  await Promise.all(logDocs.map(async (oldDoc) => {
     const oldKey = oldDoc.id;
     const newKey = padKey(oldKey);
-    if (oldKey === newKey) continue;
+    if (oldKey === newKey) return;
 
     const data = (await oldDoc.get()).data();
     const newDoc = db.collection('read_logs').doc(newKey);
     if (data) await newDoc.set(data);
 
     const entries = await oldDoc.collection('entries').get();
-    for (const entry of entries.docs) {
+    await Promise.all(entries.docs.map(async (entry) => {
       const entryRef = newDoc.collection('entries').doc(entry.id);
       await entryRef.set(entry.data());
 
-      for (const sub of ['likes', 'comments']) {
+      await Promise.all(['likes', 'comments'].map(async (sub) => {
         const subSnap = await entry.ref.collection(sub).get();
-        for (const s of subSnap.docs) {
-          await entryRef.collection(sub).doc(s.id).set(s.data());
-        }
-      }
-    }
+        await Promise.all(subSnap.docs.map(s =>
+          entryRef.collection(sub).doc(s.id).set(s.data())
+        ));
+      }));
+    }));
     await deleteDocDeep(oldDoc);
-  }
+  }));
 
   const rewards = await db.collection('daily_rewards').listDocuments();
-  for (const oldRef of rewards) {
+  await Promise.all(rewards.map(async (oldRef) => {
     const oldKey = oldRef.id;
     const newKey = padKey(oldKey);
-    if (oldKey === newKey) continue;
+    if (oldKey === newKey) return;
     const data = (await oldRef.get()).data();
     if (data) await db.collection('daily_rewards').doc(newKey).set(data);
     await deleteDocDeep(oldRef);
-  }
+  }));
 }
 
 // Defensive cleanup to remove any lingering non–zero-padded docs
 async function cleanupNonPaddedDates(collectionName) {
   const docs = await db.collection(collectionName).listDocuments();
   const padded = /^\d{4}-\d{2}-\d{2}$/;
-  for (const docRef of docs) {
+  await Promise.all(docs.map(async (docRef) => {
     if (!padded.test(docRef.id)) {
       await deleteDocDeep(docRef);
     }
-  }
+  }));
 }
 
 async function main() {
   admin.initializeApp();
   db = admin.firestore();
   const users = await db.collection('users').listDocuments();
-  for (const user of users) await migrateUser(user.id);
+  await Promise.all(users.map(user => migrateUser(user.id)));
   await migrateReadLogs();
   await cleanupNonPaddedDates('read_logs');
   await cleanupNonPaddedDates('daily_rewards');
