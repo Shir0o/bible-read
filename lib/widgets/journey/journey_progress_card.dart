@@ -1,12 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/reading_plan.dart';
 import '../../models/reading_plan_progress.dart';
-import '../../pages/plan_detail_page.dart';
 import '../../services/reading_plan_service.dart';
+import '../../pages/plan_detail_page.dart';
 import '../skeleton.dart';
+import '../views/reading_plans_view.dart';
 
 class JourneyProgressCard extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -25,6 +26,12 @@ class JourneyProgressCard extends StatefulWidget {
   State<JourneyProgressCard> createState() => _JourneyProgressCardState();
 }
 
+class _ActivePlanData {
+  final ReadingPlan? plan;
+  final UserPlanProgress? progress;
+  _ActivePlanData({this.plan, this.progress});
+}
+
 class _JourneyProgressCardState extends State<JourneyProgressCard> {
   late Future<List<ReadingPlan>> _allPlansFuture;
   late Stream<List<UserPlanProgress>> _activePlansStream;
@@ -33,7 +40,6 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
   void initState() {
     super.initState();
     _allPlansFuture = widget.readingPlanService.getAvailablePlans();
-
     final user = widget.auth.currentUser;
     if (user != null) {
       _activePlansStream = widget.readingPlanService.getActivePlans(user.uid);
@@ -42,72 +48,119 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
     }
   }
 
+  _ActivePlanData _computeActivePlan(
+      List<ReadingPlan> plans, List<UserPlanProgress> userProgressList) {
+    ReadingPlan? activePlan;
+    UserPlanProgress? activeProgress;
+
+    ReadingPlan? fallbackPlan;
+    UserPlanProgress? fallbackProgress;
+
+    for (final prog in userProgressList) {
+      try {
+        final p = plans.firstWhere((pl) => pl.id == prog.planId);
+        if (prog.completedDays.length < p.durationDays) {
+          activePlan = p;
+          activeProgress = prog;
+          break;
+        } else if (fallbackPlan == null) {
+          fallbackPlan = p;
+          fallbackProgress = prog;
+        }
+      } catch (_) {
+        // Plan might have been deleted or not loaded
+      }
+    }
+
+    if (activePlan == null) {
+      activePlan = fallbackPlan;
+      activeProgress = fallbackProgress;
+    }
+
+    return _ActivePlanData(plan: activePlan, progress: activeProgress);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: FutureBuilder<List<ReadingPlan>>(
-        future: _allPlansFuture,
-        builder: (context, plansSnapshot) {
-          return StreamBuilder<List<UserPlanProgress>>(
-            stream: _activePlansStream,
-            builder: (context, progressSnapshot) {
-              // 1. Loading
-              if (plansSnapshot.connectionState == ConnectionState.waiting ||
-                  progressSnapshot.connectionState == ConnectionState.waiting) {
-                return _buildLoadingSkeleton(context);
-              }
-
-              // 2. Data Check
-              final plans = plansSnapshot.data ?? [];
-              final userProgressList = progressSnapshot.data ?? [];
-
-              // 3. Find Active Plan
-              ReadingPlan? activePlan;
-              UserPlanProgress? activeProgress;
-
-              // Helper to track a completed plan as fallback
-              ReadingPlan? fallbackPlan;
-              UserPlanProgress? fallbackProgress;
-
-              for (final prog in userProgressList) {
-                try {
-                  final p = plans.firstWhere((pl) => pl.id == prog.planId);
-                  if (prog.completedDays.length < p.durationDays) {
-                    activePlan = p;
-                    activeProgress = prog;
-                    break;
-                  } else if (fallbackPlan == null) {
-                    fallbackPlan = p;
-                    fallbackProgress = prog;
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'My Personal Journey',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => Scaffold(
+                        appBar: AppBar(title: const Text('Reading Plans')),
+                        body: ReadingPlansView(
+                          firestore: widget.firestore,
+                          auth: widget.auth,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: Text(
+                  'Details',
+                  style: TextStyle(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          FutureBuilder<List<ReadingPlan>>(
+            future: _allPlansFuture,
+            builder: (context, plansSnapshot) {
+              return StreamBuilder<List<UserPlanProgress>>(
+                stream: _activePlansStream,
+                builder: (context, progressSnapshot) {
+                  // 1. Loading
+                  if (plansSnapshot.connectionState == ConnectionState.waiting ||
+                      progressSnapshot.connectionState == ConnectionState.waiting) {
+                    return _buildLoadingSkeleton(context);
                   }
-                } catch (_) {
-                  // Plan might have been deleted or not loaded
-                }
-              }
 
-              if (activePlan == null) {
-                activePlan = fallbackPlan;
-                activeProgress = fallbackProgress;
-              }
+                  // 2. Data Check
+                  final plans = plansSnapshot.data ?? [];
+                  final userProgressList = progressSnapshot.data ?? [];
 
-              // 4. No Active Plan (and no completed plan to show)
-              if (activePlan == null || activeProgress == null) {
-                return _buildNoActivePlanCard(context, colorScheme);
-              }
+                  // 3. Compute Active Plan (Extracted logic)
+                  final activeData = _computeActivePlan(plans, userProgressList);
+                  final activePlan = activeData.plan;
+                  final activeProgress = activeData.progress;
 
-              // 5. Active Plan Card
-              return _buildActivePlanCard(
-                context,
-                colorScheme,
-                activePlan,
-                activeProgress,
+                  // 4. No Active Plan (and no completed plan to show)
+                  if (activePlan == null || activeProgress == null) {
+                    return _buildNoActivePlanCard(context, colorScheme);
+                  }
+
+                  // 5. Active Plan Card
+                  return _buildActivePlanCard(
+                    context,
+                    colorScheme,
+                    activePlan,
+                    activeProgress,
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -120,8 +173,10 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Skeleton(width: 80, height: 100, radius: 16),
               const SizedBox(width: 16),
@@ -129,7 +184,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Skeleton(width: 150, height: 20),
+                    const Skeleton(width: double.infinity, height: 20),
                     const SizedBox(height: 8),
                     const Skeleton(width: 100, height: 12),
                     const SizedBox(height: 16),
