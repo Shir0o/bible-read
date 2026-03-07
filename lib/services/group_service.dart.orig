@@ -729,7 +729,6 @@ class GroupService {
         }
 
         final futures = <Future<QuerySnapshot<Map<String, dynamic>>>>[];
-        // ⚡ Bolt: Fetch missing users in chunks of 30 (Firestore whereIn limit) to reduce N+1 queries by 3x.
         for (var i = 0; i < missingUids.length; i += 30) {
           final batch = missingUids.sublist(
             i,
@@ -1221,7 +1220,6 @@ class GroupService {
 
     final uniqueUids = uids.toSet().toList();
     final futures = <Future<QuerySnapshot<Map<String, dynamic>>>>[];
-    // ⚡ Bolt: Fetch missing users in chunks of 30 (Firestore whereIn limit) to reduce N+1 queries by 3x.
     for (var i = 0; i < uniqueUids.length; i += 30) {
       final end = i + 30 > uniqueUids.length ? uniqueUids.length : i + 30;
       final batch = uniqueUids.sublist(i, end);
