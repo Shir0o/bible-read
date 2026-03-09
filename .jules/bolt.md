@@ -5,3 +5,8 @@
 ## 2026-03-09 - Parallelizing sequential async recalculations
 **Learning:** Sequential `await` in for-loops across multiple Firestore collections can create significant latency. Parallelizing these operations using `Future.wait` on an iterable map is a straightforward yet highly effective architectural improvement. While `FakeFirebaseFirestore` might not demonstrate a timing speedup due to its synchronous execution model, the design pattern is essential for real-world Firestore efficiency.
 **Action:** Always check for sequential `await` calls within loops that perform independent asynchronous operations and refactor them to use `Future.wait` when possible.
+
+## 2024-05-20 - Sequential document fetches
+**Learning:** Sequential `await` calls inside a loop for fetching individual Firestore documents create a severe N+1 query bottleneck.
+**Action:** When a list of specific document paths is known (and `whereIn` cannot be easily used), use chunked `Future.wait` to fetch them concurrently, ensuring errors are caught within the individual futures so the entire batch doesn't fail.
+

@@ -358,21 +358,39 @@ class ReadingStatusService {
       }
 
       if (missingDateIds.isNotEmpty) {
-        for (final id in missingDateIds) {
-          try {
-            final entry = await firestore
-                .collection('read_logs')
-                .doc(id)
-                .collection('entries')
-                .doc(user.uid)
-                .get();
-            if (entry.exists) {
+        // ⚡ Bolt: Fetch missing logs in parallel (chunked to 30 to avoid overwhelming the network and match whereIn limits).
+        const chunkSize = 30;
+        for (var i = 0; i < missingDateIds.length; i += chunkSize) {
+          final chunk = missingDateIds.sublist(
+            i,
+            i + chunkSize > missingDateIds.length
+                ? missingDateIds.length
+                : i + chunkSize,
+          );
+          final futures = chunk.map((id) async {
+            try {
+              final entry = await firestore
+                  .collection('read_logs')
+                  .doc(id)
+                  .collection('entries')
+                  .doc(user.uid)
+                  .get();
+              if (entry.exists) {
+                return id;
+              }
+            } catch (e, st) {
+              // Best effort; log errors but don't fail summary update.
+              if (kDebugMode) debugPrint('Backfill check failed for $id: $e');
+              ErrorLogger.log(e, st);
+            }
+            return null;
+          });
+
+          final results = await Future.wait(futures);
+          for (final id in results) {
+            if (id != null) {
               readDateSet.add(id);
             }
-          } catch (e, st) {
-            // Best effort; log errors but don't fail summary update.
-            if (kDebugMode) debugPrint('Backfill check failed for $id: $e');
-            ErrorLogger.log(e, st);
           }
         }
       }
@@ -426,10 +444,8 @@ class ReadingStatusService {
 
       final pastWeekReadDates =
           weekStatus.entries.where((e) => e.value).map((e) => e.key).toList();
-      final pastMonthReadDates = monthStatus.entries
-          .where((e) => e.value)
-          .map((e) => e.key)
-          .toList();
+      final pastMonthReadDates =
+          monthStatus.entries.where((e) => e.value).map((e) => e.key).toList();
 
       final sortedDates = readDateSet.map(DateTime.parse).toList()..sort();
 
