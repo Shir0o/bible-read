@@ -1522,9 +1522,11 @@ class GroupService {
         groups[g.id] = g;
       }
 
-      for (final g in groups.values) {
-        await recalcProgressForUserInGroup(groupId: g.id, uid: uid);
-      }
+      await Future.wait(
+        groups.values.map(
+          (g) => recalcProgressForUserInGroup(groupId: g.id, uid: uid),
+        ),
+      );
     } catch (e, st) {
       await _safeLog(e, st);
     }
