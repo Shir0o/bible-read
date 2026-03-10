@@ -493,31 +493,38 @@ class GroupService {
       // Cleanup any progress entries for this date and update summaries.
       final dateRef = groupRef.collection('progress').doc(docId);
       final entries = await dateRef.collection('entries').get();
-      for (final entry in entries.docs) {
-        final uid = entry.id;
-        final cnt = (entry.data()['count'] as num?)?.toInt() ?? 0;
-        try {
-          if (cnt > 0) {
-            // Decrement cached total for this member.
-            await groupRef
-                .collection('progressSummary')
-                .doc('data')
-                .collection('entries')
-                .doc(uid)
-                .set({'completed': FieldValue.increment(-cnt)},
-                    SetOptions(merge: true));
+
+      // ⚡ Bolt: Process entries concurrently in small chunks to prevent N+1 sequential bottlenecks while respecting connection limits.
+      const chunkSize = 30;
+      for (var i = 0; i < entries.docs.length; i += chunkSize) {
+        final chunk = entries.docs.sublist(
+            i,
+            i + chunkSize > entries.docs.length
+                ? entries.docs.length
+                : i + chunkSize);
+
+        await Future.wait(chunk.map((entry) async {
+          try {
+            final uid = entry.id;
+            final cnt = (entry.data()['count'] as num?)?.toInt() ?? 0;
+            if (cnt > 0) {
+              // Decrement cached total for this member.
+              await groupRef
+                  .collection('progressSummary')
+                  .doc('data')
+                  .collection('entries')
+                  .doc(uid)
+                  .set({'completed': FieldValue.increment(-cnt)},
+                      SetOptions(merge: true));
+            }
+            // Collect items and entry for individual safe deletion
+            final items = await entry.reference.collection('items').get();
+            await Future.wait(items.docs.map((d) => d.reference.delete().catchError((_) {})));
+            await entry.reference.delete();
+          } catch (e, st) {
+            await _safeLog(e, st);
           }
-          // Delete items and entry
-          final items = await entry.reference.collection('items').get();
-          for (final it in items.docs) {
-            try {
-              await it.reference.delete();
-            } catch (_) {}
-          }
-          await entry.reference.delete();
-        } catch (e, st) {
-          await _safeLog(e, st);
-        }
+        }));
       }
       // Delete the progress date doc itself
       try {
