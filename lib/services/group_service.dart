@@ -423,7 +423,9 @@ class GroupService {
           .collection(GroupCollections.members)
           .get();
 
-      for (final doc in members.docs) {
+      // ⚡ Bolt: Use Future.wait to parallelize sending schedule update
+      // notifications instead of waiting for each one sequentially.
+      await Future.wait(members.docs.map((doc) async {
         final uid = doc.id;
         try {
           final notificationId = firestore
@@ -443,7 +445,7 @@ class GroupService {
           await _safeLog(e, st);
           // continue notifying other members
         }
-      }
+      }));
     } catch (e, st) {
       await _safeLog(e, st);
       // Do not rethrow: schedule has been updated successfully.
@@ -493,7 +495,10 @@ class GroupService {
       // Cleanup any progress entries for this date and update summaries.
       final dateRef = groupRef.collection('progress').doc(docId);
       final entries = await dateRef.collection('entries').get();
-      for (final entry in entries.docs) {
+
+      // ⚡ Bolt: Use Future.wait to parallelize deleting progress entries
+      // instead of deleting them sequentially.
+      await Future.wait(entries.docs.map((entry) async {
         final uid = entry.id;
         final cnt = (entry.data()['count'] as num?)?.toInt() ?? 0;
         try {
@@ -509,16 +514,16 @@ class GroupService {
           }
           // Delete items and entry
           final items = await entry.reference.collection('items').get();
-          for (final it in items.docs) {
+          await Future.wait(items.docs.map((it) async {
             try {
               await it.reference.delete();
             } catch (_) {}
-          }
+          }));
           await entry.reference.delete();
         } catch (e, st) {
           await _safeLog(e, st);
         }
-      }
+      }));
       // Delete the progress date doc itself
       try {
         await dateRef.delete();

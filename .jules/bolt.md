@@ -10,3 +10,7 @@
 **Learning:** Sequential `await` calls inside a loop for fetching individual Firestore documents create a severe N+1 query bottleneck.
 **Action:** When a list of specific document paths is known (and `whereIn` cannot be easily used), use chunked `Future.wait` to fetch them concurrently, ensuring errors are caught within the individual futures so the entire batch doesn't fail.
 
+
+## 2024-05-21 - Parallelizing group member notifications
+**Learning:** Sequential `await` calls inside a loop for creating notifications (e.g., in `updateSchedule` for `GroupService`) create an unnecessary bottleneck, especially for larger groups. Parallelizing these operations using `Future.wait` improves performance.
+**Action:** When creating notification documents for multiple users or processing independent asynchronous tasks, use chunked `Future.wait` or un-chunked `Future.wait` (if the limit isn't huge and independent execution is fine) to execute them concurrently instead of using sequential `await` within a `for` loop.
