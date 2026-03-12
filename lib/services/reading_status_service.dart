@@ -561,18 +561,24 @@ class ReadingStatusService {
     }
 
     if (missingDateIds.isNotEmpty) {
-      // Fetch up to 30 missing logs at a time using whereIn (limit of Firestore)
+      // ⚡ Bolt: Use Future.wait to fetch all 30-item chunks concurrently to avoid N+1 query latency.
+      final futures = <Future<QuerySnapshot<Map<String, dynamic>>>>[];
       for (var i = 0; i < missingDateIds.length; i += 30) {
         final batch = missingDateIds.sublist(
           i,
           i + 30 > missingDateIds.length ? missingDateIds.length : i + 30,
         );
-        final logsSnapshot = await firestore
-            .collectionGroup('entries')
-            .where('uid', isEqualTo: uid)
-            .where('dateId', whereIn: batch)
-            .get();
+        futures.add(
+          firestore
+              .collectionGroup('entries')
+              .where('uid', isEqualTo: uid)
+              .where('dateId', whereIn: batch)
+              .get(),
+        );
+      }
 
+      final snapshots = await Future.wait(futures);
+      for (final logsSnapshot in snapshots) {
         for (final doc in logsSnapshot.docs) {
           final dateId = doc.data()['dateId'] as String?;
           if (dateId != null) {
