@@ -250,6 +250,7 @@ Future<List<LeaderboardEntry>> _fetchEntries(
         streaks[uid] = 0;
       }
     });
+    // ⚡ Bolt: Fetch all streaks concurrently in a single batch to avoid N+1 sequential network delays.
     await Future.wait(futures);
   }
 
