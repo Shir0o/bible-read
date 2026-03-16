@@ -9,17 +9,15 @@ import 'package:bible_read/models/group.dart';
 import 'package:network_image_mock/network_image_mock.dart';
 import '../helpers/pump_app.dart';
 import '../helpers/firebase_seeder.dart';
-import '../helpers/mocks.dart';
 import '../helpers/stub_vibration_service.dart';
 
 void main() {
-  testWidgets('Daily Engagement Scenario: User completes daily reading', (tester) async {
+  testWidgets('Daily Engagement Scenario: User completes daily reading',
+      (tester) async {
     await mockNetworkImagesFor(() async {
       // Setup
       final auth = MockFirebaseAuth(signedIn: false);
       final firestore = FakeFirebaseFirestore();
-      final messaging = MockFirebaseMessaging();
-      final functions = MockFirebaseFunctions();
       final vibration = StubVibrationService();
       final seeder = FirebaseSeeder(firestore);
 
@@ -61,7 +59,8 @@ void main() {
       final group = Group.fromFirestore(groupSnap);
 
       // Explicitly seed the progress entry doc
-      final dateKey = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      final dateKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
       await firestore
           .collection('groups')
           .doc(groupId)

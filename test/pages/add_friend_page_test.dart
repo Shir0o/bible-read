@@ -43,7 +43,6 @@ void main() {
   tearDownAll(resetHttpOverrides);
 
   testWidgets('renders add friend form', (tester) async {
-    final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
       signedIn: true,

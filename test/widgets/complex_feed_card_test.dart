@@ -13,7 +13,8 @@ void main() {
     vibrationService = StubVibrationService();
   });
 
-  testWidgets('FeedCard handles likes and comments interactions', (tester) async {
+  testWidgets('FeedCard handles likes and comments interactions',
+      (tester) async {
     bool likeCalled = false;
     String? submittedComment;
 
@@ -34,17 +35,17 @@ void main() {
             log: log,
             currentUserName: 'Bob',
             onToggleLike: () async {
-               likeCalled = true;
+              likeCalled = true;
             },
             onAddComment: (msg) async {
-               submittedComment = msg;
-               return Comment(
-                 id: 'c1',
-                 uid: 'u2',
-                 authorName: 'Bob',
-                 message: msg,
-                 timestamp: DateTime.now(),
-               );
+              submittedComment = msg;
+              return Comment(
+                id: 'c1',
+                uid: 'u2',
+                authorName: 'Bob',
+                message: msg,
+                timestamp: DateTime.now(),
+              );
             },
             vibrationService: vibrationService,
           ),

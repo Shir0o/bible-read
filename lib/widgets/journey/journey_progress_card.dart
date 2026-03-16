@@ -130,8 +130,10 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                 stream: _activePlansStream,
                 builder: (context, progressSnapshot) {
                   // 1. Loading
-                  if (plansSnapshot.connectionState == ConnectionState.waiting ||
-                      progressSnapshot.connectionState == ConnectionState.waiting) {
+                  if (plansSnapshot.connectionState ==
+                          ConnectionState.waiting ||
+                      progressSnapshot.connectionState ==
+                          ConnectionState.waiting) {
                     return _buildLoadingSkeleton(context);
                   }
 
@@ -140,7 +142,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                   final userProgressList = progressSnapshot.data ?? [];
 
                   // 3. Compute Active Plan (Extracted logic)
-                  final activeData = _computeActivePlan(plans, userProgressList);
+                  final activeData =
+                      _computeActivePlan(plans, userProgressList);
                   final activePlan = activeData.plan;
                   final activeProgress = activeData.progress;
 

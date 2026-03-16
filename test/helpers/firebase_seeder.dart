@@ -20,7 +20,12 @@ class FirebaseSeeder {
     });
 
     // Seed summary/data for streaks
-    await firestore.collection('users').doc(uid).collection('summary').doc('data').set({
+    await firestore
+        .collection('users')
+        .doc(uid)
+        .collection('summary')
+        .doc('data')
+        .set({
       'streak': 0,
     });
   }
@@ -80,10 +85,15 @@ class FirebaseSeeder {
 
     // Seed chapters
     for (int i = 1; i <= 100; i++) {
-        await firestore.collection('reading_plans').doc(planId).collection('items').doc(i.toString()).set({
-            'ref': 'Gen $i',
-            'desc': 'Description $i',
-        });
+      await firestore
+          .collection('reading_plans')
+          .doc(planId)
+          .collection('items')
+          .doc(i.toString())
+          .set({
+        'ref': 'Gen $i',
+        'desc': 'Description $i',
+      });
     }
   }
 
@@ -92,7 +102,8 @@ class FirebaseSeeder {
     required List<GroupSchedule> schedule,
   }) async {
     for (final s in schedule) {
-      final dateKey = '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
+      final dateKey =
+          '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
       await firestore
           .collection('groups')
           .doc(groupId)

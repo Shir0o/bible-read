@@ -11,15 +11,17 @@ class FakeGroupService extends GroupService {
   FakeGroupService() : super(firestore: FakeFirebaseFirestore());
 
   @override
-  Stream<List<GroupMemberProgressData>> memberOverallCompletion(String groupId, {String? includeUid}) {
+  Stream<List<GroupMemberProgressData>> memberOverallCompletion(String groupId,
+      {String? includeUid}) {
     return Stream.value([
-        GroupMemberProgressData(uid: 'u1', name: 'Alice', completion: 0.75),
-        GroupMemberProgressData(uid: 'u2', name: 'Bob', completion: 0.25),
+      GroupMemberProgressData(uid: 'u1', name: 'Alice', completion: 0.75),
+      GroupMemberProgressData(uid: 'u2', name: 'Bob', completion: 0.25),
     ]);
   }
 
   @override
-  Future<List<String>> fetchTodaysChapters(String groupId) async => ['Genesis 1', 'Genesis 2'];
+  Future<List<String>> fetchTodaysChapters(String groupId) async =>
+      ['Genesis 1', 'Genesis 2'];
 }
 
 void main() {

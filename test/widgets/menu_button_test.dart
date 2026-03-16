@@ -5,14 +5,13 @@ import 'package:bible_read/widgets/navigation_menu_scope.dart';
 
 void main() {
   testWidgets('MenuButton calls onNavigate when tapped', (tester) async {
-    int? navigatedIndex;
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: NavigationMenuScope(
             onNavigate: (index) {
-              navigatedIndex = index;
+              // No-op
             },
             friendsIndex: 2,
             child: const MenuButton(),

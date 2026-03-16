@@ -127,7 +127,8 @@ void main() {
     expect(find.text('Please select an end date.'), findsOneWidget);
   });
 
-  testWidgets('creates schedule and navigates on success', skip: true, (tester) async {
+  testWidgets('creates schedule and navigates on success', skip: true,
+      (tester) async {
     final observer = MockNavigatorObserver();
     await tester.pumpApp(buildSubject(navigatorObserver: observer));
 
@@ -160,7 +161,8 @@ void main() {
         .thenAnswer((_) => Stream.value(<GroupSchedule>[]));
     when(() => groupService.memberOverallCompletion('group_123'))
         .thenAnswer((_) => Stream.value(<GroupMemberProgressData>[]));
-    when(() => groupService.memberDailyCompletion('group_123', date: any(named: 'date')))
+    when(() => groupService.memberDailyCompletion('group_123',
+            date: any(named: 'date')))
         .thenAnswer((_) => Stream.value(<GroupMemberProgressData>[]));
 
     // 4. Create
@@ -169,7 +171,6 @@ void main() {
 
     // Allow async gaps
     await tester.pump(const Duration(milliseconds: 100));
-
 
     await tester.pumpAndSettle();
 

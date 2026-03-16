@@ -16,7 +16,7 @@ class ReadingPlanService {
   /// Loads available reading plans from local assets and Firestore.
   Future<List<ReadingPlan>> getAvailablePlans({String? userId}) async {
     List<ReadingPlan> allPlans = [];
-    
+
     // Load asset-based plans
     try {
       if (_cachedPlans == null) {
@@ -64,7 +64,8 @@ class ReadingPlanService {
     } catch (e) {
       // Try fetching directly from Firestore if not in cache
       try {
-        final doc = await firestore.collection('custom_plans').doc(planId).get();
+        final doc =
+            await firestore.collection('custom_plans').doc(planId).get();
         if (doc.exists) {
           final data = doc.data()!;
           data['id'] = doc.id;
@@ -80,7 +81,7 @@ class ReadingPlanService {
     final data = plan.toJson();
     data['userId'] = userId;
     data['createdAt'] = FieldValue.serverTimestamp();
-    
+
     final docRef = await firestore.collection('custom_plans').add(data);
     return docRef.id;
   }

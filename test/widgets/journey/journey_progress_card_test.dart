@@ -68,7 +68,8 @@ void main() {
     expect(find.text('Start a Reading Plan'), findsNothing);
   });
 
-  testWidgets('renders no active plan card when user has no plans', (tester) async {
+  testWidgets('renders no active plan card when user has no plans',
+      (tester) async {
     when(() => readingPlanService.getAvailablePlans())
         .thenAnswer((_) async => []);
     when(() => readingPlanService.getActivePlans('test_uid'))
@@ -81,7 +82,8 @@ void main() {
     expect(find.text('Browse Plans'), findsOneWidget);
   });
 
-  testWidgets('renders active plan card when user has an active plan', (tester) async {
+  testWidgets('renders active plan card when user has an active plan',
+      (tester) async {
     final plan = ReadingPlan(
       id: 'plan_1',
       title: 'Bible in a Year',

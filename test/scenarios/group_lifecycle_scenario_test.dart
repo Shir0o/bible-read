@@ -8,23 +8,20 @@ import 'package:bible_read/services/notification_service.dart';
 import 'package:network_image_mock/network_image_mock.dart';
 import '../helpers/pump_app.dart';
 import '../helpers/firebase_seeder.dart';
-import '../helpers/mocks.dart';
 import '../helpers/stub_vibration_service.dart';
 
 void main() {
-  testWidgets('Group Lifecycle Scenario: User creates a new group', (tester) async {
+  testWidgets('Group Lifecycle Scenario: User creates a new group',
+      (tester) async {
     await mockNetworkImagesFor(() async {
       // Setup
       final auth = MockFirebaseAuth(signedIn: false);
       final firestore = FakeFirebaseFirestore();
-      final messaging = MockFirebaseMessaging();
-      final functions = MockFirebaseFunctions();
       final vibration = StubVibrationService();
       final seeder = FirebaseSeeder(firestore);
 
       // Create services manually
-      final notificationService = NotificationService(
-          firestore: firestore);
+      final notificationService = NotificationService(firestore: firestore);
       final groupService = GroupService(
           firestore: firestore, notificationService: notificationService);
 
@@ -76,10 +73,10 @@ void main() {
       // Based on typical UI code, mm/dd/yyyy is shown when date is null.
       final datePickerTrigger = find.text('mm/dd/yyyy');
       if (datePickerTrigger.evaluate().isNotEmpty) {
-         await tester.tap(datePickerTrigger.last);
+        await tester.tap(datePickerTrigger.last);
       } else {
-         // Fallback to icon if text changed
-         await tester.tap(find.byIcon(Icons.calendar_today).last);
+        // Fallback to icon if text changed
+        await tester.tap(find.byIcon(Icons.calendar_today).last);
       }
       await tester.pumpAndSettle();
 

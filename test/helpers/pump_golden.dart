@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,9 +37,8 @@ extension PumpGolden on WidgetTester {
               platformBrightness: brightness,
             ),
             child: Scaffold(
-              backgroundColor: brightness == Brightness.light
-                  ? Colors.white
-                  : Colors.black,
+              backgroundColor:
+                  brightness == Brightness.light ? Colors.white : Colors.black,
               body: Center(
                 child: widget,
               ),

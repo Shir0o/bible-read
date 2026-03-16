@@ -86,10 +86,9 @@ void main() {
 
     // Benchmark
     final stopwatch = Stopwatch()..start();
-    final result = await service.memberDailyCompletion(groupId).first;
+    await service.memberDailyCompletion(groupId).first;
     stopwatch.stop();
 
-    print('Member count: ${result.length}');
-    print('Benchmark time: ${stopwatch.elapsedMilliseconds}ms');
+    // deleted print statement to satisfy lints
   }, timeout: Timeout(Duration(minutes: 2)));
 }

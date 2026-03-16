@@ -20,7 +20,7 @@ void main() {
     });
 
     // Populate Data
-    print('Populating data...');
+    // deleted print statement to satisfy lints
     var batch = firestore.batch();
     int opCount = 0;
 
@@ -69,13 +69,13 @@ void main() {
       await batch.commit();
     }
 
-    print('Data populated. Starting deleteGroup...');
+    // deleted print statement to satisfy lints
 
     final stopwatch = Stopwatch()..start();
     await service.deleteGroup(groupId: groupId, ownerUid: ownerUid);
     stopwatch.stop();
 
-    print('Benchmark time: ${stopwatch.elapsedMilliseconds}ms');
+    // deleted print statement to satisfy lints
 
     // Verify everything is deleted
     final groupDoc = await firestore.collection('groups').doc(groupId).get();

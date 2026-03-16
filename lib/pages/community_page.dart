@@ -252,8 +252,7 @@ class _CommunityPageState extends State<CommunityPage> {
                                     height: 40,
                                     child: Theme(
                                       data: Theme.of(context).copyWith(
-                                        splashFactory:
-                                            NoSplash.splashFactory,
+                                        splashFactory: NoSplash.splashFactory,
                                       ),
                                       child: InkWell(
                                         onTap: () {
@@ -278,8 +277,8 @@ class _CommunityPageState extends State<CommunityPage> {
                                         width: 40,
                                         height: 40,
                                         child: Icon(Icons.person,
-                                            color: colorScheme
-                                                .onSurfaceVariant),
+                                            color:
+                                                colorScheme.onSurfaceVariant),
                                       ),
                                     ),
                                   ),

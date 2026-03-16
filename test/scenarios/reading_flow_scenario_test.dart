@@ -39,7 +39,10 @@ void main() {
       await seeder.seedUser(uid: uid, name: 'Reader');
       final groupId = 'g1';
       await seeder.seedGroup(
-          groupId: groupId, ownerUid: uid, members: [uid], name: 'Reading Group');
+          groupId: groupId,
+          ownerUid: uid,
+          members: [uid],
+          name: 'Reading Group');
 
       // Seed group schedule for today
       final today = DateTime.now();
@@ -68,9 +71,10 @@ void main() {
           firestore: firestore,
           messaging: messaging,
           functions: functions,
-          sendLikeNotification: ({required ownerUid, required likerName}) async {},
-          sendCommentNotification: ({required ownerUid,
-              required commenterName}) async {},
+          sendLikeNotification: (
+              {required ownerUid, required likerName}) async {},
+          sendCommentNotification: (
+              {required ownerUid, required commenterName}) async {},
           vibrationService: vibration,
           googleSignInProvider: () => MockGoogleSignIn(),
         ),

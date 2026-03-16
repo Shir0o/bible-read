@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockFriendService extends Mock implements FriendService {}
+
 class MockVibrationService extends Mock implements VibrationService {}
 
 void main() {
@@ -40,8 +41,9 @@ void main() {
     expect(find.text('Achievements'), findsOneWidget);
     expect(find.byType(TabBarView), findsOneWidget);
   });
-  
-  testWidgets('ChallengesPage shows Seasonal Challenges by default', (tester) async {
+
+  testWidgets('ChallengesPage shows Seasonal Challenges by default',
+      (tester) async {
     // Should show "No active season" because Firestore is empty
     await tester.pumpWidget(MaterialApp(
       home: ChallengesPage(
@@ -51,12 +53,12 @@ void main() {
         vibrationService: vibrationService,
       ),
     ));
-    
+
     await tester.pumpAndSettle();
 
     expect(find.text('No active season currently.'), findsOneWidget);
   });
-  
+
   testWidgets('ChallengesPage can switch tabs', (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: ChallengesPage(
@@ -66,10 +68,10 @@ void main() {
         vibrationService: vibrationService,
       ),
     ));
-    
+
     await tester.tap(find.text('Achievements'));
     await tester.pumpAndSettle();
-    
+
     // Should show empty state for achievements
     expect(find.text('No achievements yet. Keep reading!'), findsOneWidget);
   });

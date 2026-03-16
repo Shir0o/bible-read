@@ -36,7 +36,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
   void initState() {
     super.initState();
     _planService = ReadingPlanService(firestore: widget.firestore);
-    
+
     final user = widget.auth.currentUser;
     _allPlansFuture = _planService.getAvailablePlans(userId: user?.uid);
 
@@ -56,19 +56,20 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
       backgroundColor: Colors.transparent, // Let parent background show
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          Navigator.of(context).push(
+          Navigator.of(context)
+              .push(
             MaterialPageRoute(
               builder: (_) => CreatePlanPage(
                 firestore: widget.firestore,
                 auth: widget.auth,
               ),
             ),
-          ).then((_) {
+          )
+              .then((_) {
             // Refresh plans after returning
             setState(() {
               _allPlansFuture = _planService.getAvailablePlans(
-                userId: widget.auth.currentUser?.uid
-              );
+                  userId: widget.auth.currentUser?.uid);
             });
           });
         },

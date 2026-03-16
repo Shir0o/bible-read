@@ -59,11 +59,14 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final user = widget.auth.currentUser;
 
-    if (user == null) return const Scaffold(body: Center(child: Text('Not logged in')));
+    if (user == null) {
+      return const Scaffold(body: Center(child: Text('Not logged in')));
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Reading Plans', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text('My Reading Plans',
+            style: TextStyle(fontWeight: FontWeight.w600)),
         backgroundColor: colorScheme.surface,
         scrolledUnderElevation: 0,
         centerTitle: false,
@@ -90,19 +93,22 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
 
               final activeProgress = progressSnapshot.data ?? [];
 
-              final activePlansData = activeProgress.map((progress) {
-                final plan = allPlans.firstWhere(
-                  (p) => p.id == progress.planId,
-                  orElse: () => ReadingPlan(
-                      id: 'unknown',
-                      title: 'Unknown Plan',
-                      description: '',
-                      durationDays: 0,
-                      tags: [],
-                      schedule: []),
-                );
-                return (plan: plan, progress: progress);
-              }).where((item) => item.plan.id != 'unknown').toList();
+              final activePlansData = activeProgress
+                  .map((progress) {
+                    final plan = allPlans.firstWhere(
+                      (p) => p.id == progress.planId,
+                      orElse: () => ReadingPlan(
+                          id: 'unknown',
+                          title: 'Unknown Plan',
+                          description: '',
+                          durationDays: 0,
+                          tags: [],
+                          schedule: []),
+                    );
+                    return (plan: plan, progress: progress);
+                  })
+                  .where((item) => item.plan.id != 'unknown')
+                  .toList();
 
               final discoverPlans = allPlans
                   .where((p) => !activeProgress.any((ap) => ap.planId == p.id))
@@ -133,7 +139,8 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                              color: colorScheme.primaryContainer
+                                  .withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
@@ -161,9 +168,12 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                           children: activePlansData.map((data) {
                             final plan = data.plan;
                             final progress = data.progress;
-                            final completedCount = progress.completedDays.length;
+                            final completedCount =
+                                progress.completedDays.length;
                             final totalCount = plan.durationDays;
-                            final percent = totalCount > 0 ? completedCount / totalCount : 0.0;
+                            final percent = totalCount > 0
+                                ? completedCount / totalCount
+                                : 0.0;
                             final percentString = '${(percent * 100).toInt()}%';
 
                             return Container(
@@ -172,7 +182,8 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                                 color: colorScheme.surfaceContainerHigh,
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                                  color: colorScheme.outlineVariant
+                                      .withValues(alpha: 0.4),
                                 ),
                               ),
                               padding: const EdgeInsets.all(16),
@@ -198,7 +209,8 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                                   ),
                                   const SizedBox(height: 16),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         '$percentString complete',
@@ -223,7 +235,8 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                                     child: LinearProgressIndicator(
                                       value: percent,
                                       minHeight: 8,
-                                      backgroundColor: colorScheme.surfaceContainerHighest,
+                                      backgroundColor:
+                                          colorScheme.surfaceContainerHighest,
                                       color: colorScheme.primary,
                                     ),
                                   ),
@@ -244,16 +257,21 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                                             );
                                           },
                                           style: FilledButton.styleFrom(
-                                            backgroundColor: colorScheme.primaryContainer,
-                                            foregroundColor: colorScheme.onPrimaryContainer,
-                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            backgroundColor:
+                                                colorScheme.primaryContainer,
+                                            foregroundColor:
+                                                colorScheme.onPrimaryContainer,
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                           ),
                                           child: const Text(
                                             'Continue Reading',
-                                            style: TextStyle(fontWeight: FontWeight.w600),
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w600),
                                           ),
                                         ),
                                       ),
@@ -261,18 +279,23 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                                       OutlinedButton(
                                         onPressed: () => _leavePlan(plan),
                                         style: OutlinedButton.styleFrom(
-                                          foregroundColor: colorScheme.onSurfaceVariant,
+                                          foregroundColor:
+                                              colorScheme.onSurfaceVariant,
                                           side: BorderSide(
-                                            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                                            color: colorScheme.outlineVariant
+                                                .withValues(alpha: 0.5),
                                           ),
-                                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 12, horizontal: 20),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                         ),
                                         child: const Text(
                                           'Leave',
-                                          style: TextStyle(fontWeight: FontWeight.w500),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w500),
                                         ),
                                       ),
                                     ],
@@ -305,7 +328,8 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                             },
                             style: TextButton.styleFrom(
                               foregroundColor: colorScheme.primary,
-                              textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                              textStyle:
+                                  const TextStyle(fontWeight: FontWeight.w600),
                               padding: EdgeInsets.zero,
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -328,7 +352,8 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           scrollDirection: Axis.horizontal,
                           itemCount: discoverPlans.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 16),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 16),
                           itemBuilder: (context, index) {
                             final plan = discoverPlans[index];
                             return Container(
@@ -337,7 +362,8 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                                 color: colorScheme.surfaceContainerHigh,
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                                  color: colorScheme.outlineVariant
+                                      .withValues(alpha: 0.4),
                                 ),
                               ),
                               padding: const EdgeInsets.all(16),
@@ -366,7 +392,8 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                                     ),
                                   ),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
@@ -390,17 +417,23 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
                                           );
                                         },
                                         style: FilledButton.styleFrom(
-                                          backgroundColor: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                                          backgroundColor: colorScheme
+                                              .primaryContainer
+                                              .withValues(alpha: 0.5),
                                           foregroundColor: colorScheme.primary,
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 0),
                                           minimumSize: const Size(0, 36),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                         ),
                                         child: const Text(
                                           'Enroll',
-                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13),
                                         ),
                                       ),
                                     ],

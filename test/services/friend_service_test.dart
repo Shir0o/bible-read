@@ -87,20 +87,7 @@ void main() {
       );
     });
 
-    Future<void> seedFriendship(String first, String second) async {
-      await firestore
-          .collection(FriendCollections.users)
-          .doc(first)
-          .collection(FriendCollections.friends)
-          .doc(second)
-          .set({'name': 'Friend'});
-      await firestore
-          .collection(FriendCollections.users)
-          .doc(second)
-          .collection(FriendCollections.friends)
-          .doc(first)
-          .set({'name': 'Friend'});
-    }
+
 
     group('sendFriendRequest', () {
       test('should create sent and received requests', () async {

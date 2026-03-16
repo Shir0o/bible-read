@@ -29,7 +29,8 @@ void main() {
     await seeder.seedUser(uid: currentUser.uid, name: 'Alice');
 
     // Seed another user to add
-    await seeder.seedUser(uid: 'bob_uid', name: 'Bob', email: 'bob@example.com');
+    await seeder.seedUser(
+        uid: 'bob_uid', name: 'Bob', email: 'bob@example.com');
 
     await tester.pumpApp(
       MainPage(
@@ -37,8 +38,10 @@ void main() {
         firestore: firestore,
         messaging: messaging,
         functions: functions,
-        sendLikeNotification: ({required ownerUid, required likerName}) async {},
-        sendCommentNotification: ({required ownerUid, required commenterName}) async {},
+        sendLikeNotification: (
+            {required ownerUid, required likerName}) async {},
+        sendCommentNotification: (
+            {required ownerUid, required commenterName}) async {},
         vibrationService: vibration,
         googleSignInProvider: () => MockGoogleSignIn(),
       ),
@@ -69,7 +72,7 @@ void main() {
       await tester.tap(addBtn.first);
     } else {
       // Maybe text "Add Friend"?
-       await tester.tap(find.text('Add Friend'));
+      await tester.tap(find.text('Add Friend'));
     }
     await tester.pumpAndSettle();
 
@@ -85,14 +88,14 @@ void main() {
     // Use generic search if unsure
     final sendBtn = find.text('Send');
     if (sendBtn.evaluate().isNotEmpty) {
-        await tester.tap(sendBtn);
+      await tester.tap(sendBtn);
     } else {
-        final sendRequestBtn = find.text('Send Request');
-        if (sendRequestBtn.evaluate().isNotEmpty) {
-            await tester.tap(sendRequestBtn);
-        } else {
-            await tester.tap(find.text('Add'));
-        }
+      final sendRequestBtn = find.text('Send Request');
+      if (sendRequestBtn.evaluate().isNotEmpty) {
+        await tester.tap(sendRequestBtn);
+      } else {
+        await tester.tap(find.text('Add'));
+      }
     }
     await tester.pumpAndSettle();
 
@@ -111,7 +114,8 @@ void main() {
         .collection('friendRequestsReceived')
         .get();
     expect(requests.docs.length, 1);
-    expect(requests.docs.first.data()['fromUid'], isNull); // It uses docId as fromUid now
+    expect(requests.docs.first.data()['fromUid'],
+        isNull); // It uses docId as fromUid now
     // Actually, sendFriendRequest uses fromUid as docId in receivedRequests.
     // Let's check receivedRequests docId.
     expect(requests.docs.first.id, currentUser.uid);

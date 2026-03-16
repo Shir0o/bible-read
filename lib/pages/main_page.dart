@@ -171,7 +171,8 @@ class _MainPageState extends State<MainPage> {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) return;
               await user.getIdToken(true);
-              final functions = widget.functions ?? FirebaseFunctions.instanceFor(region: 'us-central1');
+              final functions = widget.functions ??
+                  FirebaseFunctions.instanceFor(region: 'us-central1');
               final callable = functions.httpsCallable('sendLikeNotification');
               await callable.call({
                 'ownerUid': ownerUid,
@@ -183,8 +184,10 @@ class _MainPageState extends State<MainPage> {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) return;
               await user.getIdToken(true);
-              final functions = widget.functions ?? FirebaseFunctions.instanceFor(region: 'us-central1');
-              final callable = functions.httpsCallable('sendCommentNotification');
+              final functions = widget.functions ??
+                  FirebaseFunctions.instanceFor(region: 'us-central1');
+              final callable =
+                  functions.httpsCallable('sendCommentNotification');
               await callable.call({
                 'ownerUid': ownerUid,
                 'commenterName': commenterName,

@@ -74,7 +74,7 @@ void main() {
         'dateUnlocked': DateTime(2023, 1, 1),
       });
 
-       await tester.pumpGolden(
+      await tester.pumpGolden(
         AchievementSummary(
           firestore: firestore,
           auth: auth,

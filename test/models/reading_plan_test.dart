@@ -41,7 +41,7 @@ void main() {
       expect(plan.tags, ['test', 'bible']);
       expect(plan.schedule.length, 1);
       expect(plan.schedule.first.day, 1);
-      
+
       expect(plan.toJson(), json);
     });
 

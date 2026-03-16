@@ -8,6 +8,7 @@ import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/theme/app_theme.dart';
 import 'package:bible_read/widgets/animated_page_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -20,6 +21,7 @@ class LoginPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final GoogleSignIn Function() googleSignInProvider;
   final VibrationService vibrationService;
+  final BaseCacheManager? cacheManager;
   final Widget Function(BuildContext)? mainPageBuilder;
 
   LoginPage({
@@ -28,6 +30,7 @@ class LoginPage extends StatefulWidget {
     FirebaseFirestore? firestore,
     GoogleSignIn Function()? googleSignInProvider,
     VibrationService? vibrationService,
+    this.cacheManager,
     this.mainPageBuilder,
   })  : auth = auth ?? FirebaseAuth.instance,
         firestore = firestore ?? FirebaseFirestore.instance,
@@ -204,6 +207,7 @@ class _LoginPageState extends State<LoginPage> {
               imageUrl:
                   'https://lh3.googleusercontent.com/aida-public/AB6AXuCfzrtAkMN22RwB2ZiqvZ7-a-u3c-1Q3SYe1V6xrgX8oGAGl0fcdKTFGezJhbpHXu8o1n3ePffi_ZF79ajNqZfUsXddI-13tqUsvWaaiNgLKefDYXK0KgRmpDPKA_meuN2OR1SNZqMAEjz6CXvzG7W7A6V3Do9bc_HOxoFH-5RLqbVZek6jTgqM-ERrpHdie1ASqWaBbJxXCKiQDVcL0TkaFmAp07o9oaHvgLprritLLT8kmwNubpE4Xl6s2ETlB0C7b6HWAgBESSe6',
               fit: BoxFit.cover,
+              cacheManager: widget.cacheManager,
               placeholder: (context, url) => Container(
                 color: const Color(0xFF141218), // m3-dark-surface
               ),
@@ -563,7 +567,8 @@ class _LoginPageState extends State<LoginPage> {
                                           padding: const EdgeInsets.all(4.0),
                                           child: Text(
                                             'Sign up',
-                                            style: textTheme.bodyMedium?.copyWith(
+                                            style:
+                                                textTheme.bodyMedium?.copyWith(
                                               fontSize: 14,
                                               fontWeight:
                                                   FontWeight.bold, // font-bold

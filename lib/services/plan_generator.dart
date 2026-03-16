@@ -80,8 +80,8 @@ class PlanGenerator {
           id, title, description, allChapters, startDate, endDate, readingDays);
     } else if (customChaptersPerDay != null) {
       // Custom amount per day
-      return _generateFixedPace(id, title, description, allChapters,
-          startDate, customChaptersPerDay, readingDays);
+      return _generateFixedPace(id, title, description, allChapters, startDate,
+          customChaptersPerDay, readingDays);
     } else {
       // Fixed years (1 or 2)
       final durationDays = years * 365;
@@ -131,7 +131,7 @@ class PlanGenerator {
 
     while (otIdx < otChapters.length || ntIdx < ntChapters.length) {
       final List<String> todayReadings = [];
-      
+
       // OT: 3 chapters on 6 days (let's say Mon-Sat)
       int weekday = ((day - 1) % 7) + 1; // 1=Mon, 7=Sun
       if (weekday <= 6 && otIdx < otChapters.length) {
@@ -189,10 +189,11 @@ class PlanGenerator {
       int remainingDays = validDates.length - i;
       int remainingChapters = allChapters.length - chaptersAssigned;
       int count = (remainingChapters / remainingDays).ceil();
-      
-      final daily = allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
+
+      final daily =
+          allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
       // We use the date relative index as 'day' for the ReadingPlan model
-      // or should 'day' be the calendar day since start? 
+      // or should 'day' be the calendar day since start?
       // ReadingPlan model uses 1-indexed sequential days.
       schedule.add(ReadingPlanDay(day: i + 1, readings: daily));
       chaptersAssigned += count;
@@ -227,13 +228,14 @@ class PlanGenerator {
       // Actually, ReadingPlan model expects sequential days.
       // If user only reads Mon-Fri, Day 1 is Monday, Day 2 is Tuesday...
       // The startDate determines when Day 1 is.
-      
+
       int count = chaptersPerDay;
       if (chaptersAssigned + count > allChapters.length) {
         count = allChapters.length - chaptersAssigned;
       }
 
-      final daily = allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
+      final daily =
+          allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
       schedule.add(ReadingPlanDay(day: dayCount, readings: daily));
       chaptersAssigned += count;
     }
@@ -259,7 +261,8 @@ class PlanGenerator {
     List<int>? readingDays,
   ) {
     if (type == PlanType.portions) {
-      return _generatePortions(id, title, description, startDate, durationDays, readingDays);
+      return _generatePortions(
+          id, title, description, startDate, durationDays, readingDays);
     }
 
     // Sequential
@@ -269,8 +272,9 @@ class PlanGenerator {
       int remainingDays = durationDays - i;
       int remainingChapters = allChapters.length - chaptersAssigned;
       int count = (remainingChapters / remainingDays).ceil();
-      
-      final daily = allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
+
+      final daily =
+          allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
       schedule.add(ReadingPlanDay(day: i + 1, readings: daily));
       chaptersAssigned += count;
       if (chaptersAssigned >= allChapters.length) break;
@@ -323,7 +327,8 @@ class PlanGenerator {
       int otRemaining = otChapters.length - otAssigned;
       if (otRemaining > 0) {
         int otCount = (otRemaining / remainingDays).ceil();
-        todayReadings.addAll(otChapters.sublist(otAssigned, otAssigned + otCount));
+        todayReadings
+            .addAll(otChapters.sublist(otAssigned, otAssigned + otCount));
         otAssigned += otCount;
       }
 
@@ -331,14 +336,17 @@ class PlanGenerator {
       int ntRemaining = ntChapters.length - ntAssigned;
       if (ntRemaining > 0) {
         int ntCount = (ntRemaining / remainingDays).ceil();
-        todayReadings.addAll(ntChapters.sublist(ntAssigned, ntAssigned + ntCount));
+        todayReadings
+            .addAll(ntChapters.sublist(ntAssigned, ntAssigned + ntCount));
         ntAssigned += ntCount;
       }
 
       if (todayReadings.isNotEmpty) {
         schedule.add(ReadingPlanDay(day: i + 1, readings: todayReadings));
       }
-      if (otAssigned >= otChapters.length && ntAssigned >= ntChapters.length) break;
+      if (otAssigned >= otChapters.length && ntAssigned >= ntChapters.length) {
+        break;
+      }
     }
 
     return ReadingPlan(

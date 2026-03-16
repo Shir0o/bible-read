@@ -12,17 +12,17 @@ class MockGroupBookAchievementService extends Mock
     implements GroupBookAchievementService {}
 
 class FakeAchievement extends Fake implements Achievement {
-   @override
-   String get id => 'fake_id';
-   
-   @override
-   String get title => 'Fake Title';
-   
-   @override
-   String get type => 'book';
-   
-   @override
-   DateTime get dateUnlocked => DateTime.now();
+  @override
+  String get id => 'fake_id';
+
+  @override
+  String get title => 'Fake Title';
+
+  @override
+  String get type => 'book';
+
+  @override
+  DateTime get dateUnlocked => DateTime.now();
 }
 
 void main() {
@@ -34,7 +34,7 @@ void main() {
   final now = DateTime(2024, 1, 1);
 
   setUpAll(() {
-     registerFallbackValue(FakeAchievement());
+    registerFallbackValue(FakeAchievement());
   });
 
   setUp(() {
@@ -60,7 +60,8 @@ void main() {
       when(() => groupBookAchievementService.completedChaptersByBook(uid))
           .thenAnswer((_) async => {});
 
-      final result = await refresher.refresh(uid: uid, completionTimestamp: now);
+      final result =
+          await refresher.refresh(uid: uid, completionTimestamp: now);
 
       expect(result.unlockedAchievementIds, isEmpty);
       expect(result.alreadyUnlockedAchievementIds, isEmpty);
@@ -73,7 +74,8 @@ void main() {
                 'John': {1, 2}, // John has 21 chapters
               });
 
-      final result = await refresher.refresh(uid: uid, completionTimestamp: now);
+      final result =
+          await refresher.refresh(uid: uid, completionTimestamp: now);
 
       expect(result.unlockedAchievementIds, isEmpty);
       verifyNever(() => achievementService.unlockAchievement(any(), any()));
@@ -86,7 +88,8 @@ void main() {
                 'Obadiah': {1},
               });
 
-      final result = await refresher.refresh(uid: uid, completionTimestamp: now);
+      final result =
+          await refresher.refresh(uid: uid, completionTimestamp: now);
 
       expect(result.unlockedAchievementIds, contains('book_obadiah'));
       expect(result.alreadyUnlockedAchievementIds, isEmpty);
@@ -114,7 +117,8 @@ void main() {
                 'Obadiah': {1},
               });
 
-      final result = await refresher.refresh(uid: uid, completionTimestamp: now);
+      final result =
+          await refresher.refresh(uid: uid, completionTimestamp: now);
 
       expect(result.unlockedAchievementIds, isEmpty);
       expect(result.alreadyUnlockedAchievementIds, contains('book_obadiah'));
@@ -122,19 +126,19 @@ void main() {
     });
 
     test('skips achievement if in skip list', () async {
-       when(() => groupBookAchievementService.completedChaptersByBook(uid))
+      when(() => groupBookAchievementService.completedChaptersByBook(uid))
           .thenAnswer((_) async => {
                 'Obadiah': {1},
               });
-      
+
       final result = await refresher.refresh(
         uid: uid,
         completionTimestamp: now,
         skipAchievementIds: {'book_obadiah'},
       );
 
-       expect(result.unlockedAchievementIds, isEmpty);
-       verifyNever(() => achievementService.unlockAchievement(any(), any()));
+      expect(result.unlockedAchievementIds, isEmpty);
+      verifyNever(() => achievementService.unlockAchievement(any(), any()));
     });
 
     test('unlocks multiple books', () async {
@@ -145,26 +149,29 @@ void main() {
                 'Philemon': {1},
               });
 
-      final result = await refresher.refresh(uid: uid, completionTimestamp: now);
+      final result =
+          await refresher.refresh(uid: uid, completionTimestamp: now);
 
       expect(result.unlockedAchievementIds, hasLength(2));
-      expect(result.unlockedAchievementIds, containsAll(['book_obadiah', 'book_philemon']));
-      
+      expect(result.unlockedAchievementIds,
+          containsAll(['book_obadiah', 'book_philemon']));
+
       verify(() => achievementService.unlockAchievement(uid, any())).called(2);
     });
-    
-    test('handles partial completion alongside full completion', () async{
-       when(() => groupBookAchievementService.completedChaptersByBook(uid))
+
+    test('handles partial completion alongside full completion', () async {
+      when(() => groupBookAchievementService.completedChaptersByBook(uid))
           .thenAnswer((_) async => {
                 'Obadiah': {1},
                 'John': {1, 2}, // Incomplete
               });
-      
-      final result = await refresher.refresh(uid: uid, completionTimestamp: now);
-      
+
+      final result =
+          await refresher.refresh(uid: uid, completionTimestamp: now);
+
       expect(result.unlockedAchievementIds, contains('book_obadiah'));
       expect(result.unlockedAchievementIds, isNot(contains('book_john')));
-       verify(() => achievementService.unlockAchievement(uid, any())).called(1);
+      verify(() => achievementService.unlockAchievement(uid, any())).called(1);
     });
   });
 }
