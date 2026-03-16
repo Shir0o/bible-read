@@ -264,184 +264,173 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
           color: colorScheme.outlineVariant.withValues(alpha: 0.2),
         ),
       ),
-      child: Stack(
-        children: [
-          // Background decorative elements (simplified)
-          Positioned(
-            top: -20,
-            right: -20,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colorScheme.primary.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Icon Box
-                    Container(
-                      width: 80,
-                      height: 100, // Slightly taller rectangle
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color:
-                              colorScheme.outlineVariant.withValues(alpha: 0.2),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Icon Box
+                      Container(
+                        width: 80,
+                        height: 100, // Slightly taller rectangle
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: colorScheme.outlineVariant
+                                .withValues(alpha: 0.2),
                           ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.auto_stories,
-                          size: 36,
-                          color: colorScheme.primary.withValues(alpha: 0.8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.auto_stories,
+                            size: 36,
+                            color: colorScheme.primary.withValues(alpha: 0.8),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    // Text Details
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            plan.title,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  height: 1.2,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  isCompleted ? 'Done' : 'Day $currentDay',
-                                  style: TextStyle(
-                                    color: colorScheme.onPrimaryContainer,
-                                    fontSize: 11,
+                      const SizedBox(width: 16),
+                      // Text Details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              plan.title,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    height: 1.2,
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    isCompleted ? 'Done' : 'Day $currentDay',
+                                    style: TextStyle(
+                                      color: colorScheme.onPrimaryContainer,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'of $totalCount • Personal Plan',
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'of $totalCount • Personal Plan',
+                                    style: TextStyle(
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontSize: 11,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Progress Bar Section
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '$percentString Completed',
                                   style: TextStyle(
                                     color: colorScheme.onSurfaceVariant,
                                     fontSize: 11,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: LinearProgressIndicator(
+                                value: percent,
+                                minHeight: 8,
+                                backgroundColor:
+                                    colorScheme.surfaceContainerHighest,
+                                color: colorScheme.primary,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton.tonal(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => PlanDetailPage(
+                              plan: plan,
+                              firestore: widget.firestore,
+                              auth: widget.auth,
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          // Progress Bar Section
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                '$percentString Completed',
-                                style: TextStyle(
-                                  color: colorScheme.onSurfaceVariant,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: LinearProgressIndicator(
-                              value: percent,
-                              minHeight: 8,
-                              backgroundColor:
-                                  colorScheme.surfaceContainerHighest,
-                              color: colorScheme.primary,
+                        );
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: colorScheme.secondaryContainer,
+                        foregroundColor: colorScheme.onSecondaryContainer,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.play_arrow_rounded, size: 24),
+                          const SizedBox(width: 8),
+                          Text(
+                            isCompleted ? 'Review Plan' : 'Continue Reading',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: FilledButton.tonal(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => PlanDetailPage(
-                            plan: plan,
-                            firestore: widget.firestore,
-                            auth: widget.auth,
-                          ),
-                        ),
-                      );
-                    },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colorScheme.secondaryContainer,
-                      foregroundColor: colorScheme.onSecondaryContainer,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.play_arrow_rounded, size: 24),
-                        const SizedBox(width: 8),
-                        Text(
-                          isCompleted ? 'Review Plan' : 'Continue Reading',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -250,25 +250,37 @@ class _CommunityPageState extends State<CommunityPage> {
                                     fit: BoxFit.cover,
                                     width: 40,
                                     height: 40,
+                                    child: Theme(
+                                      data: Theme.of(context).copyWith(
+                                        splashFactory:
+                                            NoSplash.splashFactory,
+                                      ),
+                                      child: InkWell(
+                                        onTap: () {
+                                          widget.vibrationService.lightImpact();
+                                          NavigationMenuScope.maybeOf(context)
+                                              ?.showMenu(context);
+                                        },
+                                      ),
+                                    ),
+                                  )
+                                : Theme(
+                                    data: Theme.of(context).copyWith(
+                                      splashFactory: NoSplash.splashFactory,
+                                    ),
                                     child: InkWell(
                                       onTap: () {
                                         widget.vibrationService.lightImpact();
                                         NavigationMenuScope.maybeOf(context)
                                             ?.showMenu(context);
                                       },
-                                    ),
-                                  )
-                                : InkWell(
-                                    onTap: () {
-                                      widget.vibrationService.lightImpact();
-                                      NavigationMenuScope.maybeOf(context)
-                                          ?.showMenu(context);
-                                    },
-                                    child: SizedBox(
-                                      width: 40,
-                                      height: 40,
-                                      child: Icon(Icons.person,
-                                          color: colorScheme.onSurfaceVariant),
+                                      child: SizedBox(
+                                        width: 40,
+                                        height: 40,
+                                        child: Icon(Icons.person,
+                                            color: colorScheme
+                                                .onSurfaceVariant),
+                                      ),
                                     ),
                                   ),
                           ),

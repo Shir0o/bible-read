@@ -251,6 +251,7 @@ class _HomePageState extends State<HomePage>
 
     if (!_disposed && mounted) {
       setState(() {
+        _toggleLoading = true;
         // Optimistically mark today as read in local state.
         _readToday = true;
         if (_pastWeek.length < 7) {
@@ -332,6 +333,12 @@ class _HomePageState extends State<HomePage>
             content: Text('Failed to mark reading. Please try again.'),
           ),
         );
+      }
+    } finally {
+      if (!_disposed && mounted) {
+        setState(() {
+          _toggleLoading = false;
+        });
       }
     }
   }
