@@ -18,12 +18,10 @@ import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../models/reading_plan.dart';
 
-import '../services/notification_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
-import 'notification_center_page.dart';
 import 'read_log_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
@@ -546,23 +544,7 @@ class _HomePageState extends State<HomePage>
           statusBarIconBrightness: Brightness.dark, // Android: Dark icons
           statusBarBrightness: Brightness.light, // iOS: Dark icons
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              unawaited(widget.vibrationService.lightImpact());
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => NotificationCenterPage(
-                    service: NotificationService(firestore: widget.firestore),
-                    auth: widget.auth,
-                    vibrationService: widget.vibrationService,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
+        actions: [],
       ),
       body: SkeletonLoader(
         loading: _initialLoading,

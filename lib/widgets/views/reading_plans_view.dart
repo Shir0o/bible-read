@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../models/reading_plan.dart';
 import '../../models/reading_plan_progress.dart';
 import '../../pages/plan_detail_page.dart';
+import '../../pages/create_plan_page.dart';
 import '../../services/reading_plan_service.dart';
 import '../common_styles.dart';
 
@@ -35,9 +36,10 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
   void initState() {
     super.initState();
     _planService = ReadingPlanService(firestore: widget.firestore);
-    _allPlansFuture = _planService.getAvailablePlans();
-
+    
     final user = widget.auth.currentUser;
+    _allPlansFuture = _planService.getAvailablePlans(userId: user?.uid);
+
     if (user != null) {
       _activePlansStream = _planService.getActivePlans(user.uid);
     } else {
@@ -52,6 +54,27 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
 
     return Scaffold(
       backgroundColor: Colors.transparent, // Let parent background show
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => CreatePlanPage(
+                firestore: widget.firestore,
+                auth: widget.auth,
+              ),
+            ),
+          ).then((_) {
+            // Refresh plans after returning
+            setState(() {
+              _allPlansFuture = _planService.getAvailablePlans(
+                userId: widget.auth.currentUser?.uid
+              );
+            });
+          });
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('New Plan'),
+      ),
       body: StreamBuilder<List<UserPlanProgress>>(
         stream: _activePlansStream,
         builder: (context, activeSnapshot) {
@@ -65,13 +88,6 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
               }
 
               final allPlans = plansSnapshot.data ?? [];
-
-              // Filter plans:
-              // If a plan is active, we can show it in a "Current Plan" section.
-              // All other plans go to "Available Plans".
-
-              // For "Bible in a Year", typically users only have one active at a time,
-              // but we support multiple.
 
               return ListView(
                 padding: const EdgeInsets.all(16),
@@ -284,6 +300,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                       child:
                           Center(child: Text('No plans available right now.')),
                     ),
+                  const SizedBox(height: 80), // Space for FAB
                 ],
               );
             },

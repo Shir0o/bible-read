@@ -13,33 +13,76 @@ class ReadingPlanService {
   // Cached plans to avoid repeated JSON parsing
   List<ReadingPlan>? _cachedPlans;
 
-  /// Loads available reading plans from local assets.
-  Future<List<ReadingPlan>> getAvailablePlans() async {
-    if (_cachedPlans != null) return _cachedPlans!;
-
+  /// Loads available reading plans from local assets and Firestore.
+  Future<List<ReadingPlan>> getAvailablePlans({String? userId}) async {
+    List<ReadingPlan> allPlans = [];
+    
+    // Load asset-based plans
     try {
-      final String jsonString =
-          await rootBundle.loadString('assets/plans/sample_plans.json');
-      final List<dynamic> jsonList = json.decode(jsonString);
-      _cachedPlans =
-          jsonList.map((json) => ReadingPlan.fromJson(json)).toList();
-      return _cachedPlans!;
+      if (_cachedPlans == null) {
+        final String jsonString =
+            await rootBundle.loadString('assets/plans/sample_plans.json');
+        final List<dynamic> jsonList = json.decode(jsonString);
+        _cachedPlans =
+            jsonList.map((json) => ReadingPlan.fromJson(json)).toList();
+      }
+      allPlans.addAll(_cachedPlans!);
     } catch (e) {
       if (kDebugMode) {
-        print('Error loading reading plans: $e');
+        print('Error loading asset reading plans: $e');
       }
-      return [];
     }
+
+    // Load custom plans from Firestore
+    if (userId != null) {
+      try {
+        final snapshot = await firestore
+            .collection('custom_plans')
+            .where('userId', isEqualTo: userId)
+            .get();
+        final customPlans = snapshot.docs.map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id;
+          return ReadingPlan.fromJson(data);
+        }).toList();
+        allPlans.addAll(customPlans);
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error loading custom reading plans: $e');
+        }
+      }
+    }
+
+    return allPlans;
   }
 
   /// Gets a specific plan by ID.
-  Future<ReadingPlan?> getPlanById(String planId) async {
-    final plans = await getAvailablePlans();
+  Future<ReadingPlan?> getPlanById(String planId, {String? userId}) async {
+    final plans = await getAvailablePlans(userId: userId);
     try {
       return plans.firstWhere((p) => p.id == planId);
     } catch (e) {
+      // Try fetching directly from Firestore if not in cache
+      try {
+        final doc = await firestore.collection('custom_plans').doc(planId).get();
+        if (doc.exists) {
+          final data = doc.data()!;
+          data['id'] = doc.id;
+          return ReadingPlan.fromJson(data);
+        }
+      } catch (_) {}
       return null;
     }
+  }
+
+  /// Saves a custom reading plan to Firestore.
+  Future<String> saveCustomPlan(String userId, ReadingPlan plan) async {
+    final data = plan.toJson();
+    data['userId'] = userId;
+    data['createdAt'] = FieldValue.serverTimestamp();
+    
+    final docRef = await firestore.collection('custom_plans').add(data);
+    return docRef.id;
   }
 
   /// Starts a reading plan for a user.
