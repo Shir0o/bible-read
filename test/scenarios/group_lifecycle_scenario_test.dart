@@ -5,7 +5,6 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:bible_read/pages/groups_page.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/notification_service.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:network_image_mock/network_image_mock.dart';
 import '../helpers/pump_app.dart';
 import '../helpers/firebase_seeder.dart';

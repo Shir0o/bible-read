@@ -74,9 +74,8 @@ extension PumpGolden on WidgetTester {
 class LocalFileComparatorWithThreshold extends LocalFileComparator {
   final double threshold;
 
-  LocalFileComparatorWithThreshold(Uri testFile, this.threshold)
-      : assert(threshold >= 0 && threshold <= 1),
-        super(testFile);
+  LocalFileComparatorWithThreshold(super.testFile, this.threshold)
+      : assert(threshold >= 0 && threshold <= 1);
 
   @override
   Future<bool> compare(Uint8List imageBytes, Uri golden) async {
