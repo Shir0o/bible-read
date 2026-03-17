@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
@@ -10,28 +8,11 @@ class ReadingPlanService {
 
   ReadingPlanService({required this.firestore});
 
-  // Cached plans to avoid repeated JSON parsing
-  List<ReadingPlan>? _cachedPlans;
-
   /// Loads available reading plans from local assets and Firestore.
   Future<List<ReadingPlan>> getAvailablePlans({String? userId}) async {
     List<ReadingPlan> allPlans = [];
 
-    // Load asset-based plans
-    try {
-      if (_cachedPlans == null) {
-        final String jsonString =
-            await rootBundle.loadString('assets/plans/sample_plans.json');
-        final List<dynamic> jsonList = json.decode(jsonString);
-        _cachedPlans =
-            jsonList.map((json) => ReadingPlan.fromJson(json)).toList();
-      }
-      allPlans.addAll(_cachedPlans!);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error loading asset reading plans: $e');
-      }
-    }
+    // No longer loading asset-based plans as per user request
 
     // Load custom plans from Firestore
     if (userId != null) {

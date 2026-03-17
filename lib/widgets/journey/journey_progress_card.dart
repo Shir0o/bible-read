@@ -6,8 +6,9 @@ import '../../models/reading_plan.dart';
 import '../../models/reading_plan_progress.dart';
 import '../../services/reading_plan_service.dart';
 import '../../pages/plan_detail_page.dart';
+import '../../pages/reading_plans_page.dart';
+import '../../pages/create_plan_page.dart';
 import '../skeleton.dart';
-import '../views/reading_plans_view.dart';
 
 class JourneyProgressCard extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -102,12 +103,9 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => Scaffold(
-                        appBar: AppBar(title: const Text('Reading Plans')),
-                        body: ReadingPlansView(
-                          firestore: widget.firestore,
-                          auth: widget.auth,
-                        ),
+                      builder: (_) => ReadingPlansPage(
+                        firestore: widget.firestore,
+                        auth: widget.auth,
                       ),
                     ),
                   );
@@ -231,11 +229,16 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
             const SizedBox(height: 16),
             FilledButton.tonal(
               onPressed: () {
-                // Open plans tab or navigate
-                // Since we removed tabs, we might need a way to browse plans.
-                // For now, let's just leave it as is or show a dialog.
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => CreatePlanPage(
+                      firestore: widget.firestore,
+                      auth: widget.auth,
+                    ),
+                  ),
+                );
               },
-              child: const Text('Browse Plans'),
+              child: const Text('Create Plan'),
             ),
           ],
         ),

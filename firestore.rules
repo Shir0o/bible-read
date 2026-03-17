@@ -43,6 +43,16 @@ service cloud.firestore {
     allow read: if request.auth != null && request.auth.uid == userId;
   }
 
+  // Allow users to query their own member records across all groups (for collectionGroup)
+  match /{path=**}/members/{uid} {
+    allow read: if request.auth != null && request.auth.uid == uid;
+  }
+
+  // Allow users to query their own join requests across all groups (for collectionGroup)
+  match /{path=**}/joinRequests/{uid} {
+    allow read: if request.auth != null && request.auth.uid == uid;
+  }
+
   function isValidFeedbackCreate() {
       return request.resource.data.keys().hasOnly([
             'uid',
@@ -404,6 +414,13 @@ service cloud.firestore {
       resource.data.uid != null && request.auth.uid == resource.data.uid);
     allow create: if request.auth != null && isValidFeedbackCreate();
     allow update, delete: if false;
+  }
+  // 📖 Custom Reading Plans
+  match /custom_plans/{planId} {
+    allow read, write: if request.auth != null && (
+      request.auth.uid == resource.data.userId || 
+      request.auth.uid == request.resource.data.userId
+    );
   }
   }
 }

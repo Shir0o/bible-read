@@ -185,12 +185,6 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                     .where((item) => item.plan.id != 'unknown')
                     .toList();
 
-                final discoverPlans = allPlans
-                    .where((p) =>
-                        !activeProgress.any((ap) => ap.planId == p.id) &&
-                        !archivedProgress.any((ap) => ap.planId == p.id))
-                    .toList();
-
                 return ListView(
                   padding: const EdgeInsets.only(bottom: 100),
                   children: [
@@ -272,47 +266,6 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                             data.progress,
                           )),
                     ],
-
-                    // Discover New Plans Section
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Discover New Plans',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          // "See All" button removed as per request
-                        ],
-                      ),
-                    ),
-
-                    if (discoverPlans.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('No new plans available.'),
-                      )
-                    else
-                      SizedBox(
-                        height: 180,
-                        child: ListView.separated(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          scrollDirection: Axis.horizontal,
-                          itemCount: discoverPlans.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: 16),
-                          itemBuilder: (context, index) {
-                            final plan = discoverPlans[index];
-                            return _buildDiscoverPlanCard(
-                                context, colorScheme, plan);
-                          },
-                        ),
-                      ),
                   ],
                 );
               },
@@ -508,90 +461,6 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
             icon: const Icon(Icons.delete_outline),
             tooltip: 'Delete permanently',
             color: Colors.red.withValues(alpha: 0.7),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDiscoverPlanCard(
-    BuildContext context,
-    ColorScheme colorScheme,
-    ReadingPlan plan,
-  ) {
-    return Container(
-      width: 260,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
-        ),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            plan.title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-          Expanded(
-            child: Text(
-              plan.description,
-              style: TextStyle(
-                fontSize: 13,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${plan.durationDays} Days',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                ),
-              ),
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => PlanDetailPage(
-                        plan: plan,
-                        firestore: widget.firestore,
-                        auth: widget.auth,
-                      ),
-                    ),
-                  );
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: colorScheme.primary.withValues(alpha: 0.15),
-                  foregroundColor: colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  minimumSize: const Size(0, 36),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text(
-                  'Enroll',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-              ),
-            ],
           ),
         ],
       ),

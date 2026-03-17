@@ -27,7 +27,14 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   int _years = 1;
   DateTime _startDate = DateTime.now();
   DateTime? _endDate;
-  final Set<int> _readingDays = {1, 2, 3, 4, 5, 6, 7}; // 1 = Mon, 7 = Sun
+  final Set<int> _readingDays = {
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  }; // 1 = Mon, 6 = Sat (no Sun default)
   final Set<String> _selectedBooks = Set.from(ReferenceParser.allBooks);
   int? _customChaptersPerDay;
   bool _isCreating = false;
@@ -96,7 +103,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     try {
       final plan = PlanGenerator.generatePlan(
         id: '', // Will be set by Firestore
-        title: _titleController.text.trim(),
+        title: _capitalizeWords(_titleController.text.trim()),
         description: _generateDescription(),
         type: _selectedType,
         years: _years > 0 ? _years : 1, // Default to 1 if not set
@@ -147,6 +154,14 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     }
   }
 
+  String _capitalizeWords(String input) {
+    if (input.isEmpty) return input;
+    return input.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
+  }
+
   String _generateDescription() {
     switch (_selectedType) {
       case PlanType.sequential:
@@ -155,10 +170,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         return 'Read portions of the Old and New Testaments daily.';
       case PlanType.threeOldOneNew:
         return 'A balanced schedule: 3 OT chapters (6 days/week) and 1 NT chapter (5 days/week).';
-      case PlanType.otHalfYear:
-        return 'Complete the Old Testament in six months.';
-      case PlanType.ntHalfYear:
-        return 'Complete the New Testament in six months.';
+      case PlanType.otOnly:
+        return 'Complete the Old Testament.';
+      case PlanType.ntOnly:
+        return 'Complete the New Testament.';
     }
   }
 
@@ -200,6 +215,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             children: [
               TextField(
                 controller: _titleController,
+                textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(
                   labelText: 'Plan Title',
                   hintText: 'e.g., Daily Walk',
@@ -235,205 +251,205 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                 'Fixed daily distribution',
                 showInfo: true,
               ),
+              const SizedBox(height: 8),
+              _buildPlanTypeOption(
+                  PlanType.otOnly, 'Old Testament Only', 'Genesis to Malachi'),
+              const SizedBox(height: 8),
+              _buildPlanTypeOption(PlanType.ntOnly, 'New Testament Only',
+                  'Matthew to Revelation'),
               const SizedBox(height: 24),
 
               // Configuration Section
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
-                  children: [
-                    // Duration Selector
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Plan Duration',
-                            style: TextStyle(fontWeight: FontWeight.w500)),
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                                color: colorScheme.outlineVariant
-                                    .withValues(alpha: 0.5)),
-                          ),
-                          child: Row(
-                            children: [
-                              GestureDetector(
-                                onTap: () => setState(() {
-                                  _years = 1;
-                                  _endDate = null;
-                                }),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: _years == 1
-                                        ? colorScheme.primary
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    '1 Year',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: _years == 1
-                                          ? colorScheme.onPrimary
-                                          : colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () => setState(() {
-                                  _years = 2;
-                                  _endDate = null;
-                                }),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: _years == 2
-                                        ? colorScheme.primary
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    '2 Years',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: _years == 2
-                                          ? colorScheme.onPrimary
-                                          : colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Day Selection
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Active Reading Days',
-                            style: TextStyle(fontWeight: FontWeight.w500)),
-                        const SizedBox(height: 8), // For spacing
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _dayCircle(7, 'S'), // Sun
-                        _dayCircle(1, 'M'), // Mon
-                        _dayCircle(2, 'T'), // Tue
-                        _dayCircle(3, 'W'), // Wed
-                        _dayCircle(4, 'T'), // Thu
-                        _dayCircle(5, 'F'), // Fri
-                        _dayCircle(6, 'S'), // Sat
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    const Divider(height: 1),
-                    const SizedBox(height: 16),
-
-                    // Start Date
-                    InkWell(
-                      onTap: () => _selectDate(context, true),
-                      child: Row(
+              if (_selectedType != PlanType.threeOldOneNew) ...[
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    children: [
+                      // Duration Selector
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Icon(Icons.calendar_today_outlined,
-                                  size: 20,
-                                  color: colorScheme.onSurfaceVariant),
-                              const SizedBox(width: 12),
-                              const Text('Start Date'),
-                            ],
-                          ),
-                          Text(
-                            '${_months[_startDate.month - 1]} ${_startDate.day}, ${_startDate.year}',
-                            style: TextStyle(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w600,
+                          const Text('Plan Duration',
+                              style: TextStyle(fontWeight: FontWeight.w500)),
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                  color: colorScheme.outlineVariant
+                                      .withValues(alpha: 0.5)),
+                            ),
+                            child: Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () => setState(() {
+                                    _years = 1;
+                                    _endDate = null;
+                                  }),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: _years == 1
+                                          ? colorScheme.primary
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      '1 Year',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: _years == 1
+                                            ? colorScheme.onPrimary
+                                            : colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => setState(() {
+                                    _years = 2;
+                                    _endDate = null;
+                                  }),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: _years == 2
+                                          ? colorScheme.primary
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      '2 Years',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: _years == 2
+                                            ? colorScheme.onPrimary
+                                            : colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 20),
+
+                      // Day Selection
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Active Reading Days',
+                              style: TextStyle(fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _dayCircle(7, 'S'), // Sun
+                          _dayCircle(1, 'M'), // Mon
+                          _dayCircle(2, 'T'), // Tue
+                          _dayCircle(3, 'W'), // Wed
+                          _dayCircle(4, 'T'), // Thu
+                          _dayCircle(5, 'F'), // Fri
+                          _dayCircle(6, 'S'), // Sat
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      const Divider(height: 1),
+                      const SizedBox(height: 16),
+
+                      // Start Date
+                      InkWell(
+                        onTap: () => _selectDate(context, true),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_today_outlined,
+                                    size: 20,
+                                    color: colorScheme.onSurfaceVariant),
+                                const SizedBox(width: 12),
+                                const Text('Start Date'),
+                              ],
+                            ),
+                            Text(
+                              '${_months[_startDate.month - 1]} ${_startDate.day}, ${_startDate.year}',
+                              style: TextStyle(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Old Testament Plans
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                child: Text(
-                  'OLD TESTAMENT PLANS',
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
+              ] else ...[
+                // Fixed configuration for 3 in Old, 1 in New
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Plan Duration',
+                              style: TextStyle(fontWeight: FontWeight.w500)),
+                          Text('1 Year',
+                              style: TextStyle(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(height: 1),
+                      const SizedBox(height: 16),
+                      InkWell(
+                        onTap: () => _selectDate(context, true),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_today_outlined,
+                                    size: 20,
+                                    color: colorScheme.onSurfaceVariant),
+                                const SizedBox(width: 12),
+                                const Text('Start Date'),
+                              ],
+                            ),
+                            Text(
+                              '${_months[_startDate.month - 1]} ${_startDate.day}, ${_startDate.year}',
+                              style: TextStyle(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildHalfYearOption(PlanType.otHalfYear,
-                        '1 Year (Half-paced)', _years == 1),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildHalfYearOption(PlanType.otHalfYear,
-                        '2 Years (Half-paced)', _years == 2),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // New Testament Plans
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                child: Text(
-                  'NEW TESTAMENT PLANS',
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildHalfYearOption(PlanType.ntHalfYear,
-                        '1 Year (Half-paced)', _years == 1),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildHalfYearOption(PlanType.ntHalfYear,
-                        '2 Years (Half-paced)', _years == 2),
-                  ),
-                ],
-              ),
+              ],
 
               const SizedBox(height: 24),
 
@@ -469,7 +485,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                 const SizedBox(width: 12),
                                 const Text('Custom Plan',
                                     style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
+                                        TextStyle(fontWeight: FontWeight.w500)),
                               ],
                             ),
                             Icon(
@@ -494,7 +510,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                 Text('End Date',
                                     style: TextStyle(
                                         color: colorScheme.onSurfaceVariant,
-                                        fontSize: 12)),
+                                        fontWeight: FontWeight.w500)),
                                 InkWell(
                                   onTap: () => _selectDate(context, false),
                                   child: Container(
@@ -526,7 +542,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                 Text('Chapters per Day',
                                     style: TextStyle(
                                         color: colorScheme.onSurfaceVariant,
-                                        fontSize: 12)),
+                                        fontWeight: FontWeight.w500)),
                                 Row(
                                   children: [
                                     GestureDetector(
@@ -599,7 +615,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                         'Books Included (${_selectedBooks.length}/${ReferenceParser.allBooks.length})',
                                         style: TextStyle(
                                             color: colorScheme.onSurfaceVariant,
-                                            fontSize: 12)),
+                                            fontWeight: FontWeight.w500)),
                                     TextButton(
                                       onPressed: () {
                                         setState(() {
@@ -735,9 +751,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     return GestureDetector(
       onTap: () => setState(() {
         _selectedType = type;
-        if (type == PlanType.otHalfYear || type == PlanType.ntHalfYear) {
-          // keep years
-        } else {
+        if (type == PlanType.threeOldOneNew) {
           _years = 1;
         }
       }),
@@ -815,36 +829,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
               ),
             ],
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHalfYearOption(
-      PlanType type, String title, bool isSelectedDuration) {
-    final isSelected = _selectedType == type && isSelectedDuration;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return GestureDetector(
-      onTap: () => setState(() {
-        _selectedType = type;
-        _years = title.contains('2') ? 2 : 1;
-      }),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected
-                ? colorScheme.primary.withValues(alpha: 0.5)
-                : colorScheme.outlineVariant.withValues(alpha: 0.2),
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          '${title.split(' ')[0]} ${title.split(' ')[1]}', // '1 Year' or '2 Years'
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
         ),
       ),
     );

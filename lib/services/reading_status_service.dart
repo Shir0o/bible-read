@@ -571,7 +571,7 @@ class ReadingStatusService {
         futures.add(
           firestore
               .collectionGroup('entries')
-              .where('uid', isEqualTo: uid)
+              .where(FieldPath.documentId, isEqualTo: uid)
               .where('dateId', whereIn: batch)
               .get(),
         );

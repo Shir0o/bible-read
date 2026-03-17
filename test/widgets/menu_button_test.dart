@@ -5,7 +5,6 @@ import 'package:bible_read/widgets/navigation_menu_scope.dart';
 
 void main() {
   testWidgets('MenuButton calls onNavigate when tapped', (tester) async {
-
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(

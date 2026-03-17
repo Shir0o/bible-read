@@ -5,8 +5,8 @@ enum PlanType {
   sequential,
   portions,
   threeOldOneNew,
-  otHalfYear,
-  ntHalfYear,
+  otOnly,
+  ntOnly,
 }
 
 class PlanGenerator {
@@ -27,7 +27,7 @@ class PlanGenerator {
     final List<String> allChapters = [];
 
     // 1. Determine the pool of chapters to read
-    if (type == PlanType.otHalfYear) {
+    if (type == PlanType.otOnly) {
       final otBooks = ReferenceParser.allBooks.take(39);
       for (final book in otBooks) {
         final count = ReferenceParser.chapterCount(book) ?? 0;
@@ -35,7 +35,7 @@ class PlanGenerator {
           allChapters.add('$book $i');
         }
       }
-    } else if (type == PlanType.ntHalfYear) {
+    } else if (type == PlanType.ntOnly) {
       final ntBooks = ReferenceParser.allBooks.skip(39);
       for (final book in ntBooks) {
         final count = ReferenceParser.chapterCount(book) ?? 0;

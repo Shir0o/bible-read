@@ -43,7 +43,8 @@ void main() {
   });
   tearDownAll(resetHttpOverrides);
 
-  testWidgets('show "How did your reading go today?" and button when not read', (
+  testWidgets('show "How did your reading go today?" and button when not read',
+      (
     tester,
   ) async {
     final firestore = FakeFirebaseFirestore();

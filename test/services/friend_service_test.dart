@@ -87,8 +87,6 @@ void main() {
       );
     });
 
-
-
     group('sendFriendRequest', () {
       test('should create sent and received requests', () async {
         const fromUid = 'userA';
