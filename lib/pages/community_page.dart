@@ -76,10 +76,14 @@ class CommunityPage extends StatefulWidget {
   State<CommunityPage> createState() => _CommunityPageState();
 }
 
-class _CommunityPageState extends State<CommunityPage> {
+class _CommunityPageState extends State<CommunityPage>
+    with AutomaticKeepAliveClientMixin {
   late Stream<List<Group>> _groupsStream;
   List<ReadLog> _friendLogs = [];
   bool _loadingLogs = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -209,6 +213,7 @@ class _CommunityPageState extends State<CommunityPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final user = widget.auth.currentUser;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -292,7 +297,7 @@ class _CommunityPageState extends State<CommunityPage> {
                           children: [
                             Text(
                               'Good Morning,',
-                              style: AppTextStyles.body.copyWith(
+                              style: AppTextStyles.body(context).copyWith(
                                 color: colorScheme.onSurfaceVariant,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -300,7 +305,7 @@ class _CommunityPageState extends State<CommunityPage> {
                             ),
                             Text(
                               firstName,
-                              style: AppTextStyles.title.copyWith(
+                              style: AppTextStyles.title(context).copyWith(
                                 color: colorScheme.primary,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -397,7 +402,7 @@ class _CommunityPageState extends State<CommunityPage> {
                           children: [
                             Text(
                               'Group Progress',
-                              style: AppTextStyles.title.copyWith(fontSize: 20),
+                              style: AppTextStyles.title(context).copyWith(fontSize: 20),
                             ),
                             TextButton(
                               onPressed: () {
@@ -448,7 +453,7 @@ class _CommunityPageState extends State<CommunityPage> {
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
                   child: Text(
                     'Friends Activity',
-                    style: AppTextStyles.title.copyWith(fontSize: 20),
+                    style: AppTextStyles.title(context).copyWith(fontSize: 20),
                   ),
                 ),
               ),
@@ -463,7 +468,7 @@ class _CommunityPageState extends State<CommunityPage> {
                     child: Center(
                       child: Text(
                         'No recent activity.',
-                        style: AppTextStyles.body
+                        style: AppTextStyles.body(context)
                             .copyWith(color: colorScheme.onSurfaceVariant),
                       ),
                     ),
@@ -511,13 +516,13 @@ class _CommunityPageState extends State<CommunityPage> {
           const SizedBox(height: 12),
           Text(
             'No active groups',
-            style: AppTextStyles.title
+            style: AppTextStyles.title(context)
                 .copyWith(fontSize: 16, color: colorScheme.onSurface),
           ),
           const SizedBox(height: 8),
           Text(
             'Join a group to see progress here.',
-            style: AppTextStyles.body
+            style: AppTextStyles.body(context)
                 .copyWith(color: colorScheme.onSurfaceVariant),
           ),
         ],
@@ -624,7 +629,7 @@ class _GroupProgressCard extends StatelessWidget {
                       children: [
                         Text(
                           group.name,
-                          style: AppTextStyles.title.copyWith(fontSize: 18),
+                          style: AppTextStyles.title(context).copyWith(fontSize: 18),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -650,7 +655,7 @@ class _GroupProgressCard extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               'of $totalDays • Collective Plan',
-                              style: AppTextStyles.body.copyWith(
+                              style: AppTextStyles.body(context).copyWith(
                                 fontSize: 12,
                                 color: colorScheme.onSurfaceVariant,
                               ),
@@ -679,7 +684,7 @@ class _GroupProgressCard extends StatelessWidget {
                                   children: [
                                     Text(
                                       '${(percent * 100).toInt()}% of Schedule',
-                                      style: AppTextStyles.body.copyWith(
+                                      style: AppTextStyles.body(context).copyWith(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                         color: colorScheme.onSurfaceVariant,
@@ -826,7 +831,7 @@ class _ActivityItem extends StatelessWidget {
               children: [
                 RichText(
                   text: TextSpan(
-                    style: AppTextStyles.body
+                    style: AppTextStyles.body(context)
                         .copyWith(color: colorScheme.onSurface),
                     children: [
                       TextSpan(
@@ -865,7 +870,7 @@ class _ActivityItem extends StatelessWidget {
                     ),
                     child: Text(
                       '"${log.comments.last.message}"',
-                      style: AppTextStyles.body.copyWith(
+                      style: AppTextStyles.body(context).copyWith(
                         fontSize: 12,
                         fontStyle: FontStyle.italic,
                         color: colorScheme.onSurfaceVariant,
@@ -875,7 +880,7 @@ class _ActivityItem extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   timeString,
-                  style: AppTextStyles.body.copyWith(
+                  style: AppTextStyles.body(context).copyWith(
                       fontSize: 12, color: colorScheme.onSurfaceVariant),
                 ),
               ],

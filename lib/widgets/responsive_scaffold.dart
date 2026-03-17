@@ -46,11 +46,7 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
   void didUpdateWidget(covariant ResponsiveScaffold oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.selectedIndex != oldWidget.selectedIndex) {
-      _pageController.animateToPage(
-        widget.selectedIndex,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.fastOutSlowIn,
-      );
+      _pageController.jumpToPage(widget.selectedIndex);
     }
   }
 

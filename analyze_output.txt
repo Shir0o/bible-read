@@ -1,23 +1,61 @@
 Analyzing bible-read...                                         
 
-warning • The value of the field '_originalStartDate' isn't used • lib/pages/edit_group_page.dart:48:17 • unused_field
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:352:61 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:357:61 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:362:61 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:402:40 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:405:51 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:489:55 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:502:48 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:508:48 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:575:43 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:607:56 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:631:53 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:709:59 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:815:38 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:817:40 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:965:55 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:1065:49 • deprecated_member_use
-   info • 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre • lib/pages/edit_group_page.dart:1096:17 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:1114:47 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/edit_group_page.dart:1139:33 • deprecated_member_use
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/challenges_page.dart:58:45 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:300:57 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:308:58 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:405:58 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:456:48 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:472:30 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:520:18 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:526:18 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:632:54 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:658:57 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:687:65 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:835:26 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:873:49 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/pages/community_page.dart:883:45 • undefined_method
+warning • Unused import: 'package:google_fonts/google_fonts.dart' • lib/pages/full_schedule_page.dart:5:8 • unused_import
+warning • Unused import: 'package:google_fonts/google_fonts.dart' • lib/pages/group_detail_page.dart:8:8 • unused_import
+  error • Expected to find ';' • lib/pages/group_detail_page.dart:1133:17 • expected_token
+  error • Expected an identifier • lib/pages/group_detail_page.dart:1133:18 • missing_identifier
+  error • Unexpected text ';' • lib/pages/group_detail_page.dart:1133:18 • unexpected_token
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/feed_card.dart:121:58 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/feed_card.dart:147:63 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/feed_card.dart:186:55 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/feed_card.dart:269:59 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/feed_card.dart:279:61 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/find_group_card.dart:60:44 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/find_group_card.dart:85:47 • undefined_method
+warning • Unused import: 'common_styles.dart' • lib/widgets/group_card.dart:7:8 • unused_import
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/journey/journey_header.dart:75:45 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/journey/journey_header.dart:83:46 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/month_streak_calendar.dart:128:42 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/month_streak_calendar.dart:156:59 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/profile_summary_card.dart:68:44 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/profile_summary_card.dart:92:49 • undefined_method
+  error • The argument type 'TextStyle Function(BuildContext)' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/seasonal_challenge_card.dart:87:44 • argument_type_not_assignable
+  error • The argument type 'TextStyle Function(BuildContext)' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/seasonal_challenge_card.dart:89:57 • argument_type_not_assignable
+  error • The argument type 'TextStyle Function(BuildContext)' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/seasonal_challenge_card.dart:91:58 • argument_type_not_assignable
+  error • The argument type 'Object' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/seasonal_challenge_card.dart:135:40 • argument_type_not_assignable
+  error • The argument type 'Object' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/seasonal_challenge_card.dart:137:46 • argument_type_not_assignable
+  error • The argument type 'Object' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/seasonal_challenge_card.dart:144:37 • argument_type_not_assignable
+  error • The argument type 'Object' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/seasonal_challenge_card.dart:154:26 • argument_type_not_assignable
+  error • The method 'copyWith' isn't defined for the type 'Object' • lib/widgets/seasonal_challenge_card.dart:170:42 • undefined_method
+  error • The argument type 'Object' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/seasonal_challenge_card.dart:173:55 • argument_type_not_assignable
+  error • The argument type 'Object' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/seasonal_challenge_card.dart:180:32 • argument_type_not_assignable
+  error • The argument type 'TextStyle Function(BuildContext)' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/section_header.dart:19:30 • argument_type_not_assignable
+  error • The argument type 'TextStyle Function(BuildContext)' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/streak_stats_box.dart:46:57 • argument_type_not_assignable
+  error • The argument type 'TextStyle Function(BuildContext)' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/streak_stats_box.dart:47:57 • argument_type_not_assignable
+  error • The argument type 'TextStyle Function(BuildContext)' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/streak_stats_box.dart:48:58 • argument_type_not_assignable
+  error • The argument type 'TextStyle Function(BuildContext)' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/streak_stats_box.dart:49:53 • argument_type_not_assignable
+  error • The argument type 'TextStyle Function(BuildContext)' can't be assigned to the parameter type 'TextStyle?'.  • lib/widgets/streak_stats_box.dart:53:22 • argument_type_not_assignable
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/views/all_groups_view.dart:87:50 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/views/all_groups_view.dart:189:43 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/views/read_log_view.dart:376:49 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/views/read_log_view.dart:399:61 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/views/read_log_view.dart:407:57 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/views/read_log_view.dart:435:65 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/views/read_log_view.dart:445:61 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/week_streak_calendar.dart:79:43 • undefined_method
+  error • The method 'copyWith' isn't defined for the type 'Function' • lib/widgets/week_streak_calendar.dart:108:51 • undefined_method
 

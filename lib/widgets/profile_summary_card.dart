@@ -65,7 +65,7 @@ class ProfileSummaryCard extends StatelessWidget {
               // Name
               Text(
                 user?.displayName ?? 'Reader',
-                style: AppTextStyles.title.copyWith(
+                style: AppTextStyles.title(context).copyWith(
                   fontSize: 24,
                   fontWeight: FontWeight.w500, // Slightly softer than bold
                   color: colorScheme.onSurface,
@@ -89,7 +89,7 @@ class ProfileSummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       'View Profile',
-                      style: AppTextStyles.body.copyWith(
+                      style: AppTextStyles.body(context).copyWith(
                         fontSize: 12,
                         color: colorScheme.primary.withValues(alpha: 0.8),
                         fontWeight: FontWeight.w500,

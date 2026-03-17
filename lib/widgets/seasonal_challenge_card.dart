@@ -84,12 +84,14 @@ class SeasonalChallengeCard extends StatelessWidget {
     final theme = Theme.of(context);
     final materialLocalizations = MaterialLocalizations.of(context);
     final titleStyle =
-        theme.textTheme.titleMedium?.merge(AppTextStyles.subtitle) ??
-            AppTextStyles.subtitle;
-    final bodyStyle = theme.textTheme.bodyMedium?.merge(AppTextStyles.body) ??
-        AppTextStyles.body;
-    final subtleStyle = theme.textTheme.bodySmall?.merge(AppTextStyles.body) ??
-        AppTextStyles.body;
+        theme.textTheme.titleMedium?.merge(AppTextStyles.subtitle(context)) ??
+            AppTextStyles.subtitle(context);
+    final bodyStyle =
+        theme.textTheme.bodyMedium?.merge(AppTextStyles.body(context)) ??
+            AppTextStyles.body(context);
+    final subtleStyle =
+        theme.textTheme.bodySmall?.merge(AppTextStyles.body(context)) ??
+            AppTextStyles.body(context);
 
     final now = nowBuilder?.call() ?? DateTime.now();
     final ended = now.isAfter(season.endDate);

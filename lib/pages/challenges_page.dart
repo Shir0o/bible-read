@@ -55,7 +55,7 @@ class _ChallengesPageState extends State<ChallengesPage>
         title: const Text('Challenges'),
         backgroundColor: colorScheme.surface,
         scrolledUnderElevation: 0,
-        titleTextStyle: AppTextStyles.title.copyWith(fontSize: 22),
+        titleTextStyle: AppTextStyles.title(context).copyWith(fontSize: 22),
         bottom: TabBar(
           controller: _tabController,
           labelColor: colorScheme.primary,

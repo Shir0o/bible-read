@@ -72,7 +72,7 @@ class JourneyHeader extends StatelessWidget {
               children: [
                 Text(
                   'Keep going,',
-                  style: AppTextStyles.body.copyWith(
+                  style: AppTextStyles.body(context).copyWith(
                     color: colorScheme.onSurfaceVariant,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -80,7 +80,7 @@ class JourneyHeader extends StatelessWidget {
                 ),
                 Text(
                   user?.displayName ?? 'Friend',
-                  style: AppTextStyles.title.copyWith(
+                  style: AppTextStyles.title(context).copyWith(
                     color: colorScheme.primary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

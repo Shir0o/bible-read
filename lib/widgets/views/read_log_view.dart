@@ -373,7 +373,7 @@ class _ReadLogViewState extends State<ReadLogView>
                     padding: const EdgeInsets.all(32.0),
                     child: Text(
                       'Unable to load today\'s readers.\nPlease check your connection.',
-                      style: AppTextStyles.body.copyWith(
+                      style: AppTextStyles.body(context).copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       textAlign: TextAlign.center,
@@ -396,7 +396,7 @@ class _ReadLogViewState extends State<ReadLogView>
                             const SizedBox(height: 16),
                             Text(
                               'Sign in to see who\'s reading today',
-                              style: AppTextStyles.subtitle.copyWith(
+                              style: AppTextStyles.subtitle(context).copyWith(
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
                               textAlign: TextAlign.center,
@@ -404,7 +404,7 @@ class _ReadLogViewState extends State<ReadLogView>
                             const SizedBox(height: 8),
                             Text(
                               'Join the community and encourage others.',
-                              style: AppTextStyles.body.copyWith(
+                              style: AppTextStyles.body(context).copyWith(
                                 color: Theme.of(context)
                                     .colorScheme
                                     .onSurfaceVariant,
@@ -432,7 +432,7 @@ class _ReadLogViewState extends State<ReadLogView>
                                 const SizedBox(height: 16),
                                 Text(
                                   'Be the first light today',
-                                  style: AppTextStyles.subtitle.copyWith(
+                                  style: AppTextStyles.subtitle(context).copyWith(
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
                                     fontWeight: FontWeight.w600,
@@ -442,7 +442,7 @@ class _ReadLogViewState extends State<ReadLogView>
                                 const SizedBox(height: 8),
                                 Text(
                                   'Read your passage and be an encouragement to others.',
-                                  style: AppTextStyles.body.copyWith(
+                                  style: AppTextStyles.body(context).copyWith(
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurfaceVariant,

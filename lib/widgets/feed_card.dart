@@ -118,7 +118,7 @@ class _FeedCardState extends State<FeedCard>
                             // User name: Bold and prominent
                             Text(
                               widget.log.name,
-                              style: AppTextStyles.title.copyWith(
+                              style: AppTextStyles.title(context).copyWith(
                                 fontSize: 18,
                               ),
                             ),
@@ -144,7 +144,7 @@ class _FeedCardState extends State<FeedCard>
                                   // Text: "Read today"
                                   Text(
                                     'Read today',
-                                    style: AppTextStyles.body.copyWith(
+                                    style: AppTextStyles.body(context).copyWith(
                                       fontSize: 14,
                                       color: colorScheme.onSurfaceVariant,
                                     ),
@@ -183,7 +183,7 @@ class _FeedCardState extends State<FeedCard>
                         Expanded(
                           child: Text(
                             _buildLikeText(widget.log.likeNames),
-                            style: AppTextStyles.body.copyWith(
+                            style: AppTextStyles.body(context).copyWith(
                               fontSize: 13,
                               // Muted but friendly tone
                               color: colorScheme.onSurfaceVariant,
@@ -266,7 +266,7 @@ class _FeedCardState extends State<FeedCard>
                             children: [
                               Text(
                                 '${comment.authorName}:',
-                                style: AppTextStyles.body.copyWith(
+                                style: AppTextStyles.body(context).copyWith(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
                                   color: colorScheme.onSurface,
@@ -276,7 +276,7 @@ class _FeedCardState extends State<FeedCard>
                               Expanded(
                                 child: Text(
                                   comment.message,
-                                  style: AppTextStyles.body.copyWith(
+                                  style: AppTextStyles.body(context).copyWith(
                                     fontSize: 13,
                                     color: colorScheme.onSurface,
                                   ),

@@ -57,7 +57,7 @@ class _FindGroupCardState extends State<FindGroupCard> {
             children: [
               Text(
                 widget.group.name,
-                style: AppTextStyles.title.copyWith(
+                style: AppTextStyles.title(context).copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -82,7 +82,7 @@ class _FindGroupCardState extends State<FindGroupCard> {
 
                   return Text(
                     readingText,
-                    style: AppTextStyles.body.copyWith(
+                    style: AppTextStyles.body(context).copyWith(
                       color: colorScheme.onSurfaceVariant,
                       fontSize: 14,
                     ),

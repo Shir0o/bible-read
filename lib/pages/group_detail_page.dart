@@ -1127,13 +1127,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               ),
               builder: (context, snapshot) {
                 final count = snapshot.data?.length ?? 0;
-                return Text(
-                  '$count Members',
-                  style: theme.textTheme.labelSmall,
-                ),
-              },
-            ),
-          ],
+                  return Text(
+                    "$count Members",
+                    style: theme.textTheme.labelSmall,
+                  );
+                },
+              ),          ],
         ),
         const SizedBox(height: 12),
         Container(

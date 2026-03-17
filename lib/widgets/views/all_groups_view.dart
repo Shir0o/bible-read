@@ -84,7 +84,7 @@ class _AllGroupsViewState extends State<AllGroupsView>
                     child: Text(
                       'Find Groups',
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.title.copyWith(fontSize: 20),
+                      style: AppTextStyles.title(context).copyWith(fontSize: 20),
                     ),
                   ),
                   IconButton(
@@ -186,7 +186,7 @@ class _AllGroupsViewState extends State<AllGroupsView>
           padding: const EdgeInsets.only(bottom: 16, left: 4),
           child: Text(
             'RECOMMENDED FOR YOU',
-            style: AppTextStyles.subtitle.copyWith(
+            style: AppTextStyles.subtitle(context).copyWith(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurfaceVariant,
