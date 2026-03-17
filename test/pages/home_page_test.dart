@@ -43,7 +43,7 @@ void main() {
   });
   tearDownAll(resetHttpOverrides);
 
-  testWidgets('show "Did you read today?" and button when not read', (
+  testWidgets('show "How did your reading go today?" and button when not read', (
     tester,
   ) async {
     final firestore = FakeFirebaseFirestore();
@@ -66,7 +66,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Did you read today?'), findsOneWidget);
+    expect(find.text('How did your reading go today?'), findsOneWidget);
     expect(find.text('Yes, I read'),
         findsOneWidget); // Can be FilledButton or FilledButton.tonal
     expect(find.byType(FilledButton), findsOneWidget);
@@ -244,7 +244,7 @@ void main() {
     await tester.pump();
 
     // Check that regular content is NOT present yet
-    expect(find.text('Did you read today?'), findsNothing);
+    expect(find.text('How did your reading go today?'), findsNothing);
     expect(find.text('Yes, I read'), findsNothing);
 
     // Check that Skeleton is present
@@ -258,7 +258,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Now content should be visible
-    expect(find.text('Did you read today?'), findsOneWidget);
+    expect(find.text('How did your reading go today?'), findsOneWidget);
     expect(find.byType(HomePageSkeleton), findsNothing);
   });
 }

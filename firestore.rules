@@ -38,6 +38,11 @@ service cloud.firestore {
     );
   }
 
+  // Allow users to query their own entries across all collections (for collectionGroup)
+  match /{path=**}/entries/{userId} {
+    allow read: if request.auth != null && request.auth.uid == userId;
+  }
+
   function isValidFeedbackCreate() {
       return request.resource.data.keys().hasOnly([
             'uid',

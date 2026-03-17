@@ -723,7 +723,7 @@ class _HomePageState extends State<HomePage>
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Did you read today?',
+                  'How did your reading go today?',
                   style: AppTextStyles.title.copyWith(
                     fontSize: 26,
                     fontWeight: FontWeight.w400,
@@ -765,8 +765,6 @@ class _HomePageState extends State<HomePage>
                             : const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.check),
-                                  SizedBox(width: 8),
                                   Text('Yes, I read'),
                                 ],
                               ),

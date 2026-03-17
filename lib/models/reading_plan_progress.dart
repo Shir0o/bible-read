@@ -7,6 +7,7 @@ class UserPlanProgress {
   final DateTime startDate;
   final List<int> completedDays; // List of day numbers that are completed
   final DateTime? lastReadDate;
+  final bool isArchived;
 
   UserPlanProgress({
     required this.planId,
@@ -14,6 +15,7 @@ class UserPlanProgress {
     required this.startDate,
     required this.completedDays,
     this.lastReadDate,
+    this.isArchived = false,
   });
 
   factory UserPlanProgress.fromFirestore(
@@ -25,6 +27,7 @@ class UserPlanProgress {
       startDate: (data['startDate'] as Timestamp).toDate(),
       completedDays: List<int>.from(data['completedDays'] as List? ?? []),
       lastReadDate: (data['lastReadDate'] as Timestamp?)?.toDate(),
+      isArchived: data['isArchived'] as bool? ?? false,
     );
   }
 
@@ -35,6 +38,7 @@ class UserPlanProgress {
         'completedDays': completedDays,
         'lastReadDate':
             lastReadDate != null ? Timestamp.fromDate(lastReadDate!) : null,
+        'isArchived': isArchived,
       };
 
   UserPlanProgress copyWith({
@@ -43,6 +47,7 @@ class UserPlanProgress {
     DateTime? startDate,
     List<int>? completedDays,
     DateTime? lastReadDate,
+    bool? isArchived,
   }) {
     return UserPlanProgress(
       planId: planId ?? this.planId,
@@ -50,6 +55,7 @@ class UserPlanProgress {
       startDate: startDate ?? this.startDate,
       completedDays: completedDays ?? this.completedDays,
       lastReadDate: lastReadDate ?? this.lastReadDate,
+      isArchived: isArchived ?? this.isArchived,
     );
   }
 }

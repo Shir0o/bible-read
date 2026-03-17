@@ -104,6 +104,16 @@ class ReadingPlanService {
         .set(progress.toFirestore());
   }
 
+  /// Removes a reading plan for a user.
+  Future<void> leavePlan(String userId, String planId) async {
+    await firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .doc(planId)
+        .delete();
+  }
+
   /// Streams the user's progress for a specific plan.
   Stream<UserPlanProgress?> getPlanProgress(String userId, String planId) {
     return firestore
@@ -118,18 +128,45 @@ class ReadingPlanService {
     });
   }
 
-  /// Streams all active plans for a user.
+  /// Streams all active (non-archived) plans for a user.
   Stream<List<UserPlanProgress>> getActivePlans(String userId) {
     return firestore
         .collection('users')
         .doc(userId)
         .collection('plan_progress')
+        .where('isArchived', isEqualTo: false)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
           .map((doc) => UserPlanProgress.fromFirestore(doc))
           .toList();
     });
+  }
+
+  /// Streams all archived plans for a user.
+  Stream<List<UserPlanProgress>> getArchivedPlans(String userId) {
+    return firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .where('isArchived', isEqualTo: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => UserPlanProgress.fromFirestore(doc))
+          .toList();
+    });
+  }
+
+  /// Sets the archived status of a plan.
+  Future<void> setPlanArchived(
+      String userId, String planId, bool isArchived) async {
+    await firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .doc(planId)
+        .update({'isArchived': isArchived});
   }
 
   /// Marks a specific day in the plan as completed.
