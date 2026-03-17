@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:bible_read/pages/friend_requests_page.dart';
 import 'package:bible_read/pages/group_join_requests_page.dart';
@@ -35,6 +36,25 @@ void main() async {
         androidProvider: AndroidProvider.debug,
         appleProvider: AppleProvider.debug,
       );
+      // Try to get token to trigger debug token print in logs
+      int retries = 0;
+      const maxRetries = 3;
+      while (retries < maxRetries) {
+        try {
+          final token = await FirebaseAppCheck.instance.getToken();
+          debugPrint('Firebase App Check debug token: $token');
+          break;
+        } catch (e) {
+          retries++;
+          debugPrint('AppCheck getToken attempt $retries failed: $e');
+          if (retries >= maxRetries) {
+            debugPrint('AppCheck getToken failed after $maxRetries attempts.');
+          } else {
+            await Future.delayed(
+                Duration(seconds: math.pow(2, retries).toInt()));
+          }
+        }
+      }
     } else {
       await FirebaseAppCheck.instance.activate(
         androidProvider: AndroidProvider.playIntegrity,

@@ -571,7 +571,7 @@ class ReadingStatusService {
         futures.add(
           firestore
               .collectionGroup('entries')
-              .where(FieldPath.documentId, isEqualTo: uid)
+              .where('uid', isEqualTo: uid)
               .where('dateId', whereIn: batch)
               .get(),
         );
@@ -580,7 +580,16 @@ class ReadingStatusService {
       final snapshots = await Future.wait(futures);
       for (final logsSnapshot in snapshots) {
         for (final doc in logsSnapshot.docs) {
-          final dateId = doc.data()['dateId'] as String?;
+          // If the entry has a dateId field use it, otherwise fallback to parent doc ID
+          final data = doc.data();
+          String? dateId = data['dateId'] as String?;
+          if (dateId == null) {
+            // Path: groups/{gid}/progress/{dateId}/entries/{uid}
+            // or read_logs/{dateId}/entries/{uid}
+            try {
+              dateId = doc.reference.parent.parent?.id;
+            } catch (_) {}
+          }
           if (dateId != null) {
             status[dateId] = true;
           }

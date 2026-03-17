@@ -67,6 +67,7 @@ class ReadLogPage extends StatefulWidget {
         .set({
       'name': (user.displayName ?? '').split(' ').first,
       'email': user.email?.toLowerCase() ?? '',
+      'uid': user.uid,
       'timestamp': Timestamp.now(),
     });
 
