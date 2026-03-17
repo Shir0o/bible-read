@@ -1,3 +1,26 @@
+# Release 1.24.0
+
+This release introduces a major visual refresh with Plus Jakarta Sans typography, refined Reading Plans UI with custom styling, and critical stability fixes for App Check and Firestore queries.
+
+## Highlights
+
+*   **Typography Refresh:** Migrated to Plus Jakarta Sans as the primary font and standardized the typography scale for a more modern, cohesive feel.
+*   **Reading Plans UI:** Completely redesigned the reading plans experience with hierarchical book selection, custom styling, and a more intuitive enrollment flow.
+*   **Performance & Navigation:** Resolved navigation flashing and optimized page transitions throughout the app.
+*   **Stability:** Fixed App Check token failures and Firestore query errors to ensure reliable backend connectivity.
+
+## Features & Enhancements
+
+*   **Reading Plans:** Modularized journey progress cards and added support for hierarchical book selection in custom plans.
+*   **UI Polish:** Standardized spacing and font weights across all core views including Home, Journey, and Profile.
+*   **Haptics:** Refined login and enrollment haptics for more consistent interaction feedback.
+
+## Stability
+
+*   **App Check:** Corrected token validation flow to prevent intermittent authentication failures.
+*   **Firestore:** Optimized complex queries to avoid execution errors and improved local state persistence.
+*   **Tests:** Updated golden tests and analysis rules to reflect the new typography and UI changes.
+
 # Release 1.23.0
 
 This release introduces a new Bible Progress page for detailed book tracking, a redesigned Journey experience, and a centralized Notification Center. It also includes critical stability fixes for iOS startup.
