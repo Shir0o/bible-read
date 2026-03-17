@@ -38,8 +38,8 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
         auth: widget.auth,
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
+        onPressed: () async {
+          await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => CreatePlanPage(
                 firestore: widget.firestore,
@@ -47,6 +47,9 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
               ),
             ),
           );
+          if (mounted) {
+            setState(() {});
+          }
         },
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,

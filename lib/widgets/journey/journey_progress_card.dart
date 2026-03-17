@@ -40,7 +40,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
   @override
   void initState() {
     super.initState();
-    _allPlansFuture = widget.readingPlanService.getAvailablePlans();
+    _allPlansFuture = widget.readingPlanService
+        .getAvailablePlans(userId: widget.auth.currentUser?.uid);
     final user = widget.auth.currentUser;
     if (user != null) {
       _activePlansStream = widget.readingPlanService.getActivePlans(user.uid);
@@ -100,8 +101,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                     ),
               ),
               TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(
+                onPressed: () async {
+                  await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => ReadingPlansPage(
                         firestore: widget.firestore,
@@ -109,6 +110,13 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                       ),
                     ),
                   );
+                  if (mounted) {
+                    setState(() {
+                      _allPlansFuture = widget.readingPlanService
+                          .getAvailablePlans(
+                              userId: widget.auth.currentUser?.uid);
+                    });
+                  }
                 },
                 child: Text(
                   'Details',
@@ -228,8 +236,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
             ),
             const SizedBox(height: 16),
             FilledButton.tonal(
-              onPressed: () {
-                Navigator.of(context).push(
+              onPressed: () async {
+                await Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => CreatePlanPage(
                       firestore: widget.firestore,
@@ -237,6 +245,13 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                     ),
                   ),
                 );
+                if (mounted) {
+                  setState(() {
+                    _allPlansFuture = widget.readingPlanService
+                        .getAvailablePlans(
+                            userId: widget.auth.currentUser?.uid);
+                  });
+                }
               },
               child: const Text('Create Plan'),
             ),

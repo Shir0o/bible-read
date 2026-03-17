@@ -44,7 +44,8 @@ void main() {
 
     when(() => auth.currentUser).thenReturn(user);
 
-    when(() => readingPlanService.getAvailablePlans())
+    when(() =>
+            readingPlanService.getAvailablePlans(userId: any(named: 'userId')))
         .thenAnswer((_) async => []);
     when(() => readingPlanService.getActivePlans(any()))
         .thenAnswer((_) => Stream.value([]));
@@ -59,7 +60,8 @@ void main() {
   }
 
   testWidgets('renders loading state initially', (tester) async {
-    when(() => readingPlanService.getAvailablePlans())
+    when(() =>
+            readingPlanService.getAvailablePlans(userId: any(named: 'userId')))
         .thenAnswer((_) => Completer<List<ReadingPlan>>().future);
 
     await tester.pumpApp(buildSubject());
@@ -70,7 +72,8 @@ void main() {
 
   testWidgets('renders no active plan card when user has no plans',
       (tester) async {
-    when(() => readingPlanService.getAvailablePlans())
+    when(() =>
+            readingPlanService.getAvailablePlans(userId: any(named: 'userId')))
         .thenAnswer((_) async => []);
     when(() => readingPlanService.getActivePlans('test_uid'))
         .thenAnswer((_) => Stream.value([]));
@@ -79,7 +82,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Start a Reading Plan'), findsOneWidget);
-    expect(find.text('Browse Plans'), findsOneWidget);
+    expect(find.text('Create Plan'), findsOneWidget);
   });
 
   testWidgets('renders active plan card when user has an active plan',
@@ -101,7 +104,8 @@ void main() {
       lastReadDate: DateTime.now(),
     );
 
-    when(() => readingPlanService.getAvailablePlans())
+    when(() =>
+            readingPlanService.getAvailablePlans(userId: any(named: 'userId')))
         .thenAnswer((_) async => [plan]);
     when(() => readingPlanService.getActivePlans('test_uid'))
         .thenAnswer((_) => Stream.value([progress]));
@@ -132,7 +136,8 @@ void main() {
       lastReadDate: DateTime.now(),
     );
 
-    when(() => readingPlanService.getAvailablePlans())
+    when(() =>
+            readingPlanService.getAvailablePlans(userId: any(named: 'userId')))
         .thenAnswer((_) async => [plan]);
     when(() => readingPlanService.getActivePlans('test_uid'))
         .thenAnswer((_) => Stream.value([progress]));
@@ -165,7 +170,8 @@ void main() {
       lastReadDate: DateTime.now(),
     );
 
-    when(() => readingPlanService.getAvailablePlans())
+    when(() =>
+            readingPlanService.getAvailablePlans(userId: any(named: 'userId')))
         .thenAnswer((_) async => [plan]);
     when(() => readingPlanService.getActivePlans('test_uid'))
         .thenAnswer((_) => Stream.value([progress]));
