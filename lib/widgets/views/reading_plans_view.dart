@@ -215,9 +215,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                               ),
                               child: Text(
                                 '${activePlansData.length} Ongoing',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                   color: colorScheme.primary,
                                 ),
                               ),
@@ -250,11 +248,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                             ),
                             Text(
                               '${archivedPlansData.length} Plans',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: Theme.of(context).textTheme.labelSmall,
                             ),
                           ],
                         ),
@@ -302,18 +296,12 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
         children: [
           Text(
             plan.title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
           Text(
             plan.description,
-            style: TextStyle(
-              fontSize: 14,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -323,18 +311,14 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
             children: [
               Text(
                 '$percentString complete',
-                style: TextStyle(
-                  fontSize: 14,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.primary,
                 ),
               ),
               Text(
                 '$completedCount/$totalCount days',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
           ),
@@ -433,19 +417,12 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
               children: [
                 Text(
                   plan.title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: colorScheme.onSurface.withValues(alpha: 0.8),
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '$percentString complete ($completedCount/$totalCount days)',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall,
                 ),
               ],
             ),

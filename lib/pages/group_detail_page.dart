@@ -867,19 +867,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       children: [
                         Text(
                           'GROUP PROGRESS',
-                          style: GoogleFonts.plusJakartaSans(
-                            textStyle: theme.textTheme.labelSmall,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1.2,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                          style: theme.textTheme.labelSmall,
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '$percentDisplay%',
-                          style: GoogleFonts.plusJakartaSans(
-                            textStyle: theme.textTheme.displaySmall,
-                            fontWeight: FontWeight.bold,
+                          style: theme.textTheme.displaySmall?.copyWith(
                             color: colorScheme.primary,
                           ),
                         ),
@@ -896,9 +889,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       ),
                       child: Text(
                         isOnTrack ? 'On Track' : 'Behind',
-                        style: GoogleFonts.plusJakartaSans(
-                          textStyle: theme.textTheme.labelSmall,
-                          fontWeight: FontWeight.w600,
+                        style: theme.textTheme.labelSmall?.copyWith(
                           color: isOnTrack
                               ? colorScheme.onPrimaryContainer
                               : colorScheme.onErrorContainer,
@@ -924,10 +915,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   currentBook != null
                       ? 'The group is $percentDisplay% through the Book of $currentBook.'
                       : 'The group is $percentDisplay% through the reading plan.',
-                  style: GoogleFonts.plusJakartaSans(
-                    textStyle: theme.textTheme.bodyMedium,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: theme.textTheme.bodyMedium,
                 ),
               ],
             ),
@@ -969,11 +957,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       children: [
         Text(
           "Today's Reading",
-          style: GoogleFonts.plusJakartaSans(
-            textStyle: theme.textTheme.titleMedium,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
-          ),
+          style: theme.textTheme.titleMedium,
         ),
         const SizedBox(height: 12),
         Container(
@@ -996,21 +980,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             children: [
               Text(
                 dateString,
-                style: GoogleFonts.plusJakartaSans(
-                  textStyle: theme.textTheme.bodySmall,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.labelSmall,
               ),
               const SizedBox(height: 8),
               Text(
                 readingTitle,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
-                  textStyle: theme.textTheme.headlineSmall,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
+                style: theme.textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
               // Subtitle placeholder if needed
@@ -1115,8 +1091,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                                 elevation: isRead ? 0 : 4,
-                                textStyle: GoogleFonts.plusJakartaSans(
-                                  fontWeight: FontWeight.w600,
+                                textStyle: theme.textTheme.titleMedium?.copyWith(
                                   fontSize: 16,
                                 ),
                               ),
@@ -1143,11 +1118,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           children: [
             Text(
               'Members',
-              style: GoogleFonts.plusJakartaSans(
-                textStyle: theme.textTheme.titleMedium,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
+              style: theme.textTheme.titleMedium,
             ),
             StreamBuilder<List<GroupMemberProgressData>>(
               stream: widget.groupService.memberDailyCompletion(
@@ -1158,11 +1129,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 final count = snapshot.data?.length ?? 0;
                 return Text(
                   '$count Members',
-                  style: GoogleFonts.plusJakartaSans(
-                    textStyle: theme.textTheme.bodySmall,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                );
+                  style: theme.textTheme.labelSmall,
+                ),
               },
             ),
           ],
@@ -1258,8 +1226,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                 children: [
                                   Text(
                                     member.name,
-                                    style: GoogleFonts.plusJakartaSans(
-                                      textStyle: theme.textTheme.bodyLarge,
+                                    style: theme.textTheme.bodyLarge?.copyWith(
                                       fontWeight: FontWeight.w500,
                                       color: isRead
                                           ? colorScheme.onSurface
@@ -1269,9 +1236,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                   ),
                                   Text(
                                     statusText,
-                                    style: GoogleFonts.plusJakartaSans(
-                                      textStyle: theme.textTheme.bodySmall,
-                                      fontWeight: FontWeight.w500,
+                                    style: theme.textTheme.labelSmall?.copyWith(
                                       color: isRead
                                           ? colorScheme.primary
                                           : colorScheme.onSurfaceVariant,
@@ -1354,8 +1319,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
-          textStyle: GoogleFonts.plusJakartaSans(
-            fontWeight: FontWeight.w500,
+          textStyle: theme.textTheme.titleMedium?.copyWith(
             fontSize: 16,
           ),
         ),

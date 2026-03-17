@@ -118,23 +118,20 @@ class CommonStyles {
 
 /// Defines reusable text styles for displaying content.
 ///
-/// Use [subtitle] for section headings and [body] for regular content text.
+/// Use these getters to access standardized typography throughout the app.
 class AppTextStyles {
-  static const TextStyle subtitle = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-  );
+  static TextStyle title(BuildContext context) =>
+      Theme.of(context).textTheme.titleLarge!;
 
-  static const TextStyle body = TextStyle(
-    fontSize: 16,
-  );
+  static TextStyle subtitle(BuildContext context) =>
+      Theme.of(context).textTheme.titleMedium!;
 
-  static const TextStyle title = TextStyle(
-    fontSize: 22,
-    fontWeight: FontWeight.w700,
-  );
+  static TextStyle body(BuildContext context) =>
+      Theme.of(context).textTheme.bodyLarge!;
 
-  static const TextStyle caption = TextStyle(
-    fontSize: 12,
-  );
+  static TextStyle bodySmall(BuildContext context) =>
+      Theme.of(context).textTheme.bodyMedium!;
+
+  static TextStyle caption(BuildContext context) =>
+      Theme.of(context).textTheme.labelSmall!;
 }

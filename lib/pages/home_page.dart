@@ -614,7 +614,7 @@ class _HomePageState extends State<HomePage>
       return Center(
         child: Text(
           'User not signed in.',
-          style: AppTextStyles.subtitle.copyWith(
+          style: AppTextStyles.subtitle(context).copyWith(
             color:
                 Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
@@ -641,11 +641,9 @@ class _HomePageState extends State<HomePage>
               const SizedBox(height: 24),
               Text(
                 'Thank you for being here.',
-                style: AppTextStyles.subtitle.copyWith(
+                style: AppTextStyles.subtitle(context).copyWith(
                   fontSize: 24,
-                  fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withValues(alpha: 0.9),
-                  letterSpacing: 0.0,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -653,22 +651,18 @@ class _HomePageState extends State<HomePage>
               if (_scheduledDay != null) ...[
                 Text(
                   'TODAY\'S READING',
-                  style: AppTextStyles.caption.copyWith(
+                  style: AppTextStyles.caption(context).copyWith(
                     color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 2.0,
-                    fontSize: 11,
                   ),
                 ),
                 const SizedBox(height: 32),
                 Text(
                   _formatReadings(_scheduledDay!.readings),
-                  style: AppTextStyles.title.copyWith(
+                  style: AppTextStyles.title(context).copyWith(
                     fontSize: 26,
                     fontWeight: FontWeight.w400,
                     height: 1.3,
                     color: colorScheme.onSurface.withValues(alpha: 0.9),
-                    fontFamily: 'Serif',
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -714,21 +708,17 @@ class _HomePageState extends State<HomePage>
               ] else ...[
                 Text(
                   'Daily Reading',
-                  style: AppTextStyles.caption.copyWith(
+                  style: AppTextStyles.caption(context).copyWith(
                     color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 2.0,
-                    fontSize: 11,
                   ),
                 ),
                 const SizedBox(height: 24),
                 Text(
                   'How did your reading go today?',
-                  style: AppTextStyles.title.copyWith(
+                  style: AppTextStyles.title(context).copyWith(
                     fontSize: 26,
                     fontWeight: FontWeight.w400,
                     color: colorScheme.onSurface.withValues(alpha: 0.9),
-                    fontFamily: 'Serif',
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -788,8 +778,7 @@ class _HomePageState extends State<HomePage>
                     children: [
                       Text(
                         'Reading this week',
-                        style: AppTextStyles.body.copyWith(
-                          fontSize: 12,
+                        style: AppTextStyles.bodySmall(context).copyWith(
                           color: colorScheme.onSurfaceVariant
                               .withValues(alpha: 0.6),
                         ),
@@ -826,12 +815,9 @@ class _HomePageState extends State<HomePage>
 
               const SizedBox(height: 24),
 
-              // Streak Count
-              if (_currentStreak > 0)
                 RichText(
                   text: TextSpan(
-                    style: AppTextStyles.body.copyWith(
-                      fontSize: 13,
+                    style: AppTextStyles.bodySmall(context).copyWith(
                       color: colorScheme.outline,
                     ),
                     children: [
@@ -839,7 +825,7 @@ class _HomePageState extends State<HomePage>
                         text: '$_currentStreak',
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
-                      TextSpan(text: ' days of reading'),
+                      const TextSpan(text: ' days of reading'),
                     ],
                   ),
                 ),

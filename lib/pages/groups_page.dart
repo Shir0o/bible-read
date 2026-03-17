@@ -163,7 +163,7 @@ class _GroupsPageState extends State<GroupsPage> {
                                 padding: const EdgeInsets.all(32),
                                 child: Text(
                                   'You haven\'t joined any groups yet.',
-                                  style: AppTextStyles.body.copyWith(
+                                  style: AppTextStyles.body(context).copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
                                   textAlign: TextAlign.center,
@@ -206,9 +206,8 @@ class _GroupsPageState extends State<GroupsPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    textStyle: const TextStyle(
+                    textStyle: theme.textTheme.titleMedium?.copyWith(
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

@@ -64,7 +64,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
               children: [
                 Text(
                   'When would you like to start?',
-                  style: AppTextStyles.subtitle.copyWith(fontSize: 20),
+                  style: AppTextStyles.subtitle(context),
                 ),
                 const SizedBox(height: 24),
                 ListTile(
@@ -163,9 +163,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                   children: [
                     Text(
                       widget.plan.description,
-                      style: AppTextStyles.body.copyWith(
+                      style: AppTextStyles.body(context).copyWith(
                         color: colorScheme.onSurfaceVariant,
-                        fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -202,14 +201,13 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                                 children: [
                                   Text(
                                     'Plan in Progress',
-                                    style: AppTextStyles.subtitle.copyWith(
+                                    style: AppTextStyles.subtitle(context).copyWith(
                                       color: colorScheme.onSecondaryContainer,
-                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   Text(
                                     '${progress.completedDays.length} / ${widget.plan.durationDays} days completed',
-                                    style: AppTextStyles.caption.copyWith(
+                                    style: AppTextStyles.caption(context).copyWith(
                                       color: colorScheme.onSecondaryContainer,
                                     ),
                                   ),
@@ -295,16 +293,14 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                                       children: [
                                         Text(
                                           'Day ${day.day}',
-                                          style: AppTextStyles.caption.copyWith(
-                                            fontWeight: FontWeight.bold,
+                                          style: AppTextStyles.caption(context).copyWith(
                                             color: colorScheme.primary,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
                                           day.readings.join(', '),
-                                          style: AppTextStyles.body.copyWith(
-                                            fontSize: 16,
+                                          style: AppTextStyles.body(context).copyWith(
                                             decoration: isCompleted
                                                 ? TextDecoration.lineThrough
                                                 : null,

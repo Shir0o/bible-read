@@ -7,15 +7,15 @@ import 'package:google_fonts/google_fonts.dart';
 /// Pass a [ColorScheme] to [appTheme] to change primary colors and adjust
 /// [fontFamily] or [textTheme] to modify typography.
 class AppTheme {
-  static TextTheme _applyIBMFont(TextTheme base) =>
-      GoogleFonts.ibmPlexSansTextTheme(base);
+  static TextTheme _applyFont(TextTheme base) =>
+      GoogleFonts.plusJakartaSansTextTheme(base);
 
   static Typography _buildTypography() {
     final materialTypography = Typography.material2021();
 
     return materialTypography.copyWith(
-      black: _applyIBMFont(materialTypography.black),
-      white: _applyIBMFont(materialTypography.white),
+      black: _applyFont(materialTypography.black),
+      white: _applyFont(materialTypography.white),
     );
   }
 
@@ -50,17 +50,46 @@ class AppTheme {
   /// Adjust [colorScheme], [textTheme], or button themes to change the overall
   /// look and feel.
   static ThemeData appTheme(ColorScheme colorScheme) {
-    // Apply standard M3 typography scaling
-    final themedText = (colorScheme.brightness == Brightness.light
-            ? textTheme
-            : primaryTextTheme)
-        .copyWith(
-          bodyMedium: GoogleFonts.ibmPlexSans(fontSize: 16),
-        )
-        .apply(
-          bodyColor: colorScheme.onSurface,
-          displayColor: colorScheme.onSurface,
-        );
+    final isLight = colorScheme.brightness == Brightness.light;
+    final baseTextTheme = isLight ? textTheme : primaryTextTheme;
+
+    // Apply standard M3 typography scaling and custom overrides
+    final themedText = _applyFont(baseTextTheme).copyWith(
+      displaySmall: baseTextTheme.displaySmall?.copyWith(
+        fontSize: 36,
+        fontWeight: FontWeight.bold,
+        color: colorScheme.onSurface,
+      ),
+      headlineSmall: baseTextTheme.headlineSmall?.copyWith(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: colorScheme.onSurface,
+      ),
+      titleLarge: baseTextTheme.titleLarge?.copyWith(
+        fontSize: 22,
+        fontWeight: FontWeight.bold,
+        color: colorScheme.onSurface,
+      ),
+      titleMedium: baseTextTheme.titleMedium?.copyWith(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: colorScheme.onSurface,
+      ),
+      bodyLarge: baseTextTheme.bodyLarge?.copyWith(
+        fontSize: 16,
+        color: colorScheme.onSurface,
+      ),
+      bodyMedium: baseTextTheme.bodyMedium?.copyWith(
+        fontSize: 14,
+        color: colorScheme.onSurfaceVariant,
+      ),
+      labelSmall: baseTextTheme.labelSmall?.copyWith(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1.2,
+        color: colorScheme.onSurfaceVariant,
+      ),
+    );
 
     return ThemeData(
       brightness: colorScheme.brightness,
@@ -72,8 +101,7 @@ class AppTheme {
       scaffoldBackgroundColor: colorScheme.surface,
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.surface,
-        titleTextStyle:
-            themedText.titleLarge?.copyWith(color: colorScheme.onSurface),
+        titleTextStyle: themedText.titleLarge,
         elevation: 0,
         centerTitle: false,
       ),

@@ -76,15 +76,12 @@ class GroupCard extends StatelessWidget {
                                   children: [
                                     Text(
                                       group.name,
-                                      style: AppTextStyles.title.copyWith(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: theme.textTheme.titleMedium,
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       readingText,
-                                      style: AppTextStyles.body.copyWith(
+                                      style: theme.textTheme.bodyMedium?.copyWith(
                                         color: colorScheme.primary,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -100,17 +97,13 @@ class GroupCard extends StatelessWidget {
                                 children: [
                                   Text(
                                     '${(groupCompletion * 100).toInt()}%',
-                                    style: AppTextStyles.title.copyWith(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
+                                    style: theme.textTheme.headlineSmall?.copyWith(
+                                      color: colorScheme.primary,
                                     ),
                                   ),
                                   Text(
                                     'Group Goal',
-                                    style: AppTextStyles.body.copyWith(
-                                      fontSize: 10,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
+                                    style: theme.textTheme.labelSmall,
                                   ),
                                 ],
                               ),
@@ -136,11 +129,7 @@ class GroupCard extends StatelessWidget {
                             children: [
                               Text(
                                 dailyGoalText,
-                                style: AppTextStyles.body.copyWith(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
+                                style: theme.textTheme.labelSmall,
                               ),
                               // Member Stack
                               _buildMemberStack(context, members),

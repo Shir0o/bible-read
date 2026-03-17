@@ -87,11 +87,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
         ),
         title: Text(
           'Full Schedule',
-          style: GoogleFonts.plusJakartaSans(
-            textStyle: theme.textTheme.titleLarge,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
-          ),
+          style: theme.textTheme.titleLarge,
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -171,10 +167,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
       padding: const EdgeInsets.only(left: 8, bottom: 8, top: 8),
       child: Text(
         title.toUpperCase(),
-        style: GoogleFonts.plusJakartaSans(
-          textStyle: theme.textTheme.labelMedium,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 1.2,
+        style: theme.textTheme.labelMedium?.copyWith(
           color:
               isHighlight ? colorScheme.primary : colorScheme.onSurfaceVariant,
         ),
@@ -206,16 +199,13 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
                 children: [
                   Text(
                     _formatDate(schedule.date),
-                    style: GoogleFonts.plusJakartaSans(
-                      textStyle: theme.textTheme.bodySmall,
-                      fontWeight: FontWeight.w600,
+                    style: theme.textTheme.labelSmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   Text(
                     _formatDayOfWeek(schedule.date),
-                    style: GoogleFonts.plusJakartaSans(
-                      textStyle: theme.textTheme.bodySmall,
+                    style: theme.textTheme.labelSmall?.copyWith(
                       color:
                           colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                     ),
@@ -227,8 +217,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
             Expanded(
               child: Text(
                 schedule.chapters.join(', '),
-                style: GoogleFonts.plusJakartaSans(
-                  textStyle: theme.textTheme.bodyLarge,
+                style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withValues(alpha: 0.8),
                 ),
@@ -287,16 +276,13 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
               children: [
                 Text(
                   _formatDate(schedule.date),
-                  style: GoogleFonts.plusJakartaSans(
-                    textStyle: theme.textTheme.bodyMedium,
-                    fontWeight: FontWeight.bold,
+                  style: theme.textTheme.titleSmall?.copyWith(
                     color: colorScheme.primary,
                   ),
                 ),
                 Text(
                   _formatDayOfWeek(schedule.date),
-                  style: GoogleFonts.plusJakartaSans(
-                    textStyle: theme.textTheme.bodySmall,
+                  style: theme.textTheme.labelSmall?.copyWith(
                     color: colorScheme.primary.withValues(alpha: 0.8),
                   ),
                 ),
@@ -310,11 +296,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
               children: [
                 Text(
                   schedule.chapters.join(', '),
-                  style: GoogleFonts.plusJakartaSans(
-                    textStyle: theme.textTheme.titleMedium,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
+                  style: theme.textTheme.titleMedium,
                 ),
               ],
             ),

@@ -26,8 +26,7 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Reading Plans',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('My Reading Plans'),
         backgroundColor: colorScheme.surface,
         scrolledUnderElevation: 0,
         centerTitle: false,
