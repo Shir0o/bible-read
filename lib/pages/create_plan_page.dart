@@ -7,6 +7,12 @@ import '../services/reading_plan_service.dart';
 import '../services/reference_parser.dart';
 import 'plan_detail_page.dart';
 
+enum _PlanGoalMethod {
+  endDate,
+  versesPerDay,
+  chaptersPerDay,
+}
+
 class CreatePlanPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
@@ -37,8 +43,92 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   }; // 1 = Mon, 6 = Sat (no Sun default)
   final Set<String> _selectedBooks = Set.from(ReferenceParser.allBooks);
   int? _customChaptersPerDay;
+  int? _customVersesPerDay;
+  _PlanGoalMethod _goalMethod = _PlanGoalMethod.endDate;
   bool _isCreating = false;
   bool _isCustomPlanExpanded = false;
+
+  static const Map<String, Map<String, List<String>>> _bookCategories = {
+    'Old Testament': {
+      'Pentateuch': [
+        'Genesis',
+        'Exodus',
+        'Leviticus',
+        'Numbers',
+        'Deuteronomy'
+      ],
+      'Books of History': [
+        'Joshua',
+        'Judges',
+        'Ruth',
+        '1 Samuel',
+        '2 Samuel',
+        '1 Kings',
+        '2 Kings',
+        '1 Chronicles',
+        '2 Chronicles',
+        'Ezra',
+        'Nehemiah',
+        'Esther'
+      ],
+      'Books of Poetry': [
+        'Job',
+        'Psalm',
+        'Proverbs',
+        'Ecclesiastes',
+        'Song of Songs'
+      ],
+      'Books of Prophecy': [
+        'Isaiah',
+        'Jeremiah',
+        'Lamentations',
+        'Ezekiel',
+        'Daniel',
+        'Hosea',
+        'Joel',
+        'Amos',
+        'Obadiah',
+        'Jonah',
+        'Micah',
+        'Nahum',
+        'Habakkuk',
+        'Zephaniah',
+        'Haggai',
+        'Zechariah',
+        'Malachi'
+      ],
+    },
+    'New Testament': {
+      'Gospels': ['Matthew', 'Mark', 'Luke', 'John'],
+      'History': ['Acts'],
+      'Epistles': [
+        'Romans',
+        '1 Corinthians',
+        '2 Corinthians',
+        'Galatians',
+        'Ephesians',
+        'Philippians',
+        'Colossians',
+        '1 Thessalonians',
+        '2 Thessalonians',
+        '1 Timothy',
+        '2 Timothy',
+        'Titus',
+        'Philemon',
+        'Hebrews',
+        'James',
+        '1 Peter',
+        '2 Peter',
+        '1 John',
+        '2 John',
+        '3 John',
+        'Jude'
+      ],
+      'Prophecy': ['Revelation'],
+    },
+  };
+
+  final Set<String> _expandedCategories = {};
 
   @override
   void dispose() {
@@ -70,6 +160,17 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           ? DateTime.now().subtract(const Duration(days: 365))
           : _startDate.add(const Duration(days: 1)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  surfaceContainerHigh:
+                      Theme.of(context).colorScheme.surfaceContainerHigh,
+                ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
@@ -108,12 +209,17 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         type: _selectedType,
         years: _years > 0 ? _years : 1, // Default to 1 if not set
         startDate: _startDate,
-        endDate: _endDate,
+        endDate: _goalMethod == _PlanGoalMethod.endDate ? _endDate : null,
         readingDays: _readingDays.toList(),
         selectedBooks: _selectedBooks.length == ReferenceParser.allBooks.length
             ? null
             : _selectedBooks.toList(),
-        customChaptersPerDay: _customChaptersPerDay,
+        customChaptersPerDay: _goalMethod == _PlanGoalMethod.chaptersPerDay
+            ? _customChaptersPerDay
+            : null,
+        customVersesPerDay: _goalMethod == _PlanGoalMethod.versesPerDay
+            ? _customVersesPerDay
+            : null,
       );
 
       final planService = ReadingPlanService(firestore: widget.firestore);
@@ -502,198 +608,88 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // End Date
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('End Date',
-                                    style: TextStyle(
-                                        color: colorScheme.onSurfaceVariant,
-                                        fontWeight: FontWeight.w500)),
-                                InkWell(
-                                  onTap: () => _selectDate(context, false),
-                                  child: Container(
-                                    padding: const EdgeInsets.only(bottom: 2),
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                          bottom: BorderSide(
-                                              color: colorScheme.primary)),
-                                    ),
-                                    child: Text(
-                                      _endDate != null
-                                          ? '${_months[_endDate!.month - 1]} ${_endDate!.day}, ${_endDate!.year}'
-                                          : 'Select Date',
-                                      style: TextStyle(
-                                        color: colorScheme.primary,
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 12,
+                            _buildGoalOption(
+                              _PlanGoalMethod.endDate,
+                              'End date:',
+                              InkWell(
+                                onTap: _goalMethod == _PlanGoalMethod.endDate
+                                    ? () => _selectDate(context, false)
+                                    : null,
+                                child: Container(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                        bottom: BorderSide(
+                                            color: _goalMethod ==
+                                                    _PlanGoalMethod.endDate
+                                                ? colorScheme.primary
+                                                : colorScheme.outlineVariant)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        _endDate != null
+                                            ? '${_months[_endDate!.month - 1]} ${_endDate!.day}, ${_endDate!.year}'
+                                            : 'Select Date',
+                                        style: TextStyle(
+                                          color: _goalMethod ==
+                                                  _PlanGoalMethod.endDate
+                                              ? colorScheme.primary
+                                              : colorScheme.onSurfaceVariant,
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 14,
+                                        ),
                                       ),
-                                    ),
+                                      const Spacer(),
+                                      Icon(Icons.calendar_today,
+                                          size: 16,
+                                          color: _goalMethod ==
+                                                  _PlanGoalMethod.endDate
+                                              ? colorScheme.primary
+                                              : colorScheme.onSurfaceVariant),
+                                    ],
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
                             const SizedBox(height: 16),
-                            // Chapters per Day
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Chapters per Day',
-                                    style: TextStyle(
-                                        color: colorScheme.onSurfaceVariant,
-                                        fontWeight: FontWeight.w500)),
-                                Row(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _customChaptersPerDay =
-                                              (_customChaptersPerDay ?? 3) - 1;
-                                          if (_customChaptersPerDay! < 1) {
-                                            _customChaptersPerDay = 1;
-                                          }
-                                        });
-                                      },
-                                      child: Container(
-                                        width: 24,
-                                        height: 24,
-                                        decoration: BoxDecoration(
-                                            color: colorScheme
-                                                .surfaceContainerHighest,
-                                            borderRadius:
-                                                BorderRadius.circular(4)),
-                                        child: const Center(
-                                            child: Text('-',
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold))),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text('${_customChaptersPerDay ?? 3}',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12)),
-                                    const SizedBox(width: 12),
-                                    GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _customChaptersPerDay =
-                                              (_customChaptersPerDay ?? 3) + 1;
-                                        });
-                                      },
-                                      child: Container(
-                                        width: 24,
-                                        height: 24,
-                                        decoration: BoxDecoration(
-                                            color: colorScheme
-                                                .surfaceContainerHighest,
-                                            borderRadius:
-                                                BorderRadius.circular(4)),
-                                        child: const Center(
-                                            child: Text('+',
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold))),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                            _buildGoalOption(
+                              _PlanGoalMethod.versesPerDay,
+                              'Amount of verses to read per day:',
+                              _buildNumericField(
+                                value: _customVersesPerDay,
+                                onChanged: (val) => setState(() =>
+                                    _customVersesPerDay = int.tryParse(val)),
+                                enabled:
+                                    _goalMethod == _PlanGoalMethod.versesPerDay,
+                              ),
                             ),
                             const SizedBox(height: 16),
-                            // Books Included
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                        'Books Included (${_selectedBooks.length}/${ReferenceParser.allBooks.length})',
-                                        style: TextStyle(
-                                            color: colorScheme.onSurfaceVariant,
-                                            fontWeight: FontWeight.w500)),
-                                    TextButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          if (_selectedBooks.isEmpty) {
-                                            _selectedBooks.addAll(
-                                                ReferenceParser.allBooks);
-                                          } else {
-                                            _selectedBooks.clear();
-                                          }
-                                        });
-                                      },
-                                      style: TextButton.styleFrom(
-                                        padding: EdgeInsets.zero,
-                                        minimumSize: Size.zero,
-                                        tapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                      child: Text(
-                                        _selectedBooks.isEmpty
-                                            ? 'SELECT ALL'
-                                            : 'DESELECT ALL',
-                                        style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: colorScheme.primary),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    ..._selectedBooks.take(3).map((b) =>
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: colorScheme.primaryContainer,
-                                            borderRadius:
-                                                BorderRadius.circular(6),
-                                          ),
-                                          child: Text(b,
-                                              style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: colorScheme
-                                                      .onPrimaryContainer)),
-                                        )),
-                                    if (_selectedBooks.length > 3)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                              color: colorScheme.outlineVariant
-                                                  .withValues(alpha: 0.5)),
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                            '...and ${_selectedBooks.length - 3} more',
-                                            style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w500,
-                                                color: colorScheme
-                                                    .onSurfaceVariant)),
-                                      ),
-                                    if (_selectedBooks.isEmpty)
-                                      Text('No books selected',
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: colorScheme.error)),
-                                  ],
-                                ),
-                              ],
+                            _buildGoalOption(
+                              _PlanGoalMethod.chaptersPerDay,
+                              'Amount of chapters to read per day:',
+                              _buildNumericField(
+                                value: _customChaptersPerDay,
+                                onChanged: (val) => setState(() =>
+                                    _customChaptersPerDay = int.tryParse(val)),
+                                enabled: _goalMethod ==
+                                    _PlanGoalMethod.chaptersPerDay,
+                              ),
                             ),
+                            const SizedBox(height: 32),
+                            Text(
+                              'Select Bible books to read:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ..._bookCategories.entries.map((entry) =>
+                                _buildBookCategory(entry.key, entry.value)),
                           ],
                         ),
                       ),
@@ -862,6 +858,255 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildGoalOption(
+      _PlanGoalMethod method, String label, Widget inputField) {
+    final isSelected = _goalMethod == method;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => setState(() => _goalMethod = method),
+          child: Row(
+            children: [
+              Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected
+                        ? colorScheme.primary
+                        : colorScheme.outlineVariant,
+                    width: isSelected ? 5.5 : 1.5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected
+                        ? colorScheme.onSurface
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.only(left: 30),
+          child: inputField,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNumericField({
+    int? value,
+    required ValueChanged<String> onChanged,
+    required bool enabled,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: enabled ? colorScheme.surface : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: enabled ? colorScheme.outline : colorScheme.outlineVariant,
+        ),
+      ),
+      child: TextField(
+        enabled: enabled,
+        keyboardType: TextInputType.number,
+        onChanged: onChanged,
+        style: const TextStyle(fontSize: 14),
+        decoration: InputDecoration(
+          hintText: 'Enter amount',
+          hintStyle: TextStyle(
+              fontSize: 14, color: colorScheme.onSurfaceVariant.withAlpha(150)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          border: InputBorder.none,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookCategory(
+      String name, Map<String, List<String>> subcategories) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final allBooksInCategory = subcategories.values.expand((e) => e).toList();
+    final isFullySelected =
+        allBooksInCategory.every((book) => _selectedBooks.contains(book));
+    final isPartiallySelected =
+        allBooksInCategory.any((book) => _selectedBooks.contains(book)) &&
+            !isFullySelected;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(100),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            dense: true,
+            visualDensity: VisualDensity.compact,
+            onTap: () {
+              setState(() {
+                if (_expandedCategories.contains(name)) {
+                  _expandedCategories.remove(name);
+                } else {
+                  _expandedCategories.add(name);
+                }
+              });
+            },
+            leading: Checkbox(
+              visualDensity: VisualDensity.compact,
+              value:
+                  isFullySelected ? true : (isPartiallySelected ? null : false),
+              tristate: true,
+              activeColor: colorScheme.primary,
+              onChanged: (val) {
+                setState(() {
+                  if (val == true) {
+                    _selectedBooks.addAll(allBooksInCategory);
+                  } else {
+                    _selectedBooks.removeWhere(
+                        (book) => allBooksInCategory.contains(book));
+                  }
+                });
+              },
+            ),
+            title: Text(name,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            trailing: Icon(
+              _expandedCategories.contains(name)
+                  ? Icons.expand_less
+                  : Icons.expand_more,
+              size: 20,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          if (_expandedCategories.contains(name))
+            Padding(
+              padding: const EdgeInsets.only(left: 16, bottom: 8),
+              child: Column(
+                children: subcategories.entries
+                    .map((e) => _buildBookSubcategory(e.key, e.value))
+                    .toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookSubcategory(String name, List<String> books) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isFullySelected =
+        books.every((book) => _selectedBooks.contains(book));
+    final isPartiallySelected =
+        books.any((book) => _selectedBooks.contains(book)) && !isFullySelected;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          leading: Checkbox(
+            visualDensity: VisualDensity.compact,
+            value:
+                isFullySelected ? true : (isPartiallySelected ? null : false),
+            tristate: true,
+            onChanged: (val) {
+              setState(() {
+                if (val == true) {
+                  _selectedBooks.addAll(books);
+                } else {
+                  _selectedBooks.removeWhere((book) => books.contains(book));
+                }
+              });
+            },
+          ),
+          title: Text(name, style: const TextStyle(fontSize: 13)),
+          trailing: Icon(
+            _expandedCategories.contains(name)
+                ? Icons.expand_less
+                : Icons.expand_more,
+            size: 18,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          onTap: () {
+            setState(() {
+              if (_expandedCategories.contains(name)) {
+                _expandedCategories.remove(name);
+              } else {
+                _expandedCategories.add(name);
+              }
+            });
+          },
+        ),
+        if (_expandedCategories.contains(name))
+          Padding(
+            padding: const EdgeInsets.only(left: 32),
+            child: Column(
+              children: books.map((book) {
+                final isSelected = _selectedBooks.contains(book);
+                return ListTile(
+                  onTap: () {
+                    setState(() {
+                      if (isSelected) {
+                        _selectedBooks.remove(book);
+                      } else {
+                        _selectedBooks.add(book);
+                      }
+                    });
+                  },
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  contentPadding: EdgeInsets.zero,
+                  leading: Checkbox(
+                    visualDensity: VisualDensity.compact,
+                    value: isSelected,
+                    activeColor: colorScheme.primary,
+                    onChanged: (val) {
+                      setState(() {
+                        if (val == true) {
+                          _selectedBooks.add(book);
+                        } else {
+                          _selectedBooks.remove(book);
+                        }
+                      });
+                    },
+                  ),
+                  title: Text(
+                    book,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected
+                          ? colorScheme.onSurface
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+      ],
     );
   }
 }

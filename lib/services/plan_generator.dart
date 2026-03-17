@@ -22,6 +22,7 @@ class PlanGenerator {
     List<int>? readingDays, // 1-7 (Mon-Sun)
     List<String>? selectedBooks,
     int? customChaptersPerDay,
+    int? customVersesPerDay,
   }) {
     startDate ??= DateTime.now();
     final List<String> allChapters = [];
@@ -79,9 +80,15 @@ class PlanGenerator {
       return _generateFixedDuration(
           id, title, description, allChapters, startDate, endDate, readingDays);
     } else if (customChaptersPerDay != null) {
-      // Custom amount per day
+      // Custom amount per day (chapters)
       return _generateFixedPace(id, title, description, allChapters, startDate,
           customChaptersPerDay, readingDays);
+    } else if (customVersesPerDay != null) {
+      // Custom amount per day (verses) - approximate to chapters
+      // Bible has ~31,102 verses / 1,189 chapters ≈ 26 verses per chapter
+      final int chaptersPerDay = (customVersesPerDay / 26).ceil().clamp(1, 100);
+      return _generateFixedPace(id, title, description, allChapters, startDate,
+          chaptersPerDay, readingDays);
     } else {
       // Fixed years (1 or 2)
       final durationDays = years * 365;
