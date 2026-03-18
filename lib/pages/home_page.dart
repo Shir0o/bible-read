@@ -16,7 +16,9 @@ import '../services/google_sign_in_factory.dart';
 import '../services/group_book_achievement_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
+import '../services/user_preferences_service.dart';
 import '../models/reading_plan.dart';
+import '../models/user_preferences.dart';
 
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
@@ -54,6 +56,7 @@ class HomePage extends StatefulWidget {
     AchievementService? achievementService,
     GroupBookAchievementService? groupBookAchievementService,
     ReadingPlanService? readingPlanService,
+    UserPreferencesService? userPreferencesService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         readingStatusService = readingStatusService ??
@@ -62,6 +65,9 @@ class HomePage extends StatefulWidget {
                 auth: auth ?? FirebaseAuth.instance),
         readingPlanService = readingPlanService ??
             ReadingPlanService(
+                firestore: firestore ?? FirebaseFirestore.instance),
+        userPreferencesService = userPreferencesService ??
+            UserPreferencesService(
                 firestore: firestore ?? FirebaseFirestore.instance),
         vibrationService = vibrationService ?? const VibrationService(),
         googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
@@ -85,6 +91,9 @@ class HomePage extends StatefulWidget {
   /// Service for managing reading plans.
   final ReadingPlanService readingPlanService;
 
+  /// Service for managing user preferences.
+  final UserPreferencesService userPreferencesService;
+
   final DateTime Function() dateProvider;
 
   @override
@@ -101,6 +110,7 @@ class _HomePageState extends State<HomePage>
 
   /// Whether the page is currently performing its initial data fetch.
   bool _initialLoading = true;
+  bool _prefsLoaded = false;
   List<bool> _pastWeek = [];
   List<bool> _pastMonth = [];
   Set<DateTime> _readDates = {};
@@ -110,6 +120,8 @@ class _HomePageState extends State<HomePage>
 
   // Plan state
   ReadingPlan? _currentPlan;
+  UserPreferences _userPrefs = const UserPreferences();
+  StreamSubscription<UserPreferences>? _prefSub;
 
   ReadingPlanDay? _scheduledDay;
 
@@ -132,9 +144,11 @@ class _HomePageState extends State<HomePage>
     await Future.wait([
       _loadReadStatus(showLoading: false),
       _loadActivePlan(showLoading: false),
+      _loadUserPreferences(),
     ]);
     if (!_disposed && mounted) {
       setState(() {
+        _prefsLoaded = true;
         _initialLoading = false;
       });
     }
@@ -144,8 +158,11 @@ class _HomePageState extends State<HomePage>
   void didUpdateWidget(covariant HomePage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.auth != widget.auth) {
-      unawaited(_loadReadStatus());
-      unawaited(_loadActivePlan());
+      setState(() {
+        _initialLoading = true;
+        _prefsLoaded = false;
+      });
+      unawaited(_loadInitialData());
     }
     if (oldWidget.achievementService != widget.achievementService ||
         oldWidget.groupBookAchievementService !=
@@ -190,9 +207,113 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  Future<bool> _showFirstTimePlanPrompt() async {
+    bool? doNotAskAgain = false;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Update Reading Plan?'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Would you like to mark today\'s reading in your personal plan as complete as well?',
+                  ),
+                  const SizedBox(height: 16),
+                  CheckboxListTile(
+                    title: const Text('Don\'t ask again'),
+                    subtitle: const Text('You can change this in settings later'),
+                    value: doNotAskAgain,
+                    onChanged: (val) => setState(() => doNotAskAgain = val),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(
+                    'No',
+                    style: TextStyle(color: colorScheme.outline),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Yes'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      final uid = widget.auth.currentUser?.uid;
+      if (uid != null) {
+        if (doNotAskAgain == true) {
+          final newPrefs = _userPrefs.copyWith(
+            hasSeenPlanPrompt: true,
+            autoMarkPlanRead: result,
+          );
+          setState(() {
+            _userPrefs = newPrefs;
+          });
+          unawaited(widget.userPreferencesService.updatePreferences(uid, newPrefs));
+        }
+      }
+      return result;
+    }
+    return false;
+  }
+
+  Future<void> _loadUserPreferences() async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+
+    final completer = Completer<void>();
+    bool firstEvent = true;
+
+    _prefSub?.cancel();
+    _prefSub = widget.userPreferencesService.streamPreferences(uid).listen(
+      (prefs) {
+        if (!_disposed && mounted) {
+          setState(() {
+            _userPrefs = prefs;
+          });
+        }
+        if (firstEvent) {
+          firstEvent = false;
+          completer.complete();
+        }
+      },
+      onError: (e, st) {
+        if (kDebugMode) {
+          debugPrint('Error loading preferences: $e');
+        }
+        ErrorLogger.log(e, st);
+        if (firstEvent) {
+          firstEvent = false;
+          completer.complete(); // Still complete to avoid hanging
+        }
+      },
+    );
+
+    return completer.future;
+  }
+
   Future<void> _loadActivePlan({bool showLoading = true}) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
+
+    final completer = Completer<void>();
+    bool firstEvent = true;
 
     // Listen to the stream for real-time updates
     widget.readingPlanService.getActivePlans(uid).listen((plans) async {
@@ -204,12 +325,17 @@ class _HomePageState extends State<HomePage>
             _scheduledDay = null;
           });
         }
+        if (firstEvent) {
+          firstEvent = false;
+          completer.complete();
+        }
         return;
       }
 
       // Just take the first one for now as we don't have multi-plan UI yet
       final progress = plans.first;
-      final plan = await widget.readingPlanService.getPlanById(progress.planId);
+      final plan = await widget.readingPlanService
+          .getPlanById(progress.planId, userId: uid);
 
       if (plan != null) {
         final day = widget.readingPlanService
@@ -222,8 +348,21 @@ class _HomePageState extends State<HomePage>
           });
         }
       }
+
+      if (firstEvent) {
+        firstEvent = false;
+        completer.complete();
+      }
+    }, onError: (e) {
+      if (firstEvent) {
+        firstEvent = false;
+        completer.completeError(e);
+      }
     });
+
+    return completer.future;
   }
+
 
   /// Marks the current day as read. Optimistically updates local state and
   /// writes the change to Firestore, rolling back on failure.
@@ -277,29 +416,47 @@ class _HomePageState extends State<HomePage>
     try {
       final dateKey =
           '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-      await ReadLogPage.writeReadLogEntry(
-        refreshedUser ?? user,
-        firestore: widget.firestore,
-        functions: widget.functions,
-        markFirstReader: widget.markFirstReader,
-        dateProvider: () => today,
-      );
 
-      await widget.firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('reading')
-          .doc(dateKey)
-          .set({
-        'read': true,
-      }, SetOptions(merge: true)); // Mark read in Firestore.
+      // Determine if we should mark the plan day.
+      // We do this immediately (optimistically) before waiting for daily reading writes.
+      bool markPlan = false;
+      if (_currentPlan != null && _scheduledDay != null) {
+        if (_prefsLoaded && !_userPrefs.hasSeenPlanPrompt) {
+          // If the user hasn't seen the prompt yet, ask them.
+          markPlan = await _showFirstTimePlanPrompt();
+        } else if (_prefsLoaded) {
+          // Otherwise, use their saved preference.
+          markPlan = _userPrefs.autoMarkPlanRead;
+        }
+      }
+
+      final List<Future<void>> backendWrites = [
+        ReadLogPage.writeReadLogEntry(
+          refreshedUser ?? user,
+          firestore: widget.firestore,
+          functions: widget.functions,
+          markFirstReader: widget.markFirstReader,
+          dateProvider: () => today,
+        ),
+        widget.firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('reading')
+            .doc(dateKey)
+            .set({
+          'read': true,
+        }, SetOptions(merge: true)),
+      ];
 
       // Mark plan day if relevant
-      if (_currentPlan != null && _scheduledDay != null) {
-        await widget.readingPlanService
-            .markDayComplete(user.uid, _currentPlan!.id, _scheduledDay!.day);
+      if (markPlan && _currentPlan != null && _scheduledDay != null) {
+        backendWrites.add(widget.readingPlanService
+            .markDayComplete(user.uid, _currentPlan!.id, _scheduledDay!.day));
         markedPlanDay = true;
       }
+
+      // Execute all backend writes in parallel
+      await Future.wait(backendWrites);
 
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
@@ -853,6 +1010,7 @@ class _HomePageState extends State<HomePage>
   void dispose() {
     _disposed = true;
     _animationController.dispose();
+    _prefSub?.cancel();
     super.dispose();
   }
 

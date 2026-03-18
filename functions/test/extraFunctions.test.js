@@ -1,5 +1,6 @@
 const {after, describe, it} = require('mocha');
 const assert = require('node:assert');
+const sinon = require('sinon');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 
@@ -298,8 +299,7 @@ describe('other cloud functions', () => {
 
   it('deleteFriendRequestPair handles deletion error', async () => {
     const originalFirestore = admin.firestore;
-    const originalLogger = functions.logger.error;
-    let logged = false;
+    const stderrStub = sinon.stub(process.stderr, 'write');
     const fakeDb = {
       collection: () => ({
         doc: () => ({
@@ -319,7 +319,6 @@ describe('other cloud functions', () => {
     function fakeFirestore() { return fakeDb; }
     fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
     Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-    functions.logger.error = () => { logged = true; };
 
     const wrapped = functionsTest.wrap(myFunctions.deleteFriendRequestPair);
     try {
@@ -328,9 +327,10 @@ describe('other cloud functions', () => {
     } catch (err) {
       assert.equal(err.code, 'internal');
     }
-    assert.ok(logged);
+    assert.ok(stderrStub.called);
+    assert.match(stderrStub.getCall(0).args[0], /Failed to delete friend request pair/);
 
-    functions.logger.error = originalLogger;
+    stderrStub.restore();
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   });
 
@@ -370,8 +370,7 @@ describe('other cloud functions', () => {
 
   it('acceptFriendRequest handles commit error', async () => {
     const originalFirestore = admin.firestore;
-    const originalLogger = functions.logger.error;
-    let logged = false;
+    const stderrStub = sinon.stub(process.stderr, 'write');
     const fakeBatch = {
       set: () => {},
       delete: () => {},
@@ -395,7 +394,6 @@ describe('other cloud functions', () => {
     function fakeFirestore() { return fakeDb; }
     fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
     Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-    functions.logger.error = () => { logged = true; };
 
     const wrapped = functionsTest.wrap(myFunctions.acceptFriendRequest);
     try {
@@ -404,9 +402,10 @@ describe('other cloud functions', () => {
     } catch (err) {
       assert.equal(err.code, 'internal');
     }
-    assert.ok(logged);
+    assert.ok(stderrStub.called);
+    assert.match(stderrStub.getCall(0).args[0], /Failed to accept friend request/);
 
-    functions.logger.error = originalLogger;
+    stderrStub.restore();
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   });
 

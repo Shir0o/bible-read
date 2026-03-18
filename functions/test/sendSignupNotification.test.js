@@ -1,5 +1,6 @@
 const {after, describe, it} = require('mocha');
 const assert = require('node:assert');
+const sinon = require('sinon');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 
@@ -72,16 +73,16 @@ afterEach(() => utils.invalidateUserCache());
       writable: true,
     });
 
-    let logged = false;
-    const originalLogger = functions.logger.error;
-    functions.logger.error = () => { logged = true; };
+    const stderrStub = sinon.stub(process.stderr, 'write');
 
     const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
     await wrapped({ displayName: 'Test User', uid: 'u1' });
 
-    assert.ok(logged);
+    assert.ok(stderrStub.called);
+    const log = stderrStub.getCall(0).args[0];
+    assert.match(log, /Failed to send signup notification/);
 
-    functions.logger.error = originalLogger;
+    stderrStub.restore();
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
     Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
   });
@@ -90,9 +91,7 @@ afterEach(() => utils.invalidateUserCache());
     const origEnv = process.env.ADMIN_UID;
     delete process.env.ADMIN_UID;
 
-    let warned;
-    const originalWarn = functions.logger.warn;
-    functions.logger.warn = (msg) => { warned = msg; };
+    const stderrStub = sinon.stub(process.stderr, 'write');
 
     let sent = false;
     const originalMessaging = admin.messaging;
@@ -105,10 +104,12 @@ afterEach(() => utils.invalidateUserCache());
     const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
     await wrapped({ displayName: 'Test User', uid: 'u1' });
 
-    assert.equal(warned, 'ADMIN_UID not set');
+    assert.ok(stderrStub.called);
+    const log = stderrStub.getCall(0).args[0];
+    assert.match(log, /ADMIN_UID not set/);
     assert.equal(sent, false);
 
-    functions.logger.warn = originalWarn;
+    stderrStub.restore();
     Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
     process.env.ADMIN_UID = origEnv;
   });
@@ -125,9 +126,7 @@ afterEach(() => utils.invalidateUserCache());
       writable: true,
     });
 
-    let warned;
-    const originalWarn = functions.logger.warn;
-    functions.logger.warn = (msg) => { warned = msg; };
+    const stderrStub = sinon.stub(process.stderr, 'write');
 
     let sent = false;
     const originalMessaging = admin.messaging;
@@ -140,10 +139,12 @@ afterEach(() => utils.invalidateUserCache());
     const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
     await wrapped({ displayName: 'Test User', uid: 'u1' });
 
-    assert.equal(warned, 'No FCM token for admin user admin1');
+    assert.ok(stderrStub.called);
+    const log = stderrStub.getCall(0).args[0];
+    assert.match(log, /No FCM token for admin user admin1/);
     assert.equal(sent, false);
 
-    functions.logger.warn = originalWarn;
+    stderrStub.restore();
     Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   });

@@ -17,6 +17,7 @@ import '../widgets/animated_page_route.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/vibration_button.dart';
 import 'feedback_page.dart';
+import 'general_settings_page.dart';
 import 'login_page.dart';
 import 'main_page.dart';
 import 'notification_settings_page.dart';
@@ -292,6 +293,21 @@ class UserProfilePageState extends State<UserProfilePage> {
                                 onPressed: _handleSignOut,
                                 isLoading: _isSigningOut,
                                 child: const Text('Sign Out'),
+                              ),
+                              const SizedBox(height: 8),
+                              VibrationButton(
+                                vibrationService: widget.vibrationService,
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    animatedPageRoute(
+                                      GeneralSettingsPage(
+                                        auth: widget.auth,
+                                        firestore: widget.firestore,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: const Text('General Settings'),
                               ),
                               const SizedBox(height: 8),
                               VibrationButton(

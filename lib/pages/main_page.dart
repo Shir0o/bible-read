@@ -29,6 +29,7 @@ import '../services/google_sign_in_factory.dart';
 import '../services/group_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
+import '../services/user_preferences_service.dart';
 import '../services/vibration_service.dart';
 import 'app_check_error_page.dart';
 import 'leaderboard_page.dart';
@@ -125,6 +126,7 @@ class _MainPageState extends State<MainPage> {
 
   late final ReadingPlanService _readingPlanService;
   late final ReadingStatusService _readingStatusService;
+  late final UserPreferencesService _userPreferencesService;
   late final List<Widget> _pages;
   late final Stream<User?> _authStream;
 
@@ -141,6 +143,8 @@ class _MainPageState extends State<MainPage> {
     _friendService = FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
     _readingPlanService = ReadingPlanService(firestore: widget.firestore);
+    _userPreferencesService =
+        UserPreferencesService(firestore: widget.firestore);
 
     _adminRoleService = AdminRoleService(
       firestore: widget.firestore,
@@ -154,6 +158,7 @@ class _MainPageState extends State<MainPage> {
         firestore: widget.firestore,
         auth: widget.auth,
         readingStatusService: _readingStatusService,
+        userPreferencesService: _userPreferencesService,
         functions: widget.functions ?? FirebaseFunctions.instance,
         googleSignInProvider: widget.googleSignInProvider,
         dateProvider: () => DateTime.now(),
