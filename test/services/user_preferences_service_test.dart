@@ -16,19 +16,16 @@ void main() {
   test('fetchPreferences returns default values if no document exists', () async {
     final prefs = await service.fetchPreferences(uid);
     expect(prefs.autoMarkPlanRead, isFalse);
-    expect(prefs.hasSeenPlanPrompt, isFalse);
   });
 
   test('updatePreferences creates document and fetchPreferences returns it', () async {
     const newPrefs = UserPreferences(
       autoMarkPlanRead: true,
-      hasSeenPlanPrompt: true,
     );
 
     await service.updatePreferences(uid, newPrefs);
 
     final fetched = await service.fetchPreferences(uid);
     expect(fetched.autoMarkPlanRead, isTrue);
-    expect(fetched.hasSeenPlanPrompt, isTrue);
   });
 }

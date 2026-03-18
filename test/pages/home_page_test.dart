@@ -16,6 +16,7 @@ import 'package:bible_read/services/reading_plan_service.dart';
 import 'package:bible_read/services/user_preferences_service.dart';
 import 'package:bible_read/models/reading_plan.dart';
 import 'package:bible_read/models/reading_plan_progress.dart';
+import 'package:bible_read/models/user_preferences.dart';
 import 'package:bible_read/widgets/skeletons/home_page_skeleton.dart'; // Import for type check
 import '../helpers/mock_lottie_http_client.dart';
 
@@ -271,150 +272,7 @@ void main() {
     expect(find.byType(HomePageSkeleton), findsNothing);
   });
 
-  testWidgets('show prompt when marking read for the first time with a plan',
-      (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(
-      mockUser: MockUser(uid: 'u1'),
-      signedIn: true,
-    );
-
-    // 1. Create a plan
-    const plan = ReadingPlan(
-      id: 'p1',
-      title: 'Plan 1',
-      description: 'Desc',
-      durationDays: 30,
-      tags: [],
-      schedule: [
-        ReadingPlanDay(day: 1, readings: ['Gen 1']),
-      ],
-    );
-    await firestore.collection('custom_plans').doc('p1').set({
-      ...plan.toJson(),
-      'userId': 'u1',
-    });
-
-    // 2. Start the plan for user
-    final planService = ReadingPlanService(firestore: firestore);
-    await planService.startPlan('u1', 'p1', startDate: DateTime.now());
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: HomePage(
-          firestore: firestore,
-          auth: auth,
-          vibrationService: _StubVibrationService(),
-          achievementService: _StubAchievementService(),
-          groupBookAchievementService: _StubGroupBookAchievementService(),
-          readingPlanService: planService,
-          userPreferencesService: UserPreferencesService(firestore: firestore),
-          dateProvider: () => DateTime.now(),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // Verify "TODAY'S READING" is shown
-    expect(find.text('TODAY\'S READING'), findsOneWidget);
-    expect(find.text('Gen 1'), findsOneWidget);
-
-    // Tap "I have read"
-    await tester.tap(find.text('I have read'));
-    await tester.pump(); // Start process
-
-    // 3. Expect prompt
-    await tester.pumpAndSettle();
-    expect(find.text('Update Reading Plan?'), findsOneWidget);
-    expect(
-        find.text(
-            'Would you like to mark today\'s reading in your personal plan as complete as well?'),
-        findsOneWidget);
-
-    // 4. Click "Yes" on prompt
-    await tester.tap(find.text('Yes'));
-    await tester.pumpAndSettle();
-
-    // Verify UI updated to checkmark state
-    expect(find.text('Thank you for being here.'), findsOneWidget);
-
-    // Verify plan progress was updated
-    final progressDoc = await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('plan_progress')
-        .doc('p1')
-        .get();
-    final progress = UserPlanProgress.fromFirestore(progressDoc);
-    expect(progress.completedDays, contains(1));
-  });
-
-  testWidgets('don\'t mark plan when clicking No on prompt', (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(
-      mockUser: MockUser(uid: 'u1'),
-      signedIn: true,
-    );
-
-    // 1. Create a plan
-    const plan = ReadingPlan(
-      id: 'p1',
-      title: 'Plan 1',
-      description: 'Desc',
-      durationDays: 30,
-      tags: [],
-      schedule: [
-        ReadingPlanDay(day: 1, readings: ['Gen 1']),
-      ],
-    );
-    await firestore.collection('custom_plans').doc('p1').set({
-      ...plan.toJson(),
-      'userId': 'u1',
-    });
-
-    // 2. Start the plan for user
-    final planService = ReadingPlanService(firestore: firestore);
-    await planService.startPlan('u1', 'p1', startDate: DateTime.now());
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: HomePage(
-          firestore: firestore,
-          auth: auth,
-          vibrationService: _StubVibrationService(),
-          achievementService: _StubAchievementService(),
-          groupBookAchievementService: _StubGroupBookAchievementService(),
-          readingPlanService: planService,
-          userPreferencesService: UserPreferencesService(firestore: firestore),
-          dateProvider: () => DateTime.now(),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // Tap "I have read"
-    await tester.tap(find.text('I have read'));
-    await tester.pumpAndSettle();
-
-    // 3. Click "No" on prompt
-    await tester.tap(find.text('No'));
-    await tester.pumpAndSettle();
-
-    // Verify UI updated to checkmark state (general reading marked)
-    expect(find.text('Thank you for being here.'), findsOneWidget);
-
-    // Verify plan progress was NOT updated
-    final progressDoc = await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('plan_progress')
-        .doc('p1')
-        .get();
-    final progress = UserPlanProgress.fromFirestore(progressDoc);
-    expect(progress.completedDays, isEmpty);
-  });
-
-  testWidgets('setting default to Yes works and skips prompt next time',
+  testWidgets('respects autoMarkPlanRead preference when marking read',
       (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
@@ -445,6 +303,7 @@ void main() {
 
     final prefsService = UserPreferencesService(firestore: firestore);
 
+    // Test CASE 1: Preference is OFF (default)
     await tester.pumpWidget(
       MaterialApp(
         home: HomePage(
@@ -461,21 +320,29 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // First time: show prompt and check "Don't ask again"
+    // Tap "I have read"
     await tester.tap(find.text('I have read'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(CheckboxListTile)); // Toggle "Don't ask again"
-    await tester.tap(find.text('Yes'));
-    await tester.pumpAndSettle();
+    // Verify UI updated, NO prompt shown
+    expect(find.text('Update Reading Plan?'), findsNothing);
+    expect(find.text('Thank you for being here.'), findsOneWidget);
 
-    // Verify prefs updated
-    final prefs = await prefsService.fetchPreferences('u1');
-    expect(prefs.hasSeenPlanPrompt, isTrue);
-    expect(prefs.autoMarkPlanRead, isTrue);
+    // Verify plan progress was NOT updated (since pref is false by default)
+    var progressDoc = await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('plan_progress')
+        .doc('p1')
+        .get();
+    var progress = UserPlanProgress.fromFirestore(progressDoc);
+    expect(progress.completedDays, isEmpty);
 
-    // Now test a second time (re-rendering HomePage to simulate a new day/session)
-    // We'll reset readToday status in Firestore but keep prefs.
+    // Test CASE 2: Preference is ON
+    await prefsService.updatePreferences(
+        'u1', const UserPreferences(autoMarkPlanRead: true));
+
+    // Reset read status for today to allow re-testing on "same day" in test
     final today = DateTime.now();
     final dateKey =
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
@@ -486,7 +353,6 @@ void main() {
         .doc(dateKey)
         .delete();
 
-    // Create a new schedule day for day 2 to simulate next day (simpler to just re-pump)
     await tester.pumpWidget(
       MaterialApp(
         home: HomePage(
@@ -508,21 +374,19 @@ void main() {
 
     // Tap "I have read" again
     await tester.tap(find.text('I have read'));
-    await tester.pump(); // Start process
-
-    // 3. Expect NO prompt this time, and immediate update
     await tester.pumpAndSettle();
-    expect(find.text('Update Reading Plan?'), findsNothing);
-    expect(find.text('Thank you for being here.'), findsOneWidget);
 
-    // Verify plan progress was updated automatically
-    final progressDoc = await firestore
+    // Verify UI updated, NO prompt
+    expect(find.text('Update Reading Plan?'), findsNothing);
+
+    // Verify plan progress WAS updated automatically
+    progressDoc = await firestore
         .collection('users')
         .doc('u1')
         .collection('plan_progress')
         .doc('p1')
         .get();
-    final progress = UserPlanProgress.fromFirestore(progressDoc);
+    progress = UserPlanProgress.fromFirestore(progressDoc);
     expect(progress.completedDays, contains(1));
   });
 }

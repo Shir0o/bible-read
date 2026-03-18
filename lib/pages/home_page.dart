@@ -207,72 +207,6 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  Future<bool> _showFirstTimePlanPrompt() async {
-    bool? doNotAskAgain = false;
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        final colorScheme = Theme.of(context).colorScheme;
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Update Reading Plan?'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Would you like to mark today\'s reading in your personal plan as complete as well?',
-                  ),
-                  const SizedBox(height: 16),
-                  CheckboxListTile(
-                    title: const Text('Don\'t ask again'),
-                    subtitle: const Text('You can change this in settings later'),
-                    value: doNotAskAgain,
-                    onChanged: (val) => setState(() => doNotAskAgain = val),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text(
-                    'No',
-                    style: TextStyle(color: colorScheme.outline),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Yes'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (result != null) {
-      final uid = widget.auth.currentUser?.uid;
-      if (uid != null) {
-        if (doNotAskAgain == true) {
-          final newPrefs = _userPrefs.copyWith(
-            hasSeenPlanPrompt: true,
-            autoMarkPlanRead: result,
-          );
-          setState(() {
-            _userPrefs = newPrefs;
-          });
-          unawaited(widget.userPreferencesService.updatePreferences(uid, newPrefs));
-        }
-      }
-      return result;
-    }
-    return false;
-  }
-
   Future<void> _loadUserPreferences() async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
@@ -421,11 +355,7 @@ class _HomePageState extends State<HomePage>
       // We do this immediately (optimistically) before waiting for daily reading writes.
       bool markPlan = false;
       if (_currentPlan != null && _scheduledDay != null) {
-        if (_prefsLoaded && !_userPrefs.hasSeenPlanPrompt) {
-          // If the user hasn't seen the prompt yet, ask them.
-          markPlan = await _showFirstTimePlanPrompt();
-        } else if (_prefsLoaded) {
-          // Otherwise, use their saved preference.
+        if (_prefsLoaded) {
           markPlan = _userPrefs.autoMarkPlanRead;
         }
       }
