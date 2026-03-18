@@ -63,7 +63,11 @@ key.properties
 # Test output files
 test_output*.txt
 test_results.txt
+analyze_output.txt
 .env
 
 .gemini/
 gha-creds-*.json
+
+# Android build
+/android/build/
