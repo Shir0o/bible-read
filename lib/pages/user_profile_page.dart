@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -250,9 +251,23 @@ class UserProfilePageState extends State<UserProfilePage> {
                               if (photoUrl != null && photoUrl.isNotEmpty)
                                 Hero(
                                   tag: 'profile-avatar',
-                                  child: CircleAvatar(
-                                    backgroundImage: NetworkImage(photoUrl),
-                                    radius: 40,
+                                  child: CachedNetworkImage(
+                                    imageUrl: photoUrl,
+                                    imageBuilder: (context, imageProvider) =>
+                                        CircleAvatar(
+                                      backgroundImage: imageProvider,
+                                      radius: 40,
+                                    ),
+                                    placeholder: (context, url) =>
+                                        const CircleAvatar(
+                                      radius: 40,
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        const CircleAvatar(
+                                      radius: 40,
+                                      child: Icon(Icons.person),
+                                    ),
                                   ),
                                 ),
                               const SizedBox(height: 16),

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
@@ -46,11 +47,24 @@ class ProfileSummaryCard extends StatelessWidget {
                 ),
                 child: ClipOval(
                   child: user?.photoURL != null
-                      ? Image.network(
-                          user!.photoURL!,
+                      ? CachedNetworkImage(
+                          imageUrl: user!.photoURL!,
                           width: 64,
                           height: 64,
                           fit: BoxFit.cover,
+                          placeholder: (context, url) => const SizedBox(
+                            width: 64,
+                            height: 64,
+                            child: Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Icon(
+                            Icons.person_outline,
+                            size: 32,
+                            color: colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.5),
+                          ),
                         )
                       : Icon(
                           Icons.person_outline,

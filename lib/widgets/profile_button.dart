@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -31,18 +32,21 @@ class ProfileButton extends StatelessWidget {
               Theme.of(context).colorScheme.surfaceContainerHighest,
           child: user?.photoURL != null
               ? ClipOval(
-                  child: Image.network(
-                    user!.photoURL!,
+                  child: CachedNetworkImage(
+                    imageUrl: user!.photoURL!,
                     width: 32,
                     height: 32,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.person,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      );
-                    },
+                    placeholder: (context, url) => const SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    errorWidget: (context, url, error) => Icon(
+                      Icons.person,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 )
               : Icon(

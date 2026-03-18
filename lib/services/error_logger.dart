@@ -24,6 +24,20 @@ class ErrorLogger {
   /// Records [error] and optional [stack] to Crashlytics.
   static Future<void> log(Object error, [StackTrace? stack]) async {
     if (muteForTest) return;
+
+    final errorString = error.toString();
+
+    // Filter out network-related noise that doesn't represent app bugs.
+    if (errorString.contains('Failed to load font') ||
+        errorString.contains('HTTP request failed, statusCode: 504') ||
+        errorString.contains('HandshakeException') ||
+        errorString.contains('SocketException')) {
+      if (kDebugMode) {
+        debugPrint('ErrorLogger (Filtered): $error');
+      }
+      return;
+    }
+
     if (kDebugMode) {
       debugPrint('ErrorLogger: $error\n$stack');
     }
