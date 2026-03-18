@@ -125,3 +125,83 @@ class _SkeletonLoaderState extends State<SkeletonLoader> {
     );
   }
 }
+
+/// A sliver version of [SkeletonLoader].
+class SliverSkeletonLoader extends StatefulWidget {
+  final bool loading;
+  final Widget child;
+  final Widget skeleton;
+  final Duration minTime;
+
+  const SliverSkeletonLoader({
+    super.key,
+    required this.loading,
+    required this.child,
+    required this.skeleton,
+    this.minTime = const Duration(milliseconds: 500),
+  });
+
+  @override
+  State<SliverSkeletonLoader> createState() => _SliverSkeletonLoaderState();
+}
+
+class _SliverSkeletonLoaderState extends State<SliverSkeletonLoader> {
+  bool _showSkeleton = false;
+  Timer? _minTimeTimer;
+  DateTime? _startTime;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.loading) {
+      _startLoading();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant SliverSkeletonLoader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.loading && !oldWidget.loading) {
+      _startLoading();
+    } else if (!widget.loading && oldWidget.loading) {
+      _attemptToFinishLoading();
+    }
+  }
+
+  @override
+  void dispose() {
+    _minTimeTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startLoading() {
+    setState(() {
+      _showSkeleton = true;
+      _startTime = DateTime.now();
+    });
+    _minTimeTimer?.cancel();
+  }
+
+  void _attemptToFinishLoading() {
+    if (_startTime == null) {
+      setState(() => _showSkeleton = false);
+      return;
+    }
+    final elapsed = DateTime.now().difference(_startTime!);
+    final remaining = widget.minTime - elapsed;
+    if (remaining.isNegative) {
+      if (mounted) setState(() => _showSkeleton = false);
+    } else {
+      _minTimeTimer = Timer(remaining, () {
+        if (mounted) {
+          setState(() => _showSkeleton = false);
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _showSkeleton ? widget.skeleton : widget.child;
+  }
+}

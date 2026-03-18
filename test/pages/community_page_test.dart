@@ -40,7 +40,7 @@ void main() {
         ReadingStatusService(firestore: firestore, auth: auth);
   });
 
-  Future<void> pumpPage(WidgetTester tester) async {
+  Future<void> pumpPage(WidgetTester tester, {DateTime? date}) async {
     await tester.pumpWidget(
       MaterialApp(
         home: CommunityPage(
@@ -55,19 +55,27 @@ void main() {
               {required ownerUid, required likerName}) async {},
           onSendCommentNotification: (
               {required ownerUid, required commenterName}) async {},
-          dateProvider: () => DateTime(2024, 1, 1),
+          dateProvider: () => date ?? DateTime(2024, 1, 1),
         ),
       ),
     );
     await tester.pumpAndSettle();
   }
 
-  testWidgets('renders header with user name and avatar', (tester) async {
-    await pumpPage(tester);
-
+  testWidgets('renders header with morning greeting', (tester) async {
+    await pumpPage(tester, date: DateTime(2024, 1, 1, 9)); // 9 AM
     expect(find.text('Good Morning,'), findsOneWidget);
-    expect(find.text('Test'), findsOneWidget); // First name
-    expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
+    expect(find.text('Test'), findsOneWidget);
+  });
+
+  testWidgets('renders header with afternoon greeting', (tester) async {
+    await pumpPage(tester, date: DateTime(2024, 1, 1, 14)); // 2 PM
+    expect(find.text('Good Afternoon,'), findsOneWidget);
+  });
+
+  testWidgets('renders header with evening greeting', (tester) async {
+    await pumpPage(tester, date: DateTime(2024, 1, 1, 19)); // 7 PM
+    expect(find.text('Good Evening,'), findsOneWidget);
   });
 
   testWidgets('renders empty group state when no groups', (tester) async {

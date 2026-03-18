@@ -11,11 +11,13 @@ import '../../pages/bible_progress_page.dart';
 class BibleLibraryGrid extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final Set<String>? initialUnlockedIds;
 
   const BibleLibraryGrid({
     super.key,
     required this.firestore,
     required this.auth,
+    this.initialUnlockedIds,
   });
 
   @override
@@ -32,7 +34,9 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
     _achievementService = AchievementService(firestore: widget.firestore);
     final user = widget.auth.currentUser;
     if (user != null) {
-      _unlockedIdsStream = _achievementService.unlockedAchievementIds(user.uid);
+      _unlockedIdsStream = widget.initialUnlockedIds != null
+          ? Stream.value(widget.initialUnlockedIds!)
+          : _achievementService.unlockedAchievementIds(user.uid);
     } else {
       _unlockedIdsStream = Stream.value({});
     }

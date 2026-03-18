@@ -22,6 +22,7 @@ import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
+import '../widgets/app_header.dart';
 import 'read_log_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
@@ -46,6 +47,7 @@ class HomePage extends StatefulWidget {
     FirebaseAuth? auth,
     this.functions,
     this.markFirstReader,
+    required this.dateProvider,
     ReadingStatusService? readingStatusService,
     VibrationService? vibrationService,
     GoogleSignIn Function()? googleSignInProvider,
@@ -82,6 +84,8 @@ class HomePage extends StatefulWidget {
 
   /// Service for managing reading plans.
   final ReadingPlanService readingPlanService;
+
+  final DateTime Function() dateProvider;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -536,20 +540,28 @@ class _HomePageState extends State<HomePage>
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        forceMaterialTransparency: true,
-        backgroundColor: Colors.transparent,
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark, // Android: Dark icons
-          statusBarBrightness: Brightness.light, // iOS: Dark icons
+      body: SafeArea(
+        child: Column(
+          children: [
+            AppHeader(
+              auth: widget.auth,
+              firestore: widget.firestore,
+              vibrationService: widget.vibrationService,
+              dateProvider: widget.dateProvider,
+              showProfileIcon: false,
+              showNotificationBell: false,
+              showGreeting: false,
+            ),
+            Expanded(
+              child: SkeletonLoader(
+                loading: _initialLoading,
+                minTime: const Duration(milliseconds: 1000),
+                skeleton: const HomePageSkeleton(),
+                child: _buildMinimalContent(context),
+              ),
+            ),
+          ],
         ),
-        actions: [],
-      ),
-      body: SkeletonLoader(
-        loading: _initialLoading,
-        skeleton: const HomePageSkeleton(),
-        child: _buildMinimalContent(context),
       ),
     );
   }

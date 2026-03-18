@@ -62,6 +62,7 @@ void main() {
           vibrationService: _StubVibrationService(),
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
+          dateProvider: () => DateTime.now(),
         ),
       ),
     );
@@ -102,6 +103,7 @@ void main() {
           vibrationService: _StubVibrationService(),
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
+          dateProvider: () => DateTime.now(),
         ),
       ),
     );
@@ -132,6 +134,7 @@ void main() {
           vibrationService: vibrationService,
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
+          dateProvider: () => DateTime.now(),
         ),
       ),
     );
@@ -204,6 +207,7 @@ void main() {
           vibrationService: _StubVibrationService(),
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
+          dateProvider: () => DateTime.now(),
         ),
       ),
     );
@@ -237,6 +241,7 @@ void main() {
           achievementService: _StubAchievementService(),
           groupBookAchievementService: _StubGroupBookAchievementService(),
           readingStatusService: slowReadingService,
+          dateProvider: () => DateTime.now(),
         ),
       ),
     );

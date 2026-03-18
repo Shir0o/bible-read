@@ -4,17 +4,28 @@ import 'package:flutter/material.dart';
 
 import '../widgets/journey/bible_library_grid.dart';
 import '../widgets/journey/consistency_calendar.dart';
-import '../widgets/journey/journey_header.dart';
 import '../widgets/journey/journey_progress_card.dart';
+import '../services/vibration_service.dart';
+import '../services/reading_plan_service.dart';
+import '../services/achievement_service.dart';
+import '../widgets/app_header.dart';
+import '../widgets/skeleton_loader.dart';
+import '../widgets/skeletons/journey_page_skeleton.dart';
+import '../models/reading_plan.dart';
+import '../models/reading_plan_progress.dart';
 
 class JourneyPage extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
+  final VibrationService vibrationService;
+  final DateTime Function() dateProvider;
 
   const JourneyPage({
     super.key,
     required this.auth,
     required this.firestore,
+    required this.vibrationService,
+    required this.dateProvider,
   });
 
   @override
@@ -23,8 +34,57 @@ class JourneyPage extends StatefulWidget {
 
 class _JourneyPageState extends State<JourneyPage>
     with AutomaticKeepAliveClientMixin {
+  bool _isLoading = true;
+  List<ReadingPlan>? _plans;
+  List<UserPlanProgress>? _progress;
+  Set<String>? _unlockedIds;
+
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final user = widget.auth.currentUser;
+    if (user == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    final readingPlanService =
+        ReadingPlanService(firestore: widget.firestore);
+    final achievementService =
+        AchievementService(firestore: widget.firestore);
+
+    try {
+      // Prepare futures for all critical components
+      final results = await Future.wait([
+        readingPlanService.getAvailablePlans(userId: user.uid),
+        readingPlanService.getActivePlans(user.uid).first,
+        achievementService.unlockedAchievementIds(user.uid).first,
+        // Minimal artificial delay to ensure smooth transition
+        Future.delayed(const Duration(milliseconds: 400)),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _plans = results[0] as List<ReadingPlan>;
+          _progress = results[1] as List<UserPlanProgress>;
+          _unlockedIds = results[2] as Set<String>;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error pre-loading Journey data: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,29 +96,43 @@ class _JourneyPageState extends State<JourneyPage>
       body: SafeArea(
         child: Column(
           children: [
-            JourneyHeader(auth: widget.auth, firestore: widget.firestore),
+            AppHeader(
+              auth: widget.auth,
+              firestore: widget.firestore,
+              vibrationService: widget.vibrationService,
+              dateProvider: widget.dateProvider,
+              customGreeting: 'Keep going,',
+            ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 16),
-                    JourneyProgressCard(
-                      firestore: widget.firestore,
-                      auth: widget.auth,
-                    ),
-                    const SizedBox(height: 32),
-                    BibleLibraryGrid(
-                      firestore: widget.firestore,
-                      auth: widget.auth,
-                    ),
-                    const SizedBox(height: 32),
-                    ConsistencyCalendar(
-                      firestore: widget.firestore,
-                      auth: widget.auth,
-                    ),
-                  ],
+              child: SkeletonLoader(
+                loading: _isLoading,
+                minTime: const Duration(milliseconds: 1000),
+                skeleton: const JourneyPageSkeleton(),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 16),
+                      JourneyProgressCard(
+                        firestore: widget.firestore,
+                        auth: widget.auth,
+                        initialPlans: _plans,
+                        initialProgress: _progress,
+                      ),
+                      const SizedBox(height: 32),
+                      BibleLibraryGrid(
+                        firestore: widget.firestore,
+                        auth: widget.auth,
+                        initialUnlockedIds: _unlockedIds,
+                      ),
+                      const SizedBox(height: 32),
+                      ConsistencyCalendar(
+                        firestore: widget.firestore,
+                        auth: widget.auth,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

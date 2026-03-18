@@ -24,6 +24,8 @@ import 'notification_center_page.dart';
 import '../services/notification_service.dart';
 import '../widgets/skeletons/friends_activity_skeleton.dart';
 import '../models/app_notification.dart';
+import '../widgets/app_header.dart';
+import '../widgets/skeleton_loader.dart';
 
 class CommunityPage extends StatefulWidget {
   final FirebaseAuth auth;
@@ -220,8 +222,6 @@ class _CommunityPageState extends State<CommunityPage>
 
     if (user == null) return const SizedBox.shrink();
 
-    final firstName = (user.displayName ?? 'Friend').split(' ').first;
-
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: SafeArea(
@@ -234,156 +234,11 @@ class _CommunityPageState extends State<CommunityPage>
             slivers: [
               // Header
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-                  child: Row(
-                    children: [
-                      // Avatar
-                      Semantics(
-                        button: true,
-                        label: 'Open menu',
-                        child: Tooltip(
-                          message: 'Open menu',
-                          child: Material(
-                            color: colorScheme.surfaceContainerHighest,
-                            shape: const CircleBorder(),
-                            clipBehavior: Clip.antiAlias,
-                            child: user.photoURL != null
-                                ? Ink.image(
-                                    image: CachedNetworkImageProvider(
-                                        user.photoURL!),
-                                    fit: BoxFit.cover,
-                                    width: 40,
-                                    height: 40,
-                                    child: Theme(
-                                      data: Theme.of(context).copyWith(
-                                        splashFactory: NoSplash.splashFactory,
-                                      ),
-                                      child: InkWell(
-                                        onTap: () {
-                                          widget.vibrationService.lightImpact();
-                                          NavigationMenuScope.maybeOf(context)
-                                              ?.showMenu(context);
-                                        },
-                                      ),
-                                    ),
-                                  )
-                                : Theme(
-                                    data: Theme.of(context).copyWith(
-                                      splashFactory: NoSplash.splashFactory,
-                                    ),
-                                    child: InkWell(
-                                      onTap: () {
-                                        widget.vibrationService.lightImpact();
-                                        NavigationMenuScope.maybeOf(context)
-                                            ?.showMenu(context);
-                                      },
-                                      child: SizedBox(
-                                        width: 40,
-                                        height: 40,
-                                        child: Icon(Icons.person,
-                                            color:
-                                                colorScheme.onSurfaceVariant),
-                                      ),
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Good Morning,',
-                              style: AppTextStyles.body(context).copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              firstName,
-                              style: AppTextStyles.title(context).copyWith(
-                                color: colorScheme.primary,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                height: 1.1,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Notification Button
-                      StreamBuilder<List<AppNotification>>(
-                        stream: NotificationService(firestore: widget.firestore)
-                            .notifications(user.uid),
-                        builder: (context, snapshot) {
-                          final unreadCount =
-                              snapshot.data?.where((n) => !n.read).length ?? 0;
-                          return Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colorScheme.surfaceContainer,
-                              border: Border.all(
-                                  color: colorScheme.outlineVariant
-                                      .withValues(alpha: 0.1)),
-                            ),
-                            child: Stack(
-                              children: [
-                                Center(
-                                  child: IconButton(
-                                    tooltip: 'Notifications',
-                                    icon: Icon(
-                                      Icons.notifications_outlined,
-                                      color: colorScheme.onSurfaceVariant,
-                                      size: 20,
-                                    ),
-                                    onPressed: () {
-                                      widget.vibrationService.lightImpact();
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              NotificationCenterPage(
-                                            service: NotificationService(
-                                                firestore: widget.firestore),
-                                            auth: widget.auth,
-                                            vibrationService:
-                                                widget.vibrationService,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                ),
-                                if (unreadCount > 0)
-                                  Positioned(
-                                    top: 10,
-                                    right: 10,
-                                    child: Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        color: colorScheme.tertiary,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                            color: colorScheme.surfaceContainer,
-                                            width: 2),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                child: AppHeader(
+                  auth: widget.auth,
+                  firestore: widget.firestore,
+                  vibrationService: widget.vibrationService,
+                  dateProvider: widget.dateProvider,
                 ),
               ),
 
@@ -459,37 +314,39 @@ class _CommunityPageState extends State<CommunityPage>
               ),
 
               // Friends Activity List
-              if (_loadingLogs)
-                const FriendsActivitySkeleton()
-              else if (_friendLogs.isEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Center(
-                      child: Text(
-                        'No recent activity.',
-                        style: AppTextStyles.body(context)
-                            .copyWith(color: colorScheme.onSurfaceVariant),
+              SliverSkeletonLoader(
+                loading: _loadingLogs,
+                minTime: const Duration(milliseconds: 1000),
+                skeleton: const FriendsActivitySkeleton(),
+                child: _friendLogs.isEmpty
+                    ? SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Center(
+                            child: Text(
+                              'No recent activity.',
+                              style: AppTextStyles.body(context).copyWith(
+                                  color: colorScheme.onSurfaceVariant),
+                            ),
+                          ),
+                        ),
+                      )
+                    : SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final log = _friendLogs[index];
+                              return _ActivityItem(
+                                log: log,
+                                onLike: () => _toggleLike(log.uid),
+                              );
+                            },
+                            childCount: _friendLogs.length,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final log = _friendLogs[index];
-                        return _ActivityItem(
-                          log: log,
-                          onLike: () => _toggleLike(log.uid),
-                        );
-                      },
-                      childCount: _friendLogs.length,
-                    ),
-                  ),
-                ),
+              ),
 
               const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
             ],

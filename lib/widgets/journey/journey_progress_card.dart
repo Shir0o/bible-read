@@ -14,12 +14,16 @@ class JourneyProgressCard extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final ReadingPlanService readingPlanService;
+  final List<ReadingPlan>? initialPlans;
+  final List<UserPlanProgress>? initialProgress;
 
   JourneyProgressCard({
     super.key,
     required this.firestore,
     required this.auth,
     ReadingPlanService? readingPlanService,
+    this.initialPlans,
+    this.initialProgress,
   }) : readingPlanService =
             readingPlanService ?? ReadingPlanService(firestore: firestore);
 
@@ -40,11 +44,15 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
   @override
   void initState() {
     super.initState();
-    _allPlansFuture = widget.readingPlanService
-        .getAvailablePlans(userId: widget.auth.currentUser?.uid);
+    _allPlansFuture = widget.initialPlans != null
+        ? Future.value(widget.initialPlans)
+        : widget.readingPlanService
+            .getAvailablePlans(userId: widget.auth.currentUser?.uid);
     final user = widget.auth.currentUser;
     if (user != null) {
-      _activePlansStream = widget.readingPlanService.getActivePlans(user.uid);
+      _activePlansStream = widget.initialProgress != null
+          ? Stream.value(widget.initialProgress!)
+          : widget.readingPlanService.getActivePlans(user.uid);
     } else {
       _activePlansStream = Stream.value([]);
     }

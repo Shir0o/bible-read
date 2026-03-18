@@ -156,6 +156,7 @@ class _MainPageState extends State<MainPage> {
         readingStatusService: _readingStatusService,
         functions: widget.functions ?? FirebaseFunctions.instance,
         googleSignInProvider: widget.googleSignInProvider,
+        dateProvider: () => DateTime.now(),
       ),
       CommunityPage(
         auth: widget.auth,
@@ -198,6 +199,8 @@ class _MainPageState extends State<MainPage> {
       JourneyPage(
         auth: widget.auth,
         firestore: widget.firestore,
+        vibrationService: widget.vibrationService,
+        dateProvider: () => DateTime.now(),
       ),
     ];
   }
