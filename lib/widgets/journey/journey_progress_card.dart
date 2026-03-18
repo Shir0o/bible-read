@@ -16,6 +16,8 @@ class JourneyProgressCard extends StatefulWidget {
   final ReadingPlanService readingPlanService;
   final List<ReadingPlan>? initialPlans;
   final List<UserPlanProgress>? initialProgress;
+  final bool showTitle;
+  final bool isLoading;
 
   JourneyProgressCard({
     super.key,
@@ -24,6 +26,8 @@ class JourneyProgressCard extends StatefulWidget {
     ReadingPlanService? readingPlanService,
     this.initialPlans,
     this.initialProgress,
+    this.showTitle = true,
+    this.isLoading = false,
   }) : readingPlanService =
             readingPlanService ?? ReadingPlanService(firestore: firestore);
 
@@ -98,48 +102,53 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'My Personal Journey',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-              ),
-              TextButton(
-                onPressed: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ReadingPlansPage(
-                        firestore: widget.firestore,
-                        auth: widget.auth,
+          if (widget.showTitle) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'My Personal Journey',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
                       ),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ReadingPlansPage(
+                          firestore: widget.firestore,
+                          auth: widget.auth,
+                        ),
+                      ),
+                    );
+                    if (mounted) {
+                      setState(() {
+                        _allPlansFuture = widget.readingPlanService
+                            .getAvailablePlans(
+                                userId: widget.auth.currentUser?.uid);
+                      });
+                    }
+                  },
+                  child: Text(
+                    'Details',
+                    style: TextStyle(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.bold,
                     ),
-                  );
-                  if (mounted) {
-                    setState(() {
-                      _allPlansFuture = widget.readingPlanService
-                          .getAvailablePlans(
-                              userId: widget.auth.currentUser?.uid);
-                    });
-                  }
-                },
-                child: Text(
-                  'Details',
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          FutureBuilder<List<ReadingPlan>>(
-            future: _allPlansFuture,
-            builder: (context, plansSnapshot) {
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (widget.isLoading)
+            _buildLoadingSkeleton(context)
+          else
+            FutureBuilder<List<ReadingPlan>>(
+              future: _allPlansFuture,
+              builder: (context, plansSnapshot) {
               return StreamBuilder<List<UserPlanProgress>>(
                 stream: _activePlansStream,
                 builder: (context, progressSnapshot) {

@@ -9,8 +9,6 @@ import '../services/vibration_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/achievement_service.dart';
 import '../widgets/app_header.dart';
-import '../widgets/skeleton_loader.dart';
-import '../widgets/skeletons/journey_page_skeleton.dart';
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
 
@@ -66,8 +64,8 @@ class _JourneyPageState extends State<JourneyPage>
         readingPlanService.getAvailablePlans(userId: user.uid),
         readingPlanService.getActivePlans(user.uid).first,
         achievementService.unlockedAchievementIds(user.uid).first,
-        // Minimal artificial delay to ensure smooth transition
-        Future.delayed(const Duration(milliseconds: 400)),
+        // Artificial delay to ensure smooth transition and match community page
+        Future.delayed(const Duration(milliseconds: 1000)),
       ]);
 
       if (mounted) {
@@ -104,35 +102,33 @@ class _JourneyPageState extends State<JourneyPage>
               customGreeting: 'Keep going,',
             ),
             Expanded(
-              child: SkeletonLoader(
-                loading: _isLoading,
-                minTime: const Duration(milliseconds: 1000),
-                skeleton: const JourneyPageSkeleton(),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: 16),
-                      JourneyProgressCard(
-                        firestore: widget.firestore,
-                        auth: widget.auth,
-                        initialPlans: _plans,
-                        initialProgress: _progress,
-                      ),
-                      const SizedBox(height: 32),
-                      BibleLibraryGrid(
-                        firestore: widget.firestore,
-                        auth: widget.auth,
-                        initialUnlockedIds: _unlockedIds,
-                      ),
-                      const SizedBox(height: 32),
-                      ConsistencyCalendar(
-                        firestore: widget.firestore,
-                        auth: widget.auth,
-                      ),
-                    ],
-                  ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 16),
+                    JourneyProgressCard(
+                      firestore: widget.firestore,
+                      auth: widget.auth,
+                      initialPlans: _plans,
+                      initialProgress: _progress,
+                      isLoading: _isLoading,
+                    ),
+                    const SizedBox(height: 32),
+                    BibleLibraryGrid(
+                      firestore: widget.firestore,
+                      auth: widget.auth,
+                      initialUnlockedIds: _unlockedIds,
+                      isLoading: _isLoading,
+                    ),
+                    const SizedBox(height: 32),
+                    ConsistencyCalendar(
+                      firestore: widget.firestore,
+                      auth: widget.auth,
+                      isLoading: _isLoading,
+                    ),
+                  ],
                 ),
               ),
             ),

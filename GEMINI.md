@@ -138,6 +138,14 @@ The application prioritizes a zero-latency user experience by employing Optimist
 *   **Conflict Resolution:** Local overrides must be cleared or synchronized once the backend "source of truth" (typically a Stream) reflects the change.
 *   **Rollback Mechanism:** In the event of a backend failure, the UI must gracefully revert to its previous state and notify the user (e.g., via a SnackBar).
 
+### Skeleton Loaders
+
+The application uses skeleton loaders to provide a smooth transition while content is loading.
+
+**Key Requirements:**
+*   **Minimum Duration:** Skeleton loaders must be visible for a minimum of **1000ms** to prevent UI flashing during fast network responses. This is typically achieved using `SkeletonLoader.minTime` or an artificial `Future.delayed` in data fetching methods.
+*   **Persistent Titles:** Page and section titles should remain visible while their content is loading. Skeleton loaders should only replace the data-dependent components (e.g., cards, lists), not the headers themselves. This maintains layout stability and provides context to the user while they wait.
+
 ### Error Logging and Crash Reporting
 
 Firebase Crashlytics is integrated for crash reporting. Crashlytics collection is enabled only in non-debug builds. Global error handlers are registered in `lib/main.dart` to log errors via the `ErrorLogger` service.

@@ -2,17 +2,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../skeleton.dart';
-
 import '../../theme/app_theme.dart';
+import '../../widgets/skeletons/consistency_calendar_skeleton.dart';
 
 class ConsistencyCalendar extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final bool showTitle;
+  final bool isLoading;
 
   const ConsistencyCalendar({
     super.key,
     required this.firestore,
     required this.auth,
+    this.showTitle = true,
+    this.isLoading = false,
   });
 
   @override
@@ -160,90 +164,95 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Consistency',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
+          if (widget.showTitle) ...[
+            Text(
+              'Consistency',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (widget.isLoading)
+            const ConsistencyCalendarSkeleton()
+          else
+            Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.2),
                 ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${_monthName(_currentMonth.month)} ${_currentMonth.year}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.chevron_left),
+                            onPressed: () => _changeMonth(-1),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            style: IconButton.styleFrom(
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          IconButton(
+                            icon: const Icon(Icons.chevron_right),
+                            onPressed:
+                                isCurrentMonth ? null : () => _changeMonth(1),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            style: IconButton.styleFrom(
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  _buildCalendarGrid(colorScheme),
+
+                  const SizedBox(height: 16),
+
+                  // Legend
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _buildLegendItem(
+                        colorScheme,
+                        label: 'Missed',
+                        color: Colors.transparent,
+                        borderColor:
+                            colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      ),
+                      const SizedBox(width: 16),
+                      _buildLegendItem(
+                        colorScheme,
+                        label: 'Read',
+                        color: colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${_monthName(_currentMonth.month)} ${_currentMonth.year}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.chevron_left),
-                          onPressed: () => _changeMonth(-1),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          style: IconButton.styleFrom(
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        IconButton(
-                          icon: const Icon(Icons.chevron_right),
-                          onPressed:
-                              isCurrentMonth ? null : () => _changeMonth(1),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          style: IconButton.styleFrom(
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                _buildCalendarGrid(colorScheme),
-
-                const SizedBox(height: 16),
-
-                // Legend
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _buildLegendItem(
-                      colorScheme,
-                      label: 'Missed',
-                      color: Colors.transparent,
-                      borderColor:
-                          colorScheme.outlineVariant.withValues(alpha: 0.5),
-                    ),
-                    const SizedBox(width: 16),
-                    _buildLegendItem(
-                      colorScheme,
-                      label: 'Read',
-                      color: colorScheme.primary,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 24), // Bottom padding
         ],
       ),

@@ -7,17 +7,22 @@ import '../../services/reference_parser.dart';
 import '../../models/achievement_definition.dart';
 import '../../theme/app_theme.dart';
 import '../../pages/bible_progress_page.dart';
+import '../../widgets/skeletons/bible_library_grid_skeleton.dart';
 
 class BibleLibraryGrid extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final Set<String>? initialUnlockedIds;
+  final bool showTitle;
+  final bool isLoading;
 
   const BibleLibraryGrid({
     super.key,
     required this.firestore,
     required this.auth,
     this.initialUnlockedIds,
+    this.showTitle = true,
+    this.isLoading = false,
   });
 
   @override
@@ -50,41 +55,46 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.hPadding),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Bible Library',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => BibleProgressPage(
-                        firestore: widget.firestore,
-                        auth: widget.auth,
+          if (widget.showTitle) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Bible Library',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
                       ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => BibleProgressPage(
+                          firestore: widget.firestore,
+                          auth: widget.auth,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'See All',
+                    style: TextStyle(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.bold,
                     ),
-                  );
-                },
-                child: Text(
-                  'See All',
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          StreamBuilder<Set<String>>(
-            stream: _unlockedIdsStream,
-            builder: (context, snapshot) {
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (widget.isLoading)
+            const BibleLibraryGridSkeleton()
+          else
+            StreamBuilder<Set<String>>(
+              stream: _unlockedIdsStream,
+              builder: (context, snapshot) {
               final unlockedIdsList = snapshot.data?.toList() ?? [];
 
               // Calculate metrics
