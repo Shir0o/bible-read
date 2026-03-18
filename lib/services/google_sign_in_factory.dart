@@ -2,29 +2,40 @@ import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 
-/// Creates a [GoogleSignIn] instance that is configured for each platform.
+GoogleSignIn? _googleSignIn;
+
+/// Returns a configured [GoogleSignIn] instance.
 GoogleSignIn createGoogleSignIn() {
+  if (_googleSignIn != null) {
+    return _googleSignIn!;
+  }
+
   const scopes = <String>['email'];
 
   if (kIsWeb) {
-    return GoogleSignIn(scopes: scopes);
+    _googleSignIn = GoogleSignIn(scopes: scopes);
+    return _googleSignIn!;
   }
 
   switch (defaultTargetPlatform) {
     case TargetPlatform.android:
-      return GoogleSignIn(
+      _googleSignIn = GoogleSignIn(
         scopes: scopes,
         serverClientId: _androidServerClientId,
       );
+      break;
     case TargetPlatform.iOS:
     case TargetPlatform.macOS:
-      return GoogleSignIn(
+      _googleSignIn = GoogleSignIn(
         scopes: scopes,
         clientId: _appleClientId,
       );
+      break;
     default:
-      return GoogleSignIn(scopes: scopes);
+      _googleSignIn = GoogleSignIn(scopes: scopes);
   }
+
+  return _googleSignIn!;
 }
 
 const String _androidServerClientId =

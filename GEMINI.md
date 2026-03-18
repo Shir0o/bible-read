@@ -128,6 +128,16 @@ npm run lint
 cd ..
 ```
 
+### Optimistic UI Updates
+
+The application prioritizes a zero-latency user experience by employing Optimistic UI updates for high-frequency interactions (e.g., marking readings as complete, toggling likes). 
+
+**Key Requirements:**
+*   **Immediate Feedback:** UI state must update immediately upon user interaction using local state overrides.
+*   **Background Sync:** Backend requests (Firestore, Cloud Functions) should be initiated in the background without blocking the UI.
+*   **Conflict Resolution:** Local overrides must be cleared or synchronized once the backend "source of truth" (typically a Stream) reflects the change.
+*   **Rollback Mechanism:** In the event of a backend failure, the UI must gracefully revert to its previous state and notify the user (e.g., via a SnackBar).
+
 ### Error Logging and Crash Reporting
 
 Firebase Crashlytics is integrated for crash reporting. Crashlytics collection is enabled only in non-debug builds. Global error handlers are registered in `lib/main.dart` to log errors via the `ErrorLogger` service.

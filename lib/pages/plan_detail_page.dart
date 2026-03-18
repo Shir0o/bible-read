@@ -26,6 +26,7 @@ class PlanDetailPage extends StatefulWidget {
 class _PlanDetailPageState extends State<PlanDetailPage> {
   late final ReadingPlanService _planService;
   late Stream<UserPlanProgress?> _progressStream;
+  Set<int>? _optimisticCompletedDays;
 
   @override
   void initState() {
@@ -150,8 +151,21 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       body: StreamBuilder<UserPlanProgress?>(
         stream: _progressStream,
         builder: (context, snapshot) {
-          final progress = snapshot.data;
-          final isStarted = progress != null;
+          final streamProgress = snapshot.data;
+          final isStarted = streamProgress != null;
+
+          // Clear optimistic state if it matches the stream data
+          if (streamProgress != null && _optimisticCompletedDays != null) {
+            final streamSet = streamProgress.completedDays.toSet();
+            if (streamSet.length == _optimisticCompletedDays!.length &&
+                streamSet.containsAll(_optimisticCompletedDays!)) {
+              _optimisticCompletedDays = null;
+            }
+          }
+
+          final completedDays = _optimisticCompletedDays ??
+              streamProgress?.completedDays.toSet() ??
+              {};
 
           return Column(
             children: [
@@ -206,7 +220,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                                     ),
                                   ),
                                   Text(
-                                    '${progress.completedDays.length} / ${widget.plan.durationDays} days completed',
+                                    '${completedDays.length} / ${widget.plan.durationDays} days completed',
                                     style: AppTextStyles.caption(context).copyWith(
                                       color: colorScheme.onSecondaryContainer,
                                     ),
@@ -230,8 +244,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                       const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final day = widget.plan.schedule[index];
-                    final isCompleted =
-                        progress?.completedDays.contains(day.day) ?? false;
+                    final isCompleted = completedDays.contains(day.day);
 
                     return Opacity(
                         opacity: (!isStarted || isCompleted) ? 0.7 : 1.0,
@@ -248,19 +261,56 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                                   : colorScheme.outlineVariant,
                             ),
                           ),
-                          child: InkWell(
+                                  child: InkWell(
                             onTap: !isStarted
                                 ? null
-                                : () {
+                                : () async {
                                     final user = widget.auth.currentUser;
                                     if (user == null) return;
 
-                                    if (isCompleted) {
-                                      _planService.unmarkDayComplete(
-                                          user.uid, widget.plan.id, day.day);
-                                    } else {
-                                      _planService.markDayComplete(
-                                          user.uid, widget.plan.id, day.day);
+                                    final wasCompleted = isCompleted;
+                                    final previousOptimistic =
+                                        _optimisticCompletedDays != null
+                                            ? Set<int>.from(
+                                                _optimisticCompletedDays!)
+                                            : streamProgress?.completedDays
+                                                    .toSet() ??
+                                                {};
+
+                                    setState(() {
+                                      final newCompletedDays =
+                                          Set<int>.from(completedDays);
+                                      if (wasCompleted) {
+                                        newCompletedDays.remove(day.day);
+                                      } else {
+                                        newCompletedDays.add(day.day);
+                                      }
+                                      _optimisticCompletedDays =
+                                          newCompletedDays;
+                                    });
+
+                                    try {
+                                      if (wasCompleted) {
+                                        await _planService.unmarkDayComplete(
+                                            user.uid, widget.plan.id, day.day);
+                                      } else {
+                                        await _planService.markDayComplete(
+                                            user.uid, widget.plan.id, day.day);
+                                      }
+                                    } catch (e) {
+                                      if (mounted) {
+                                        setState(() {
+                                          _optimisticCompletedDays =
+                                              previousOptimistic;
+                                        });
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                'Failed to update progress. Please try again.'),
+                                          ),
+                                        );
+                                      }
                                     }
                                   },
                             borderRadius: BorderRadius.circular(12),
@@ -330,3 +380,4 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     );
   }
 }
+
