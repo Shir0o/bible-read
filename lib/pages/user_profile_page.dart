@@ -77,6 +77,7 @@ class UserProfilePage extends StatefulWidget {
 
 class UserProfilePageState extends State<UserProfilePage> {
   bool _isSigningIn = false;
+  bool _isSigningOut = false;
   bool _loading = true;
 
   @override
@@ -91,6 +92,8 @@ class UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _handleSignIn() async {
+    if (_isSigningIn) return;
+
     if (mounted) {
       setState(() {
         _isSigningIn = true;
@@ -139,6 +142,14 @@ class UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _handleSignOut() async {
+    if (_isSigningOut) return;
+
+    if (mounted) {
+      setState(() {
+        _isSigningOut = true;
+      });
+    }
+
     final googleSignIn = widget.googleSignInProvider();
     try {
       await googleSignIn.signOut();
@@ -161,9 +172,13 @@ class UserProfilePageState extends State<UserProfilePage> {
       // Ignore Firebase sign-out failures.
     }
 
-    if (!mounted) return;
-    final page = widget.mainPageBuilder?.call(context) ?? MainPage();
-    Navigator.of(context).pushReplacement(animatedPageRoute(page));
+    if (mounted) {
+      setState(() {
+        _isSigningOut = false;
+      });
+      final page = widget.mainPageBuilder?.call(context) ?? MainPage();
+      Navigator.of(context).pushReplacement(animatedPageRoute(page));
+    }
   }
 
   @override
@@ -260,6 +275,7 @@ class UserProfilePageState extends State<UserProfilePage> {
                               const SizedBox(height: 24),
                               AnimatedActionButton(
                                 onPressed: _handleSignOut,
+                                isLoading: _isSigningOut,
                                 child: const Text('Sign Out'),
                               ),
                               const SizedBox(height: 8),
