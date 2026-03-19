@@ -23,6 +23,7 @@ import 'groups_page.dart';
 import 'notification_center_page.dart';
 import '../services/notification_service.dart';
 import '../widgets/skeletons/friends_activity_skeleton.dart';
+import '../widgets/skeletons/journey_progress_card_skeleton.dart';
 import '../models/app_notification.dart';
 import '../widgets/app_header.dart';
 import '../widgets/skeleton_loader.dart';
@@ -83,6 +84,7 @@ class _CommunityPageState extends State<CommunityPage>
   late Stream<List<Group>> _groupsStream;
   List<ReadLog> _friendLogs = [];
   bool _loadingLogs = true;
+  bool _isLoadingGroups = true;
 
   @override
   bool get wantKeepAlive => true;
@@ -92,11 +94,17 @@ class _CommunityPageState extends State<CommunityPage>
     super.initState();
     final user = widget.auth.currentUser;
     if (user != null) {
-      _groupsStream = widget.groupService.groupsForUser(user.uid);
+      _groupsStream = widget.groupService.groupsForUser(user.uid).map((groups) {
+        if (mounted) {
+          setState(() => _isLoadingGroups = false);
+        }
+        return groups;
+      });
       _fetchFriendsActivity();
     } else {
       _groupsStream = Stream.value([]);
       _loadingLogs = false;
+      _isLoadingGroups = false;
     }
   }
 
@@ -257,7 +265,10 @@ class _CommunityPageState extends State<CommunityPage>
                           children: [
                             Text(
                               'Group Progress',
-                              style: AppTextStyles.title(context).copyWith(fontSize: 20),
+                              style: AppTextStyles.title(context).copyWith(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             TextButton(
                               onPressed: () {
@@ -282,20 +293,27 @@ class _CommunityPageState extends State<CommunityPage>
                           ],
                         ),
                       ),
-                      StreamBuilder<List<Group>>(
-                        stream: _groupsStream,
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                            return _buildEmptyGroupState(context, colorScheme);
-                          }
-                          final group = snapshot.data!.first;
-                          return _GroupProgressCard(
-                            group: group,
-                            groupService: widget.groupService,
-                            user: user,
-                            vibrationService: widget.vibrationService,
-                          );
-                        },
+                      SkeletonLoader(
+                        loading: _isLoadingGroups,
+                        minTime: const Duration(milliseconds: 1000),
+                        skeleton: const JourneyProgressCardSkeleton(
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: StreamBuilder<List<Group>>(
+                          stream: _groupsStream,
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                              return _buildEmptyGroupState(context, colorScheme);
+                            }
+                            final group = snapshot.data!.first;
+                            return _GroupProgressCard(
+                              group: group,
+                              groupService: widget.groupService,
+                              user: user,
+                              vibrationService: widget.vibrationService,
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -308,7 +326,10 @@ class _CommunityPageState extends State<CommunityPage>
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
                   child: Text(
                     'Friends Activity',
-                    style: AppTextStyles.title(context).copyWith(fontSize: 20),
+                    style: AppTextStyles.title(context).copyWith(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -497,15 +518,15 @@ class _GroupProgressCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: colorScheme.secondaryContainer,
-                                borderRadius: BorderRadius.circular(4),
+                                color: colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 'Day $currentDay',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: colorScheme.onSecondaryContainer,
+                                  color: colorScheme.onPrimaryContainer,
                                 ),
                               ),
                             ),
@@ -513,7 +534,7 @@ class _GroupProgressCard extends StatelessWidget {
                             Text(
                               'of $totalDays • Collective Plan',
                               style: AppTextStyles.body(context).copyWith(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: colorScheme.onSurfaceVariant,
                               ),
                             ),
@@ -542,7 +563,7 @@ class _GroupProgressCard extends StatelessWidget {
                                     Text(
                                       '${(percent * 100).toInt()}% of Schedule',
                                       style: AppTextStyles.body(context).copyWith(
-                                        fontSize: 12,
+                                        fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                         color: colorScheme.onSurfaceVariant,
                                       ),
@@ -575,7 +596,8 @@ class _GroupProgressCard extends StatelessWidget {
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            height: 48,
+            child: FilledButton.tonal(
               onPressed: () {
                 vibrationService.lightImpact();
                 Navigator.of(context).push(
@@ -589,15 +611,26 @@ class _GroupProgressCard extends StatelessWidget {
                   ),
                 );
               },
-              icon: const Icon(Icons.calendar_today),
-              label: const Text('View Schedule'),
               style: FilledButton.styleFrom(
                 backgroundColor: colorScheme.secondaryContainer,
                 foregroundColor: colorScheme.onSecondaryContainer,
-                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16)),
-                textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                elevation: 0,
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.calendar_today, size: 24),
+                  SizedBox(width: 8),
+                  Text(
+                    'View Schedule',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

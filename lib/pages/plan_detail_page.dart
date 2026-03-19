@@ -27,6 +27,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   late final ReadingPlanService _planService;
   late Stream<UserPlanProgress?> _progressStream;
   Set<int>? _optimisticCompletedDays;
+  final ScrollController _scrollController = ScrollController();
+  final Map<int, GlobalKey> _itemKeys = {};
+  bool _hasScrolledToUnchecked = false;
 
   @override
   void initState() {
@@ -37,6 +40,42 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       _progressStream = _planService.getPlanProgress(user.uid, widget.plan.id);
     } else {
       _progressStream = Stream.value(null);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToLastUnchecked(Set<int> completedDays) {
+    if (_hasScrolledToUnchecked) return;
+
+    // "Last unchecked" could mean the furthest one in the schedule that isn't done.
+    // However, usually users want the NEXT one to read. 
+    // If they said "last unchecked", we'll find the highest day number that is not completed.
+    int? targetDay;
+    for (int i = widget.plan.schedule.length - 1; i >= 0; i--) {
+      final day = widget.plan.schedule[i].day;
+      if (!completedDays.contains(day)) {
+        targetDay = day;
+        break;
+      }
+    }
+
+    if (targetDay != null && _itemKeys.containsKey(targetDay)) {
+      final key = _itemKeys[targetDay];
+      if (key?.currentContext != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Scrollable.ensureVisible(
+            key!.currentContext!,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        });
+        _hasScrolledToUnchecked = true;
+      }
     }
   }
 
@@ -118,8 +157,6 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   }
 
   String _formatDate(DateTime date) {
-    // Simple formatter to avoid intl dependency if not already there,
-    // or use if available. Keeping it simple.
     const months = [
       'Jan',
       'Feb',
@@ -137,17 +174,38 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     return '${months[date.month - 1]} ${date.day}';
   }
 
+  String _formatDayOfWeek(DateTime date) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days[date.weekday - 1];
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.plan.title),
-        backgroundColor: colorScheme.surface,
-        scrolledUnderElevation: 0,
-      ),
       backgroundColor: colorScheme.surface,
+      appBar: AppBar(
+        backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          widget.plan.title,
+          style: theme.textTheme.titleLarge,
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+            height: 1,
+          ),
+        ),
+      ),
       body: StreamBuilder<UserPlanProgress?>(
         stream: _progressStream,
         builder: (context, snapshot) {
@@ -167,217 +225,400 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
               streamProgress?.completedDays.toSet() ??
               {};
 
-          return Column(
+          if (isStarted && !_hasScrolledToUnchecked) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollToLastUnchecked(completedDays);
+            });
+          }
+
+          if (!isStarted) {
+            return _buildNotStartedState(context, colorScheme);
+          }
+
+          final now = DateTime.now();
+          final todayDate = DateTime(now.year, now.month, now.day);
+          final startDate = streamProgress.startDate;
+
+          final past = <ReadingPlanDay>[];
+          final today = <ReadingPlanDay>[];
+          final upcoming = <ReadingPlanDay>[];
+
+          for (final day in widget.plan.schedule) {
+            final date = startDate.add(Duration(days: day.day - 1));
+            final sDate = DateTime(date.year, date.month, date.day);
+            
+            if (sDate.isBefore(todayDate)) {
+              past.add(day);
+            } else if (sDate.isAtSameMomentAs(todayDate)) {
+              today.add(day);
+            } else {
+              upcoming.add(day);
+            }
+          }
+
+          return ListView(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(16),
             children: [
-              // Header Info
+              // Header description
               Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.plan.description,
-                      style: AppTextStyles.body(context).copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (!isStarted)
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: _startPlan,
-                          icon: const Icon(Icons.play_arrow),
-                          label: const Text('Start This Plan'),
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.all(16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: colorScheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.check_circle,
-                                color: colorScheme.onSecondaryContainer),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Plan in Progress',
-                                    style: AppTextStyles.subtitle(context).copyWith(
-                                      color: colorScheme.onSecondaryContainer,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${completedDays.length} / ${widget.plan.durationDays} days completed',
-                                    style: AppTextStyles.caption(context).copyWith(
-                                      color: colorScheme.onSecondaryContainer,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
+                padding: const EdgeInsets.only(bottom: 24, left: 8, right: 8),
+                child: Text(
+                  widget.plan.description,
+                  style: AppTextStyles.body(context).copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
-              const Divider(height: 1),
-              // Schedule List
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: widget.plan.schedule.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final day = widget.plan.schedule[index];
-                    final isCompleted = completedDays.contains(day.day);
 
-                    return Opacity(
-                        opacity: (!isStarted || isCompleted) ? 0.7 : 1.0,
-                        child: Card(
-                          elevation: 0,
-                          color: isCompleted
-                              ? colorScheme.surfaceContainerHigh
-                              : colorScheme.surface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: isCompleted
-                                  ? Colors.transparent
-                                  : colorScheme.outlineVariant,
-                            ),
-                          ),
-                                  child: InkWell(
-                            onTap: !isStarted
-                                ? null
-                                : () async {
-                                    final user = widget.auth.currentUser;
-                                    if (user == null) return;
-
-                                    final wasCompleted = isCompleted;
-                                    final previousOptimistic =
-                                        _optimisticCompletedDays != null
-                                            ? Set<int>.from(
-                                                _optimisticCompletedDays!)
-                                            : streamProgress?.completedDays
-                                                    .toSet() ??
-                                                {};
-
-                                    setState(() {
-                                      final newCompletedDays =
-                                          Set<int>.from(completedDays);
-                                      if (wasCompleted) {
-                                        newCompletedDays.remove(day.day);
-                                      } else {
-                                        newCompletedDays.add(day.day);
-                                      }
-                                      _optimisticCompletedDays =
-                                          newCompletedDays;
-                                    });
-
-                                    try {
-                                      if (wasCompleted) {
-                                        await _planService.unmarkDayComplete(
-                                            user.uid, widget.plan.id, day.day);
-                                      } else {
-                                        await _planService.markDayComplete(
-                                            user.uid, widget.plan.id, day.day);
-                                      }
-                                    } catch (e) {
-                                      if (mounted) {
-                                        setState(() {
-                                          _optimisticCompletedDays =
-                                              previousOptimistic;
-                                        });
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Failed to update progress. Please try again.'),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 16,
-                                    backgroundColor: isCompleted
-                                        ? colorScheme.primary
-                                        : colorScheme.surfaceContainerHighest,
-                                    child: isCompleted
-                                        ? Icon(Icons.check,
-                                            size: 16,
-                                            color: colorScheme.onPrimary)
-                                        : Text(
-                                            '${day.day}',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: colorScheme
-                                                    .onSurfaceVariant),
-                                          ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Day ${day.day}',
-                                          style: AppTextStyles.caption(context).copyWith(
-                                            color: colorScheme.primary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          day.readings.join(', '),
-                                          style: AppTextStyles.body(context).copyWith(
-                                            decoration: isCompleted
-                                                ? TextDecoration.lineThrough
-                                                : null,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (isStarted && !isCompleted)
-                                    Icon(Icons.radio_button_unchecked,
-                                        color: colorScheme.outline),
-                                  if (isStarted && isCompleted)
-                                    Icon(Icons.check_circle,
-                                        color: colorScheme.primary),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ));
-                  },
-                ),
-              ),
+              if (past.isNotEmpty) ...[
+                _buildSectionHeader(context, 'Past Readings'),
+                ...past.map((day) => _buildScheduleItem(
+                      context,
+                      day,
+                      startDate,
+                      completedDays,
+                      isPast: true,
+                    )),
+                const SizedBox(height: 16),
+              ],
+              if (today.isNotEmpty) ...[
+                _buildSectionHeader(context, 'Today', isHighlight: true),
+                ...today.map((day) => _buildTodayItem(
+                      context,
+                      day,
+                      startDate,
+                      completedDays,
+                    )),
+                const SizedBox(height: 16),
+              ],
+              if (upcoming.isNotEmpty) ...[
+                _buildSectionHeader(context, 'Upcoming'),
+                ...upcoming.map((day) => _buildScheduleItem(
+                      context,
+                      day,
+                      startDate,
+                      completedDays,
+                    )),
+              ],
+              const SizedBox(height: 80),
             ],
           );
         },
       ),
     );
   }
+
+  Widget _buildNotStartedState(BuildContext context, ColorScheme colorScheme) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.plan.description,
+                style: AppTextStyles.body(context).copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _startPlan,
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Start This Plan'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(),
+        _buildSectionHeader(context, 'Plan Preview'),
+        ...widget.plan.schedule.map((day) => _buildScheduleItem(
+              context,
+              day,
+              DateTime.now(), // Preview only
+              {},
+              isStarted: false,
+            )),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title,
+      {bool isHighlight = false}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 8, top: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: theme.textTheme.labelMedium?.copyWith(
+          color:
+              isHighlight ? colorScheme.primary : colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScheduleItem(
+    BuildContext context,
+    ReadingPlanDay day,
+    DateTime startDate,
+    Set<int> completedDays, {
+    bool isPast = false,
+    bool isStarted = true,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isCompleted = completedDays.contains(day.day);
+    final date = startDate.add(Duration(days: day.day - 1));
+    final opacity = (isPast || isCompleted) ? 0.7 : 1.0;
+
+    final key = _itemKeys.putIfAbsent(day.day, () => GlobalKey());
+
+    return Opacity(
+      key: key,
+      opacity: opacity,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: isCompleted
+              ? colorScheme.surfaceContainerHigh
+              : colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: InkWell(
+          onTap: !isStarted ? null : () => _toggleDay(day.day, isCompleted, completedDays),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 56,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _formatDate(date),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        _formatDayOfWeek(date),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Day ${day.day}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        day.readings.join(', '),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface.withValues(alpha: 0.8),
+                          decoration: isCompleted ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isCompleted)
+                  Icon(
+                    Icons.check_circle,
+                    color: colorScheme.primary,
+                    size: 24,
+                  )
+                else
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: colorScheme.outline.withValues(alpha: 0.4),
+                          width: 1,
+                        )),
+                  )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTodayItem(
+    BuildContext context,
+    ReadingPlanDay day,
+    DateTime startDate,
+    Set<int> completedDays,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isCompleted = completedDays.contains(day.day);
+    final date = startDate.add(Duration(days: day.day - 1));
+
+    final key = _itemKeys.putIfAbsent(day.day, () => GlobalKey());
+
+    return Container(
+      key: key,
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isCompleted
+            ? colorScheme.surfaceContainerHigh
+            : colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () => _toggleDay(day.day, isCompleted, completedDays),
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 56,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _formatDate(date),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    Text(
+                      _formatDayOfWeek(date),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.primary.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Day ${day.day}',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      day.readings.join(', '),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        decoration: isCompleted ? TextDecoration.lineThrough : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isCompleted)
+                Icon(
+                  Icons.check_circle,
+                  color: colorScheme.primary,
+                  size: 24,
+                )
+              else
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: colorScheme.primary,
+                        width: 2,
+                      )),
+                )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _toggleDay(int dayNumber, bool wasCompleted, Set<int> completedDays) async {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+
+    final previousOptimistic = _optimisticCompletedDays != null
+        ? Set<int>.from(_optimisticCompletedDays!)
+        : (await _planService.getPlanProgress(user.uid, widget.plan.id).first)
+                ?.completedDays
+                .toSet() ??
+            {};
+
+    setState(() {
+      final newCompletedDays = Set<int>.from(completedDays);
+      if (wasCompleted) {
+        newCompletedDays.remove(dayNumber);
+      } else {
+        newCompletedDays.add(dayNumber);
+      }
+      _optimisticCompletedDays = newCompletedDays;
+    });
+
+    try {
+      if (wasCompleted) {
+        await _planService.unmarkDayComplete(user.uid, widget.plan.id, dayNumber);
+      } else {
+        await _planService.markDayComplete(user.uid, widget.plan.id, dayNumber);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _optimisticCompletedDays = previousOptimistic;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update progress. Please try again.'),
+          ),
+        );
+      }
+    }
+  }
+
 }
 

@@ -30,9 +30,8 @@ class FullSchedulePage extends StatefulWidget {
 class _FullSchedulePageState extends State<FullSchedulePage> {
   late Stream<List<GroupSchedule>> _scheduleStream;
   final ScrollController _scrollController = ScrollController();
-
-  // Cache for read status to avoid refetching too often if we add that feature
-  // For now, we mainly display the schedule.
+  final GlobalKey _todayKey = GlobalKey();
+  bool _hasScrolledToToday = false;
 
   @override
   void initState() {
@@ -44,6 +43,21 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToToday() {
+    if (_hasScrolledToToday) return;
+
+    if (_todayKey.currentContext != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Scrollable.ensureVisible(
+          _todayKey.currentContext!,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      });
+      _hasScrolledToToday = true;
+    }
   }
 
   String _formatDate(DateTime date) {
@@ -133,6 +147,12 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
             }
           }
 
+          if (!_hasScrolledToToday && (today.isNotEmpty || upcoming.isNotEmpty)) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollToToday();
+            });
+          }
+
           return ListView(
             controller: _scrollController,
             padding: const EdgeInsets.all(16),
@@ -145,12 +165,19 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
               ],
               if (today.isNotEmpty) ...[
                 _buildSectionHeader(context, 'Today', isHighlight: true),
-                ...today.map((s) => _buildTodayItem(context, s)),
+                ...today.map((s) => _buildTodayItem(context, s, key: _todayKey)),
                 const SizedBox(height: 16),
               ],
               if (upcoming.isNotEmpty) ...[
                 _buildSectionHeader(context, 'Upcoming'),
-                ...upcoming.map((s) => _buildScheduleItem(context, s)),
+                ...upcoming.map((s) {
+                  final isFirstUpcoming = s == upcoming.first;
+                  return _buildScheduleItem(
+                    context, 
+                    s, 
+                    key: (today.isEmpty && isFirstUpcoming) ? _todayKey : null
+                  );
+                }),
               ],
             ],
           );
@@ -176,12 +203,13 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   }
 
   Widget _buildScheduleItem(BuildContext context, GroupSchedule schedule,
-      {bool isPast = false}) {
+      {bool isPast = false, Key? key}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final opacity = isPast ? 0.7 : 1.0;
 
     return Opacity(
+      key: key,
       opacity: opacity,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
@@ -246,11 +274,12 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
     );
   }
 
-  Widget _buildTodayItem(BuildContext context, GroupSchedule schedule) {
+  Widget _buildTodayItem(BuildContext context, GroupSchedule schedule, {Key? key}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Container(
+      key: key,
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(

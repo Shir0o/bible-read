@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import '../skeleton.dart';
 
 class JourneyProgressCardSkeleton extends StatelessWidget {
-  const JourneyProgressCardSkeleton({super.key});
+  final EdgeInsetsGeometry padding;
+  
+  const JourneyProgressCardSkeleton({
+    super.key,
+    this.padding = const EdgeInsets.symmetric(horizontal: 16),
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: padding,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
