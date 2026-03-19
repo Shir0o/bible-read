@@ -6,8 +6,6 @@ import 'package:flutter/foundation.dart';
 import '../services/error_logger.dart';
 
 import '../services/reading_status_service.dart';
-import '../services/achievement_service.dart';
-import '../models/achievement.dart';
 
 import '../services/vibration_service.dart';
 
@@ -69,6 +67,7 @@ class ReadLogPage extends StatefulWidget {
       'email': user.email?.toLowerCase() ?? '',
       'uid': user.uid,
       'timestamp': Timestamp.now(),
+      'dateId': dateKey,
     });
 
     // Keep the per-user reading collection in sync for streak calculations.
@@ -100,18 +99,6 @@ class ReadLogPage extends StatefulWidget {
         }
         ErrorLogger.log(e, st);
       }
-    }
-
-    if (result?['first'] == true) {
-      await AchievementService(firestore: db).unlockAchievement(
-        user.uid,
-        Achievement(
-          id: 'firstReader',
-          title: 'First Reader',
-          type: 'first',
-          dateUnlocked: DateTime.now(),
-        ),
-      );
     }
   }
 }

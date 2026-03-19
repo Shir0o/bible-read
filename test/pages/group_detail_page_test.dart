@@ -9,7 +9,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/models/group.dart';
 import 'package:bible_read/pages/group_detail_page.dart';
 import 'package:bible_read/pages/edit_group_page.dart';
-import 'package:bible_read/services/achievement_service.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/services/error_logger.dart';
@@ -386,15 +385,6 @@ void main() {
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     final service = GroupService(firestore: firestore);
 
-    final achievementsCollection = firestore
-        .collection('users')
-        .doc('u1')
-        .collection(AchievementService.achievementsCollection);
-    expect(
-      (await achievementsCollection.doc('book_ruth').get()).exists,
-      isFalse,
-    );
-
     await pumpPage(
       tester,
       service: service,
@@ -408,105 +398,6 @@ void main() {
     await tester.tap(readButton);
     await tester.pump();
     await pumpUntilSettled(tester);
-
-    final achievementSnap = await achievementsCollection.doc('book_ruth').get();
-    expect(achievementSnap.exists, isTrue);
-    final data = achievementSnap.data() ?? <String, dynamic>{};
-    expect(data['type'], 'book');
-    expect(data['title'], 'Complete Ruth');
-    expect(data['dateUnlocked'], isA<Timestamp>());
-  });
-
-  testWidgets('marking schedule read unlocks book achievement', (tester) async {
-    final groupRef = firestore.collection('groups').doc('g1');
-    await groupRef.set(group.toFirestore());
-    await groupRef.collection('members').doc('u1').set({
-      'uid': 'u1',
-      'role': 'owner',
-      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 6, 1)),
-    });
-
-    Future<void> seedSchedule({
-      required String dateId,
-      required DateTime date,
-      required List<String> chapters,
-    }) async {
-      await groupRef.collection('schedule').doc(dateId).set({
-        'date': Timestamp.fromDate(date),
-        'chapters': chapters,
-      });
-    }
-
-    Future<void> seedProgress({
-      required String dateId,
-      required List<int> completedIndices,
-    }) async {
-      final entryRef = groupRef
-          .collection('progress')
-          .doc(dateId)
-          .collection('entries')
-          .doc('u1');
-      await entryRef.set({
-        'uid': 'u1',
-        'groupId': 'g1',
-        'dateId': dateId,
-        'count': completedIndices.length,
-      });
-      for (final index in completedIndices) {
-        await entryRef.collection('items').doc(index.toString()).set({
-          'done': true,
-          'ts': Timestamp.fromDate(DateTime.utc(2024, 6, 1)),
-        });
-      }
-    }
-
-    await seedSchedule(
-      dateId: '2024-06-01',
-      date: DateTime.utc(2024, 6, 1),
-      chapters: const ['Ruth 1', 'Ruth 2'],
-    );
-    await seedSchedule(
-      dateId: '2024-06-02',
-      date: DateTime.utc(2024, 6, 2),
-      chapters: const ['Ruth 3', 'Ruth 4'],
-    );
-
-    await seedProgress(dateId: '2024-06-01', completedIndices: const [0, 1]);
-    // Pre-seed empty progress for the target day to ensure the document exists.
-    await seedProgress(dateId: '2024-06-02', completedIndices: const []);
-
-    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-    final service = GroupService(firestore: firestore);
-
-    final achievementsCollection = firestore
-        .collection('users')
-        .doc('u1')
-        .collection(AchievementService.achievementsCollection);
-    expect(
-      (await achievementsCollection.doc('book_ruth').get()).exists,
-      isFalse,
-    );
-
-    await pumpPage(
-      tester,
-      service: service,
-      auth: auth,
-      currentDate: DateTime(2024, 6, 2),
-    );
-
-    final readButton = find.text('Mark as Read');
-    expect(readButton, findsOneWidget);
-
-    await tester.tap(readButton);
-    await tester.pump();
-    await pumpUntilSettled(tester);
-
-    final achievementSnap = await achievementsCollection.doc('book_ruth').get();
-    expect(achievementSnap.exists, isTrue);
-    final data = achievementSnap.data() ?? <String, dynamic>{};
-    expect(data['type'], 'book');
-    expect(data['title'], 'Complete Ruth');
-    expect(data['dateUnlocked'], isA<Timestamp>());
   });
 
   testWidgets('non-members see read-only schedule tiles', (tester) async {

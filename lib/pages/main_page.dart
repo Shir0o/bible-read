@@ -19,7 +19,6 @@ import 'package:bible_read/pages/auth_selection_page.dart';
 import 'package:bible_read/pages/login_page.dart'; // Added
 import 'package:bible_read/widgets/animated_page_route.dart'; // Added
 import 'friends_page.dart';
-import 'achievements_page.dart';
 import 'challenges_page.dart';
 import 'streak_history_page.dart';
 import '../services/admin_role_service.dart';
@@ -298,15 +297,6 @@ class _MainPageState extends State<MainPage> {
                         vibrationService: widget.vibrationService,
                       )));
           break;
-        case 6: // Achievements
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => AchievementsPage(
-                        auth: widget.auth,
-                        firestore: widget.firestore,
-                      )));
-          break;
         case 7: // History
           Navigator.push(
               context,
@@ -343,40 +333,27 @@ class _MainPageState extends State<MainPage> {
       return const AppCheckErrorPage();
     }
 
+    final currentUser = widget.auth.currentUser;
+
     return StreamBuilder<User?>(
       stream: _authStream,
-      initialData: widget.auth.currentUser,
+      initialData: currentUser,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-
+        // If we have a user (either from initialData or stream), show the main UI right away.
+        // This avoids the stuck-on-loading-screen feeling.
         final user = snapshot.data;
 
-        Widget buildMainPage(BuildContext context) {
-          return MainPage(
-            auth: widget.auth,
-            firestore: widget.firestore,
-            messaging: widget.messaging,
-            functions: widget.functions,
-            vibrationService: widget.vibrationService,
-            googleSignInProvider: widget.googleSignInProvider,
-            readingStatusService: widget.readingStatusService,
-            leaderboardPageBuilder: widget.leaderboardPageBuilder,
-            readLogPageBuilder: widget.readLogPageBuilder,
-            sendLikeNotification: widget.sendLikeNotification,
-            sendCommentNotification: widget.sendCommentNotification,
-            appCheckFailed: widget.appCheckFailed,
-            onNavigate: widget.onNavigate,
-          );
-        }
-
         if (user == null) {
+          // If the stream is still waiting and we don't have a currentUser yet, show loader.
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+
+          // Real null user: show Welcome/Auth
           if (_showAuthSelection) {
             return PopScope(
               canPop: false,
@@ -391,7 +368,7 @@ class _MainPageState extends State<MainPage> {
                 firestore: widget.firestore,
                 googleSignInProvider: widget.googleSignInProvider,
                 vibrationService: widget.vibrationService,
-                mainPageBuilder: buildMainPage,
+                mainPageBuilder: (context) => buildMainPage(context),
               ),
             );
           }
@@ -410,7 +387,7 @@ class _MainPageState extends State<MainPage> {
                     firestore: widget.firestore,
                     googleSignInProvider: widget.googleSignInProvider,
                     vibrationService: widget.vibrationService,
-                    mainPageBuilder: buildMainPage,
+                    mainPageBuilder: (context) => buildMainPage(context),
                   ),
                 ),
               );
@@ -418,6 +395,7 @@ class _MainPageState extends State<MainPage> {
           );
         }
 
+        // We have a user! Show the responsive UI immediately.
         final destinations = const [
           NavigationDestination(
               icon: Icon(Icons.home_outlined),
@@ -458,6 +436,24 @@ class _MainPageState extends State<MainPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget buildMainPage(BuildContext context) {
+    return MainPage(
+      auth: widget.auth,
+      firestore: widget.firestore,
+      messaging: widget.messaging,
+      functions: widget.functions,
+      vibrationService: widget.vibrationService,
+      googleSignInProvider: widget.googleSignInProvider,
+      readingStatusService: widget.readingStatusService,
+      leaderboardPageBuilder: widget.leaderboardPageBuilder,
+      readLogPageBuilder: widget.readLogPageBuilder,
+      sendLikeNotification: widget.sendLikeNotification,
+      sendCommentNotification: widget.sendCommentNotification,
+      appCheckFailed: widget.appCheckFailed,
+      onNavigate: widget.onNavigate,
     );
   }
 }

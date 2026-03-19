@@ -10,8 +10,7 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/services/reading_status_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
-import 'package:bible_read/services/achievement_service.dart';
-import 'package:bible_read/services/group_book_achievement_service.dart';
+import 'package:bible_read/services/bible_progress_service.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
 import 'package:bible_read/services/user_preferences_service.dart';
 import 'package:bible_read/models/reading_plan.dart';
@@ -29,12 +28,8 @@ class _StubVibrationService extends VibrationService {
   }
 }
 
-class _StubAchievementService extends AchievementService {
-  _StubAchievementService() : super(firestore: FakeFirebaseFirestore());
-}
-
-class _StubGroupBookAchievementService extends GroupBookAchievementService {
-  _StubGroupBookAchievementService()
+class _StubBibleProgressService extends BibleProgressService {
+  _StubBibleProgressService()
       : super(firestore: FakeFirebaseFirestore());
 }
 
@@ -65,8 +60,8 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          achievementService: _StubAchievementService(),
-          groupBookAchievementService: _StubGroupBookAchievementService(),
+
+          bibleProgressService: _StubBibleProgressService(),
           dateProvider: () => DateTime.now(),
         ),
       ),
@@ -106,8 +101,8 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          achievementService: _StubAchievementService(),
-          groupBookAchievementService: _StubGroupBookAchievementService(),
+
+          bibleProgressService: _StubBibleProgressService(),
           dateProvider: () => DateTime.now(),
         ),
       ),
@@ -137,8 +132,8 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: vibrationService,
-          achievementService: _StubAchievementService(),
-          groupBookAchievementService: _StubGroupBookAchievementService(),
+
+          bibleProgressService: _StubBibleProgressService(),
           dateProvider: () => DateTime.now(),
         ),
       ),
@@ -210,8 +205,8 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          achievementService: _StubAchievementService(),
-          groupBookAchievementService: _StubGroupBookAchievementService(),
+
+          bibleProgressService: _StubBibleProgressService(),
           dateProvider: () => DateTime.now(),
         ),
       ),
@@ -243,8 +238,8 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          achievementService: _StubAchievementService(),
-          groupBookAchievementService: _StubGroupBookAchievementService(),
+
+          bibleProgressService: _StubBibleProgressService(),
           readingStatusService: slowReadingService,
           dateProvider: () => DateTime.now(),
         ),
@@ -310,8 +305,8 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          achievementService: _StubAchievementService(),
-          groupBookAchievementService: _StubGroupBookAchievementService(),
+
+          bibleProgressService: _StubBibleProgressService(),
           readingPlanService: planService,
           userPreferencesService: prefsService,
           dateProvider: () => DateTime.now(),
@@ -360,8 +355,8 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-          achievementService: _StubAchievementService(),
-          groupBookAchievementService: _StubGroupBookAchievementService(),
+
+          bibleProgressService: _StubBibleProgressService(),
           readingPlanService: planService,
           userPreferencesService: prefsService,
           dateProvider: () => DateTime.now(),

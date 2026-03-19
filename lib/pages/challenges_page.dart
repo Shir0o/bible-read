@@ -5,11 +5,9 @@ import 'package:flutter/material.dart';
 import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
-import '../services/achievement_service.dart';
 import '../services/seasonal_challenge_service.dart';
 
 // These imports assume we will refactor or use existing pages
-import 'achievements_page.dart';
 import 'leaderboard_page.dart' as lb;
 import 'seasonal_challenges_page.dart';
 
@@ -38,7 +36,7 @@ class _ChallengesPageState extends State<ChallengesPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -66,7 +64,6 @@ class _ChallengesPageState extends State<ChallengesPage>
           tabs: const [
             Tab(text: 'Seasonal'),
             Tab(text: 'Leaderboard'),
-            Tab(text: 'Achievements'),
           ],
         ),
       ),
@@ -81,10 +78,6 @@ class _ChallengesPageState extends State<ChallengesPage>
             firestore: widget.firestore,
             auth: widget.auth,
             friendService: widget.friendService,
-          ),
-          AchievementsView(
-            auth: widget.auth,
-            achievementService: AchievementService(firestore: widget.firestore),
           ),
         ],
       ),

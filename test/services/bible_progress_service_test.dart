@@ -2,19 +2,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bible_read/services/group_book_achievement_service.dart';
+import 'package:bible_read/services/bible_progress_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('GroupBookAchievementService', () {
+  group('BibleProgressService', () {
     const userId = 'user1';
     late FakeFirebaseFirestore firestore;
-    late GroupBookAchievementService service;
+    late BibleProgressService service;
 
     setUp(() {
       firestore = FakeFirebaseFirestore();
-      service = GroupBookAchievementService(firestore: firestore);
+      service = BibleProgressService(firestore: firestore);
     });
 
     Future<void> seedGroup(String groupId) async {
@@ -129,6 +129,47 @@ void main() {
 
       final result = await service.completedChaptersByBook(userId);
 
+      expect(result['Ruth'], equals({1, 2, 3, 4}));
+    });
+
+    test('includes manual book completions', () async {
+      // Genesis has 50 chapters
+      await firestore
+          .collection('users')
+          .doc(userId)
+          .collection('bible_books')
+          .doc('Genesis')
+          .set({'completed': true});
+
+      final result = await service.completedChaptersByBook(userId);
+
+      expect(result['Genesis'], isNotNull);
+      expect(result['Genesis']!.length, 50);
+      expect(result['Genesis']!.contains(1), isTrue);
+      expect(result['Genesis']!.contains(50), isTrue);
+    });
+
+    test('merges group progress and manual completion seamlessly', () async {
+      await seedGroup('g1');
+      // Group progress: Ruth 1, 2
+      await seedSchedule(
+        groupId: 'g1',
+        date: DateTime(2024, 6, 1),
+        chapters: const ['Ruth 1', 'Ruth 2'],
+        completed: const {0, 1},
+      );
+
+      // Manual progress: Ruth (all chapters 1-4)
+      await firestore
+          .collection('users')
+          .doc(userId)
+          .collection('bible_books')
+          .doc('Ruth')
+          .set({'completed': true});
+
+      final result = await service.completedChaptersByBook(userId);
+
+      // Should have all chapters due to manual override
       expect(result['Ruth'], equals({1, 2, 3, 4}));
     });
   });

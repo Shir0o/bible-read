@@ -2,9 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../services/achievement_service.dart';
+import '../../services/bible_progress_service.dart';
 import '../../services/reference_parser.dart';
-import '../../models/achievement_definition.dart';
 import '../../theme/app_theme.dart';
 import '../../pages/bible_progress_page.dart';
 import '../../widgets/skeletons/bible_library_grid_skeleton.dart';
@@ -12,7 +11,7 @@ import '../../widgets/skeletons/bible_library_grid_skeleton.dart';
 class BibleLibraryGrid extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
-  final Set<String>? initialUnlockedIds;
+  final Map<String, Set<int>>? initialCompletedByBook;
   final bool showTitle;
   final bool isLoading;
 
@@ -20,7 +19,7 @@ class BibleLibraryGrid extends StatefulWidget {
     super.key,
     required this.firestore,
     required this.auth,
-    this.initialUnlockedIds,
+    this.initialCompletedByBook,
     this.showTitle = true,
     this.isLoading = false,
   });
@@ -30,20 +29,20 @@ class BibleLibraryGrid extends StatefulWidget {
 }
 
 class _BibleLibraryGridState extends State<BibleLibraryGrid> {
-  late final AchievementService _achievementService;
-  late Stream<Set<String>> _unlockedIdsStream;
+  late final BibleProgressService _bibleProgressService;
+  late Stream<Map<String, Set<int>>> _completedStream;
 
   @override
   void initState() {
     super.initState();
-    _achievementService = AchievementService(firestore: widget.firestore);
+    _bibleProgressService = BibleProgressService(firestore: widget.firestore);
     final user = widget.auth.currentUser;
     if (user != null) {
-      _unlockedIdsStream = widget.initialUnlockedIds != null
-          ? Stream.value(widget.initialUnlockedIds!)
-          : _achievementService.unlockedAchievementIds(user.uid);
+      _completedStream = widget.initialCompletedByBook != null
+          ? Stream.value(widget.initialCompletedByBook!)
+          : Stream.fromFuture(_bibleProgressService.completedChaptersByBook(user.uid));
     } else {
-      _unlockedIdsStream = Stream.value({});
+      _completedStream = Stream.value({});
     }
   }
 
@@ -92,10 +91,10 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
           if (widget.isLoading)
             const BibleLibraryGridSkeleton()
           else
-            StreamBuilder<Set<String>>(
-              stream: _unlockedIdsStream,
+            StreamBuilder<Map<String, Set<int>>>(
+              stream: _completedStream,
               builder: (context, snapshot) {
-              final unlockedIdsList = snapshot.data?.toList() ?? [];
+              final completedData = snapshot.data ?? {};
 
               // Calculate metrics
               int completedBooksCount = 0;
@@ -103,9 +102,10 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
               int ntCompleted = 0;
 
               for (final book in ReferenceParser.allBooks) {
-                final achievementId =
-                    AchievementDefinition.bookAchievementId(book);
-                if (unlockedIdsList.contains(achievementId)) {
+                final chapters = completedData[book] ?? {};
+                final totalChapters = ReferenceParser.chapterCount(book) ?? 0;
+                
+                if (totalChapters > 0 && chapters.length >= totalChapters) {
                   completedBooksCount++;
                   // The first 39 books are OT, the rest NT
                   if (ReferenceParser.allBooks.indexOf(book) < 39) {

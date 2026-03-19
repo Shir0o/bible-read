@@ -3,10 +3,8 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/pages/bible_progress_page.dart';
-import 'package:bible_read/models/achievement_definition.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +34,7 @@ void main() {
     expect(find.text('Rev'), findsOneWidget);
   });
 
-  testWidgets('BibleProgressPage marks book as read', (tester) async {
+  testWidgets('BibleProgressPage shows completed status and handles optimistic toggle', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
@@ -46,102 +44,35 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Tap Genesis (Gen)
-    await tester.tap(find.text('Gen'));
-    await tester.pumpAndSettle();
-
-    // Verify dialog
-    expect(find.text('Complete Genesis?'), findsOneWidget);
-
-    // Confirm
-    await tester.tap(find.text('Confirm'));
-    await tester.pumpAndSettle();
-
-    // Verify achievement
-    final doc = await firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('achievements')
-        .doc(AchievementDefinition.bookAchievementId('Genesis'))
-        .get();
-    expect(doc.exists, isTrue);
-  });
-
-  testWidgets('BibleProgressPage unmarks book as read', (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final user = MockUser(uid: 'u1');
-    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
-
-    // Pre-unlock Genesis
-    final achievementId = AchievementDefinition.bookAchievementId('Genesis');
-    await firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('achievements')
-        .doc(achievementId)
-        .set({'title': 'Complete Genesis'});
-
-    await tester.pumpWidget(
-      MaterialApp(home: BibleProgressPage(firestore: firestore, auth: auth)),
-    );
-    await tester.pumpAndSettle();
-
-    // Tap Genesis (Gen)
-    await tester.tap(find.text('Gen'));
-    await tester.pumpAndSettle();
-
-    // Verify dialog for unmarking
-    expect(find.text('Mark Genesis as unread?'), findsOneWidget);
-
-    // Confirm
-    await tester.tap(find.text('Confirm'));
-    await tester.pumpAndSettle();
-
-    // Verify achievement removed
-    final doc = await firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('achievements')
-        .doc(achievementId)
-        .get();
-    expect(doc.exists, isFalse);
-  });
-
-  testWidgets('BibleProgressPage book items have correct semantics',
-      (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final user = MockUser(uid: 'u1');
-    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
-
-    await tester.pumpWidget(
-      MaterialApp(home: BibleProgressPage(firestore: firestore, auth: auth)),
-    );
-    await tester.pumpAndSettle();
-
-    // Verify initial semantics for Genesis
-    final genesisFinder = find.bySemanticsLabel('Genesis, Not completed');
-    expect(genesisFinder, findsOneWidget);
-
-    // Verify tap action
+    // 1. Initially Genesis is not completed
     expect(
-        tester
-            .getSemantics(genesisFinder)
-            .getSemanticsData()
-            .hasAction(SemanticsAction.tap),
-        isTrue);
+      find.bySemanticsLabel('Genesis, Not completed'),
+      findsOneWidget,
+    );
 
-    // Tap to mark as read
-    await tester.tap(genesisFinder);
+    // 2. Tap to complete
+    await tester.tap(find.text('Gen'));
     await tester.pumpAndSettle();
-
-    // Confirm dialog
+    
+    expect(find.text('Complete Genesis?'), findsOneWidget);
     await tester.tap(find.text('Confirm'));
-    await tester.pumpAndSettle();
-
-    // Verify updated semantics
+    
+    // 3. OPTIMISTIC CHECK: UI should update immediately after Confirm, 
+    // even without waiting for Firestore or pumpAndSettle (though pump() is needed for next frame)
+    await tester.pump();
+    
     expect(
       find.bySemanticsLabel('Genesis, Completed'),
       findsOneWidget,
     );
+
+    // 4. Verify Firestore was eventually called (optional but good)
+    final doc = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('bible_books')
+        .doc('Genesis')
+        .get();
+    expect(doc.exists, isTrue);
   });
 }

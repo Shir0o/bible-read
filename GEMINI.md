@@ -1,6 +1,6 @@
 # Bible Reading Challenge App
 
-This project is a Flutter mobile application designed to help individuals and groups track their daily Bible reading, build streaks, and engage with a community. It features daily reading tracking, leaderboards, a reading feed, user profiles, seasonal challenges, and achievements.
+This project is a Flutter mobile application designed to help individuals and groups track their daily Bible reading, build streaks, and engage with a community. It features daily reading tracking, leaderboards, a reading feed, user profiles, seasonal challenges, and Bible book progress.
 
 The application leverages Firebase heavily for its backend services, including:
 *   **Firestore:** For database operations and real-time data synchronization.
@@ -130,10 +130,10 @@ cd ..
 
 ### Optimistic UI Updates
 
-The application prioritizes a zero-latency user experience by employing Optimistic UI updates for high-frequency interactions (e.g., marking readings as complete, toggling likes). 
+The application prioritizes a zero-latency user experience by employing Optimistic UI updates for high-frequency interactions (e.g., marking readings as complete, toggling likes, manual Bible book tracking). 
 
 **Key Requirements:**
-*   **Immediate Feedback:** UI state must update immediately upon user interaction using local state overrides.
+*   **Immediate Feedback:** UI state must update immediately upon user interaction using local state overrides, **without waiting for API/backend success**.
 *   **Background Sync:** Backend requests (Firestore, Cloud Functions) should be initiated in the background without blocking the UI.
 *   **Conflict Resolution:** Local overrides must be cleared or synchronized once the backend "source of truth" (typically a Stream) reflects the change.
 *   **Rollback Mechanism:** In the event of a backend failure, the UI must gracefully revert to its previous state and notify the user (e.g., via a SnackBar).

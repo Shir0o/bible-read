@@ -8,12 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-import '../models/achievement.dart';
-import '../services/achievement_service.dart';
-import '../services/book_achievement_refresher.dart';
 import '../services/error_logger.dart';
 import '../services/google_sign_in_factory.dart';
-import '../services/group_book_achievement_service.dart';
+import '../services/bible_progress_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/user_preferences_service.dart';
@@ -53,8 +50,7 @@ class HomePage extends StatefulWidget {
     ReadingStatusService? readingStatusService,
     VibrationService? vibrationService,
     GoogleSignIn Function()? googleSignInProvider,
-    AchievementService? achievementService,
-    GroupBookAchievementService? groupBookAchievementService,
+    BibleProgressService? bibleProgressService,
     ReadingPlanService? readingPlanService,
     UserPreferencesService? userPreferencesService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
@@ -71,10 +67,8 @@ class HomePage extends StatefulWidget {
                 firestore: firestore ?? FirebaseFirestore.instance),
         vibrationService = vibrationService ?? const VibrationService(),
         googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-        achievementService =
-            achievementService ?? AchievementService(firestore: firestore),
-        groupBookAchievementService = groupBookAchievementService ??
-            GroupBookAchievementService(firestore: firestore);
+        bibleProgressService = bibleProgressService ??
+            BibleProgressService(firestore: firestore);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -82,11 +76,8 @@ class HomePage extends StatefulWidget {
   /// Service used for read-toggle haptics.
   final VibrationService vibrationService;
 
-  /// Service responsible for unlocking achievements.
-  final AchievementService achievementService;
-
   /// Aggregates reading progress across groups for book badges.
-  final GroupBookAchievementService groupBookAchievementService;
+  final BibleProgressService bibleProgressService;
 
   /// Service for managing reading plans.
   final ReadingPlanService readingPlanService;
@@ -116,8 +107,6 @@ class _HomePageState extends State<HomePage>
   Set<DateTime> _readDates = {};
   int _currentStreak = 0;
 
-  late BookAchievementRefresher _bookAchievementRefresher;
-
   // Plan state
   ReadingPlan? _currentPlan;
   UserPreferences _userPrefs = const UserPreferences();
@@ -132,26 +121,30 @@ class _HomePageState extends State<HomePage>
     super.initState();
     _animationController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 1000));
-    _bookAchievementRefresher = BookAchievementRefresher(
-      achievementService: widget.achievementService,
-      groupBookAchievementService: widget.groupBookAchievementService,
-    );
     _loadInitialData();
     _animationController.forward();
   }
 
   Future<void> _loadInitialData() async {
-    await Future.wait([
-      _loadReadStatus(showLoading: false),
-      _loadActivePlan(showLoading: false),
-      _loadUserPreferences(),
-    ]);
-    if (!_disposed && mounted) {
-      setState(() {
-        _prefsLoaded = true;
-        _initialLoading = false;
-      });
-    }
+    // Start all loads in parallel. 
+    // We don't wait for all of them before showing the first UI.
+    // _initialLoading will be set to false when the primary reading status is ready.
+    unawaited(_loadReadStatus(showLoading: false).then((_) {
+      if (!_disposed && mounted) {
+        setState(() {
+          _initialLoading = false;
+        });
+      }
+    }));
+    
+    unawaited(_loadActivePlan(showLoading: false));
+    unawaited(_loadUserPreferences().then((_) {
+      if (!_disposed && mounted) {
+        setState(() {
+          _prefsLoaded = true;
+        });
+      }
+    }));
   }
 
   @override
@@ -163,14 +156,6 @@ class _HomePageState extends State<HomePage>
         _prefsLoaded = false;
       });
       unawaited(_loadInitialData());
-    }
-    if (oldWidget.achievementService != widget.achievementService ||
-        oldWidget.groupBookAchievementService !=
-            widget.groupBookAchievementService) {
-      _bookAchievementRefresher = BookAchievementRefresher(
-        achievementService: widget.achievementService,
-        groupBookAchievementService: widget.groupBookAchievementService,
-      );
     }
   }
 
@@ -390,7 +375,6 @@ class _HomePageState extends State<HomePage>
 
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
-      await _refreshBookAchievementsForUser();
 
       // Removed success animation after backend success to reduce noise.
 
@@ -441,7 +425,6 @@ class _HomePageState extends State<HomePage>
 
     try {
       final stats = await widget.readingStatusService.updateSummary();
-      await _checkAchievements(user.uid, stats.streak, stats.totalReadDays);
       return stats;
     } catch (e, st) {
       if (kDebugMode) {
@@ -457,103 +440,6 @@ class _HomePageState extends State<HomePage>
         unawaited(_loadReadStatus(showLoading: false));
       }
       return null;
-    }
-  }
-
-  Future<bool> _refreshBookAchievementsForUser({
-    bool showErrorSnackBar = true,
-  }) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) {
-      return false;
-    }
-
-    try {
-      await _bookAchievementRefresher.refresh(
-        uid: uid,
-        completionTimestamp: DateTime.now(),
-      );
-      return true;
-    } catch (e, st) {
-      return _handleRefreshError(
-        e,
-        st,
-        logPrefix: 'Failed to refresh book achievements',
-        snackBarMessage: 'Failed to refresh achievements. Please try again.',
-        showErrorSnackBar: showErrorSnackBar,
-      );
-    }
-  }
-
-  bool _handleRefreshError(
-    Object error,
-    StackTrace stackTrace, {
-    required String logPrefix,
-    required String snackBarMessage,
-    required bool showErrorSnackBar,
-    VoidCallback? onAfterError,
-  }) {
-    if (kDebugMode) {
-      debugPrint('$logPrefix: $error');
-    }
-    ErrorLogger.log(error, stackTrace);
-    if (showErrorSnackBar && !_disposed && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(snackBarMessage),
-        ),
-      );
-      onAfterError?.call();
-    }
-    return false;
-  }
-
-  /// Unlocks achievements based on the user's streak and total read days.
-  Future<void> _checkAchievements(
-    String uid,
-    int streak,
-    int totalReadDays,
-  ) async {
-    try {
-      final service = AchievementService(firestore: widget.firestore);
-      if (streak >= 7) {
-        await service.unlockAchievement(
-          uid,
-          Achievement(
-            id: 'streak7',
-            title: '7-Day Streak',
-            type: 'streak',
-            dateUnlocked: DateTime.now(),
-          ),
-        );
-      }
-      if (streak >= 30) {
-        await service.unlockAchievement(
-          uid,
-          Achievement(
-            id: 'streak30',
-            title: '30-Day Streak',
-            type: 'streak',
-            dateUnlocked: DateTime.now(),
-          ),
-        );
-      }
-      if (totalReadDays >= 30) {
-        await service.unlockAchievement(
-          uid,
-          Achievement(
-            id: 'days30',
-            title: '30 Days Read',
-            type: 'days',
-            dateUnlocked: DateTime.now(),
-          ),
-        );
-      }
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to unlock achievements: $e');
-      }
-      ErrorLogger.log(e, st);
     }
   }
 

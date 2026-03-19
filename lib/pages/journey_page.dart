@@ -7,7 +7,7 @@ import '../widgets/journey/consistency_calendar.dart';
 import '../widgets/journey/journey_progress_card.dart';
 import '../services/vibration_service.dart';
 import '../services/reading_plan_service.dart';
-import '../services/achievement_service.dart';
+import '../services/bible_progress_service.dart';
 import '../widgets/app_header.dart';
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
@@ -35,7 +35,7 @@ class _JourneyPageState extends State<JourneyPage>
   bool _isLoading = true;
   List<ReadingPlan>? _plans;
   List<UserPlanProgress>? _progress;
-  Set<String>? _unlockedIds;
+  Map<String, Set<int>>? _completedByBook;
 
   @override
   bool get wantKeepAlive => true;
@@ -55,15 +55,15 @@ class _JourneyPageState extends State<JourneyPage>
 
     final readingPlanService =
         ReadingPlanService(firestore: widget.firestore);
-    final achievementService =
-        AchievementService(firestore: widget.firestore);
+    final bibleProgressService =
+        BibleProgressService(firestore: widget.firestore);
 
     try {
       // Prepare futures for all critical components
       final results = await Future.wait([
         readingPlanService.getAvailablePlans(userId: user.uid),
         readingPlanService.getActivePlans(user.uid).first,
-        achievementService.unlockedAchievementIds(user.uid).first,
+        bibleProgressService.completedChaptersByBook(user.uid),
         // Artificial delay to ensure smooth transition and match community page
         Future.delayed(const Duration(milliseconds: 1000)),
       ]);
@@ -72,7 +72,7 @@ class _JourneyPageState extends State<JourneyPage>
         setState(() {
           _plans = results[0] as List<ReadingPlan>;
           _progress = results[1] as List<UserPlanProgress>;
-          _unlockedIds = results[2] as Set<String>;
+          _completedByBook = results[2] as Map<String, Set<int>>;
           _isLoading = false;
         });
       }
@@ -119,7 +119,7 @@ class _JourneyPageState extends State<JourneyPage>
                     BibleLibraryGrid(
                       firestore: widget.firestore,
                       auth: widget.auth,
-                      initialUnlockedIds: _unlockedIds,
+                      initialCompletedByBook: _completedByBook,
                       isLoading: _isLoading,
                     ),
                     const SizedBox(height: 32),

@@ -2,9 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../services/achievement_service.dart';
-import '../models/achievement_definition.dart';
-import '../models/achievement.dart';
+import '../services/bible_progress_service.dart';
+import '../services/reference_parser.dart';
+import '../services/error_logger.dart';
 
 class BibleProgressPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -21,8 +21,14 @@ class BibleProgressPage extends StatefulWidget {
 }
 
 class _BibleProgressPageState extends State<BibleProgressPage> {
-  late final AchievementService _achievementService;
-  late final Stream<Set<String>> _unlockedIdsStream;
+  late final BibleProgressService _bibleProgressService;
+  
+  // The synchronous source of truth for the UI
+  Map<String, Set<int>> _currentData = {};
+  bool _loading = true;
+
+  // Optimistic UI overrides: bookName -> isCompleted
+  final Map<String, bool> _localOverrides = {};
 
   static const List<MapEntry<String, List<String>>> _categories = [
     MapEntry('Pentateuch',
@@ -92,12 +98,132 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
   @override
   void initState() {
     super.initState();
-    _achievementService = AchievementService(firestore: widget.firestore);
+    _bibleProgressService =
+        BibleProgressService(firestore: widget.firestore);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
     final user = widget.auth.currentUser;
-    if (user != null) {
-      _unlockedIdsStream = _achievementService.unlockedAchievementIds(user.uid);
+    if (user == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+
+    try {
+      final data = await _bibleProgressService.completedChaptersByBook(user.uid);
+      if (mounted) {
+        setState(() {
+          _currentData = data;
+          _loading = false;
+        });
+      }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Map<String, Set<int>> _getDisplayData() {
+    if (_localOverrides.isEmpty) return _currentData;
+
+    final Map<String, Set<int>> merged = Map.from(_currentData);
+    _localOverrides.forEach((book, isCompleted) {
+      if (isCompleted) {
+        final count = ReferenceParser.chapterCount(book) ?? 0;
+        merged[book] = Set.from(List.generate(count, (i) => i + 1));
+      } else {
+        merged.remove(book);
+      }
+    });
+    return merged;
+  }
+
+  Future<void> _handleBookTap(String book, bool isCurrentlyCompleted) async {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+
+    final bool desiredCompleted = !isCurrentlyCompleted;
+
+    if (isCurrentlyCompleted) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog.adaptive(
+          title: Text('Mark $book as unread?'),
+          content: Text('This will remove the manual completion for $book.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Confirm'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
     } else {
-      _unlockedIdsStream = Stream.value({});
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog.adaptive(
+          title: Text('Complete $book?'),
+          content: Text('Mark $book as read?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Confirm'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
+    // 1. Apply Optimistic Update
+    setState(() {
+      _localOverrides[book] = desiredCompleted;
+    });
+
+    try {
+      if (desiredCompleted) {
+        await widget.firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('bible_books')
+            .doc(book)
+            .set({
+          'completed': true,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      } else {
+        await widget.firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('bible_books')
+            .doc(book)
+            .delete();
+      }
+      
+      // Successfully updated, we can eventually clear override but 
+      // keeping it is safe until next full reload.
+    } catch (e, st) {
+      // 2. Rollback on failure
+      setState(() {
+        _localOverrides.remove(book);
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update $book. Please try again.')),
+        );
+      }
+      ErrorLogger.log(e, st);
     }
   }
 
@@ -146,7 +272,7 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
       case 'Ecclesiastes':
         return 'Ecc';
       case 'Song of Songs':
-        return 'Sol'; // Commonly 'Sol' or 'Son'
+        return 'Sol';
       case 'Isaiah':
         return 'Isa';
       case 'Jeremiah':
@@ -245,6 +371,15 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    if (_loading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Progress')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final completedData = _getDisplayData();
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -267,140 +402,73 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
         ),
         centerTitle: false,
       ),
-      body: StreamBuilder<Set<String>>(
-        stream: _unlockedIdsStream,
-        builder: (context, snapshot) {
-          final unlockedIds = snapshot.data ?? {};
-
-          return CustomScrollView(
-            slivers: [
-              for (final entry in _categories) ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-                    child: Row(
-                      children: [
-                        Expanded(
-                            child: Divider(
-                                color: colorScheme.outlineVariant
-                                    .withValues(alpha: 0.5))),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            entry.key.toUpperCase(),
-                            style: textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.0,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
+      body: CustomScrollView(
+        slivers: [
+          for (final entry in _categories) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                        child: Divider(
+                            color: colorScheme.outlineVariant
+                                .withValues(alpha: 0.5))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        entry.key.toUpperCase(),
+                        style: textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                          color: colorScheme.onSurfaceVariant,
                         ),
-                        Expanded(
-                            child: Divider(
-                                color: colorScheme.outlineVariant
-                                    .withValues(alpha: 0.5))),
-                      ],
+                      ),
                     ),
-                  ),
+                    Expanded(
+                        child: Divider(
+                            color: colorScheme.outlineVariant
+                                .withValues(alpha: 0.5))),
+                  ],
                 ),
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 5,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.0,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final book = entry.value[index];
-                        final achievementId =
-                            AchievementDefinition.bookAchievementId(book);
-                        final isUnlocked = unlockedIds.contains(achievementId);
-                        final abbr = _getAbbreviation(book);
-
-                        return _BookGridItem(
-                          book: book,
-                          abbr: abbr,
-                          isUnlocked: isUnlocked,
-                          onTap: () =>
-                              _handleBookTap(book, achievementId, isUnlocked),
-                        );
-                      },
-                      childCount: entry.value.length,
-                    ),
-                  ),
-                ),
-              ],
-              const SliverToBoxAdapter(child: SizedBox(height: 32)),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Future<void> _handleBookTap(
-      String book, String achievementId, bool isUnlocked) async {
-    final user = widget.auth.currentUser;
-    if (user == null) return;
-
-    if (isUnlocked) {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog.adaptive(
-          title: Text('Mark $book as unread?'),
-          content: Text('This will remove the achievement for reading $book.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              ),
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Confirm'),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverGrid(
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1.0,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final book = entry.value[index];
+                    final chapters = completedData[book] ?? {};
+                    final totalChapters =
+                        ReferenceParser.chapterCount(book) ?? 0;
+                    final isCompleted =
+                        totalChapters > 0 && chapters.length >= totalChapters;
+                    final abbr = _getAbbreviation(book);
+
+                    return _BookGridItem(
+                      book: book,
+                      abbr: abbr,
+                      isUnlocked: isCompleted,
+                      onTap: () => _handleBookTap(book, isCompleted),
+                    );
+                  },
+                  childCount: entry.value.length,
+                ),
+              ),
             ),
           ],
-        ),
-      );
-
-      if (confirmed == true) {
-        await _achievementService.removeAchievement(user.uid, achievementId);
-      }
-      return;
-    }
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog.adaptive(
-        title: Text('Complete $book?'),
-        content: Text('Mark $book as read?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Confirm'),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
     );
-
-    if (confirmed == true) {
-      await _achievementService.unlockAchievement(
-        user.uid,
-        Achievement(
-          id: achievementId,
-          title: 'Complete $book',
-          type: 'book',
-          dateUnlocked: DateTime.now(),
-        ),
-      );
-    }
   }
 }
 

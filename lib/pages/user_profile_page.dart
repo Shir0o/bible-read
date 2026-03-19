@@ -11,7 +11,6 @@ import '../services/friend_service.dart';
 
 import '../services/google_sign_in_factory.dart';
 import '../services/vibration_service.dart';
-import '../widgets/achievement_summary.dart';
 import '../widgets/animated_action_button.dart';
 import '../widgets/animated_page_route.dart';
 import '../widgets/common_styles.dart';
@@ -282,11 +281,6 @@ class UserProfilePageState extends State<UserProfilePage> {
                               Text(
                                 email,
                                 style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              const SizedBox(height: 16),
-                              AchievementSummary(
-                                firestore: widget.firestore,
-                                auth: widget.auth,
                               ),
                               const SizedBox(height: 24),
                               AnimatedActionButton(

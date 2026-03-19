@@ -2,7 +2,6 @@ enum NotificationType {
   like,
   nudge,
   signup,
-  achievement,
   friendRequest,
   comment,
   groupJoinRequest,
@@ -20,24 +19,27 @@ class NotificationPreferences {
   NotificationPreferences({Map<NotificationType, bool>? values})
       : values = {
           for (final type in NotificationType.values)
-            type: values?[type] ?? true,
+            type: (values ?? {})[type] ?? true,
         };
 
-  /// Reads preferences from Firestore data.
-  factory NotificationPreferences.fromFirestore(Map<String, dynamic>? data) {
-    return NotificationPreferences(
-      values: {
-        for (final type in NotificationType.values)
-          type: data?[type.name] is bool ? data![type.name] as bool : true,
-      },
-    );
+  /// Returns whether notifications of [type] are enabled.
+  bool operator [](NotificationType type) => values[type] ?? true;
+
+  /// Creates [NotificationPreferences] from a Firestore map.
+  factory NotificationPreferences.fromFirestore(Map<String, dynamic> data) {
+    final values = <NotificationType, bool>{};
+    for (final type in NotificationType.values) {
+      if (data.containsKey(type.name)) {
+        values[type] = data[type.name] == true;
+      }
+    }
+    return NotificationPreferences(values: values);
   }
 
-  /// Serializes preferences for Firestore.
-  Map<String, dynamic> toFirestore() => {
-        for (final entry in values.entries) entry.key.name: entry.value,
-      };
-
-  /// Returns whether [type] is enabled.
-  bool operator [](NotificationType type) => values[type] ?? true;
+  /// Converts preferences to a Firestore-compatible map.
+  Map<String, dynamic> toFirestore() {
+    return {
+      for (final entry in values.entries) entry.key.name: entry.value,
+    };
+  }
 }

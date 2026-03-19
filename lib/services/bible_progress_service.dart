@@ -7,8 +7,8 @@ import 'group_service.dart';
 import 'reference_parser.dart';
 
 /// Aggregates completed chapters across all of a user's groups.
-class GroupBookAchievementService {
-  GroupBookAchievementService({
+class BibleProgressService {
+  BibleProgressService({
     FirebaseFirestore? firestore,
     GroupService? groupService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
@@ -22,14 +22,26 @@ class GroupBookAchievementService {
   final GroupService groupService;
 
   /// Returns a map from canonical book names to the set of completed chapter
-  /// numbers for [uid] across all joined or owned groups.
+  /// numbers for [uid] across all joined or owned groups, plus any manually
+  /// completed books.
   Future<Map<String, Set<int>>> completedChaptersByBook(String uid) async {
     // 1. Fetch all progress entries for the user in one query.
     // This avoids N queries where N is the total number of scheduled days across all groups.
-    final allEntriesSnap = await firestore
-        .collectionGroup('entries')
-        .where(FieldPath.documentId, isEqualTo: uid)
-        .get();
+    // Also fetch manual book completions in parallel.
+    final futures = await Future.wait([
+      firestore
+          .collectionGroup('entries')
+          .where('uid', isEqualTo: uid)
+          .get(),
+      firestore
+          .collection('users')
+          .doc(uid)
+          .collection('bible_books')
+          .get(),
+    ]);
+
+    final allEntriesSnap = futures[0];
+    final manualBooksSnap = futures[1];
 
     // Organize entries by groupId -> dateId -> DocumentSnapshot
     final entriesByGroup = <String, Map<String, DocumentSnapshot>>{};
@@ -46,9 +58,6 @@ class GroupBookAchievementService {
 
     // 2. Fetch all groups for the user.
     final groups = await groupService.groupsForUser(uid).first;
-    if (groups.isEmpty) {
-      return <String, Set<int>>{};
-    }
 
     // 3. Process each group in parallel.
     final groupFutures = groups.map((group) async {
@@ -121,6 +130,18 @@ class GroupBookAchievementService {
       res.forEach((book, chapters) {
         finalResult.putIfAbsent(book, () => <int>{}).addAll(chapters);
       });
+    }
+
+    // 5. Add manual book completions
+    for (final doc in manualBooksSnap.docs) {
+      final book = doc.id; // doc ID is the book name (canonical)
+      if (ReferenceParser.allBooks.contains(book)) {
+        final count = ReferenceParser.chapterCount(book) ?? 0;
+        if (count > 0) {
+          final chapters = Set<int>.from(List<int>.generate(count, (i) => i + 1));
+          finalResult[book] = chapters;
+        }
+      }
     }
 
     return finalResult.map(

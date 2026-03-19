@@ -2,19 +2,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bible_read/services/group_book_achievement_service.dart';
+import 'package:bible_read/services/bible_progress_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('GroupBookAchievementService Performance', () {
+  group('BibleProgressService Performance', () {
     const userId = 'user1';
     late FakeFirebaseFirestore firestore;
-    late GroupBookAchievementService service;
+    late BibleProgressService service;
 
     setUp(() {
       firestore = FakeFirebaseFirestore();
-      service = GroupBookAchievementService(firestore: firestore);
+      service = BibleProgressService(firestore: firestore);
     });
 
     String dateId0(DateTime date) {

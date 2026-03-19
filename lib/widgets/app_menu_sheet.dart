@@ -164,11 +164,6 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
         index: 4,
       ),
       _MenuItem(
-        icon: Icons.stars,
-        label: 'Achievements',
-        index: 6,
-      ),
-      _MenuItem(
         icon: Icons.logout,
         label: 'Sign Out',
         index: 10,
@@ -225,11 +220,6 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
         icon: Icons.people,
         label: 'Friends',
         index: 4,
-      ),
-      _MenuItem(
-        icon: Icons.stars,
-        label: 'Achievements',
-        index: 6,
       ),
       _MenuItem(
         icon: Icons.logout,

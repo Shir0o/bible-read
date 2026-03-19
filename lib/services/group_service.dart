@@ -509,8 +509,10 @@ class GroupService {
                 .doc('data')
                 .collection('entries')
                 .doc(uid)
-                .set({'completed': FieldValue.increment(-cnt)},
-                    SetOptions(merge: true));
+                .set({
+              'completed': FieldValue.increment(-cnt),
+              'uid': uid,
+            }, SetOptions(merge: true));
           }
           // Delete items and entry
           final items = await entry.reference.collection('items').get();
@@ -1466,7 +1468,11 @@ class GroupService {
               final itemsSnap = await entryRef.collection('items').get();
               final c = itemsSnap.docs.length;
               try {
-                await entryRef.set({'count': c}, SetOptions(merge: true));
+                await entryRef.set({
+                  'count': c,
+                  'uid': uid,
+                  'dateId': entryRef.parent.parent?.id,
+                }, SetOptions(merge: true));
               } catch (_) {}
               return c;
             } catch (e, st) {
@@ -1487,7 +1493,10 @@ class GroupService {
           .doc('data')
           .collection('entries')
           .doc(uid);
-      await summaryRef.set({'completed': total}, SetOptions(merge: true));
+      await summaryRef.set({
+        'completed': total,
+        'uid': uid,
+      }, SetOptions(merge: true));
     } catch (e, st) {
       await _safeLog(e, st);
     }
