@@ -661,9 +661,10 @@ class ReadingStatusService {
         if (readToday && currentStreak % 15 == 0) {
           ledger.addBonusCredit(currentDate);
         }
-      } else {
+      } else if (currentDate.isBefore(today)) {
         // When neither a real read nor a grace credit covers the day, the
         // streak ends and a fresh count starts from the next actual read.
+        // We only reset if the day is strictly in the past.
         currentStreak = 0;
       }
     }

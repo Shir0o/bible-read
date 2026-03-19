@@ -94,7 +94,12 @@ class _CommunityPageState extends State<CommunityPage>
     super.initState();
     final user = widget.auth.currentUser;
     if (user != null) {
-      _groupsStream = widget.groupService.groupsForUser(user.uid).map((groups) {
+      _groupsStream = widget.groupService.groupsForUser(user.uid).handleError((e, st) {
+        ErrorLogger.log(e, st);
+        if (mounted) {
+          setState(() => _isLoadingGroups = false);
+        }
+      }).map((groups) {
         if (mounted) {
           setState(() => _isLoadingGroups = false);
         }
@@ -293,27 +298,25 @@ class _CommunityPageState extends State<CommunityPage>
                           ],
                         ),
                       ),
-                      SkeletonLoader(
-                        loading: _isLoadingGroups,
-                        minTime: const Duration(milliseconds: 1000),
-                        skeleton: const JourneyProgressCardSkeleton(
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: StreamBuilder<List<Group>>(
-                          stream: _groupsStream,
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                              return _buildEmptyGroupState(context, colorScheme);
-                            }
-                            final group = snapshot.data!.first;
-                            return _GroupProgressCard(
-                              group: group,
-                              groupService: widget.groupService,
-                              user: user,
-                              vibrationService: widget.vibrationService,
-                            );
-                          },
-                        ),
+                      StreamBuilder<List<Group>>(
+                        stream: _groupsStream,
+                        builder: (context, snapshot) {
+                          return SkeletonLoader(
+                            loading: _isLoadingGroups,
+                            minTime: const Duration(milliseconds: 1000),
+                            skeleton: const JourneyProgressCardSkeleton(
+                              padding: EdgeInsets.zero,
+                            ),
+                            child: (snapshot.hasData && snapshot.data!.isNotEmpty)
+                                ? _GroupProgressCard(
+                                    group: snapshot.data!.first,
+                                    groupService: widget.groupService,
+                                    user: user,
+                                    vibrationService: widget.vibrationService,
+                                  )
+                                : _buildEmptyGroupState(context, colorScheme),
+                          );
+                        },
                       ),
                     ],
                   ),

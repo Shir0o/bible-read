@@ -258,7 +258,7 @@ class _HomePageState extends State<HomePage>
 
       if (plan != null) {
         final day = widget.readingPlanService
-            .getScheduledDay(plan, progress.startDate, DateTime.now());
+            .getScheduledDay(plan, progress.startDate, widget.dateProvider());
 
         if (!_disposed && mounted) {
           setState(() {
@@ -304,7 +304,7 @@ class _HomePageState extends State<HomePage>
     // Also track if we successfully marked the plan day
     bool markedPlanDay = false;
 
-    final today = DateTime.now();
+    final today = widget.dateProvider();
     final weekIndex = today.weekday % 7;
     final monthIndex = today.day - 1;
     final daysInMonth = DateTime(today.year, today.month + 1, 0).day;
@@ -448,7 +448,7 @@ class _HomePageState extends State<HomePage>
     final user = widget.auth.currentUser;
     if (user == null) return;
 
-    final today = DateTime.now();
+    final today = widget.dateProvider();
     final dateKey =
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
     final userDocRef = widget.firestore.collection('users').doc(user.uid);
@@ -480,7 +480,7 @@ class _HomePageState extends State<HomePage>
     final user = widget.auth.currentUser;
     if (user == null) return;
 
-    final today = DateTime.now();
+    final today = widget.dateProvider();
     final dateKey =
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
     final userDocRef = widget.firestore.collection('users').doc(user.uid);
@@ -753,68 +753,65 @@ class _HomePageState extends State<HomePage>
             const Spacer(flex: 4), // Push progress lower
 
             // Weekly Progress Section - Visual separation
-            if (_readToday) ...[
-              // Weekly Progress Section
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 240),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Reading this week',
-                        style: AppTextStyles.bodySmall(context).copyWith(
-                          color: colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.6),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 240),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Reading this week',
+                      style: AppTextStyles.bodySmall(context).copyWith(
+                        color:
+                            colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: colorScheme.outline.withValues(alpha: 0.1),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: colorScheme.outline.withValues(alpha: 0.1),
-                          ),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: _pastWeek.isEmpty
-                                ? 0.0
-                                : _pastWeek.where((d) => d).length / 7.0,
-                            minHeight: 10,
-                            backgroundColor: Colors.transparent,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.primary.withValues(alpha: 0.6),
-                            ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: _pastWeek.isEmpty
+                              ? 0.0
+                              : _pastWeek.where((d) => d).length / 7.0,
+                          minHeight: 10,
+                          backgroundColor: Colors.transparent,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.primary.withValues(alpha: 0.6),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
+            ),
 
-              const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-                RichText(
-                  text: TextSpan(
-                    style: AppTextStyles.bodySmall(context).copyWith(
-                      color: colorScheme.outline,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: '$_currentStreak',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const TextSpan(text: ' days of reading'),
-                    ],
-                  ),
+            RichText(
+              text: TextSpan(
+                style: AppTextStyles.bodySmall(context).copyWith(
+                  color: colorScheme.outline,
                 ),
-            ],
+                children: [
+                  TextSpan(
+                    text: '$_currentStreak',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const TextSpan(text: ' days of reading'),
+                ],
+              ),
+            ),
             const SizedBox(height: 32),
           ],
         ),
