@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../skeleton.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/skeletons/consistency_calendar_skeleton.dart';
+import '../skeleton_loader.dart';
 
 class ConsistencyCalendar extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -174,10 +175,11 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
             ),
             const SizedBox(height: 12),
           ],
-          if (widget.isLoading)
-            const ConsistencyCalendarSkeleton()
-          else
-            Container(
+          SkeletonLoader(
+            loading: widget.isLoading,
+            minTime: const Duration(milliseconds: 1000),
+            skeleton: const ConsistencyCalendarSkeleton(),
+            child: Container(
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(24),
@@ -253,6 +255,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                 ],
               ),
             ),
+          ),
           const SizedBox(height: 24), // Bottom padding
         ],
       ),

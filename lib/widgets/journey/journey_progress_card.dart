@@ -10,6 +10,7 @@ import '../../pages/bible_progress_page.dart';
 import '../../pages/reading_plans_page.dart';
 import '../../pages/create_plan_page.dart';
 import '../skeleton.dart';
+import '../skeleton_loader.dart';
 
 class JourneyProgressCard extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -144,48 +145,50 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
             ),
             const SizedBox(height: 8),
           ],
-          if (widget.isLoading)
-            _buildLoadingSkeleton(context)
-          else
-            FutureBuilder<List<ReadingPlan>>(
+          SkeletonLoader(
+            loading: widget.isLoading,
+            minTime: const Duration(milliseconds: 1000),
+            skeleton: _buildLoadingSkeleton(context),
+            child: FutureBuilder<List<ReadingPlan>>(
               future: _allPlansFuture,
               builder: (context, plansSnapshot) {
-              return StreamBuilder<List<UserPlanProgress>>(
-                stream: _activePlansStream,
-                builder: (context, progressSnapshot) {
-                  // 1. Loading
-                  if (plansSnapshot.connectionState ==
-                          ConnectionState.waiting ||
-                      progressSnapshot.connectionState ==
-                          ConnectionState.waiting) {
-                    return _buildLoadingSkeleton(context);
-                  }
+                return StreamBuilder<List<UserPlanProgress>>(
+                  stream: _activePlansStream,
+                  builder: (context, progressSnapshot) {
+                    // 1. Loading (Secondary loading for manual triggers)
+                    if (plansSnapshot.connectionState ==
+                            ConnectionState.waiting ||
+                        progressSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                      return _buildLoadingSkeleton(context);
+                    }
 
-                  // 2. Data Check
-                  final plans = plansSnapshot.data ?? [];
-                  final userProgressList = progressSnapshot.data ?? [];
+                    // 2. Data Check
+                    final plans = plansSnapshot.data ?? [];
+                    final userProgressList = progressSnapshot.data ?? [];
 
-                  // 3. Compute Active Plan (Extracted logic)
-                  final activeData =
-                      _computeActivePlan(plans, userProgressList);
-                  final activePlan = activeData.plan;
-                  final activeProgress = activeData.progress;
+                    // 3. Compute Active Plan (Extracted logic)
+                    final activeData =
+                        _computeActivePlan(plans, userProgressList);
+                    final activePlan = activeData.plan;
+                    final activeProgress = activeData.progress;
 
-                  // 4. No Active Plan (and no completed plan to show)
-                  if (activePlan == null || activeProgress == null) {
-                    return _buildNoActivePlanCard(context, colorScheme);
-                  }
+                    // 4. No Active Plan (and no completed plan to show)
+                    if (activePlan == null || activeProgress == null) {
+                      return _buildNoActivePlanCard(context, colorScheme);
+                    }
 
-                  // 5. Active Plan Card
-                  return _buildActivePlanCard(
-                    context,
-                    colorScheme,
-                    activePlan,
-                    activeProgress,
-                  );
-                },
-              );
-            },
+                    // 5. Active Plan Card
+                    return _buildActivePlanCard(
+                      context,
+                      colorScheme,
+                      activePlan,
+                      activeProgress,
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
