@@ -300,6 +300,7 @@ class _HomePageState extends State<HomePage>
     final prevWeek = List<bool>.from(_pastWeek);
     final prevMonth = List<bool>.from(_pastMonth);
     final prevReadDates = Set<DateTime>.from(_readDates);
+    final prevStreak = _currentStreak;
 
     // Also track if we successfully marked the plan day
     bool markedPlanDay = false;
@@ -314,18 +315,27 @@ class _HomePageState extends State<HomePage>
         _toggleLoading = true;
         // Optimistically mark today as read in local state.
         _readToday = true;
+        _currentStreak += 1; // Increment streak optimistically.
+
         if (_pastWeek.length < 7) {
           _pastWeek = List<bool>.generate(
             7,
             (i) => i < _pastWeek.length ? _pastWeek[i] : false,
           );
+        } else {
+          // Create a new list to ensure the UI updates correctly.
+          _pastWeek = List<bool>.from(_pastWeek);
         }
         _pastWeek[weekIndex] = true;
+
         if (_pastMonth.length < daysInMonth) {
           _pastMonth = List<bool>.generate(
             daysInMonth,
             (i) => i < _pastMonth.length ? _pastMonth[i] : false,
           );
+        } else {
+          // Create a new list to ensure the UI updates correctly.
+          _pastMonth = List<bool>.from(_pastMonth);
         }
         _pastMonth[monthIndex] = true;
         _readDates.add(DateTime(today.year, today.month, today.day));
@@ -400,6 +410,7 @@ class _HomePageState extends State<HomePage>
           _pastWeek = prevWeek;
           _pastMonth = prevMonth;
           _readDates = prevReadDates;
+          _currentStreak = prevStreak;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
