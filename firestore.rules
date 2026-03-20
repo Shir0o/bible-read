@@ -288,12 +288,20 @@ service cloud.firestore {
         allow read: if request.auth != null;
         // Owner can create their own member record at group creation.
         // Admin/owner can create a member when approving a join request.
+        // User can create their own member record if the group is public.
+        // User can create their own member record if they have an invitation.
         allow create: if (
             (isOwner() && request.auth != null && request.auth.uid == uid)
           ) || (
             isOwnerOrAdmin() &&
             exists(/databases/$(database)/documents/groups/$(groupId)/joinRequests/$(uid)) &&
             !existsAfter(/databases/$(database)/documents/groups/$(groupId)/joinRequests/$(uid))
+          ) || (
+            request.auth != null && request.auth.uid == uid &&
+            (
+              get(/databases/$(database)/documents/groups/$(groupId)).data.isPublic == true ||
+              exists(/databases/$(database)/documents/groups/$(groupId)/invites/$(request.auth.uid))
+            )
           );
         allow delete: if isOwnerOrAdmin();
         allow update: if isOwnerOrAdmin() || (
@@ -301,6 +309,15 @@ service cloud.firestore {
           request.resource.data.role == resource.data.role &&
           request.resource.data.uid == resource.data.uid
         );
+      }
+
+      match /invites/{uid} {
+        // Only owners/admins can send invites.
+        allow create, update: if isOwnerOrAdmin();
+        // Recipients can read their own invites (for collectionGroup) and owners/admins can read all.
+        allow read: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
+        // Owners/admins can delete, and recipients can delete when responding.
+        allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
       }
 
       match /schedule/{date} {

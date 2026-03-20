@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/group.dart';
+import '../models/group_invite.dart';
 
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
@@ -137,29 +138,34 @@ class _GroupsPageState extends State<GroupsPage> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _refresh,
-                child: StreamBuilder<List<Group>>(
-                  key: ValueKey('my-groups-page-$_refreshTick'),
-                  stream: widget.groupService.groupsForUser(user.uid),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Center(
-                          child:
-                              Text('Error loading groups: ${snapshot.error}'));
-                    }
-                    if (!snapshot.hasData) {
-                      return const GroupListSkeleton();
-                    }
-                    final groups = snapshot.data!;
-                    if (groups.isEmpty) {
-                      return LayoutBuilder(builder: (context, constraints) {
-                        return SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minHeight: constraints.maxHeight,
-                            ),
-                            child: Center(
-                              child: Padding(
+                child: StreamBuilder<List<GroupInvite>>(
+                  stream: widget.groupService.userInvites(user.uid),
+                  builder: (context, inviteSnapshot) {
+                    final invites = inviteSnapshot.data ?? [];
+
+                    return StreamBuilder<List<Group>>(
+                      key: ValueKey('my-groups-page-$_refreshTick'),
+                      stream: widget.groupService.groupsForUser(user.uid),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return Center(
+                              child: Text(
+                                  'Error loading groups: ${snapshot.error}'));
+                        }
+                        if (!snapshot.hasData) {
+                          return const GroupListSkeleton();
+                        }
+                        final groups = snapshot.data!;
+
+                        return ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            if (invites.isNotEmpty) ...[
+                              _buildInvitesSection(context, invites),
+                              const SizedBox(height: 24),
+                            ],
+                            if (groups.isEmpty && invites.isEmpty)
+                              Padding(
                                 padding: const EdgeInsets.all(32),
                                 child: Text(
                                   'You haven\'t joined any groups yet.',
@@ -168,21 +174,14 @@ class _GroupsPageState extends State<GroupsPage> {
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
-                              ),
-                            ),
-                          ),
-                        );
-                      });
-                    }
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: groups.length,
-                      itemBuilder: (context, index) {
-                        final group = groups[index];
-                        return GroupCard(
-                          group: group,
-                          groupService: widget.groupService,
-                          onTap: () => _openGroup(group),
+                              )
+                            else
+                              ...groups.map((group) => GroupCard(
+                                    group: group,
+                                    groupService: widget.groupService,
+                                    onTap: () => _openGroup(group),
+                                  )),
+                          ],
                         );
                       },
                     );
@@ -216,6 +215,108 @@ class _GroupsPageState extends State<GroupsPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInvitesSection(BuildContext context, List<GroupInvite> invites) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'INVITATIONS',
+          style: theme.textTheme.labelSmall?.copyWith(
+            letterSpacing: 1.2,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...invites.map((invite) => Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              elevation: 0,
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: colorScheme.primary.withValues(alpha: 0.1),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            invite.groupName,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Invited by ${invite.senderName}',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.check_circle_outline),
+                      color: colorScheme.primary,
+                      onPressed: () async {
+                        final user = widget.auth.currentUser;
+                        if (user == null) return;
+                        try {
+                          await widget.groupService.respondToGroupInvite(
+                            groupId: invite.groupId,
+                            uid: user.uid,
+                            name: user.displayName ?? '',
+                            photoUrl: user.photoURL,
+                            accept: true,
+                          );
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Failed to accept invitation')),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.cancel_outlined),
+                      color: colorScheme.error,
+                      onPressed: () async {
+                        final user = widget.auth.currentUser;
+                        if (user == null) return;
+                        try {
+                          await widget.groupService.respondToGroupInvite(
+                            groupId: invite.groupId,
+                            uid: user.uid,
+                            name: user.displayName ?? '',
+                            accept: false,
+                          );
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Failed to decline invitation')),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            )),
+      ],
     );
   }
 }

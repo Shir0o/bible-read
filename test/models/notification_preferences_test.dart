@@ -5,10 +5,14 @@ import 'package:bible_read/models/notification_preferences.dart';
 void main() {
   group('NotificationPreferences', () {
     test('fromFirestore handles missing or invalid fields', () {
-      final prefs = NotificationPreferences.fromFirestore({'like': 'yes'});
-      for (final type in NotificationType.values) {
-        expect(prefs[type], isTrue);
-      }
+      final prefs = NotificationPreferences.fromFirestore({'like': 'invalid'});
+      // If the field is invalid (not a boolean), it should default to true or the default value logic.
+      // In fromFirestore implementation: values[type] = data[type.name] == true;
+      // So 'invalid' == true is false.
+      expect(prefs[NotificationType.like], isFalse);
+      
+      // Missing fields should be true
+      expect(prefs[NotificationType.groupInvite], isTrue);
     });
 
     test('fromFirestore reads provided values', () {

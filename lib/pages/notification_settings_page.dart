@@ -222,6 +222,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         return 'Group Join Request Notifications';
       case NotificationType.groupScheduleUpdate:
         return 'Group Schedule Update Notifications';
+      case NotificationType.groupInvite:
+        return 'Group Invite Notifications';
       case NotificationType.seasonalChallenge:
         return 'Seasonal Challenge Notifications';
     }

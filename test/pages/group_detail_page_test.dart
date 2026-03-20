@@ -27,6 +27,7 @@ class RecordingGroupService extends GroupService {
     required String uid,
     required String name,
     String? photoUrl,
+    bool? isPublic,
   }) async {
     joinedGroupId = groupId;
     joinedUid = uid;
@@ -42,6 +43,7 @@ class RecordingGroupService extends GroupService {
       uid: uid,
       name: name,
       photoUrl: photoUrl,
+      isPublic: isPublic,
     );
   }
 }

@@ -18,6 +18,7 @@ import '../widgets/common_styles.dart';
 import '../widgets/vibration_button.dart';
 import 'edit_group_page.dart';
 import 'group_join_requests_page.dart';
+import 'invite_member_page.dart';
 import 'full_schedule_page.dart';
 
 typedef GroupDatePicker = Future<DateTime?> Function({
@@ -581,6 +582,23 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             actions: hasAdminPrivileges
                 ? [
                     IconButton(
+                      icon: const Icon(Icons.person_add_alt_1),
+                      tooltip: 'Invite member',
+                      onPressed: () {
+                        unawaited(widget.vibrationService.lightImpact());
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => InviteMemberPage(
+                              group: widget.group,
+                              groupService: widget.groupService,
+                              auth: widget.auth,
+                              vibrationService: widget.vibrationService,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
                       icon: const Icon(Icons.group_add_outlined),
                       tooltip: 'Join requests',
                       onPressed: () {
@@ -658,11 +676,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                       uid: user.uid,
                                       name: user.displayName ?? '',
                                       photoUrl: user.photoURL,
+                                      isPublic: widget.group.isPublic,
                                     );
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Join request sent'),
+                                      SnackBar(
+                                        content: Text(widget.group.isPublic
+                                            ? 'Joined group'
+                                            : 'Join request sent'),
                                       ),
                                     );
                                   } catch (e, st) {
@@ -678,7 +699,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     );
                                   }
                                 },
-                                child: const Text('Join Group'),
+                                child: Text(widget.group.isPublic
+                                    ? 'Join Group'
+                                    : 'Request to Join'),
                               ),
                             );
                           },

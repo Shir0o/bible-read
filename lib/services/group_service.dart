@@ -6,6 +6,7 @@ import '../models/app_notification.dart';
 import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../models/group.dart';
+import '../models/group_invite.dart';
 import '../models/notification_preferences.dart';
 import 'error_logger.dart';
 import 'notification_service.dart';
@@ -25,6 +26,9 @@ class GroupCollections {
 
   /// Sub-collection containing join requests awaiting approval.
   static const String joinRequests = 'joinRequests';
+
+  /// Sub-collection containing invitations to join.
+  static const String invites = 'invites';
 }
 
 /// Provides helper methods for managing reading groups.
@@ -118,15 +122,95 @@ class GroupService {
 
   /// Join the group with [groupId] as [uid].
   ///
-  /// This always creates a join request for the group owner to approve.
+  /// If the group is public, it joins directly. Otherwise, it creates a join
+  /// request for the group owner to approve.
   Future<void> joinGroup({
     required String groupId,
     required String uid,
     required String name,
     String? photoUrl,
-  }) {
-    return requestJoin(
-        groupId: groupId, uid: uid, name: name, photoUrl: photoUrl);
+    bool? isPublic,
+  }) async {
+    try {
+      bool public = isPublic ?? false;
+      if (isPublic == null) {
+        final groupSnap = await firestore
+            .collection(GroupCollections.groups)
+            .doc(groupId)
+            .get();
+        public = groupSnap.data()?['isPublic'] as bool? ?? false;
+      }
+
+      if (public) {
+        return joinGroupDirectly(
+          groupId: groupId,
+          uid: uid,
+          name: name,
+          photoUrl: photoUrl,
+        );
+      } else {
+        return requestJoin(
+          groupId: groupId,
+          uid: uid,
+          name: name,
+          photoUrl: photoUrl,
+        );
+      }
+    } catch (e, st) {
+      await _safeLog(e, st);
+      rethrow;
+    }
+  }
+
+  /// Directly add [uid] to the group with [groupId] without a join request.
+  ///
+  /// Typically used for public groups or when an invite is accepted.
+  Future<void> joinGroupDirectly({
+    required String groupId,
+    required String uid,
+    required String name,
+    String? photoUrl,
+  }) async {
+    try {
+      final groupRef =
+          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupSnap = await groupRef.get();
+      if (!groupSnap.exists) {
+        throw StateError('Group does not exist');
+      }
+
+      final memberRef = groupRef.collection(GroupCollections.members).doc(uid);
+      final memberSnap = await memberRef.get();
+
+      if (memberSnap.exists) {
+        return; // Already a member
+      }
+
+      final data = <String, dynamic>{
+        'uid': uid,
+        'role': 'member',
+        'joinedAt': FieldValue.serverTimestamp(),
+      };
+      if (name.isNotEmpty) {
+        data['name'] = name;
+      }
+      if (photoUrl != null && photoUrl.isNotEmpty) {
+        data['photoUrl'] = photoUrl;
+      }
+
+      final batch = firestore.batch();
+      batch.set(memberRef, data, SetOptions(merge: true));
+      await _ensureMemberCount(groupRef);
+      batch.update(groupRef, {'memberCount': FieldValue.increment(1)});
+
+      // Also delete any existing join request if they had one
+      batch.delete(groupRef.collection(GroupCollections.joinRequests).doc(uid));
+
+      await batch.commit();
+    } catch (e, st) {
+      await _safeLog(e, st);
+      rethrow;
+    }
   }
 
   /// Create a join request for [uid] on [groupId].
@@ -184,6 +268,110 @@ class GroupService {
             .doc(notificationId)
             .set(notification.toFirestore(), SetOptions(merge: true));
       }
+    } catch (e, st) {
+      await _safeLog(e, st);
+      rethrow;
+    }
+  }
+
+  /// Send an invitation to [recipientUid] to join [groupId].
+  Future<void> sendGroupInvite({
+    required String groupId,
+    required String groupName,
+    required String senderUid,
+    required String senderName,
+    required String recipientUid,
+  }) async {
+    try {
+      final invite = GroupInvite(
+        id: '', // Firestore will assign
+        groupId: groupId,
+        groupName: groupName,
+        senderUid: senderUid,
+        senderName: senderName,
+        recipientUid: recipientUid,
+        timestamp: DateTime.now(),
+      );
+
+      // Store in group's invites collection
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.invites)
+          .doc(recipientUid)
+          .set(invite.toFirestore());
+
+      // Send notification to recipient
+      final notificationId = 'groupInvite_${groupId}_$senderUid';
+      final notification = AppNotification(
+        id: notificationId,
+        type: NotificationType.groupInvite,
+        fromUid: senderUid,
+        senderUid: senderUid,
+        groupId: groupId,
+        message: '$senderName invited you to join $groupName',
+        timestamp: DateTime.now(),
+        read: false,
+      );
+
+      await firestore
+          .collection(NotificationCollections.users)
+          .doc(recipientUid)
+          .collection(NotificationCollections.notifications)
+          .doc(notificationId)
+          .set(notification.toFirestore(), SetOptions(merge: true));
+    } catch (e, st) {
+      await _safeLog(e, st);
+      rethrow;
+    }
+  }
+
+  /// Stream of invitations for the user with [uid].
+  Stream<List<GroupInvite>> userInvites(String uid) {
+    return firestore
+        .collectionGroup(GroupCollections.invites)
+        .where('recipientUid', isEqualTo: uid)
+        .snapshots()
+        .map((snap) => snap.docs.map(GroupInvite.fromFirestore).toList());
+  }
+
+  /// Respond to a group invitation.
+  Future<void> respondToGroupInvite({
+    required String groupId,
+    required String uid,
+    required String name,
+    String? photoUrl,
+    required bool accept,
+  }) async {
+    try {
+      final groupRef =
+          firestore.collection(GroupCollections.groups).doc(groupId);
+      final inviteRef = groupRef.collection(GroupCollections.invites).doc(uid);
+
+      if (accept) {
+        await joinGroupDirectly(
+          groupId: groupId,
+          uid: uid,
+          name: name,
+          photoUrl: photoUrl,
+        );
+      }
+      await inviteRef.delete();
+
+      // Cleanup notifications
+      final snaps = await firestore
+          .collection(NotificationCollections.users)
+          .doc(uid)
+          .collection(NotificationCollections.notifications)
+          .where('groupId', isEqualTo: groupId)
+          .where('type', isEqualTo: NotificationType.groupInvite.name)
+          .get();
+
+      final batch = firestore.batch();
+      for (final doc in snaps.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
     } catch (e, st) {
       await _safeLog(e, st);
       rethrow;
