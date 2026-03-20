@@ -64,7 +64,6 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
     }
 
     try {
-      final start = DateTime(_currentMonth.year, _currentMonth.month, 1);
       final daysInMonth =
           DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
 

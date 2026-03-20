@@ -214,7 +214,7 @@ class ReadingStatusService {
 
       if (weekDates.length < 7) {
         // Backfill the past week by querying reading documents directly.
-        final weekStatus = await _getReadStatusForRange(
+        final weekStatus = await getReadStatusForRange(
           user.uid,
           7,
           referenceDate: today,
@@ -229,7 +229,7 @@ class ReadingStatusService {
       }
       if (monthDates.length < daysInMonth) {
         // Backfill the past month similarly.
-        final backfillStatus = await _getReadStatusForRange(
+        final backfillStatus = await getReadStatusForRange(
           user.uid,
           daysInMonth,
           referenceDate: today,

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -17,15 +16,11 @@ import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
-import '../widgets/navigation_menu_scope.dart';
 import 'full_schedule_page.dart';
 import 'group_detail_page.dart';
 import 'groups_page.dart';
-import 'notification_center_page.dart';
-import '../services/notification_service.dart';
 import '../widgets/skeletons/friends_activity_skeleton.dart';
 import '../widgets/skeletons/journey_progress_card_skeleton.dart';
-import '../models/app_notification.dart';
 import '../widgets/app_header.dart';
 import '../widgets/skeleton_loader.dart';
 
