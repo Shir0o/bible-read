@@ -64,8 +64,6 @@ class _JourneyPageState extends State<JourneyPage>
         readingPlanService.getAvailablePlans(userId: user.uid),
         readingPlanService.getActivePlans(user.uid).first,
         bibleProgressService.completedChaptersByBook(user.uid),
-        // Artificial delay to ensure smooth transition and match community page
-        Future.delayed(const Duration(milliseconds: 1000)),
       ]);
 
       if (mounted) {

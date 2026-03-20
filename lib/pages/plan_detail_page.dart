@@ -29,9 +29,6 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   late final ReadingPlanService _planService;
   late Stream<UserPlanProgress?> _progressStream;
   Set<int>? _optimisticCompletedDays;
-  final ScrollController _scrollController = ScrollController();
-  final Map<int, GlobalKey> _itemKeys = {};
-  bool _hasScrolledToUnchecked = false;
 
   @override
   void initState() {
@@ -45,49 +42,14 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     }
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _scrollToFirstUnchecked(Set<int> completedDays) {
-    if (_hasScrolledToUnchecked) return;
-
-    // Find the first day number that is not completed.
-    int? targetDay;
-    for (final day in widget.plan.schedule) {
-      if (!completedDays.contains(day.day)) {
-        targetDay = day.day;
-        break;
-      }
-    }
-
-    if (targetDay != null && _itemKeys.containsKey(targetDay)) {
-      final key = _itemKeys[targetDay];
-      if (key?.currentContext != null) {
-        Scrollable.ensureVisible(
-          key!.currentContext!,
-          duration: const Duration(milliseconds: 1200),
-          curve: Curves.easeInOut,
-          alignment: 0.1, // Near the top
-        );
-        _hasScrolledToUnchecked = true;
-      }
-    }
-  }
-
   Future<void> _startPlan() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
     final now = DateTime.now();
     final currentYear = now.year;
-    // Dynamic option for Jan 1 of current year, or next year if deep in the year?
-    // Simply offering Jan 1 of this year covers late joiners.
     final jan1 = DateTime(currentYear, 1, 1);
 
-    // Show dialog
     final DateTime? pickedDate = await showModalBottomSheet<DateTime>(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -156,18 +118,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return '${months[date.month - 1]} ${date.day}';
   }
@@ -215,41 +167,162 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
             loading: isLoading,
             minTime: const Duration(milliseconds: 1000),
             skeleton: const PlanDetailSkeleton(),
-            child: _buildContent(context, colorScheme, streamProgress, isStarted),
+            child: _PlanDetailContent(
+              plan: widget.plan,
+              progress: streamProgress,
+              isStarted: isStarted,
+              optimisticCompletedDays: _optimisticCompletedDays,
+              onToggleDay: _toggleDay,
+              onStartPlan: _startPlan,
+              formatDate: _formatDate,
+              formatDayOfWeek: _formatDayOfWeek,
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, ColorScheme colorScheme,
-      UserPlanProgress? streamProgress, bool isStarted) {
-    // Clear optimistic state if it matches the stream data
-    if (streamProgress != null && _optimisticCompletedDays != null) {
-      final streamSet = streamProgress.completedDays.toSet();
-      if (streamSet.length == _optimisticCompletedDays!.length &&
-          streamSet.containsAll(_optimisticCompletedDays!)) {
-        _optimisticCompletedDays = null;
+  Future<void> _toggleDay(
+      int dayNumber, bool wasCompleted, Set<int> completedDays) async {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+
+    final previousOptimistic = _optimisticCompletedDays != null
+        ? Set<int>.from(_optimisticCompletedDays!)
+        : (await _planService.getPlanProgress(user.uid, widget.plan.id).first)
+                ?.completedDays
+                .toSet() ??
+            {};
+
+    setState(() {
+      final newCompletedDays = Set<int>.from(completedDays);
+      if (wasCompleted) {
+        newCompletedDays.remove(dayNumber);
+      } else {
+        newCompletedDays.add(dayNumber);
+      }
+      _optimisticCompletedDays = newCompletedDays;
+    });
+
+    try {
+      if (wasCompleted) {
+        await _planService.unmarkDayComplete(
+            user.uid, widget.plan.id, dayNumber);
+      } else {
+        await _planService.markDayComplete(user.uid, widget.plan.id, dayNumber);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _optimisticCompletedDays = previousOptimistic;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update progress. Please try again.'),
+          ),
+        );
+      }
+    }
+  }
+}
+
+class _PlanDetailContent extends StatefulWidget {
+  final ReadingPlan plan;
+  final UserPlanProgress? progress;
+  final bool isStarted;
+  final Set<int>? optimisticCompletedDays;
+  final Function(int, bool, Set<int>) onToggleDay;
+  final VoidCallback onStartPlan;
+  final String Function(DateTime) formatDate;
+  final String Function(DateTime) formatDayOfWeek;
+
+  const _PlanDetailContent({
+    required this.plan,
+    required this.progress,
+    required this.isStarted,
+    this.optimisticCompletedDays,
+    required this.onToggleDay,
+    required this.onStartPlan,
+    required this.formatDate,
+    required this.formatDayOfWeek,
+  });
+
+  @override
+  State<_PlanDetailContent> createState() => _PlanDetailContentState();
+}
+
+class _PlanDetailContentState extends State<_PlanDetailContent> {
+  final ScrollController _scrollController = ScrollController();
+  final Map<int, GlobalKey> _itemKeys = {};
+  bool _hasScrolledToUnchecked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isStarted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (mounted) {
+          // Wait for the skeleton loader to finish its transition animation
+          // and for the content to be fully laid out in the tree.
+          await Future.delayed(const Duration(milliseconds: 400));
+          if (mounted) {
+            _scrollToFirstUnchecked();
+          }
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToFirstUnchecked() {
+    if (_hasScrolledToUnchecked) return;
+
+    final completedDays =
+        widget.optimisticCompletedDays ?? widget.progress?.completedDays.toSet() ?? {};
+
+    int? targetDay;
+    for (final day in widget.plan.schedule) {
+      if (!completedDays.contains(day.day)) {
+        targetDay = day.day;
+        break;
       }
     }
 
-    final completedDays = _optimisticCompletedDays ??
-        streamProgress?.completedDays.toSet() ??
-        {};
-
-    if (isStarted && !_hasScrolledToUnchecked) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToFirstUnchecked(completedDays);
-      });
+    if (targetDay != null && _itemKeys.containsKey(targetDay)) {
+      final key = _itemKeys[targetDay];
+      if (key?.currentContext != null) {
+        Scrollable.ensureVisible(
+          key!.currentContext!,
+          duration: const Duration(milliseconds: 1200),
+          curve: Curves.easeInOutCubic,
+          alignment: 0.1,
+        );
+        _hasScrolledToUnchecked = true;
+      }
     }
+  }
 
-    if (!isStarted) {
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (!widget.isStarted) {
       return _buildNotStartedState(context, colorScheme);
     }
 
+    final completedDays = widget.optimisticCompletedDays ??
+        widget.progress?.completedDays.toSet() ??
+        {};
+
     final now = DateTime.now();
     final todayDate = DateTime(now.year, now.month, now.day);
-    final startDate = streamProgress!.startDate;
+    final startDate = widget.progress!.startDate;
 
     final past = <ReadingPlanDay>[];
     final today = <ReadingPlanDay>[];
@@ -274,7 +347,6 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header description
           Padding(
             padding: const EdgeInsets.only(bottom: 24, left: 8, right: 8),
             child: Text(
@@ -342,7 +414,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
-                    onPressed: _startPlan,
+                    onPressed: widget.onStartPlan,
                     icon: const Icon(Icons.play_arrow),
                     label: const Text('Start This Plan'),
                     style: FilledButton.styleFrom(
@@ -361,7 +433,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
           ...widget.plan.schedule.map((day) => _buildScheduleItem(
                 context,
                 day,
-                DateTime.now(), // Preview only
+                DateTime.now(),
                 {},
                 isStarted: false,
               )),
@@ -414,7 +486,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
           borderRadius: BorderRadius.circular(16),
         ),
         child: InkWell(
-          onTap: !isStarted ? null : () => _toggleDay(day.day, isCompleted, completedDays),
+          onTap: !isStarted
+              ? null
+              : () => widget.onToggleDay(day.day, isCompleted, completedDays),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -426,15 +500,16 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _formatDate(date),
+                        widget.formatDate(date),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                       Text(
-                        _formatDayOfWeek(date),
+                        widget.formatDayOfWeek(date),
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                          color:
+                              colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -458,7 +533,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w500,
                           color: colorScheme.onSurface.withValues(alpha: 0.8),
-                          decoration: isCompleted ? TextDecoration.lineThrough : null,
+                          decoration:
+                              isCompleted ? TextDecoration.lineThrough : null,
                         ),
                       ),
                     ],
@@ -522,7 +598,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         ],
       ),
       child: InkWell(
-        onTap: () => _toggleDay(day.day, isCompleted, completedDays),
+        onTap: () => widget.onToggleDay(day.day, isCompleted, completedDays),
         borderRadius: BorderRadius.circular(24),
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -534,13 +610,13 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _formatDate(date),
+                      widget.formatDate(date),
                       style: theme.textTheme.titleSmall?.copyWith(
                         color: colorScheme.primary,
                       ),
                     ),
                     Text(
-                      _formatDayOfWeek(date),
+                      widget.formatDayOfWeek(date),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: colorScheme.primary.withValues(alpha: 0.8),
                       ),
@@ -564,7 +640,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                     Text(
                       day.readings.join(', '),
                       style: theme.textTheme.titleMedium?.copyWith(
-                        decoration: isCompleted ? TextDecoration.lineThrough : null,
+                        decoration:
+                            isCompleted ? TextDecoration.lineThrough : null,
                       ),
                     ),
                   ],
@@ -593,47 +670,4 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       ),
     );
   }
-
-  Future<void> _toggleDay(int dayNumber, bool wasCompleted, Set<int> completedDays) async {
-    final user = widget.auth.currentUser;
-    if (user == null) return;
-
-    final previousOptimistic = _optimisticCompletedDays != null
-        ? Set<int>.from(_optimisticCompletedDays!)
-        : (await _planService.getPlanProgress(user.uid, widget.plan.id).first)
-                ?.completedDays
-                .toSet() ??
-            {};
-
-    setState(() {
-      final newCompletedDays = Set<int>.from(completedDays);
-      if (wasCompleted) {
-        newCompletedDays.remove(dayNumber);
-      } else {
-        newCompletedDays.add(dayNumber);
-      }
-      _optimisticCompletedDays = newCompletedDays;
-    });
-
-    try {
-      if (wasCompleted) {
-        await _planService.unmarkDayComplete(user.uid, widget.plan.id, dayNumber);
-      } else {
-        await _planService.markDayComplete(user.uid, widget.plan.id, dayNumber);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _optimisticCompletedDays = previousOptimistic;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to update progress. Please try again.'),
-          ),
-        );
-      }
-    }
-  }
-
 }
-
