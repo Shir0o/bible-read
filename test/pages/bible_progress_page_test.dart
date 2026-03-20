@@ -1,4 +1,5 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
@@ -74,5 +75,56 @@ void main() {
         .doc('Genesis')
         .get();
     expect(doc.exists, isTrue);
+  });
+
+  testWidgets('BibleProgressPage scrolls to initialScrollToBook', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(uid: 'u1');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    // Use a book that is far down the list
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BibleProgressPage(
+          firestore: firestore,
+          auth: auth,
+          initialScrollToBook: 'Revelation',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Revelation should be visible
+    expect(find.text('Rev'), findsOneWidget);
+  });
+
+  testWidgets('BibleProgressPage scrolls to last checked book if no initial book',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(uid: 'u1');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+
+    // Set last checked book to Revelation
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('bible_books')
+        .doc('Revelation')
+        .set({
+      'completed': true,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BibleProgressPage(
+          firestore: firestore,
+          auth: auth,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle(const Duration(seconds: 1));
+
+    expect(find.text('Rev'), findsOneWidget);
   });
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/group_schedule.dart';
 import 'group_service.dart';
@@ -147,6 +148,26 @@ class BibleProgressService {
     return finalResult.map(
       (book, chapters) => MapEntry(book, Set<int>.unmodifiable(chapters)),
     );
+  }
+
+  /// Returns the name of the book most recently marked as completed by [uid].
+  Future<String?> getLastCheckedBook(String uid) async {
+    try {
+      final snap = await firestore
+          .collection('users')
+          .doc(uid)
+          .collection('bible_books')
+          .orderBy('timestamp', descending: true)
+          .limit(1)
+          .get();
+
+      if (snap.docs.isNotEmpty) {
+        return snap.docs.first.id;
+      }
+    } catch (e) {
+      debugPrint('Error getting last checked book: $e');
+    }
+    return null;
   }
 
   Future<Set<int>> _loadCheckedIndices(

@@ -6,6 +6,8 @@ import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
 import '../services/reading_plan_service.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/skeleton_loader.dart';
+import '../widgets/skeletons/plan_detail_skeleton.dart';
 
 class PlanDetailPage extends StatefulWidget {
   final ReadingPlan plan;
@@ -49,17 +51,14 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     super.dispose();
   }
 
-  void _scrollToLastUnchecked(Set<int> completedDays) {
+  void _scrollToFirstUnchecked(Set<int> completedDays) {
     if (_hasScrolledToUnchecked) return;
 
-    // "Last unchecked" could mean the furthest one in the schedule that isn't done.
-    // However, usually users want the NEXT one to read. 
-    // If they said "last unchecked", we'll find the highest day number that is not completed.
+    // Find the first day number that is not completed.
     int? targetDay;
-    for (int i = widget.plan.schedule.length - 1; i >= 0; i--) {
-      final day = widget.plan.schedule[i].day;
-      if (!completedDays.contains(day)) {
-        targetDay = day;
+    for (final day in widget.plan.schedule) {
+      if (!completedDays.contains(day.day)) {
+        targetDay = day.day;
         break;
       }
     }
@@ -67,13 +66,12 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     if (targetDay != null && _itemKeys.containsKey(targetDay)) {
       final key = _itemKeys[targetDay];
       if (key?.currentContext != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Scrollable.ensureVisible(
-            key!.currentContext!,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
-        });
+        Scrollable.ensureVisible(
+          key!.currentContext!,
+          duration: const Duration(milliseconds: 1200),
+          curve: Curves.easeInOut,
+          alignment: 0.1, // Near the top
+        );
         _hasScrolledToUnchecked = true;
       }
     }
@@ -209,149 +207,166 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       body: StreamBuilder<UserPlanProgress?>(
         stream: _progressStream,
         builder: (context, snapshot) {
+          final isLoading = snapshot.connectionState == ConnectionState.waiting;
           final streamProgress = snapshot.data;
           final isStarted = streamProgress != null;
 
-          // Clear optimistic state if it matches the stream data
-          if (streamProgress != null && _optimisticCompletedDays != null) {
-            final streamSet = streamProgress.completedDays.toSet();
-            if (streamSet.length == _optimisticCompletedDays!.length &&
-                streamSet.containsAll(_optimisticCompletedDays!)) {
-              _optimisticCompletedDays = null;
-            }
-          }
-
-          final completedDays = _optimisticCompletedDays ??
-              streamProgress?.completedDays.toSet() ??
-              {};
-
-          if (isStarted && !_hasScrolledToUnchecked) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _scrollToLastUnchecked(completedDays);
-            });
-          }
-
-          if (!isStarted) {
-            return _buildNotStartedState(context, colorScheme);
-          }
-
-          final now = DateTime.now();
-          final todayDate = DateTime(now.year, now.month, now.day);
-          final startDate = streamProgress.startDate;
-
-          final past = <ReadingPlanDay>[];
-          final today = <ReadingPlanDay>[];
-          final upcoming = <ReadingPlanDay>[];
-
-          for (final day in widget.plan.schedule) {
-            final date = startDate.add(Duration(days: day.day - 1));
-            final sDate = DateTime(date.year, date.month, date.day);
-            
-            if (sDate.isBefore(todayDate)) {
-              past.add(day);
-            } else if (sDate.isAtSameMomentAs(todayDate)) {
-              today.add(day);
-            } else {
-              upcoming.add(day);
-            }
-          }
-
-          return ListView(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(16),
-            children: [
-              // Header description
-              Padding(
-                padding: const EdgeInsets.only(bottom: 24, left: 8, right: 8),
-                child: Text(
-                  widget.plan.description,
-                  style: AppTextStyles.body(context).copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-
-              if (past.isNotEmpty) ...[
-                _buildSectionHeader(context, 'Past Readings'),
-                ...past.map((day) => _buildScheduleItem(
-                      context,
-                      day,
-                      startDate,
-                      completedDays,
-                      isPast: true,
-                    )),
-                const SizedBox(height: 16),
-              ],
-              if (today.isNotEmpty) ...[
-                _buildSectionHeader(context, 'Today', isHighlight: true),
-                ...today.map((day) => _buildTodayItem(
-                      context,
-                      day,
-                      startDate,
-                      completedDays,
-                    )),
-                const SizedBox(height: 16),
-              ],
-              if (upcoming.isNotEmpty) ...[
-                _buildSectionHeader(context, 'Upcoming'),
-                ...upcoming.map((day) => _buildScheduleItem(
-                      context,
-                      day,
-                      startDate,
-                      completedDays,
-                    )),
-              ],
-              const SizedBox(height: 80),
-            ],
+          return SkeletonLoader(
+            loading: isLoading,
+            minTime: const Duration(milliseconds: 1000),
+            skeleton: const PlanDetailSkeleton(),
+            child: _buildContent(context, colorScheme, streamProgress, isStarted),
           );
         },
       ),
     );
   }
 
-  Widget _buildNotStartedState(BuildContext context, ColorScheme colorScheme) {
-    return ListView(
+  Widget _buildContent(BuildContext context, ColorScheme colorScheme,
+      UserPlanProgress? streamProgress, bool isStarted) {
+    // Clear optimistic state if it matches the stream data
+    if (streamProgress != null && _optimisticCompletedDays != null) {
+      final streamSet = streamProgress.completedDays.toSet();
+      if (streamSet.length == _optimisticCompletedDays!.length &&
+          streamSet.containsAll(_optimisticCompletedDays!)) {
+        _optimisticCompletedDays = null;
+      }
+    }
+
+    final completedDays = _optimisticCompletedDays ??
+        streamProgress?.completedDays.toSet() ??
+        {};
+
+    if (isStarted && !_hasScrolledToUnchecked) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToFirstUnchecked(completedDays);
+      });
+    }
+
+    if (!isStarted) {
+      return _buildNotStartedState(context, colorScheme);
+    }
+
+    final now = DateTime.now();
+    final todayDate = DateTime(now.year, now.month, now.day);
+    final startDate = streamProgress!.startDate;
+
+    final past = <ReadingPlanDay>[];
+    final today = <ReadingPlanDay>[];
+    final upcoming = <ReadingPlanDay>[];
+
+    for (final day in widget.plan.schedule) {
+      final date = startDate.add(Duration(days: day.day - 1));
+      final sDate = DateTime(date.year, date.month, date.day);
+
+      if (sDate.isBefore(todayDate)) {
+        past.add(day);
+      } else if (sDate.isAtSameMomentAs(todayDate)) {
+        today.add(day);
+      } else {
+        upcoming.add(day);
+      }
+    }
+
+    return SingleChildScrollView(
+      controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.plan.description,
-                style: AppTextStyles.body(context).copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header description
+          Padding(
+            padding: const EdgeInsets.only(bottom: 24, left: 8, right: 8),
+            child: Text(
+              widget.plan.description,
+              style: AppTextStyles.body(context).copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _startPlan,
-                  icon: const Icon(Icons.play_arrow),
-                  label: const Text('Start This Plan'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.all(16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+
+          if (past.isNotEmpty) ...[
+            _buildSectionHeader(context, 'Past Readings'),
+            ...past.map((day) => _buildScheduleItem(
+                  context,
+                  day,
+                  startDate,
+                  completedDays,
+                  isPast: true,
+                )),
+            const SizedBox(height: 16),
+          ],
+          if (today.isNotEmpty) ...[
+            _buildSectionHeader(context, 'Today', isHighlight: true),
+            ...today.map((day) => _buildTodayItem(
+                  context,
+                  day,
+                  startDate,
+                  completedDays,
+                )),
+            const SizedBox(height: 16),
+          ],
+          if (upcoming.isNotEmpty) ...[
+            _buildSectionHeader(context, 'Upcoming'),
+            ...upcoming.map((day) => _buildScheduleItem(
+                  context,
+                  day,
+                  startDate,
+                  completedDays,
+                )),
+          ],
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotStartedState(BuildContext context, ColorScheme colorScheme) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.plan.description,
+                  style: AppTextStyles.body(context).copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _startPlan,
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Start This Plan'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        const Divider(),
-        _buildSectionHeader(context, 'Plan Preview'),
-        ...widget.plan.schedule.map((day) => _buildScheduleItem(
-              context,
-              day,
-              DateTime.now(), // Preview only
-              {},
-              isStarted: false,
-            )),
-      ],
+          const Divider(),
+          _buildSectionHeader(context, 'Plan Preview'),
+          ...widget.plan.schedule.map((day) => _buildScheduleItem(
+                context,
+                day,
+                DateTime.now(), // Preview only
+                {},
+                isStarted: false,
+              )),
+        ],
+      ),
     );
   }
 

@@ -6,6 +6,7 @@ import '../../models/reading_plan.dart';
 import '../../models/reading_plan_progress.dart';
 import '../../services/reading_plan_service.dart';
 import '../../pages/plan_detail_page.dart';
+import '../../pages/bible_progress_page.dart';
 import '../../pages/reading_plans_page.dart';
 import '../../pages/create_plan_page.dart';
 import '../skeleton.dart';

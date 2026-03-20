@@ -9,11 +9,13 @@ import '../services/error_logger.dart';
 class BibleProgressPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final String? initialScrollToBook;
 
   const BibleProgressPage({
     super.key,
     required this.firestore,
     required this.auth,
+    this.initialScrollToBook,
   });
 
   @override
@@ -26,6 +28,10 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
   // The synchronous source of truth for the UI
   Map<String, Set<int>> _currentData = {};
   bool _loading = true;
+  bool _hasScrolled = false;
+
+  final ScrollController _scrollController = ScrollController();
+  final Map<String, GlobalKey> _bookKeys = {};
 
   // Optimistic UI overrides: bookName -> isCompleted
   final Map<String, bool> _localOverrides = {};
@@ -103,6 +109,12 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
     _loadData();
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadData() async {
     final user = widget.auth.currentUser;
     if (user == null) {
@@ -117,10 +129,34 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
           _currentData = data;
           _loading = false;
         });
+
+        // Trigger scroll logic
+        final String? targetBook = widget.initialScrollToBook ?? 
+            await _bibleProgressService.getLastCheckedBook(user.uid);
+        
+        if (targetBook != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollToBook(targetBook);
+          });
+        }
       }
     } catch (e, st) {
       ErrorLogger.log(e, st);
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _scrollToBook(String book) {
+    if (_hasScrolled) return;
+    final key = _bookKeys[book];
+    if (key?.currentContext != null) {
+      Scrollable.ensureVisible(
+        key!.currentContext!,
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.easeInOut,
+        alignment: 0.5, // Center the item
+      );
+      _hasScrolled = true;
     }
   }
 
@@ -403,6 +439,7 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
         centerTitle: false,
       ),
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
           for (final entry in _categories) ...[
             SliverToBoxAdapter(
@@ -453,7 +490,10 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
                         totalChapters > 0 && chapters.length >= totalChapters;
                     final abbr = _getAbbreviation(book);
 
+                    final key = _bookKeys.putIfAbsent(book, () => GlobalKey());
+
                     return _BookGridItem(
+                      key: key,
                       book: book,
                       abbr: abbr,
                       isUnlocked: isCompleted,
@@ -479,6 +519,7 @@ class _BookGridItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const _BookGridItem({
+    super.key,
     required this.book,
     required this.abbr,
     required this.isUnlocked,
