@@ -510,7 +510,7 @@ class ReadingStatusService {
     }
   }
 
-  Future<Map<String, bool>> _getReadStatusForRange(
+  Future<Map<String, bool>> getReadStatusForRange(
     String uid,
     int daysBack, {
     DateTime? referenceDate,

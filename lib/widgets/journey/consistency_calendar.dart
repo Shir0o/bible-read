@@ -5,12 +5,14 @@ import '../skeleton.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/skeletons/consistency_calendar_skeleton.dart';
 import '../skeleton_loader.dart';
+import '../../services/reading_status_service.dart';
 
 class ConsistencyCalendar extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final bool showTitle;
   final bool isLoading;
+  final Set<DateTime>? initialReadDates;
 
   const ConsistencyCalendar({
     super.key,
@@ -18,6 +20,7 @@ class ConsistencyCalendar extends StatefulWidget {
     required this.auth,
     this.showTitle = true,
     this.isLoading = false,
+    this.initialReadDates,
   });
 
   @override
@@ -27,13 +30,21 @@ class ConsistencyCalendar extends StatefulWidget {
 class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
   DateTime _currentMonth = DateTime.now();
   Set<DateTime> _readDates = {};
-  bool _loading = true;
+  bool _loading = false;
+  late final ReadingStatusService _readingStatusService;
 
   @override
   void initState() {
     super.initState();
+    _readingStatusService =
+        ReadingStatusService(firestore: widget.firestore, auth: widget.auth);
     _currentMonth = DateTime(_currentMonth.year, _currentMonth.month, 1);
-    _loadStats();
+
+    if (widget.initialReadDates != null) {
+      _readDates = widget.initialReadDates!;
+    } else {
+      _loadStats();
+    }
   }
 
   void _changeMonth(int delta) {
@@ -45,7 +56,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
   }
 
   Future<void> _loadStats() async {
-    setState(() => _loading = true);
+    if (mounted) setState(() => _loading = true);
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) {
       if (mounted) setState(() => _loading = false);
@@ -54,10 +65,19 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
 
     try {
       final start = DateTime(_currentMonth.year, _currentMonth.month, 1);
-      final end = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+      final daysInMonth =
+          DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
 
-      final readDates = await _queryRange(
-          widget.firestore.collection('users').doc(uid), start, end);
+      final statusMap = await _readingStatusService.getReadStatusForRange(
+        uid,
+        daysInMonth,
+        referenceDate: DateTime(_currentMonth.year, _currentMonth.month, daysInMonth),
+      );
+
+      final readDates = statusMap.entries
+          .where((e) => e.value)
+          .map((e) => DateTime.parse(e.key))
+          .toSet();
 
       if (mounted) {
         setState(() {
@@ -71,66 +91,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
     }
   }
 
-  // Adapted from StreakHistoryView
-  Future<Set<DateTime>> _queryRange(
-    DocumentReference<Map<String, dynamic>> userDocRef,
-    DateTime start,
-    DateTime end,
-  ) async {
-    final readingCollection = userDocRef.collection('reading');
-    final startKey =
-        '${start.year}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')}';
-    final endKey =
-        '${end.year}-${end.month.toString().padLeft(2, '0')}-${end.day.toString().padLeft(2, '0')}';
-
-    final querySnapshot = await readingCollection
-        .where(FieldPath.documentId, isGreaterThanOrEqualTo: startKey)
-        .where(FieldPath.documentId, isLessThanOrEqualTo: endKey)
-        .get();
-
-    final readingDataMap = {
-      for (var doc in querySnapshot.docs) doc.id: doc.data()
-    };
-
-    final result = <DateTime>{};
-    final dates = <DateTime>[];
-    final uid = userDocRef.id;
-    final fallbacks = <Future<DocumentSnapshot<Map<String, dynamic>>>>[];
-    final fallbackIdx = <int>[];
-
-    final totalDays = end.difference(start).inDays;
-    for (int offset = 0; offset <= totalDays; offset++) {
-      final day = DateTime(start.year, start.month, start.day + offset);
-      final key =
-          '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-      dates.add(day);
-
-      if (readingDataMap.containsKey(key) &&
-          readingDataMap[key]?['read'] == true) {
-        result.add(day);
-      } else {
-        fallbacks.add(
-          widget.firestore
-              .collection('read_logs')
-              .doc(key)
-              .collection('entries')
-              .doc(uid)
-              .get(),
-        );
-        fallbackIdx.add(dates.length - 1);
-      }
-    }
-
-    if (fallbacks.isNotEmpty) {
-      final fbSnaps = await Future.wait(fallbacks);
-      for (int j = 0; j < fbSnaps.length; j++) {
-        if (fbSnaps[j].exists) {
-          result.add(dates[fallbackIdx[j]]);
-        }
-      }
-    }
-    return result;
-  }
+  // Removed _queryRange as it's now in ReadingStatusService
 
   String _monthName(int month) {
     const months = [

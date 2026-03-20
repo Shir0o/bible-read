@@ -8,6 +8,7 @@ import '../widgets/journey/journey_progress_card.dart';
 import '../services/vibration_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/bible_progress_service.dart';
+import '../services/reading_status_service.dart';
 import '../widgets/app_header.dart';
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
@@ -36,6 +37,7 @@ class _JourneyPageState extends State<JourneyPage>
   List<ReadingPlan>? _plans;
   List<UserPlanProgress>? _progress;
   Map<String, Set<int>>? _completedByBook;
+  Set<DateTime>? _readDates;
 
   @override
   bool get wantKeepAlive => true;
@@ -57,13 +59,20 @@ class _JourneyPageState extends State<JourneyPage>
         ReadingPlanService(firestore: widget.firestore);
     final bibleProgressService =
         BibleProgressService(firestore: widget.firestore);
+    final readingStatusService =
+        ReadingStatusService(firestore: widget.firestore, auth: widget.auth);
 
     try {
+      final now = widget.dateProvider();
+      final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+
       // Prepare futures for all critical components
       final results = await Future.wait([
         readingPlanService.getAvailablePlans(userId: user.uid),
         readingPlanService.getActivePlans(user.uid).first,
         bibleProgressService.completedChaptersByBook(user.uid),
+        readingStatusService.getReadStatusForRange(user.uid, daysInMonth,
+            referenceDate: now),
       ]);
 
       if (mounted) {
@@ -71,6 +80,13 @@ class _JourneyPageState extends State<JourneyPage>
           _plans = results[0] as List<ReadingPlan>;
           _progress = results[1] as List<UserPlanProgress>;
           _completedByBook = results[2] as Map<String, Set<int>>;
+
+          final statusMap = results[3] as Map<String, bool>;
+          _readDates = statusMap.entries
+              .where((e) => e.value)
+              .map((e) => DateTime.parse(e.key))
+              .toSet();
+
           _isLoading = false;
         });
       }
@@ -124,6 +140,7 @@ class _JourneyPageState extends State<JourneyPage>
                     ConsistencyCalendar(
                       firestore: widget.firestore,
                       auth: widget.auth,
+                      initialReadDates: _readDates,
                       isLoading: _isLoading,
                     ),
                   ],
