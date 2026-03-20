@@ -152,8 +152,6 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
     if (key?.currentContext != null) {
       Scrollable.ensureVisible(
         key!.currentContext!,
-        duration: const Duration(milliseconds: 800),
-        curve: Curves.easeInOut,
         alignment: 0.5, // Center the item
       );
       _hasScrolled = true;

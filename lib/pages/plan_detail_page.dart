@@ -261,14 +261,9 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
   void initState() {
     super.initState();
     if (widget.isStarted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          // Wait for the skeleton loader to finish its transition animation
-          // and for the content to be fully laid out in the tree.
-          await Future.delayed(const Duration(milliseconds: 400));
-          if (mounted) {
-            _scrollToFirstUnchecked();
-          }
+          _scrollToFirstUnchecked();
         }
       });
     }
@@ -299,8 +294,6 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
       if (key?.currentContext != null) {
         Scrollable.ensureVisible(
           key!.currentContext!,
-          duration: const Duration(milliseconds: 1200),
-          curve: Curves.easeInOutCubic,
           alignment: 0.1,
         );
         _hasScrolledToUnchecked = true;
