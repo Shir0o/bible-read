@@ -5,7 +5,6 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../services/error_logger.dart';
@@ -126,25 +125,27 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _loadInitialData() async {
-    // Start all loads in parallel. 
-    // We don't wait for all of them before showing the first UI.
+    // Start all loads in parallel.
     // _initialLoading will be set to false when the primary reading status is ready.
-    unawaited(_loadReadStatus(showLoading: false).then((_) {
-      if (!_disposed && mounted) {
-        setState(() {
-          _initialLoading = false;
-        });
-      }
-    }));
-    
-    unawaited(_loadActivePlan(showLoading: false));
-    unawaited(_loadUserPreferences().then((_) {
-      if (!_disposed && mounted) {
-        setState(() {
-          _prefsLoaded = true;
-        });
-      }
-    }));
+    final futures = [
+      _loadReadStatus(showLoading: false).then((_) {
+        if (!_disposed && mounted) {
+          setState(() {
+            _initialLoading = false;
+          });
+        }
+      }),
+      _loadActivePlan(showLoading: false),
+      _loadUserPreferences().then((_) {
+        if (!_disposed && mounted) {
+          setState(() {
+            _prefsLoaded = true;
+          });
+        }
+      }),
+    ];
+
+    await Future.wait(futures);
   }
 
   @override
@@ -537,11 +538,22 @@ class _HomePageState extends State<HomePage>
               showGreeting: false,
             ),
             Expanded(
-              child: SkeletonLoader(
-                loading: _initialLoading,
-                minTime: const Duration(milliseconds: 1000),
-                skeleton: const HomePageSkeleton(),
-                child: _buildMinimalContent(context),
+              child: RefreshIndicator(
+                onRefresh: _loadInitialData,
+                child: SkeletonLoader(
+                  loading: _initialLoading,
+                  minTime: const Duration(milliseconds: 1000),
+                  skeleton: const HomePageSkeleton(),
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _buildMinimalContent(context),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -621,13 +633,12 @@ class _HomePageState extends State<HomePage>
     final colorScheme = Theme.of(context).colorScheme;
 
     // Minimal UI: Centered content, no distractions.
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Spacer(flex: 3),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Spacer(flex: 3),
             if (_readToday) ...[
               Icon(
                 Icons.check_circle_outline_rounded,
@@ -826,7 +837,6 @@ class _HomePageState extends State<HomePage>
             const SizedBox(height: 32),
           ],
         ),
-      ),
     );
   }
 

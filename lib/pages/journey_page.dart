@@ -116,34 +116,38 @@ class _JourneyPageState extends State<JourneyPage>
               customGreeting: 'Keep going,',
             ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 16),
-                    JourneyProgressCard(
-                      firestore: widget.firestore,
-                      auth: widget.auth,
-                      initialPlans: _plans,
-                      initialProgress: _progress,
-                      isLoading: _isLoading,
-                    ),
-                    const SizedBox(height: 32),
-                    BibleLibraryGrid(
-                      firestore: widget.firestore,
-                      auth: widget.auth,
-                      initialCompletedByBook: _completedByBook,
-                      isLoading: _isLoading,
-                    ),
-                    const SizedBox(height: 32),
-                    ConsistencyCalendar(
-                      firestore: widget.firestore,
-                      auth: widget.auth,
-                      initialReadDates: _readDates,
-                      isLoading: _isLoading,
-                    ),
-                  ],
+              child: RefreshIndicator(
+                onRefresh: _loadData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 16),
+                      JourneyProgressCard(
+                        firestore: widget.firestore,
+                        auth: widget.auth,
+                        initialPlans: _plans,
+                        initialProgress: _progress,
+                        isLoading: _isLoading,
+                      ),
+                      const SizedBox(height: 32),
+                      BibleLibraryGrid(
+                        firestore: widget.firestore,
+                        auth: widget.auth,
+                        initialCompletedByBook: _completedByBook,
+                        isLoading: _isLoading,
+                      ),
+                      const SizedBox(height: 32),
+                      ConsistencyCalendar(
+                        firestore: widget.firestore,
+                        auth: widget.auth,
+                        initialReadDates: _readDates,
+                        isLoading: _isLoading,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
