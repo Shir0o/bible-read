@@ -439,6 +439,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                               plan: plan,
                               firestore: widget.firestore,
                               auth: widget.auth,
+                              initialProgress: progress,
                             ),
                           ),
                         );

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -13,12 +15,14 @@ class PlanDetailPage extends StatefulWidget {
   final ReadingPlan plan;
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final UserPlanProgress? initialProgress;
 
   const PlanDetailPage({
     super.key,
     required this.plan,
     required this.firestore,
     required this.auth,
+    this.initialProgress,
   });
 
   @override
@@ -158,8 +162,10 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       ),
       body: StreamBuilder<UserPlanProgress?>(
         stream: _progressStream,
+        initialData: widget.initialProgress,
         builder: (context, snapshot) {
-          final isLoading = snapshot.connectionState == ConnectionState.waiting;
+          final isLoading = snapshot.connectionState == ConnectionState.waiting &&
+              snapshot.data == null;
           final streamProgress = snapshot.data;
           final isStarted = streamProgress != null;
 
@@ -263,7 +269,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
     if (widget.isStarted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _scrollToFirstUnchecked();
+          unawaited(_scrollToFirstUnchecked());
         }
       });
     }
@@ -275,7 +281,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
     super.dispose();
   }
 
-  void _scrollToFirstUnchecked() {
+  Future<void> _scrollToFirstUnchecked() async {
     if (_hasScrolledToUnchecked) return;
 
     final completedDays =
@@ -291,12 +297,29 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
 
     if (targetDay != null && _itemKeys.containsKey(targetDay)) {
       final key = _itemKeys[targetDay];
-      if (key?.currentContext != null) {
-        Scrollable.ensureVisible(
-          key!.currentContext!,
-          alignment: 0.1,
-        );
+      final context = key?.currentContext;
+      if (context != null) {
         _hasScrolledToUnchecked = true;
+        
+        // 1. Initial jump to a position slightly above the target
+        // We use alignment: 0.3 to put it a bit lower than the top initially
+        Scrollable.ensureVisible(
+          context,
+          alignment: 0.3,
+        );
+
+        // 2. Short delay to let the jump settle
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        // 3. Smooth scroll to the final position (alignment: 0.1)
+        if (mounted) {
+          await Scrollable.ensureVisible(
+            context,
+            alignment: 0.1,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeInOut,
+          );
+        }
       }
     }
   }

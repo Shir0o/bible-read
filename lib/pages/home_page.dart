@@ -772,69 +772,71 @@ class _HomePageState extends State<HomePage>
               ],
             ],
 
-            const Spacer(flex: 4), // Push progress lower
+            if (_readToday) ...[
+              const Spacer(flex: 4), // Push progress lower
 
-            // Weekly Progress Section - Visual separation
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 240),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Reading this week',
-                      style: AppTextStyles.bodySmall(context).copyWith(
-                        color:
-                            colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: colorScheme.outline.withValues(alpha: 0.1),
+              // Weekly Progress Section - Visual separation
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 240),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Reading this week',
+                        style: AppTextStyles.bodySmall(context).copyWith(
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.6),
                         ),
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: _pastWeek.isEmpty
-                              ? 0.0
-                              : _pastWeek.where((d) => d).length / 7.0,
-                          minHeight: 10,
-                          backgroundColor: Colors.transparent,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            colorScheme.primary.withValues(alpha: 0.6),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: colorScheme.outline.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: _pastWeek.isEmpty
+                                ? 0.0
+                                : _pastWeek.where((d) => d).length / 7.0,
+                            minHeight: 10,
+                            backgroundColor: Colors.transparent,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.primary.withValues(alpha: 0.6),
+                            ),
                           ),
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              RichText(
+                text: TextSpan(
+                  style: AppTextStyles.bodySmall(context).copyWith(
+                    color: colorScheme.outline,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: '$_currentStreak',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
+                    const TextSpan(text: ' days of reading'),
                   ],
                 ),
               ),
-            ),
-
-            const SizedBox(height: 24),
-
-            RichText(
-              text: TextSpan(
-                style: AppTextStyles.bodySmall(context).copyWith(
-                  color: colorScheme.outline,
-                ),
-                children: [
-                  TextSpan(
-                    text: '$_currentStreak',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const TextSpan(text: ' days of reading'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
+              const SizedBox(height: 32),
+            ],
           ],
         ),
     );

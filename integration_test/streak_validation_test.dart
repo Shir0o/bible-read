@@ -75,13 +75,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // 3. Verify streak and week bar are visible before reading
-    expect(find.textContaining('5', findRichText: true), findsOneWidget);
-    expect(find.text('Reading this week'), findsOneWidget);
-    
-    // Check progress bar value (2/7 read: Sun, Mon)
-    final progressIndicator = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
-    expect(progressIndicator.value, closeTo(2 / 7, 0.01));
+    // 3. Verify streak and week bar are ABSENT before reading (new behavior)
+    expect(find.textContaining('5', findRichText: true), findsNothing);
+    expect(find.text('Reading this week'), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
 
     // 4. Mark today as read
     final readButton = find.text('Yes, I read');
@@ -92,8 +89,9 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    // 5. Verify streak incremented to 6
+    // 5. Verify streak and week bar ARE NOW VISIBLE and updated
     expect(find.textContaining('6', findRichText: true), findsOneWidget);
+    expect(find.text('Reading this week'), findsOneWidget);
     
     // 6. Verify weekly progress bar updated to 3/7 (Sun, Mon, Tue)
     final progressIndicatorAfter = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));

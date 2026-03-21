@@ -14,6 +14,7 @@ class FullSchedulePage extends StatefulWidget {
   final GroupService groupService;
   final FirebaseAuth auth;
   final VibrationService vibrationService;
+  final List<GroupSchedule>? initialSchedule;
 
   const FullSchedulePage({
     super.key,
@@ -21,6 +22,7 @@ class FullSchedulePage extends StatefulWidget {
     required this.groupService,
     required this.auth,
     required this.vibrationService,
+    this.initialSchedule,
   });
 
   @override
@@ -45,18 +47,31 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
     super.dispose();
   }
 
-  void _scrollToToday() {
+  Future<void> _scrollToToday() async {
     if (_hasScrolledToToday) return;
 
-    if (_todayKey.currentContext != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Scrollable.ensureVisible(
-          _todayKey.currentContext!,
-          duration: const Duration(milliseconds: 500),
+    final context = _todayKey.currentContext;
+    if (context != null) {
+      _hasScrolledToToday = true;
+
+      // 1. Initial jump to a position slightly above the target
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.3,
+      );
+
+      // 2. Short delay to let the jump settle
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // 3. Smooth scroll to the final position (alignment: 0.1)
+      if (mounted) {
+        await Scrollable.ensureVisible(
+          context,
+          alignment: 0.1,
+          duration: const Duration(milliseconds: 800),
           curve: Curves.easeInOut,
         );
-      });
-      _hasScrolledToToday = true;
+      }
     }
   }
 
@@ -113,6 +128,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
       ),
       body: StreamBuilder<List<GroupSchedule>>(
         stream: _scheduleStream,
+        initialData: widget.initialSchedule,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -149,7 +165,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
 
           if (!_hasScrolledToToday && (today.isNotEmpty || upcoming.isNotEmpty)) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              _scrollToToday();
+              unawaited(_scrollToToday());
             });
           }
 

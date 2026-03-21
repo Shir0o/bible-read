@@ -79,8 +79,9 @@ class _CommunityPageState extends State<CommunityPage>
     with AutomaticKeepAliveClientMixin {
   late Stream<List<Group>> _groupsStream;
   List<ReadLog> _friendLogs = [];
-  bool _loadingLogs = true;
-  bool _isLoadingGroups = true;
+  List<GroupSchedule>? _initialGroupSchedule;
+  List<GroupMemberProgressData>? _initialGroupProgress;
+  bool _isLoading = true;
 
   @override
   bool get wantKeepAlive => true;
@@ -88,32 +89,76 @@ class _CommunityPageState extends State<CommunityPage>
   @override
   void initState() {
     super.initState();
+    _groupsStream = const Stream.empty();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
     final user = widget.auth.currentUser;
-    if (user != null) {
-      _groupsStream = widget.groupService.groupsForUser(user.uid).handleError((e, st) {
-        ErrorLogger.log(e, st);
+    if (user == null) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      return;
+    }
+
+    if (!_isLoading) {
+      setState(() => _isLoading = true);
+    }
+
+    _groupsStream = widget.groupService.groupsForUser(user.uid);
+
+    try {
+      final results = await Future.wait([
+        _groupsStream.first.timeout(const Duration(seconds: 5), onTimeout: () => []),
+        _getFriendsActivity(),
+      ]);
+
+      final groups = results[0] as List<Group>;
+      final logs = results[1] as List<ReadLog>;
+
+      // If we have groups, pre-fetch details for the first one to avoid flashing
+      if (groups.isNotEmpty) {
+        final firstGroup = groups.first;
+        final details = await Future.wait([
+          widget.groupService.schedule(firstGroup.id).first.timeout(
+                const Duration(seconds: 2),
+                onTimeout: () => [],
+              ),
+          widget.groupService
+              .memberOverallCompletion(firstGroup.id, includeUid: user.uid)
+              .first
+              .timeout(
+                const Duration(seconds: 2),
+                onTimeout: () => [],
+              ),
+        ]);
+
         if (mounted) {
-          setState(() => _isLoadingGroups = false);
+          setState(() {
+            _initialGroupSchedule = details[0] as List<GroupSchedule>;
+            _initialGroupProgress = details[1] as List<GroupMemberProgressData>;
+          });
         }
-      }).map((groups) {
-        if (mounted) {
-          setState(() => _isLoadingGroups = false);
-        }
-        return groups;
-      });
-      _fetchFriendsActivity();
-    } else {
-      _groupsStream = Stream.value([]);
-      _loadingLogs = false;
-      _isLoadingGroups = false;
+      }
+
+      if (mounted) {
+        setState(() {
+          _friendLogs = logs;
+          _isLoading = false;
+        });
+      }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  Future<void> _fetchFriendsActivity() async {
+  Future<List<ReadLog>> _getFriendsActivity() async {
     final user = widget.auth.currentUser;
-    if (user == null) return;
-
-    setState(() => _loadingLogs = true);
+    if (user == null) return [];
 
     try {
       // 1. Get friends
@@ -149,17 +194,10 @@ class _CommunityPageState extends State<CommunityPage>
         return a.name.compareTo(b.name);
       });
 
-      if (mounted) {
-        setState(() {
-          _friendLogs = filtered;
-          _loadingLogs = false;
-        });
-      }
+      return filtered;
     } catch (e, st) {
       ErrorLogger.log(e, st);
-      if (mounted) {
-        setState(() => _loadingLogs = false);
-      }
+      return [];
     }
   }
 
@@ -235,10 +273,7 @@ class _CommunityPageState extends State<CommunityPage>
       backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () async {
-            await _fetchFriendsActivity();
-            setState(() {}); // Trigger rebuilds for streams
-          },
+          onRefresh: _loadData,
           child: CustomScrollView(
             slivers: [
               // Header
@@ -298,7 +333,7 @@ class _CommunityPageState extends State<CommunityPage>
                         stream: _groupsStream,
                         builder: (context, snapshot) {
                           return SkeletonLoader(
-                            loading: _isLoadingGroups,
+                            loading: _isLoading,
                             minTime: const Duration(milliseconds: 1000),
                             skeleton: const JourneyProgressCardSkeleton(
                               padding: EdgeInsets.zero,
@@ -310,6 +345,8 @@ class _CommunityPageState extends State<CommunityPage>
                                     auth: widget.auth,
                                     user: user,
                                     vibrationService: widget.vibrationService,
+                                    initialSchedule: _initialGroupSchedule,
+                                    initialProgress: _initialGroupProgress,
                                   )
                                 : _buildEmptyGroupState(context, colorScheme),
                           );
@@ -336,7 +373,7 @@ class _CommunityPageState extends State<CommunityPage>
 
               // Friends Activity List
               SliverSkeletonLoader(
-                loading: _loadingLogs,
+                loading: _isLoading,
                 minTime: const Duration(milliseconds: 1000),
                 skeleton: const FriendsActivitySkeleton(),
                 child: _friendLogs.isEmpty
@@ -415,6 +452,8 @@ class _GroupProgressCard extends StatelessWidget {
   final FirebaseAuth auth;
   final User user;
   final VibrationService vibrationService;
+  final List<GroupSchedule>? initialSchedule;
+  final List<GroupMemberProgressData>? initialProgress;
 
   const _GroupProgressCard({
     required this.group,
@@ -422,6 +461,8 @@ class _GroupProgressCard extends StatelessWidget {
     required this.auth,
     required this.user,
     required this.vibrationService,
+    this.initialSchedule,
+    this.initialProgress,
   });
 
   @override
@@ -495,6 +536,7 @@ class _GroupProgressCard extends StatelessWidget {
                     Expanded(
                       child: StreamBuilder<List<GroupSchedule>>(
                         stream: groupService.schedule(group.id),
+                        initialData: initialSchedule,
                         builder: (context, scheduleSnap) {
                           final schedule = scheduleSnap.data ?? [];
                           // Calculate days
@@ -566,6 +608,7 @@ class _GroupProgressCard extends StatelessWidget {
                                 stream: groupService.memberOverallCompletion(
                                     group.id,
                                     includeUid: user.uid),
+                                initialData: initialProgress,
                                 builder: (context, progressSnap) {
                                   final members = progressSnap.data ?? [];
                                   final myProgress = members.firstWhere(
@@ -633,6 +676,7 @@ class _GroupProgressCard extends StatelessWidget {
                             groupService: groupService,
                             auth: auth,
                             vibrationService: vibrationService,
+                            initialSchedule: initialSchedule,
                           ),
                         ),
                       );

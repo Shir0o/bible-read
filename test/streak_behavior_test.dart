@@ -95,10 +95,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify streak text and progress bar are VISIBLE
-      expect(find.textContaining('5', findRichText: true), findsOneWidget);
-      expect(find.text('Reading this week'), findsOneWidget);
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      // Verify streak text and progress bar are ABSENT (now only shown after read)
+      expect(find.textContaining('5', findRichText: true), findsNothing);
+      expect(find.text('Reading this week'), findsNothing);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
     });
   });
 }

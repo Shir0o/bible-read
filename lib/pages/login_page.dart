@@ -320,9 +320,8 @@ class _LoginPageState extends State<LoginPage> {
                                   keyboardType: TextInputType.emailAddress,
                                   autofillHints: [AutofillHints.email],
                                   textInputAction: TextInputAction.next,
-                                  autofocus: true,
-                                ),
-                                const SizedBox(height: 16), // gap-4
+                                  autofocus: false,
+                                ),                                const SizedBox(height: 16), // gap-4
 
                                 // Password
                                 _buildStyledInput(
