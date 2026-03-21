@@ -10,7 +10,7 @@ void main() {
       // In fromFirestore implementation: values[type] = data[type.name] == true;
       // So 'invalid' == true is false.
       expect(prefs[NotificationType.like], isFalse);
-      
+
       // Missing fields should be true
       expect(prefs[NotificationType.groupInvite], isTrue);
     });

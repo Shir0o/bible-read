@@ -21,6 +21,7 @@ void main() {
     final foundWelcome = welcomeFinder.evaluate().isNotEmpty;
     final foundHome = homeFinder.evaluate().isNotEmpty;
 
-    expect(foundWelcome || foundHome, isTrue, reason: 'Should be on Welcome or Home page');
+    expect(foundWelcome || foundHome, isTrue,
+        reason: 'Should be on Welcome or Home page');
   });
 }

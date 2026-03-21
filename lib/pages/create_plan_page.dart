@@ -245,7 +245,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           ),
         );
       } else {
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {

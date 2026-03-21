@@ -1,4 +1,3 @@
-import 'package:bible_read/models/group.dart';
 import 'package:bible_read/models/notification_preferences.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -36,7 +35,7 @@ void main() {
           .get();
 
       expect(memberDoc.exists, isTrue);
-      
+
       final groupDoc = await firestore.collection('groups').doc(groupId).get();
       expect(groupDoc.data()?['memberCount'], equals(2)); // Owner + user1
     });
@@ -114,7 +113,7 @@ void main() {
         name: 'Test Group',
       );
       final recipientUid = 'user1';
-      
+
       // Setup invite and notification
       await groupService.sendGroupInvite(
         groupId: groupId,
@@ -154,10 +153,11 @@ void main() {
       expect(notificationSnap.docs.isEmpty, isTrue);
     });
 
-    test('respondToGroupInvite (Decline) deletes invite and cleans up', () async {
+    test('respondToGroupInvite (Decline) deletes invite and cleans up',
+        () async {
       final groupId = 'group1';
       final recipientUid = 'user1';
-      
+
       await groupService.sendGroupInvite(
         groupId: groupId,
         groupName: 'Test Group',

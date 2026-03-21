@@ -321,7 +321,8 @@ class _LoginPageState extends State<LoginPage> {
                                   autofillHints: [AutofillHints.email],
                                   textInputAction: TextInputAction.next,
                                   autofocus: false,
-                                ),                                const SizedBox(height: 16), // gap-4
+                                ),
+                                const SizedBox(height: 16), // gap-4
 
                                 // Password
                                 _buildStyledInput(

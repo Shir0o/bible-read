@@ -70,7 +70,8 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
       final statusMap = await _readingStatusService.getReadStatusForRange(
         uid,
         daysInMonth,
-        referenceDate: DateTime(_currentMonth.year, _currentMonth.month, daysInMonth),
+        referenceDate:
+            DateTime(_currentMonth.year, _currentMonth.month, daysInMonth),
       );
 
       final readDates = statusMap.entries

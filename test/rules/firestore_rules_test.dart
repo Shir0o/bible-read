@@ -22,12 +22,11 @@ void main() {
     test('does not include deprecated readLog collection', () {
       expect(rulesText.contains('/readLog'), isFalse);
     });
-test('includes group rules with members and schedule', () {
-  expect(rulesText.contains('match /groups/{groupId}'), isTrue);
-  expect(rulesText.contains('match /members/{uid}'), isTrue);
-  expect(rulesText.contains('match /schedule/{date}'), isTrue);
-  expect(rulesText.contains('match /invites/{uid}'), isTrue);
-});
+    test('includes group rules with members and schedule', () {
+      expect(rulesText.contains('match /groups/{groupId}'), isTrue);
+      expect(rulesText.contains('match /members/{uid}'), isTrue);
+      expect(rulesText.contains('match /schedule/{date}'), isTrue);
+      expect(rulesText.contains('match /invites/{uid}'), isTrue);
 
       expect(
           rulesText.contains('allow create: if request.auth != null;'), isTrue);

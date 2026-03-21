@@ -24,7 +24,7 @@ void main() {
     final journeyTab = find.byIcon(Icons.map); // Assuming map icon for Journey
     await tester.tap(journeyTab);
     await tester.pumpAndSettle();
-    
+
     // Journey page has an artificial delay
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
@@ -39,7 +39,7 @@ void main() {
     // 4. Manually mark Genesis as read
     await tester.tap(find.text('Gen'));
     await tester.pumpAndSettle();
-    
+
     // Confirm dialog
     expect(find.text('Complete Genesis?'), findsOneWidget);
     await tester.tap(find.text('Confirm'));
@@ -48,13 +48,13 @@ void main() {
     // 5. Go back to Journey Page
     await tester.pageBack();
     await tester.pumpAndSettle();
-    
+
     // Trigger data refresh if needed (JourneyPage state might need a nudge or it might be real-time)
     // Actually JourneyPage currently loads data in initState.
-    // If we use AutomaticKeepAliveClientMixin, we might need to manually refresh or 
+    // If we use AutomaticKeepAliveClientMixin, we might need to manually refresh or
     // rely on real-time streams if implemented.
     // BibleLibraryGrid uses a Stream.fromFuture in its current implementation which is NOT real-time.
-    
+
     // Re-pump Journey page to see updates
     await tester.tap(find.byIcon(Icons.home)); // Switch away
     await tester.pumpAndSettle();

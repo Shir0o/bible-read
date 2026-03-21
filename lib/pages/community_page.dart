@@ -110,7 +110,8 @@ class _CommunityPageState extends State<CommunityPage>
 
     try {
       final results = await Future.wait([
-        _groupsStream.first.timeout(const Duration(seconds: 5), onTimeout: () => []),
+        _groupsStream.first
+            .timeout(const Duration(seconds: 5), onTimeout: () => []),
         _getFriendsActivity(),
       ]);
 
@@ -338,7 +339,8 @@ class _CommunityPageState extends State<CommunityPage>
                             skeleton: const JourneyProgressCardSkeleton(
                               padding: EdgeInsets.zero,
                             ),
-                            child: (snapshot.hasData && snapshot.data!.isNotEmpty)
+                            child: (snapshot.hasData &&
+                                    snapshot.data!.isNotEmpty)
                                 ? _GroupProgressCard(
                                     group: snapshot.data!.first,
                                     groupService: widget.groupService,
@@ -548,8 +550,8 @@ class _GroupProgressCard extends StatelessWidget {
 
                           if (schedule.isNotEmpty) {
                             // Find index of today or next upcoming
-                            final index = schedule.indexWhere(
-                                (s) => !s.date.isBefore(today));
+                            final index = schedule
+                                .indexWhere((s) => !s.date.isBefore(today));
                             if (index != -1) {
                               if (schedule[index]
                                   .date

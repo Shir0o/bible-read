@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/group.dart';
 import '../models/group_schedule.dart';
@@ -50,13 +49,13 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   Future<void> _scrollToToday() async {
     if (_hasScrolledToToday) return;
 
-    final context = _todayKey.currentContext;
-    if (context != null) {
+    final targetContext = _todayKey.currentContext;
+    if (targetContext != null) {
       _hasScrolledToToday = true;
 
       // 1. Initial jump to a position slightly above the target
       Scrollable.ensureVisible(
-        context,
+        targetContext,
         alignment: 0.3,
       );
 
@@ -65,8 +64,8 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
 
       // 3. Smooth scroll to the final position (alignment: 0.1)
       if (mounted) {
-        await Scrollable.ensureVisible(
-          context,
+        Scrollable.ensureVisible(
+          targetContext,
           alignment: 0.1,
           duration: const Duration(milliseconds: 800),
           curve: Curves.easeInOut,
@@ -163,7 +162,8 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
             }
           }
 
-          if (!_hasScrolledToToday && (today.isNotEmpty || upcoming.isNotEmpty)) {
+          if (!_hasScrolledToToday &&
+              (today.isNotEmpty || upcoming.isNotEmpty)) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               unawaited(_scrollToToday());
             });
@@ -181,18 +181,18 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
               ],
               if (today.isNotEmpty) ...[
                 _buildSectionHeader(context, 'Today', isHighlight: true),
-                ...today.map((s) => _buildTodayItem(context, s, key: _todayKey)),
+                ...today
+                    .map((s) => _buildTodayItem(context, s, key: _todayKey)),
                 const SizedBox(height: 16),
               ],
               if (upcoming.isNotEmpty) ...[
                 _buildSectionHeader(context, 'Upcoming'),
                 ...upcoming.map((s) {
                   final isFirstUpcoming = s == upcoming.first;
-                  return _buildScheduleItem(
-                    context, 
-                    s, 
-                    key: (today.isEmpty && isFirstUpcoming) ? _todayKey : null
-                  );
+                  return _buildScheduleItem(context, s,
+                      key: (today.isEmpty && isFirstUpcoming)
+                          ? _todayKey
+                          : null);
                 }),
               ],
             ],
@@ -290,7 +290,8 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
     );
   }
 
-  Widget _buildTodayItem(BuildContext context, GroupSchedule schedule, {Key? key}) {
+  Widget _buildTodayItem(BuildContext context, GroupSchedule schedule,
+      {Key? key}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 

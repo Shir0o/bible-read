@@ -116,7 +116,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                 ),
                 TextButton(
                   onPressed: () async {
-                    await Navigator.of(context).push(
+                    final edited = await Navigator.of(context).push<bool>(
                       MaterialPageRoute(
                         builder: (_) => ReadingPlansPage(
                           firestore: widget.firestore,
@@ -124,7 +124,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                         ),
                       ),
                     );
-                    if (mounted) {
+                    if (edited == true && mounted) {
                       setState(() {
                         _allPlansFuture = widget.readingPlanService
                             .getAvailablePlans(
@@ -257,7 +257,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
             const SizedBox(height: 16),
             FilledButton.tonal(
               onPressed: () async {
-                await Navigator.of(context).push(
+                final edited = await Navigator.of(context).push<bool>(
                   MaterialPageRoute(
                     builder: (_) => CreatePlanPage(
                       firestore: widget.firestore,
@@ -265,7 +265,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                     ),
                   ),
                 );
-                if (mounted) {
+                if (edited == true && mounted) {
                   setState(() {
                     _allPlansFuture = widget.readingPlanService
                         .getAvailablePlans(

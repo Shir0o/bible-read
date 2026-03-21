@@ -124,8 +124,8 @@ class MonthStreakCalendar extends StatelessWidget {
               Flexible(
                 child: Text(
                   _monthLabel,
-                  style:
-                      AppTextStyles.body(context).copyWith(fontWeight: FontWeight.bold),
+                  style: AppTextStyles.body(context)
+                      .copyWith(fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                 ),

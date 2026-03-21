@@ -306,7 +306,8 @@ class _GroupsPageState extends State<GroupsPage> {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                  content: Text('Failed to decline invitation')),
+                                  content:
+                                      Text('Failed to decline invitation')),
                             );
                           }
                         }

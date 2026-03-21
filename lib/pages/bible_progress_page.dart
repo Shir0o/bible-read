@@ -24,7 +24,7 @@ class BibleProgressPage extends StatefulWidget {
 
 class _BibleProgressPageState extends State<BibleProgressPage> {
   late final BibleProgressService _bibleProgressService;
-  
+
   // The synchronous source of truth for the UI
   Map<String, Set<int>> _currentData = {};
   bool _loading = true;
@@ -104,8 +104,7 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
   @override
   void initState() {
     super.initState();
-    _bibleProgressService =
-        BibleProgressService(firestore: widget.firestore);
+    _bibleProgressService = BibleProgressService(firestore: widget.firestore);
     _loadData();
   }
 
@@ -123,7 +122,8 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
     }
 
     try {
-      final data = await _bibleProgressService.completedChaptersByBook(user.uid);
+      final data =
+          await _bibleProgressService.completedChaptersByBook(user.uid);
       if (mounted) {
         setState(() {
           _currentData = data;
@@ -131,9 +131,9 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
         });
 
         // Trigger scroll logic
-        final String? targetBook = widget.initialScrollToBook ?? 
+        final String? targetBook = widget.initialScrollToBook ??
             await _bibleProgressService.getLastCheckedBook(user.uid);
-        
+
         if (targetBook != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _scrollToBook(targetBook);
@@ -243,8 +243,8 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
             .doc(book)
             .delete();
       }
-      
-      // Successfully updated, we can eventually clear override but 
+
+      // Successfully updated, we can eventually clear override but
       // keeping it is safe until next full reload.
     } catch (e, st) {
       // 2. Rollback on failure
@@ -471,8 +471,7 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverGrid(
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 5,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,

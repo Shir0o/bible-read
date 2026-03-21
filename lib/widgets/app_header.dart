@@ -7,7 +7,6 @@ import '../models/app_notification.dart';
 import '../pages/notification_center_page.dart';
 import '../services/notification_service.dart';
 import '../services/vibration_service.dart';
-import '../theme/app_theme.dart';
 import 'common_styles.dart';
 import 'navigation_menu_scope.dart';
 
@@ -35,7 +34,7 @@ class AppHeader extends StatelessWidget {
 
   String _getGreeting() {
     if (customGreeting != null) return customGreeting!;
-    
+
     final hour = dateProvider().hour;
     if (hour < 12) {
       return 'Good Morning,';
@@ -161,8 +160,8 @@ class AppHeader extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: colorScheme.surfaceContainer,
                     border: Border.all(
-                        color: colorScheme.outlineVariant
-                            .withValues(alpha: 0.1)),
+                        color:
+                            colorScheme.outlineVariant.withValues(alpha: 0.1)),
                   ),
                   child: Stack(
                     children: [
@@ -180,8 +179,8 @@ class AppHeader extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => NotificationCenterPage(
-                                  service: NotificationService(
-                                      firestore: firestore),
+                                  service:
+                                      NotificationService(firestore: firestore),
                                   auth: auth,
                                   vibrationService: vibrationService,
                                 ),

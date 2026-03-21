@@ -84,7 +84,8 @@ class _AllGroupsViewState extends State<AllGroupsView>
                     child: Text(
                       'Find Groups',
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.title(context).copyWith(fontSize: 20),
+                      style:
+                          AppTextStyles.title(context).copyWith(fontSize: 20),
                     ),
                   ),
                   IconButton(

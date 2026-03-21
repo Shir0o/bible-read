@@ -18,16 +18,18 @@ void main() {
     setupLottieHttpOverrides();
   });
 
-  testWidgets('Scenario: Complete book via group reading and verify library update', (tester) async {
+  testWidgets(
+      'Scenario: Complete book via group reading and verify library update',
+      (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1', displayName: 'Test User');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
-    
+
     // 1. Seed a group where Ruth (4 chapters) is scheduled
     final groupRef = firestore.collection('groups').doc('g1');
     await groupRef.set({'ownerUid': user.uid, 'name': 'Ruth Study'});
     await groupRef.collection('members').doc(user.uid).set({'uid': user.uid});
-    
+
     // Ruth 1-4 scheduled on one day
     final chapters = ['Ruth 1', 'Ruth 2', 'Ruth 3', 'Ruth 4'];
     await groupRef.collection('schedule').doc('2024-05-01').set({
@@ -36,7 +38,12 @@ void main() {
     });
 
     // 2. Mark as read in Firestore
-    await groupRef.collection('progress').doc('2024-05-01').collection('entries').doc(user.uid).set({
+    await groupRef
+        .collection('progress')
+        .doc('2024-05-01')
+        .collection('entries')
+        .doc(user.uid)
+        .set({
       'uid': user.uid,
       'done': true,
       'count': 4,
@@ -54,7 +61,7 @@ void main() {
         ),
       ),
     );
-    
+
     // Allow for initial data loading (1000ms delay in JourneyPage)
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();

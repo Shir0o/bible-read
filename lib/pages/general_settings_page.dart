@@ -96,7 +96,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                       ),
                       value: _prefs.autoMarkPlanRead,
                       onChanged: _updatePreference,
-                      activeColor: colorScheme.primary,
+                      activeThumbColor: colorScheme.primary,
                     ),
                   ),
                   Padding(

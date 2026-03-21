@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
+import 'data_cache_service.dart';
 import 'error_logger.dart';
 
 /// Result of fetching read status data.
@@ -88,19 +89,50 @@ class ReadingStatusService {
   /// calculations against a fixed point in time.
   final DateTime Function() nowProvider;
 
+  /// Optional cache for avoiding redundant Firestore reads.
+  final DataCacheService? cache;
+
   /// Creates a [ReadingStatusService] using default Firebase instances.
   ReadingStatusService({
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     DateTime Function()? dateProvider,
     DateTime Function()? nowProvider,
+    this.cache,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         nowProvider = nowProvider ?? dateProvider ?? DateTime.now;
 
+  /// Cache key for the current user's reading status.
+  String get _cacheKey {
+    final uid = auth.currentUser?.uid ?? 'anon';
+    return 'reading_status:$uid';
+  }
+
+  /// Clears cached reading status so the next [fetchStatus] call hits
+  /// Firestore. Call this after the user marks a day as read or performs
+  /// any other mutation.
+  void invalidateCache() {
+    cache?.invalidate(_cacheKey);
+  }
+
   /// Fetches today's read flag and calendar history. Ensures the user
   /// document exists and backfills missing calendar entries.
-  Future<ReadingStatus> fetchStatus() async {
+  ///
+  /// When a [cache] is provided, returns the cached result if it has not
+  /// expired. Pass [forceRefresh] to bypass the cache.
+  Future<ReadingStatus> fetchStatus({bool forceRefresh = false}) async {
+    if (!forceRefresh && cache != null) {
+      return cache!.getOrFetch<ReadingStatus>(
+        _cacheKey,
+        () => _fetchStatusFromFirestore(),
+      );
+    }
+    return _fetchStatusFromFirestore();
+  }
+
+  /// Internal method that always reads from Firestore.
+  Future<ReadingStatus> _fetchStatusFromFirestore() async {
     final user = auth.currentUser;
     final today = _dateOnly(nowProvider());
     if (user == null) {

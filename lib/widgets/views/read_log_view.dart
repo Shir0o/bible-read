@@ -432,7 +432,8 @@ class _ReadLogViewState extends State<ReadLogView>
                                 const SizedBox(height: 16),
                                 Text(
                                   'Be the first light today',
-                                  style: AppTextStyles.subtitle(context).copyWith(
+                                  style:
+                                      AppTextStyles.subtitle(context).copyWith(
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
                                     fontWeight: FontWeight.w600,

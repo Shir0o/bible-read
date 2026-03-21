@@ -3,7 +3,7 @@ import '../skeleton.dart';
 
 class JourneyProgressCardSkeleton extends StatelessWidget {
   final EdgeInsetsGeometry padding;
-  
+
   const JourneyProgressCardSkeleton({
     super.key,
     this.padding = const EdgeInsets.symmetric(horizontal: 16),

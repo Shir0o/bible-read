@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -41,7 +40,9 @@ void main() {
       );
     });
 
-    test('Unit Test: updateSummary DOES NOT reset streak to 0 if today is not read yet', () async {
+    test(
+        'Unit Test: updateSummary DOES NOT reset streak to 0 if today is not read yet',
+        () async {
       final userDoc = firestore.collection('users').doc(user.uid);
       await userDoc.set({'email': user.email});
 
@@ -55,19 +56,31 @@ void main() {
       // Day -1: Read (S5)
       // Today: Not read (Should STAY S5)
 
-      await userDoc.collection('reading').doc(formatDate(fixedNow.subtract(const Duration(days: 5)))).set({'read': true});
+      await userDoc
+          .collection('reading')
+          .doc(formatDate(fixedNow.subtract(const Duration(days: 5))))
+          .set({'read': true});
       // Miss -4
       // Miss -3
-      await userDoc.collection('reading').doc(formatDate(fixedNow.subtract(const Duration(days: 2)))).set({'read': true});
-      await userDoc.collection('reading').doc(formatDate(fixedNow.subtract(const Duration(days: 1)))).set({'read': true});
+      await userDoc
+          .collection('reading')
+          .doc(formatDate(fixedNow.subtract(const Duration(days: 2))))
+          .set({'read': true});
+      await userDoc
+          .collection('reading')
+          .doc(formatDate(fixedNow.subtract(const Duration(days: 1))))
+          .set({'read': true});
 
       final stats = await service.updateSummary();
-      
-      expect(stats.streak, 5, reason: 'Streak should not reset to 0 if today is not read yet');
+
+      expect(stats.streak, 5,
+          reason: 'Streak should not reset to 0 if today is not read yet');
       expect(stats.graceCreditsAvailable, 0);
     });
 
-    testWidgets('Widget Test: Streak and Week Bar are VISIBLE even if not read today', (tester) async {
+    testWidgets(
+        'Widget Test: Streak and Week Bar are VISIBLE even if not read today',
+        (tester) async {
       // Seed summary data with a streak
       await firestore
           .collection('users')
@@ -80,7 +93,7 @@ void main() {
       });
 
       // NOT read today.
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: HomePage(

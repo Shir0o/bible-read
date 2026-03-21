@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
 import '../services/group_service.dart';
-import 'common_styles.dart';
 
 class GroupCard extends StatelessWidget {
   final Group group;
@@ -81,7 +80,8 @@ class GroupCard extends StatelessWidget {
                                     const SizedBox(height: 4),
                                     Text(
                                       readingText,
-                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
                                         color: colorScheme.primary,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -97,7 +97,8 @@ class GroupCard extends StatelessWidget {
                                 children: [
                                   Text(
                                     '${(groupCompletion * 100).toInt()}%',
-                                    style: theme.textTheme.headlineSmall?.copyWith(
+                                    style:
+                                        theme.textTheme.headlineSmall?.copyWith(
                                       color: colorScheme.primary,
                                     ),
                                   ),

@@ -28,6 +28,7 @@ import '../services/google_sign_in_factory.dart';
 import '../services/group_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
+import '../services/data_cache_service.dart';
 import '../services/user_preferences_service.dart';
 import '../services/vibration_service.dart';
 import 'app_check_error_page.dart';
@@ -124,6 +125,7 @@ class _MainPageState extends State<MainPage> {
   late final GroupService _groupService;
 
   late final ReadingPlanService _readingPlanService;
+  late final DataCacheService _cacheService;
   late final ReadingStatusService _readingStatusService;
   late final UserPreferencesService _userPreferencesService;
   late final List<Widget> _pages;
@@ -136,9 +138,14 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     _authStream = widget.auth.authStateChanges();
+    _cacheService = DataCacheService();
     // ... existing init code ...
     _readingStatusService = widget.readingStatusService ??
-        ReadingStatusService(firestore: widget.firestore, auth: widget.auth);
+        ReadingStatusService(
+          firestore: widget.firestore,
+          auth: widget.auth,
+          cache: _cacheService,
+        );
     _friendService = FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
     _readingPlanService = ReadingPlanService(firestore: widget.firestore);
@@ -205,6 +212,7 @@ class _MainPageState extends State<MainPage> {
         firestore: widget.firestore,
         vibrationService: widget.vibrationService,
         dateProvider: () => DateTime.now(),
+        cache: _cacheService,
       ),
     ];
   }
@@ -324,6 +332,7 @@ class _MainPageState extends State<MainPage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.auth != widget.auth) {
       _authStream = widget.auth.authStateChanges();
+      _cacheService.clear();
     }
   }
 

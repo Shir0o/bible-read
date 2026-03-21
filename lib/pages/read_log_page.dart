@@ -82,17 +82,13 @@ class ReadLogPage extends StatefulWidget {
       // Best effort: ignore failures here since the log entry itself succeeded.
     }
     final handler = markFirstReader;
-    Map<String, dynamic>? result;
     if (handler != null) {
-      result = await handler(dateKey: dateKey, uid: user.uid);
+      await handler(dateKey: dateKey, uid: user.uid);
     } else if (functions != null) {
       try {
-        final res = await functions.httpsCallable('markFirstReader').call({
+        await functions.httpsCallable('markFirstReader').call({
           'dateKey': dateKey,
         });
-        if (res.data is Map) {
-          result = Map<String, dynamic>.from(res.data as Map);
-        }
       } catch (e, st) {
         if (kDebugMode) {
           debugPrint('markFirstReader failed: $e');

@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../services/data_cache_service.dart';
+
 import '../widgets/journey/bible_library_grid.dart';
 import '../widgets/journey/consistency_calendar.dart';
 import '../widgets/journey/journey_progress_card.dart';
@@ -19,12 +21,16 @@ class JourneyPage extends StatefulWidget {
   final VibrationService vibrationService;
   final DateTime Function() dateProvider;
 
+  /// Optional cache to avoid redundant data loading between tab switches.
+  final DataCacheService? cache;
+
   const JourneyPage({
     super.key,
     required this.auth,
     required this.firestore,
     required this.vibrationService,
     required this.dateProvider,
+    this.cache,
   });
 
   @override
@@ -55,16 +61,34 @@ class _JourneyPageState extends State<JourneyPage>
       return;
     }
 
-    final readingPlanService =
-        ReadingPlanService(firestore: widget.firestore);
+    final readingPlanService = ReadingPlanService(firestore: widget.firestore);
     final bibleProgressService =
         BibleProgressService(firestore: widget.firestore);
     final readingStatusService =
         ReadingStatusService(firestore: widget.firestore, auth: widget.auth);
+    final cache = widget.cache;
 
     try {
       final now = widget.dateProvider();
       final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+      final cacheKey = 'journey:${user.uid}';
+
+      // If cache has fresh data, use it directly.
+      if (cache != null) {
+        final cached = cache.peek<_JourneyData>(cacheKey);
+        if (cached != null) {
+          if (mounted) {
+            setState(() {
+              _plans = cached.plans;
+              _progress = cached.progress;
+              _completedByBook = cached.completedByBook;
+              _readDates = cached.readDates;
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+      }
 
       // Prepare futures for all critical components
       final results = await Future.wait([
@@ -75,18 +99,31 @@ class _JourneyPageState extends State<JourneyPage>
             referenceDate: now),
       ]);
 
+      final plans = results[0] as List<ReadingPlan>;
+      final progress = results[1] as List<UserPlanProgress>;
+      final completedByBook = results[2] as Map<String, Set<int>>;
+      final statusMap = results[3] as Map<String, bool>;
+      final readDates = statusMap.entries
+          .where((e) => e.value)
+          .map((e) => DateTime.parse(e.key))
+          .toSet();
+
+      // Store in cache for next tab switch
+      cache?.put<_JourneyData>(
+          cacheKey,
+          _JourneyData(
+            plans: plans,
+            progress: progress,
+            completedByBook: completedByBook,
+            readDates: readDates,
+          ));
+
       if (mounted) {
         setState(() {
-          _plans = results[0] as List<ReadingPlan>;
-          _progress = results[1] as List<UserPlanProgress>;
-          _completedByBook = results[2] as Map<String, Set<int>>;
-
-          final statusMap = results[3] as Map<String, bool>;
-          _readDates = statusMap.entries
-              .where((e) => e.value)
-              .map((e) => DateTime.parse(e.key))
-              .toSet();
-
+          _plans = plans;
+          _progress = progress;
+          _completedByBook = completedByBook;
+          _readDates = readDates;
           _isLoading = false;
         });
       }
@@ -156,4 +193,20 @@ class _JourneyPageState extends State<JourneyPage>
       ),
     );
   }
+}
+
+/// Value object holding pre-fetched data for the Journey tab.
+/// Stored in [DataCacheService] to avoid re-fetching on tab switches.
+class _JourneyData {
+  final List<ReadingPlan> plans;
+  final List<UserPlanProgress> progress;
+  final Map<String, Set<int>> completedByBook;
+  final Set<DateTime> readDates;
+
+  const _JourneyData({
+    required this.plans,
+    required this.progress,
+    required this.completedByBook,
+    required this.readDates,
+  });
 }

@@ -30,15 +30,8 @@ class BibleProgressService {
     // This avoids N queries where N is the total number of scheduled days across all groups.
     // Also fetch manual book completions in parallel.
     final futures = await Future.wait([
-      firestore
-          .collectionGroup('entries')
-          .where('uid', isEqualTo: uid)
-          .get(),
-      firestore
-          .collection('users')
-          .doc(uid)
-          .collection('bible_books')
-          .get(),
+      firestore.collectionGroup('entries').where('uid', isEqualTo: uid).get(),
+      firestore.collection('users').doc(uid).collection('bible_books').get(),
     ]);
 
     final allEntriesSnap = futures[0];
@@ -139,7 +132,8 @@ class BibleProgressService {
       if (ReferenceParser.allBooks.contains(book)) {
         final count = ReferenceParser.chapterCount(book) ?? 0;
         if (count > 0) {
-          final chapters = Set<int>.from(List<int>.generate(count, (i) => i + 1));
+          final chapters =
+              Set<int>.from(List<int>.generate(count, (i) => i + 1));
           finalResult[book] = chapters;
         }
       }

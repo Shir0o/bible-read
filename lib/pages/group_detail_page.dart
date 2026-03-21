@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
@@ -1024,7 +1023,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                                 elevation: isRead ? 0 : 4,
-                                textStyle: theme.textTheme.titleMedium?.copyWith(
+                                textStyle:
+                                    theme.textTheme.titleMedium?.copyWith(
                                   fontSize: 16,
                                 ),
                               ),
@@ -1060,12 +1060,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               ),
               builder: (context, snapshot) {
                 final count = snapshot.data?.length ?? 0;
-                  return Text(
-                    "$count Members",
-                    style: theme.textTheme.labelSmall,
-                  );
-                },
-              ),          ],
+                return Text(
+                  '$count Members',
+                  style: theme.textTheme.labelSmall,
+                );
+              },
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         Container(

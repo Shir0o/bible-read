@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockGroupService extends Mock implements GroupService {}
+
 class MockFriendService extends Mock implements FriendService {}
 
 void main() {
@@ -31,11 +32,13 @@ void main() {
     auth = MockFirebaseAuth(signedIn: true, mockUser: user);
     groupService = MockGroupService();
     friendService = MockFriendService();
-    
+
     // Default stubs
     when(() => groupService.firestore).thenReturn(firestore);
-    when(() => groupService.userInvites(any())).thenAnswer((_) => Stream.value([]));
-    when(() => groupService.groupsForUser(any())).thenAnswer((_) => Stream.value([]));
+    when(() => groupService.userInvites(any()))
+        .thenAnswer((_) => Stream.value([]));
+    when(() => groupService.groupsForUser(any()))
+        .thenAnswer((_) => Stream.value([]));
   });
 
   Widget createWidget(Widget child) {
@@ -53,9 +56,10 @@ void main() {
         isPublic: true,
       );
 
-      when(() => groupService.schedule(any())).thenAnswer((_) => Stream.value([]));
-      when(() => groupService.memberDailyCompletion(any(), date: any(named: 'date')))
+      when(() => groupService.schedule(any()))
           .thenAnswer((_) => Stream.value([]));
+      when(() => groupService.memberDailyCompletion(any(),
+          date: any(named: 'date'))).thenAnswer((_) => Stream.value([]));
       when(() => groupService.memberOverallCompletion(any()))
           .thenAnswer((_) => Stream.value([]));
 
@@ -76,9 +80,10 @@ void main() {
         isPublic: false,
       );
 
-      when(() => groupService.schedule(any())).thenAnswer((_) => Stream.value([]));
-      when(() => groupService.memberDailyCompletion(any(), date: any(named: 'date')))
+      when(() => groupService.schedule(any()))
           .thenAnswer((_) => Stream.value([]));
+      when(() => groupService.memberDailyCompletion(any(),
+          date: any(named: 'date'))).thenAnswer((_) => Stream.value([]));
       when(() => groupService.memberOverallCompletion(any()))
           .thenAnswer((_) => Stream.value([]));
 
@@ -106,8 +111,10 @@ void main() {
         ),
       ];
 
-      when(() => groupService.userInvites('user1')).thenAnswer((_) => Stream.value(invites));
-      when(() => groupService.groupsForUser('user1')).thenAnswer((_) => Stream.value([]));
+      when(() => groupService.userInvites('user1'))
+          .thenAnswer((_) => Stream.value(invites));
+      when(() => groupService.groupsForUser('user1'))
+          .thenAnswer((_) => Stream.value([]));
 
       await tester.pumpWidget(createWidget(GroupsPage(
         groupService: groupService,
@@ -132,7 +139,8 @@ void main() {
         Friend(uid: 'friend1', name: 'Friend One'),
       ];
 
-      when(() => friendService.friends('user1')).thenAnswer((_) => Stream.value(friends));
+      when(() => friendService.friends('user1'))
+          .thenAnswer((_) => Stream.value(friends));
 
       await tester.pumpWidget(createWidget(InviteMemberPage(
         group: group,

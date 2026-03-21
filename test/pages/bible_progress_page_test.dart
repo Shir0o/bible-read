@@ -35,7 +35,9 @@ void main() {
     expect(find.text('Rev'), findsOneWidget);
   });
 
-  testWidgets('BibleProgressPage shows completed status and handles optimistic toggle', (tester) async {
+  testWidgets(
+      'BibleProgressPage shows completed status and handles optimistic toggle',
+      (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
@@ -54,14 +56,14 @@ void main() {
     // 2. Tap to complete
     await tester.tap(find.text('Gen'));
     await tester.pumpAndSettle();
-    
+
     expect(find.text('Complete Genesis?'), findsOneWidget);
     await tester.tap(find.text('Confirm'));
-    
-    // 3. OPTIMISTIC CHECK: UI should update immediately after Confirm, 
+
+    // 3. OPTIMISTIC CHECK: UI should update immediately after Confirm,
     // even without waiting for Firestore or pumpAndSettle (though pump() is needed for next frame)
     await tester.pump();
-    
+
     expect(
       find.bySemanticsLabel('Genesis, Completed'),
       findsOneWidget,
@@ -77,7 +79,8 @@ void main() {
     expect(doc.exists, isTrue);
   });
 
-  testWidgets('BibleProgressPage scrolls to initialScrollToBook', (tester) async {
+  testWidgets('BibleProgressPage scrolls to initialScrollToBook',
+      (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
@@ -98,7 +101,8 @@ void main() {
     expect(find.text('Rev'), findsOneWidget);
   });
 
-  testWidgets('BibleProgressPage scrolls to last checked book if no initial book',
+  testWidgets(
+      'BibleProgressPage scrolls to last checked book if no initial book',
       (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1');

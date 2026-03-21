@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -10,7 +9,6 @@ import 'package:bible_read/services/bible_progress_service.dart';
 import '../helpers/path_provider_mock.dart';
 import '../helpers/pump_golden.dart';
 import '../helpers/mock_sqflite.dart';
-import 'package:mocktail/mocktail.dart';
 
 class _StubVibrationService extends VibrationService {
   @override
@@ -25,12 +23,13 @@ void main() {
   setupPathProviderMocks();
   setupSqfliteMock();
 
-  testWidgets('HomePage Streak Golden Test (Not Read Today - Streak Absent)', (tester) async {
+  testWidgets('HomePage Streak Golden Test (Not Read Today - Streak Absent)',
+      (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
     final fixedNow = DateTime(2024, 7, 30);
-    
+
     // Seed summary data with a streak
     await firestore
         .collection('users')
@@ -75,12 +74,13 @@ void main() {
     );
   });
 
-  testWidgets('HomePage Streak Golden Test (Read Today - Streak Visible)', (tester) async {
+  testWidgets('HomePage Streak Golden Test (Read Today - Streak Visible)',
+      (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
     final fixedNow = DateTime(2024, 7, 30);
-    
+
     // Seed summary data with a streak
     await firestore
         .collection('users')
@@ -89,7 +89,11 @@ void main() {
         .doc('data')
         .set({
       'streak': 12,
-      'pastWeekReadDates': ['2024-07-28', '2024-07-29', '2024-07-30'], // Sun, Mon, Tue
+      'pastWeekReadDates': [
+        '2024-07-28',
+        '2024-07-29',
+        '2024-07-30'
+      ], // Sun, Mon, Tue
       'graceCreditsAvailable': 0,
     });
 

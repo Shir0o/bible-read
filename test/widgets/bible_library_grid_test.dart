@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('BibleLibraryGrid displays progress correctly from initial data', (tester) async {
+  testWidgets('BibleLibraryGrid displays progress correctly from initial data',
+      (tester) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
@@ -33,15 +34,15 @@ void main() {
 
     // Verify Title
     expect(find.text('Bible Library'), findsOneWidget);
-    
+
     // Verify Progress Summary (3 books total)
     expect(find.text('3'), findsOneWidget);
     expect(find.text('of 66 Books'), findsOneWidget);
-    
+
     // OT: 2 books (Genesis, Exodus), NT: 1 book (Matthew)
     expect(find.text('2/39'), findsOneWidget);
     expect(find.text('1/27'), findsOneWidget);
-    
+
     // Verify See All button
     expect(find.text('See All'), findsOneWidget);
   });

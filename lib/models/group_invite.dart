@@ -35,7 +35,8 @@ class GroupInvite {
   });
 
   /// Reads a [GroupInvite] from a Firestore document.
-  factory GroupInvite.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory GroupInvite.fromFirestore(
+      DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
     return GroupInvite(
       id: doc.id,

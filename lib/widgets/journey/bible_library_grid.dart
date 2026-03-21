@@ -41,7 +41,8 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
     if (user != null) {
       _completedStream = widget.initialCompletedByBook != null
           ? Stream.value(widget.initialCompletedByBook!)
-          : Stream.fromFuture(_bibleProgressService.completedChaptersByBook(user.uid));
+          : Stream.fromFuture(
+              _bibleProgressService.completedChaptersByBook(user.uid));
     } else {
       _completedStream = Stream.value({});
     }
@@ -121,7 +122,8 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                 final totalBooks = ReferenceParser.allBooks.length;
                 final overallProgress =
                     totalBooks > 0 ? completedBooksCount / totalBooks : 0.0;
-                final overallPercentText = '${(overallProgress * 100).toInt()}%';
+                final overallPercentText =
+                    '${(overallProgress * 100).toInt()}%';
 
                 return Container(
                   padding: const EdgeInsets.all(24),
@@ -152,7 +154,8 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
-                                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.baseline,
                                   textBaseline: TextBaseline.alphabetic,
                                   children: [
                                     Text(

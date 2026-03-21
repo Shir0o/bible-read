@@ -13,12 +13,14 @@ void main() {
     service = UserPreferencesService(firestore: firestore);
   });
 
-  test('fetchPreferences returns default values if no document exists', () async {
+  test('fetchPreferences returns default values if no document exists',
+      () async {
     final prefs = await service.fetchPreferences(uid);
     expect(prefs.autoMarkPlanRead, isFalse);
   });
 
-  test('updatePreferences creates document and fetchPreferences returns it', () async {
+  test('updatePreferences creates document and fetchPreferences returns it',
+      () async {
     const newPrefs = UserPreferences(
       autoMarkPlanRead: true,
     );

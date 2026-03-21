@@ -1,4 +1,3 @@
-
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -50,7 +49,10 @@ void main() {
         .doc('data')
         .set({
       'streak': 5,
-      'pastWeekReadDates': ['2024-07-28', '2024-07-29'], // Sun, Mon (this calendar week)
+      'pastWeekReadDates': [
+        '2024-07-28',
+        '2024-07-29'
+      ], // Sun, Mon (this calendar week)
       'graceCreditsAvailable': 0,
     });
 
@@ -84,7 +86,7 @@ void main() {
     final readButton = find.text('Yes, I read');
     expect(readButton, findsOneWidget);
     await tester.tap(readButton);
-    
+
     // Wait for optimistic update and backend sync
     await tester.pump();
     await tester.pumpAndSettle();
@@ -92,9 +94,10 @@ void main() {
     // 5. Verify streak and week bar ARE NOW VISIBLE and updated
     expect(find.textContaining('6', findRichText: true), findsOneWidget);
     expect(find.text('Reading this week'), findsOneWidget);
-    
+
     // 6. Verify weekly progress bar updated to 3/7 (Sun, Mon, Tue)
-    final progressIndicatorAfter = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
+    final progressIndicatorAfter = tester
+        .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
     expect(progressIndicatorAfter.value, closeTo(3 / 7, 0.01));
 
     // 7. Verify "Thank you" message

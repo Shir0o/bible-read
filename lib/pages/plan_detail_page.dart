@@ -102,7 +102,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                       firstDate: DateTime(currentYear - 1),
                       lastDate: DateTime(currentYear + 2),
                     );
-                    if (context.mounted) Navigator.pop(context, customDate);
+                    if (context.mounted && customDate != null) {
+                      Navigator.pop(context, customDate);
+                    }
                   },
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -122,8 +124,18 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return '${months[date.month - 1]} ${date.day}';
   }
@@ -164,8 +176,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         stream: _progressStream,
         initialData: widget.initialProgress,
         builder: (context, snapshot) {
-          final isLoading = snapshot.connectionState == ConnectionState.waiting &&
-              snapshot.data == null;
+          final isLoading =
+              snapshot.connectionState == ConnectionState.waiting &&
+                  snapshot.data == null;
           final streamProgress = snapshot.data;
           final isStarted = streamProgress != null;
 
@@ -284,8 +297,9 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
   Future<void> _scrollToFirstUnchecked() async {
     if (_hasScrolledToUnchecked) return;
 
-    final completedDays =
-        widget.optimisticCompletedDays ?? widget.progress?.completedDays.toSet() ?? {};
+    final completedDays = widget.optimisticCompletedDays ??
+        widget.progress?.completedDays.toSet() ??
+        {};
 
     int? targetDay;
     for (final day in widget.plan.schedule) {
@@ -300,7 +314,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
       final context = key?.currentContext;
       if (context != null) {
         _hasScrolledToUnchecked = true;
-        
+
         // 1. Initial jump to a position slightly above the target
         // We use alignment: 0.3 to put it a bit lower than the top initially
         Scrollable.ensureVisible(
@@ -372,7 +386,6 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
               ),
             ),
           ),
-
           if (past.isNotEmpty) ...[
             _buildSectionHeader(context, 'Past Readings'),
             ...past.map((day) => _buildScheduleItem(
@@ -524,8 +537,8 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                       Text(
                         widget.formatDayOfWeek(date),
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color:
-                              colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.6),
                         ),
                       ),
                     ],

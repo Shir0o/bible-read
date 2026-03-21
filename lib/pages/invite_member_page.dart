@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/group.dart';
-import '../models/group_member_progress.dart';
 import '../services/friend_service.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';

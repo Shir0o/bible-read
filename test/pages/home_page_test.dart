@@ -29,8 +29,7 @@ class _StubVibrationService extends VibrationService {
 }
 
 class _StubBibleProgressService extends BibleProgressService {
-  _StubBibleProgressService()
-      : super(firestore: FakeFirebaseFirestore());
+  _StubBibleProgressService() : super(firestore: FakeFirebaseFirestore());
 }
 
 void main() {
@@ -60,7 +59,6 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-
           bibleProgressService: _StubBibleProgressService(),
           dateProvider: () => DateTime.now(),
         ),
@@ -101,7 +99,6 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-
           bibleProgressService: _StubBibleProgressService(),
           dateProvider: () => DateTime.now(),
         ),
@@ -132,7 +129,6 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: vibrationService,
-
           bibleProgressService: _StubBibleProgressService(),
           dateProvider: () => DateTime.now(),
         ),
@@ -205,7 +201,6 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-
           bibleProgressService: _StubBibleProgressService(),
           dateProvider: () => DateTime.now(),
         ),
@@ -238,7 +233,6 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-
           bibleProgressService: _StubBibleProgressService(),
           readingStatusService: slowReadingService,
           dateProvider: () => DateTime.now(),
@@ -305,7 +299,6 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-
           bibleProgressService: _StubBibleProgressService(),
           readingPlanService: planService,
           userPreferencesService: prefsService,
@@ -355,7 +348,6 @@ void main() {
           firestore: firestore,
           auth: auth,
           vibrationService: _StubVibrationService(),
-
           bibleProgressService: _StubBibleProgressService(),
           readingPlanService: planService,
           userPreferencesService: prefsService,
@@ -391,7 +383,7 @@ class MockReadingStatusService extends ReadingStatusService {
       : super(firestore: FakeFirebaseFirestore(), auth: MockFirebaseAuth());
 
   @override
-  Future<ReadingStatus> fetchStatus() async {
+  Future<ReadingStatus> fetchStatus({bool forceRefresh = false}) async {
     // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 1000));
     return ReadingStatus(

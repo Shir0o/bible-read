@@ -17,8 +17,7 @@ void main() {
       'Matthew': Set<int>.from(List.generate(28, (i) => i + 1)),
     };
 
-    await pumpGoldenWidget(
-      tester,
+    await tester.pumpGolden(
       Padding(
         padding: const EdgeInsets.all(16.0),
         child: BibleLibraryGrid(
