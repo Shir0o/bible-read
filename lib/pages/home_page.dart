@@ -521,47 +521,56 @@ class _HomePageState extends State<HomePage>
   }
 
   @override
-  Widget build(BuildContext context) {
+    Widget build(BuildContext context) {
     super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            AppHeader(
-              auth: widget.auth,
-              firestore: widget.firestore,
-              vibrationService: widget.vibrationService,
-              dateProvider: widget.dateProvider,
-              showProfileIcon: false,
-              showNotificationBell: false,
-              showGreeting: false,
-            ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _loadInitialData,
-                child: SkeletonLoader(
-                  loading: _initialLoading,
-                  minTime: const Duration(milliseconds: 1000),
-                  skeleton: const HomePageSkeleton(),
-                  child: CustomScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: _buildMinimalContent(context),
-                      ),
-                    ],
-                  ),
+      body: Stack(
+        children: [
+          // Background/Main Content
+          Positioned.fill(
+            child: RefreshIndicator(
+              onRefresh: _loadInitialData,
+              child: SkeletonLoader(
+                loading: _initialLoading,
+                minTime: const Duration(milliseconds: 1000),
+                skeleton: const HomePageSkeleton(),
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _buildMinimalContent(context),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+          // AppHeader overlaid at top
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: AppHeader(
+                auth: widget.auth,
+                firestore: widget.firestore,
+                vibrationService: widget.vibrationService,
+                dateProvider: widget.dateProvider,
+                showProfileIcon: false,
+                showNotificationBell: false,
+                showGreeting: false,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
+
 
   /// Groups sequential chapters (e.g., "Genesis 1", "Genesis 2" -> "Genesis 1–2").
   String _formatReadings(List<String> readings) {
@@ -640,218 +649,253 @@ class _HomePageState extends State<HomePage>
         children: [
           // Centered main content: Reading info or "Thank you"
           Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_readToday) ...[
-                  Icon(
-                    Icons.check_circle_outline_rounded,
-                    size: 80,
-                    color: colorScheme.primary.withValues(alpha: 0.8),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 500),
+              switchInCurve: Curves.easeOutBack,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.9, end: 1.0).animate(
+                      CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutBack,
+                      ),
+                    ),
+                    child: child,
                   ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Thank you for being here.',
-                    style: AppTextStyles.subtitle(context).copyWith(
-                      fontSize: 24,
-                      color: colorScheme.onSurface.withValues(alpha: 0.9),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ] else ...[
-                  if (_scheduledDay != null) ...[
-                    Text(
-                      'TODAY\'S READING',
-                      style: AppTextStyles.caption(context).copyWith(
-                        color:
-                            colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    Text(
-                      _formatReadings(_scheduledDay!.readings),
-                      style: AppTextStyles.title(context).copyWith(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w400,
-                        height: 1.3,
-                        color: colorScheme.onSurface.withValues(alpha: 0.9),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 56),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 64,
-                      child: Semantics(
-                        button: true,
-                        label: "Mark today's reading as complete",
-                        child: Tooltip(
-                          message: 'Mark as read',
-                          child: FilledButton(
-                            onPressed:
-                                _toggleLoading ? null : _toggleReadStatus,
-                            child: _toggleLoading
-                                ? SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      color: colorScheme.onPrimary,
-                                    ),
-                                  )
-                                : Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        'I have read',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleLarge
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                          ),
+                );
+              },
+              child: _readToday
+                  ? Column(
+                      key: const ValueKey('read_state'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline_rounded,
+                          size: 80,
+                          color: colorScheme.primary.withValues(alpha: 0.8),
                         ),
-                      ),
-                    ),
-                  ] else ...[
-                    Text(
-                      'Daily Reading',
-                      style: AppTextStyles.caption(context).copyWith(
-                        color:
-                            colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'How did your reading go today?',
-                      style: AppTextStyles.title(context).copyWith(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w400,
-                        color: colorScheme.onSurface.withValues(alpha: 0.9),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 48),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 64,
-                      child: Semantics(
-                        button: true,
-                        label: 'Mark daily reading as complete',
-                        child: Tooltip(
-                          message: 'Mark as read',
-                          child: FilledButton.tonal(
-                            onPressed:
-                                _toggleLoading ? null : _toggleReadStatus,
-                            style: FilledButton.styleFrom(
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                              textStyle: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            child: _toggleLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                    ),
-                                  )
-                                : const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text('Yes, I read'),
-                                    ],
-                                  ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Thank you for being here.',
+                          style: AppTextStyles.subtitle(context).copyWith(
+                            fontSize: 24,
+                            color: colorScheme.onSurface.withValues(alpha: 0.9),
                           ),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                    ),
-                  ],
-                ],
-              ],
-            ),
-          ),
-          // Bottom section: Progress (only if readToday)
-          if (_readToday)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 32.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Weekly Progress Section
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 240),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                      ],
+                    )
+                  : Column(
+                      key: const ValueKey('unread_state'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_scheduledDay != null) ...[
                           Text(
-                            'Reading this week',
-                            style: AppTextStyles.bodySmall(context).copyWith(
+                            'TODAY\'S READING',
+                            style: AppTextStyles.caption(context).copyWith(
                               color: colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.6),
+                                  .withValues(alpha: 0.7),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Container(
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: colorScheme.surfaceContainerHighest
-                                  .withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color:
-                                    colorScheme.outline.withValues(alpha: 0.1),
+                          const SizedBox(height: 32),
+                          Text(
+                            _formatReadings(_scheduledDay!.readings),
+                            style: AppTextStyles.title(context).copyWith(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w400,
+                              height: 1.3,
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.9),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 56),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 64,
+                            child: Semantics(
+                              button: true,
+                              label: "Mark today's reading as complete",
+                              child: Tooltip(
+                                message: 'Mark as read',
+                                child: FilledButton(
+                                  onPressed:
+                                      _toggleLoading ? null : _toggleReadStatus,
+                                  child: _toggleLoading
+                                      ? SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: colorScheme.onPrimary,
+                                          ),
+                                        )
+                                      : Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'I have read',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleLarge
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.black,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                ),
                               ),
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: LinearProgressIndicator(
-                                value: _pastWeek.isEmpty
-                                    ? 0.0
-                                    : _pastWeek.where((d) => d).length / 7.0,
-                                minHeight: 10,
-                                backgroundColor: Colors.transparent,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  colorScheme.primary.withValues(alpha: 0.6),
+                          ),
+                        ] else ...[
+                          Text(
+                            'Daily Reading',
+                            style: AppTextStyles.caption(context).copyWith(
+                              color: colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.7),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'How did your reading go today?',
+                            style: AppTextStyles.title(context).copyWith(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w400,
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.9),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 48),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 64,
+                            child: Semantics(
+                              button: true,
+                              label: 'Mark daily reading as complete',
+                              child: Tooltip(
+                                message: 'Mark as read',
+                                child: FilledButton.tonal(
+                                  onPressed:
+                                      _toggleLoading ? null : _toggleReadStatus,
+                                  style: FilledButton.styleFrom(
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(24),
+                                    ),
+                                    textStyle: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  child: _toggleLoading
+                                      ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                          ),
+                                        )
+                                      : const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text('Yes, I read'),
+                                          ],
+                                        ),
                                 ),
                               ),
                             ),
                           ),
                         ],
-                      ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    RichText(
-                      text: TextSpan(
-                        style: AppTextStyles.bodySmall(context).copyWith(
-                          color: colorScheme.outline,
-                        ),
+            ),
+          ),
+          // Bottom section: Progress (only if readToday)
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 800),
+            child: _readToday
+                ? Align(
+                    key: const ValueKey('bottom_progress'),
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 32.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          TextSpan(
-                            text: '$_currentStreak',
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          // Weekly Progress Section
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 240),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Reading this week',
+                                  style: AppTextStyles.bodySmall(context)
+                                      .copyWith(
+                                    color: colorScheme.onSurfaceVariant
+                                        .withValues(alpha: 0.6),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceContainerHighest
+                                        .withValues(alpha: 0.3),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: colorScheme.outline
+                                          .withValues(alpha: 0.1),
+                                    ),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: LinearProgressIndicator(
+                                      value: _pastWeek.isEmpty
+                                          ? 0.0
+                                          : _pastWeek.where((d) => d).length /
+                                              7.0,
+                                      minHeight: 10,
+                                      backgroundColor: Colors.transparent,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        colorScheme.primary
+                                            .withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          const TextSpan(text: ' days of reading'),
+                          const SizedBox(height: 24),
+                          RichText(
+                            text: TextSpan(
+                              style: AppTextStyles.bodySmall(context).copyWith(
+                                color: colorScheme.outline,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: '$_currentStreak',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                const TextSpan(text: ' days of reading'),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  )
+                : const SizedBox.shrink(key: ValueKey('bottom_empty')),
+          ),
         ],
       ),
     );
