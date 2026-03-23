@@ -102,7 +102,8 @@ void main() {
     Future<void> select(String label, int expectedIndex) async {
       final previousCalls = vibrationService.calls;
       lastIndex = null;
-      await tester.tap(find.text(label).first);
+      final finder = find.text(label);
+      await tester.tap(finder.first);
       await tester.pumpAndSettle();
       expect(lastIndex, expectedIndex);
       expect(vibrationService.calls, previousCalls + 1);
@@ -116,7 +117,7 @@ void main() {
     await select('Friends', 4);
 
     await openMenu();
-    await select('Achievements', 6);
+    await select('Challenges', 5);
 
     await openMenu();
     await select('Sign Out', 10);
