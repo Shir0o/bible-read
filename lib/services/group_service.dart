@@ -677,47 +677,76 @@ class GroupService {
       final docId = _dateId(date);
       final groupRef =
           firestore.collection(GroupCollections.groups).doc(groupId);
+
+      final List<void Function(WriteBatch)> operations = [];
+
       // Delete schedule doc
-      await groupRef.collection(GroupCollections.schedule).doc(docId).delete();
+      operations.add((batch) => batch.delete(
+          groupRef.collection(GroupCollections.schedule).doc(docId)));
 
       // Cleanup any progress entries for this date and update summaries.
       final dateRef = groupRef.collection('progress').doc(docId);
       final entries = await dateRef.collection('entries').get();
 
-      // ⚡ Bolt: Use Future.wait to parallelize deleting progress entries
-      // instead of deleting them sequentially.
-      await Future.wait(entries.docs.map((entry) async {
+      // Fetch all items subcollections in parallel.
+      final itemsSnapshots = await Future.wait(
+        entries.docs.map((e) async {
+          try {
+            return await e.reference.collection('items').get();
+          } catch (e, st) {
+            await _safeLog(e, st);
+            return null;
+          }
+        }),
+      );
+
+      for (var i = 0; i < entries.docs.length; i++) {
+        final entry = entries.docs[i];
+        final itemsSnap = itemsSnapshots[i];
+        if (itemsSnap == null) continue;
+
         final uid = entry.id;
         final cnt = (entry.data()['count'] as num?)?.toInt() ?? 0;
+
+        if (cnt > 0) {
+          final summaryRef = groupRef
+              .collection('progressSummary')
+              .doc('data')
+              .collection('entries')
+              .doc(uid);
+          operations.add((batch) => batch.set(
+                summaryRef,
+                {
+                  'completed': FieldValue.increment(-cnt),
+                  'uid': uid,
+                },
+                SetOptions(merge: true),
+              ));
+        }
+
+        operations.add((batch) => batch.delete(entry.reference));
+        for (final itemDoc in itemsSnap.docs) {
+          operations.add((batch) => batch.delete(itemDoc.reference));
+        }
+      }
+
+      // Also delete the progress date doc itself
+      operations.add((batch) => batch.delete(dateRef));
+
+      // ⚡ Bolt: Use WriteBatch to group deletions and summary updates into
+      // single network roundtrips (up to 500 operations each).
+      for (var i = 0; i < operations.length; i += 500) {
+        final batch = firestore.batch();
+        final end = (i + 500 < operations.length) ? i + 500 : operations.length;
+        for (var j = i; j < end; j++) {
+          operations[j](batch);
+        }
         try {
-          if (cnt > 0) {
-            // Decrement cached total for this member.
-            await groupRef
-                .collection('progressSummary')
-                .doc('data')
-                .collection('entries')
-                .doc(uid)
-                .set({
-              'completed': FieldValue.increment(-cnt),
-              'uid': uid,
-            }, SetOptions(merge: true));
-          }
-          // Delete items and entry
-          final items = await entry.reference.collection('items').get();
-          await Future.wait(items.docs.map((it) async {
-            try {
-              await it.reference.delete();
-            } catch (_) {}
-          }));
-          await entry.reference.delete();
+          await batch.commit();
         } catch (e, st) {
           await _safeLog(e, st);
         }
-      }));
-      // Delete the progress date doc itself
-      try {
-        await dateRef.delete();
-      } catch (_) {}
+      }
     } catch (e, st) {
       await _safeLog(e, st);
       rethrow;
