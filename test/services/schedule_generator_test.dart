@@ -77,7 +77,7 @@ void main() {
       // Jan 3 is Tuesday (2).
       // Select Sunday and Tuesday only.
       final schedule = ScheduleGenerator.generateSchedule(
-        books: ['3 John'], // 1 chapter
+        books: ['Haggai'], // 2 chapters
         startDate: DateTime(2023, 1, 1), // Sun (7)
         endDate: DateTime(2023, 1, 3), // Tue (2)
         selectedWeekdays: [7, 2],
