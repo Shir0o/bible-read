@@ -8,7 +8,7 @@ void main() {
         books: [],
         startDate: DateTime(2023, 1, 1),
         endDate: DateTime(2023, 1, 31),
-        isDaily: true,
+        selectedWeekdays: [1, 2, 3, 4, 5, 6, 7],
       );
       expect(schedule, isEmpty);
     });
@@ -19,7 +19,17 @@ void main() {
         books: ['Genesis'],
         startDate: DateTime(2023, 1, 2),
         endDate: DateTime(2023, 1, 1),
-        isDaily: true,
+        selectedWeekdays: [1, 2, 3, 4, 5, 6, 7],
+      );
+      expect(schedule, isEmpty);
+    });
+
+    test('generateSchedule returns empty list for no selected weekdays', () {
+      final schedule = ScheduleGenerator.generateSchedule(
+        books: ['Genesis'],
+        startDate: DateTime(2023, 1, 1),
+        endDate: DateTime(2023, 1, 5),
+        selectedWeekdays: [],
       );
       expect(schedule, isEmpty);
     });
@@ -32,7 +42,7 @@ void main() {
         books: ['Genesis'],
         startDate: DateTime(2023, 1, 1),
         endDate: DateTime(2023, 1, 5),
-        isDaily: true,
+        selectedWeekdays: [1, 2, 3, 4, 5, 6, 7],
       );
 
       expect(schedule.length, 5);
@@ -45,20 +55,37 @@ void main() {
       expect(schedule.last.chapters.last, 'Genesis 50');
     });
 
-    test('generateSchedule respects weekdays only', () {
-      // Jan 1 2023 is a Sunday.
-      // Jan 2 is Monday.
-      // If we run Jan 1 to Jan 2, weekdays only, we should only have schedule for Jan 2.
+    test('generateSchedule respects selected weekdays only', () {
+      // Jan 1 2023 is a Sunday (7).
+      // Jan 2 is Monday (1).
+      // If we run Jan 1 to Jan 2, Mon-Fri only, we should only have schedule for Jan 2.
       final schedule = ScheduleGenerator.generateSchedule(
         books: ['Jude'], // 1 chapter
-        startDate: DateTime(2023, 1, 1), // Sun
-        endDate: DateTime(2023, 1, 2), // Mon
-        isDaily: false,
+        startDate: DateTime(2023, 1, 1), // Sun (7)
+        endDate: DateTime(2023, 1, 2), // Mon (1)
+        selectedWeekdays: [1, 2, 3, 4, 5],
       );
 
       expect(schedule.length, 1);
       expect(schedule.first.date.weekday, 1); // Monday
       expect(schedule.first.chapters, ['Jude 1']);
+    });
+
+    test('generateSchedule respects custom weekday selection', () {
+      // Jan 1 2023 is a Sunday (7).
+      // Jan 2 is Monday (1).
+      // Jan 3 is Tuesday (2).
+      // Select Sunday and Tuesday only.
+      final schedule = ScheduleGenerator.generateSchedule(
+        books: ['3 John'], // 1 chapter
+        startDate: DateTime(2023, 1, 1), // Sun (7)
+        endDate: DateTime(2023, 1, 3), // Tue (2)
+        selectedWeekdays: [7, 2],
+      );
+
+      expect(schedule.length, 2);
+      expect(schedule[0].date.weekday, 7); // Sunday
+      expect(schedule[1].date.weekday, 2); // Tuesday
     });
   });
 }

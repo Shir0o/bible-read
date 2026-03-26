@@ -44,7 +44,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
   // Timeline State
   late DateTime _startDate;
   DateTime? _endDate;
-  bool _isDaily = true;
+  List<int> _selectedWeekdays = [1, 2, 3, 4, 5, 6, 7];
 
   // Settings State
   late bool _isPublic;
@@ -82,19 +82,15 @@ class _EditGroupPageState extends State<EditGroupPage> {
         }
         _selectedBooks.addAll(books);
 
-        bool hasWeekend = false;
+        final days = <int>{};
         for (final s in schedule) {
-          if (s.date.weekday == DateTime.saturday ||
-              s.date.weekday == DateTime.sunday) {
-            hasWeekend = true;
-            break;
-          }
+          days.add(s.date.weekday);
         }
-        _isDaily = hasWeekend;
+        _selectedWeekdays = days.toList()..sort();
       } else {
         _startDate = DateTime.now();
 
-        _isDaily = true;
+        _selectedWeekdays = [1, 2, 3, 4, 5, 6, 7];
       }
 
       _isPublic = widget.group.isPublic;
@@ -143,6 +139,19 @@ class _EditGroupPageState extends State<EditGroupPage> {
     });
   }
 
+  void _toggleDay(int day, bool selected) {
+    setState(() {
+      if (selected) {
+        if (!_selectedWeekdays.contains(day)) {
+          _selectedWeekdays.add(day);
+          _selectedWeekdays.sort();
+        }
+      } else {
+        _selectedWeekdays.remove(day);
+      }
+    });
+  }
+
   Future<void> _selectEndDate() async {
     final firstDate = _startDate;
     final picked = await showDatePicker(
@@ -180,7 +189,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
         books: _selectedBooks,
         startDate: _startDate,
         endDate: _endDate!,
-        isDaily: _isDaily,
+        selectedWeekdays: _selectedWeekdays,
       );
 
       final currentSchedule =
@@ -779,123 +788,88 @@ class _EditGroupPageState extends State<EditGroupPage> {
         ),
         const SizedBox(height: 12),
 
-        // Frequency Cards
-        _buildFrequencyCard(
-          colorScheme: colorScheme,
-          textTheme: textTheme,
-          title: 'Daily',
-          subtitle: 'Every single day',
-          icon: Icons.calendar_view_day,
-          isSelected: _isDaily,
-          onTap: () => setState(() => _isDaily = true),
+        // Quick Presets
+        Row(
+          children: [
+            ActionChip(
+              label: const Text('Daily'),
+              onPressed: () {
+                widget.vibrationService.lightImpact();
+                setState(() {
+                  _selectedWeekdays = [1, 2, 3, 4, 5, 6, 7];
+                });
+              },
+            ),
+            const SizedBox(width: 8),
+            ActionChip(
+              label: const Text('Weekdays'),
+              onPressed: () {
+                widget.vibrationService.lightImpact();
+                setState(() {
+                  _selectedWeekdays = [1, 2, 3, 4, 5];
+                });
+              },
+            ),
+          ],
         ),
         const SizedBox(height: 12),
-        _buildFrequencyCard(
-          colorScheme: colorScheme,
-          textTheme: textTheme,
-          title: 'Weekdays',
-          subtitle: 'Mon - Fri only',
-          icon: Icons.date_range,
-          isSelected: !_isDaily,
-          onTap: () => setState(() => _isDaily = false),
+
+        // Individual Day Selection
+        Wrap(
+          spacing: 4,
+          children: [
+            _DayChip(
+              label: 'M',
+              dayValue: 1,
+              isSelected: _selectedWeekdays.contains(1),
+              onToggle: (selected) => _toggleDay(1, selected),
+              vibrationService: widget.vibrationService,
+            ),
+            _DayChip(
+              label: 'T',
+              dayValue: 2,
+              isSelected: _selectedWeekdays.contains(2),
+              onToggle: (selected) => _toggleDay(2, selected),
+              vibrationService: widget.vibrationService,
+            ),
+            _DayChip(
+              label: 'W',
+              dayValue: 3,
+              isSelected: _selectedWeekdays.contains(3),
+              onToggle: (selected) => _toggleDay(3, selected),
+              vibrationService: widget.vibrationService,
+            ),
+            _DayChip(
+              label: 'T',
+              dayValue: 4,
+              isSelected: _selectedWeekdays.contains(4),
+              onToggle: (selected) => _toggleDay(4, selected),
+              vibrationService: widget.vibrationService,
+            ),
+            _DayChip(
+              label: 'F',
+              dayValue: 5,
+              isSelected: _selectedWeekdays.contains(5),
+              onToggle: (selected) => _toggleDay(5, selected),
+              vibrationService: widget.vibrationService,
+            ),
+            _DayChip(
+              label: 'S',
+              dayValue: 6,
+              isSelected: _selectedWeekdays.contains(6),
+              onToggle: (selected) => _toggleDay(6, selected),
+              vibrationService: widget.vibrationService,
+            ),
+            _DayChip(
+              label: 'S',
+              dayValue: 7,
+              isSelected: _selectedWeekdays.contains(7),
+              onToggle: (selected) => _toggleDay(7, selected),
+              vibrationService: widget.vibrationService,
+            ),
+          ],
         ),
       ],
-    );
-  }
-
-  Widget _buildFrequencyCard({
-    required ColorScheme colorScheme,
-    required TextTheme textTheme,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final borderColor = isSelected
-        ? colorScheme.primary
-        : colorScheme.outlineVariant.withValues(alpha: 0.5);
-    final backgroundColor = isSelected
-        ? colorScheme.primaryContainer.withValues(alpha: 0.2)
-        : null; // Adjusted opacity
-    final iconColor =
-        isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant;
-
-    return Semantics(
-      checked: isSelected,
-      inMutuallyExclusiveGroup: true,
-      button: true,
-      label: '$title, $subtitle',
-      excludeSemantics: true,
-      child: InkWell(
-        onTap: () {
-          widget.vibrationService.lightImpact();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            border: Border.all(color: borderColor),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              // Radio Indicator
-              Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isSelected
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
-                    width: 2,
-                  ),
-                  color: isSelected ? colorScheme.primary : null,
-                ),
-                child: isSelected
-                    ? Center(
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: colorScheme.onPrimary,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 16),
-              Icon(icon, color: iconColor, size: 24),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -1180,6 +1154,45 @@ class _EditGroupPageState extends State<EditGroupPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DayChip extends StatelessWidget {
+  final String label;
+  final int dayValue;
+  final bool isSelected;
+  final Function(bool) onToggle;
+  final VibrationService vibrationService;
+
+  const _DayChip({
+    required this.label,
+    required this.dayValue,
+    required this.isSelected,
+    required this.onToggle,
+    required this.vibrationService,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        vibrationService.lightImpact();
+        onToggle(selected);
+      },
+      selectedColor: colorScheme.primary,
+      labelStyle: TextStyle(
+        color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      shape: const CircleBorder(),
     );
   }
 }
