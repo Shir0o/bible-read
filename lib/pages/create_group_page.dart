@@ -32,7 +32,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   final List<String> _selectedBooks = [];
   DateTime _startDate = DateTime.now();
   DateTime? _endDate;
-  bool _isDaily = true; // true = Daily, false = Weekdays
+  List<int> _selectedWeekdays = [1, 2, 3, 4, 5, 6, 7]; // Mon-Sun
   final TextEditingController _searchController = TextEditingController();
   bool _isCreating = false;
 
@@ -51,12 +51,12 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   }
 
   double get _pace {
-    if (_endDate == null || _totalChapters == 0) return 0;
+    if (_endDate == null || _totalChapters == 0 || _selectedWeekdays.isEmpty) return 0;
     int days = 0;
     DateTime current = _startDate;
     // Simple day counting based on frequency
     while (!current.isAfter(_endDate!)) {
-      if (_isDaily || (current.weekday >= 1 && current.weekday <= 5)) {
+      if (_selectedWeekdays.contains(current.weekday)) {
         days++;
       }
       current = current.add(const Duration(days: 1));
@@ -77,6 +77,19 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   void _removeBook(String book) {
     setState(() {
       _selectedBooks.remove(book);
+    });
+  }
+
+  void _toggleDay(int day, bool selected) {
+    setState(() {
+      if (selected) {
+        if (!_selectedWeekdays.contains(day)) {
+          _selectedWeekdays.add(day);
+          _selectedWeekdays.sort();
+        }
+      } else {
+        _selectedWeekdays.remove(day);
+      }
     });
   }
 
@@ -147,7 +160,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
         books: _selectedBooks,
         startDate: _startDate,
         endDate: _endDate!,
-        isDaily: _isDaily,
+        selectedWeekdays: _selectedWeekdays,
       );
 
       // 3. Upload Schedule
@@ -440,75 +453,85 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                           ?.copyWith(color: colorScheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 8),
-                    // Frequency Options
-                    Container(
-                      decoration: BoxDecoration(
-                        border: _isDaily
-                            ? Border.all(color: colorScheme.primary)
-                            : Border.all(
-                                color:
-                                    colorScheme.outline.withValues(alpha: 0.3)),
-                        borderRadius: BorderRadius.circular(12),
-                        color: _isDaily
-                            ? colorScheme.primaryContainer
-                                .withValues(alpha: 0.4)
-                            : null,
-                      ),
-                      child: RadioListTile<bool>(
-                        value: true,
-                        // ignore: deprecated_member_use
-                        groupValue: _isDaily,
-                        // ignore: deprecated_member_use
-                        onChanged: (val) {
-                          unawaited(widget.vibrationService.lightImpact());
-                          setState(() => _isDaily = val!);
-                        },
-                        title: const Text('Daily'),
-                        subtitle: const Text('Every single day'),
-                        secondary: Icon(Icons.calendar_view_day,
-                            color: _isDaily
-                                ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 4),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
+                    // Quick Presets
+                    Row(
+                      children: [
+                        ActionChip(
+                          label: const Text('Daily'),
+                          onPressed: () {
+                            unawaited(widget.vibrationService.lightImpact());
+                            setState(() {
+                              _selectedWeekdays = [1, 2, 3, 4, 5, 6, 7];
+                            });
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ActionChip(
+                          label: const Text('Weekdays'),
+                          onPressed: () {
+                            unawaited(widget.vibrationService.lightImpact());
+                            setState(() {
+                              _selectedWeekdays = [1, 2, 3, 4, 5];
+                            });
+                          },
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: !_isDaily
-                            ? Border.all(color: colorScheme.primary)
-                            : Border.all(
-                                color:
-                                    colorScheme.outline.withValues(alpha: 0.3)),
-                        borderRadius: BorderRadius.circular(12),
-                        color: !_isDaily
-                            ? colorScheme.primaryContainer
-                                .withValues(alpha: 0.4)
-                            : null,
-                      ),
-                      child: RadioListTile<bool>(
-                        value: false,
-                        // ignore: deprecated_member_use
-                        groupValue: _isDaily,
-                        // ignore: deprecated_member_use
-                        onChanged: (val) {
-                          unawaited(widget.vibrationService.lightImpact());
-                          setState(() => _isDaily = val!);
-                        },
-                        title: const Text('Weekdays'),
-                        subtitle: const Text('Mon - Fri only'),
-                        secondary: Icon(Icons.date_range,
-                            color: !_isDaily
-                                ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 4),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
+                    // Individual Day Selection
+                    Wrap(
+                      spacing: 4,
+                      children: [
+                        _DayChip(
+                          label: 'M',
+                          dayValue: 1,
+                          isSelected: _selectedWeekdays.contains(1),
+                          onToggle: (selected) => _toggleDay(1, selected),
+                          vibrationService: widget.vibrationService,
+                        ),
+                        _DayChip(
+                          label: 'T',
+                          dayValue: 2,
+                          isSelected: _selectedWeekdays.contains(2),
+                          onToggle: (selected) => _toggleDay(2, selected),
+                          vibrationService: widget.vibrationService,
+                        ),
+                        _DayChip(
+                          label: 'W',
+                          dayValue: 3,
+                          isSelected: _selectedWeekdays.contains(3),
+                          onToggle: (selected) => _toggleDay(3, selected),
+                          vibrationService: widget.vibrationService,
+                        ),
+                        _DayChip(
+                          label: 'T',
+                          dayValue: 4,
+                          isSelected: _selectedWeekdays.contains(4),
+                          onToggle: (selected) => _toggleDay(4, selected),
+                          vibrationService: widget.vibrationService,
+                        ),
+                        _DayChip(
+                          label: 'F',
+                          dayValue: 5,
+                          isSelected: _selectedWeekdays.contains(5),
+                          onToggle: (selected) => _toggleDay(5, selected),
+                          vibrationService: widget.vibrationService,
+                        ),
+                        _DayChip(
+                          label: 'S',
+                          dayValue: 6,
+                          isSelected: _selectedWeekdays.contains(6),
+                          onToggle: (selected) => _toggleDay(6, selected),
+                          vibrationService: widget.vibrationService,
+                        ),
+                        _DayChip(
+                          label: 'S',
+                          dayValue: 7,
+                          isSelected: _selectedWeekdays.contains(7),
+                          onToggle: (selected) => _toggleDay(7, selected),
+                          vibrationService: widget.vibrationService,
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     if (_endDate != null)
@@ -644,6 +667,45 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DayChip extends StatelessWidget {
+  final String label;
+  final int dayValue;
+  final bool isSelected;
+  final Function(bool) onToggle;
+  final VibrationService vibrationService;
+
+  const _DayChip({
+    required this.label,
+    required this.dayValue,
+    required this.isSelected,
+    required this.onToggle,
+    required this.vibrationService,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        unawaited(vibrationService.lightImpact());
+        onToggle(selected);
+      },
+      selectedColor: colorScheme.primary,
+      labelStyle: TextStyle(
+        color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      shape: const CircleBorder(),
     );
   }
 }

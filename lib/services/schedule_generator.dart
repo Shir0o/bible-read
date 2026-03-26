@@ -7,9 +7,9 @@ class ScheduleGenerator {
     required List<String> books,
     required DateTime startDate,
     required DateTime endDate,
-    required bool isDaily,
+    required List<int> selectedWeekdays,
   }) {
-    if (books.isEmpty || endDate.isBefore(startDate)) {
+    if (books.isEmpty || endDate.isBefore(startDate) || selectedWeekdays.isEmpty) {
       return [];
     }
 
@@ -37,8 +37,7 @@ class ScheduleGenerator {
 
     while (!d.isAfter(end) && safetyLimit > 0) {
       safetyLimit--;
-      // If isDaily is false (Weekdays only), skip Saturday (6) and Sunday (7)
-      if (isDaily || (d.weekday >= 1 && d.weekday <= 5)) {
+      if (selectedWeekdays.contains(d.weekday)) {
         readingDays.add(d);
       }
       d = d.add(const Duration(days: 1));
