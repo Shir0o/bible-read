@@ -64,12 +64,15 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
 
       // 3. Smooth scroll to the final position (alignment: 0.1)
       if (mounted) {
-        Scrollable.ensureVisible(
-          targetContext,
-          alignment: 0.1,
-          duration: const Duration(milliseconds: 800),
-          curve: Curves.easeInOut,
-        );
+        final currentContext = _todayKey.currentContext;
+        if (currentContext != null) {
+          Scrollable.ensureVisible(
+            currentContext,
+            alignment: 0.1,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeInOut,
+          );
+        }
       }
     }
   }

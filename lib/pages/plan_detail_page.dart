@@ -327,12 +327,15 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
 
         // 3. Smooth scroll to the final position (alignment: 0.1)
         if (mounted) {
-          await Scrollable.ensureVisible(
-            context,
-            alignment: 0.1,
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeInOut,
-          );
+          final currentContext = key?.currentContext;
+          if (currentContext != null) {
+            await Scrollable.ensureVisible(
+              currentContext,
+              alignment: 0.1,
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeInOut,
+            );
+          }
         }
       }
     }

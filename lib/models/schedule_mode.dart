@@ -1,0 +1,1 @@
+enum ScheduleMode { endDate, chaptersPerDay }

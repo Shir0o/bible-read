@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
+import '../models/schedule_mode.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../services/reference_parser.dart';
@@ -45,6 +46,9 @@ class _EditGroupPageState extends State<EditGroupPage> {
   late DateTime _startDate;
   DateTime? _endDate;
   List<int> _selectedWeekdays = [1, 2, 3, 4, 5, 6, 7];
+  ScheduleMode _scheduleMode = ScheduleMode.endDate;
+  final TextEditingController _chaptersController =
+      TextEditingController(text: '3');
 
   // Settings State
   late bool _isPublic;
@@ -61,6 +65,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _chaptersController.dispose();
     super.dispose();
   }
 
@@ -124,6 +129,49 @@ class _EditGroupPageState extends State<EditGroupPage> {
     return count;
   }
 
+  DateTime? get _estimatedEndDate {
+    if (_scheduleMode == ScheduleMode.endDate) return _endDate;
+    final pace = double.tryParse(_chaptersController.text) ?? 0;
+    if (pace <= 0 || _totalChapters == 0 || _selectedWeekdays.isEmpty) {
+      return null;
+    }
+
+    int daysNeeded = (_totalChapters / pace).ceil();
+    DateTime current = _startDate;
+    int daysFound = 0;
+    int safetyLimit = 365 * 20;
+
+    while (daysFound < daysNeeded && safetyLimit > 0) {
+      safetyLimit--;
+      if (_selectedWeekdays.contains(current.weekday)) {
+        daysFound++;
+        if (daysFound == daysNeeded) return current;
+      }
+      current = current.add(const Duration(days: 1));
+    }
+    return null;
+  }
+
+  double get _pace {
+    if (_scheduleMode == ScheduleMode.chaptersPerDay) {
+      return double.tryParse(_chaptersController.text) ?? 0;
+    }
+    if (_endDate == null || _totalChapters == 0 || _selectedWeekdays.isEmpty) {
+      return 0;
+    }
+    int days = 0;
+    DateTime current = _startDate;
+    // Simple day counting based on frequency
+    while (!current.isAfter(_endDate!)) {
+      if (_selectedWeekdays.contains(current.weekday)) {
+        days++;
+      }
+      current = current.add(const Duration(days: 1));
+    }
+    if (days == 0) return 0;
+    return _totalChapters / days;
+  }
+
   void _addBook(String book) {
     if (!_selectedBooks.contains(book)) {
       setState(() {
@@ -174,11 +222,24 @@ class _EditGroupPageState extends State<EditGroupPage> {
       );
       return;
     }
-    if (_endDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an end date.')),
-      );
-      return;
+
+    int? fixedChapters;
+    if (_scheduleMode == ScheduleMode.chaptersPerDay) {
+      fixedChapters = int.tryParse(_chaptersController.text);
+      if (fixedChapters == null || fixedChapters <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Please enter a valid number of chapters per day.')),
+        );
+        return;
+      }
+    } else {
+      if (_endDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select an end date.')),
+        );
+        return;
+      }
     }
 
     setState(() => _isSaving = true);
@@ -188,7 +249,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
       final newSchedule = ScheduleGenerator.generateSchedule(
         books: _selectedBooks,
         startDate: _startDate,
-        endDate: _endDate!,
+        endDate: _endDate,
+        fixedChaptersPerDay: fixedChapters,
         selectedWeekdays: _selectedWeekdays,
       );
 
@@ -702,6 +764,32 @@ class _EditGroupPageState extends State<EditGroupPage> {
         ),
         const SizedBox(height: 16),
 
+        // Schedule Mode Selection
+        Center(
+          child: SegmentedButton<ScheduleMode>(
+            segments: const [
+              ButtonSegment(
+                value: ScheduleMode.endDate,
+                label: Text('By End Date'),
+                icon: Icon(Icons.event),
+              ),
+              ButtonSegment(
+                value: ScheduleMode.chaptersPerDay,
+                label: Text('By Chapters / Day'),
+                icon: Icon(Icons.auto_stories),
+              ),
+            ],
+            selected: {_scheduleMode},
+            onSelectionChanged: (Set<ScheduleMode> newSelection) {
+              unawaited(widget.vibrationService.lightImpact());
+              setState(() {
+                _scheduleMode = newSelection.first;
+              });
+            },
+          ),
+        ),
+        const SizedBox(height: 24),
+
         Row(
           children: [
             // Start Date
@@ -730,51 +818,119 @@ class _EditGroupPageState extends State<EditGroupPage> {
               ),
             ),
             const SizedBox(width: 16),
-            // End Date
-            Expanded(
-              child: Semantics(
-                button: true,
-                label: _endDate == null
-                    ? 'Select end date'
-                    : 'Select end date, current selection: ${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}',
-                child: InkWell(
-                  onTap: _selectEndDate,
-                  borderRadius: BorderRadius.circular(8),
-                  child: InputDecorator(
-                    decoration: InputDecoration(
-                      labelText: 'End',
-                      labelStyle: TextStyle(color: colorScheme.primary),
-                      floatingLabelBehavior: FloatingLabelBehavior.always,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: colorScheme.primary),
+            // End Date or Chapters per Day
+            if (_scheduleMode == ScheduleMode.endDate)
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  label: _endDate == null
+                      ? 'Select end date'
+                      : 'Select end date, current selection: ${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}',
+                  child: InkWell(
+                    onTap: _selectEndDate,
+                    borderRadius: BorderRadius.circular(8),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'End',
+                        labelStyle: TextStyle(color: colorScheme.primary),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: colorScheme.primary),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: colorScheme.primary),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide:
+                              BorderSide(color: colorScheme.primary, width: 2),
+                        ),
+                        suffixIcon: Icon(Icons.calendar_today,
+                            color: colorScheme.onSurfaceVariant),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: colorScheme.primary),
+                      child: Text(
+                        _endDate == null
+                            ? 'Select Date'
+                            : "${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}",
+                        style: textTheme.bodyLarge,
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide:
-                            BorderSide(color: colorScheme.primary, width: 2),
-                      ),
-                      suffixIcon: Icon(Icons.calendar_today,
-                          color: colorScheme.onSurfaceVariant),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
-                    ),
-                    child: Text(
-                      _endDate == null
-                          ? 'Select Date'
-                          : "${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}",
-                      style: textTheme.bodyLarge,
                     ),
                   ),
                 ),
+              )
+            else
+              Expanded(
+                child: TextField(
+                  controller: _chaptersController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  style: textTheme.bodyLarge,
+                  decoration: InputDecoration(
+                    labelText: 'Chapters / Day',
+                    labelStyle: TextStyle(color: colorScheme.primary),
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: colorScheme.primary),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: colorScheme.primary),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide:
+                          BorderSide(color: colorScheme.primary, width: 2),
+                    ),
+                    prefixIcon:
+                        Icon(Icons.auto_stories, color: colorScheme.primary),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 16),
+                  ),
+                  onChanged: (val) {
+                    setState(() {
+                      // Trigger estimated end date recalculation
+                    });
+                  },
+                ),
               ),
-            ),
           ],
         ),
+        if (_scheduleMode == ScheduleMode.chaptersPerDay &&
+            _estimatedEndDate != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 12.0),
+            child: Row(
+              children: [
+                Icon(Icons.event_note, size: 16, color: colorScheme.secondary),
+                const SizedBox(width: 4),
+                Text(
+                  'Estimated End Date: ${_estimatedEndDate!.month}/${_estimatedEndDate!.day}/${_estimatedEndDate!.year}',
+                  style: textTheme.bodySmall
+                      ?.copyWith(color: colorScheme.secondary),
+                ),
+              ],
+            ),
+          ),
+        if (_scheduleMode == ScheduleMode.endDate && _endDate != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 12.0),
+            child: Row(
+              children: [
+                Icon(Icons.speed, size: 16, color: colorScheme.secondary),
+                const SizedBox(width: 4),
+                Text(
+                  'Pace: ~${_pace.toStringAsFixed(1)} chapters / day',
+                  style: textTheme.bodySmall
+                      ?.copyWith(color: colorScheme.secondary),
+                ),
+              ],
+            ),
+          ),
 
         const SizedBox(height: 24),
 

@@ -15,6 +15,7 @@ void main() {
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
     await tester.pumpWidget(app.MyApp(
+      appCheckFailed: false,
       firestore: firestore,
       auth: auth,
     ));

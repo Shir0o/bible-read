@@ -172,8 +172,15 @@ Future<void> _setupMessaging() async {
 
 class MyApp extends StatelessWidget {
   final bool appCheckFailed;
+  final FirebaseFirestore? firestore;
+  final FirebaseAuth? auth;
 
-  const MyApp({super.key, required this.appCheckFailed});
+  const MyApp({
+    super.key,
+    required this.appCheckFailed,
+    this.firestore,
+    this.auth,
+  });
 
   // This widget is the root of your application.
   @override
@@ -190,6 +197,8 @@ class MyApp extends StatelessWidget {
       navigatorKey: _rootNavigatorKey,
       home: MainPage(
         appCheckFailed: appCheckFailed,
+        firestore: firestore,
+        auth: auth,
       ),
     );
   }
