@@ -817,14 +817,11 @@ class GroupService {
       Future<void> handleMember(
           QuerySnapshot<Map<String, dynamic>> snap) async {
         try {
-          final futures = snap.docs
-              .map((doc) => doc.reference.parent.parent)
-              .whereType<DocumentReference<Map<String, dynamic>>>()
-              .map((parent) => parent.get())
+          final ids = snap.docs
+              .map((doc) => doc.reference.parent.parent?.id)
+              .whereType<String>()
               .toList();
-          final docs = await Future.wait(futures);
-          memberGroups =
-              docs.where((doc) => doc.exists).map(Group.fromFirestore).toList();
+          memberGroups = await _fetchGroupsByIds(ids);
         } catch (e, st) {
           await _safeLog(e, st);
           memberGroups = <Group>[];
@@ -845,14 +842,11 @@ class GroupService {
       Future<void> handleJoinRequest(
           QuerySnapshot<Map<String, dynamic>> snap) async {
         try {
-          final futures = snap.docs
-              .map((doc) => doc.reference.parent.parent)
-              .whereType<DocumentReference<Map<String, dynamic>>>()
-              .map((parent) => parent.get())
+          final ids = snap.docs
+              .map((doc) => doc.reference.parent.parent?.id)
+              .whereType<String>()
               .toList();
-          final docs = await Future.wait(futures);
-          pendingGroups =
-              docs.where((doc) => doc.exists).map(Group.fromFirestore).toList();
+          pendingGroups = await _fetchGroupsByIds(ids);
         } catch (e, st) {
           await _safeLog(e, st);
           pendingGroups = <Group>[];
@@ -1690,6 +1684,27 @@ class GroupService {
     }
   }
 
+  Future<List<Group>> _fetchGroupsByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    final uniqueIds = ids.toSet().toList();
+    final futures = <Future<QuerySnapshot<Map<String, dynamic>>>>[];
+
+    for (var i = 0; i < uniqueIds.length; i += 30) {
+      final end = i + 30 > uniqueIds.length ? uniqueIds.length : i + 30;
+      final batch = uniqueIds.sublist(i, end);
+      futures.add(firestore
+          .collection(GroupCollections.groups)
+          .where(FieldPath.documentId, whereIn: batch)
+          .get());
+    }
+
+    final results = await Future.wait(futures);
+    return results
+        .expand((snap) => snap.docs)
+        .map(Group.fromFirestore)
+        .toList();
+  }
+
   /// Recalculate progress summaries for all groups the user belongs to or owns.
   Future<void> fixMemberProgressSummariesForUser(String uid) async {
     try {
@@ -1701,17 +1716,14 @@ class GroupService {
           .where('uid', isEqualTo: uid)
           .get();
 
-      final memberGroupFutures = memberSnaps.docs
-          .map((doc) => doc.reference.parent.parent)
-          .whereType<DocumentReference<Map<String, dynamic>>>()
-          .map((parent) => parent.get())
+      final memberGroupIds = memberSnaps.docs
+          .map((doc) => doc.reference.parent.parent?.id)
+          .whereType<String>()
           .toList();
-      final memberGroupDocs = await Future.wait(memberGroupFutures);
-      for (final doc in memberGroupDocs) {
-        if (doc.exists) {
-          final g = Group.fromFirestore(doc);
-          groups[g.id] = g;
-        }
+
+      final memberGroups = await _fetchGroupsByIds(memberGroupIds);
+      for (final g in memberGroups) {
+        groups[g.id] = g;
       }
 
       // 2. Groups owned by user
