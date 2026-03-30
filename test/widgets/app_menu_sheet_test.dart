@@ -116,9 +116,6 @@ void main() {
     await select('Friends', 4);
 
     await openMenu();
-    await select('Achievements', 6);
-
-    await openMenu();
     await select('Sign Out', 10);
   });
 

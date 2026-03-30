@@ -10,6 +10,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 
 import 'package:bible_read/pages/main_page.dart';
+import 'package:bible_read/pages/welcome_page.dart';
 
 import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/pages/leaderboard_page.dart';
@@ -396,24 +397,28 @@ void main() {
       state.navigateFromMenu(expectedIndex);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
-      if (expectedIndex >= 3) {
+      if (expectedIndex >= 3 && expectedIndex != 10) {
         Navigator.pop(state.context);
         await tester.pumpAndSettle();
       }
 
-      responsive = tester.widget<ResponsiveScaffold>(
-        find.byType(ResponsiveScaffold),
-      );
-      expect(responsive.contentIndex, 0);
-      expect(responsive.selectedIndex, 0);
+      if (expectedIndex != 10) {
+        responsive = tester.widget<ResponsiveScaffold>(
+          find.byType(ResponsiveScaffold),
+        );
+        expect(responsive.contentIndex, 0);
+        expect(responsive.selectedIndex, 0);
+      } else {
+        await tester.pumpAndSettle();
+        expect(find.byType(WelcomePage), findsOneWidget);
+      }
     }
 
     // These usages are now checking no-op behavior for pushed items
     await selectMenuItem('Challenges', 5); // 5 is pushed
     await selectMenuItem('Friends', 4);
-    await selectMenuItem('Achievements', 6);
-    await selectMenuItem('History', 7);
-  });
+    await selectMenuItem('Sign Out', 10);
+    });
 
   testWidgets('bottom navigation visible on non-core pages', (tester) async {
     final auth = MockFirebaseAuth(

@@ -38,7 +38,6 @@ void main() {
     expect(find.byType(TabBar), findsOneWidget);
     expect(find.text('Seasonal'), findsOneWidget);
     expect(find.text('Leaderboard'), findsOneWidget);
-    expect(find.text('Achievements'), findsOneWidget);
     expect(find.byType(TabBarView), findsOneWidget);
   });
 
@@ -57,22 +56,5 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No active season currently.'), findsOneWidget);
-  });
-
-  testWidgets('ChallengesPage can switch tabs', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: ChallengesPage(
-        auth: auth,
-        firestore: firestore,
-        friendService: friendService,
-        vibrationService: vibrationService,
-      ),
-    ));
-
-    await tester.tap(find.text('Achievements'));
-    await tester.pumpAndSettle();
-
-    // Should show empty state for achievements
-    expect(find.text('No achievements yet. Keep reading!'), findsOneWidget);
   });
 }

@@ -180,6 +180,7 @@ void main() {
         .doc('data')
         .set({
       'streak': 5,
+      'totalReadDays': 5,
       'pastWeekReadDates': [], // Empty for now
     });
 
@@ -209,8 +210,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify streak text (RichText)
-    // RichText content aggregates to "5 days of reading"
-    expect(find.text('5 days of reading', findRichText: true), findsOneWidget);
+    // RichText content aggregates to "5 day streak  •  5 days total"
+    expect(find.text('5 day streak  •  5 days total', findRichText: true), findsOneWidget);
 
     // Verify progress bar elements
     expect(find.text('Reading this week'), findsOneWidget);
@@ -392,6 +393,7 @@ class MockReadingStatusService extends ReadingStatusService {
       pastMonth: [],
       readDates: {},
       streak: 0,
+      totalReadDays: 0,
       graceCreditsAvailable: 0,
       graceCreditsMonth: '2021-01',
     );

@@ -24,6 +24,9 @@ class ReadingStatus {
   /// Current streak count.
   final int streak;
 
+  /// Total number of days the user has read.
+  final int totalReadDays;
+
   /// Remaining grace credits available for the current summary month.
   final int graceCreditsAvailable;
 
@@ -37,6 +40,7 @@ class ReadingStatus {
     required this.pastMonth,
     required this.readDates,
     required this.streak,
+    required this.totalReadDays,
     required this.graceCreditsAvailable,
     required this.graceCreditsMonth,
   });
@@ -144,6 +148,7 @@ class ReadingStatusService {
         pastMonth: [],
         readDates: {},
         streak: 0,
+        totalReadDays: 0,
         graceCreditsAvailable: 0,
         graceCreditsMonth: defaultMonthKey,
       );
@@ -205,6 +210,7 @@ class ReadingStatusService {
       // Load calendar data from summary doc.
       final data = summaryDoc.data() ?? {};
       final streak = (data['streak'] as int?) ?? 0;
+      final totalReadDays = (data['totalReadDays'] as int?) ?? 0;
       final graceCreditsRaw = data['graceCreditsAvailable'];
       final graceCreditsAvailable = graceCreditsRaw is int
           ? graceCreditsRaw
@@ -306,6 +312,7 @@ class ReadingStatusService {
         pastMonth: savedMonth,
         readDates: readDates,
         streak: streak,
+        totalReadDays: totalReadDays,
         graceCreditsAvailable: graceCreditsAvailable,
         graceCreditsMonth: graceCreditsMonth,
       );

@@ -105,6 +105,7 @@ class _HomePageState extends State<HomePage>
   List<bool> _pastMonth = [];
   Set<DateTime> _readDates = {};
   int _currentStreak = 0;
+  int _totalReadDays = 0;
 
   // Plan state
   ReadingPlan? _currentPlan;
@@ -177,6 +178,7 @@ class _HomePageState extends State<HomePage>
           _pastMonth = status.pastMonth;
           _readDates = status.readDates;
           _currentStreak = status.streak;
+          _totalReadDays = status.totalReadDays;
         });
       }
     } catch (e, st) {
@@ -301,6 +303,7 @@ class _HomePageState extends State<HomePage>
     final prevMonth = List<bool>.from(_pastMonth);
     final prevReadDates = Set<DateTime>.from(_readDates);
     final prevStreak = _currentStreak;
+    final prevTotalReadDays = _totalReadDays;
 
     // Also track if we successfully marked the plan day
     bool markedPlanDay = false;
@@ -316,6 +319,7 @@ class _HomePageState extends State<HomePage>
         // Optimistically mark today as read in local state.
         _readToday = true;
         _currentStreak += 1; // Increment streak optimistically.
+        _totalReadDays += 1; // Increment total days optimistically.
 
         if (_pastWeek.length < 7) {
           _pastWeek = List<bool>.generate(
@@ -413,6 +417,7 @@ class _HomePageState extends State<HomePage>
           _pastMonth = prevMonth;
           _readDates = prevReadDates;
           _currentStreak = prevStreak;
+          _totalReadDays = prevTotalReadDays;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -878,10 +883,21 @@ class _HomePageState extends State<HomePage>
                               children: [
                                 TextSpan(
                                   text: '$_currentStreak',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.primary,
+                                  ),
                                 ),
-                                const TextSpan(text: ' days of reading'),
+                                const TextSpan(text: ' day streak'),
+                                const TextSpan(text: '  •  '),
+                                TextSpan(
+                                  text: '$_totalReadDays',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                                const TextSpan(text: ' days total'),
                               ],
                             ),
                           ),
