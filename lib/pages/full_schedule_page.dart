@@ -14,26 +14,6 @@ class FullSchedulePage extends StatefulWidget {
   final FirebaseAuth auth;
   final VibrationService vibrationService;
   final List<GroupSchedule>? initialSchedule;
-
-  const FullSchedulePage({
-    super.key,
-    required this.group,
-    required this.groupService,
-    required this.auth,
-    required this.vibrationService,
-    this.initialSchedule,
-  });
-
-  @override
-  State<FullSchedulePage> createState() => _FullSchedulePageState();
-}
-
-class FullSchedulePage extends StatefulWidget {
-  final Group group;
-  final GroupService groupService;
-  final FirebaseAuth auth;
-  final VibrationService vibrationService;
-  final List<GroupSchedule>? initialSchedule;
   final bool isMember;
 
   const FullSchedulePage({
