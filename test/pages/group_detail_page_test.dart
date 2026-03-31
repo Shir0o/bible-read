@@ -257,11 +257,11 @@ void main() {
     );
 
     await tester.scrollUntilVisible(
-      find.text('Join Group'),
+      find.text('Request to Join'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.text('Join Group'));
+    await tester.tap(find.text('Request to Join'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -269,7 +269,7 @@ void main() {
     expect(service.joinedUid, 'u2');
     expect(service.joinedName, 'User');
     expect(find.text('Join request sent'), findsOneWidget);
-    expect(find.text('Join Group'), findsNothing);
+    expect(find.text('Request to Join'), findsNothing);
     expect(vibration.lightCount, 1);
   });
 
@@ -290,18 +290,18 @@ void main() {
     );
 
     await tester.scrollUntilVisible(
-      find.text('Join Group'),
+      find.text('Request to Join'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.text('Join Group'));
+    await tester.tap(find.text('Request to Join'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(service.joinedGroupId, 'g1');
     expect(find.text('Failed to join group'), findsOneWidget);
-    expect(find.text('Join Group'), findsOneWidget);
+    expect(find.text('Request to Join'), findsOneWidget);
   });
 
   testWidgets('pending join request hides join button', (tester) async {
