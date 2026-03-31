@@ -37,7 +37,6 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _todayKey = GlobalKey();
   bool _hasScrolledToToday = false;
-  bool _isScrollPending = false;
 
   @override
   void initState() {
@@ -61,15 +60,9 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   Future<void> _scrollToToday() async {
     if (_hasScrolledToToday) return;
 
-    // Give the ListView and page transition a moment to settle
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    if (!mounted) return;
-
     final targetContext = _todayKey.currentContext;
     if (targetContext != null && targetContext.mounted) {
       _hasScrolledToToday = true;
-      _isScrollPending = false;
 
       // 1. Initial jump to a position slightly above the target
       Scrollable.ensureVisible(
@@ -83,15 +76,13 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
       // 3. Smooth scroll to the final position (alignment: 0.1)
       final currentContext = _todayKey.currentContext;
       if (currentContext != null && currentContext.mounted) {
-        Scrollable.ensureVisible(
+        await Scrollable.ensureVisible(
           currentContext,
           alignment: 0.1,
-          duration: const Duration(milliseconds: 1000),
-          curve: Curves.easeInOutCubic,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeInOut,
         );
       }
-    } else {
-      _isScrollPending = false;
     }
   }
 
@@ -234,7 +225,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
               final todayDate = DateTime(now.year, now.month, now.day);
 
               final past = <GroupSchedule>[];
-              final today = <GroupSchedule>[];
+              final todayList = <GroupSchedule>[];
               final upcoming = <GroupSchedule>[];
 
               for (final s in fullSchedule) {
@@ -242,79 +233,84 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
                 if (sDate.isBefore(todayDate)) {
                   past.add(s);
                 } else if (sDate.isAtSameMomentAs(todayDate)) {
-                  today.add(s);
+                  todayList.add(s);
                 } else {
                   upcoming.add(s);
                 }
               }
 
               if (!_hasScrolledToToday &&
-                  !_isScrollPending &&
-                  (today.isNotEmpty || upcoming.isNotEmpty)) {
-                _isScrollPending = true;
+                  (todayList.isNotEmpty || upcoming.isNotEmpty)) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  unawaited(_scrollToToday());
+                  if (mounted) {
+                    unawaited(_scrollToToday());
+                  }
                 });
               }
 
-              return ListView(
+              return SingleChildScrollView(
                 controller: _scrollController,
                 padding: const EdgeInsets.all(16),
-                children: [
-                  if (past.isNotEmpty) ...[
-                    _buildSectionHeader(context, 'Past Readings'),
-                    ...past.map((s) {
-                      final dateId = _dateId(s.date);
-                      final count = progress[dateId] ?? 0;
-                      final isRead = s.chapters.isEmpty
-                          ? count > 0
-                          : count >= s.chapters.length;
-                      return _buildScheduleItem(
-                        context,
-                        s,
-                        isPast: true,
-                        isRead: isRead,
-                      );
-                    }),
-                    const SizedBox(height: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (past.isNotEmpty) ...[
+                      _buildSectionHeader(context, 'Past Readings'),
+                      ...past.map((s) {
+                        final dateId = _dateId(s.date);
+                        final count = progress[dateId] ?? 0;
+                        final isRead = s.chapters.isEmpty
+                            ? count > 0
+                            : count >= s.chapters.length;
+                        return _buildScheduleItem(
+                          context,
+                          s,
+                          isPast: true,
+                          isRead: isRead,
+                        );
+                      }),
+                      const SizedBox(height: 16),
+                    ],
+                    if (todayList.isNotEmpty) ...[
+                      _buildSectionHeader(context, 'Today', isHighlight: true),
+                      ...todayList.map((s) {
+                        final dateId = _dateId(s.date);
+                        final count = progress[dateId] ?? 0;
+                        final isRead = s.chapters.isEmpty
+                            ? count > 0
+                            : count >= s.chapters.length;
+                        final isFirstToday = s == todayList.first;
+                        return _buildTodayItem(
+                          context,
+                          s,
+                          isRead: isRead,
+                          key: isFirstToday ? _todayKey : null,
+                        );
+                      }),
+                      const SizedBox(height: 16),
+                    ],
+                    if (upcoming.isNotEmpty) ...[
+                      _buildSectionHeader(context, 'Upcoming'),
+                      ...upcoming.map((s) {
+                        final isFirstUpcoming = s == upcoming.first;
+                        final dateId = _dateId(s.date);
+                        final count = progress[dateId] ?? 0;
+                        final isRead = s.chapters.isEmpty
+                            ? count > 0
+                            : count >= s.chapters.length;
+                        return _buildScheduleItem(
+                          context,
+                          s,
+                          isRead: isRead,
+                          key: (todayList.isEmpty && isFirstUpcoming)
+                              ? _todayKey
+                              : null,
+                        );
+                      }),
+                    ],
+                    const SizedBox(height: 80),
                   ],
-                  if (today.isNotEmpty) ...[
-                    _buildSectionHeader(context, 'Today', isHighlight: true),
-                    ...today.map((s) {
-                      final dateId = _dateId(s.date);
-                      final count = progress[dateId] ?? 0;
-                      final isRead = s.chapters.isEmpty
-                          ? count > 0
-                          : count >= s.chapters.length;
-                      return _buildTodayItem(
-                        context,
-                        s,
-                        isRead: isRead,
-                        key: _todayKey,
-                      );
-                    }),
-                    const SizedBox(height: 16),
-                  ],
-                  if (upcoming.isNotEmpty) ...[
-                    _buildSectionHeader(context, 'Upcoming'),
-                    ...upcoming.map((s) {
-                      final isFirstUpcoming = s == upcoming.first;
-                      final dateId = _dateId(s.date);
-                      final count = progress[dateId] ?? 0;
-                      final isRead = s.chapters.isEmpty
-                          ? count > 0
-                          : count >= s.chapters.length;
-                      return _buildScheduleItem(
-                        context,
-                        s,
-                        isRead: isRead,
-                        key: (today.isEmpty && isFirstUpcoming)
-                            ? _todayKey
-                            : null,
-                      );
-                    }),
-                  ],
-                ],
+                ),
               );
             },
           );
