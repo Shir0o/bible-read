@@ -33,6 +33,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _todayKey = GlobalKey();
   bool _hasScrolledToToday = false;
+  bool _isScrollPending = false;
 
   @override
   void initState() {
@@ -47,8 +48,18 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   }
 
   Future<void> _scrollToToday() async {
+    if (_hasScrolledToToday) return;
+
+    // Give the ListView and page transition a moment to settle
+    await Future.delayed(const Duration(milliseconds: 400));
+
+    if (!mounted) return;
+
     final targetContext = _todayKey.currentContext;
-    if (targetContext != null) {
+    if (targetContext != null && targetContext.mounted) {
+      _hasScrolledToToday = true;
+      _isScrollPending = false;
+
       // 1. Initial jump to a position slightly above the target
       Scrollable.ensureVisible(
         targetContext,
@@ -64,10 +75,12 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
         Scrollable.ensureVisible(
           currentContext,
           alignment: 0.1,
-          duration: const Duration(milliseconds: 800),
-          curve: Curves.easeInOut,
+          duration: const Duration(milliseconds: 1000),
+          curve: Curves.easeInOutCubic,
         );
       }
+    } else {
+      _isScrollPending = false;
     }
   }
 
@@ -160,8 +173,9 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
           }
 
           if (!_hasScrolledToToday &&
+              !_isScrollPending &&
               (today.isNotEmpty || upcoming.isNotEmpty)) {
-            _hasScrolledToToday = true;
+            _isScrollPending = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               unawaited(_scrollToToday());
             });
