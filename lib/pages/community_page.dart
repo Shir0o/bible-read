@@ -679,6 +679,7 @@ class _GroupProgressCard extends StatelessWidget {
                             auth: auth,
                             vibrationService: vibrationService,
                             initialSchedule: initialSchedule,
+                            isMember: false,
                           ),
                         ),
                       );

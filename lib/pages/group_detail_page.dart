@@ -691,6 +691,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 groupService: widget.groupService,
                 auth: widget.auth,
                 vibrationService: widget.vibrationService,
+                isMember: isMember,
               ),
             ),
           );

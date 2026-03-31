@@ -28,8 +28,32 @@ class FullSchedulePage extends StatefulWidget {
   State<FullSchedulePage> createState() => _FullSchedulePageState();
 }
 
+class FullSchedulePage extends StatefulWidget {
+  final Group group;
+  final GroupService groupService;
+  final FirebaseAuth auth;
+  final VibrationService vibrationService;
+  final List<GroupSchedule>? initialSchedule;
+  final bool isMember;
+
+  const FullSchedulePage({
+    super.key,
+    required this.group,
+    required this.groupService,
+    required this.auth,
+    required this.vibrationService,
+    this.initialSchedule,
+    this.isMember = false,
+  });
+
+  @override
+  State<FullSchedulePage> createState() => _FullSchedulePageState();
+}
+
 class _FullSchedulePageState extends State<FullSchedulePage> {
   late Stream<List<GroupSchedule>> _scheduleStream;
+  late Stream<Map<String, int>> _progressStream;
+  final Map<String, int> _optimisticProgress = {};
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _todayKey = GlobalKey();
   bool _hasScrolledToToday = false;
@@ -39,6 +63,13 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   void initState() {
     super.initState();
     _scheduleStream = widget.groupService.schedule(widget.group.id);
+    final user = widget.auth.currentUser;
+    if (user != null) {
+      _progressStream =
+          widget.groupService.userProgressForGroup(widget.group.id, user.uid);
+    } else {
+      _progressStream = Stream.value({});
+    }
   }
 
   @override
@@ -108,6 +139,51 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
     return days[date.weekday - 1];
   }
 
+  String _dateId(DateTime date) {
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  Future<void> _handleToggle(GroupSchedule schedule, bool isRead) async {
+    if (!widget.isMember) return;
+
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+
+    final dateId = _dateId(schedule.date);
+    final previousOptimistic = _optimisticProgress[dateId];
+
+    unawaited(widget.vibrationService.lightImpact());
+
+    setState(() {
+      _optimisticProgress[dateId] =
+          !isRead ? (schedule.chapters.length.clamp(1, 999)) : 0;
+    });
+
+    final success = await widget.groupService.toggleReadStatus(
+      groupId: widget.group.id,
+      uid: user.uid,
+      schedule: schedule,
+      read: !isRead,
+    );
+
+    if (!mounted) return;
+    if (!success) {
+      setState(() {
+        if (previousOptimistic == null) {
+          _optimisticProgress.remove(dateId);
+        } else {
+          _optimisticProgress[dateId] = previousOptimistic;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update read status')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -138,15 +214,15 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
       body: StreamBuilder<List<GroupSchedule>>(
         stream: _scheduleStream,
         initialData: widget.initialSchedule,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+        builder: (context, scheduleSnapshot) {
+          if (scheduleSnapshot.hasError) {
+            return Center(child: Text('Error: ${scheduleSnapshot.error}'));
           }
-          if (!snapshot.hasData) {
+          if (!scheduleSnapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final fullSchedule = snapshot.data!;
+          final fullSchedule = scheduleSnapshot.data!;
           if (fullSchedule.isEmpty) {
             return const Center(child: Text('No schedule available'));
           }
@@ -154,59 +230,113 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
           // Sort schedule just in case
           fullSchedule.sort((a, b) => a.date.compareTo(b.date));
 
-          final now = DateTime.now();
-          final todayDate = DateTime(now.year, now.month, now.day);
+          return StreamBuilder<Map<String, int>>(
+            stream: _progressStream,
+            builder: (context, progressSnapshot) {
+              final remoteProgress = progressSnapshot.data ?? {};
 
-          final past = <GroupSchedule>[];
-          final today = <GroupSchedule>[];
-          final upcoming = <GroupSchedule>[];
+              // Clear optimistic overrides if they match remote data
+              if (progressSnapshot.hasData) {
+                final toRemove = <String>[];
+                _optimisticProgress.forEach((dateId, count) {
+                  if (remoteProgress[dateId] == count) {
+                    toRemove.add(dateId);
+                  }
+                });
+                for (final id in toRemove) {
+                  _optimisticProgress.remove(id);
+                }
+              }
 
-          for (final s in fullSchedule) {
-            final sDate = DateTime(s.date.year, s.date.month, s.date.day);
-            if (sDate.isBefore(todayDate)) {
-              past.add(s);
-            } else if (sDate.isAtSameMomentAs(todayDate)) {
-              today.add(s);
-            } else {
-              upcoming.add(s);
-            }
-          }
+              final progress = {...remoteProgress, ..._optimisticProgress};
 
-          if (!_hasScrolledToToday &&
-              !_isScrollPending &&
-              (today.isNotEmpty || upcoming.isNotEmpty)) {
-            _isScrollPending = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              unawaited(_scrollToToday());
-            });
-          }
+              final now = DateTime.now();
+              final todayDate = DateTime(now.year, now.month, now.day);
 
-          return ListView(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(16),
-            children: [
-              if (past.isNotEmpty) ...[
-                _buildSectionHeader(context, 'Past Readings'),
-                ...past.map((s) => _buildScheduleItem(context, s, isPast: true)),
-                const SizedBox(height: 16),
-              ],
-              if (today.isNotEmpty) ...[
-                _buildSectionHeader(context, 'Today', isHighlight: true),
-                ...today
-                    .map((s) => _buildTodayItem(context, s, key: _todayKey)),
-                const SizedBox(height: 16),
-              ],
-              if (upcoming.isNotEmpty) ...[
-                _buildSectionHeader(context, 'Upcoming'),
-                ...upcoming.map((s) {
-                  final isFirstUpcoming = s == upcoming.first;
-                  return _buildScheduleItem(context, s,
-                      key: (today.isEmpty && isFirstUpcoming)
-                          ? _todayKey
-                          : null);
-                }),
-              ],
-            ],
+              final past = <GroupSchedule>[];
+              final today = <GroupSchedule>[];
+              final upcoming = <GroupSchedule>[];
+
+              for (final s in fullSchedule) {
+                final sDate = DateTime(s.date.year, s.date.month, s.date.day);
+                if (sDate.isBefore(todayDate)) {
+                  past.add(s);
+                } else if (sDate.isAtSameMomentAs(todayDate)) {
+                  today.add(s);
+                } else {
+                  upcoming.add(s);
+                }
+              }
+
+              if (!_hasScrolledToToday &&
+                  !_isScrollPending &&
+                  (today.isNotEmpty || upcoming.isNotEmpty)) {
+                _isScrollPending = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  unawaited(_scrollToToday());
+                });
+              }
+
+              return ListView(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16),
+                children: [
+                  if (past.isNotEmpty) ...[
+                    _buildSectionHeader(context, 'Past Readings'),
+                    ...past.map((s) {
+                      final dateId = _dateId(s.date);
+                      final count = progress[dateId] ?? 0;
+                      final isRead = s.chapters.isEmpty
+                          ? count > 0
+                          : count >= s.chapters.length;
+                      return _buildScheduleItem(
+                        context,
+                        s,
+                        isPast: true,
+                        isRead: isRead,
+                      );
+                    }),
+                    const SizedBox(height: 16),
+                  ],
+                  if (today.isNotEmpty) ...[
+                    _buildSectionHeader(context, 'Today', isHighlight: true),
+                    ...today.map((s) {
+                      final dateId = _dateId(s.date);
+                      final count = progress[dateId] ?? 0;
+                      final isRead = s.chapters.isEmpty
+                          ? count > 0
+                          : count >= s.chapters.length;
+                      return _buildTodayItem(
+                        context,
+                        s,
+                        isRead: isRead,
+                        key: _todayKey,
+                      );
+                    }),
+                    const SizedBox(height: 16),
+                  ],
+                  if (upcoming.isNotEmpty) ...[
+                    _buildSectionHeader(context, 'Upcoming'),
+                    ...upcoming.map((s) {
+                      final isFirstUpcoming = s == upcoming.first;
+                      final dateId = _dateId(s.date);
+                      final count = progress[dateId] ?? 0;
+                      final isRead = s.chapters.isEmpty
+                          ? count > 0
+                          : count >= s.chapters.length;
+                      return _buildScheduleItem(
+                        context,
+                        s,
+                        isRead: isRead,
+                        key: (today.isEmpty && isFirstUpcoming)
+                            ? _todayKey
+                            : null,
+                      );
+                    }),
+                  ],
+                ],
+              );
+            },
           );
         },
       ),
@@ -230,7 +360,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   }
 
   Widget _buildScheduleItem(BuildContext context, GroupSchedule schedule,
-      {bool isPast = false, Key? key}) {
+      {bool isPast = false, bool isRead = false, Key? key}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final opacity = isPast ? 0.7 : 1.0;
@@ -240,108 +370,139 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
       opacity: opacity,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainer,
+        child: InkWell(
+          onTap: widget.isMember ? () => _handleToggle(schedule, isRead) : null,
           borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 56, // min-w-[3.5rem] -> 56px
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _formatDate(schedule.date),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  Text(
-                    _formatDayOfWeek(schedule.date),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color:
-                          colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(16),
+              border: isRead
+                  ? Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.2),
+                      width: 1,
+                    )
+                  : null,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                schedule.chapters.join(', '),
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface.withValues(alpha: 0.8),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 56, // min-w-[3.5rem] -> 56px
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _formatDate(schedule.date),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        _formatDayOfWeek(schedule.date),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    schedule.chapters.join(', '),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+                if (isRead)
+                  Icon(
+                    Icons.check,
+                    color: colorScheme.primary.withValues(alpha: 0.5),
+                    size: 20,
+                  ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildTodayItem(BuildContext context, GroupSchedule schedule,
-      {Key? key}) {
+      {bool isRead = false, Key? key}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Container(
       key: key,
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
+      child: InkWell(
+        onTap: widget.isMember ? () => _handleToggle(schedule, isRead) : null,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.5),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: colorScheme.primary.withValues(alpha: isRead ? 0.8 : 0.5),
+              width: isRead ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.primary.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 56,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _formatDate(schedule.date),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    Text(
+                      _formatDayOfWeek(schedule.date),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.primary.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      schedule.chapters.join(', '),
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ],
+                ),
+              ),
+              if (isRead)
+                Icon(
+                  Icons.check,
+                  color: colorScheme.primary,
+                  size: 24,
+                ),
+            ],
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 56,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _formatDate(schedule.date),
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: colorScheme.primary,
-                  ),
-                ),
-                Text(
-                  _formatDayOfWeek(schedule.date),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.primary.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  schedule.chapters.join(', '),
-                  style: theme.textTheme.titleMedium,
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
