@@ -1,13 +1,14 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:bible_read/widgets/group_members_list.dart';
+import 'package:bible_read/widgets/group_progress_card.dart';
+import 'package:bible_read/widgets/todays_reading_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/group.dart';
-import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../services/error_logger.dart';
 import '../services/bible_progress_service.dart';
@@ -643,6 +644,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 stream: _scheduleStream,
                 builder: (context, snapshot) {
                   final schedule = snapshot.data ?? [];
+                  final now = _now;
+                  final today = DateTime(now.year, now.month, now.day);
+                  final todaySchedule = schedule.where((s) {
+                    final sDate =
+                        DateTime(s.date.year, s.date.month, s.date.day);
+                    return sDate.isAtSameMomentAs(today);
+                  }).firstOrNull;
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -705,12 +714,57 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                             );
                           },
                         ),
-                      _buildGroupProgress(context, schedule),
+                      GroupProgressCard(
+                        groupId: widget.group.id,
+                        schedule: schedule,
+                        groupService: widget.groupService,
+                        currentDate: _now,
+                      ),
                       const SizedBox(height: 24),
-                      _buildTodaysReading(context, schedule,
-                          isMember: isMember),
-                      const SizedBox(height: 24),
-                      _buildMembersList(context),
+                      if (todaySchedule != null) ...[
+                        TodaysReadingCard(
+                          groupId: widget.group.id,
+                          userId: widget.auth.currentUser?.uid ?? '',
+                          schedule: todaySchedule,
+                          groupService: widget.groupService,
+                          vibrationService: widget.vibrationService,
+                          isMember: isMember,
+                          currentDate: _now,
+                          pendingReadOverride:
+                              _pendingReadOverrides[_dateKey(todaySchedule.date)],
+                          pendingChapterOverrides: _pendingChapterOverrides[
+                              _dateKey(todaySchedule.date)],
+                          onToggle: ({
+                            required read,
+                            required currentlyChecked,
+                            required hasChapters,
+                          }) {
+                            _handleScheduleReadToggle(
+                              schedule: todaySchedule,
+                              read: read,
+                              currentlyChecked: currentlyChecked,
+                              hasChapters: hasChapters,
+                            );
+                          },
+                          onSnapshotsUpdated: ({
+                            required rawChecked,
+                            required baseDone,
+                            required totalChapters,
+                          }) {
+                            final dateKey = _dateKey(todaySchedule.date);
+                            _latestRawCheckedSnapshots[dateKey] = rawChecked;
+                            _latestBaseDoneSnapshots[dateKey] = baseDone;
+                            _latestChapterCountSnapshots[dateKey] =
+                                totalChapters;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      GroupMembersList(
+                        groupId: widget.group.id,
+                        groupService: widget.groupService,
+                        currentDate: _now,
+                      ),
                       const SizedBox(height: 24),
                       _buildFullScheduleButton(context),
                     ],
@@ -721,505 +775,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildGroupProgress(
-      BuildContext context, List<GroupSchedule> schedule) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    // Calculate time-based expected progress
-    int totalChapters = 0;
-    int expectedCompletedChapters = 0;
-    final now = _now;
-    final today = DateTime(now.year, now.month, now.day);
-
-    String? currentBook;
-
-    for (var s in schedule) {
-      totalChapters += s.chapters.length;
-      if (s.date.isBefore(today) || s.date.isAtSameMomentAs(today)) {
-        expectedCompletedChapters += s.chapters.length;
-      }
-      if (s.date.isAtSameMomentAs(today) && s.chapters.isNotEmpty) {
-        // Simple parsing: assuming format "Book Chapter"
-        final firstChapter = s.chapters.first;
-        final parts = firstChapter.split(' ');
-        if (parts.length > 1) {
-          // Handle "1 John" cases
-          if (int.tryParse(parts[0]) != null && parts.length > 2) {
-            currentBook = '${parts[0]} ${parts[1]}';
-          } else {
-            currentBook = parts[0];
-          }
-        } else {
-          currentBook = parts[0];
-        }
-      }
-    }
-
-    final timePercent =
-        totalChapters > 0 ? expectedCompletedChapters / totalChapters : 0.0;
-
-    return StreamBuilder<List<GroupMemberProgressData>>(
-        stream: widget.groupService.memberOverallCompletion(widget.group.id),
-        builder: (context, snapshot) {
-          final members = snapshot.data ?? [];
-          final double actualPercent = members.isEmpty
-              ? 0.0
-              : members.map((m) => m.completion).reduce((a, b) => a + b) /
-                  members.length;
-
-          final percentDisplay = (actualPercent * 100).round();
-          final bool isOnTrack = actualPercent >= timePercent;
-
-          return Container(
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'GROUP PROGRESS',
-                          style: theme.textTheme.labelSmall,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '$percentDisplay%',
-                          style: theme.textTheme.displaySmall?.copyWith(
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isOnTrack
-                            ? colorScheme.primaryContainer
-                            : colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        isOnTrack ? 'On Track' : 'Behind',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: isOnTrack
-                              ? colorScheme.onPrimaryContainer
-                              : colorScheme.onErrorContainer,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: actualPercent,
-                    minHeight: 16,
-                    backgroundColor:
-                        colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  currentBook != null
-                      ? 'The group is $percentDisplay% through the Book of $currentBook.'
-                      : 'The group is $percentDisplay% through the reading plan.',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          );
-        });
-  }
-
-  Widget _buildTodaysReading(BuildContext context, List<GroupSchedule> schedule,
-      {required bool isMember}) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final now = _now;
-    final today = DateTime(now.year, now.month, now.day);
-
-    final todaySchedule = schedule.where((s) {
-      final sDate = DateTime(s.date.year, s.date.month, s.date.day);
-      return sDate.isAtSameMomentAs(today);
-    }).firstOrNull;
-
-    if (todaySchedule == null) {
-      return const SizedBox.shrink();
-    }
-
-    final dateString = _formatDate(now);
-    final readingTitle = todaySchedule.chapters.join(', ');
-
-    // Logic for "My Read Status"
-    final dateKey = _dateKey(todaySchedule.date);
-    final entryRef = widget.groupService.firestore
-        .collection(GroupCollections.groups)
-        .doc(widget.group.id)
-        .collection('progress')
-        .doc(dateKey)
-        .collection('entries')
-        .doc(widget.auth.currentUser?.uid);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Today's Reading",
-          style: theme.textTheme.titleMedium,
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainer,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              Text(
-                dateString,
-                style: theme.textTheme.labelSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                readingTitle,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              // Subtitle placeholder if needed
-              // Text('Life in the Spirit', ...),
-              const SizedBox(height: 24),
-
-              if (isMember)
-                // Read Button Logic
-                StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                  stream: entryRef.snapshots(),
-                  builder: (context, entrySnap) {
-                    final entryData = entrySnap.data?.data();
-                    final baseDone = entryData?['done'] == true;
-
-                    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                        stream: entryRef.collection('items').snapshots(),
-                        builder: (context, itemsSnap) {
-                          final rawChecked = <int>{};
-                          for (final d in itemsSnap.data?.docs ?? const []) {
-                            final idx = int.tryParse(d.id);
-                            if (idx != null) rawChecked.add(idx);
-                          }
-
-                          final rawCheckedSnapshot = Set<int>.from(rawChecked);
-                          final totalChapters = todaySchedule.chapters.length;
-                          final hasChapters = totalChapters > 0;
-
-                          // Update snapshots for override logic
-                          _latestRawCheckedSnapshots[dateKey] =
-                              Set<int>.from(rawCheckedSnapshot);
-                          _latestBaseDoneSnapshots[dateKey] = baseDone;
-                          _latestChapterCountSnapshots[dateKey] = totalChapters;
-
-                          // Check for pending overrides
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (!mounted) return;
-                            final hasPendingChapterOverride =
-                                (_pendingChapterOverrides[dateKey]
-                                        ?.isNotEmpty ??
-                                    false);
-                            final hasPendingReadOverride =
-                                _pendingReadOverrides.containsKey(dateKey);
-                            if (hasPendingChapterOverride) {
-                              _resolvePendingChapterOverridesFromSnapshot(
-                                dateKey: dateKey,
-                                rawChecked: rawCheckedSnapshot,
-                              );
-                            }
-                            if (hasPendingReadOverride) {
-                              _resolvePendingReadOverrideFromSnapshot(
-                                dateKey: dateKey,
-                                hasChapters: hasChapters,
-                                totalChapters: totalChapters,
-                                rawChecked: rawCheckedSnapshot,
-                                baseDone: baseDone,
-                              );
-                            }
-                          });
-
-                          final pendingRead = _pendingReadOverrides[dateKey];
-                          // Determine effective read status
-                          final isRead = hasChapters
-                              ? (pendingRead ??
-                                  (totalChapters > 0 &&
-                                      rawCheckedSnapshot.length >=
-                                          totalChapters))
-                              : (pendingRead ?? baseDone);
-
-                          return SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                unawaited(
-                                    widget.vibrationService.lightImpact());
-                                _handleScheduleReadToggle(
-                                  schedule: todaySchedule,
-                                  read: !isRead,
-                                  currentlyChecked: rawCheckedSnapshot,
-                                  hasChapters: hasChapters,
-                                );
-                              },
-                              icon: Icon(
-                                Icons.check_circle,
-                                color: isRead
-                                    ? colorScheme.onPrimary
-                                    : colorScheme.onPrimary
-                                        .withValues(alpha: 0.7),
-                                fill: isRead
-                                    ? 1.0
-                                    : 0.0, // Material Symbols fill if supported
-                              ),
-                              label: Text(isRead ? 'Read' : 'Mark as Read'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isRead
-                                    ? colorScheme.primary
-                                    : colorScheme.primary.withValues(
-                                        alpha: 0.8), // Purple Expressive
-                                foregroundColor: colorScheme.onPrimary,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                elevation: isRead ? 0 : 4,
-                                textStyle:
-                                    theme.textTheme.titleMedium?.copyWith(
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          );
-                        });
-                  },
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMembersList(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Members',
-              style: theme.textTheme.titleMedium,
-            ),
-            StreamBuilder<List<GroupMemberProgressData>>(
-              stream: widget.groupService.memberDailyCompletion(
-                widget.group.id,
-                date: _now,
-              ),
-              builder: (context, snapshot) {
-                final count = snapshot.data?.length ?? 0;
-                return Text(
-                  '$count Members',
-                  style: theme.textTheme.labelSmall,
-                );
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainer,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: StreamBuilder<List<GroupMemberProgressData>>(
-            stream: widget.groupService.memberDailyCompletion(
-              widget.group.id,
-              date: _now,
-            ),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('Failed to load members'));
-              }
-              if (!snapshot.hasData) {
-                return const Center(
-                    child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: CircularProgressIndicator()));
-              }
-              final members = snapshot.data!;
-              if (members.isEmpty) {
-                return const Padding(
-                    padding: EdgeInsets.all(16), child: Text('No members'));
-              }
-
-              return ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: members.length,
-                separatorBuilder: (context, index) => Divider(
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
-                  height: 1,
-                ),
-                itemBuilder: (context, index) {
-                  final member = members[index];
-                  final isRead = member.completion >= 1.0;
-                  final statusText = isRead ? 'Read today' : 'Not yet';
-
-                  return Semantics(
-                    label: '${member.name}, $statusText',
-                    container: true,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: ClipOval(
-                              child: member.photoUrl != null
-                                  ? CachedNetworkImage(
-                                      imageUrl: member.photoUrl!,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) =>
-                                          const Icon(Icons.person),
-                                      errorWidget: (context, url, error) =>
-                                          const Icon(Icons.person),
-                                    )
-                                  : const Icon(Icons.person),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Semantics(
-                              excludeSemantics: true,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    member.name,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontWeight: FontWeight.w500,
-                                      color: isRead
-                                          ? colorScheme.onSurface
-                                          : colorScheme.onSurface
-                                              .withValues(alpha: 0.8),
-                                    ),
-                                  ),
-                                  Text(
-                                    statusText,
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: isRead
-                                          ? colorScheme.primary
-                                          : colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Tooltip(
-                            message: isRead
-                                ? 'Completed reading for today'
-                                : 'Has not read today',
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isRead
-                                    ? colorScheme.primary.withValues(alpha: 0.2)
-                                    : Colors.transparent,
-                                border: isRead
-                                    ? null
-                                    : Border.all(
-                                        color: colorScheme.outline
-                                            .withValues(alpha: 0.3),
-                                      ),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  isRead ? Icons.check : Icons.hourglass_empty,
-                                  size: 18,
-                                  color: isRead
-                                      ? colorScheme.primary
-                                      : colorScheme.outline
-                                          .withValues(alpha: 0.5),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 
@@ -1258,23 +813,5 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
-    return '${months[date.month - 1]} ${date.day}';
   }
 }
