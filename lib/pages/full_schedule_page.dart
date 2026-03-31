@@ -47,12 +47,8 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   }
 
   Future<void> _scrollToToday() async {
-    if (_hasScrolledToToday) return;
-
     final targetContext = _todayKey.currentContext;
     if (targetContext != null) {
-      _hasScrolledToToday = true;
-
       // 1. Initial jump to a position slightly above the target
       Scrollable.ensureVisible(
         targetContext,
@@ -165,6 +161,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
 
           if (!_hasScrolledToToday &&
               (today.isNotEmpty || upcoming.isNotEmpty)) {
+            _hasScrolledToToday = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               unawaited(_scrollToToday());
             });
