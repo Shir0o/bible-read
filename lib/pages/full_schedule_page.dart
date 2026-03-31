@@ -176,8 +176,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
             children: [
               if (past.isNotEmpty) ...[
                 _buildSectionHeader(context, 'Past Readings'),
-                ...past
-                    .map((s) => _buildScheduleItem(context, s, isPast: true)),
+                ...past.map((s) => _buildScheduleItem(context, s, isPast: true)),
                 const SizedBox(height: 16),
               ],
               if (today.isNotEmpty) ...[
@@ -268,23 +267,6 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
                 ),
               ),
             ),
-            if (isPast)
-              Icon(
-                Icons.check_circle,
-                color: colorScheme.primary,
-                size: 24,
-              )
-            else
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: colorScheme.outline.withValues(alpha: 0.4),
-                      width: 1,
-                    )),
-              )
           ],
         ),
       ),
@@ -348,16 +330,6 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
               ],
             ),
           ),
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: colorScheme.primary,
-                  width: 2,
-                )),
-          )
         ],
       ),
     );

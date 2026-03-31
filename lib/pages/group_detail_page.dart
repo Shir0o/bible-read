@@ -20,6 +20,7 @@ import 'edit_group_page.dart';
 import 'group_join_requests_page.dart';
 import 'invite_member_page.dart';
 import 'full_schedule_page.dart';
+import 'group_catch_up_page.dart';
 
 typedef GroupDatePicker = Future<DateTime?> Function({
   required BuildContext context,
@@ -327,152 +328,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     super.dispose();
   }
 
-  Future<bool> _toggleMyReadForDate(DateTime date, bool read) async {
-    final user = widget.auth.currentUser;
-    if (user == null) return false;
-    try {
-      final target = DateTime(date.year, date.month, date.day);
-      final dateKey =
-          '${target.year}-${target.month.toString().padLeft(2, '0')}-${target.day.toString().padLeft(2, '0')}';
-      final db = widget.groupService.firestore;
-      final progressDoc = db
-          .collection(GroupCollections.groups)
-          .doc(widget.group.id)
-          .collection('progress')
-          .doc(dateKey)
-          .collection('entries')
-          .doc(user.uid);
-      if (read) {
-        await progressDoc.set({
-          'done': true,
-          'ts': Timestamp.now(),
-          'uid': user.uid,
-          'groupId': widget.group.id,
-          'dateId': dateKey,
-        }, SetOptions(merge: true));
-      } else {
-        await progressDoc.delete();
-      }
-      return true;
-    } catch (e, st) {
-      if (kDebugMode) debugPrint('Failed to toggle read: $e');
-      ErrorLogger.log(e, st);
-      if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update read status')),
-      );
-      return false;
-    }
-  }
-
-  Future<bool> _setMyReadStatusForDate({
-    required GroupSchedule schedule,
-    required bool read,
-    required Set<int> currentlyChecked,
-  }) async {
-    if (schedule.chapters.isEmpty) {
-      return true;
-    }
-    final user = widget.auth.currentUser;
-    if (user == null) return false;
-    try {
-      final target = DateTime(
-        schedule.date.year,
-        schedule.date.month,
-        schedule.date.day,
-      );
-      final dateKey =
-          '${target.year}-${target.month.toString().padLeft(2, '0')}-${target.day.toString().padLeft(2, '0')}';
-      final db = widget.groupService.firestore;
-      final entryRef = db
-          .collection(GroupCollections.groups)
-          .doc(widget.group.id)
-          .collection('progress')
-          .doc(dateKey)
-          .collection('entries')
-          .doc(user.uid);
-      final summaryRef = db
-          .collection(GroupCollections.groups)
-          .doc(widget.group.id)
-          .collection('progressSummary')
-          .doc('data')
-          .collection('entries')
-          .doc(user.uid);
-
-      await db.runTransaction((tx) async {
-        final snapshots =
-            await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-          tx.get(entryRef),
-          tx.get(summaryRef),
-        ]);
-        final entrySnap = snapshots[0];
-        final summarySnap = snapshots[1];
-        final nowTs = Timestamp.now();
-        final currentCount = (entrySnap.data()?['count'] as num?)?.toInt() ??
-            currentlyChecked.length;
-        final desiredCount = read ? schedule.chapters.length : 0;
-        final delta = desiredCount - currentCount;
-        final itemsCollection = entryRef.collection('items');
-        final prevCompleted =
-            (summarySnap.data()?['completed'] as num?)?.toInt() ?? 0;
-
-        if (read) {
-          for (var i = 0; i < schedule.chapters.length; i++) {
-            if (currentlyChecked.contains(i)) continue;
-            tx.set(itemsCollection.doc(i.toString()), {
-              'done': true,
-              'ts': nowTs,
-            });
-          }
-          tx.set(
-              entryRef,
-              {
-                'done': true,
-                'ts': nowTs,
-                'uid': user.uid,
-                'groupId': widget.group.id,
-                'dateId': dateKey,
-                'count': desiredCount,
-              },
-              SetOptions(merge: true));
-        } else {
-          if (currentlyChecked.isNotEmpty) {
-            for (final idx in currentlyChecked) {
-              tx.delete(itemsCollection.doc(idx.toString()));
-            }
-          }
-          if (entrySnap.exists) {
-            if (desiredCount == 0) {
-              tx.delete(entryRef);
-            } else {
-              tx.update(entryRef, {'count': desiredCount, 'ts': nowTs});
-            }
-          }
-        }
-
-        if (delta != 0) {
-          final updatedCompleted = prevCompleted + delta;
-          tx.set(
-              summaryRef,
-              {
-                'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
-                'uid': user.uid,
-              },
-              SetOptions(merge: true));
-        }
-      });
-      return true;
-    } catch (e, st) {
-      if (kDebugMode) debugPrint('Failed to toggle read: $e');
-      ErrorLogger.log(e, st);
-      if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update read status')),
-      );
-      return false;
-    }
-  }
-
   void _handleScheduleReadToggle({
     required GroupSchedule schedule,
     required bool read,
@@ -504,13 +359,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     });
 
     unawaited(() async {
-      final bool success = hasChapters
-          ? await _setMyReadStatusForDate(
-              schedule: schedule,
-              read: read,
-              currentlyChecked: currentlyChecked,
-            )
-          : await _toggleMyReadForDate(schedule.date, read);
+      final user = widget.auth.currentUser;
+      if (user == null) return;
+
+      final bool success = await widget.groupService.toggleReadStatus(
+        groupId: widget.group.id,
+        uid: user.uid,
+        schedule: schedule,
+        read: read,
+        currentlyChecked: currentlyChecked,
+      );
 
       if (!mounted) return;
       if (_pendingReadOps[dateKey] != opId) {
@@ -765,8 +623,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         groupService: widget.groupService,
                         currentDate: _now,
                       ),
-                      const SizedBox(height: 24),
-                      _buildFullScheduleButton(context),
+                      if (isMember) ...[
+                        const SizedBox(height: 24),
+                        _buildCatchUpButton(context),
+                      ],
+                      const SizedBox(height: 16),
+                      _buildFullScheduleButton(context, isMember),
                     ],
                   );
                 },
@@ -778,7 +640,43 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
-  Widget _buildFullScheduleButton(BuildContext context) {
+  Widget _buildCatchUpButton(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () {
+          unawaited(widget.vibrationService.lightImpact());
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => GroupCatchUpPage(
+                group: widget.group,
+                groupService: widget.groupService,
+                auth: widget.auth,
+                vibrationService: widget.vibrationService,
+              ),
+            ),
+          );
+        },
+        icon: const Icon(Icons.history_rounded),
+        label: const Text('Catch Up on Missed Days'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colorScheme.primaryContainer,
+          foregroundColor: colorScheme.onPrimaryContainer,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          textStyle: theme.textTheme.titleMedium?.copyWith(
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFullScheduleButton(BuildContext context, bool isMember) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return SizedBox(
