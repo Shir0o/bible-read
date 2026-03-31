@@ -1745,6 +1745,151 @@ class GroupService {
       await _safeLog(e, st);
     }
   }
+
+  /// Toggles the read status for a specific user on a specific date in a group.
+  ///
+  /// If [schedule.chapters] is not empty, it updates the 'count' and 'items'
+  /// sub-collection. If [schedule.chapters] is empty, it toggles the 'done' flag.
+  Future<bool> toggleReadStatus({
+    required String groupId,
+    required String uid,
+    required GroupSchedule schedule,
+    required bool read,
+    Set<int>? currentlyChecked,
+  }) async {
+    try {
+      final dateKey = _dateId(schedule.date);
+      final db = firestore;
+      final entryRef = db
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection('progress')
+          .doc(dateKey)
+          .collection('entries')
+          .doc(uid);
+      final summaryRef = db
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection('progressSummary')
+          .doc('data')
+          .collection('entries')
+          .doc(uid);
+
+      if (schedule.chapters.isEmpty) {
+        if (read) {
+          await entryRef.set({
+            'done': true,
+            'ts': FieldValue.serverTimestamp(),
+            'uid': uid,
+            'groupId': groupId,
+            'dateId': dateKey,
+          }, SetOptions(merge: true));
+        } else {
+          await entryRef.delete();
+        }
+        return true;
+      }
+
+      await db.runTransaction((tx) async {
+        final snapshots =
+            await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
+          tx.get(entryRef),
+          tx.get(summaryRef),
+        ]);
+        final entrySnap = snapshots[0];
+        final summarySnap = snapshots[1];
+        final nowTs = FieldValue.serverTimestamp();
+        final currentCount = (entrySnap.data()?['count'] as num?)?.toInt() ??
+            (currentlyChecked?.length ?? 0);
+        final desiredCount = read ? schedule.chapters.length : 0;
+        final delta = desiredCount - currentCount;
+        final itemsCollection = entryRef.collection('items');
+        final prevCompleted =
+            (summarySnap.data()?['completed'] as num?)?.toInt() ?? 0;
+
+        if (read) {
+          for (var i = 0; i < schedule.chapters.length; i++) {
+            if (currentlyChecked?.contains(i) ?? false) continue;
+            tx.set(itemsCollection.doc(i.toString()), {
+              'done': true,
+              'ts': nowTs,
+            });
+          }
+          tx.set(
+              entryRef,
+              {
+                'done': true,
+                'ts': nowTs,
+                'uid': uid,
+                'groupId': groupId,
+                'dateId': dateKey,
+                'count': desiredCount,
+              },
+              SetOptions(merge: true));
+        } else {
+          if (currentlyChecked != null && currentlyChecked.isNotEmpty) {
+            for (final idx in currentlyChecked) {
+              tx.delete(itemsCollection.doc(idx.toString()));
+            }
+          } else {
+            // If we don't know what's checked, we have to fetch them or assume all
+            // But we are in a transaction, so we can't easily fetch a collection.
+            // However, we can probably just delete all possible indexes if small
+            for (var i = 0; i < schedule.chapters.length; i++) {
+              tx.delete(itemsCollection.doc(i.toString()));
+            }
+          }
+
+          if (entrySnap.exists) {
+            if (desiredCount == 0) {
+              tx.delete(entryRef);
+            } else {
+              tx.update(entryRef, {'count': desiredCount, 'ts': nowTs});
+            }
+          }
+        }
+
+        if (delta != 0) {
+          final updatedCompleted = prevCompleted + delta;
+          tx.set(
+              summaryRef,
+              {
+                'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
+                'uid': uid,
+              },
+              SetOptions(merge: true));
+        }
+      });
+      return true;
+    } catch (e, st) {
+      await _safeLog(e, st);
+      return false;
+    }
+  }
+
+  /// Stream of completion counts/status for each day in the schedule for a specific user.
+  ///
+  /// Returns a map where key is dateId and value is the count of chapters read.
+  Stream<Map<String, int>> userProgressForGroup(String groupId, String uid) {
+    return firestore
+        .collectionGroup('entries')
+        .where('groupId', isEqualTo: groupId)
+        .where('uid', isEqualTo: uid)
+        .snapshots()
+        .map((snap) {
+      final progress = <String, int>{};
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        final dateId = data['dateId'] as String?;
+        final count = (data['count'] as num?)?.toInt() ?? 0;
+        final done = data['done'] as bool? ?? false;
+        if (dateId != null) {
+          progress[dateId] = count > 0 ? count : (done ? 1 : 0);
+        }
+      }
+      return progress;
+    });
+  }
 }
 
 class _UserInfo {
