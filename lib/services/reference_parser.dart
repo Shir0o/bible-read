@@ -493,7 +493,7 @@ class ReferenceParser {
     if (chapStr.isEmpty) {
       chapter = 1;
     } else {
-      chapter = int.tryParse(chapStr) ?? 1;
+      chapter = int.tryParse(chapStr) ?? 0;
     }
     if (chapter < 1) return null;
     if (chapter > chapters) chapter = chapters;

@@ -41,6 +41,7 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -71,6 +72,12 @@ class _SignupPageState extends State<SignupPage> {
     super.dispose();
   }
 
+  bool _isValidEmail(String email) {
+    return RegExp(
+            r"^[a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9-]+\.[a-zA-Z]+$")
+        .hasMatch(email);
+  }
+
   Future<void> _handleSignupError(Object error, StackTrace stackTrace) async {
     await ErrorLogger.log(error, stackTrace);
     if (!mounted) return;
@@ -87,16 +94,13 @@ class _SignupPageState extends State<SignupPage> {
   Future<void> _submit() async {
     if (_loading || _isGoogleSigningIn) return;
 
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-
-    if (name.isEmpty || email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
-    }
 
     setState(() {
       _loading = true;
@@ -170,12 +174,6 @@ class _SignupPageState extends State<SignupPage> {
 
         await widget.auth.signInWithCredential(credential);
 
-        // Navigation is handled by auth stream listener in MainPage usually,
-        // but since we are pushing this page, we might want to pop or replace.
-        // If we are here, we are likely not authenticated yet.
-        // Once authenticated, MainPage stream builder will update.
-        // However, if we pushed this page, we should probably pop/replace to main page.
-
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
@@ -230,8 +228,17 @@ class _SignupPageState extends State<SignupPage> {
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: darkPrimary, width: 1),
       ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
       labelStyle: GoogleFonts.inter(color: grey400),
       floatingLabelStyle: GoogleFonts.inter(color: darkPrimary),
+      errorStyle: GoogleFonts.inter(color: Colors.red, fontSize: 12),
     );
 
     return Scaffold(
@@ -296,67 +303,94 @@ class _SignupPageState extends State<SignupPage> {
                     const SizedBox(height: 32),
 
                     // Form
-                    AutofillGroup(
-                      child: Column(
-                        children: [
-                          // Full Name
-                          TextField(
-                            controller: _nameController,
-                            style: GoogleFonts.inter(color: Colors.white),
-                            textCapitalization: TextCapitalization.words,
-                            autofillHints: const [AutofillHints.name],
-                            textInputAction: TextInputAction.next,
-                            decoration: inputDecoration.copyWith(
-                              labelText: 'Full Name',
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Email
-                          TextField(
-                            key: const Key('signupEmailField'),
-                            controller: _emailController,
-                            style: GoogleFonts.inter(color: Colors.white),
-                            keyboardType: TextInputType.emailAddress,
-                            autofillHints: const [AutofillHints.email],
-                            textInputAction: TextInputAction.next,
-                            decoration: inputDecoration.copyWith(
-                              labelText: 'Email',
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Password
-                          TextField(
-                            key: const Key('signupPasswordField'),
-                            controller: _passwordController,
-                            style: GoogleFonts.inter(color: Colors.white),
-                            obscureText: !_isPasswordVisible,
-                            autofillHints: const [AutofillHints.newPassword],
-                            textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => _submit(),
-                            decoration: inputDecoration.copyWith(
-                              labelText: 'Password',
-                              suffixIcon: IconButton(
-                                tooltip: _isPasswordVisible
-                                    ? 'Hide password'
-                                    : 'Show password',
-                                icon: Icon(
-                                  _isPasswordVisible
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  color: grey400,
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _isPasswordVisible = !_isPasswordVisible;
-                                  });
-                                },
+                    Form(
+                      key: _formKey,
+                      child: AutofillGroup(
+                        child: Column(
+                          children: [
+                            // Full Name
+                            TextFormField(
+                              controller: _nameController,
+                              style: GoogleFonts.inter(color: Colors.white),
+                              textCapitalization: TextCapitalization.words,
+                              autofillHints: const [AutofillHints.name],
+                              textInputAction: TextInputAction.next,
+                              decoration: inputDecoration.copyWith(
+                                labelText: 'Full Name',
                               ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Please fill in all fields';
+                                }
+                                return null;
+                              },
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 20),
+
+                            // Email
+                            TextFormField(
+                              key: const Key('signupEmailField'),
+                              controller: _emailController,
+                              style: GoogleFonts.inter(color: Colors.white),
+                              keyboardType: TextInputType.emailAddress,
+                              autofillHints: const [AutofillHints.email],
+                              textInputAction: TextInputAction.next,
+                              decoration: inputDecoration.copyWith(
+                                labelText: 'Email',
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Please fill in all fields';
+                                }
+                                if (!_isValidEmail(value.trim())) {
+                                  return 'Please enter a valid email address';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Password
+                            TextFormField(
+                              key: const Key('signupPasswordField'),
+                              controller: _passwordController,
+                              style: GoogleFonts.inter(color: Colors.white),
+                              obscureText: !_isPasswordVisible,
+                              autofillHints: const [AutofillHints.newPassword],
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) => _submit(),
+                              decoration: inputDecoration.copyWith(
+                                labelText: 'Password',
+                                suffixIcon: IconButton(
+                                  tooltip: _isPasswordVisible
+                                      ? 'Hide password'
+                                      : 'Show password',
+                                  icon: Icon(
+                                    _isPasswordVisible
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: grey400,
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isPasswordVisible = !_isPasswordVisible;
+                                    });
+                                  },
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please fill in all fields';
+                                }
+                                if (value.length < 6) {
+                                  return 'Password must be at least 6 characters';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
 

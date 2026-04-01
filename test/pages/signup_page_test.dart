@@ -133,7 +133,7 @@ void main() {
 
     // Enter Full Name
     await tester.enterText(
-      find.widgetWithText(TextField, 'Full Name'),
+      find.widgetWithText(TextFormField, 'Full Name'),
       'Test User',
     );
 
@@ -144,7 +144,7 @@ void main() {
     );
 
     // Enter Password
-    await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
+    await tester.enterText(find.byKey(const Key('signupPasswordField')), 'password');
 
     // Tap Create Account
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
@@ -152,7 +152,7 @@ void main() {
 
     expect(auth.createCalled, isTrue);
     expect(auth.email, 'user@example.com');
-    expect(auth.password, 'pw');
+    expect(auth.password, 'password');
 
     final uid = auth.currentUser!.uid;
     final doc = await firestore.collection('users').doc(uid).get();
@@ -166,6 +166,74 @@ void main() {
     expect(find.byType(MainPage), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('SignupPage shows validation errors for empty fields',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SignupPage(
+          auth: RecordingAuth(),
+          firestore: FakeFirebaseFirestore(),
+          vibrationService: MockVibrationService(),
+          googleSignInProvider: () => FakeGoogleSignIn(),
+        ),
+      ),
+    );
+
+    // Tap Create Account without entering anything
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
+    await tester.pump();
+
+    expect(find.text('Please fill in all fields'), findsAtLeast(3));
+  });
+
+  testWidgets('SignupPage shows error for invalid email', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SignupPage(
+          auth: RecordingAuth(),
+          firestore: FakeFirebaseFirestore(),
+          vibrationService: MockVibrationService(),
+          googleSignInProvider: () => FakeGoogleSignIn(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'Full Name'), 'Test User');
+    await tester.enterText(
+        find.byKey(const Key('signupEmailField')), 'invalid-email');
+    await tester.enterText(find.byKey(const Key('signupPasswordField')), 'password');
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
+    await tester.pump();
+
+    expect(find.text('Please enter a valid email address'), findsOneWidget);
+  });
+
+  testWidgets('SignupPage shows error for short password', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SignupPage(
+          auth: RecordingAuth(),
+          firestore: FakeFirebaseFirestore(),
+          vibrationService: MockVibrationService(),
+          googleSignInProvider: () => FakeGoogleSignIn(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'Full Name'), 'Test User');
+    await tester.enterText(
+        find.byKey(const Key('signupEmailField')), 'user@example.com');
+    await tester.enterText(find.byKey(const Key('signupPasswordField')), '12345');
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
+    await tester.pump();
+
+    expect(find.text('Password must be at least 6 characters'), findsOneWidget);
   });
 
   testWidgets('Social button has correct semantics and tooltip',

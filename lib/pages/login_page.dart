@@ -42,6 +42,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -65,22 +66,12 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _submit() async {
     if (_loading || _isGoogleSigningIn) return;
 
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
-    }
-
-    if (!_isValidEmail(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address')),
-      );
-      return;
-    }
 
     setState(() {
       _loading = true;
@@ -308,53 +299,72 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 40), // mb-10
 
                           // Form
-                          AutofillGroup(
-                            child: Column(
-                              children: [
-                                // Email or Username
-                                _buildStyledInput(
-                                  context: context,
-                                  controller: _emailController,
-                                  label: 'Email or Username',
-                                  key: const Key('loginEmailField'),
-                                  keyboardType: TextInputType.emailAddress,
-                                  autofillHints: [AutofillHints.email],
-                                  textInputAction: TextInputAction.next,
-                                  autofocus: false,
-                                ),
-                                const SizedBox(height: 16), // gap-4
-
-                                // Password
-                                _buildStyledInput(
-                                  context: context,
-                                  controller: _passwordController,
-                                  label: 'Password',
-                                  key: const Key('loginPasswordField'),
-                                  obscureText: !_isPasswordVisible,
-                                  autofillHints: [AutofillHints.password],
-                                  textInputAction: TextInputAction.done,
-                                  onSubmitted: (_) => _submit(),
-                                  suffixIcon: IconButton(
-                                    tooltip: _isPasswordVisible
-                                        ? 'Hide password'
-                                        : 'Show password',
-                                    icon: Icon(
-                                      _isPasswordVisible
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
-                                      color: AppTheme.m3SurfaceDim
-                                          .withValues(alpha: 0.4),
-                                      size: 20, // text-xl
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _isPasswordVisible =
-                                            !_isPasswordVisible;
-                                      });
+                          Form(
+                            key: _formKey,
+                            child: AutofillGroup(
+                              child: Column(
+                                children: [
+                                  // Email or Username
+                                  _buildStyledInput(
+                                    context: context,
+                                    controller: _emailController,
+                                    label: 'Email or Username',
+                                    key: const Key('loginEmailField'),
+                                    keyboardType: TextInputType.emailAddress,
+                                    autofillHints: [AutofillHints.email],
+                                    textInputAction: TextInputAction.next,
+                                    autofocus: false,
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Please fill in all fields';
+                                      }
+                                      if (!_isValidEmail(value.trim())) {
+                                        return 'Please enter a valid email address';
+                                      }
+                                      return null;
                                     },
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 16), // gap-4
+
+                                  // Password
+                                  _buildStyledInput(
+                                    context: context,
+                                    controller: _passwordController,
+                                    label: 'Password',
+                                    key: const Key('loginPasswordField'),
+                                    obscureText: !_isPasswordVisible,
+                                    autofillHints: [AutofillHints.password],
+                                    textInputAction: TextInputAction.done,
+                                    onSubmitted: (_) => _submit(),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please fill in all fields';
+                                      }
+                                      return null;
+                                    },
+                                    suffixIcon: IconButton(
+                                      tooltip: _isPasswordVisible
+                                          ? 'Hide password'
+                                          : 'Show password',
+                                      icon: Icon(
+                                        _isPasswordVisible
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                        color: AppTheme.m3SurfaceDim
+                                            .withValues(alpha: 0.4),
+                                        size: 20, // text-xl
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _isPasswordVisible =
+                                              !_isPasswordVisible;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
 
@@ -608,6 +618,7 @@ class _LoginPageState extends State<LoginPage> {
     bool autofocus = false,
     Widget? suffixIcon,
     ValueChanged<String>? onSubmitted,
+    String? Function(String?)? validator,
   }) {
     final textTheme = Theme.of(context).textTheme;
 
@@ -637,6 +648,7 @@ class _LoginPageState extends State<LoginPage> {
           textInputAction: textInputAction,
           autofocus: autofocus,
           onFieldSubmitted: onSubmitted,
+          validator: validator,
           style: textTheme.bodyMedium?.copyWith(color: Colors.white),
           decoration: InputDecoration(
             labelText: label,
@@ -661,6 +673,14 @@ class _LoginPageState extends State<LoginPage> {
             ),
             focusedBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: AppTheme.m3Primary, width: 2),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            errorBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.red, width: 2),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            focusedErrorBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.red, width: 2),
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
             contentPadding: const EdgeInsets.fromLTRB(16, 24, 16, 8),

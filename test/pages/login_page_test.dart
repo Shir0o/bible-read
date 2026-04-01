@@ -216,8 +216,7 @@ void main() {
         await tester.pump();
         await tester.pumpAndSettle();
 
-        expect(find.widgetWithText(SnackBar, 'Please fill in all fields'),
-            findsOneWidget);
+        expect(find.text('Please fill in all fields'), findsAtLeast(1));
         expect(auth.signInCalled, isFalse);
       });
     });
@@ -235,9 +234,7 @@ void main() {
         await tester.pump();
         await tester.pumpAndSettle();
 
-        expect(
-            find.widgetWithText(SnackBar, 'Please enter a valid email address'),
-            findsOneWidget);
+        expect(find.text('Please enter a valid email address'), findsOneWidget);
         expect(auth.signInCalled, isFalse);
       });
     });

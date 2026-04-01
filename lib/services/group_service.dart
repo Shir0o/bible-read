@@ -1516,65 +1516,88 @@ class GroupService {
         throw StateError('Only the group owner can delete this group.');
       }
 
-      final refsToDelete = <DocumentReference>[];
+      // Track failures to decide if we can delete the root document
+      final failures = <String>[];
 
-      // Members
-      final members = await groupRef.collection(GroupCollections.members).get();
-      refsToDelete.addAll(members.docs.map((d) => d.reference));
+      // 1. Members, Schedule, Join Requests
+      final baseCollections = [
+        GroupCollections.members,
+        GroupCollections.schedule,
+        GroupCollections.joinRequests,
+      ];
 
-      // Schedule
-      final sched = await groupRef.collection(GroupCollections.schedule).get();
-      refsToDelete.addAll(sched.docs.map((d) => d.reference));
-
-      // Join requests
-      final requests =
-          await groupRef.collection(GroupCollections.joinRequests).get();
-      refsToDelete.addAll(requests.docs.map((d) => d.reference));
-
-      // Delete what we have so far
-      if (refsToDelete.isNotEmpty) {
-        await _deleteInBatches(refsToDelete);
-      }
-
-      // Progress entries (progress/{dateId}/entries/* and date docs)
-      final progressDates = await groupRef.collection('progress').get();
-      final allDateDocs = progressDates.docs;
-
-      // Process in chunks to limit concurrency and batch size
-      const chunkSize = 50;
-      for (var i = 0; i < allDateDocs.length; i += chunkSize) {
-        final end = (i + chunkSize < allDateDocs.length)
-            ? i + chunkSize
-            : allDateDocs.length;
-        final chunk = allDateDocs.sublist(i, end);
-
-        final chunkRefs = <DocumentReference>[];
-
-        // Fetch entries for this chunk in parallel
-        final entriesSnapshots = await Future.wait(chunk.map((d) async {
-          try {
-            return await d.reference.collection('entries').get();
-          } catch (_) {
-            return null;
+      for (final coll in baseCollections) {
+        try {
+          final snap = await groupRef.collection(coll).get();
+          if (snap.docs.isNotEmpty) {
+            await _deleteInBatches(snap.docs.map((d) => d.reference).toList());
           }
-        }));
-
-        for (final snap in entriesSnapshots) {
-          if (snap != null) {
-            chunkRefs.addAll(snap.docs.map((d) => d.reference));
-          }
-        }
-
-        // Also delete the date docs in this chunk
-        chunkRefs.addAll(chunk.map((d) => d.reference));
-
-        if (chunkRefs.isNotEmpty) {
-          await _deleteInBatches(chunkRefs);
+        } catch (e, st) {
+          failures.add(coll);
+          await _safeLog(e, st);
         }
       }
 
-      // Finally delete the group document
-      await groupRef.delete();
+      // 2. Progress entries (progress/{dateId}/entries/* and date docs)
+      try {
+        final progressDates = await groupRef.collection('progress').get();
+        final allDateDocs = progressDates.docs;
+
+        const chunkSize = 50;
+        for (var i = 0; i < allDateDocs.length; i += chunkSize) {
+          final end = (i + chunkSize < allDateDocs.length)
+              ? i + chunkSize
+              : allDateDocs.length;
+          final chunk = allDateDocs.sublist(i, end);
+
+          final chunkRefs = <DocumentReference>[];
+
+          final entriesSnapshots = await Future.wait(chunk.map((d) async {
+            try {
+              return await d.reference.collection('entries').get();
+            } catch (e, st) {
+              await _safeLog(e, st);
+              return null;
+            }
+          }));
+
+          for (final snap in entriesSnapshots) {
+            if (snap != null) {
+              chunkRefs.addAll(snap.docs.map((d) => d.reference));
+            }
+          }
+
+          chunkRefs.addAll(chunk.map((d) => d.reference));
+
+          if (chunkRefs.isNotEmpty) {
+            await _deleteInBatches(chunkRefs);
+          }
+        }
+      } catch (e, st) {
+        failures.add('progress');
+        await _safeLog(e, st);
+      }
+
+      // 3. progressSummary
+      try {
+        final summarySnap =
+            await groupRef.collection('progressSummary').doc('data').get();
+        if (summarySnap.exists) {
+          await summarySnap.reference.delete();
+        }
+      } catch (e, st) {
+        failures.add('progressSummary');
+        await _safeLog(e, st);
+      }
+
+      // Finally delete the group document only if no critical sub-collections failed to clear.
+      // We allow some flexibility but prefer a clean state.
+      if (failures.isEmpty) {
+        await groupRef.delete();
+      } else {
+        throw StateError(
+            'Failed to clean up all sub-collections: ${failures.join(', ')}. Group document preserved.');
+      }
     } catch (e, st) {
       await _safeLog(e, st);
       rethrow;
