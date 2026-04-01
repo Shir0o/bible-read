@@ -259,7 +259,7 @@ class GroupCard extends StatelessWidget {
               width: 14,
               height: 14,
               decoration: BoxDecoration(
-                color: Colors.green,
+                color: const Color(0xFF4CAF50), // Consistent Success Green
                 shape: BoxShape.circle,
                 border: Border.all(color: colorScheme.surface, width: 1.5),
               ),

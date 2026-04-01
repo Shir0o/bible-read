@@ -39,8 +39,8 @@ class NotificationButton extends StatelessWidget {
                   child: Container(
                     key: ValueKey(unreadCount),
                     padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.error,
                       shape: BoxShape.circle,
                     ),
                     constraints: const BoxConstraints(

@@ -99,6 +99,7 @@ class AppTheme {
       primaryTextTheme: primaryTextTheme,
       typography: typography,
       scaffoldBackgroundColor: colorScheme.surface,
+      shadowColor: isLight ? Colors.black : Colors.black.withValues(alpha: 0.5),
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.surface,
         titleTextStyle: themedText.titleLarge,
@@ -124,4 +125,16 @@ class AppSpacing {
     horizontal: hPadding,
     vertical: vPaddingSmall,
   );
+
+  /// Standard card shadow
+  static List<BoxShadow> cardShadow(BuildContext context) {
+    final theme = Theme.of(context);
+    return [
+      BoxShadow(
+        color: theme.shadowColor.withValues(alpha: 0.1),
+        blurRadius: 10,
+        offset: const Offset(0, 4),
+      ),
+    ];
+  }
 }

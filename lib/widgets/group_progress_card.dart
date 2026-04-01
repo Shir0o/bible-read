@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../services/group_service.dart';
+import '../theme/app_theme.dart';
 
 /// A card that displays the overall progress of a reading group.
 class GroupProgressCard extends StatelessWidget {
@@ -72,13 +73,7 @@ class GroupProgressCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: AppSpacing.cardShadow(context),
           ),
           padding: const EdgeInsets.all(24),
           child: Column(

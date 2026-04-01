@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/group_schedule.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 
 /// A card that displays the reading assignment for today and allows marking it as read.
 class TodaysReadingCard extends StatelessWidget {
@@ -81,13 +82,7 @@ class TodaysReadingCard extends StatelessWidget {
             border: Border.all(
               color: colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: AppSpacing.cardShadow(context),
           ),
           padding: const EdgeInsets.all(24),
           child: Column(

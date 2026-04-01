@@ -10,6 +10,7 @@ import '../../pages/reading_plans_page.dart';
 import '../../pages/create_plan_page.dart';
 import '../skeleton.dart';
 import '../skeleton_loader.dart';
+import '../../theme/app_theme.dart';
 
 class JourneyProgressCard extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -322,19 +323,13 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                         width: 80,
                         height: 100, // Slightly taller rectangle
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(16),
+                          color: colorScheme.surfaceContainer,
+                          borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: colorScheme.outlineVariant
-                                .withValues(alpha: 0.2),
+                            color: colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.1),
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                          boxShadow: AppSpacing.cardShadow(context),
                         ),
                         child: Center(
                           child: Icon(

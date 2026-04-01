@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../models/group_member_progress.dart';
 import '../services/group_service.dart';
+import '../theme/app_theme.dart';
 
 /// A list of members in a reading group with their completion status for a specific date.
 class GroupMembersList extends StatelessWidget {
@@ -53,13 +54,7 @@ class GroupMembersList extends StatelessWidget {
             border: Border.all(
               color: colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: AppSpacing.cardShadow(context),
           ),
           child: StreamBuilder<List<GroupMemberProgressData>>(
             stream: groupService.memberDailyCompletion(
