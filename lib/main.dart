@@ -49,6 +49,8 @@ void main() async {
           debugPrint('AppCheck getToken attempt $retries failed: $e');
           if (retries >= maxRetries) {
             debugPrint('AppCheck getToken failed after $maxRetries attempts.');
+            debugPrint('TIP: Ensure your SHA-1/SHA-256 fingerprints are registered in the Firebase Console.');
+            debugPrint('TIP: If using an emulator, you may need to add a Debug Token in the Firebase Console under App Check.');
           } else {
             await Future.delayed(
                 Duration(seconds: math.pow(2, retries).toInt()));

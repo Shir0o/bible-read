@@ -17,7 +17,7 @@ class SkeletonLoader extends StatefulWidget {
   final Widget skeleton;
 
   /// The minimum time the skeleton should be visible.
-  /// Defaults to 500ms.
+  /// Defaults to 1000ms.
   final Duration minTime;
 
   /// Curve for the fade transition between skeleton and content.
@@ -31,7 +31,7 @@ class SkeletonLoader extends StatefulWidget {
     required this.loading,
     required this.child,
     required this.skeleton,
-    this.minTime = const Duration(milliseconds: 500),
+    this.minTime = const Duration(milliseconds: 1000),
     this.switchCurve = Curves.easeOut,
     this.switchDuration = const Duration(milliseconds: 300),
   });
@@ -138,7 +138,7 @@ class SliverSkeletonLoader extends StatefulWidget {
     required this.loading,
     required this.child,
     required this.skeleton,
-    this.minTime = const Duration(milliseconds: 500),
+    this.minTime = const Duration(milliseconds: 1000),
   });
 
   @override

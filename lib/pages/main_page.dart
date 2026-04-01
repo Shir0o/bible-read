@@ -31,6 +31,8 @@ import '../services/reading_status_service.dart';
 import '../services/data_cache_service.dart';
 import '../services/user_preferences_service.dart';
 import '../services/vibration_service.dart';
+import '../services/connectivity_service.dart';
+import '../widgets/offline_banner.dart';
 import 'app_check_error_page.dart';
 import 'leaderboard_page.dart';
 import 'read_log_page.dart';
@@ -128,6 +130,7 @@ class _MainPageState extends State<MainPage> {
   late final DataCacheService _cacheService;
   late final ReadingStatusService _readingStatusService;
   late final UserPreferencesService _userPreferencesService;
+  late final ConnectivityService _connectivityService;
   late final List<Widget> _pages;
   late final Stream<User?> _authStream;
 
@@ -139,7 +142,8 @@ class _MainPageState extends State<MainPage> {
     super.initState();
     _authStream = widget.auth.authStateChanges();
     _cacheService = DataCacheService();
-    // ... existing init code ...
+    _connectivityService = ConnectivityService();
+    // ... rest of init ...
     _readingStatusService = widget.readingStatusService ??
         ReadingStatusService(
           firestore: widget.firestore,
@@ -215,6 +219,12 @@ class _MainPageState extends State<MainPage> {
         cache: _cacheService,
       ),
     ];
+  }
+
+  @override
+  void dispose() {
+    _connectivityService.dispose();
+    super.dispose();
   }
 
   Future<void> _saveFcmToken() async {
@@ -338,7 +348,7 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.appCheckFailed) {
+    if (widget.appCheckFailed && !kDebugMode) {
       return const AppCheckErrorPage();
     }
 
@@ -441,6 +451,8 @@ class _MainPageState extends State<MainPage> {
               onDestinationSelected: _onItemTapped,
               pages: _pages,
               destinations: destinations,
+              offlineBanner:
+                  OfflineBanner(connectivityService: _connectivityService),
             ),
           ),
         );

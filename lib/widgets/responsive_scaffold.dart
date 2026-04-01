@@ -12,10 +12,11 @@ class ResponsiveScaffold extends StatefulWidget {
   final ValueChanged<int> onDestinationSelected;
   final List<Widget> pages;
   final List<NavigationDestination> destinations;
-  final PreferredSizeWidget? appBar;
+  final Widget? appBar;
   final Widget? drawer;
   final int? contentIndex;
   final GlobalKey<ScaffoldState>? scaffoldKey;
+  final Widget? offlineBanner;
 
   const ResponsiveScaffold({
     super.key,
@@ -27,6 +28,7 @@ class ResponsiveScaffold extends StatefulWidget {
     this.drawer,
     this.contentIndex,
     this.scaffoldKey,
+    this.offlineBanner,
   });
 
   @override
@@ -65,40 +67,51 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
 
     return Scaffold(
       key: widget.scaffoldKey,
-      appBar: widget.appBar,
+      appBar: widget.appBar is PreferredSizeWidget
+          ? widget.appBar as PreferredSizeWidget
+          : null,
       drawer: widget.drawer,
-      body: Row(
+      body: Column(
         children: [
-          if (isWide && widget.destinations.length > 1)
-            NavigationRail(
-              selectedIndex: safeSelected,
-              onDestinationSelected: widget.onDestinationSelected,
-              labelType: NavigationRailLabelType.all,
-              leading: const SizedBox(height: 16),
-              destinations: widget.destinations.asMap().entries.map((entry) {
-                final index = entry.key;
-                final d = entry.value;
-                final isSelected = safeSelected == index;
-                return NavigationRailDestination(
-                  icon: AnimatedScale(
-                    scale: isSelected ? 1.2 : 1.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: d.icon,
-                  ),
-                  selectedIcon: AnimatedScale(
-                    scale: 1.2,
-                    duration: const Duration(milliseconds: 200),
-                    child: d.selectedIcon ?? d.icon,
-                  ),
-                  label: Text(d.label),
-                );
-              }).toList(),
-            ),
+          if (widget.offlineBanner != null) widget.offlineBanner!,
           Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(), // Disable swipe
-              children: widget.pages,
+            child: Row(
+              children: [
+                if (isWide && widget.destinations.length > 1)
+                  NavigationRail(
+                    selectedIndex: safeSelected,
+                    onDestinationSelected: widget.onDestinationSelected,
+                    labelType: NavigationRailLabelType.all,
+                    leading: const SizedBox(height: 16),
+                    destinations:
+                        widget.destinations.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final d = entry.value;
+                      final isSelected = safeSelected == index;
+                      return NavigationRailDestination(
+                        icon: AnimatedScale(
+                          scale: isSelected ? 1.2 : 1.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: d.icon,
+                        ),
+                        selectedIcon: AnimatedScale(
+                          scale: 1.2,
+                          duration: const Duration(milliseconds: 200),
+                          child: d.selectedIcon ?? d.icon,
+                        ),
+                        label: Text(d.label),
+                      );
+                    }).toList(),
+                  ),
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics:
+                        const NeverScrollableScrollPhysics(), // Disable swipe
+                    children: widget.pages,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

@@ -21,6 +21,7 @@ import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or ve
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
 import '../widgets/app_header.dart';
+import '../widgets/syncing_indicator.dart';
 import 'read_log_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
@@ -560,14 +561,23 @@ class _HomePageState extends State<HomePage>
             right: 0,
             child: SafeArea(
               bottom: false,
-              child: AppHeader(
-                auth: widget.auth,
-                firestore: widget.firestore,
-                vibrationService: widget.vibrationService,
-                dateProvider: widget.dateProvider,
-                showProfileIcon: false,
-                showNotificationBell: false,
-                showGreeting: false,
+              child: Column(
+                children: [
+                  AppHeader(
+                    auth: widget.auth,
+                    firestore: widget.firestore,
+                    vibrationService: widget.vibrationService,
+                    dateProvider: widget.dateProvider,
+                    showProfileIcon: false,
+                    showNotificationBell: false,
+                    showGreeting: false,
+                  ),
+                  if (widget.auth.currentUser != null)
+                    SyncingIndicator(
+                      firestore: widget.firestore,
+                      userId: widget.auth.currentUser!.uid,
+                    ),
+                ],
               ),
             ),
           ),
