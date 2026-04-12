@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,9 +10,6 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
-import 'package:bible_read/services/reading_status_service.dart';
-import 'package:bible_read/services/reading_plan_service.dart';
-import 'package:bible_read/models/reading_plan.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
     with MockPlatformInterfaceMixin {
@@ -68,7 +66,6 @@ void main() {
     final google = FakeGoogleSignInPlatform();
     GoogleSignInPlatform.instance = google;
 
-    final now = DateTime(2026, 4, 9, 10, 0); // Match today's date in session
     final dateKey = '2026-04-09';
 
     // 1. Setup initial user data in Firestore
@@ -78,15 +75,17 @@ void main() {
     });
 
     // Create a mock reading plan
-    final plan = ReadingPlan(
-      id: 'plan_1',
-      title: 'Sequential NT',
-      description: 'Read the NT',
-      chaptersPerDay: 1,
-    );
     await firestore.collection('users').doc('u1').collection('plans').doc('plan_1').set({
       'title': 'Sequential NT',
-      'chaptersPerDay': 1,
+      'description': 'Read the NT',
+      'durationDays': 1,
+      'tags': [],
+      'schedule': [
+        {
+          'day': 1,
+          'readings': ['Matthew 1']
+        }
+      ],
       'active': true,
       'createdAt': FieldValue.serverTimestamp(),
     });

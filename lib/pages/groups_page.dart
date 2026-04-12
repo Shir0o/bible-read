@@ -36,18 +36,44 @@ class GroupsPage extends StatefulWidget {
 
 class _GroupsPageState extends State<GroupsPage> {
   int _refreshTick = 0;
+  bool _isSyncing = false;
 
   Future<void> _refresh() async {
     try {
       await widget.auth.currentUser?.reload();
-      final uid = widget.auth.currentUser?.uid;
-      if (uid != null) {
-        // Validate and fix cached member progress for joined/owned groups.
-        await widget.groupService.fixMemberProgressSummariesForUser(uid);
-      }
     } catch (_) {}
     if (mounted) {
       setState(() => _refreshTick++);
+    }
+  }
+
+  Future<void> _syncGroups() async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null || _isSyncing) return;
+
+    setState(() => _isSyncing = true);
+    unawaited(widget.vibrationService.lightImpact());
+
+    try {
+      await widget.groupService.fixMemberProgressSummariesForUser(uid);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Group progress synchronized')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to synchronize groups')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+          _refreshTick++;
+        });
+      }
     }
   }
 
@@ -131,7 +157,29 @@ class _GroupsPageState extends State<GroupsPage> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: CommonStyles.buildAppBar(context, 'My Groups'),
+      appBar: CommonStyles.buildAppBar(
+        context,
+        'My Groups',
+        actions: [
+          _isSyncing
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                )
+              : IconButton(
+                  tooltip: 'Sync groups',
+                  icon: const Icon(Icons.sync),
+                  onPressed: _syncGroups,
+                ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [

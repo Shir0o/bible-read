@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -46,7 +46,7 @@ void main() {
       final groups = await stream.firstWhere((list) => list.length >= 60);
       stopwatch.stop();
 
-      print('PERF: groupsForUser (60 groups) took ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint('PERF: groupsForUser (60 groups) took ${stopwatch.elapsedMilliseconds}ms');
       expect(groups.length, 60);
     });
 
@@ -70,7 +70,7 @@ void main() {
       await service.fixMemberProgressSummariesForUser(uid);
       stopwatch.stop();
 
-      print('PERF: fixMemberProgressSummariesForUser (60 groups) took ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint('PERF: fixMemberProgressSummariesForUser (60 groups) took ${stopwatch.elapsedMilliseconds}ms');
     });
   });
 }
