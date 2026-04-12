@@ -10,12 +10,14 @@ import '../services/reading_plan_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/plan_detail_skeleton.dart';
+import '../services/vibration_service.dart';
 
 class PlanDetailPage extends StatefulWidget {
   final ReadingPlan plan;
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final UserPlanProgress? initialProgress;
+  final VibrationService vibrationService;
 
   const PlanDetailPage({
     super.key,
@@ -23,6 +25,7 @@ class PlanDetailPage extends StatefulWidget {
     required this.firestore,
     required this.auth,
     this.initialProgress,
+    this.vibrationService = const VibrationService(),
   });
 
   @override
@@ -206,6 +209,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       int dayNumber, bool wasCompleted, Set<int> completedDays) async {
     final user = widget.auth.currentUser;
     if (user == null) return;
+
+    unawaited(widget.vibrationService.lightImpact());
 
     final previousOptimistic = _optimisticCompletedDays != null
         ? Set<int>.from(_optimisticCompletedDays!)

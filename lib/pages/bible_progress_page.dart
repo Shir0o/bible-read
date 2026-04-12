@@ -5,17 +5,21 @@ import 'package:flutter/material.dart';
 import '../services/bible_progress_service.dart';
 import '../services/reference_parser.dart';
 import '../services/error_logger.dart';
+import '../services/vibration_service.dart';
+import 'dart:async';
 
 class BibleProgressPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final String? initialScrollToBook;
+  final VibrationService vibrationService;
 
   const BibleProgressPage({
     super.key,
     required this.firestore,
     required this.auth,
     this.initialScrollToBook,
+    this.vibrationService = const VibrationService(),
   });
 
   @override
@@ -220,6 +224,7 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
     }
 
     // 1. Apply Optimistic Update
+    unawaited(widget.vibrationService.lightImpact());
     setState(() {
       _localOverrides[book] = desiredCompleted;
     });

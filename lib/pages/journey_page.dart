@@ -168,6 +168,7 @@ class _JourneyPageState extends State<JourneyPage>
                         initialPlans: _plans,
                         initialProgress: _progress,
                         isLoading: _isLoading,
+                        vibrationService: widget.vibrationService,
                       ),
                       const SizedBox(height: 32),
                       BibleLibraryGrid(
@@ -175,6 +176,7 @@ class _JourneyPageState extends State<JourneyPage>
                         auth: widget.auth,
                         initialCompletedByBook: _completedByBook,
                         isLoading: _isLoading,
+                        vibrationService: widget.vibrationService,
                       ),
                       const SizedBox(height: 32),
                       ConsistencyCalendar(

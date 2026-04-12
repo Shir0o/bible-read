@@ -9,12 +9,15 @@ import '../../pages/bible_progress_page.dart';
 import '../../widgets/skeletons/bible_library_grid_skeleton.dart';
 import '../skeleton_loader.dart';
 
+import '../../services/vibration_service.dart';
+
 class BibleLibraryGrid extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final Map<String, Set<int>>? initialCompletedByBook;
   final bool showTitle;
   final bool isLoading;
+  final VibrationService vibrationService;
 
   const BibleLibraryGrid({
     super.key,
@@ -23,6 +26,7 @@ class BibleLibraryGrid extends StatefulWidget {
     this.initialCompletedByBook,
     this.showTitle = true,
     this.isLoading = false,
+    this.vibrationService = const VibrationService(),
   });
 
   @override
@@ -69,11 +73,13 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                 ),
                 TextButton(
                   onPressed: () {
+                    unawaited(widget.vibrationService.lightImpact());
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => BibleProgressPage(
                           firestore: widget.firestore,
                           auth: widget.auth,
+                          vibrationService: widget.vibrationService,
                         ),
                       ),
                     );

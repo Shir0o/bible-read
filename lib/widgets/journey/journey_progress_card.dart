@@ -12,10 +12,13 @@ import '../skeleton.dart';
 import '../skeleton_loader.dart';
 import '../../theme/app_theme.dart';
 
+import '../../services/vibration_service.dart';
+
 class JourneyProgressCard extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final ReadingPlanService readingPlanService;
+  final VibrationService vibrationService;
   final List<ReadingPlan>? initialPlans;
   final List<UserPlanProgress>? initialProgress;
   final bool showTitle;
@@ -26,6 +29,7 @@ class JourneyProgressCard extends StatefulWidget {
     required this.firestore,
     required this.auth,
     ReadingPlanService? readingPlanService,
+    this.vibrationService = const VibrationService(),
     this.initialPlans,
     this.initialProgress,
     this.showTitle = true,
@@ -428,6 +432,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                     height: 48,
                     child: FilledButton.tonal(
                       onPressed: () {
+                        unawaited(widget.vibrationService.lightImpact());
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => PlanDetailPage(
@@ -435,6 +440,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                               firestore: widget.firestore,
                               auth: widget.auth,
                               initialProgress: progress,
+                              vibrationService: widget.vibrationService,
                             ),
                           ),
                         );
