@@ -98,7 +98,7 @@ service cloud.firestore {
 
     // 🔓 User profiles (publicly readable, user-owned writable)
     match /users/{userId} {
-      // Any signed-in user can read all user profiles (for leaderboard, etc.)
+      // Any signed-in user can read all user profiles (for searching friends, etc.)
       allow read: if request.auth != null;
 
       // Only the user can create/update their own profile
@@ -244,9 +244,8 @@ service cloud.firestore {
       }
 
       match /summary/{docId} {
-        // Public leaderboard reads summary/data for all users; other summary
-        // documents remain private to the owner.
-        allow read: if request.auth != null && (request.auth.uid == userId || docId == 'data');
+        // Summary documents remain private to the owner.
+        allow read: if request.auth != null && request.auth.uid == userId;
         allow write: if request.auth != null && request.auth.uid == userId;
       }
 

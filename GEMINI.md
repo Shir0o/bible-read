@@ -1,6 +1,6 @@
 # Bible Reading Challenge App
 
-This project is a Flutter mobile application designed to help individuals and groups track their daily Bible reading, build streaks, and engage with a community. It features daily reading tracking, leaderboards, a reading feed, user profiles, seasonal challenges, and Bible book progress.
+This project is a Flutter mobile application designed to help individuals and groups track their daily Bible reading, build streaks, and engage with a community. It features daily reading tracking, a reading feed, user profiles, seasonal challenges, and Bible book progress.
 
 The application leverages Firebase heavily for its backend services, including:
 *   **Firestore:** For database operations and real-time data synchronization.

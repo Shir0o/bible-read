@@ -7,8 +7,6 @@ import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../services/seasonal_challenge_service.dart';
 
-// These imports assume we will refactor or use existing pages
-import 'leaderboard_page.dart' as lb;
 import 'seasonal_challenges_page.dart';
 
 class ChallengesPage extends StatefulWidget {
@@ -36,7 +34,7 @@ class _ChallengesPageState extends State<ChallengesPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 1, vsync: this);
   }
 
   @override
@@ -63,7 +61,6 @@ class _ChallengesPageState extends State<ChallengesPage>
           isScrollable: true,
           tabs: const [
             Tab(text: 'Seasonal'),
-            Tab(text: 'Leaderboard'),
           ],
         ),
       ),
@@ -73,11 +70,6 @@ class _ChallengesPageState extends State<ChallengesPage>
           SeasonalChallengesView(
             auth: widget.auth,
             service: SeasonalChallengeService(firestore: widget.firestore),
-          ),
-          lb.LeaderboardView(
-            firestore: widget.firestore,
-            auth: widget.auth,
-            friendService: widget.friendService,
           ),
         ],
       ),

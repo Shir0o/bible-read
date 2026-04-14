@@ -34,7 +34,6 @@ import '../services/vibration_service.dart';
 import '../services/connectivity_service.dart';
 import '../widgets/offline_banner.dart';
 import 'app_check_error_page.dart';
-import 'leaderboard_page.dart';
 import 'read_log_page.dart';
 
 typedef SendLikeNotification = Future<void> Function({
@@ -50,12 +49,6 @@ class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
-  final LeaderboardPage Function({
-    Key? key,
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-    FriendService? friendService,
-  }) leaderboardPageBuilder;
   final ReadLogPage Function({
     Key? key,
     FirebaseFirestore? firestore,
@@ -82,12 +75,6 @@ class MainPage extends StatefulWidget {
     FirebaseMessaging? messaging,
     VibrationService? vibrationService,
     this.readingStatusService,
-    LeaderboardPage Function({
-      Key? key,
-      FirebaseFirestore? firestore,
-      FirebaseAuth? auth,
-      FriendService? friendService,
-    })? leaderboardPageBuilder,
     ReadLogPage Function({
       Key? key,
       FirebaseFirestore? firestore,
@@ -105,7 +92,6 @@ class MainPage extends StatefulWidget {
         messaging = messaging ?? FirebaseMessaging.instance,
         googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
         vibrationService = vibrationService ?? const VibrationService(),
-        leaderboardPageBuilder = leaderboardPageBuilder ?? LeaderboardPage.new,
         readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
 
   @override
@@ -285,16 +271,6 @@ class _MainPageState extends State<MainPage> {
       });
     } else {
       switch (index) {
-        case 3: // Leaderboard
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => widget.leaderboardPageBuilder(
-                        firestore: widget.firestore,
-                        auth: widget.auth,
-                        friendService: _friendService,
-                      )));
-          break;
         case 4: // Friends
           Navigator.push(
               context,
@@ -348,7 +324,7 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.appCheckFailed && !kDebugMode) {
+    if (widget.appCheckFailed) {
       return const AppCheckErrorPage();
     }
 
@@ -469,7 +445,6 @@ class _MainPageState extends State<MainPage> {
       vibrationService: widget.vibrationService,
       googleSignInProvider: widget.googleSignInProvider,
       readingStatusService: widget.readingStatusService,
-      leaderboardPageBuilder: widget.leaderboardPageBuilder,
       readLogPageBuilder: widget.readLogPageBuilder,
       sendLikeNotification: widget.sendLikeNotification,
       sendCommentNotification: widget.sendCommentNotification,

@@ -37,7 +37,6 @@ void main() {
     expect(find.text('Challenges'), findsOneWidget);
     expect(find.byType(TabBar), findsOneWidget);
     expect(find.text('Seasonal'), findsOneWidget);
-    expect(find.text('Leaderboard'), findsOneWidget);
     expect(find.byType(TabBarView), findsOneWidget);
   });
 

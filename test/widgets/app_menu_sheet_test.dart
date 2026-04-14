@@ -110,9 +110,6 @@ void main() {
     }
 
     await openMenu();
-    await select('Leaderboard', 3);
-
-    await openMenu();
     await select('Friends', 4);
 
     await openMenu();

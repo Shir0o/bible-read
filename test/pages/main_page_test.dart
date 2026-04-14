@@ -13,7 +13,6 @@ import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
 
 import 'package:bible_read/pages/friends_page.dart';
-import 'package:bible_read/pages/leaderboard_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -458,47 +457,6 @@ void main() {
     expect(hasNavAfter, isTrue);
   });
 
-  testWidgets('bottom navigation visible when navigating to leaderboard', (
-    tester,
-  ) async {
-    final auth = MockFirebaseAuth(
-      mockUser: MockUser(uid: 'u1'),
-      signedIn: true,
-    );
-    final firestore = FakeFirebaseFirestore();
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MediaQuery(
-          data: const MediaQueryData(size: Size(400, 800)),
-          child: MainPage(
-            auth: auth,
-            firestore: firestore,
-            messaging: FakeFirebaseMessaging(null),
-            vibrationService: _RecordingVibrationService(),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // Verify the bottom navigation bar or rail is initially visible.
-    final hasNavBefore = find.byType(NavigationBar).evaluate().isNotEmpty ||
-        find.byType(NavigationRail).evaluate().isNotEmpty;
-    expect(hasNavBefore, isTrue);
-
-    final state = tester.state(find.byType(MainPage)) as dynamic;
-    state.navigateFromMenu(3);
-    await tester.pumpAndSettle();
-
-    expect(find.byType(LeaderboardPage), findsOneWidget);
-    final hasNavAfter = find
-            .byType(NavigationBar, skipOffstage: false)
-            .evaluate()
-            .isNotEmpty ||
-        find.byType(NavigationRail, skipOffstage: false).evaluate().isNotEmpty;
-    expect(hasNavAfter, isTrue);
-  });
-
   testWidgets('_navigateFromMenu triggers vibration before updating index',
       (tester) async {
     final auth = MockFirebaseAuth(
@@ -550,7 +508,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     final state = tester.state(find.byType(MainPage)) as dynamic;
-    state.navigateFromMenu(3);
+    state.navigateFromMenu(4);
     await tester.pump();
 
     expect(vibration.lightCount, 0);

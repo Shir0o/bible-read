@@ -154,11 +154,6 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
         index: 5,
       ),
       _MenuItem(
-        icon: Icons.leaderboard,
-        label: 'Leaderboard',
-        index: 3,
-      ),
-      _MenuItem(
         icon: Icons.people,
         label: 'Friends',
         index: 4,
@@ -211,11 +206,6 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
 
   List<_MenuItem> _buildFallbackMenuList() {
     return [
-      _MenuItem(
-        icon: Icons.leaderboard,
-        label: 'Leaderboard',
-        index: 3,
-      ),
       _MenuItem(
         icon: Icons.people,
         label: 'Friends',
