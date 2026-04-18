@@ -431,6 +431,8 @@ class _MainPageState extends State<MainPage> {
             friendsIndex: 0,
             vibrationService: widget.vibrationService,
             adminRoleService: _adminRoleService,
+            auth: widget.auth,
+            firestore: widget.firestore,
             child: ResponsiveScaffold(
               selectedIndex:
                   _selectedIndex >= _pages.length ? 0 : _selectedIndex,

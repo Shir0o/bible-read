@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../services/error_logger.dart';
 import '../services/feedback_service.dart';
 import '../services/friend_service.dart';
+import '../services/notification_preferences_service.dart';
 
 import '../services/google_sign_in_factory.dart';
 import '../services/vibration_service.dart';
@@ -309,7 +310,12 @@ class UserProfilePageState extends State<UserProfilePage> {
                                 onPressed: () {
                                   Navigator.of(context).push(
                                     animatedPageRoute(
-                                      NotificationSettingsPage(),
+                                      NotificationSettingsPage(
+                                        auth: widget.auth,
+                                        service: NotificationPreferencesService(
+                                          firestore: widget.firestore,
+                                        ),
+                                      ),
                                     ),
                                   );
                                 },
