@@ -33,7 +33,7 @@ class ScheduleGenerator {
     }
 
     // Determine valid reading days
-    DateTime d = startDate;
+    DateTime d = DateTime(startDate.year, startDate.month, startDate.day);
     final readingDays = <DateTime>[];
 
     if (fixedChaptersPerDay != null && fixedChaptersPerDay > 0) {

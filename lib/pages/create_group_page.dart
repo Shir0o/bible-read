@@ -32,7 +32,11 @@ class CreateGroupPage extends StatefulWidget {
 
 class _CreateGroupPageState extends State<CreateGroupPage> {
   final List<String> _selectedBooks = [];
-  DateTime _startDate = DateTime.now();
+  DateTime _startDate = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
   DateTime? _endDate;
   List<int> _selectedWeekdays = [1, 2, 3, 4, 5, 6, 7]; // Mon-Sun
   final TextEditingController _searchController = TextEditingController();
