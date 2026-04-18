@@ -18,6 +18,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'services/error_logger.dart';
 import 'services/reminder_service.dart';
+import 'services/friend_service.dart';
+import 'services/group_service.dart';
 import 'theme/app_theme.dart';
 
 // Global flag to skip messaging setup, useful for integration tests to avoid
@@ -94,6 +96,100 @@ void main() async {
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
+class NotificationNavigator {
+  final FirebaseAuth auth;
+  final FirebaseFirestore firestore;
+
+  NotificationNavigator({
+    FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+  })  : auth = auth ?? FirebaseAuth.instance,
+        firestore = firestore ?? FirebaseFirestore.instance;
+
+  Future<void> handleMessage(RemoteMessage message) async {
+    if (message.data.isEmpty) return;
+    await navigateForData(message.data);
+  }
+
+  Future<void> handlePayload(String? payload) async {
+    if (payload == null || payload.isEmpty) return;
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is Map) {
+        final normalized = <String, dynamic>{};
+        decoded.forEach((key, value) {
+          if (value != null) {
+            normalized['$key'] = value.toString();
+          }
+        });
+        await navigateForData(normalized);
+      }
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('Failed to handle notification payload: $error');
+      }
+      await ErrorLogger.log(error, stackTrace);
+    }
+  }
+
+  Future<void> navigateForData(Map<String, dynamic> data) async {
+    final navigator = _rootNavigatorKey.currentState;
+    if (navigator == null) {
+      if (kDebugMode) {
+        debugPrint('Navigator not ready for notification tap.');
+      }
+      return;
+    }
+
+    final type = data['type']?.toString();
+    if (type == null) {
+      if (kDebugMode) {
+        debugPrint('Notification payload missing type.');
+      }
+      return;
+    }
+
+    switch (type) {
+      case 'friendRequest':
+        await navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => FriendRequestsPage(
+              auth: auth,
+              friendService: FriendService(firestore: firestore),
+            ),
+          ),
+        );
+        break;
+      case 'groupJoinRequest':
+        final groupId = data['groupId']?.toString();
+        if (groupId == null || groupId.isEmpty) {
+          if (kDebugMode) {
+            debugPrint('Missing groupId for group join notification.');
+          }
+          return;
+        }
+        await navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => GroupJoinRequestsPage(
+              groupId: groupId,
+              auth: auth,
+              groupService: GroupService(firestore: firestore),
+            ),
+          ),
+        );
+        break;
+      default:
+        if (kDebugMode) {
+          debugPrint('Unhandled notification type: $type');
+        }
+        break;
+    }
+  }
+}
+
+// Global instance for convenience, can be overridden in tests.
+NotificationNavigator notificationNavigator = NotificationNavigator();
+
 Future<void> _setupMessaging() async {
   final messaging = FirebaseMessaging.instance;
   if (kDebugMode) {
@@ -121,7 +217,7 @@ Future<void> _setupMessaging() async {
 
   await ReminderService().init(
     onDidReceiveNotificationResponse: (response) async {
-      await _handleNotificationPayload(response.payload);
+      await notificationNavigator.handlePayload(response.payload);
     },
   );
 
@@ -135,7 +231,7 @@ Future<void> _setupMessaging() async {
       launchPayload.isNotEmpty) {
     final binding = WidgetsBinding.instance;
     binding.addPostFrameCallback((_) {
-      unawaited(_handleNotificationPayload(launchPayload));
+      unawaited(notificationNavigator.handlePayload(launchPayload));
     });
   }
 
@@ -160,13 +256,13 @@ Future<void> _setupMessaging() async {
     }
   });
 
-  FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageNavigation);
+  FirebaseMessaging.onMessageOpenedApp.listen(notificationNavigator.handleMessage);
 
   final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
   if (initialMessage != null) {
     final binding = WidgetsBinding.instance;
     binding.addPostFrameCallback((_) {
-      unawaited(_handleMessageNavigation(initialMessage));
+      unawaited(notificationNavigator.handleMessage(initialMessage));
     });
   }
 
@@ -187,12 +283,14 @@ class MyApp extends StatelessWidget {
   final bool appCheckFailed;
   final FirebaseFirestore? firestore;
   final FirebaseAuth? auth;
+  final FirebaseMessaging? messaging;
 
   const MyApp({
     super.key,
     required this.appCheckFailed,
     this.firestore,
     this.auth,
+    this.messaging,
   });
 
   // This widget is the root of your application.
@@ -212,84 +310,8 @@ class MyApp extends StatelessWidget {
         appCheckFailed: appCheckFailed,
         firestore: firestore,
         auth: auth,
+        messaging: messaging,
       ),
     );
-  }
-}
-
-Future<void> _handleMessageNavigation(RemoteMessage message) async {
-  if (message.data.isEmpty) {
-    return;
-  }
-  await _navigateForNotificationData(message.data);
-}
-
-Future<void> _handleNotificationPayload(String? payload) async {
-  if (payload == null || payload.isEmpty) {
-    return;
-  }
-  try {
-    final decoded = jsonDecode(payload);
-    if (decoded is Map) {
-      final normalized = <String, dynamic>{};
-      decoded.forEach((key, value) {
-        if (value != null) {
-          normalized['$key'] = value.toString();
-        }
-      });
-      await _navigateForNotificationData(normalized);
-    }
-  } catch (error, stackTrace) {
-    if (kDebugMode) {
-      debugPrint('Failed to handle notification payload: $error');
-    }
-    await ErrorLogger.log(error, stackTrace);
-  }
-}
-
-Future<void> _navigateForNotificationData(Map<String, dynamic> data) async {
-  final navigator = _rootNavigatorKey.currentState;
-  if (navigator == null) {
-    if (kDebugMode) {
-      debugPrint('Navigator not ready for notification tap.');
-    }
-    return;
-  }
-
-  final type = data['type']?.toString();
-  if (type == null) {
-    if (kDebugMode) {
-      debugPrint('Notification payload missing type.');
-    }
-    return;
-  }
-
-  switch (type) {
-    case 'friendRequest':
-      await navigator.push(
-        MaterialPageRoute<void>(
-          builder: (_) => FriendRequestsPage(),
-        ),
-      );
-      break;
-    case 'groupJoinRequest':
-      final groupId = data['groupId']?.toString();
-      if (groupId == null || groupId.isEmpty) {
-        if (kDebugMode) {
-          debugPrint('Missing groupId for group join notification.');
-        }
-        return;
-      }
-      await navigator.push(
-        MaterialPageRoute<void>(
-          builder: (_) => GroupJoinRequestsPage(groupId: groupId),
-        ),
-      );
-      break;
-    default:
-      if (kDebugMode) {
-        debugPrint('Unhandled notification type: $type');
-      }
-      break;
   }
 }

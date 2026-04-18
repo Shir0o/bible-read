@@ -373,13 +373,43 @@ class _CommunityPageState extends State<CommunityPage>
               // Friends Activity Header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-                  child: Text(
-                    'Friends Activity',
-                    style: AppTextStyles.title(context).copyWith(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 16, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Friends Activity',
+                        style: AppTextStyles.title(context).copyWith(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (widget.readLogBuilder != null)
+                        TextButton(
+                          onPressed: () {
+                            widget.vibrationService.lightImpact();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => widget.readLogBuilder!(
+                                  auth: widget.auth,
+                                  firestore: widget.firestore,
+                                  onSendLikeNotification:
+                                      widget.onSendLikeNotification,
+                                  onSendCommentNotification:
+                                      widget.onSendCommentNotification,
+                                ),
+                              ),
+                            );
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: colorScheme.primary,
+                            textStyle:
+                                const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          child: const Text('View All'),
+                        ),
+                    ],
                   ),
                 ),
               ),

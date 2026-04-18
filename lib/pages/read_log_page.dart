@@ -112,7 +112,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
       appBar: CommonStyles.buildAppBar(
         context,
         "Today's Readers",
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
       ),
       body: ReadLogView(
         key: _viewKey,
