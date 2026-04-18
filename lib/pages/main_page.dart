@@ -61,6 +61,7 @@ class MainPage extends StatefulWidget {
   final FirebaseMessaging messaging;
   final VibrationService vibrationService;
   final ReadingStatusService? readingStatusService;
+  final FriendService? friendService;
   final bool appCheckFailed;
   final FirebaseFunctions? functions;
 
@@ -81,6 +82,7 @@ class MainPage extends StatefulWidget {
     FirebaseMessaging? messaging,
     VibrationService? vibrationService,
     this.readingStatusService,
+    this.friendService,
     this.markFirstReader,
     ReadLogPage Function({
       Key? key,
@@ -143,7 +145,8 @@ class _MainPageState extends State<MainPage> {
           auth: widget.auth,
           cache: _cacheService,
         );
-    _friendService = FriendService(firestore: widget.firestore);
+    _friendService =
+        widget.friendService ?? FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
     _readingPlanService = ReadingPlanService(firestore: widget.firestore);
     _userPreferencesService =
