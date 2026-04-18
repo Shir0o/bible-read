@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:rxdart/rxdart.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
@@ -79,7 +80,9 @@ class CommunityPage extends StatefulWidget {
 class _CommunityPageState extends State<CommunityPage>
     with AutomaticKeepAliveClientMixin {
   late Stream<List<Group>> _groupsStream;
+  late Stream<List<ReadLog>> _friendsActivityStream;
   List<ReadLog> _friendLogs = [];
+  final Map<String, ReadLog> _optimisticLogs = {};
   List<GroupSchedule>? _initialGroupSchedule;
   List<GroupMemberProgressData>? _initialGroupProgress;
   bool _isLoading = true;
@@ -91,6 +94,7 @@ class _CommunityPageState extends State<CommunityPage>
   void initState() {
     super.initState();
     _groupsStream = const Stream.empty();
+    _friendsActivityStream = const Stream.empty();
     _loadData();
   }
 
@@ -108,12 +112,14 @@ class _CommunityPageState extends State<CommunityPage>
     }
 
     _groupsStream = widget.groupService.groupsForUser(user.uid);
+    _friendsActivityStream = _getFriendsActivityStream();
 
     try {
       final results = await Future.wait([
         _groupsStream.first
             .timeout(const Duration(seconds: 5), onTimeout: () => []),
-        _getFriendsActivity(),
+        _friendsActivityStream.first
+            .timeout(const Duration(seconds: 5), onTimeout: () => []),
       ]);
 
       final groups = results[0] as List<Group>;
@@ -158,58 +164,56 @@ class _CommunityPageState extends State<CommunityPage>
     }
   }
 
-  Future<List<ReadLog>> _getFriendsActivity() async {
+  Stream<List<ReadLog>> _getFriendsActivityStream() {
     final user = widget.auth.currentUser;
-    if (user == null) return [];
+    if (user == null) return Stream.value([]);
 
-    try {
-      // 1. Get friends
-      final friendsSnap = await widget.friendService.friends(user.uid).first;
+    // 1. Get friends stream
+    return widget.friendService.friends(user.uid).switchMap((friendsSnap) {
       final friendUids = friendsSnap.map((f) => f.uid).toSet();
       // Include current user
       friendUids.add(user.uid);
 
-      // 2. Get today's logs
+      // 2. Get today's logs stream
       final now = widget.dateProvider();
       final dateKey =
           '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
-      final entriesSnap = await widget.firestore
+      return widget.firestore
           .collection('read_logs')
           .doc(dateKey)
           .collection('entries')
-          .get();
+          .snapshots()
+          .asyncMap((entriesSnap) async {
+        final logs = await Future.wait(entriesSnap.docs.map((doc) {
+          return ReadLog.fromFirestore(doc, currentUid: user.uid);
+        }));
 
-      final logs = await Future.wait(entriesSnap.docs.map((doc) {
-        return ReadLog.fromFirestore(doc, currentUid: user.uid);
-      }));
+        // 3. Filter by friends + self
+        final filtered =
+            logs.where((log) => friendUids.contains(log.uid)).toList();
 
-      // 3. Filter by friends + self
-      final filtered =
-          logs.where((log) => friendUids.contains(log.uid)).toList();
+        // Sort by timestamp if available, else name
+        filtered.sort((a, b) {
+          if (a.timestamp != null && b.timestamp != null) {
+            return b.timestamp!.compareTo(a.timestamp!);
+          }
+          return a.name.compareTo(b.name);
+        });
 
-      // Sort by timestamp if available, else name
-      filtered.sort((a, b) {
-        if (a.timestamp != null && b.timestamp != null) {
-          return b.timestamp!.compareTo(a.timestamp!);
-        }
-        return a.name.compareTo(b.name);
+        return filtered;
       });
-
-      return filtered;
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      return [];
-    }
+    });
   }
 
   Future<void> _toggleLike(String logUid) async {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
-    final index = _friendLogs.indexWhere((log) => log.uid == logUid);
+    final baseLogs = _friendLogs; // Use last known logs as fallback
+    final index = baseLogs.indexWhere((log) => log.uid == logUid);
     if (index == -1) return;
-    final original = _friendLogs[index];
+    final original = baseLogs[index];
 
     final likerName = (user.displayName ?? '').split(' ').first;
     final now = widget.dateProvider();
@@ -233,11 +237,13 @@ class _CommunityPageState extends State<CommunityPage>
       updatedNames.add(likerName);
     }
 
+    final updatedLog = original.copyWith(
+      liked: newLikedState,
+      likeNames: updatedNames,
+    );
+
     setState(() {
-      _friendLogs[index] = original.copyWith(
-        liked: newLikedState,
-        likeNames: updatedNames,
-      );
+      _optimisticLogs[logUid] = updatedLog;
     });
 
     widget.vibrationService.lightImpact();
@@ -252,11 +258,15 @@ class _CommunityPageState extends State<CommunityPage>
               ownerUid: logUid, likerName: likerName);
         }
       }
+      // After success, we can eventually clear from optimisticLogs when stream catches up,
+      // but for simplicity we can just leave it until next build or clear it here.
+      // Wait, if we clear it here, the stream snapshot might still be the old one.
+      // Better to clear it when the stream emits a matching state.
     } catch (e) {
       // Revert
       if (mounted) {
         setState(() {
-          _friendLogs[index] = original;
+          _optimisticLogs.remove(logUid);
         });
       }
     }
@@ -375,38 +385,63 @@ class _CommunityPageState extends State<CommunityPage>
               ),
 
               // Friends Activity List
-              SliverSkeletonLoader(
-                loading: _isLoading,
-                minTime: const Duration(milliseconds: 1000),
-                skeleton: const FriendsActivitySkeleton(),
-                child: _friendLogs.isEmpty
-                    ? SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Center(
-                            child: Text(
-                              'No recent activity.',
-                              style: AppTextStyles.body(context).copyWith(
-                                  color: colorScheme.onSurfaceVariant),
+              StreamBuilder<List<ReadLog>>(
+                stream: _friendsActivityStream,
+                builder: (context, snapshot) {
+                  // Capture current logs for fallback
+                  if (snapshot.hasData) {
+                    _friendLogs = snapshot.data!;
+                  }
+                  
+                  final baseLogs = snapshot.data ?? _friendLogs;
+                  // Apply optimistic overrides
+                  final logs = baseLogs.map((log) {
+                    final override = _optimisticLogs[log.uid];
+                    if (override != null) {
+                      // If the stream data matches the override, we can clear it
+                      if (override.liked == log.liked) {
+                        _optimisticLogs.remove(log.uid);
+                        return log;
+                      }
+                      return override;
+                    }
+                    return log;
+                  }).toList();
+
+                  return SliverSkeletonLoader(
+                    loading: _isLoading,
+                    minTime: const Duration(milliseconds: 1000),
+                    skeleton: const FriendsActivitySkeleton(),
+                    child: logs.isEmpty
+                        ? SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: Center(
+                                child: Text(
+                                  'No recent activity.',
+                                  style: AppTextStyles.body(context).copyWith(
+                                      color: colorScheme.onSurfaceVariant),
+                                ),
+                              ),
+                            ),
+                          )
+                        : SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            sliver: SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final log = logs[index];
+                                  return CommunityActivityItem(
+                                    log: log,
+                                    onLike: () => _toggleLike(log.uid),
+                                  );
+                                },
+                                childCount: logs.length,
+                              ),
                             ),
                           ),
-                        ),
-                      )
-                    : SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final log = _friendLogs[index];
-                              return CommunityActivityItem(
-                                log: log,
-                                onLike: () => _toggleLike(log.uid),
-                              );
-                            },
-                            childCount: _friendLogs.length,
-                          ),
-                        ),
-                      ),
+                  );
+                },
               ),
 
               const SliverPadding(padding: EdgeInsets.only(bottom: 80)),

@@ -95,24 +95,28 @@ void main() {
     expect(find.textContaining('Reading'), findsAtLeast(1));
 
     // Tap Community tab
-    await tester.tap(find.byIcon(Icons.people_outlined));
+    await tester.tap(find.text('Community'));
     await tester.pumpAndSettle();
     expect(find.text('Friends Activity'), findsOneWidget);
 
     // Tap Journey tab
-    await tester.tap(find.byIcon(Icons.map_outlined));
+    await tester.tap(find.text('Journey'));
     await tester.pumpAndSettle();
-    expect(find.text('Reading Journey'), findsOneWidget);
+    expect(find.text('My Personal Journey'), findsOneWidget);
 
     // Tap Home tab
-    await tester.tap(find.byIcon(Icons.home));
+    await tester.tap(find.text('Home'));
     await tester.pumpAndSettle();
     expect(find.byType(HomePage), findsOneWidget);
 
     // Open Menu via Profile Avatar on Community page (since HomePage might not have a direct menu button in this setup)
-    await tester.tap(find.byIcon(Icons.people_outlined));
+    await tester.tap(find.text('Community'));
     await tester.pumpAndSettle();
-    await tester.tap(find.bySemanticsLabel('Open menu'));
+    
+    // Find the avatar button which has the 'Open menu' tooltip
+    final menuButton = find.byTooltip('Open menu');
+    expect(menuButton, findsOneWidget);
+    await tester.tap(menuButton);
     await tester.pumpAndSettle();
 
     // Verify some menu items

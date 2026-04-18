@@ -20,6 +20,10 @@ import 'services/error_logger.dart';
 import 'services/reminder_service.dart';
 import 'theme/app_theme.dart';
 
+// Global flag to skip messaging setup, useful for integration tests to avoid
+// system permission dialogs that block the UI.
+bool skipMessagingSetup = false;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -37,25 +41,12 @@ void main() async {
         appleProvider: AppleProvider.debug,
       );
       // Try to get token to trigger debug token print in logs
-      int retries = 0;
-      const maxRetries = 3;
-      while (retries < maxRetries) {
-        try {
-          final token = await FirebaseAppCheck.instance.getToken();
-          debugPrint('Firebase App Check debug token: $token');
-          break;
-        } catch (e) {
-          retries++;
-          debugPrint('AppCheck getToken attempt $retries failed: $e');
-          if (retries >= maxRetries) {
-            debugPrint('AppCheck getToken failed after $maxRetries attempts.');
-            debugPrint('TIP: Ensure your SHA-1/SHA-256 fingerprints are registered in the Firebase Console.');
-            debugPrint('TIP: If using an emulator, you may need to add a Debug Token in the Firebase Console under App Check.');
-          } else {
-            await Future.delayed(
-                Duration(seconds: math.pow(2, retries).toInt()));
-          }
-        }
+      try {
+        final token = await FirebaseAppCheck.instance.getToken();
+        debugPrint('Firebase App Check debug token: $token');
+      } catch (e) {
+        debugPrint('AppCheck getToken failed (normal for simulators): $e');
+        debugPrint('TIP: If using an emulator, you may need to add a Debug Token in the Firebase Console under App Check.');
       }
     } else {
       await FirebaseAppCheck.instance.activate(
@@ -65,24 +56,21 @@ void main() async {
     }
   } catch (e, st) {
     if (kDebugMode) {
-      debugPrint('AppCheck activation failed: $e\n$st');
-    }
-    ErrorLogger.log(e, st);
-    try {
-      await FirebaseFirestore.instance.collection('app_check_errors').add({
-        'timestamp': Timestamp.now(),
-        'error': e.toString(),
-        'stack': st.toString(),
-        'platform': defaultTargetPlatform.toString(),
-      });
-    } catch (firestoreError, st) {
-      if (kDebugMode) {
-        debugPrint(
-            'Failed to log AppCheck error to Firestore: $firestoreError');
+      debugPrint('AppCheck activation failed (non-fatal in debug): $e\n$st');
+    } else {
+      ErrorLogger.log(e, st);
+      try {
+        await FirebaseFirestore.instance.collection('app_check_errors').add({
+          'timestamp': Timestamp.now(),
+          'error': e.toString(),
+          'stack': st.toString(),
+          'platform': defaultTargetPlatform.toString(),
+        });
+      } catch (firestoreError, st) {
+        ErrorLogger.log(firestoreError, st);
       }
-      ErrorLogger.log(firestoreError, st);
+      appCheckFailed = true;
     }
-    appCheckFailed = true;
   }
   await FirebaseCrashlytics.instance
       .setCrashlyticsCollectionEnabled(!kDebugMode);
@@ -98,7 +86,9 @@ void main() async {
     return true;
   };
 
-  await _setupMessaging();
+  if (!skipMessagingSetup) {
+    await _setupMessaging();
+  }
   runApp(MyApp(appCheckFailed: appCheckFailed));
 }
 
@@ -106,7 +96,28 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> _setupMessaging() async {
   final messaging = FirebaseMessaging.instance;
-  await messaging.requestPermission();
+  if (kDebugMode) {
+    // Don't block on permission in debug/tests to avoid hanging on system dialogs
+    unawaited(messaging.requestPermission().catchError((e) {
+      debugPrint('Permission request failed: $e');
+      return const NotificationSettings(
+        alert: AppleNotificationSetting.disabled,
+        announcement: AppleNotificationSetting.disabled,
+        authorizationStatus: AuthorizationStatus.notDetermined,
+        badge: AppleNotificationSetting.disabled,
+        carPlay: AppleNotificationSetting.disabled,
+        lockScreen: AppleNotificationSetting.disabled,
+        notificationCenter: AppleNotificationSetting.disabled,
+        showPreviews: AppleShowPreviewSetting.never,
+        sound: AppleNotificationSetting.disabled,
+        timeSensitive: AppleNotificationSetting.disabled,
+        criticalAlert: AppleNotificationSetting.disabled,
+        providesAppNotificationSettings: AppleNotificationSetting.disabled,
+      );
+    }));
+  } else {
+    await messaging.requestPermission();
+  }
 
   await ReminderService().init(
     onDidReceiveNotificationResponse: (response) async {

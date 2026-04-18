@@ -295,19 +295,12 @@ class _HomePageState extends State<HomePage>
     final user = widget.auth.currentUser;
     if (user == null) return;
 
-    // Reload user before writing to Firestore.
-    await user.reload();
-    final refreshedUser = widget.auth.currentUser;
-
     // Preserve current state in case we need to revert on error.
     final prevWeek = List<bool>.from(_pastWeek);
     final prevMonth = List<bool>.from(_pastMonth);
     final prevReadDates = Set<DateTime>.from(_readDates);
     final prevStreak = _currentStreak;
     final prevTotalReadDays = _totalReadDays;
-
-    // Also track if we successfully marked the plan day
-    bool markedPlanDay = false;
 
     final today = widget.dateProvider();
     final weekIndex = today.weekday % 7;
@@ -346,6 +339,15 @@ class _HomePageState extends State<HomePage>
         _readDates.add(DateTime(today.year, today.month, today.day));
       });
     }
+
+    // Reload user before writing to Firestore.
+    try {
+      await user.reload();
+    } catch (_) {}
+    final refreshedUser = widget.auth.currentUser;
+
+    // Also track if we successfully marked the plan day
+    bool markedPlanDay = false;
 
     try {
       final dateKey =

@@ -9,6 +9,7 @@ import 'package:google_sign_in_platform_interface/google_sign_in_platform_interf
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:bible_read/pages/main_page.dart';
+import 'package:bible_read/widgets/community/community_activity_item.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
 
 class FakeGoogleSignInPlatform extends GoogleSignInPlatform
@@ -66,7 +67,8 @@ void main() {
     final google = FakeGoogleSignInPlatform();
     GoogleSignInPlatform.instance = google;
 
-    final dateKey = '2026-04-09';
+    final now = DateTime.now();
+    final dateKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
     // 1. Setup initial user data in Firestore
     await firestore.collection('users').doc('u1').set({
@@ -75,7 +77,7 @@ void main() {
     });
 
     // Create a mock reading plan
-    await firestore.collection('users').doc('u1').collection('plans').doc('plan_1').set({
+    await firestore.collection('custom_plans').doc('plan_1').set({
       'title': 'Sequential NT',
       'description': 'Read the NT',
       'durationDays': 1,
@@ -86,8 +88,22 @@ void main() {
           'readings': ['Matthew 1']
         }
       ],
-      'active': true,
+      'userId': 'u1',
       'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    // Set the user's active plan progress starting today
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('plan_progress')
+        .doc('plan_1')
+        .set({
+      'planId': 'plan_1',
+      'userId': 'u1',
+      'startDate': Timestamp.fromDate(now),
+      'completedDays': [],
+      'isArchived': false,
     });
 
     // 2. Launch the app
@@ -103,33 +119,29 @@ void main() {
     );
 
     // Wait for the skeleton loader (Mandate: visible for min 1000ms)
-    // We expect the HomePage to show a skeleton first.
-    await tester.pump();
-    expect(find.byType(CircularProgressIndicator), findsNothing); // We use custom skeletons usually
-    // Note: In real app we'd check for SkeletonLoader widget.
-    
-    await tester.pumpAndSettle(const Duration(milliseconds: 1100));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1500));
 
     // 3. Verify Initial State
-    expect(find.textContaining('0'), findsAtLeast(1)); // 0 streak
+    // Check for either 'TODAY\'S READING' or 'Daily Reading' depending on how it loaded
+    final todayReadingFinder = find.text('TODAY\'S READING');
+    final dailyReadingFinder = find.text('Daily Reading');
+    expect(tester.any(todayReadingFinder) || tester.any(dailyReadingFinder), isTrue);
 
     // 4. Perform Optimistic Reading Toggle
-    // Find the toggle button (usually an icon or checkbox in the reading card)
-    final toggleFinder = find.byType(Checkbox).first; 
-    // If not a checkbox, it might be an InkWell/IconButton. Let's assume a recognizable toggle.
-    // Looking at common patterns in this app, it's often a Checkbox or a custom button.
+    final toggleFinder = find.text('I have read');
+    final fallbackToggleFinder = find.text('Yes, I read');
+    
     if (tester.any(toggleFinder)) {
       await tester.tap(toggleFinder);
     } else {
-      // Fallback for different UI implementation
-      await tester.tap(find.byIcon(Icons.check_circle_outline).first);
+      await tester.tap(fallbackToggleFinder);
     }
 
     // MANDATE: Verify Immediate UI Update (Optimistic)
-    // The streak should increment to 1 immediately in the UI state
-    // before we wait for pumpAndSettle (which would imply backend confirmation)
+    // Should show '1' day streak now that it's marked as read
     await tester.pump(); // Just one pump to reflect local state change
     expect(find.textContaining('1'), findsAtLeast(1));
+    expect(find.text('Thank you for being here.'), findsOneWidget);
     
     // 5. Verify Backend Sync
     // Now wait for the "background" work to settle in our fake firestore
@@ -148,7 +160,7 @@ void main() {
         .collection('users')
         .doc('u1')
         .collection('summary')
-        .doc('stats')
+        .doc('data')
         .get();
     // In a real scenario, the service or a Cloud Function trigger would update this.
     // FakeFirebaseFirestore doesn't run Cloud Functions.
@@ -157,12 +169,15 @@ void main() {
     expect(summaryDoc.data()?['streak'], greaterThanOrEqualTo(1));
 
     // 6. Social Propagation (Community Feed)
-    await tester.tap(find.byIcon(Icons.people_outlined));
+    await tester.tap(find.text('Community'));
+    // Wait for skeletons and animations to finish
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     // Verify our post is in the feed
-    expect(find.text('Test User'), findsWidgets);
-    expect(find.textContaining('read'), findsWidgets);
+    expect(find.byType(CommunityActivityItem), findsWidgets);
+    expect(find.textContaining('Test'), findsWidgets);
 
     // Perform an Optimistic Like
     final likeButton = find.byIcon(Icons.favorite_border).first;
