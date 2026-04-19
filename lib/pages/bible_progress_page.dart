@@ -23,10 +23,10 @@ class BibleProgressPage extends StatefulWidget {
   });
 
   @override
-  State<BibleProgressPage> createState() => _BibleProgressPageState();
+  State<BibleProgressPage> createState() => BibleProgressPageState();
 }
 
-class _BibleProgressPageState extends State<BibleProgressPage> {
+class BibleProgressPageState extends State<BibleProgressPage> {
   late final BibleProgressService _bibleProgressService;
 
   // The synchronous source of truth for the UI
@@ -177,7 +177,7 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
     return merged;
   }
 
-  Future<void> _handleBookTap(String book, bool isCurrentlyCompleted) async {
+  Future<void> handleBookTap(String book, bool isCurrentlyCompleted) async {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
@@ -240,6 +240,26 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
           'completed': true,
           'timestamp': FieldValue.serverTimestamp(),
         });
+
+        // Award 'New Testament Starter' badge if this is the first book completed
+        final booksSnap = await widget.firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('bible_books')
+            .get();
+
+        if (booksSnap.docs.length == 1) {
+          await widget.firestore
+              .collection('users')
+              .doc(user.uid)
+              .collection('achievements')
+              .doc('nt_starter')
+              .set({
+            'title': 'NT Starter',
+            'type': 'achievement',
+            'dateUnlocked': FieldValue.serverTimestamp(),
+          });
+        }
       } else {
         await widget.firestore
             .collection('users')
@@ -499,7 +519,7 @@ class _BibleProgressPageState extends State<BibleProgressPage> {
                       book: book,
                       abbr: abbr,
                       isUnlocked: isCompleted,
-                      onTap: () => _handleBookTap(book, isCompleted),
+                      onTap: () => handleBookTap(book, isCompleted),
                     );
                   },
                   childCount: entry.value.length,

@@ -14,6 +14,7 @@ import '../services/google_sign_in_factory.dart';
 import '../services/vibration_service.dart';
 import '../widgets/animated_action_button.dart';
 import '../widgets/animated_page_route.dart';
+import '../widgets/badge_icon.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/vibration_button.dart';
 import 'feedback_page.dart';
@@ -361,6 +362,89 @@ class UserProfilePageState extends State<UserProfilePage> {
                                 },
                                 child: const Text('Request a Feature'),
                               ),
+                              const SizedBox(height: 32),
+                              // Achievements Section
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Achievements',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    if (firebaseUser != null)
+                                      StreamBuilder<
+                                          QuerySnapshot<Map<String, dynamic>>>(
+                                        stream: widget.firestore
+                                            .collection('users')
+                                            .doc(firebaseUser.uid)
+                                            .collection('achievements')
+                                            .orderBy('dateUnlocked',
+                                                descending: true)
+                                            .snapshots(),
+                                        builder: (context, snapshot) {
+                                          if (!snapshot.hasData) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          final docs = snapshot.data!.docs;
+                                          if (docs.isEmpty) {
+                                            return Text(
+                                              'No achievements yet. Keep reading!',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                            );
+                                          }
+                                          return SizedBox(
+                                            height: 80,
+                                            child: ListView.separated(
+                                              scrollDirection: Axis.horizontal,
+                                              itemCount: docs.length,
+                                              separatorBuilder: (context, _) =>
+                                                  const SizedBox(width: 16),
+                                              itemBuilder: (context, index) {
+                                                final data = docs[index].data();
+                                                final imageUrl =
+                                                    data['imageUrl'] as String?;
+                                                return Column(
+                                                  children: [
+                                                    BadgeIcon(
+                                                      imageUrl: imageUrl,
+                                                      iconData: imageUrl == null
+                                                          ? Icons.emoji_events
+                                                          : null,
+                                                      size: 48,
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      data['title'] ?? 'Award',
+                                                      style: const TextStyle(
+                                                          fontSize: 10),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 40),
                             ],
                           );
                         }());

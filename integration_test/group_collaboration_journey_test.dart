@@ -65,7 +65,7 @@ void main() {
     await tester.tap(find.text('Community'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('View All'));
+    await tester.tap(find.text('View All').first);
     await tester.pumpAndSettle();
     expect(find.byType(GroupsPage), findsOneWidget);
 

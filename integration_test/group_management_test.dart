@@ -45,7 +45,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // 3. Tap "View All" in Group Progress section
-    await tester.tap(find.text('View All'));
+    await tester.tap(find.text('View All').first);
     await tester.pumpAndSettle();
 
     // 4. Tap "Join or Create Group" bottom button

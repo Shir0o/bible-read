@@ -104,10 +104,10 @@ class MainPage extends StatefulWidget {
         readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
 
   @override
-  State<MainPage> createState() => _MainPageState();
+  State<MainPage> createState() => MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class MainPageState extends State<MainPage> {
   static const int _homeIndex = 0;
 
   int _selectedIndex = _homeIndex;

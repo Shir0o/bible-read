@@ -169,14 +169,25 @@ void main() {
     expect(summaryDoc.data()?['streak'], greaterThanOrEqualTo(1));
 
     // 6. Social Propagation (Community Feed)
-    await tester.tap(find.text('Community'));
+    final communityFinder = find.text('Community');
+    expect(communityFinder, findsOneWidget);
+    await tester.tap(communityFinder);
+    
     // Wait for skeletons and animations to finish
     await tester.pumpAndSettle();
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
+    
+    // Robust wait for data to appear
+    bool foundActivity = false;
+    for (int i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 500));
+      if (tester.any(find.byType(CommunityActivityItem))) {
+        foundActivity = true;
+        break;
+      }
+    }
 
-    // Verify our post is in the feed
-    expect(find.byType(CommunityActivityItem), findsWidgets);
+    expect(foundActivity, isTrue, reason: 'CommunityActivityItem should appear in the feed');
+    // User 'Test User' should appear as 'Test'
     expect(find.textContaining('Test'), findsWidgets);
 
     // Perform an Optimistic Like
