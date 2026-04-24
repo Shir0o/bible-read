@@ -12,11 +12,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import '../test/helpers/fake_google_sign_in_platform.dart';
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
     await Firebase.initializeApp();
   });
 
@@ -52,7 +56,7 @@ void main() {
       auth: auth,
       messaging: messaging,
     ));
-    
+
     // Wait for auth stream to emit and settle
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
@@ -66,7 +70,7 @@ void main() {
     unawaited(app.notificationNavigator.navigateForData({
       'type': 'friendRequest',
     }));
-    
+
     // Pump to trigger navigation
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
@@ -90,7 +94,7 @@ void main() {
       'type': 'groupJoinRequest',
       'groupId': 'group_1',
     }));
-    
+
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();

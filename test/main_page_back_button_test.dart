@@ -5,65 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bible_read/pages/main_page.dart';
-
-class FakeGoogleSignInPlatform extends GoogleSignInPlatform
-    with MockPlatformInterfaceMixin {
-  @override
-  Future<void> init({
-    List<String> scopes = const <String>[],
-    SignInOption signInOption = SignInOption.standard,
-    String? hostedDomain,
-    String? clientId,
-  }) async {}
-
-  @override
-  Future<GoogleSignInUserData?> signInSilently() async => null;
-
-  @override
-  Future<GoogleSignInUserData?> signIn() async => null;
-
-  @override
-  Future<GoogleSignInTokenData> getTokens({
-    required String email,
-    bool? shouldRecoverAuth,
-  }) async {
-    return GoogleSignInTokenData(
-      idToken: 'idToken',
-      accessToken: 'accessToken',
-    );
-  }
-
-  @override
-  Future<void> signOut() async {}
-
-  @override
-  Future<void> disconnect() async {}
-
-  @override
-  Future<bool> isSignedIn() async => false;
-
-  @override
-  Future<void> clearAuthCache({required String token}) async {}
-
-  @override
-  Future<bool> requestScopes(List<String> scopes) async => true;
-
-  @override
-  Future<bool> canAccessScopes(
-    List<String> scopes, {
-    String? accessToken,
-  }) async =>
-      true;
-
-  @override
-  Stream<GoogleSignInUserData?>? get userDataEvents => null;
-}
+import 'helpers/fake_google_sign_in_platform.dart';
 
 class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
   FakeFirebaseMessaging(this.token);
@@ -127,22 +74,22 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle(const Duration(seconds: 1));
 
     final dynamic state = tester.state(find.byType(MainPage));
     state.onItemTapped(1);
+    await tester.pumpAndSettle();
     state.onItemTapped(2);
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(state.selectedIndex, 2);
 
     await tester.binding.handlePopRoute();
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(state.selectedIndex, 1);
 
     await tester.binding.handlePopRoute();
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(state.selectedIndex, 0);
   });
 }

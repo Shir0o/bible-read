@@ -10,58 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:network_image_mock/network_image_mock.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
-
-class FakeGoogleSignInPlatform extends GoogleSignInPlatform
-    with MockPlatformInterfaceMixin {
-  GoogleSignInUserData? user;
-
-  @override
-  Future<void> init({
-    List<String> scopes = const <String>[],
-    SignInOption signInOption = SignInOption.standard,
-    String? hostedDomain,
-    String? clientId,
-  }) async {}
-
-  @override
-  Future<GoogleSignInUserData?> signIn() async {
-    return user;
-  }
-
-  @override
-  Future<GoogleSignInUserData?> signInSilently() async => user;
-
-  @override
-  Future<bool> isSignedIn() async => user != null;
-
-  @override
-  Future<void> clearAuthCache({required String token}) async {}
-
-  @override
-  Future<void> disconnect() async {}
-
-  @override
-  Future<void> signOut() async {}
-
-  @override
-  Stream<GoogleSignInUserData?>? get userDataEvents => null;
-
-  @override
-  Future<GoogleSignInTokenData> getTokens(
-      {required String email, bool? shouldRecoverAuth}) async {
-    return GoogleSignInTokenData(idToken: 'token', accessToken: 'access');
-  }
-
-  @override
-  Future<bool> requestScopes(List<String> scopes) async => true;
-
-  @override
-  Future<bool> canAccessScopes(List<String> scopes,
-          {String? accessToken}) async =>
-      true;
-}
+import '../helpers/fake_google_sign_in_platform.dart';
 
 class MockVibrationService extends VibrationService {
   int lightImpactCount = 0;
@@ -92,7 +42,7 @@ void main() {
         home: AuthSelectionPage(
           auth: MockFirebaseAuth(),
           firestore: FakeFirebaseFirestore(),
-          googleSignInProvider: () => GoogleSignIn(),
+          googleSignInProvider: () => GoogleSignIn.instance,
           vibrationService: MockVibrationService(),
         ),
       ));
@@ -114,7 +64,7 @@ void main() {
         home: AuthSelectionPage(
           auth: MockFirebaseAuth(),
           firestore: FakeFirebaseFirestore(),
-          googleSignInProvider: () => GoogleSignIn(),
+          googleSignInProvider: () => GoogleSignIn.instance,
           vibrationService: MockVibrationService(),
         ),
       ));
@@ -131,7 +81,7 @@ void main() {
         home: AuthSelectionPage(
           auth: MockFirebaseAuth(),
           firestore: FakeFirebaseFirestore(),
-          googleSignInProvider: () => GoogleSignIn(),
+          googleSignInProvider: () => GoogleSignIn.instance,
           vibrationService: MockVibrationService(),
         ),
       ));

@@ -7,11 +7,17 @@ import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/models/group.dart';
 import 'package:network_image_mock/network_image_mock.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import '../helpers/pump_app.dart';
 import '../helpers/firebase_seeder.dart';
 import '../helpers/stub_vibration_service.dart';
+import '../helpers/fake_google_sign_in_platform.dart';
 
 void main() {
+  setUpAll(() {
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
+  });
+
   testWidgets('Daily Engagement Scenario: User completes daily reading',
       (tester) async {
     await mockNetworkImagesFor(() async {

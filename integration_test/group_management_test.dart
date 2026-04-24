@@ -9,11 +9,15 @@ import 'package:integration_test/integration_test.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
 
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import '../test/helpers/fake_google_sign_in_platform.dart';
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
     await Firebase.initializeApp();
   });
 
@@ -60,7 +64,7 @@ void main() {
     final searchField = find.byType(TextField).first;
     await tester.enterText(searchField, 'Genesis');
     await tester.pump(const Duration(milliseconds: 500));
-    
+
     // Tap the Genesis option in the list
     await tester.tap(find.text('Genesis').last);
     await tester.pumpAndSettle();
@@ -71,7 +75,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(dateField);
     await tester.pumpAndSettle();
-    
+
     final okButton = find.text('OK');
     if (tester.any(okButton)) {
       await tester.tap(okButton);
@@ -82,7 +86,7 @@ void main() {
 
     // 8. Tap "Create Schedule"
     await tester.tap(find.text('Create Schedule'));
-    
+
     // Avoid pumpAndSettle if it times out, use multiple pumps
     for (int i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 200));

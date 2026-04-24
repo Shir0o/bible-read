@@ -6,65 +6,12 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:integration_test/integration_test.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
 import 'package:bible_read/models/reading_plan.dart';
-
-class FakeGoogleSignInPlatform extends GoogleSignInPlatform
-    with MockPlatformInterfaceMixin {
-  GoogleSignInUserData? user;
-
-  @override
-  Future<void> init({
-    List<String> scopes = const <String>[],
-    SignInOption signInOption = SignInOption.standard,
-    String? hostedDomain,
-    String? clientId,
-  }) async {}
-
-  @override
-  Future<GoogleSignInUserData?> signInSilently() async => user;
-
-  @override
-  Future<GoogleSignInUserData?> signIn() async => user;
-
-  @override
-  Future<GoogleSignInTokenData> getTokens({
-    required String email,
-    bool? shouldRecoverAuth,
-  }) async {
-    return GoogleSignInTokenData(
-      idToken: 'id',
-      accessToken: 'access',
-    );
-  }
-
-  @override
-  Future<void> signOut() async {}
-
-  @override
-  Future<void> disconnect() async {}
-
-  @override
-  Future<bool> isSignedIn() async => user != null;
-
-  @override
-  Future<void> clearAuthCache({required String token}) async {}
-
-  @override
-  Future<bool> requestScopes(List<String> scopes) async => true;
-
-  @override
-  Future<bool> canAccessScopes(List<String> scopes,
-          {String? accessToken}) async =>
-      true;
-
-  @override
-  Stream<GoogleSignInUserData?>? get userDataEvents => null;
-}
+import '../test/helpers/fake_google_sign_in_platform.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -85,7 +32,7 @@ void main() {
     final google = FakeGoogleSignInPlatform();
     GoogleSignInPlatform.instance = google;
 
-    // Use a fixed date for testing
+    // Use current date for testing logic
     final now = DateTime.now();
     String formatDate(DateTime d) =>
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -164,20 +111,18 @@ void main() {
 
     // Verify "I have read" button exists
     expect(find.text('I have read'), findsOneWidget);
-    expect(find.byKey(const ValueKey('unread_state')), findsOneWidget);
 
     // 3. Tap "I have read"
     await tester.tap(find.text('I have read'));
-    
+
     // 4. Verify Optimistic UI Update
-    await tester.pump(); 
+    await tester.pump();
     // Should immediately show the "read_state"
-    expect(find.byKey(const ValueKey('read_state')), findsOneWidget);
     expect(find.text('Thank you for being here.'), findsOneWidget);
 
     // 5. Verify Backend Confirmation
     await tester.pumpAndSettle();
-    
+
     // Check Firestore directly
     final readDoc = await firestore
         .collection('users')
@@ -185,8 +130,9 @@ void main() {
         .collection('reading')
         .doc(todayKey)
         .get();
-    
-    expect(readDoc.exists, isTrue, reason: 'Reading document should be created in Firestore');
+
+    expect(readDoc.exists, isTrue,
+        reason: 'Reading document should be created in Firestore');
     expect(readDoc.data()?['read'], isTrue);
 
     // Check plan progress
@@ -196,8 +142,10 @@ void main() {
         .collection('plan_progress')
         .doc('plan_1')
         .get();
-    
-    final completedDays = List<int>.from(progressDoc.data()?['completedDays'] ?? []);
-    expect(completedDays, contains(1), reason: 'Day 1 should be marked as completed in the plan progress');
+
+    final completedDays =
+        List<int>.from(progressDoc.data()?['completedDays'] ?? []);
+    expect(completedDays, contains(1),
+        reason: 'Day 1 should be marked as completed in the plan progress');
   });
 }

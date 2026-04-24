@@ -8,14 +8,20 @@ import 'package:bible_read/pages/group_detail_page.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/models/group_schedule.dart';
 import 'package:google_sign_in_mocks/google_sign_in_mocks.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:network_image_mock/network_image_mock.dart';
 import '../helpers/pump_app.dart';
 import '../helpers/firebase_seeder.dart';
 import '../helpers/mocks.dart';
 import '../helpers/stub_vibration_service.dart';
+import '../helpers/fake_google_sign_in_platform.dart';
 
 void main() {
+  setUpAll(() {
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
+  });
+
   testWidgets('Reading Scenario: User opens group and sees today\'s reading',
       (tester) async {
     await mockNetworkImagesFor(() async {
@@ -105,8 +111,8 @@ void main() {
       await tester.tap(find.text('Community'));
       await tester.pumpAndSettle();
 
-      // Tap View All to go to GroupsPage
-      await tester.tap(find.text('View All'));
+      // Tap View All to go to GroupsPage (first one is for groups)
+      await tester.tap(find.text('View All').first);
       await tester.pumpAndSettle();
 
       // Verify group is listed

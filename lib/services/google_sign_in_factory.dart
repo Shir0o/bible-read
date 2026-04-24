@@ -2,40 +2,50 @@ import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 
-GoogleSignIn? _googleSignIn;
+bool _googleSignInInitialized = false;
 
 /// Returns a configured [GoogleSignIn] instance.
 GoogleSignIn createGoogleSignIn() {
-  if (_googleSignIn != null) {
-    return _googleSignIn!;
+  final instance = GoogleSignIn.instance;
+
+  if (_googleSignInInitialized) {
+    return instance;
   }
 
-  const scopes = <String>['email'];
+  // Configuration is handled via initialize() in the latest version.
+  // We'll call it here, but it's async, so we'll return the instance
+  // and assume it's being initialized or will be initialized.
+  // Ideally, initialize() should be called at app startup.
+  _initializeGoogleSignIn();
 
-  if (kIsWeb) {
-    _googleSignIn = GoogleSignIn(scopes: scopes);
-    return _googleSignIn!;
+  return instance;
+}
+
+Future<void> _initializeGoogleSignIn() async {
+  if (_googleSignInInitialized) return;
+
+  String? clientId;
+  String? serverClientId;
+
+  if (!kIsWeb) {
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        serverClientId = _androidServerClientId;
+        break;
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        clientId = _appleClientId;
+        break;
+      default:
+        break;
+    }
   }
 
-  switch (defaultTargetPlatform) {
-    case TargetPlatform.android:
-      _googleSignIn = GoogleSignIn(
-        scopes: scopes,
-        serverClientId: _androidServerClientId,
-      );
-      break;
-    case TargetPlatform.iOS:
-    case TargetPlatform.macOS:
-      _googleSignIn = GoogleSignIn(
-        scopes: scopes,
-        clientId: _appleClientId,
-      );
-      break;
-    default:
-      _googleSignIn = GoogleSignIn(scopes: scopes);
-  }
-
-  return _googleSignIn!;
+  await GoogleSignIn.instance.initialize(
+    clientId: clientId,
+    serverClientId: serverClientId,
+  );
+  _googleSignInInitialized = true;
 }
 
 const String _androidServerClientId =

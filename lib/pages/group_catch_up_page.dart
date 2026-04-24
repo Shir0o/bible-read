@@ -121,7 +121,7 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
         backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
         elevation: 0,
         centerTitle: true,
-        title: const Text('Catch Up'),
+        title: const Text('Log Progress'),
       ),
       body: StreamBuilder<List<GroupSchedule>>(
         stream: _scheduleStream,
@@ -133,14 +133,13 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
           final now = DateTime.now();
           final todayDate = DateTime(now.year, now.month, now.day);
           final pastSchedule = scheduleSnapshot.data!
-              .where((s) =>
-                  DateTime(s.date.year, s.date.month, s.date.day)
-                      .isBefore(todayDate))
+              .where((s) => !DateTime(s.date.year, s.date.month, s.date.day)
+                  .isAfter(todayDate))
               .toList()
             ..sort((a, b) => b.date.compareTo(a.date)); // Newest first
 
           if (pastSchedule.isEmpty) {
-            return const Center(child: Text('No past readings to catch up on'));
+            return const Center(child: Text('No readings to log'));
           }
 
           return StreamBuilder<Map<String, int>>(

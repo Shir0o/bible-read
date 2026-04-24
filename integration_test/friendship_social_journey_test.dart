@@ -1,4 +1,3 @@
-import 'package:bible_read/models/notification_preferences.dart';
 import 'package:bible_read/pages/add_friend_page.dart';
 import 'package:bible_read/pages/friend_requests_page.dart';
 import 'package:bible_read/pages/main_page.dart';
@@ -12,17 +11,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import '../test/helpers/fake_google_sign_in_platform.dart';
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
     await Firebase.initializeApp();
   });
 
   testWidgets('Friendship & Social Connectivity Journey', (tester) async {
     final firestore = FakeFirebaseFirestore();
-    
+
     // 1. Setup Mock Users
     // Current user (Alice)
     final mockCurrentUser = MockUser(
@@ -31,7 +34,7 @@ void main() {
       email: 'alice@example.com',
     );
     final auth = MockFirebaseAuth(mockUser: mockCurrentUser, signedIn: true);
-    
+
     // Potential friend (Bob)
     await firestore.collection('users').doc('bob_uid').set({
       'name': 'Bob',
@@ -48,14 +51,26 @@ void main() {
       }) async {
         // Simulate what the Cloud Function does
         final batch = firestore.batch();
-        batch.set(firestore.collection('users').doc(fromUid).collection('friends').doc(toUid), {
-          'name': toName,
-          'timestamp': FieldValue.serverTimestamp(),
-        });
-        batch.set(firestore.collection('users').doc(toUid).collection('friends').doc(fromUid), {
-          'name': fromName,
-          'timestamp': FieldValue.serverTimestamp(),
-        });
+        batch.set(
+            firestore
+                .collection('users')
+                .doc(fromUid)
+                .collection('friends')
+                .doc(toUid),
+            {
+              'name': toName,
+              'timestamp': FieldValue.serverTimestamp(),
+            });
+        batch.set(
+            firestore
+                .collection('users')
+                .doc(toUid)
+                .collection('friends')
+                .doc(fromUid),
+            {
+              'name': fromName,
+              'timestamp': FieldValue.serverTimestamp(),
+            });
         await batch.commit();
       },
     );
@@ -91,7 +106,8 @@ void main() {
 
     // 4. Send Friend Request to Bob
     expect(find.byType(AddFriendPage), findsOneWidget);
-    await tester.enterText(find.byKey(const Key('addFriendEmailField')), 'bob@example.com');
+    await tester.enterText(
+        find.byKey(const Key('addFriendEmailField')), 'bob@example.com');
     await tester.tap(find.text('Send'));
     await tester.pumpAndSettle();
 
@@ -131,7 +147,7 @@ void main() {
     // 9. Verify Alice and Bob are now friends
     await tester.pageBack();
     await tester.pumpAndSettle();
-    
+
     expect(find.text('Bob'), findsOneWidget);
     expect(find.byTooltip('Send encouragement'), findsOneWidget);
   });

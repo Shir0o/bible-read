@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' as math;
 
 import 'package:bible_read/pages/friend_requests_page.dart';
 import 'package:bible_read/pages/group_join_requests_page.dart';
@@ -39,8 +38,8 @@ void main() async {
   try {
     if (kDebugMode) {
       await FirebaseAppCheck.instance.activate(
-        androidProvider: AndroidProvider.debug,
-        appleProvider: AppleProvider.debug,
+        providerAndroid: AndroidDebugProvider(),
+        providerApple: AppleDebugProvider(),
       );
       // Try to get token to trigger debug token print in logs
       try {
@@ -48,12 +47,13 @@ void main() async {
         debugPrint('Firebase App Check debug token: $token');
       } catch (e) {
         debugPrint('AppCheck getToken failed (normal for simulators): $e');
-        debugPrint('TIP: If using an emulator, you may need to add a Debug Token in the Firebase Console under App Check.');
+        debugPrint(
+            'TIP: If using an emulator, you may need to add a Debug Token in the Firebase Console under App Check.');
       }
     } else {
       await FirebaseAppCheck.instance.activate(
-        androidProvider: AndroidProvider.playIntegrity,
-        appleProvider: AppleProvider.appAttest,
+        providerAndroid: AndroidPlayIntegrityProvider(),
+        providerApple: AppleAppAttestProvider(),
       );
     }
   } catch (e, st) {
@@ -240,10 +240,10 @@ Future<void> _setupMessaging() async {
     if (notification != null) {
       final payload = message.data.isEmpty ? null : jsonEncode(message.data);
       await ReminderService().flutterLocalNotificationsPlugin.show(
-            notification.hashCode,
-            notification.title,
-            notification.body,
-            const NotificationDetails(
+            id: notification.hashCode,
+            title: notification.title,
+            body: notification.body,
+            notificationDetails: const NotificationDetails(
               android: AndroidNotificationDetails(
                 'default_channel',
                 'Notifications',
@@ -256,7 +256,8 @@ Future<void> _setupMessaging() async {
     }
   });
 
-  FirebaseMessaging.onMessageOpenedApp.listen(notificationNavigator.handleMessage);
+  FirebaseMessaging.onMessageOpenedApp
+      .listen(notificationNavigator.handleMessage);
 
   final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
   if (initialMessage != null) {

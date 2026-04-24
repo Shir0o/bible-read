@@ -149,7 +149,8 @@ class TodaysReadingCard extends StatelessWidget {
                               Icons.check_circle,
                               color: isRead
                                   ? colorScheme.onPrimary
-                                  : colorScheme.onPrimary.withValues(alpha: 0.7),
+                                  : colorScheme.onPrimary
+                                      .withValues(alpha: 0.7),
                               fill: isRead ? 1.0 : 0.0,
                             ),
                             label: Text(isRead ? 'Read' : 'Mark as Read'),

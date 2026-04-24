@@ -88,7 +88,8 @@ class ScheduleGenerator {
 
       if (readingDays.isEmpty) {
         // Fallback: put everything on start date if no days found (e.g. start=end=Saturday and weekdays only)
-        readingDays.add(DateTime(startDate.year, startDate.month, startDate.day));
+        readingDays
+            .add(DateTime(startDate.year, startDate.month, startDate.day));
       }
 
       int totalChapters = allChapters.length;

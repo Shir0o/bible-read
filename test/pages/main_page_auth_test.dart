@@ -10,33 +10,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
-
-// Mocks
-class FakeGoogleSignInPlatform extends GoogleSignInPlatform
-    with MockPlatformInterfaceMixin {
-  GoogleSignInUserData? user;
-
-  @override
-  Future<void> init({
-    List<String> scopes = const <String>[],
-    SignInOption signInOption = SignInOption.standard,
-    String? hostedDomain,
-    String? clientId,
-  }) async {}
-
-  @override
-  Future<GoogleSignInUserData?> signInSilently() async => user;
-  @override
-  Future<GoogleSignInUserData?> signIn() async => user;
-  @override
-  Future<bool> isSignedIn() async => user != null;
-}
+import '../helpers/fake_google_sign_in_platform.dart';
 
 class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
   FakeFirebaseMessaging(this.token);

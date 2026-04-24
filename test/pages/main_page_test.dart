@@ -6,8 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import '../helpers/fake_google_sign_in_platform.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
@@ -134,65 +134,6 @@ class MockHttpClientResponse extends Fake implements HttpClientResponse {
     return Stream<List<int>>.value(bytes).listen(onData,
         onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
-}
-
-class FakeGoogleSignInPlatform extends GoogleSignInPlatform
-    with MockPlatformInterfaceMixin {
-  GoogleSignInUserData? user;
-  int silentSignInCount = 0;
-
-  @override
-  Future<void> init({
-    List<String> scopes = const <String>[],
-    SignInOption signInOption = SignInOption.standard,
-    String? hostedDomain,
-    String? clientId,
-  }) async {}
-
-  @override
-  Future<GoogleSignInUserData?> signInSilently() async {
-    silentSignInCount++;
-    return user;
-  }
-
-  @override
-  Future<GoogleSignInUserData?> signIn() async => user;
-
-  @override
-  Future<GoogleSignInTokenData> getTokens({
-    required String email,
-    bool? shouldRecoverAuth,
-  }) async {
-    return GoogleSignInTokenData(
-      idToken: 'idToken',
-      accessToken: 'accessToken',
-    );
-  }
-
-  @override
-  Future<void> signOut() async {}
-
-  @override
-  Future<void> disconnect() async {}
-
-  @override
-  Future<bool> isSignedIn() async => user != null;
-
-  @override
-  Future<void> clearAuthCache({required String token}) async {}
-
-  @override
-  Future<bool> requestScopes(List<String> scopes) async => true;
-
-  @override
-  Future<bool> canAccessScopes(
-    List<String> scopes, {
-    String? accessToken,
-  }) async =>
-      true;
-
-  @override
-  Stream<GoogleSignInUserData?>? get userDataEvents => null;
 }
 
 class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
@@ -417,7 +358,7 @@ void main() {
     await selectMenuItem('Challenges', 5); // 5 is pushed
     await selectMenuItem('Friends', 4);
     await selectMenuItem('Sign Out', 10);
-    });
+  });
 
   testWidgets('bottom navigation visible on non-core pages', (tester) async {
     final auth = MockFirebaseAuth(

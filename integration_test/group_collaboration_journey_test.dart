@@ -1,11 +1,9 @@
-import 'package:bible_read/models/group.dart';
 import 'package:bible_read/pages/create_group_page.dart';
 import 'package:bible_read/pages/group_detail_page.dart';
 import 'package:bible_read/pages/groups_page.dart';
 import 'package:bible_read/pages/invite_member_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/services/friend_service.dart';
-import 'package:bible_read/services/group_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -15,11 +13,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import '../test/helpers/fake_google_sign_in_platform.dart';
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
     await Firebase.initializeApp();
   });
 
@@ -48,7 +50,6 @@ void main() {
       'timestamp': FieldValue.serverTimestamp(),
     });
 
-    final groupService = GroupService(firestore: firestore);
     final friendService = FriendService(firestore: firestore);
 
     // 2. Launch App
@@ -80,7 +81,7 @@ void main() {
     final bookField = find.byType(TextField).first;
     await tester.enterText(bookField, 'Jude');
     await tester.pumpAndSettle();
-    
+
     // Tap the autocomplete option
     await tester.tap(find.text('Jude').last);
     await tester.pumpAndSettle();
@@ -94,16 +95,16 @@ void main() {
       const Offset(0, -200),
     );
     await tester.pumpAndSettle();
-    
+
     await tester.tap(endDateField);
     await tester.pumpAndSettle();
-    
+
     // In the standard Material date picker, "Today" is highlighted.
     // We try to tap the day after today. This is tricky in a generic way.
     // But since we know today is April 18, 2026, we can try to find '19'.
     // Or we just tap OK which selects today, and ensure our normalization fix works.
-    
-    await tester.tap(find.text('OK')); 
+
+    await tester.tap(find.text('OK'));
     await tester.pumpAndSettle();
 
     // 6. Create Schedule

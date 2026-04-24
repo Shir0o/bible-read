@@ -21,7 +21,6 @@ import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or ve
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
 import '../widgets/app_header.dart';
-import '../widgets/syncing_indicator.dart';
 import 'read_log_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
@@ -101,6 +100,7 @@ class _HomePageState extends State<HomePage>
 
   /// Whether the page is currently performing its initial data fetch.
   bool _initialLoading = true;
+  bool _isSyncing = false;
   bool _prefsLoaded = false;
   List<bool> _pastWeek = [];
   List<bool> _pastMonth = [];
@@ -112,6 +112,7 @@ class _HomePageState extends State<HomePage>
   ReadingPlan? _currentPlan;
   UserPreferences _userPrefs = const UserPreferences();
   StreamSubscription<UserPreferences>? _prefSub;
+  StreamSubscription<DocumentSnapshot>? _syncSub;
 
   ReadingPlanDay? _scheduledDay;
 
@@ -123,6 +124,7 @@ class _HomePageState extends State<HomePage>
     _animationController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 1000));
     _loadInitialData();
+    _setupSyncListener();
     _animationController.forward();
   }
 
@@ -150,6 +152,33 @@ class _HomePageState extends State<HomePage>
     await Future.wait(futures);
   }
 
+  void _setupSyncListener() {
+    _syncSub?.cancel();
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) {
+      if (mounted) setState(() => _isSyncing = false);
+      return;
+    }
+
+    _syncSub = widget.firestore
+        .collection('users')
+        .doc(uid)
+        .snapshots(includeMetadataChanges: true)
+        .listen((snapshot) {
+      final hasPendingWrites = snapshot.metadata.hasPendingWrites;
+      if (!_disposed && mounted && _isSyncing != hasPendingWrites) {
+        setState(() {
+          _isSyncing = hasPendingWrites;
+        });
+      }
+    }, onError: (e, st) {
+      if (kDebugMode) {
+        debugPrint('Error in sync listener: $e');
+      }
+      ErrorLogger.log(e, st);
+    });
+  }
+
   @override
   void didUpdateWidget(covariant HomePage oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -158,6 +187,7 @@ class _HomePageState extends State<HomePage>
         _initialLoading = true;
         _prefsLoaded = false;
       });
+      _setupSyncListener();
       unawaited(_loadInitialData());
     }
   }
@@ -529,7 +559,7 @@ class _HomePageState extends State<HomePage>
   }
 
   @override
-    Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
@@ -541,7 +571,7 @@ class _HomePageState extends State<HomePage>
             child: RefreshIndicator(
               onRefresh: _loadInitialData,
               child: SkeletonLoader(
-                loading: _initialLoading,
+                loading: _initialLoading || _isSyncing,
                 minTime: const Duration(milliseconds: 1000),
                 skeleton: const HomePageSkeleton(),
                 child: CustomScrollView(
@@ -563,23 +593,14 @@ class _HomePageState extends State<HomePage>
             right: 0,
             child: SafeArea(
               bottom: false,
-              child: Column(
-                children: [
-                  AppHeader(
-                    auth: widget.auth,
-                    firestore: widget.firestore,
-                    vibrationService: widget.vibrationService,
-                    dateProvider: widget.dateProvider,
-                    showProfileIcon: false,
-                    showNotificationBell: false,
-                    showGreeting: false,
-                  ),
-                  if (widget.auth.currentUser != null)
-                    SyncingIndicator(
-                      firestore: widget.firestore,
-                      userId: widget.auth.currentUser!.uid,
-                    ),
-                ],
+              child: AppHeader(
+                auth: widget.auth,
+                firestore: widget.firestore,
+                vibrationService: widget.vibrationService,
+                dateProvider: widget.dateProvider,
+                showProfileIcon: false,
+                showNotificationBell: false,
+                showGreeting: false,
               ),
             ),
           ),
@@ -587,7 +608,6 @@ class _HomePageState extends State<HomePage>
       ),
     );
   }
-
 
   /// Groups sequential chapters (e.g., "Genesis 1", "Genesis 2" -> "Genesis 1–2").
   String _formatReadings(List<String> readings) {
@@ -674,7 +694,8 @@ class _HomePageState extends State<HomePage>
                 return FadeTransition(
                   opacity: animation,
                   child: ScaleTransition(
-                    scale: Tween<double>(begin: 0.9, end: 1.0).animate(animation),
+                    scale:
+                        Tween<double>(begin: 0.9, end: 1.0).animate(animation),
                     child: child,
                   ),
                 );
@@ -849,8 +870,8 @@ class _HomePageState extends State<HomePage>
                               children: [
                                 Text(
                                   'Reading this week',
-                                  style: AppTextStyles.bodySmall(context)
-                                      .copyWith(
+                                  style:
+                                      AppTextStyles.bodySmall(context).copyWith(
                                     color: colorScheme.onSurfaceVariant
                                         .withValues(alpha: 0.6),
                                   ),
@@ -924,12 +945,12 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-
   @override
   void dispose() {
     _disposed = true;
     _animationController.dispose();
     _prefSub?.cancel();
+    _syncSub?.cancel();
     super.dispose();
   }
 

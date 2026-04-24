@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../models/group.dart';
 import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../services/group_service.dart';
+import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
+import '../pages/full_schedule_page.dart';
 
 /// A card that displays the overall progress of a reading group.
 class GroupProgressCard extends StatelessWidget {
@@ -10,6 +14,9 @@ class GroupProgressCard extends StatelessWidget {
   final List<GroupSchedule> schedule;
   final GroupService groupService;
   final DateTime currentDate;
+  final Group? group; // Optional group model for navigation
+  final FirebaseAuth? auth;
+  final VibrationService? vibrationService;
 
   const GroupProgressCard({
     super.key,
@@ -17,6 +24,9 @@ class GroupProgressCard extends StatelessWidget {
     required this.schedule,
     required this.groupService,
     required this.currentDate,
+    this.group,
+    this.auth,
+    this.vibrationService,
   });
 
   @override
@@ -138,6 +148,46 @@ class GroupProgressCard extends StatelessWidget {
                     : 'The group is $percentDisplay% through the reading plan.',
                 style: theme.textTheme.bodyMedium,
               ),
+              if (group != null && auth != null) ...[
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      vibrationService?.lightImpact();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => FullSchedulePage(
+                            group: group!,
+                            groupService: groupService,
+                            auth: auth!,
+                            vibrationService:
+                                vibrationService ?? const VibrationService(),
+                            isMember: true,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.calendar_month,
+                        size: 18, color: colorScheme.primary),
+                    label: Text(
+                      'View Full Schedule',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                          color: colorScheme.primary.withValues(alpha: 0.3)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         );

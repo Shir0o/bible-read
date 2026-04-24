@@ -9,10 +9,12 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_sign_in_mocks/google_sign_in_mocks.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:network_image_mock/network_image_mock.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../helpers/fake_google_sign_in_platform.dart';
 
 class MockVibrationService extends Mock implements VibrationService {}
 
@@ -74,6 +76,10 @@ void main() {
     ErrorLogger.muteForTest = true;
   });
 
+  setUp(() {
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
+  });
+
   group('LoginPage', () {
     testWidgets('signs in with email and navigates to MainPage',
         (tester) async {
@@ -107,13 +113,12 @@ void main() {
         (tester) async {
       await mockNetworkImagesFor(() async {
         final auth = RecordingAuth();
-        final googleSignIn = MockGoogleSignIn();
         SharedPreferences.setMockInitialValues({});
 
         await tester.pumpWidget(MaterialApp(
           home: LoginPage(
             auth: auth,
-            googleSignInProvider: () => googleSignIn,
+            googleSignInProvider: () => GoogleSignIn.instance,
             mainPageBuilder: (_) => const TestMainPage(),
           ),
         ));

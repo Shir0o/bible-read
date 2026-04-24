@@ -5,65 +5,12 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:integration_test/integration_test.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
-
-class FakeGoogleSignInPlatform extends GoogleSignInPlatform
-    with MockPlatformInterfaceMixin {
-  GoogleSignInUserData? user;
-
-  @override
-  Future<void> init({
-    List<String> scopes = const <String>[],
-    SignInOption signInOption = SignInOption.standard,
-    String? hostedDomain,
-    String? clientId,
-  }) async {}
-
-  @override
-  Future<GoogleSignInUserData?> signInSilently() async => user;
-
-  @override
-  Future<GoogleSignInUserData?> signIn() async => user;
-
-  @override
-  Future<GoogleSignInTokenData> getTokens({
-    required String email,
-    bool? shouldRecoverAuth,
-  }) async {
-    return GoogleSignInTokenData(
-      idToken: 'id',
-      accessToken: 'access',
-    );
-  }
-
-  @override
-  Future<void> signOut() async {}
-
-  @override
-  Future<void> disconnect() async {}
-
-  @override
-  Future<bool> isSignedIn() async => user != null;
-
-  @override
-  Future<void> clearAuthCache({required String token}) async {}
-
-  @override
-  Future<bool> requestScopes(List<String> scopes) async => true;
-
-  @override
-  Future<bool> canAccessScopes(List<String> scopes,
-          {String? accessToken}) async =>
-      true;
-
-  @override
-  Stream<GoogleSignInUserData?>? get userDataEvents => null;
-}
+import '../test/helpers/fake_google_sign_in_platform.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -112,7 +59,7 @@ void main() {
     // Open Menu via Profile Avatar on Community page (since HomePage might not have a direct menu button in this setup)
     await tester.tap(find.text('Community'));
     await tester.pumpAndSettle();
-    
+
     // Find the avatar button which has the 'Open menu' tooltip
     final menuButton = find.byTooltip('Open menu');
     expect(menuButton, findsOneWidget);

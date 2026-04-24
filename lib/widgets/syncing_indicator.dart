@@ -22,7 +22,8 @@ class SyncingIndicator extends StatelessWidget {
           .doc(userId)
           .snapshots(includeMetadataChanges: true),
       builder: (context, snapshot) {
-        final hasPendingWrites = snapshot.data?.metadata.hasPendingWrites ?? false;
+        final hasPendingWrites =
+            snapshot.data?.metadata.hasPendingWrites ?? false;
 
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 500),
@@ -31,7 +32,10 @@ class SyncingIndicator extends StatelessWidget {
                   key: const ValueKey('syncing'),
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   width: double.infinity,
-                  color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primaryContainer
+                      .withValues(alpha: 0.3),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -46,7 +50,9 @@ class SyncingIndicator extends StatelessWidget {
                       Text(
                         'Syncing...',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
                               fontWeight: FontWeight.w500,
                             ),
                       ),

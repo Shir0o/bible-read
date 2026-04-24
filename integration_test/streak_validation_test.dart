@@ -5,19 +5,24 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import '../test/helpers/fake_google_sign_in_platform.dart';
 
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/services/reading_status_service.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    setupFirebaseCoreMocks();
     await Firebase.initializeApp();
   });
 
   testWidgets('streak and weekly progress validation flow', (tester) async {
+    final google = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = google;
+
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1', displayName: 'Test User');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);

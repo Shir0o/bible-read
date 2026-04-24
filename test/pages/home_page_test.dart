@@ -211,7 +211,8 @@ void main() {
 
     // Verify streak text (RichText)
     // RichText content aggregates to "5 day streak  •  5 days total"
-    expect(find.text('5 day streak  •  5 days total', findRichText: true), findsOneWidget);
+    expect(find.text('5 day streak  •  5 days total', findRichText: true),
+        findsOneWidget);
 
     // Verify progress bar elements
     expect(find.text('Reading this week'), findsOneWidget);

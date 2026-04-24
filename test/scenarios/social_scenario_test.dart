@@ -5,13 +5,19 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/friends_page.dart';
 import 'package:google_sign_in_mocks/google_sign_in_mocks.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:mocktail/mocktail.dart';
 import '../helpers/pump_app.dart';
 import '../helpers/firebase_seeder.dart';
 import '../helpers/mocks.dart';
 import '../helpers/stub_vibration_service.dart';
+import '../helpers/fake_google_sign_in_platform.dart';
 
 void main() {
+  setUpAll(() {
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
+  });
+
   testWidgets('Social Scenario: User navigates to Friends and sends a request',
       (tester) async {
     final auth = MockFirebaseAuth(signedIn: true);

@@ -52,36 +52,32 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
 
     try {
       final GoogleSignIn googleSignIn = widget.googleSignInProvider();
-      final GoogleSignInAccount? account = await googleSignIn.signIn();
+      final GoogleSignInAccount account = await googleSignIn.authenticate();
 
-      if (account != null) {
-        final GoogleSignInAuthentication auth = await account.authentication;
-        final credential = GoogleAuthProvider.credential(
-          accessToken: auth.accessToken,
-          idToken: auth.idToken,
-        );
+      final GoogleSignInAuthentication auth = account.authentication;
+      final credential = GoogleAuthProvider.credential(
+        idToken: auth.idToken,
+      );
 
-        await widget.auth.signInWithCredential(credential);
-
-        // Navigation is handled by the auth stream in MainPage, but if we need
-        // to force a refresh or navigation we can do it here.
-        // In MainPage logic, once auth changes, it rebuilds.
-      } else {
+      await widget.auth.signInWithCredential(credential);
+    } catch (error, st) {
+      if (error is GoogleSignInException &&
+          error.code == GoogleSignInExceptionCode.canceled) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Sign in cancelled')),
           );
         }
-      }
-    } catch (error, st) {
-      if (kDebugMode) {
-        debugPrint('Sign in failed: $error');
-      }
-      ErrorLogger.log(error, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Something went wrong')),
-        );
+      } else {
+        if (kDebugMode) {
+          debugPrint('Sign in failed: $error');
+        }
+        ErrorLogger.log(error, st);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Something went wrong')),
+          );
+        }
       }
     } finally {
       if (mounted) {

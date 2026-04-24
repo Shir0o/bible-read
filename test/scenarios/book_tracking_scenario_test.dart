@@ -7,7 +7,9 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import '../helpers/mock_lottie_http_client.dart';
+import '../helpers/fake_google_sign_in_platform.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +18,7 @@ void main() {
   setUpAll(() async {
     await Firebase.initializeApp();
     setupLottieHttpOverrides();
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
   });
 
   testWidgets(

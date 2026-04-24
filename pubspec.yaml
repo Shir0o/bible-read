@@ -30,17 +30,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  firebase_core: ^3.10.1
-  cloud_firestore: ^5.6.2
-  firebase_auth: ^5.6.2
-  firebase_messaging: ^15.0.0
-  cloud_functions: ^5.6.1
-  flutter_local_notifications: ^19.3.0
-  flutter_timezone: ^4.1.1
-  google_sign_in: ^6.2.2
+  firebase_core: ^4.0.0
+  cloud_firestore: ^6.3.0
+  firebase_auth: ^6.4.0
+  firebase_messaging: ^16.2.0
+  cloud_functions: ^6.2.0
+  flutter_local_notifications: ^21.0.0
+  flutter_timezone: ^5.0.2
+  google_sign_in: ^7.2.0
   permission_handler: ^12.0.1
-  firebase_crashlytics: ^4.3.1
-  timezone: ^0.10.0
+  firebase_crashlytics: ^5.2.0
+  timezone: ^0.11.0
   lottie: ^3.1.0
   shared_preferences: ^2.3.2
   font_awesome_flutter: ^10.9.0
@@ -53,7 +53,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  firebase_app_check: ^0.3.2+9
+  firebase_app_check: ^0.4.3
   custom_refresh_indicator: ^4.0.1
   dynamic_color: ^1.7.0
   google_fonts: ^6.3.3
@@ -69,11 +69,11 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
-  fake_cloud_firestore: ^3.1.0
-  firebase_auth_mocks: ^0.14.1
+  fake_cloud_firestore: ^4.1.0+1
+  firebase_auth_mocks: ^0.15.1
   firebase_core_platform_interface: ^6.0.0
-  google_sign_in_mocks: ^0.3.0
-  google_sign_in_platform_interface: ^2.5.0
+  google_sign_in_mocks: ^0.4.1
+  google_sign_in_platform_interface: ^3.1.0
   plugin_platform_interface: ^2.1.8
   integration_test:
     sdk: flutter
@@ -84,6 +84,7 @@ dev_dependencies:
   network_image_mock: ^2.1.1
   flutter_launcher_icons: ^0.14.4
 
+  vibration_platform_interface: any
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true

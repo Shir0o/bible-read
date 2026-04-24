@@ -30,23 +30,24 @@ class ReminderService {
     if (_initialized) return;
 
     tz.initializeTimeZones();
-    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+    final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
+    final String timeZoneName = timeZoneInfo.identifier;
     tz.setLocalLocation(tz.getLocation(timeZoneName));
 
     const fln.AndroidInitializationSettings initializationSettingsAndroid =
         fln.AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    final fln.DarwinInitializationSettings initializationSettingsDarwin =
+    const fln.DarwinInitializationSettings initializationSettingsDarwin =
         fln.DarwinInitializationSettings();
 
-    final fln.InitializationSettings initializationSettings =
+    const fln.InitializationSettings initializationSettings =
         fln.InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsDarwin,
     );
 
     await flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
     );
 
@@ -55,11 +56,11 @@ class ReminderService {
 
   Future<void> scheduleDailyReminder(TimeOfDay time) async {
     await flutterLocalNotificationsPlugin.zonedSchedule(
-      _notificationId,
-      'Daily Reminder',
-      'Time to read your Bible!',
-      _nextInstance(time),
-      const fln.NotificationDetails(
+      id: _notificationId,
+      title: 'Daily Reminder',
+      body: 'Time to read your Bible!',
+      scheduledDate: _nextInstance(time),
+      notificationDetails: const fln.NotificationDetails(
         android: fln.AndroidNotificationDetails(
           'daily_reminder_channel',
           'Daily Reminder',
@@ -85,7 +86,7 @@ class ReminderService {
   }
 
   Future<void> cancelReminder() async {
-    await flutterLocalNotificationsPlugin.cancel(_notificationId);
+    await flutterLocalNotificationsPlugin.cancel(id: _notificationId);
   }
 
   Future<void> saveSettings(bool enabled, TimeOfDay time) async {

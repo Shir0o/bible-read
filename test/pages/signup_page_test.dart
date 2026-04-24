@@ -13,8 +13,10 @@ import 'package:bible_read/pages/main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'dart:io';
 import 'dart:async';
+import '../helpers/fake_google_sign_in_platform.dart';
 
 class MockHttpOverrides extends HttpOverrides {
   @override
@@ -96,8 +98,6 @@ class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
   Future<String?> getToken({String? vapidKey}) async => 'fake_token';
 }
 
-class FakeGoogleSignIn extends Fake implements GoogleSignIn {}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MockHttpOverrides();
@@ -105,6 +105,10 @@ void main() {
 
   setUpAll(() async {
     await Firebase.initializeApp();
+  });
+
+  setUp(() {
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
   });
 
   testWidgets('SignupPage creates account, writes user doc and navigates', (
@@ -120,7 +124,7 @@ void main() {
           auth: auth,
           firestore: firestore,
           vibrationService: MockVibrationService(),
-          googleSignInProvider: () => FakeGoogleSignIn(),
+          googleSignInProvider: () => GoogleSignIn.instance,
           mainPageBuilder: (_) => MainPage(
             auth: auth, // Pass same auth so it sees logged in user
             firestore: firestore,
@@ -144,7 +148,8 @@ void main() {
     );
 
     // Enter Password
-    await tester.enterText(find.byKey(const Key('signupPasswordField')), 'password');
+    await tester.enterText(
+        find.byKey(const Key('signupPasswordField')), 'password');
 
     // Tap Create Account
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
@@ -176,7 +181,7 @@ void main() {
           auth: RecordingAuth(),
           firestore: FakeFirebaseFirestore(),
           vibrationService: MockVibrationService(),
-          googleSignInProvider: () => FakeGoogleSignIn(),
+          googleSignInProvider: () => GoogleSignIn.instance,
         ),
       ),
     );
@@ -195,7 +200,7 @@ void main() {
           auth: RecordingAuth(),
           firestore: FakeFirebaseFirestore(),
           vibrationService: MockVibrationService(),
-          googleSignInProvider: () => FakeGoogleSignIn(),
+          googleSignInProvider: () => GoogleSignIn.instance,
         ),
       ),
     );
@@ -204,7 +209,8 @@ void main() {
         find.widgetWithText(TextFormField, 'Full Name'), 'Test User');
     await tester.enterText(
         find.byKey(const Key('signupEmailField')), 'invalid-email');
-    await tester.enterText(find.byKey(const Key('signupPasswordField')), 'password');
+    await tester.enterText(
+        find.byKey(const Key('signupPasswordField')), 'password');
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
     await tester.pump();
@@ -219,7 +225,7 @@ void main() {
           auth: RecordingAuth(),
           firestore: FakeFirebaseFirestore(),
           vibrationService: MockVibrationService(),
-          googleSignInProvider: () => FakeGoogleSignIn(),
+          googleSignInProvider: () => GoogleSignIn.instance,
         ),
       ),
     );
@@ -228,7 +234,8 @@ void main() {
         find.widgetWithText(TextFormField, 'Full Name'), 'Test User');
     await tester.enterText(
         find.byKey(const Key('signupEmailField')), 'user@example.com');
-    await tester.enterText(find.byKey(const Key('signupPasswordField')), '12345');
+    await tester.enterText(
+        find.byKey(const Key('signupPasswordField')), '12345');
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
     await tester.pump();
@@ -244,7 +251,7 @@ void main() {
           auth: RecordingAuth(),
           firestore: FakeFirebaseFirestore(),
           vibrationService: MockVibrationService(),
-          googleSignInProvider: () => FakeGoogleSignIn(),
+          googleSignInProvider: () => GoogleSignIn.instance,
         ),
       ),
     );
@@ -266,7 +273,7 @@ void main() {
           auth: RecordingAuth(),
           firestore: FakeFirebaseFirestore(),
           vibrationService: MockVibrationService(),
-          googleSignInProvider: () => FakeGoogleSignIn(),
+          googleSignInProvider: () => GoogleSignIn.instance,
         ),
       ),
     );
@@ -312,7 +319,7 @@ void main() {
           auth: RecordingAuth(),
           firestore: FakeFirebaseFirestore(),
           vibrationService: MockVibrationService(),
-          googleSignInProvider: () => FakeGoogleSignIn(),
+          googleSignInProvider: () => GoogleSignIn.instance,
         ),
       ),
     );

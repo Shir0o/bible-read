@@ -9,8 +9,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../helpers/fake_google_sign_in_platform.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -18,51 +18,6 @@ import 'package:bible_read/pages/user_profile_page.dart';
 import 'package:bible_read/widgets/badge_icon.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-class FakeGoogleSignInPlatform extends GoogleSignInPlatform
-    with MockPlatformInterfaceMixin {
-  FakeGoogleSignInPlatform({this.userData, this.signInError});
-
-  GoogleSignInUserData? userData;
-  Exception? signInError;
-  bool signInCalled = false;
-  bool getTokensCalled = false;
-  bool signOutCalled = false;
-
-  @override
-  bool get isMock => true;
-
-  @override
-  Future<void> init(
-      {List<String> scopes = const <String>[],
-      SignInOption signInOption = SignInOption.standard,
-      String? hostedDomain,
-      String? clientId}) async {}
-
-  @override
-  Future<GoogleSignInUserData?> signIn() async {
-    signInCalled = true;
-    if (signInError != null) {
-      throw signInError!;
-    }
-    return userData;
-  }
-
-  @override
-  Future<GoogleSignInTokenData> getTokens(
-      {required String email, bool? shouldRecoverAuth}) async {
-    getTokensCalled = true;
-    return GoogleSignInTokenData(idToken: 'id', accessToken: 'access');
-  }
-
-  @override
-  Future<void> signOut() async {
-    signOutCalled = true;
-  }
-
-  @override
-  Future<void> disconnect() async {}
-}
 
 class TrackingAuth extends MockFirebaseAuth {
   TrackingAuth()
@@ -169,7 +124,7 @@ void main() {
   testWidgets('successful sign in navigates to main page', (tester) async {
     await mockNetworkImagesFor(() async {
       final googlePlatform = FakeGoogleSignInPlatform(
-        userData: GoogleSignInUserData(email: 'e', id: 'id', displayName: 'd'),
+        user: GoogleSignInUserData(email: 'e', id: 'id', displayName: 'd'),
       );
       GoogleSignInPlatform.instance = googlePlatform;
       final auth = TrackingAuth();
@@ -198,7 +153,7 @@ void main() {
   });
 
   testWidgets('sign in cancelled shows snackbar', (tester) async {
-    final googlePlatform = FakeGoogleSignInPlatform(userData: null);
+    final googlePlatform = FakeGoogleSignInPlatform(user: null);
     GoogleSignInPlatform.instance = googlePlatform;
     final auth = TrackingAuth();
 
@@ -252,10 +207,12 @@ void main() {
         id: 'id',
         displayName: 'Test User',
       );
-      final googlePlatform = FakeGoogleSignInPlatform(userData: userData);
+      final googlePlatform = FakeGoogleSignInPlatform(
+        user: userData,
+      );
       GoogleSignInPlatform.instance = googlePlatform;
 
-      final account = await GoogleSignIn().signIn();
+      final account = await GoogleSignIn.instance.authenticate();
 
       await tester.pumpWidget(
         MaterialApp(
@@ -308,7 +265,7 @@ void main() {
   testWidgets('sign out signs out google and firebase', (tester) async {
     await mockNetworkImagesFor(() async {
       final googlePlatform = FakeGoogleSignInPlatform(
-        userData: GoogleSignInUserData(
+        user: GoogleSignInUserData(
           email: 'signout@example.com',
           id: 'id',
           displayName: 'Sign Out User',
@@ -317,7 +274,7 @@ void main() {
       GoogleSignInPlatform.instance = googlePlatform;
       final auth = TrackingAuth();
 
-      final account = await GoogleSignIn().signIn();
+      final account = await GoogleSignIn.instance.authenticate();
 
       await tester.pumpWidget(
         MaterialApp(

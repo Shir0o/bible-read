@@ -104,36 +104,37 @@ class UserProfilePageState extends State<UserProfilePage> {
     }
     try {
       final GoogleSignIn googleSignIn = widget.googleSignInProvider();
-      final GoogleSignInAccount? account = await googleSignIn.signIn();
-      if (account != null) {
-        final GoogleSignInAuthentication auth = await account.authentication;
-        final credential = GoogleAuthProvider.credential(
-          accessToken: auth.accessToken,
-          idToken: auth.idToken,
-        );
+      final GoogleSignInAccount account = await googleSignIn.authenticate();
 
-        await widget.auth.signInWithCredential(credential);
+      final GoogleSignInAuthentication auth = account.authentication;
+      final credential = GoogleAuthProvider.credential(
+        idToken: auth.idToken,
+      );
 
-        if (mounted) {
-          final page = widget.mainPageBuilder?.call(context) ?? MainPage();
-          Navigator.of(context).pushReplacement(animatedPageRoute(page));
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Sign in cancelled')));
-        }
+      await widget.auth.signInWithCredential(credential);
+
+      if (mounted) {
+        final page = widget.mainPageBuilder?.call(context) ?? MainPage();
+        Navigator.of(context).pushReplacement(animatedPageRoute(page));
       }
     } catch (error, st) {
-      if (kDebugMode) {
-        debugPrint('Sign in failed: $error');
-      }
-      ErrorLogger.log(error, st);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
+      if (error is GoogleSignInException &&
+          error.code == GoogleSignInExceptionCode.canceled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sign in cancelled')),
+          );
+        }
+      } else {
+        if (kDebugMode) {
+          debugPrint('Sign in failed: $error');
+        }
+        ErrorLogger.log(error, st);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Something went wrong')),
+          );
+        }
       }
     } finally {
       if (mounted) {

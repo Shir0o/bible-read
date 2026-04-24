@@ -13,12 +13,15 @@ import 'package:bible_read/main.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:network_image_mock/network_image_mock.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import 'helpers/fake_google_sign_in_platform.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
     await Firebase.initializeApp();
   });
 

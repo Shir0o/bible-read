@@ -7,11 +7,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import '../test/helpers/fake_google_sign_in_platform.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
 
-class MockDocumentReference extends Mock implements DocumentReference<Map<String, dynamic>> {}
+// ignore: subtype_of_sealed_class
+class MockDocumentReference extends Mock
+    implements DocumentReference<Map<String, dynamic>> {}
 
 class SelectiveThrowingFirestore extends FakeFirebaseFirestore {
   bool shouldThrowOnSet = false;
@@ -36,14 +40,17 @@ class FakeSetOptions extends Fake implements SetOptions {}
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    setupFirebaseCoreMocks();
     await Firebase.initializeApp();
     registerFallbackValue(FakeSetOptions());
   });
 
   testWidgets('Optimistic UI Rollback on Firestore failure', (tester) async {
+    final google = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = google;
+
     final firestore = SelectiveThrowingFirestore();
     final mockUser = MockUser(
       uid: 'u1',
@@ -79,28 +86,33 @@ void main() {
     );
 
     await tester.pumpAndSettle(const Duration(milliseconds: 2000));
-    
+
     final toggleFinder = find.text('I have read');
     final fallbackToggleFinder = find.text('Yes, I read');
-    final actualToggle = tester.any(toggleFinder) ? toggleFinder : fallbackToggleFinder;
-    
+    final actualToggle =
+        tester.any(toggleFinder) ? toggleFinder : fallbackToggleFinder;
+
     expect(tester.any(actualToggle), isTrue);
 
     firestore.shouldThrowOnSet = true;
     await tester.tap(actualToggle);
-    
+
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.textContaining('Thank you'), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
 
-    final foundReadState = find.byKey(const ValueKey('read_state')).evaluate().isNotEmpty;
-    final foundUnreadState = find.byKey(const ValueKey('unread_state')).evaluate().isNotEmpty;
-    debugPrint('AFTER ROLLBACK: foundReadState=$foundReadState, foundUnreadState=$foundUnreadState');
+    final foundReadState =
+        find.byKey(const ValueKey('read_state')).evaluate().isNotEmpty;
+    final foundUnreadState =
+        find.byKey(const ValueKey('unread_state')).evaluate().isNotEmpty;
+    debugPrint(
+        'AFTER ROLLBACK: foundReadState=$foundReadState, foundUnreadState=$foundUnreadState');
     debugPrint('ACTUAL TOGGLE FINDER MATCHES: ${tester.any(actualToggle)}');
 
     expect(tester.any(actualToggle), isTrue);
-    expect(find.text('Failed to mark reading. Please try again.'), findsOneWidget);
+    expect(
+        find.text('Failed to mark reading. Please try again.'), findsOneWidget);
   });
 }

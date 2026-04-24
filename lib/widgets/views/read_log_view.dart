@@ -316,7 +316,7 @@ class _ReadLogViewState extends State<ReadLogView>
         .collection('comments');
     try {
       final docRef = await commentsRef.add(comment.toFirestore());
-      
+
       await widget.firestore
           .collection('read_logs')
           .doc(dateKey)

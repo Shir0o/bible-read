@@ -1,9 +1,7 @@
 import 'package:bible_read/main.dart' as app;
 import 'package:bible_read/pages/bible_progress_page.dart';
-import 'package:bible_read/pages/journey_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/user_profile_page.dart';
-import 'package:bible_read/widgets/badge_icon.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -11,12 +9,15 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import '../test/helpers/fake_google_sign_in_platform.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
     await Firebase.initializeApp();
   });
 
@@ -66,7 +67,8 @@ void main() {
     expect(find.byType(BibleProgressPage), findsOneWidget);
 
     // 3. Complete a book (Jude) programmatically to avoid scroll issues
-    final progressState = tester.state<BibleProgressPageState>(find.byType(BibleProgressPage));
+    final progressState =
+        tester.state<BibleProgressPageState>(find.byType(BibleProgressPage));
     progressState.handleBookTap('Jude', false);
     await tester.pumpAndSettle();
 
@@ -77,7 +79,7 @@ void main() {
 
     // Verify Jude is marked as completed
     expect(find.text('Jud'), findsAtLeast(1));
-    
+
     // 4. Verify Achievement is written to Firestore
     final achievementDoc = await firestore
         .collection('users')
@@ -95,11 +97,11 @@ void main() {
 
     // Now we are back on Journey tab of MainPage.
     // The menu button (profile icon) is visible on Journey tab but hidden on Home tab.
-    
+
     // Open menu
     // On Journey tab, AppHeader should have the profile icon which acts as menu trigger
     final menuButton = find.byTooltip('Open menu');
-    
+
     if (tester.any(menuButton)) {
       await tester.tap(menuButton.last);
     } else {
@@ -111,7 +113,7 @@ void main() {
         await tester.tap(find.byType(InkWell).last);
       }
     }
-    
+
     // Wait for bottom sheet animation
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 1));

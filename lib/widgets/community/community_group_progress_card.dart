@@ -8,6 +8,7 @@ import '../../services/vibration_service.dart';
 import '../../theme/app_theme.dart';
 import '../../pages/group_detail_page.dart';
 import '../../pages/full_schedule_page.dart';
+import '../../pages/group_catch_up_page.dart';
 import '../common_styles.dart';
 
 class CommunityGroupProgressCard extends StatelessWidget {
@@ -222,47 +223,86 @@ class CommunityGroupProgressCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: FilledButton.tonal(
-                    onPressed: () {
-                      vibrationService.lightImpact();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => FullSchedulePage(
-                            group: group,
-                            groupService: groupService,
-                            auth: auth,
-                            vibrationService: vibrationService,
-                            initialSchedule: initialSchedule,
-                            isMember: false,
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            vibrationService.lightImpact();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => FullSchedulePage(
+                                  group: group,
+                                  groupService: groupService,
+                                  auth: auth,
+                                  vibrationService: vibrationService,
+                                  initialSchedule: initialSchedule,
+                                  isMember: true,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: Icon(Icons.calendar_today,
+                              size: 18, color: colorScheme.primary),
+                          label: Text(
+                            'Schedule',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                                color:
+                                    colorScheme.primary.withValues(alpha: 0.3)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            padding: EdgeInsets.zero,
                           ),
                         ),
-                      );
-                    },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colorScheme.secondaryContainer,
-                      foregroundColor: colorScheme.onSecondaryContainer,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
+                      ),
                     ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.calendar_today, size: 24),
-                        SizedBox(width: 8),
-                        Text(
-                          'View Schedule',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            vibrationService.lightImpact();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => GroupCatchUpPage(
+                                  group: group,
+                                  groupService: groupService,
+                                  auth: auth,
+                                  vibrationService: vibrationService,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.history_rounded, size: 18),
+                          label: const Text(
+                            'Log Progress',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: colorScheme.primaryContainer,
+                            foregroundColor: colorScheme.onPrimaryContainer,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                            padding: EdgeInsets.zero,
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),

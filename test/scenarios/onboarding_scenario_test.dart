@@ -7,14 +7,20 @@ import 'package:bible_read/pages/welcome_page.dart';
 import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:google_sign_in_mocks/google_sign_in_mocks.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:network_image_mock/network_image_mock.dart';
 import '../helpers/pump_app.dart';
 import '../helpers/firebase_seeder.dart';
 import '../helpers/mocks.dart';
 import '../helpers/stub_vibration_service.dart';
+import '../helpers/fake_google_sign_in_platform.dart';
 
 void main() {
+  setUpAll(() {
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
+  });
+
   testWidgets(
       'Onboarding Scenario: User launches app, sees welcome, logs in, lands on home',
       (tester) async {

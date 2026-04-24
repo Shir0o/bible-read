@@ -9,16 +9,21 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import '../test/helpers/fake_google_sign_in_platform.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    setupFirebaseCoreMocks();
     await Firebase.initializeApp();
   });
 
   testWidgets('Social Feed & Engagement Journey', (tester) async {
+    final google = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = google;
+
     final firestore = FakeFirebaseFirestore();
     final now = DateTime.now();
     final dateKey =
@@ -88,7 +93,8 @@ void main() {
       debugDumpApp();
     }
     expect(find.textContaining('Bob', findRichText: true), findsAtLeast(1));
-    expect(find.textContaining('completed', findRichText: true), findsOneWidget);
+    expect(
+        find.textContaining('completed', findRichText: true), findsOneWidget);
 
     // 6. Navigate to View All (ReadLogPage)
     final viewAllButton = find.text('View All').last;
@@ -101,7 +107,7 @@ void main() {
     // Wait for ReadLogView to load
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
-    
+
     expect(find.byType(FeedCard), findsOneWidget);
     expect(find.text('Bob'), findsOneWidget);
 
@@ -121,7 +127,7 @@ void main() {
         .doc('alice_uid')
         .get();
     expect(likeDoc.exists, isTrue);
-    
+
     // FeedCard shows names of likers
     expect(find.text('Alice'), findsOneWidget);
 
@@ -160,9 +166,10 @@ void main() {
     // 11. Go back to CommunityPage and verify updated state
     await tester.pageBack();
     await tester.pumpAndSettle();
-    
+
     // CommunityPage uses CommunityActivityItem which shows "commented on" if comments exist
-    expect(find.textContaining('commented on', findRichText: true), findsOneWidget);
+    expect(find.textContaining('commented on', findRichText: true),
+        findsOneWidget);
     expect(find.textContaining('Great job Bob!'), findsAtLeast(1));
 
     // 12. Toggle Like again to unlike

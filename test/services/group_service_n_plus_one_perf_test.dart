@@ -46,11 +46,13 @@ void main() {
       final groups = await stream.firstWhere((list) => list.length >= 60);
       stopwatch.stop();
 
-      debugPrint('PERF: groupsForUser (60 groups) took ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint(
+          'PERF: groupsForUser (60 groups) took ${stopwatch.elapsedMilliseconds}ms');
       expect(groups.length, 60);
     });
 
-    test('fixMemberProgressSummariesForUser baseline performance (60 groups)', () async {
+    test('fixMemberProgressSummariesForUser baseline performance (60 groups)',
+        () async {
       final uid = 'user1';
       for (var i = 0; i < 60; i++) {
         final groupId = 'group_$i';
@@ -70,7 +72,8 @@ void main() {
       await service.fixMemberProgressSummariesForUser(uid);
       stopwatch.stop();
 
-      debugPrint('PERF: fixMemberProgressSummariesForUser (60 groups) took ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint(
+          'PERF: fixMemberProgressSummariesForUser (60 groups) took ${stopwatch.elapsedMilliseconds}ms');
     });
   });
 }

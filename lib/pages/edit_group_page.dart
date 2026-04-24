@@ -229,7 +229,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
       if (fixedChapters == null || fixedChapters <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Please enter a valid number of chapters per day.')),
+              content:
+                  Text('Please enter a valid number of chapters per day.')),
         );
         return;
       }

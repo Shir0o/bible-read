@@ -170,7 +170,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       fixedChapters = int.tryParse(_chaptersController.text);
       if (fixedChapters == null || fixedChapters <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a valid number of chapters per day.')),
+          const SnackBar(
+              content:
+                  Text('Please enter a valid number of chapters per day.')),
         );
         return;
       }

@@ -422,7 +422,7 @@ class _CommunityPageState extends State<CommunityPage>
                   if (snapshot.hasData) {
                     _friendLogs = snapshot.data!;
                   }
-                  
+
                   final baseLogs = snapshot.data ?? _friendLogs;
                   // Apply optimistic overrides
                   final logs = baseLogs.map((log) {

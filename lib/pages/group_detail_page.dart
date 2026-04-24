@@ -20,7 +20,6 @@ import '../widgets/vibration_button.dart';
 import 'edit_group_page.dart';
 import 'group_join_requests_page.dart';
 import 'invite_member_page.dart';
-import 'full_schedule_page.dart';
 import 'group_catch_up_page.dart';
 
 typedef GroupDatePicker = Future<DateTime?> Function({
@@ -587,6 +586,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         schedule: schedule,
                         groupService: widget.groupService,
                         currentDate: _now,
+                        group: widget.group,
+                        auth: widget.auth,
+                        vibrationService: widget.vibrationService,
                       ),
                       const SizedBox(height: 24),
                       if (todaySchedule != null) ...[
@@ -598,8 +600,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           vibrationService: widget.vibrationService,
                           isMember: isMember,
                           currentDate: _now,
-                          pendingReadOverride:
-                              _pendingReadOverrides[_dateKey(todaySchedule.date)],
+                          pendingReadOverride: _pendingReadOverrides[
+                              _dateKey(todaySchedule.date)],
                           pendingChapterOverrides: _pendingChapterOverrides[
                               _dateKey(todaySchedule.date)],
                           onToggle: ({
@@ -635,10 +637,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       ),
                       if (isMember) ...[
                         const SizedBox(height: 24),
-                        _buildCatchUpButton(context),
+                        _buildLogProgressButton(context),
                       ],
-                      const SizedBox(height: 16),
-                      _buildFullScheduleButton(context, isMember),
                     ],
                   );
                 },
@@ -650,7 +650,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
-  Widget _buildCatchUpButton(BuildContext context) {
+  Widget _buildLogProgressButton(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return SizedBox(
@@ -670,48 +670,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           );
         },
         icon: const Icon(Icons.history_rounded),
-        label: const Text('Catch Up on Missed Days'),
+        label: const Text('Log Progress'),
         style: ElevatedButton.styleFrom(
           backgroundColor: colorScheme.primaryContainer,
           foregroundColor: colorScheme.onPrimaryContainer,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          textStyle: theme.textTheme.titleMedium?.copyWith(
-            fontSize: 16,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFullScheduleButton(BuildContext context, bool isMember) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return SizedBox(
-      width: double.infinity,
-      child: TextButton.icon(
-        onPressed: () {
-          unawaited(widget.vibrationService.lightImpact());
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => FullSchedulePage(
-                group: widget.group,
-                groupService: widget.groupService,
-                auth: widget.auth,
-                vibrationService: widget.vibrationService,
-                isMember: isMember,
-              ),
-            ),
-          );
-        },
-        icon: Icon(Icons.calendar_month, color: colorScheme.primary),
-        label: Text('View Full Schedule',
-            style: TextStyle(color: colorScheme.primary)),
-        style: TextButton.styleFrom(
-          backgroundColor:
-              colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),

@@ -1,4 +1,3 @@
-import 'package:bible_read/models/notification_preferences.dart';
 import 'package:bible_read/pages/general_settings_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/notification_settings_page.dart';
@@ -10,16 +9,21 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import '../test/helpers/fake_google_sign_in_platform.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    setupFirebaseCoreMocks();
     await Firebase.initializeApp();
   });
 
   testWidgets('Notification & Preference Persistence Journey', (tester) async {
+    final google = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = google;
+
     final firestore = FakeFirebaseFirestore();
     final mockUser = MockUser(
       uid: 'test_user_uid',
@@ -77,7 +81,7 @@ void main() {
 
     final autoMarkSwitch = find.byType(Switch).first;
     expect(tester.widget<Switch>(autoMarkSwitch).value, isFalse);
-    
+
     await tester.tap(autoMarkSwitch);
     await tester.pumpAndSettle();
     expect(tester.widget<Switch>(autoMarkSwitch).value, isTrue);
@@ -102,7 +106,8 @@ void main() {
 
     // Wait for loading to finish
     int timeout = 0;
-    while (find.byType(CircularProgressIndicator).evaluate().isNotEmpty && timeout < 10) {
+    while (find.byType(CircularProgressIndicator).evaluate().isNotEmpty &&
+        timeout < 10) {
       await tester.pump(const Duration(milliseconds: 500));
       timeout++;
     }

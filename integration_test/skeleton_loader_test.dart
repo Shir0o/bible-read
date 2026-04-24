@@ -5,6 +5,8 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import '../test/helpers/fake_google_sign_in_platform.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
@@ -13,13 +15,17 @@ import 'package:bible_read/widgets/skeletons/home_page_skeleton.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    setupFirebaseCoreMocks();
     await Firebase.initializeApp();
   });
 
-  testWidgets('Skeleton Loader persistence and header visibility', (tester) async {
+  testWidgets('Skeleton Loader persistence and header visibility',
+      (tester) async {
+    final google = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = google;
+
     final firestore = FakeFirebaseFirestore();
     final mockUser = MockUser(
       uid: 'u1',
@@ -47,7 +53,7 @@ void main() {
     // 1. Verify Skeleton is visible immediately after first pump
     await tester.pump();
     expect(find.byType(HomePageSkeleton), findsOneWidget);
-    
+
     // MANDATE: Verify Page Title/Header is visible while skeleton is showing
     // AppHeader contains the Bible Read title or greeting.
     expect(find.byType(AppHeader), findsOneWidget);
@@ -64,10 +70,10 @@ void main() {
     // 4. Verify Skeleton is replaced by content after minTime (1000ms) + switchDuration (300ms)
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
-    
+
     expect(find.byType(HomePageSkeleton), findsNothing);
     expect(find.text('Yes, I read'), findsOneWidget);
-    
+
     // Header should still be there
     expect(find.byType(AppHeader), findsOneWidget);
   });

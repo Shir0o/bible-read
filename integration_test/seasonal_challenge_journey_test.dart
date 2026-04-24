@@ -1,9 +1,4 @@
-import 'package:bible_read/main.dart' as app;
 import 'package:bible_read/pages/main_page.dart';
-import 'package:bible_read/models/season.dart';
-import 'package:bible_read/models/seasonal_challenge.dart';
-import 'package:bible_read/models/seasonal_reward.dart';
-import 'package:bible_read/widgets/seasonal_challenge_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -12,16 +7,21 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import '../test/helpers/fake_google_sign_in_platform.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  setupFirebaseCoreMocks();
 
   setUpAll(() async {
+    setupFirebaseCoreMocks();
     await Firebase.initializeApp();
   });
 
   testWidgets('Seasonal Challenge Master Journey', (tester) async {
+    final google = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = google;
+
     final firestore = FakeFirebaseFirestore();
     final mockUser = MockUser(
       uid: 'u1',
