@@ -4,16 +4,16 @@
 #
 # Usage:
 #   scripts/capture_play_store.sh                       # uses defaults below
-#   PHONE_AVD=Pixel_8_API_34 scripts/capture_play_store.sh
+#   PHONE_AVD=Pixel_8 scripts/capture_play_store.sh
 #
 # Pre-req: the named AVDs exist (see `flutter emulators`). Create missing ones
 # in Android Studio's Device Manager.
 
 set -euo pipefail
 
-PHONE_AVD="${PHONE_AVD:-Pixel_7_API_34}"
-TABLET7_AVD="${TABLET7_AVD:-Nexus_7_API_34}"
-TABLET10_AVD="${TABLET10_AVD:-Pixel_Tablet_API_34}"
+PHONE_AVD="${PHONE_AVD:-Small_Phone}"
+TABLET7_AVD="${TABLET7_AVD:-Nexus_7}"
+TABLET10_AVD="${TABLET10_AVD:-Pixel_Tablet}"
 
 TESTS=(
   integration_test/main_flow_test.dart
@@ -73,13 +73,13 @@ capture_for_device() {
   echo "==> $out_dir/ has $(ls "$out_dir"/*.png 2>/dev/null | wc -l | tr -d ' ') PNGs"
 }
 
-capture_for_device "$PHONE_AVD"    screenshots-phone
-capture_for_device "$TABLET7_AVD"  screenshots-tablet7
-capture_for_device "$TABLET10_AVD" screenshots-tablet10
+capture_for_device "$PHONE_AVD"    screenshots/phone
+capture_for_device "$TABLET7_AVD"  screenshots/tablet_7
+capture_for_device "$TABLET10_AVD" screenshots/tablet_10
 
 stop_emulators
 echo
 echo "Done. Upload contents of:"
-echo "  screenshots-phone/    -> Play Console: Phone"
-echo "  screenshots-tablet7/  -> Play Console: 7-inch tablet"
-echo "  screenshots-tablet10/ -> Play Console: 10-inch tablet"
+echo "  screenshots/phone/     -> Play Console: Phone"
+echo "  screenshots/tablet_7/  -> Play Console: 7-inch tablet"
+echo "  screenshots/tablet_10/ -> Play Console: 10-inch tablet"
