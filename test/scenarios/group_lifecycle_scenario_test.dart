@@ -74,25 +74,18 @@ void main() {
       await tester.tap(genesisOption);
       await tester.pumpAndSettle();
 
-      // 3. Select End Date
-      // We look for the mm/dd/yyyy text or calendar icon.
-      // Based on typical UI code, mm/dd/yyyy is shown when date is null.
-      final datePickerTrigger = find.text('mm/dd/yyyy');
-      if (datePickerTrigger.evaluate().isNotEmpty) {
-        await tester.tap(datePickerTrigger.last);
-      } else {
-        // Fallback to icon if text changed
-        await tester.tap(find.byIcon(Icons.calendar_today).last);
-      }
+      // 3. Switch to "By Chapters / Day" mode to avoid the date picker UI.
+      await tester.tap(find.text('By Chapters / Day'));
       await tester.pumpAndSettle();
 
-      // Select date (e.g., 28)
-      await tester.tap(find.text('28'));
-      await tester.tap(find.text('OK'));
+      // Enter chapters per day
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Chapters / Day'), '5');
       await tester.pumpAndSettle();
 
       // 4. Tap "Create Schedule"
       final createBtn = find.text('Create Schedule');
+      await tester.ensureVisible(createBtn);
       await tester.tap(createBtn);
       await tester.pumpAndSettle();
 

@@ -77,7 +77,13 @@ void main() {
   });
 
   setUp(() {
-    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
+    GoogleSignInPlatform.instance = FakeGoogleSignInPlatform(
+      user: const GoogleSignInUserData(
+        id: 'google_user_id',
+        email: 'gmail.user@example.com',
+        displayName: 'Gmail User',
+      ),
+    );
   });
 
   group('LoginPage', () {

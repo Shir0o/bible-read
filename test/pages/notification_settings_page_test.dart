@@ -51,11 +51,11 @@ void main() {
       'Like Notifications',
       'Nudge Notifications',
       'Signup Alerts',
-      'Achievement Notifications',
       'Friend Request Notifications',
       'Comment Notifications',
       'Group Join Request Notifications',
       'Group Schedule Update Notifications',
+      'Group Invite Notifications',
       'Seasonal Challenge Notifications',
       'Vibration',
     ];

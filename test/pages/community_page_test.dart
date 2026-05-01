@@ -118,7 +118,7 @@ void main() {
     await pumpPage(tester);
 
     expect(find.text('My Group'), findsOneWidget);
-    expect(find.text('View Schedule'), findsOneWidget);
+    expect(find.text('Schedule'), findsOneWidget);
     expect(find.text('Day 1'), findsOneWidget);
   });
 

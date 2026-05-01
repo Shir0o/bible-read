@@ -40,6 +40,8 @@ void main() {
 
     when(() => mockAuth.currentUser).thenReturn(mockUser);
     when(() => mockUser.uid).thenReturn('test_uid');
+    when(() => mockGroupService.userProgressForGroup(any(), any()))
+        .thenAnswer((_) => Stream.value(<String, int>{}));
   });
 
   Widget createWidgetUnderTest() {
