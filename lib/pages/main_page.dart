@@ -158,7 +158,6 @@ class MainPageState extends State<MainPage> {
     );
     unawaited(_adminRoleService.prewarm());
     unawaited(_saveFcmToken());
-    unawaited(_handleSilentSignIn());
 
     _pages = [
       HomePage(
@@ -238,37 +237,6 @@ class MainPageState extends State<MainPage> {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Error saving FCM token: $e');
-      }
-    }
-  }
-
-  Future<void> _handleSilentSignIn() async {
-    try {
-      final googleSignIn = widget.googleSignInProvider();
-      final GoogleSignInAccount? account = await googleSignIn.attemptLightweightAuthentication();
-
-      if (account != null) {
-        final GoogleSignInAuthentication auth = account.authentication;
-        final credential = GoogleAuthProvider.credential(
-          idToken: auth.idToken,
-        );
-
-        // Only sign in if not already signed in to Firebase with this user
-        final currentUser = widget.auth.currentUser;
-        if (currentUser == null) {
-          await widget.auth.signInWithCredential(credential);
-        } else {
-          // Refresh the credential for the existing user if it's the same Google account
-          final isGoogleUser = currentUser.providerData
-              .any((info) => info.providerId == 'google.com');
-          if (isGoogleUser && currentUser.email == account.email) {
-            await currentUser.reauthenticateWithCredential(credential);
-          }
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Silent sign-in failed: $e');
       }
     }
   }

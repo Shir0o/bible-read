@@ -16,6 +16,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'firebase_options.dart';
 import 'services/error_logger.dart';
+import 'services/google_sign_in_factory.dart';
 import 'services/reminder_service.dart';
 import 'services/friend_service.dart';
 import 'services/group_service.dart';
@@ -76,6 +77,13 @@ void main() async {
   }
   await FirebaseCrashlytics.instance
       .setCrashlyticsCollectionEnabled(!kDebugMode);
+
+  unawaited(initializeGoogleSignIn().catchError((Object error, StackTrace st) {
+    if (kDebugMode) {
+      debugPrint('Google Sign-In init failed: $error');
+    }
+    ErrorLogger.log(error, st);
+  }));
 
   FlutterError.onError = (details) {
     if (kDebugMode) {
