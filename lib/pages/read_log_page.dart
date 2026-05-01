@@ -83,7 +83,22 @@ class ReadLogPage extends StatefulWidget {
     }
     final handler = markFirstReader;
     if (handler != null) {
-      await handler(dateKey: dateKey, uid: user.uid);
+      final result = await handler(dateKey: dateKey, uid: user.uid);
+      if (result?['first'] == true) {
+        try {
+          await db
+              .collection('users')
+              .doc(user.uid)
+              .collection('achievements')
+              .doc('firstReader')
+              .set({
+            'dateUnlocked': Timestamp.now(),
+            'dateKey': dateKey,
+          }, SetOptions(merge: true));
+        } catch (_) {
+          // Best-effort; the read-log entry already succeeded.
+        }
+      }
     } else if (functions != null) {
       try {
         await functions.httpsCallable('markFirstReader').call({
