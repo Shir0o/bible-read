@@ -313,7 +313,7 @@ class _LoginPageState extends State<LoginPage> {
                                     keyboardType: TextInputType.emailAddress,
                                     autofillHints: [AutofillHints.email],
                                     textInputAction: TextInputAction.next,
-                                    autofocus: false,
+                                    autofocus: true,
                                     validator: (value) {
                                       if (value == null ||
                                           value.trim().isEmpty) {
