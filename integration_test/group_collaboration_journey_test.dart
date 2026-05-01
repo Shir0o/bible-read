@@ -11,13 +11,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
 
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import '../test/helpers/fake_google_sign_in_platform.dart';
+import 'helpers/screenshot_helper.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  initScreenshotBinding();
   setupFirebaseCoreMocks();
 
   setUpAll(() async {
@@ -122,6 +122,7 @@ void main() {
     // Verify navigation to GroupDetailPage
     expect(find.byType(GroupDetailPage), findsOneWidget);
     expect(find.text('Jude Plan'), findsOneWidget);
+    await takeScreenshot(tester, '11_group_detail');
 
     // 7. Invite Friend
     await tester.tap(find.byTooltip('Invite member'));

@@ -6,12 +6,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import '../test/helpers/fake_google_sign_in_platform.dart';
+import 'helpers/screenshot_helper.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  initScreenshotBinding();
 
   setUpAll(() async {
     setupFirebaseCoreMocks();
@@ -134,6 +134,7 @@ void main() {
 
     // Now progress should be 1 / 1 readings
     expect(find.textContaining('1 / 1'), findsOneWidget);
+    await takeScreenshot(tester, '08_seasonal_challenge_complete');
 
     // 8. Claim Reward
     final claimButton = find.text('Claim reward');

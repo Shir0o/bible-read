@@ -5,15 +5,15 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
-import 'package:integration_test/integration_test.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
 import '../test/helpers/fake_google_sign_in_platform.dart';
+import 'helpers/screenshot_helper.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  initScreenshotBinding();
   setupFirebaseCoreMocks();
 
   setUpAll(() async {
@@ -40,16 +40,19 @@ void main() {
 
     // Verify HomePage is showing Today's Reading (or Daily Reading if no plan)
     expect(find.textContaining('Reading'), findsAtLeast(1));
+    await takeScreenshot(tester, '01_home_tab');
 
     // Tap Community tab
     await tester.tap(find.text('Community'));
     await tester.pumpAndSettle();
     expect(find.text('Friends Activity'), findsOneWidget);
+    await takeScreenshot(tester, '02_community_tab');
 
     // Tap Journey tab
     await tester.tap(find.text('Journey'));
     await tester.pumpAndSettle();
     expect(find.text('My Personal Journey'), findsOneWidget);
+    await takeScreenshot(tester, '03_journey_tab');
 
     // Tap Home tab
     await tester.tap(find.text('Home'));

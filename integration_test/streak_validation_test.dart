@@ -4,15 +4,15 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import '../test/helpers/fake_google_sign_in_platform.dart';
 
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/services/reading_status_service.dart';
+import 'helpers/screenshot_helper.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  initScreenshotBinding();
 
   setUpAll(() async {
     setupFirebaseCoreMocks();
@@ -107,5 +107,6 @@ void main() {
 
     // 7. Verify "Thank you" message
     expect(find.text('Thank you for being here.'), findsOneWidget);
+    await takeScreenshot(tester, '06_streak_progress');
   });
 }

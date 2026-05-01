@@ -6,15 +6,15 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
-import 'package:integration_test/integration_test.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
 import 'package:bible_read/models/reading_plan.dart';
 import '../test/helpers/fake_google_sign_in_platform.dart';
+import 'helpers/screenshot_helper.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  initScreenshotBinding();
   setupFirebaseCoreMocks();
 
   setUpAll(() async {
@@ -111,6 +111,7 @@ void main() {
 
     // Verify "I have read" button exists
     expect(find.text('I have read'), findsOneWidget);
+    await takeScreenshot(tester, '04_home_unread_card');
 
     // 3. Tap "I have read"
     await tester.tap(find.text('I have read'));
@@ -122,6 +123,7 @@ void main() {
 
     // 5. Verify Backend Confirmation
     await tester.pumpAndSettle();
+    await takeScreenshot(tester, '05_home_marked_complete');
 
     // Check Firestore directly
     final readDoc = await firestore
