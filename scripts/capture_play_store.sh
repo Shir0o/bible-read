@@ -54,15 +54,16 @@ capture_for_device() {
   flutter emulators --launch "$avd"
   wait_for_device
 
-  rm -rf screenshots
+  rm -f screenshots/*.png
   for t in "${TESTS[@]}"; do
     echo "--- $t on $avd"
     flutter drive --driver=test_driver/screenshot_driver.dart --target="$t"
   done
 
-  rm -rf "$out_dir"
-  mv screenshots "$out_dir"
-  echo "==> $out_dir/ has $(ls "$out_dir" | wc -l | tr -d ' ') PNGs"
+  mkdir -p "$out_dir"
+  rm -f "$out_dir"/*.png
+  mv screenshots/*.png "$out_dir"/
+  echo "==> $out_dir/ has $(ls "$out_dir"/*.png 2>/dev/null | wc -l | tr -d ' ') PNGs"
 }
 
 capture_for_device "$PHONE_AVD"    screenshots-phone
