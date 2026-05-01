@@ -31,11 +31,17 @@ cd "$repo_root"
 
 wait_for_device() {
   echo "Waiting for emulator to boot..."
-  adb wait-for-device
-  until [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; do
+  # Wait until at least one emulator-* serial appears in `adb devices`.
+  until adb devices | awk '/^emulator-[0-9]+\s+device$/{found=1} END{exit !found}'; do
     sleep 2
   done
-  echo "Emulator booted."
+  local serial
+  serial="$(adb devices | awk '/^emulator-[0-9]+\s+device$/{print $1; exit}')"
+  until [[ "$(adb -s "$serial" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; do
+    sleep 2
+  done
+  echo "Emulator $serial booted."
+  echo "$serial"
 }
 
 stop_emulators() {
@@ -52,12 +58,13 @@ capture_for_device() {
   echo "==> Booting $avd"
   stop_emulators
   flutter emulators --launch "$avd"
-  wait_for_device
+  local serial
+  serial="$(wait_for_device | tail -n1)"
 
   rm -f screenshots/*.png
   for t in "${TESTS[@]}"; do
-    echo "--- $t on $avd"
-    flutter drive --driver=test_driver/screenshot_driver.dart --target="$t"
+    echo "--- $t on $avd ($serial)"
+    flutter drive -d "$serial" --driver=test_driver/screenshot_driver.dart --target="$t"
   done
 
   mkdir -p "$out_dir"
