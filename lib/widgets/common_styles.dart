@@ -30,14 +30,14 @@ class CommonStyles {
     EdgeInsetsGeometry? margin,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Card.filled(
-      elevation: 8,
-      shadowColor: colorScheme.shadow,
+    return Card(
+      elevation: 0,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          color: colorScheme.outlineVariant,
+          width: 0.5,
         ),
       ),
       margin: margin ??
@@ -45,7 +45,7 @@ class CommonStyles {
             horizontal: AppSpacing.hPadding,
             vertical: AppSpacing.vPaddingSmall,
           ),
-      color: colorScheme.surfaceContainerHighest,
+      color: colorScheme.surfaceContainerLow,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.hPadding),
         child: child,
@@ -61,15 +61,15 @@ class CommonStyles {
     VoidCallback? onTap,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(24);
-    return Card.filled(
-      elevation: 8,
-      shadowColor: colorScheme.shadow,
+    final radius = BorderRadius.circular(16);
+    return Card(
+      elevation: 0,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: radius,
         side: BorderSide(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          color: colorScheme.outlineVariant,
+          width: 0.5,
         ),
       ),
       margin: margin ??
@@ -77,7 +77,7 @@ class CommonStyles {
             horizontal: AppSpacing.hPadding,
             vertical: AppSpacing.vPaddingSmall,
           ),
-      color: colorScheme.surfaceContainerHighest,
+      color: colorScheme.surfaceContainerLow,
       child: InkWell(
         onTap: onTap,
         borderRadius: radius,

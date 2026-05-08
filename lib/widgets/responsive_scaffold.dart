@@ -85,20 +85,10 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
                     leading: const SizedBox(height: 16),
                     destinations:
                         widget.destinations.asMap().entries.map((entry) {
-                      final index = entry.key;
                       final d = entry.value;
-                      final isSelected = safeSelected == index;
                       return NavigationRailDestination(
-                        icon: AnimatedScale(
-                          scale: isSelected ? 1.2 : 1.0,
-                          duration: const Duration(milliseconds: 200),
-                          child: d.icon,
-                        ),
-                        selectedIcon: AnimatedScale(
-                          scale: 1.2,
-                          duration: const Duration(milliseconds: 200),
-                          child: d.selectedIcon ?? d.icon,
-                        ),
+                        icon: d.icon,
+                        selectedIcon: d.selectedIcon ?? d.icon,
                         label: Text(d.label),
                       );
                     }).toList(),
@@ -124,20 +114,10 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
               height: 88,
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
               destinations: widget.destinations.asMap().entries.map((entry) {
-                final index = entry.key;
                 final d = entry.value;
-                final isSelected = safeSelected == index;
                 return NavigationDestination(
-                  icon: AnimatedScale(
-                    scale: isSelected ? 1.2 : 1.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: d.icon,
-                  ),
-                  selectedIcon: AnimatedScale(
-                    scale: 1.2,
-                    duration: const Duration(milliseconds: 200),
-                    child: d.selectedIcon ?? d.icon,
-                  ),
+                  icon: d.icon,
+                  selectedIcon: d.selectedIcon ?? d.icon,
                   label: d.label,
                   tooltip: d.tooltip,
                 );
