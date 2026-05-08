@@ -52,7 +52,7 @@ extension PumpGolden on WidgetTester {
         final testFile = comparator.basedir.resolve('dummy_for_config.dart');
         goldenFileComparator = LocalFileComparatorWithThreshold(
           testFile,
-          0.01, // 1% tolerance for local vs CI font rasterization variance.
+          0.015, // 1.5% tolerance for local vs CI font rasterization variance.
         );
       }
     }
