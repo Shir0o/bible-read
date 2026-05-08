@@ -16,7 +16,6 @@ import 'package:flutter/gestures.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../theme/app_theme.dart';
 import '../widgets/auth/auth_background.dart';
 
 class SignupPage extends StatefulWidget {
@@ -217,31 +216,36 @@ class _SignupPageState extends State<SignupPage> {
         final colorScheme = Theme.of(context).colorScheme;
         final textTheme = Theme.of(context).textTheme;
 
+        const inputRadius = BorderRadius.vertical(top: Radius.circular(12));
         final inputDecoration = InputDecoration(
           filled: true,
           fillColor: colorScheme.surface.withValues(alpha: 0.08),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.outlineVariant, width: 1),
+          contentPadding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+          enabledBorder: UnderlineInputBorder(
+            borderRadius: inputRadius,
+            borderSide: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.primary, width: 1),
+          focusedBorder: UnderlineInputBorder(
+            borderRadius: inputRadius,
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
           ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.error, width: 1),
+          errorBorder: UnderlineInputBorder(
+            borderRadius: inputRadius,
+            borderSide: BorderSide(color: colorScheme.error, width: 2),
           ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.error, width: 1),
+          focusedErrorBorder: UnderlineInputBorder(
+            borderRadius: inputRadius,
+            borderSide: BorderSide(color: colorScheme.error, width: 2),
           ),
-          labelStyle: textTheme.bodyMedium
-              ?.copyWith(color: colorScheme.onSurfaceVariant),
-          floatingLabelStyle:
-              textTheme.bodyMedium?.copyWith(color: colorScheme.primary),
+          labelStyle: textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
+          floatingLabelStyle: textTheme.bodyMedium?.copyWith(
+            color: colorScheme.primary,
+            fontWeight: FontWeight.w500,
+          ),
           errorStyle: textTheme.labelSmall?.copyWith(color: colorScheme.error),
         );
 
@@ -408,7 +412,7 @@ class _SignupPageState extends State<SignupPage> {
                                     'By creating an account, you agree to our '),
                             TextSpan(
                               text: 'Terms of Service',
-                              style: AppTheme.googleSans(
+                              style: textTheme.labelSmall?.copyWith(
                                 color: colorScheme.primary,
                                 decoration: TextDecoration.underline,
                               ),
@@ -417,7 +421,7 @@ class _SignupPageState extends State<SignupPage> {
                             const TextSpan(text: ' and '),
                             TextSpan(
                               text: 'Privacy Policy',
-                              style: AppTheme.googleSans(
+                              style: textTheme.labelSmall?.copyWith(
                                 color: colorScheme.primary,
                                 decoration: TextDecoration.underline,
                               ),
@@ -536,7 +540,7 @@ class _SignupPageState extends State<SignupPage> {
                             padding: const EdgeInsets.all(4.0),
                             child: Text(
                               'Log in',
-                              style: AppTheme.googleSans(
+                              style: textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: colorScheme.primary,
                               ),

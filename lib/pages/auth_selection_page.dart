@@ -227,7 +227,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  GestureDetector(
+                  InkWell(
                     onTap: () {
                       unawaited(widget.vibrationService.lightImpact());
                       Navigator.of(context).push(
@@ -239,11 +239,16 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                         ),
                       );
                     },
-                    child: Text(
-                      'Log in',
-                      style: textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.primary,
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8.0, vertical: 4.0),
+                      child: Text(
+                        'Log in',
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.primary,
+                        ),
                       ),
                     ),
                   ),

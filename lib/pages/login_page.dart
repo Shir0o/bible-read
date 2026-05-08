@@ -627,75 +627,51 @@ class _LoginPageState extends State<LoginPage> {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Stack(
-      children: [
-        // Background overlay
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              color: colorScheme.surface.withValues(alpha: 0.08),
-              borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12)), // rounded-t-xl
-              border: Border(
-                  bottom: BorderSide(
-                      color:
-                          colorScheme.outlineVariant.withValues(alpha: 0.5))),
-            ),
-          ),
-        ),
+    const radius = BorderRadius.vertical(top: Radius.circular(12));
 
-        // Input
-        TextFormField(
-          key: key,
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
-          autofillHints: autofillHints,
-          textInputAction: textInputAction,
-          autofocus: autofocus,
-          onFieldSubmitted: onSubmitted,
-          validator: validator,
-          style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
-          decoration: InputDecoration(
-            labelText: label,
-            labelStyle: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-            floatingLabelStyle: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
-            filled: true,
-            fillColor: colorScheme.surface.withValues(alpha: 0),
-            border: const UnderlineInputBorder(
-              borderSide:
-                  BorderSide.none, // Handled by background overlay border
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0),
-                  width: 2),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: colorScheme.primary, width: 2),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            errorBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: colorScheme.error, width: 2),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            focusedErrorBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: colorScheme.error, width: 2),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            contentPadding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-            suffixIcon: suffixIcon,
-          ),
+    return TextFormField(
+      key: key,
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      autofillHints: autofillHints,
+      textInputAction: textInputAction,
+      autofocus: autofocus,
+      onFieldSubmitted: onSubmitted,
+      validator: validator,
+      style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w500,
         ),
-      ],
+        floatingLabelStyle: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.primary,
+          fontWeight: FontWeight.w500,
+        ),
+        filled: true,
+        fillColor: colorScheme.surface.withValues(alpha: 0.08),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+          borderRadius: radius,
+        ),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          borderRadius: radius,
+        ),
+        errorBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: colorScheme.error, width: 2),
+          borderRadius: radius,
+        ),
+        focusedErrorBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: colorScheme.error, width: 2),
+          borderRadius: radius,
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+        suffixIcon: suffixIcon,
+      ),
     );
   }
 }

@@ -9,76 +9,12 @@ class AppTheme {
   static const String authHeroImageUrl =
       'https://lh3.googleusercontent.com/aida-public/AB6AXuCfzrtAkMN22RwB2ZiqvZ7-a-u3c-1Q3SYe1V6xrgX8oGAGl0fcdKTFGezJhbpHXu8o1n3ePffi_ZF79ajNqZfUsXddI-13tqUsvWaaiNgLKefDYXK0KgRmpDPKA_meuN2OR1SNZqMAEjz6CXvzG7W7A6V3Do9bc_HOxoFH-5RLqbVZek6jTgqM-ERrpHdie1ASqWaBbJxXCKiQDVcL0TkaFmAp07o9oaHvgLprritLLT8kmwNubpE4Xl6s2ETlB0C7b6HWAgBESSe6';
 
-  /// App-wide Google Sans typography entry point.
+  /// Applies the app's typography to a text theme.
   ///
-  /// Google Sans is not available through `google_fonts`, so this uses Roboto,
-  /// Google's public Material font, without runtime font fetching.
-  static TextStyle googleSans({
-    TextStyle? textStyle,
-    Color? color,
-    Color? backgroundColor,
-    double? fontSize,
-    FontWeight? fontWeight,
-    FontStyle? fontStyle,
-    double? letterSpacing,
-    double? wordSpacing,
-    TextBaseline? textBaseline,
-    double? height,
-    Locale? locale,
-    Paint? foreground,
-    Paint? background,
-    List<Shadow>? shadows,
-    List<FontFeature>? fontFeatures,
-    TextDecoration? decoration,
-    Color? decorationColor,
-    TextDecorationStyle? decorationStyle,
-    double? decorationThickness,
-  }) {
-    final base = textStyle ?? const TextStyle();
-    return base.copyWith(
-      fontFamily: 'Roboto',
-      color: color,
-      backgroundColor: backgroundColor,
-      fontSize: fontSize,
-      fontWeight: fontWeight,
-      fontStyle: fontStyle,
-      letterSpacing: letterSpacing,
-      wordSpacing: wordSpacing,
-      textBaseline: textBaseline,
-      height: height,
-      locale: locale,
-      foreground: foreground,
-      background: background,
-      shadows: shadows,
-      fontFeatures: fontFeatures,
-      decoration: decoration,
-      decorationColor: decorationColor,
-      decorationStyle: decorationStyle,
-      decorationThickness: decorationThickness,
-    );
-  }
-
-  /// Applies the app's Google Sans typography to a text theme.
-  static TextTheme googleSansTextTheme([TextTheme? base]) {
-    final textTheme = base ?? Typography.material2021().black;
-    return textTheme.copyWith(
-      displayLarge: googleSans(textStyle: textTheme.displayLarge),
-      displayMedium: googleSans(textStyle: textTheme.displayMedium),
-      displaySmall: googleSans(textStyle: textTheme.displaySmall),
-      headlineLarge: googleSans(textStyle: textTheme.headlineLarge),
-      headlineMedium: googleSans(textStyle: textTheme.headlineMedium),
-      headlineSmall: googleSans(textStyle: textTheme.headlineSmall),
-      titleLarge: googleSans(textStyle: textTheme.titleLarge),
-      titleMedium: googleSans(textStyle: textTheme.titleMedium),
-      titleSmall: googleSans(textStyle: textTheme.titleSmall),
-      bodyLarge: googleSans(textStyle: textTheme.bodyLarge),
-      bodyMedium: googleSans(textStyle: textTheme.bodyMedium),
-      bodySmall: googleSans(textStyle: textTheme.bodySmall),
-      labelLarge: googleSans(textStyle: textTheme.labelLarge),
-      labelMedium: googleSans(textStyle: textTheme.labelMedium),
-      labelSmall: googleSans(textStyle: textTheme.labelSmall),
-    );
-  }
+  /// Google Sans is not publicly available, so this uses Roboto — Google's
+  /// public Material font — without runtime font fetching.
+  static TextTheme googleSansTextTheme([TextTheme? base]) =>
+      (base ?? Typography.material2021().black).apply(fontFamily: 'Roboto');
 
   static TextTheme _applyFont(TextTheme base) => googleSansTextTheme(base);
 
