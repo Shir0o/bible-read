@@ -155,5 +155,82 @@ void main() {
       expect(find.text('MY FRIENDS'), findsOneWidget);
       expect(find.text('Friend One'), findsOneWidget);
     });
+
+    testWidgets('shows invited status for friends with pending invites',
+        (tester) async {
+      final group = Group(id: 'g1', name: 'G1', ownerUid: 'user1');
+      final friends = [
+        Friend(uid: 'friend1', name: 'Friend One'),
+      ];
+
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc('g1')
+          .collection(GroupCollections.invites)
+          .doc('friend1')
+          .set({
+        'groupId': 'g1',
+        'groupName': 'G1',
+        'senderUid': 'user1',
+        'senderName': 'User One',
+        'recipientUid': 'friend1',
+        'timestamp': DateTime.now(),
+      });
+
+      when(() => friendService.friends('user1'))
+          .thenAnswer((_) => Stream.value(friends));
+
+      await tester.pumpWidget(createWidget(InviteMemberPage(
+        group: group,
+        groupService: groupService,
+        friendService: friendService,
+        auth: auth,
+      )));
+
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Friend One'), findsOneWidget);
+      expect(find.text('Invited'), findsOneWidget);
+      expect(find.byIcon(Icons.mark_email_read_outlined), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Invite'), findsNothing);
+    });
+
+    testWidgets('shows member status for friends already in the group',
+        (tester) async {
+      final group = Group(id: 'g1', name: 'G1', ownerUid: 'user1');
+      final friends = [
+        Friend(uid: 'friend1', name: 'Friend One'),
+      ];
+
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc('g1')
+          .collection(GroupCollections.members)
+          .doc('friend1')
+          .set({
+        'uid': 'friend1',
+        'role': 'member',
+        'joinedAt': DateTime.now(),
+      });
+
+      when(() => friendService.friends('user1'))
+          .thenAnswer((_) => Stream.value(friends));
+
+      await tester.pumpWidget(createWidget(InviteMemberPage(
+        group: group,
+        groupService: groupService,
+        friendService: friendService,
+        auth: auth,
+      )));
+
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Friend One'), findsOneWidget);
+      expect(find.text('Member'), findsOneWidget);
+      expect(find.byIcon(Icons.verified_user_outlined), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Invite'), findsNothing);
+    });
   });
 }

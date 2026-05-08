@@ -284,9 +284,15 @@ class _InviteMemberPageState extends State<InviteMemberPage> {
               ),
               title: Text(name),
               trailing: isMember
-                  ? const Text('Already a member')
+                  ? const _InviteStatusChip(
+                      icon: Icons.verified_user_outlined,
+                      label: 'Member',
+                    )
                   : hasPendingInvite
-                      ? const Text('Invite pending')
+                      ? const _InviteStatusChip(
+                          icon: Icons.mark_email_read_outlined,
+                          label: 'Invited',
+                        )
                       : ElevatedButton(
                           onPressed: () => _sendInvite(uid, name),
                           child: const Text('Invite'),
@@ -295,6 +301,34 @@ class _InviteMemberPageState extends State<InviteMemberPage> {
           },
         );
       },
+    );
+  }
+}
+
+class _InviteStatusChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _InviteStatusChip({
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Chip(
+      avatar: Icon(
+        icon,
+        size: 18,
+        color: colorScheme.primary,
+      ),
+      label: Text(label),
+      side: BorderSide(color: colorScheme.outlineVariant),
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+      visualDensity: VisualDensity.compact,
     );
   }
 }
