@@ -1,14 +1,27 @@
 // Defines the global color scheme, fonts, spacing, and button styles.
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Provides the application's theme configuration.
 ///
 /// Pass a [ColorScheme] to [appTheme] to change primary colors and adjust
 /// [fontFamily] or [textTheme] to modify typography.
 class AppTheme {
-  static TextTheme _applyFont(TextTheme base) =>
-      GoogleFonts.plusJakartaSansTextTheme(base);
+  static const String authHeroImageUrl =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuCfzrtAkMN22RwB2ZiqvZ7-a-u3c-1Q3SYe1V6xrgX8oGAGl0fcdKTFGezJhbpHXu8o1n3ePffi_ZF79ajNqZfUsXddI-13tqUsvWaaiNgLKefDYXK0KgRmpDPKA_meuN2OR1SNZqMAEjz6CXvzG7W7A6V3Do9bc_HOxoFH-5RLqbVZek6jTgqM-ERrpHdie1ASqWaBbJxXCKiQDVcL0TkaFmAp07o9oaHvgLprritLLT8kmwNubpE4Xl6s2ETlB0C7b6HWAgBESSe6';
+
+  /// Applies the app's typography to a text theme.
+  ///
+  /// Google Sans is not publicly available, so this uses Roboto — Google's
+  /// public Material font — without runtime font fetching.
+  static TextTheme googleSansTextTheme([TextTheme? base]) =>
+      (base ?? Typography.material2021().black).apply(fontFamily: 'Roboto');
+
+  static TextTheme _applyFont(TextTheme base) => googleSansTextTheme(base);
+
+  static Color successColor(ColorScheme colorScheme) => colorScheme.tertiary;
+
+  static Color onSuccessColor(ColorScheme colorScheme) =>
+      colorScheme.onTertiary;
 
   static Typography _buildTypography() {
     final materialTypography = Typography.material2021();

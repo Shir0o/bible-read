@@ -273,11 +273,11 @@ class _MenuContents extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
             blurRadius: 20,
-            color: Colors.black26,
-            offset: Offset(0, -4),
+            color: colorScheme.shadow.withValues(alpha: 0.16),
+            offset: const Offset(0, -4),
           ),
         ],
       ),

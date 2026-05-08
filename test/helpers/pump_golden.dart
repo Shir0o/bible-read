@@ -1,7 +1,7 @@
+import 'package:bible_read/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:network_image_mock/network_image_mock.dart';
 
 extension PumpGolden on WidgetTester {
@@ -14,9 +14,6 @@ extension PumpGolden on WidgetTester {
     // Configure tolerance for pixel comparison to handle CI vs Local rendering differences.
     _configureGoldenComparator();
 
-    // Allow runtime fetching to prevent crashes when fonts are missing in assets
-    GoogleFonts.config.allowRuntimeFetching = true;
-
     // Set surface size
     await binding.setSurfaceSize(surfaceSize);
     addTearDown(() => binding.setSurfaceSize(null));
@@ -25,11 +22,7 @@ extension PumpGolden on WidgetTester {
       await pumpWidget(
         MaterialApp(
           debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            brightness: brightness,
-            colorSchemeSeed: Colors.blue,
-            useMaterial3: true,
-          ),
+          theme: AppTheme.appTheme(AppTheme.seededColorScheme(brightness)),
           home: MediaQuery(
             data: MediaQueryData(
               size: surfaceSize,
@@ -37,8 +30,7 @@ extension PumpGolden on WidgetTester {
               platformBrightness: brightness,
             ),
             child: Scaffold(
-              backgroundColor:
-                  brightness == Brightness.light ? Colors.white : Colors.black,
+              backgroundColor: AppTheme.seededColorScheme(brightness).surface,
               body: Center(
                 child: widget,
               ),
@@ -60,7 +52,7 @@ extension PumpGolden on WidgetTester {
         final testFile = comparator.basedir.resolve('dummy_for_config.dart');
         goldenFileComparator = LocalFileComparatorWithThreshold(
           testFile,
-          0.005, // 0.5% tolerance
+          0.015, // 1.5% tolerance for local vs CI font rasterization variance.
         );
       }
     }

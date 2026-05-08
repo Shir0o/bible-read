@@ -5,7 +5,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
@@ -15,6 +14,7 @@ import '../services/group_service.dart';
 import '../services/reference_parser.dart';
 import '../services/schedule_generator.dart';
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 
 class EditGroupPage extends StatefulWidget {
   final Group group;
@@ -316,7 +316,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error),
             child: const Text('Archive'),
           ),
         ],
@@ -356,7 +357,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error),
             child: const Text('Remove'),
           ),
         ],
@@ -400,7 +402,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final textTheme = GoogleFonts.interTextTheme(theme.textTheme);
+    final textTheme = AppTheme.googleSansTextTheme(theme.textTheme);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -645,7 +647,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
+                      color: colorScheme.shadow.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),

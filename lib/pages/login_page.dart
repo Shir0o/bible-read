@@ -186,423 +186,427 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final authColorScheme = AppTheme.seededColorScheme(Brightness.dark);
 
-    return Scaffold(
-      backgroundColor: AppTheme.m3DarkSurface,
-      body: Stack(
-        children: [
-          // Background Image
-          Positioned.fill(
-            child: CachedNetworkImage(
-              imageUrl:
-                  'https://lh3.googleusercontent.com/aida-public/AB6AXuCfzrtAkMN22RwB2ZiqvZ7-a-u3c-1Q3SYe1V6xrgX8oGAGl0fcdKTFGezJhbpHXu8o1n3ePffi_ZF79ajNqZfUsXddI-13tqUsvWaaiNgLKefDYXK0KgRmpDPKA_meuN2OR1SNZqMAEjz6CXvzG7W7A6V3Do9bc_HOxoFH-5RLqbVZek6jTgqM-ERrpHdie1ASqWaBbJxXCKiQDVcL0TkaFmAp07o9oaHvgLprritLLT8kmwNubpE4Xl6s2ETlB0C7b6HWAgBESSe6',
-              fit: BoxFit.cover,
-              cacheManager: widget.cacheManager,
-              placeholder: (context, url) => Container(
-                color: const Color(0xFF141218), // m3-dark-surface
-              ),
-              errorWidget: (context, url, error) => Container(
-                color: const Color(0xFF141218), // Fallback color
-              ),
-            ),
-          ),
-          // Gradient 1 (Dark Overlay)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    const Color(0xFF141218), // m3-dark-surface
-                    const Color(0xFF141218).withValues(alpha: 0.9),
-                    Colors.transparent,
-                  ],
+    return Theme(
+      data: AppTheme.appTheme(authColorScheme),
+      child: Builder(builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        final textTheme = Theme.of(context).textTheme;
+
+        return Scaffold(
+          backgroundColor: colorScheme.surface,
+          body: Stack(
+            children: [
+              // Background Image
+              Positioned.fill(
+                child: CachedNetworkImage(
+                  imageUrl:
+                      'https://lh3.googleusercontent.com/aida-public/AB6AXuCfzrtAkMN22RwB2ZiqvZ7-a-u3c-1Q3SYe1V6xrgX8oGAGl0fcdKTFGezJhbpHXu8o1n3ePffi_ZF79ajNqZfUsXddI-13tqUsvWaaiNgLKefDYXK0KgRmpDPKA_meuN2OR1SNZqMAEjz6CXvzG7W7A6V3Do9bc_HOxoFH-5RLqbVZek6jTgqM-ERrpHdie1ASqWaBbJxXCKiQDVcL0TkaFmAp07o9oaHvgLprritLLT8kmwNubpE4Xl6s2ETlB0C7b6HWAgBESSe6',
+                  fit: BoxFit.cover,
+                  cacheManager: widget.cacheManager,
+                  placeholder: (context, url) => Container(
+                    color: colorScheme.surface,
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: colorScheme.surface,
+                  ),
                 ),
               ),
-            ),
-          ),
-          // Black Overlay
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.4),
-            ),
-          ),
-
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints:
-                        BoxConstraints(minHeight: constraints.maxHeight),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 40),
-                          // Header Icon
-                          Container(
-                            width: 64, // h-16
-                            height: 64, // w-16
-                            decoration: BoxDecoration(
-                              color: AppTheme.m3Primary,
-                              borderRadius:
-                                  BorderRadius.circular(16), // rounded-2xl
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(
-                                      alpha:
-                                          0.25), // shadow-2xl equivalent approx
-                                  blurRadius: 25,
-                                  offset: const Offset(0, 25),
-                                )
-                              ],
-                            ),
-                            child: const Icon(Icons.menu_book,
-                                color: AppTheme.m3OnPrimary,
-                                size: 36), // text-4xl
-                          ),
-                          const SizedBox(
-                              height:
-                                  24), // mb-10 in HTML, but here we stack elements
-
-                          // Title
-                          Text(
-                            'Welcome back',
-                            textAlign: TextAlign.center,
-                            style: textTheme.headlineMedium?.copyWith(
-                              fontSize: 30, // 3xl
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              height: 1.25, // leading-tight
-                              letterSpacing: -0.025, // tracking-tight
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Subtitle
-                          Container(
-                            constraints: const BoxConstraints(maxWidth: 280),
-                            child: Text(
-                              'Join your community in daily Scripture reading',
-                              textAlign: TextAlign.center,
-                              style: textTheme.bodyMedium?.copyWith(
-                                fontSize: 16, // text-base
-                                color: AppTheme.m3SurfaceDim
-                                    .withValues(alpha: 0.7),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 40), // mb-10
-
-                          // Form
-                          Form(
-                            key: _formKey,
-                            child: AutofillGroup(
-                              child: Column(
-                                children: [
-                                  // Email or Username
-                                  _buildStyledInput(
-                                    context: context,
-                                    controller: _emailController,
-                                    label: 'Email or Username',
-                                    key: const Key('loginEmailField'),
-                                    keyboardType: TextInputType.emailAddress,
-                                    autofillHints: [AutofillHints.email],
-                                    textInputAction: TextInputAction.next,
-                                    autofocus: true,
-                                    validator: (value) {
-                                      if (value == null ||
-                                          value.trim().isEmpty) {
-                                        return 'Please fill in all fields';
-                                      }
-                                      if (!_isValidEmail(value.trim())) {
-                                        return 'Please enter a valid email address';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 16), // gap-4
-
-                                  // Password
-                                  _buildStyledInput(
-                                    context: context,
-                                    controller: _passwordController,
-                                    label: 'Password',
-                                    key: const Key('loginPasswordField'),
-                                    obscureText: !_isPasswordVisible,
-                                    autofillHints: [AutofillHints.password],
-                                    textInputAction: TextInputAction.done,
-                                    onSubmitted: (_) => _submit(),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Please fill in all fields';
-                                      }
-                                      return null;
-                                    },
-                                    suffixIcon: IconButton(
-                                      tooltip: _isPasswordVisible
-                                          ? 'Hide password'
-                                          : 'Show password',
-                                      icon: Icon(
-                                        _isPasswordVisible
-                                            ? Icons.visibility_off
-                                            : Icons.visibility,
-                                        color: AppTheme.m3SurfaceDim
-                                            .withValues(alpha: 0.4),
-                                        size: 20, // text-xl
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          _isPasswordVisible =
-                                              !_isPasswordVisible;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          // Forgot Password
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Padding(
-                              padding: const EdgeInsets.only(
-                                  top: 12.0), // -mt-1 in HTML but cleaner here
-                              child: Semantics(
-                                key: const Key('forgotPasswordSemantics'),
-                                button: true,
-                                label: 'Forgot password',
-                                excludeSemantics: true,
-                                child: Tooltip(
-                                  message: 'Forgot password',
-                                  child: Material(
-                                    type: MaterialType.transparency,
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(4),
-                                      onTap: () {
-                                        unawaited(widget.vibrationService
-                                            .lightImpact());
-                                        _handleForgotPassword();
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(
-                                          'Forgot Password?',
-                                          style: textTheme.bodyMedium?.copyWith(
-                                            fontSize: 14, // text-sm
-                                            fontWeight: FontWeight
-                                                .w600, // font-semibold
-                                            color: AppTheme.m3Primary,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Login Button
-                          SizedBox(
-                            height: 56, // h-14
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _submit,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.m3Primary,
-                                foregroundColor: AppTheme.m3OnPrimary,
-                                elevation: 10, // shadow-lg
-                                shadowColor:
-                                    Colors.black.withValues(alpha: 0.3),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(28),
-                                ),
-                              ),
-                              child: _loading
-                                  ? const SizedBox(
-                                      height: 24,
-                                      width: 24,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: AppTheme.m3OnPrimary))
-                                  : Text(
-                                      'Login',
-                                      style: textTheme.labelLarge?.copyWith(
-                                        fontSize: 16, // text-base
-                                        fontWeight:
-                                            FontWeight.bold, // font-bold
-                                        letterSpacing: 0.5, // tracking-wide
-                                      ),
-                                    ),
-                            ),
-                          ),
-
-                          // OR Divider
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 24.0),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                    child: Divider(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.1))),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16),
-                                  child: Text(
-                                    'OR',
-                                    style: textTheme.labelSmall?.copyWith(
-                                      fontSize: 12, // text-xs
-                                      fontWeight: FontWeight.bold, // font-bold
-                                      color: AppTheme.m3SurfaceDim
-                                          .withValues(alpha: 0.4),
-                                      letterSpacing: 1.5, // tracking-widest
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                    child: Divider(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.1))),
-                              ],
-                            ),
-                          ),
-
-                          // Continue with Google Button
-                          SizedBox(
-                            height: 56, // h-14
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _handleGoogleSignIn,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF1F1F1F),
-                                elevation: 4, // shadow-md
-                                shadowColor:
-                                    Colors.black.withValues(alpha: 0.1),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(28),
-                                  side: BorderSide(
-                                      color:
-                                          Colors.grey[200]!), // border-gray-200
-                                ),
-                              ),
-                              child: _isGoogleSigningIn
-                                  ? const SizedBox(
-                                      height: 24,
-                                      width: 24,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Color(0xFF1F1F1F)))
-                                  : Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        // Google Icon
-                                        FaIcon(FontAwesomeIcons.google,
-                                            size: 20, color: Color(0xFF1F1F1F)),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          'Continue with Google',
-                                          style: textTheme.labelLarge?.copyWith(
-                                            fontSize: 16, // text-base
-                                            fontWeight: FontWeight
-                                                .w600, // font-semibold
-                                            letterSpacing:
-                                                -0.025, // tracking-tight
-                                            color: const Color(0xFF1F1F1F),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 40),
-
-                          // Sign up link
-                          Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: 40.0, top: 20),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Don't have an account? ",
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    fontSize: 14, // text-sm
-                                    fontWeight: FontWeight.w500, // font-medium
-                                    color: AppTheme.m3SurfaceDim
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                                Semantics(
-                                  key: const Key('signUpSemantics'),
-                                  button: true,
-                                  label: 'Sign up',
-                                  excludeSemantics: true,
-                                  child: Tooltip(
-                                    message: 'Sign up',
-                                    child: Material(
-                                      type: MaterialType.transparency,
-                                      child: InkWell(
-                                        borderRadius: BorderRadius.circular(4),
-                                        onTap: () {
-                                          unawaited(widget.vibrationService
-                                              .lightImpact());
-                                          Navigator.of(context).push(
-                                            animatedPageRoute(
-                                              SignupPage(
-                                                auth: widget.auth,
-                                                firestore: widget.firestore,
-                                                vibrationService:
-                                                    widget.vibrationService,
-                                                googleSignInProvider:
-                                                    widget.googleSignInProvider,
-                                                mainPageBuilder:
-                                                    widget.mainPageBuilder,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(4.0),
-                                          child: Text(
-                                            'Sign up',
-                                            style:
-                                                textTheme.bodyMedium?.copyWith(
-                                              fontSize: 14,
-                                              fontWeight:
-                                                  FontWeight.bold, // font-bold
-                                              color: AppTheme.m3Primary,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+              // Gradient 1 (Dark Overlay)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        colorScheme.surface,
+                        colorScheme.surface.withValues(alpha: 0.9),
+                        colorScheme.surface.withValues(alpha: 0),
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              ),
+              // Black Overlay
+              Positioned.fill(
+                child: Container(
+                  color: colorScheme.scrim.withValues(alpha: 0.4),
+                ),
+              ),
+
+              SafeArea(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints:
+                            BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(height: 40),
+                              // Header Icon
+                              Container(
+                                width: 64, // h-16
+                                height: 64, // w-16
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
+                                  borderRadius:
+                                      BorderRadius.circular(16), // rounded-2xl
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: colorScheme.shadow.withValues(
+                                          alpha:
+                                              0.25), // shadow-2xl equivalent approx
+                                      blurRadius: 25,
+                                      offset: const Offset(0, 25),
+                                    )
+                                  ],
+                                ),
+                                child: Icon(Icons.menu_book,
+                                    color: colorScheme.onPrimary,
+                                    size: 36), // text-4xl
+                              ),
+                              const SizedBox(
+                                  height:
+                                      24), // mb-10 in HTML, but here we stack elements
+
+                              // Title
+                              Text(
+                                'Welcome back',
+                                textAlign: TextAlign.center,
+                                style: textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSurface,
+                                  height: 1.25,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Subtitle
+                              Container(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 280),
+                                child: Text(
+                                  'Join your community in daily Scripture reading',
+                                  textAlign: TextAlign.center,
+                                  style: textTheme.bodyLarge?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 40), // mb-10
+
+                              // Form
+                              Form(
+                                key: _formKey,
+                                child: AutofillGroup(
+                                  child: Column(
+                                    children: [
+                                      // Email or Username
+                                      _buildStyledInput(
+                                        context: context,
+                                        controller: _emailController,
+                                        label: 'Email or Username',
+                                        key: const Key('loginEmailField'),
+                                        keyboardType:
+                                            TextInputType.emailAddress,
+                                        autofillHints: [AutofillHints.email],
+                                        textInputAction: TextInputAction.next,
+                                        autofocus: true,
+                                        validator: (value) {
+                                          if (value == null ||
+                                              value.trim().isEmpty) {
+                                            return 'Please fill in all fields';
+                                          }
+                                          if (!_isValidEmail(value.trim())) {
+                                            return 'Please enter a valid email address';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                      const SizedBox(height: 16), // gap-4
+
+                                      // Password
+                                      _buildStyledInput(
+                                        context: context,
+                                        controller: _passwordController,
+                                        label: 'Password',
+                                        key: const Key('loginPasswordField'),
+                                        obscureText: !_isPasswordVisible,
+                                        autofillHints: [AutofillHints.password],
+                                        textInputAction: TextInputAction.done,
+                                        onSubmitted: (_) => _submit(),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please fill in all fields';
+                                          }
+                                          return null;
+                                        },
+                                        suffixIcon: IconButton(
+                                          tooltip: _isPasswordVisible
+                                              ? 'Hide password'
+                                              : 'Show password',
+                                          icon: Icon(
+                                            _isPasswordVisible
+                                                ? Icons.visibility_off
+                                                : Icons.visibility,
+                                            color: colorScheme.onSurfaceVariant,
+                                            size: 20, // text-xl
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _isPasswordVisible =
+                                                  !_isPasswordVisible;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              // Forgot Password
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                      top:
+                                          12.0), // -mt-1 in HTML but cleaner here
+                                  child: Semantics(
+                                    key: const Key('forgotPasswordSemantics'),
+                                    button: true,
+                                    label: 'Forgot password',
+                                    excludeSemantics: true,
+                                    child: Tooltip(
+                                      message: 'Forgot password',
+                                      child: Material(
+                                        type: MaterialType.transparency,
+                                        child: InkWell(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          onTap: () {
+                                            unawaited(widget.vibrationService
+                                                .lightImpact());
+                                            _handleForgotPassword();
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(
+                                              'Forgot Password?',
+                                              style: textTheme.bodyMedium
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight
+                                                    .w600, // font-semibold
+                                                color: colorScheme.primary,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Login Button
+                              SizedBox(
+                                height: 56, // h-14
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: _submit,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: colorScheme.primary,
+                                    foregroundColor: colorScheme.onPrimary,
+                                    elevation: 10, // shadow-lg
+                                    shadowColor: colorScheme.shadow
+                                        .withValues(alpha: 0.3),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(28),
+                                    ),
+                                  ),
+                                  child: _loading
+                                      ? SizedBox(
+                                          height: 24,
+                                          width: 24,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: colorScheme.onPrimary))
+                                      : Text(
+                                          'Login',
+                                          style: textTheme.labelLarge?.copyWith(
+                                            fontWeight:
+                                                FontWeight.bold, // font-bold
+                                            letterSpacing: 0.5, // tracking-wide
+                                          ),
+                                        ),
+                                ),
+                              ),
+
+                              // OR Divider
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 24.0),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                        child: Divider(
+                                            color: colorScheme.outlineVariant
+                                                .withValues(alpha: 0.1))),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16),
+                                      child: Text(
+                                        'OR',
+                                        style: textTheme.labelSmall?.copyWith(
+                                          fontWeight:
+                                              FontWeight.bold, // font-bold
+                                          color: colorScheme.onSurfaceVariant,
+                                          letterSpacing: 1.5, // tracking-widest
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                        child: Divider(
+                                            color: colorScheme.outlineVariant
+                                                .withValues(alpha: 0.1))),
+                                  ],
+                                ),
+                              ),
+
+                              // Continue with Google Button
+                              SizedBox(
+                                height: 56, // h-14
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: _handleGoogleSignIn,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: colorScheme.surfaceBright,
+                                    foregroundColor: colorScheme.onSurface,
+                                    elevation: 4, // shadow-md
+                                    shadowColor: colorScheme.shadow
+                                        .withValues(alpha: 0.1),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(28),
+                                      side: BorderSide(
+                                          color: colorScheme.outlineVariant),
+                                    ),
+                                  ),
+                                  child: _isGoogleSigningIn
+                                      ? SizedBox(
+                                          height: 24,
+                                          width: 24,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: colorScheme.onSurface))
+                                      : Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            // Google Icon
+                                            FaIcon(FontAwesomeIcons.google,
+                                                size: 20,
+                                                color: colorScheme.onSurface),
+                                            const SizedBox(width: 12),
+                                            Text(
+                                              'Continue with Google',
+                                              style: textTheme.labelLarge
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight
+                                                    .w600, // font-semibold
+                                                color: colorScheme.onSurface,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 40),
+
+                              // Sign up link
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                    bottom: 40.0, top: 20),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Don't have an account? ",
+                                      style: textTheme.bodyMedium?.copyWith(
+                                        fontWeight:
+                                            FontWeight.w500, // font-medium
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    Semantics(
+                                      key: const Key('signUpSemantics'),
+                                      button: true,
+                                      label: 'Sign up',
+                                      excludeSemantics: true,
+                                      child: Tooltip(
+                                        message: 'Sign up',
+                                        child: Material(
+                                          type: MaterialType.transparency,
+                                          child: InkWell(
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            onTap: () {
+                                              unawaited(widget.vibrationService
+                                                  .lightImpact());
+                                              Navigator.of(context).push(
+                                                animatedPageRoute(
+                                                  SignupPage(
+                                                    auth: widget.auth,
+                                                    firestore: widget.firestore,
+                                                    vibrationService:
+                                                        widget.vibrationService,
+                                                    googleSignInProvider: widget
+                                                        .googleSignInProvider,
+                                                    mainPageBuilder:
+                                                        widget.mainPageBuilder,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(4.0),
+                                              child: Text(
+                                                'Sign up',
+                                                style: textTheme.bodyMedium
+                                                    ?.copyWith(
+                                                  fontWeight: FontWeight
+                                                      .bold, // font-bold
+                                                  color: colorScheme.primary,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      }),
     );
   }
 
@@ -621,73 +625,53 @@ class _LoginPageState extends State<LoginPage> {
     String? Function(String?)? validator,
   }) {
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return Stack(
-      children: [
-        // Background overlay
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12)), // rounded-t-xl
-              border: Border(
-                  bottom:
-                      BorderSide(color: Colors.white.withValues(alpha: 0.2))),
-            ),
-          ),
-        ),
+    const radius = BorderRadius.vertical(top: Radius.circular(12));
 
-        // Input
-        TextFormField(
-          key: key,
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
-          autofillHints: autofillHints,
-          textInputAction: textInputAction,
-          autofocus: autofocus,
-          onFieldSubmitted: onSubmitted,
-          validator: validator,
-          style: textTheme.bodyMedium?.copyWith(color: Colors.white),
-          decoration: InputDecoration(
-            labelText: label,
-            labelStyle: textTheme.bodyMedium?.copyWith(
-              color: AppTheme.m3SurfaceDim.withValues(alpha: 0.6),
-              fontWeight: FontWeight.w500,
-            ),
-            floatingLabelStyle: textTheme.bodyMedium?.copyWith(
-              color: AppTheme.m3Primary,
-              fontWeight: FontWeight.w500,
-            ),
-            filled: true,
-            fillColor: Colors.transparent,
-            border: const UnderlineInputBorder(
-              borderSide:
-                  BorderSide.none, // Handled by background overlay border
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.transparent, width: 2),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            focusedBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: AppTheme.m3Primary, width: 2),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            errorBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.red, width: 2),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            focusedErrorBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.red, width: 2),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            contentPadding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-            suffixIcon: suffixIcon,
-          ),
+    return TextFormField(
+      key: key,
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      autofillHints: autofillHints,
+      textInputAction: textInputAction,
+      autofocus: autofocus,
+      onFieldSubmitted: onSubmitted,
+      validator: validator,
+      style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w500,
         ),
-      ],
+        floatingLabelStyle: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.primary,
+          fontWeight: FontWeight.w500,
+        ),
+        filled: true,
+        fillColor: colorScheme.surface.withValues(alpha: 0.08),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+          borderRadius: radius,
+        ),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          borderRadius: radius,
+        ),
+        errorBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: colorScheme.error, width: 2),
+          borderRadius: radius,
+        ),
+        focusedErrorBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: colorScheme.error, width: 2),
+          borderRadius: radius,
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+        suffixIcon: suffixIcon,
+      ),
     );
   }
 }

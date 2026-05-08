@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../widgets/auth/auth_background.dart';
 
 class WelcomePage extends StatelessWidget {
   final VoidCallback onGetStarted;
@@ -14,171 +14,114 @@ class WelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF141218), // m3-dark-surface
-      body: Stack(
-        children: [
-          // Background Image
-          Positioned.fill(
-            child: CachedNetworkImage(
-              imageUrl:
-                  'https://lh3.googleusercontent.com/aida-public/AB6AXuCfzrtAkMN22RwB2ZiqvZ7-a-u3c-1Q3SYe1V6xrgX8oGAGl0fcdKTFGezJhbpHXu8o1n3ePffi_ZF79ajNqZfUsXddI-13tqUsvWaaiNgLKefDYXK0KgRmpDPKA_meuN2OR1SNZqMAEjz6CXvzG7W7A6V3Do9bc_HOxoFH-5RLqbVZek6jTgqM-ERrpHdie1ASqWaBbJxXCKiQDVcL0TkaFmAp07o9oaHvgLprritLLT8kmwNubpE4Xl6s2ETlB0C7b6HWAgBESSe6',
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(color: Colors.black),
-              errorWidget: (context, url, error) =>
-                  Container(color: const Color(0xFF141218)),
-            ),
-          ),
-          // Gradient 1 (Purple/Indigo)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    const Color(0xFF1D0033),
-                    const Color(0xFF2A0038).withValues(alpha: 0.9),
-                    Colors.transparent,
+    return AuthBackground(
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        final textTheme = Theme.of(context).textTheme;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Title
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    height: 1.1,
+                    color: colorScheme.onSurface,
+                    shadows: [
+                      Shadow(
+                        offset: const Offset(0, 2),
+                        blurRadius: 4,
+                        color: colorScheme.scrim.withValues(alpha: 0.5),
+                      ),
+                    ],
+                  ),
+                  children: [
+                    const TextSpan(text: 'Read Together,\n'),
+                    TextSpan(
+                      text: 'Grow Together',
+                      style: textTheme.displaySmall?.copyWith(
+                        color: colorScheme.primary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
                   ],
-                  stops: const [0.0, 0.4, 1.0],
                 ),
               ),
-            ),
-          ),
-          // Gradient 2 (Black fade)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.8),
-                    Colors.black.withValues(alpha: 0.4),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.3, 1.0],
+              const SizedBox(height: 16),
+
+              // Description
+              Text(
+                'Experience the Bible in community. Create shared schedules, discuss insights, and keep your friends accountable every day.',
+                textAlign: TextAlign.center,
+                style: textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w400,
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.5,
                 ),
               ),
-            ),
-          ),
-          // Content
-          SafeArea(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Title
-                  RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      style: GoogleFonts.inter(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        height: 1.1,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            offset: const Offset(0, 2),
-                            blurRadius: 4,
-                            color: Colors.black.withValues(alpha: 0.5),
-                          ),
-                        ],
-                      ),
-                      children: [
-                        const TextSpan(text: 'Read Together,\n'),
-                        TextSpan(
-                          text: 'Grow Together',
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFFD0BCFF), // m3-dark-tertiary
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+              const SizedBox(height: 40),
 
-                  // Description
-                  Text(
-                    'Experience the Bible in community. Create shared schedules, discuss insights, and keep your friends accountable every day.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFFCAC4D0), // m3-surface-variant
-                      height: 1.5,
+              // Get Started Button
+              SizedBox(
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: onGetStarted,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primaryContainer,
+                    foregroundColor: colorScheme.onPrimaryContainer,
+                    elevation: 4,
+                    shadowColor: colorScheme.shadow.withValues(alpha: 0.3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28), // rounded-full
                     ),
                   ),
-                  const SizedBox(height: 40),
-
-                  // Get Started Button
-                  SizedBox(
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: onGetStarted,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(0xFFEADDFF), // m3-primary-container
-                        foregroundColor:
-                            const Color(0xFF21005D), // m3-on-primary-container
-                        elevation: 4,
-                        shadowColor: Colors.black.withValues(alpha: 0.3),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(28), // rounded-full
-                        ),
-                      ),
-                      child: Text(
-                        'Get Started',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                  child: Text(
+                    'Get Started',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // I already have an account Button
-                  SizedBox(
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: onLogin,
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          width: 1,
-                        ),
-                        backgroundColor: Colors.transparent,
-                        foregroundColor:
-                            const Color(0xFFD0BCFF), // m3-dark-tertiary
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                      ),
-                      child: Text(
-                        'I already have an account',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+
+              // I already have an account Button
+              SizedBox(
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: onLogin,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                      width: 1,
+                    ),
+                    backgroundColor: colorScheme.surface.withValues(alpha: 0),
+                    foregroundColor: colorScheme.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: Text(
+                    'I already have an account',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

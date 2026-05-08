@@ -776,7 +776,8 @@ class _HomePageState extends State<HomePage>
                                                   .titleLarge
                                                   ?.copyWith(
                                                     fontWeight: FontWeight.bold,
-                                                    color: Colors.black,
+                                                    color:
+                                                        colorScheme.onPrimary,
                                                   ),
                                             ),
                                           ],

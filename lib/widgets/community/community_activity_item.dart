@@ -142,7 +142,8 @@ class CommunityActivityItem extends StatelessWidget {
           IconButton(
             icon: Icon(
               log.liked ? Icons.favorite : Icons.favorite_border,
-              color: log.liked ? Colors.red : colorScheme.onSurfaceVariant,
+              color:
+                  log.liked ? colorScheme.error : colorScheme.onSurfaceVariant,
               size: 20,
             ),
             onPressed: onLike,

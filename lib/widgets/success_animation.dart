@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 
 /// Overlay animation shown on successful actions.
 class SuccessAnimation extends StatelessWidget {
@@ -50,8 +51,11 @@ class SuccessAnimation extends StatelessWidget {
             }
             return child;
           },
-          errorBuilder: (context, error, stackTrace) =>
-              const Icon(Icons.check_circle, color: Colors.green, size: 120),
+          errorBuilder: (context, error, stackTrace) => Icon(
+            Icons.check_circle,
+            color: AppTheme.successColor(Theme.of(context).colorScheme),
+            size: 120,
+          ),
         ),
       ),
     );
