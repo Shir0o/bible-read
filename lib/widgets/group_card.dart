@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
 import '../services/group_service.dart';
+import '../theme/app_theme.dart';
 
 class GroupCard extends StatelessWidget {
   final Group group;
@@ -259,11 +260,15 @@ class GroupCard extends StatelessWidget {
               width: 14,
               height: 14,
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50), // Consistent Success Green
+                color: AppTheme.successColor(colorScheme),
                 shape: BoxShape.circle,
                 border: Border.all(color: colorScheme.surface, width: 1.5),
               ),
-              child: const Icon(Icons.check, size: 8, color: Colors.white),
+              child: Icon(
+                Icons.check,
+                size: 8,
+                color: AppTheme.onSuccessColor(colorScheme),
+              ),
             ),
           ),
       ],

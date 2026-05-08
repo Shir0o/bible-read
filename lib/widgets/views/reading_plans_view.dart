@@ -75,7 +75,8 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
               Navigator.pop(context);
               _deletePlanPermanently(plan);
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error),
             child: const Text('Delete Permanently'),
           ),
         ],
@@ -440,7 +441,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
             onPressed: () => _deletePlanPermanently(plan),
             icon: const Icon(Icons.delete_outline),
             tooltip: 'Delete permanently',
-            color: Colors.red.withValues(alpha: 0.7),
+            color: colorScheme.error.withValues(alpha: 0.7),
           ),
         ],
       ),

@@ -13,9 +13,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/gestures.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../theme/app_theme.dart';
+import '../widgets/auth/auth_background.dart';
 
 class SignupPage extends StatefulWidget {
   final FirebaseAuth auth;
@@ -210,41 +212,40 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    const darkSurface = Color(0xFF141218);
-    const darkPrimary = Color(0xFFD0BCFF);
-    const darkOnPrimary = Color(0xFF381E72);
-    const outlineVariant = Color(0xFFCAC4D0);
-    const grey400 = Color(0xFF9CA3AF); // Approximate text-gray-400
+    return AuthBackground(
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        final textTheme = Theme.of(context).textTheme;
 
-    final inputDecoration = InputDecoration(
-      filled: true,
-      fillColor: Colors.transparent,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: outlineVariant, width: 1),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: darkPrimary, width: 1),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Colors.red, width: 1),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Colors.red, width: 1),
-      ),
-      labelStyle: GoogleFonts.inter(color: grey400),
-      floatingLabelStyle: GoogleFonts.inter(color: darkPrimary),
-      errorStyle: GoogleFonts.inter(color: Colors.red, fontSize: 12),
-    );
+        final inputDecoration = InputDecoration(
+          filled: true,
+          fillColor: colorScheme.surface.withValues(alpha: 0.08),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.outlineVariant, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 1),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.error, width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.error, width: 1),
+          ),
+          labelStyle: textTheme.bodyMedium
+              ?.copyWith(color: colorScheme.onSurfaceVariant),
+          floatingLabelStyle:
+              textTheme.bodyMedium?.copyWith(color: colorScheme.primary),
+          errorStyle: textTheme.labelSmall?.copyWith(color: colorScheme.error),
+        );
 
-    return Scaffold(
-      backgroundColor: darkSurface,
-      body: SafeArea(
-        child: SingleChildScrollView(
+        return SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -254,10 +255,12 @@ class _SignupPageState extends State<SignupPage> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      icon:
+                          Icon(Icons.arrow_back, color: colorScheme.onSurface),
                       onPressed: () => Navigator.of(context).pop(),
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.transparent,
+                        backgroundColor:
+                            colorScheme.surface.withValues(alpha: 0),
                         shape: const CircleBorder(),
                       ),
                     ),
@@ -265,10 +268,9 @@ class _SignupPageState extends State<SignupPage> {
                       child: Text(
                         'Sign Up',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
+                        style: textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w500,
-                          color: Colors.white,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -285,20 +287,15 @@ class _SignupPageState extends State<SignupPage> {
                     const SizedBox(height: 16),
                     Text(
                       'Create your account',
-                      style: GoogleFonts.inter(
-                        fontSize: 32,
+                      style: textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
                         height: 1.1,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Join the community to start reading together.',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: const Color(0xFFCAC4D0),
-                      ),
+                      style: textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 32),
 
@@ -311,7 +308,8 @@ class _SignupPageState extends State<SignupPage> {
                             // Full Name
                             TextFormField(
                               controller: _nameController,
-                              style: GoogleFonts.inter(color: Colors.white),
+                              style: textTheme.bodyLarge
+                                  ?.copyWith(color: colorScheme.onSurface),
                               textCapitalization: TextCapitalization.words,
                               autofillHints: const [AutofillHints.name],
                               textInputAction: TextInputAction.next,
@@ -331,7 +329,8 @@ class _SignupPageState extends State<SignupPage> {
                             TextFormField(
                               key: const Key('signupEmailField'),
                               controller: _emailController,
-                              style: GoogleFonts.inter(color: Colors.white),
+                              style: textTheme.bodyLarge
+                                  ?.copyWith(color: colorScheme.onSurface),
                               keyboardType: TextInputType.emailAddress,
                               autofillHints: const [AutofillHints.email],
                               textInputAction: TextInputAction.next,
@@ -354,7 +353,8 @@ class _SignupPageState extends State<SignupPage> {
                             TextFormField(
                               key: const Key('signupPasswordField'),
                               controller: _passwordController,
-                              style: GoogleFonts.inter(color: Colors.white),
+                              style: textTheme.bodyLarge
+                                  ?.copyWith(color: colorScheme.onSurface),
                               obscureText: !_isPasswordVisible,
                               autofillHints: const [AutofillHints.newPassword],
                               textInputAction: TextInputAction.done,
@@ -369,7 +369,7 @@ class _SignupPageState extends State<SignupPage> {
                                     _isPasswordVisible
                                         ? Icons.visibility_off
                                         : Icons.visibility,
-                                    color: grey400,
+                                    color: colorScheme.onSurfaceVariant,
                                     size: 20,
                                   ),
                                   onPressed: () {
@@ -400,16 +400,16 @@ class _SignupPageState extends State<SignupPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
                       child: RichText(
                         text: TextSpan(
-                          style:
-                              GoogleFonts.inter(fontSize: 12, color: grey400),
+                          style: textTheme.labelSmall
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
                           children: [
                             const TextSpan(
                                 text:
                                     'By creating an account, you agree to our '),
                             TextSpan(
                               text: 'Terms of Service',
-                              style: GoogleFonts.inter(
-                                color: darkPrimary,
+                              style: AppTheme.googleSans(
+                                color: colorScheme.primary,
                                 decoration: TextDecoration.underline,
                               ),
                               recognizer: _termsRecognizer,
@@ -417,8 +417,8 @@ class _SignupPageState extends State<SignupPage> {
                             const TextSpan(text: ' and '),
                             TextSpan(
                               text: 'Privacy Policy',
-                              style: GoogleFonts.inter(
-                                color: darkPrimary,
+                              style: AppTheme.googleSans(
+                                color: colorScheme.primary,
                                 decoration: TextDecoration.underline,
                               ),
                               recognizer: _privacyRecognizer,
@@ -438,23 +438,23 @@ class _SignupPageState extends State<SignupPage> {
                       child: ElevatedButton(
                         onPressed: _submit,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: darkPrimary,
-                          foregroundColor: darkOnPrimary,
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
                         ),
                         child: _loading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 24,
                                 width: 24,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: darkOnPrimary))
+                                    strokeWidth: 2,
+                                    color: colorScheme.onPrimary))
                             : Text(
                                 'Create Account',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
+                                style: textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 0.5,
                                 ),
@@ -472,18 +472,15 @@ class _SignupPageState extends State<SignupPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Row(
                   children: [
-                    Expanded(child: Divider(color: Colors.grey[800])),
+                    Expanded(child: Divider(color: colorScheme.outlineVariant)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
                         'Or continue with',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: const Color(0xFFCAC4D0),
-                        ),
+                        style: textTheme.bodyMedium,
                       ),
                     ),
-                    Expanded(child: Divider(color: Colors.grey[800])),
+                    Expanded(child: Divider(color: colorScheme.outlineVariant)),
                   ],
                 ),
               ),
@@ -497,8 +494,7 @@ class _SignupPageState extends State<SignupPage> {
                   _SocialButton(
                     onTap: _handleGoogleSignIn,
                     label: 'Sign in with Google',
-                    child: const FaIcon(FontAwesomeIcons.google,
-                        size: 20, color: Colors.white),
+                    child: const FaIcon(FontAwesomeIcons.google, size: 20),
                   ),
                 ],
               ),
@@ -511,10 +507,7 @@ class _SignupPageState extends State<SignupPage> {
                 children: [
                   Text(
                     'Already have an account? ',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: const Color(0xFFCAC4D0),
-                    ),
+                    style: textTheme.bodyMedium,
                   ),
                   Semantics(
                     key: const Key('loginLinkSemantics'),
@@ -543,10 +536,9 @@ class _SignupPageState extends State<SignupPage> {
                             padding: const EdgeInsets.all(4.0),
                             child: Text(
                               'Log in',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
+                              style: AppTheme.googleSans(
                                 fontWeight: FontWeight.w600,
-                                color: darkPrimary,
+                                color: colorScheme.primary,
                               ),
                             ),
                           ),
@@ -559,8 +551,8 @@ class _SignupPageState extends State<SignupPage> {
               const SizedBox(height: 32),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -578,6 +570,8 @@ class _SocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Semantics(
       button: true,
       label: label,
@@ -591,7 +585,7 @@ class _SocialButton extends StatelessWidget {
             width: 48,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey[800]!),
+              border: Border.all(color: colorScheme.outlineVariant),
             ),
             alignment: Alignment.center,
             child: child,
