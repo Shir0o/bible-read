@@ -1319,6 +1319,9 @@ void main() {
         final mockFs = MockFirebaseFirestore();
         final groups = MockCollectionReference<Map<String, dynamic>>();
         final groupDoc = MockDocumentReference<Map<String, dynamic>>();
+        final members = MockCollectionReference<Map<String, dynamic>>();
+        final memberDoc = MockDocumentReference<Map<String, dynamic>>();
+        final memberSnap = MockDocumentSnapshot<Map<String, dynamic>>();
         final joinRequests = MockCollectionReference<Map<String, dynamic>>();
         final joinDoc = MockDocumentReference<Map<String, dynamic>>();
         final err = Exception('fail');
@@ -1331,6 +1334,11 @@ void main() {
             .thenReturn(groups);
         when(() => groups.doc('g1')).thenReturn(groupDoc);
         when(() => groupDoc.get()).thenAnswer((_) async => groupSnap);
+        when(() => groupDoc.collection(GroupCollections.members))
+            .thenReturn(members);
+        when(() => members.doc('u1')).thenReturn(memberDoc);
+        when(() => memberDoc.get()).thenAnswer((_) async => memberSnap);
+        when(() => memberSnap.exists).thenReturn(false);
         when(() => groupDoc.collection(GroupCollections.joinRequests))
             .thenReturn(joinRequests);
         when(() => joinRequests.doc('u1')).thenReturn(joinDoc);

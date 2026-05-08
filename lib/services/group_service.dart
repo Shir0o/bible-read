@@ -230,6 +230,16 @@ class GroupService {
         throw StateError('Group does not exist');
       }
 
+      final memberSnap = await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.members)
+          .doc(uid)
+          .get();
+      if (memberSnap.exists) {
+        return;
+      }
+
       final data = <String, dynamic>{
         'uid': uid,
         'name': name,
@@ -283,6 +293,37 @@ class GroupService {
     required String recipientUid,
   }) async {
     try {
+      final groupRef =
+          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupSnap = await groupRef.get();
+      if (!groupSnap.exists) {
+        throw StateError('Group does not exist');
+      }
+
+      if (recipientUid == senderUid) {
+        throw StateError('Cannot invite yourself to a group.');
+      }
+
+      final ownerUid = groupSnap.data()?['ownerUid'] as String?;
+      if (senderUid != ownerUid) {
+        final senderMemberSnap = await groupRef
+            .collection(GroupCollections.members)
+            .doc(senderUid)
+            .get();
+        final senderRole = senderMemberSnap.data()?['role'] as String?;
+        if (senderRole != 'admin' && senderRole != 'owner') {
+          throw StateError('Only group owners and admins can invite members.');
+        }
+      }
+
+      final recipientMemberSnap = await groupRef
+          .collection(GroupCollections.members)
+          .doc(recipientUid)
+          .get();
+      if (recipientMemberSnap.exists) {
+        throw StateError('Cannot invite an existing group member.');
+      }
+
       final invite = GroupInvite(
         id: '', // Firestore will assign
         groupId: groupId,
@@ -294,9 +335,7 @@ class GroupService {
       );
 
       // Store in group's invites collection
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
+      await groupRef
           .collection(GroupCollections.invites)
           .doc(recipientUid)
           .set(invite.toFirestore());
@@ -349,6 +388,10 @@ class GroupService {
       final inviteRef = groupRef.collection(GroupCollections.invites).doc(uid);
 
       if (accept) {
+        final inviteSnap = await inviteRef.get();
+        if (!inviteSnap.exists) {
+          throw StateError('Cannot accept a missing group invite.');
+        }
         await joinGroupDirectly(
           groupId: groupId,
           uid: uid,
@@ -389,6 +432,9 @@ class GroupService {
       final requestRef =
           groupRef.collection(GroupCollections.joinRequests).doc(uid);
       final requestSnap = await requestRef.get();
+      if (!requestSnap.exists) {
+        throw StateError('Cannot approve a missing join request.');
+      }
       final name = requestSnap.data()?['name'] as String?;
       final photoUrl = requestSnap.data()?['photoUrl'] as String?;
 
