@@ -49,7 +49,9 @@ void main() {
 
         final entryRef = dateRef.collection('entries').doc('u1');
         batch.set(entryRef, <String, dynamic>{
-          'count': 1
+          'count': 1,
+          'uid': 'u1',
+          'groupId': 'g1',
         }); // Assume count exists to focus on read speed
 
         opCount += 2;

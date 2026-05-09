@@ -512,18 +512,76 @@ class GroupService {
             .delete();
       } catch (_) {}
       try {
-        final dates = await groupRef.collection('progress').get();
+        // ⚡ Bolt: Use a hybrid approach for cleanup. Start with collectionGroup for efficiency.
+        final entriesSnap = await firestore
+            .collectionGroup('entries')
+            .where('uid', isEqualTo: uid)
+            .where('groupId', isEqualTo: groupId)
+            .get();
+
+        final foundEntryRefs = entriesSnap.docs.map((d) => d.reference).toSet();
+        final allDateSnaps = await groupRef.collection('progress').get();
+
+        final missingDates = allDateSnaps.docs.where((dateDoc) {
+          final entryRef = dateDoc.reference.collection('entries').doc(uid);
+          return !foundEntryRefs.contains(entryRef);
+        }).toList();
+
+        final fallbackSnaps = <DocumentSnapshot<Map<String, dynamic>>>[];
+        if (missingDates.isNotEmpty) {
+          const chunkSize = 30;
+          for (var i = 0; i < missingDates.length; i += chunkSize) {
+            final chunk = missingDates.sublist(
+              i,
+              i + chunkSize > missingDates.length ? missingDates.length : i + chunkSize,
+            );
+            final results = await Future.wait(
+              chunk.map((d) => d.reference
+                  .collection('entries')
+                  .doc(uid)
+                  .get()
+                  .then<DocumentSnapshot<Map<String, dynamic>>?>((s) => s)
+                  .catchError((Object e, StackTrace st) {
+                _safeLog(e, st);
+                return null;
+              })),
+            );
+            fallbackSnaps.addAll(
+                results.whereType<DocumentSnapshot<Map<String, dynamic>>>());
+          }
+        }
+
+        final allRelevantEntrySnaps = [
+          ...entriesSnap.docs,
+          ...fallbackSnaps.where((s) => s.exists),
+        ];
+
         final refsToDelete = <DocumentReference>[];
-        await Future.wait(dates.docs.map((d) async {
-          try {
-            final entryRef = d.reference.collection('entries').doc(uid);
-            refsToDelete.add(entryRef);
-            final items = await entryRef.collection('items').get();
-            for (final it in items.docs) {
-              refsToDelete.add(it.reference);
+        for (final entrySnap in allRelevantEntrySnaps) {
+          refsToDelete.add(entrySnap.reference);
+        }
+
+        // Fetch items for all found entries in parallel chunks.
+        if (allRelevantEntrySnaps.isNotEmpty) {
+          const chunkSize = 30;
+          for (var i = 0; i < allRelevantEntrySnaps.length; i += chunkSize) {
+            final chunk = allRelevantEntrySnaps.sublist(
+              i,
+              i + chunkSize > allRelevantEntrySnaps.length
+                  ? allRelevantEntrySnaps.length
+                  : i + chunkSize,
+            );
+            final itemSnaps = await Future.wait(
+              chunk.map((d) => d.reference.collection('items').get()),
+            );
+            for (final snap in itemSnaps) {
+              for (final doc in snap.docs) {
+                refsToDelete.add(doc.reference);
+              }
             }
-          } catch (_) {}
-        }));
+          }
+        }
+
         if (refsToDelete.isNotEmpty) {
           await _deleteInBatches(refsToDelete);
         }
@@ -1586,17 +1644,18 @@ class GroupService {
 
       // 2. Progress entries (progress/{dateId}/entries/* and date docs)
       try {
+        final refsToDelete = <DocumentReference>[];
         final progressDates = await groupRef.collection('progress').get();
         final allDateDocs = progressDates.docs;
 
+        // Iterate per-date in chunks. This covers both modern entries (with groupId)
+        // and legacy ones, so a separate collectionGroup query would be redundant.
         const chunkSize = 50;
         for (var i = 0; i < allDateDocs.length; i += chunkSize) {
-          final end = (i + chunkSize < allDateDocs.length)
-              ? i + chunkSize
-              : allDateDocs.length;
-          final chunk = allDateDocs.sublist(i, end);
-
-          final chunkRefs = <DocumentReference>[];
+          final chunk = allDateDocs.sublist(
+            i,
+            i + chunkSize > allDateDocs.length ? allDateDocs.length : i + chunkSize,
+          );
 
           final entriesSnapshots = await Future.wait(chunk.map((d) async {
             try {
@@ -1609,15 +1668,19 @@ class GroupService {
 
           for (final snap in entriesSnapshots) {
             if (snap != null) {
-              chunkRefs.addAll(snap.docs.map((d) => d.reference));
+              for (final entryDoc in snap.docs) {
+                refsToDelete.add(entryDoc.reference);
+              }
             }
           }
 
-          chunkRefs.addAll(chunk.map((d) => d.reference));
-
-          if (chunkRefs.isNotEmpty) {
-            await _deleteInBatches(chunkRefs);
+          for (final dateDoc in chunk) {
+            refsToDelete.add(dateDoc.reference);
           }
+        }
+
+        if (refsToDelete.isNotEmpty) {
+          await _deleteInBatches(refsToDelete);
         }
       } catch (e, st) {
         failures.add('progress');
@@ -1682,33 +1745,62 @@ class GroupService {
           await groupRef.collection(GroupCollections.members).doc(uid).get();
       if (!memberSnap.exists && !isOwner) return;
 
-      final progressDates = await groupRef.collection('progress').get();
+      // ⚡ Bolt: Use a hybrid approach. First, try fetching all entries using a single
+      // collectionGroup query. This relies on 'groupId' being present.
+      final entriesSnap = await firestore
+          .collectionGroup('entries')
+          .where('uid', isEqualTo: uid)
+          .where('groupId', isEqualTo: groupId)
+          .get();
 
-      // Fetch all entries in parallel to avoid sequential round-trips.
-      final entryFutures = progressDates.docs.map((dateDoc) async {
-        try {
-          final entryRef = dateDoc.reference.collection('entries').doc(uid);
-          final snap = await entryRef.get();
-          return MapEntry(entryRef, snap);
-        } catch (e, st) {
-          await _safeLog(e, st);
-          return null;
+      final foundEntryRefs = entriesSnap.docs.map((d) => d.reference).toSet();
+      final allDateSnaps = await groupRef.collection('progress').get();
+
+      // For any date that wasn't found by the collectionGroup query, we must fetch
+      // it individually to handle legacy data (missing groupId) and ensure correctness.
+      final missingDates = allDateSnaps.docs.where((dateDoc) {
+        final entryRef = dateDoc.reference.collection('entries').doc(uid);
+        return !foundEntryRefs.contains(entryRef);
+      }).toList();
+
+      final fallbackSnaps = <DocumentSnapshot<Map<String, dynamic>>>[];
+      if (missingDates.isNotEmpty) {
+        // Fetch missing entries in parallel chunks.
+        const chunkSize = 30;
+        for (var i = 0; i < missingDates.length; i += chunkSize) {
+          final chunk = missingDates.sublist(
+            i,
+            i + chunkSize > missingDates.length ? missingDates.length : i + chunkSize,
+          );
+          final futures = chunk.map((d) => d.reference.collection('entries').doc(uid).get());
+          fallbackSnaps.addAll(await Future.wait(futures));
         }
-      });
-
-      final entryResults = await Future.wait(entryFutures);
+      }
 
       int total = 0;
       final repairFutures = <Future<int>>[];
 
-      for (final result in entryResults) {
-        if (result == null) continue;
-        final entryRef = result.key;
-        final entrySnap = result.value;
+      final allRelevantSnaps = [
+        ...entriesSnap.docs,
+        ...fallbackSnaps.where((s) => s.exists),
+      ];
 
-        if (!entrySnap.exists) continue;
+      for (final entrySnap in allRelevantSnaps) {
+        final entryRef = entrySnap.reference;
+        final data = entrySnap.data();
 
-        final count = (entrySnap.data()?['count'] as num?)?.toInt();
+        final count = (data?['count'] as num?)?.toInt();
+
+        // Backfill groupId if missing — but only when count is present, since the
+        // count-repair branch below already writes groupId in the same set().
+        if (data != null && !data.containsKey('groupId') && count != null) {
+          unawaited(entryRef.set({
+            'groupId': groupId,
+            'uid': uid,
+            'dateId': entryRef.parent.parent?.id,
+          }, SetOptions(merge: true)));
+        }
+
         if (count != null) {
           total += count;
         } else {
@@ -1722,6 +1814,7 @@ class GroupService {
                 await entryRef.set({
                   'count': c,
                   'uid': uid,
+                  'groupId': groupId,
                   'dateId': entryRef.parent.parent?.id,
                 }, SetOptions(merge: true));
               } catch (_) {}
