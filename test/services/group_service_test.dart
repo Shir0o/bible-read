@@ -1019,7 +1019,7 @@ void main() {
             .doc('d1')
             .collection('entries')
             .doc('u1')
-            .set({'count': 2});
+            .set({'count': 2, 'uid': 'u1', 'groupId': 'g1'});
 
         // Date 2: 3 items
         await groupRef.collection('progress').doc('d2').set({});
@@ -1028,7 +1028,7 @@ void main() {
             .doc('d2')
             .collection('entries')
             .doc('u1')
-            .set({'count': 3});
+            .set({'count': 3, 'uid': 'u1', 'groupId': 'g1'});
 
         // Pre-existing summary (wrong value to verify update)
         await groupRef
@@ -1065,7 +1065,10 @@ void main() {
             .doc('d1')
             .collection('entries')
             .doc('u1');
-        await entryRef.set({}); // Empty entry
+        await entryRef.set({
+          'uid': 'u1',
+          'groupId': 'g1'
+        }); // Entry with uid/groupId but no count
         await entryRef.collection('items').doc('i1').set({});
         await entryRef.collection('items').doc('i2').set({});
 
@@ -1124,7 +1127,7 @@ void main() {
             .doc('d1')
             .collection('entries')
             .doc('u1')
-            .set({'count': 2});
+            .set({'count': 2, 'uid': 'u1', 'groupId': 'g1'});
 
         // Group 2
         final g2 = firestore.collection(GroupCollections.groups).doc('g2');
@@ -1139,7 +1142,7 @@ void main() {
             .doc('d1')
             .collection('entries')
             .doc('u1')
-            .set({'count': 3});
+            .set({'count': 3, 'uid': 'u1', 'groupId': 'g2'});
 
         await service.fixMemberProgressSummariesForUser('u1');
 

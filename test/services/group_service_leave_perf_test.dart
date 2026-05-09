@@ -67,7 +67,11 @@ void main() {
 
         // Create entry for leaver
         final entryRef = dateRef.collection('entries').doc('leaver');
-        await entryRef.set({'count': 3});
+        await entryRef.set({
+          'count': 3,
+          'uid': 'leaver',
+          'groupId': 'g1',
+        });
 
         // Add items for the entry
         for (var i = 0; i < 3; i++) {
