@@ -419,18 +419,16 @@ service cloud.firestore {
 
   // 🐞 Bug reports
   match /bugReports/{docId} {
-    allow read: if isAdmin() || (request.auth != null &&
-      resource.data.uid != null && request.auth.uid == resource.data.uid);
+    allow read: if (request.auth != null && resource.data.uid != null && request.auth.uid == resource.data.uid) || isAdmin();
     allow create: if request.auth != null && isValidFeedbackCreate();
-    allow update, delete: if false;
+    allow update, delete: if isAdmin();
   }
 
   // 💡 Feature requests
   match /featureRequests/{docId} {
-    allow read: if isAdmin() || (request.auth != null &&
-      resource.data.uid != null && request.auth.uid == resource.data.uid);
+    allow read: if (request.auth != null && resource.data.uid != null && request.auth.uid == resource.data.uid) || isAdmin();
     allow create: if request.auth != null && isValidFeedbackCreate();
-    allow update, delete: if false;
+    allow update, delete: if isAdmin();
   }
   // 📖 Custom Reading Plans
   match /custom_plans/{planId} {
