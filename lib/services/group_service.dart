@@ -489,8 +489,19 @@ class GroupService {
               i,
               i + chunkSize > missingDates.length ? missingDates.length : i + chunkSize,
             );
-            final futures = chunk.map((d) => d.reference.collection('entries').doc(uid).get());
-            fallbackSnaps.addAll(await Future.wait(futures));
+            final results = await Future.wait(
+              chunk.map((d) => d.reference
+                  .collection('entries')
+                  .doc(uid)
+                  .get()
+                  .then<DocumentSnapshot<Map<String, dynamic>>?>((s) => s)
+                  .catchError((Object e, StackTrace st) {
+                _safeLog(e, st);
+                return null;
+              })),
+            );
+            fallbackSnaps.addAll(
+                results.whereType<DocumentSnapshot<Map<String, dynamic>>>());
           }
         }
 
@@ -1587,25 +1598,12 @@ class GroupService {
 
       // 2. Progress entries (progress/{dateId}/entries/* and date docs)
       try {
-        // ⚡ Bolt: Use a combination of collectionGroup (for efficiency) and
-        // date-based iteration (for completeness of legacy data) to clear progress.
-        final entriesSnap = await firestore
-            .collectionGroup('entries')
-            .where('groupId', isEqualTo: groupId)
-            .get();
-
         final refsToDelete = <DocumentReference>[];
-        final foundEntryRefs = <DocumentReference>{};
-        for (final entryDoc in entriesSnap.docs) {
-          refsToDelete.add(entryDoc.reference);
-          foundEntryRefs.add(entryDoc.reference);
-        }
-
         final progressDates = await groupRef.collection('progress').get();
         final allDateDocs = progressDates.docs;
 
-        // Process dates in chunks to find and delete any entries missed by collectionGroup
-        // (legacy data missing groupId) and the date documents themselves.
+        // Iterate per-date in chunks. This covers both modern entries (with groupId)
+        // and legacy ones, so a separate collectionGroup query would be redundant.
         const chunkSize = 50;
         for (var i = 0; i < allDateDocs.length; i += chunkSize) {
           final chunk = allDateDocs.sublist(
@@ -1625,9 +1623,7 @@ class GroupService {
           for (final snap in entriesSnapshots) {
             if (snap != null) {
               for (final entryDoc in snap.docs) {
-                if (!foundEntryRefs.contains(entryDoc.reference)) {
-                  refsToDelete.add(entryDoc.reference);
-                }
+                refsToDelete.add(entryDoc.reference);
               }
             }
           }
@@ -1747,8 +1743,11 @@ class GroupService {
         final entryRef = entrySnap.reference;
         final data = entrySnap.data();
 
-        // ⚡ Bolt: Always repair/backfill groupId if it's missing to improve future query performance.
-        if (data != null && !data.containsKey('groupId')) {
+        final count = (data?['count'] as num?)?.toInt();
+
+        // Backfill groupId if missing — but only when count is present, since the
+        // count-repair branch below already writes groupId in the same set().
+        if (data != null && !data.containsKey('groupId') && count != null) {
           unawaited(entryRef.set({
             'groupId': groupId,
             'uid': uid,
@@ -1756,7 +1755,6 @@ class GroupService {
           }, SetOptions(merge: true)));
         }
 
-        final count = (data?['count'] as num?)?.toInt();
         if (count != null) {
           total += count;
         } else {
