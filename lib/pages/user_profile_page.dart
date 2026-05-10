@@ -154,6 +154,7 @@ class UserProfilePageState extends State<UserProfilePage> {
       });
     }
 
+    await clearSilentSignInFlag();
     final googleSignIn = widget.googleSignInProvider();
     try {
       await googleSignIn.signOut();
