@@ -67,6 +67,7 @@ analyze_output.txt
 .env
 
 .gemini/
+.claude/
 gha-creds-*.json
 
 # Android build
