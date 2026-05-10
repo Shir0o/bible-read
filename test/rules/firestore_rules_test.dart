@@ -58,7 +58,7 @@ void main() {
       expect(rulesText.contains('function isAdmin()'), isTrue);
       expect(
         rulesText.contains(
-          'allow read: if isAdmin() || (request.auth != null &&\n      resource.data.uid != null && request.auth.uid == resource.data.uid);',
+          'allow read: if (request.auth != null && resource.data.uid != null && request.auth.uid == resource.data.uid) || isAdmin();',
         ),
         isTrue,
       );
