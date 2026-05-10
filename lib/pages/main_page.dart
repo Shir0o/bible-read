@@ -312,9 +312,11 @@ class MainPageState extends State<MainPage> {
                       )));
           break;
         case 10: // Sign Out
-          unawaited(clearSilentSignInFlag());
-          unawaited(widget.auth.signOut());
-          unawaited(widget.googleSignInProvider().signOut());
+          unawaited(() async {
+            await clearSilentSignInFlag();
+            await widget.auth.signOut();
+            await widget.googleSignInProvider().signOut();
+          }());
           setState(() {
             _selectedIndex = 0;
             _navigationHistory

@@ -61,12 +61,22 @@ Future<void> _doInitialize() async {
     },
   );
 
+  // try/catch guards the synchronous throw from `FirebaseAuth.instance`
+  // when Firebase Core isn't initialized (notably in unit tests that hit
+  // this lazily via createGoogleSignIn). onError handles stream errors.
   try {
-    _authStateSubscription ??= _firebaseAuth.authStateChanges().listen((user) {
-      if (user != null) {
-        unawaited(_setHasSignedInBefore(true));
-      }
-    });
+    _authStateSubscription ??= _firebaseAuth.authStateChanges().listen(
+      (user) {
+        if (user != null) {
+          unawaited(_setHasSignedInBefore(true));
+        }
+      },
+      onError: (Object error) {
+        if (kDebugMode) {
+          debugPrint('authStateChanges error: $error');
+        }
+      },
+    );
   } catch (error) {
     if (kDebugMode) {
       debugPrint('authStateChanges subscribe failed: $error');
@@ -80,6 +90,8 @@ Future<void> _doInitialize() async {
 
 Future<void> _attemptSilentSignIn() async {
   try {
+    // Already signed in via persisted Firebase session — nothing to do.
+    if (_safeCurrentUser() != null) return;
     final prefs = await SharedPreferences.getInstance();
     if (!(prefs.getBool(_hasSignedInBeforePrefKey) ?? false)) {
       // Fresh install (or post-signout): don't surface saved Google
@@ -97,11 +109,20 @@ Future<void> _attemptSilentSignIn() async {
 Future<void> _setHasSignedInBefore(bool value) async {
   try {
     final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_hasSignedInBeforePrefKey) == value) return;
     await prefs.setBool(_hasSignedInBeforePrefKey, value);
   } catch (error) {
     if (kDebugMode) {
       debugPrint('Failed to update silent sign-in flag: $error');
     }
+  }
+}
+
+User? _safeCurrentUser() {
+  try {
+    return _firebaseAuth.currentUser;
+  } catch (_) {
+    return null;
   }
 }
 
