@@ -131,7 +131,9 @@ class FeedCard extends StatelessWidget {
     if (likeNames.length <= maxToShow) {
       return likeNames.join(' & ');
     }
-    return '${likeNames.take(maxToShow).join(', ')} and ${likeNames.length - maxToShow} others';
+    final remaining = likeNames.length - maxToShow;
+    final noun = remaining == 1 ? 'other' : 'others';
+    return '${likeNames.take(maxToShow).join(', ')} and $remaining $noun';
   }
 }
 
