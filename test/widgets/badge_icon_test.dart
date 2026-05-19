@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:bible_read/widgets/badge_icon.dart';
 
@@ -17,7 +16,7 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: BadgeIcon(
-            iconData: FontAwesomeIcons.star,
+            iconData: Icons.star,
             locked: true,
           ),
         ),
@@ -33,7 +32,7 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: BadgeIcon(
-            iconData: FontAwesomeIcons.star,
+            iconData: Icons.star,
             locked: false,
           ),
         ),

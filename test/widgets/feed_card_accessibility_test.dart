@@ -3,7 +3,6 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/widgets/feed_card.dart';
 import 'package:bible_read/models/read_log.dart';
-import 'package:bible_read/models/comment.dart';
 
 void main() {
   testWidgets('FeedCard action buttons have correct semantics', (tester) async {
@@ -22,16 +21,6 @@ void main() {
           body: FeedCard(
             log: log,
             onToggleLike: () {},
-            onAddComment: (msg) async {
-              return Comment(
-                id: 'new',
-                uid: 'me',
-                authorName: 'Tester',
-                message: msg,
-                timestamp: DateTime.now(),
-              );
-            },
-            currentUserName: 'Tester',
           ),
         ),
       ),
@@ -66,33 +55,11 @@ void main() {
     expect(encourageData.hasFlag(SemanticsFlag.isSelected), isTrue,
         reason: 'Encourage should be selected');
 
-    // 2. Check "Comment" button semantics
-    // It should have label "Comment" (or "0" if using count logic, here empty comments so "Comment")
-    // and selected should be null (so not flagged as selected).
-    final commentSemanticsFinder = find.byWidgetPredicate((widget) {
-      if (widget is Semantics) {
-        return widget.properties.label == 'Comment';
-      }
-      return false;
-    });
-    expect(commentSemanticsFinder, findsOneWidget);
-
-    final commentNode = tester.getSemantics(commentSemanticsFinder);
-    final commentData = commentNode.getSemanticsData();
-
-    // ignore: deprecated_member_use
-    expect(commentData.hasFlag(SemanticsFlag.isButton), isTrue,
-        reason: 'Comment should be a button');
-    // ignore: deprecated_member_use
-    expect(commentData.hasFlag(SemanticsFlag.isEnabled), isTrue,
-        reason: 'Comment should be enabled');
-    // It should NOT be selected
-    // ignore: deprecated_member_use
-    expect(commentData.hasFlag(SemanticsFlag.isSelected), isFalse,
-        reason: 'Comment should not be selected');
+    expect(find.text('Comment'), findsNothing);
+    expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsNothing);
   });
 
-  testWidgets('FeedCard send button has tooltip', (tester) async {
+  testWidgets('FeedCard does not expose comment composer', (tester) async {
     final log = ReadLog(
       uid: 'user1',
       name: 'Bob',
@@ -108,32 +75,14 @@ void main() {
           body: FeedCard(
             log: log,
             onToggleLike: () {},
-            onAddComment: (msg) async {
-              return Comment(
-                id: 'new',
-                uid: 'me',
-                authorName: 'Tester',
-                message: msg,
-                timestamp: DateTime.now(),
-              );
-            },
-            currentUserName: 'Tester',
           ),
         ),
       ),
     );
 
-    // Expand to show input
-    await tester.tap(find.text('Bob')); // Tap header to expand
-    await tester.pumpAndSettle();
-
-    // Find the send button (IconButton.filled)
-    final sendButtonFinder = find.byIcon(Icons.send_rounded);
-    expect(sendButtonFinder, findsOneWidget);
-
-    // Check tooltip
-    final tooltipFinder = find.byTooltip('Send comment');
-    expect(tooltipFinder, findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.byIcon(Icons.send_rounded), findsNothing);
+    expect(find.byTooltip('Send comment'), findsNothing);
   });
 
   testWidgets('FeedCard Read today uses MergeSemantics', (tester) async {
@@ -152,16 +101,6 @@ void main() {
           body: FeedCard(
             log: log,
             onToggleLike: () {},
-            onAddComment: (msg) async {
-              return Comment(
-                id: 'new',
-                uid: 'me',
-                authorName: 'Tester',
-                message: msg,
-                timestamp: DateTime.now(),
-              );
-            },
-            currentUserName: 'Tester',
           ),
         ),
       ),

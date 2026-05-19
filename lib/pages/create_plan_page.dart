@@ -952,64 +952,66 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         allBooksInCategory.any((book) => _selectedBooks.contains(book)) &&
             !isFullySelected;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
         color: colorScheme.surfaceContainerHighest.withAlpha(100),
         borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          ListTile(
-            dense: true,
-            visualDensity: VisualDensity.compact,
-            onTap: () {
-              setState(() {
-                if (_expandedCategories.contains(name)) {
-                  _expandedCategories.remove(name);
-                } else {
-                  _expandedCategories.add(name);
-                }
-              });
-            },
-            leading: Checkbox(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            ListTile(
+              dense: true,
               visualDensity: VisualDensity.compact,
-              value:
-                  isFullySelected ? true : (isPartiallySelected ? null : false),
-              tristate: true,
-              activeColor: colorScheme.primary,
-              onChanged: (val) {
+              onTap: () {
                 setState(() {
-                  if (val == true) {
-                    _selectedBooks.addAll(allBooksInCategory);
+                  if (_expandedCategories.contains(name)) {
+                    _expandedCategories.remove(name);
                   } else {
-                    _selectedBooks.removeWhere(
-                        (book) => allBooksInCategory.contains(book));
+                    _expandedCategories.add(name);
                   }
                 });
               },
-            ),
-            title: Text(name,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            trailing: Icon(
-              _expandedCategories.contains(name)
-                  ? Icons.expand_less
-                  : Icons.expand_more,
-              size: 20,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          if (_expandedCategories.contains(name))
-            Padding(
-              padding: const EdgeInsets.only(left: 16, bottom: 8),
-              child: Column(
-                children: subcategories.entries
-                    .map((e) => _buildBookSubcategory(e.key, e.value))
-                    .toList(),
+              leading: Checkbox(
+                visualDensity: VisualDensity.compact,
+                value: isFullySelected
+                    ? true
+                    : (isPartiallySelected ? null : false),
+                tristate: true,
+                activeColor: colorScheme.primary,
+                onChanged: (val) {
+                  setState(() {
+                    if (val == true) {
+                      _selectedBooks.addAll(allBooksInCategory);
+                    } else {
+                      _selectedBooks.removeWhere(
+                          (book) => allBooksInCategory.contains(book));
+                    }
+                  });
+                },
+              ),
+              title: Text(name,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 14)),
+              trailing: Icon(
+                _expandedCategories.contains(name)
+                    ? Icons.expand_less
+                    : Icons.expand_more,
+                size: 20,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
-        ],
+            if (_expandedCategories.contains(name))
+              Padding(
+                padding: const EdgeInsets.only(left: 16, bottom: 8),
+                child: Column(
+                  children: subcategories.entries
+                      .map((e) => _buildBookSubcategory(e.key, e.value))
+                      .toList(),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

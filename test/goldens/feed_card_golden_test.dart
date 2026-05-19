@@ -6,9 +6,6 @@ import 'package:bible_read/models/comment.dart';
 import '../helpers/pump_golden.dart';
 
 void main() {
-  const userUid = 'user123';
-  const userName = 'Alice';
-
   final log = ReadLog(
     uid: 'u1',
     name: 'Bob',
@@ -33,14 +30,6 @@ void main() {
         FeedCard(
           log: log,
           onToggleLike: () {},
-          onAddComment: (msg) async => Comment(
-            id: 'c2',
-            uid: userUid,
-            authorName: userName,
-            message: msg,
-            timestamp: DateTime.now(),
-          ),
-          currentUserName: userName,
         ),
         brightness: Brightness.light,
       );
@@ -55,14 +44,6 @@ void main() {
         FeedCard(
           log: log,
           onToggleLike: () {},
-          onAddComment: (msg) async => Comment(
-            id: 'c2',
-            uid: userUid,
-            authorName: userName,
-            message: msg,
-            timestamp: DateTime.now(),
-          ),
-          currentUserName: userName,
         ),
         brightness: Brightness.dark,
       );
@@ -77,14 +58,6 @@ void main() {
         FeedCard(
           log: log,
           onToggleLike: () {},
-          onAddComment: (msg) async => Comment(
-            id: 'c2',
-            uid: userUid,
-            authorName: userName,
-            message: msg,
-            timestamp: DateTime.now(),
-          ),
-          currentUserName: userName,
         ),
         brightness: Brightness.light,
         textScaleFactor: 1.5,

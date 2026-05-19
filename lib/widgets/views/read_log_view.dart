@@ -6,7 +6,6 @@ import '../../services/error_logger.dart';
 import '../../services/vibration_service.dart';
 
 import '../common_styles.dart';
-import '../../models/comment.dart';
 import '../read_log_list.dart';
 import '../../services/reading_status_service.dart';
 import '../../models/read_log.dart';
@@ -64,16 +63,6 @@ class _ReadLogViewState extends State<ReadLogView>
     await widget.onSendLikeNotification(
       ownerUid: ownerUid,
       likerName: likerName,
-    );
-  }
-
-  Future<void> _sendCommentNotification({
-    required String ownerUid,
-    required String commenterName,
-  }) async {
-    await widget.onSendCommentNotification(
-      ownerUid: ownerUid,
-      commenterName: commenterName,
     );
   }
 
@@ -278,87 +267,6 @@ class _ReadLogViewState extends State<ReadLogView>
     }
   }
 
-  Future<Comment> _addComment(String logUid, String message) async {
-    final user = widget.auth.currentUser;
-    if (user == null) {
-      throw StateError('User not signed in');
-    }
-    final index = _logs.indexWhere((log) => log.uid == logUid);
-    if (index == -1) {
-      throw StateError('Log not found');
-    }
-
-    final author = (user.displayName ?? '').split(' ').first;
-    final comment = Comment(
-      id: '',
-      uid: user.uid,
-      authorName: author,
-      message: message,
-      timestamp: DateTime.now(),
-    );
-
-    final original = _logs[index];
-    final originalComments = List<Comment>.from(original.comments);
-    setState(() {
-      _logs[index] = original.copyWith(
-        comments: [...originalComments, comment],
-      );
-    });
-
-    final now = widget.dateProvider();
-    final dateKey =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final commentsRef = widget.firestore
-        .collection('read_logs')
-        .doc(dateKey)
-        .collection('entries')
-        .doc(logUid)
-        .collection('comments');
-    try {
-      final docRef = await commentsRef.add(comment.toFirestore());
-
-      await widget.firestore
-          .collection('read_logs')
-          .doc(dateKey)
-          .collection('entries')
-          .doc(logUid)
-          .update({'lastActivityAt': FieldValue.serverTimestamp()});
-      Comment persisted = Comment(
-        id: docRef.id,
-        uid: comment.uid,
-        authorName: comment.authorName,
-        message: comment.message,
-        timestamp: comment.timestamp,
-      );
-      if (mounted) {
-        final updated = List<Comment>.from(originalComments)..add(persisted);
-        setState(() {
-          _logs[index] = original.copyWith(comments: updated);
-        });
-      }
-      if (logUid != user.uid) {
-        await _sendCommentNotification(ownerUid: logUid, commenterName: author);
-      }
-      return persisted;
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to add comment: $e');
-      }
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        setState(() {
-          _logs[index] = original;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to add comment. Please try again.'),
-          ),
-        );
-      }
-      rethrow;
-    }
-  }
-
   @override
   bool get wantKeepAlive => true;
 
@@ -472,11 +380,6 @@ class _ReadLogViewState extends State<ReadLogView>
                           child: ReadLogList(
                             logs: _logs,
                             onToggleLike: _toggleLike,
-                            onAddComment: _addComment,
-                            commenterName:
-                                (widget.auth.currentUser?.displayName ?? '')
-                                    .split(' ')
-                                    .first,
                             vibrationService: widget.vibrationService,
                           ),
                         ),

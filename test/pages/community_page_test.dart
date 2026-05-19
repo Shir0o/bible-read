@@ -82,6 +82,7 @@ void main() {
     await pumpPage(tester);
 
     expect(find.text('Group Progress'), findsOneWidget);
+    expect(find.text('View All'), findsOneWidget);
     expect(find.text('No active groups'), findsOneWidget);
     expect(find.text('Join a group to see progress here.'), findsOneWidget);
   });
