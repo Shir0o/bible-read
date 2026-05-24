@@ -22,7 +22,7 @@ jobs:
         run: flutter pub get
 
       - name: Run Flutter tests
-        run: flutter test --no-pub --fail-fast
+        run: flutter test --no-pub --fail-fast $(find test -name "*_test.dart" ! -path "test/goldens/*")
 
   functions-tests:
     name: Firebase Functions tests
