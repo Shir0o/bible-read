@@ -49,8 +49,8 @@ void main() {
     const channel = MethodChannel('plugins.flutter.io/firebase_crashlytics');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-      return null;
-    });
+          return null;
+        });
 
     await Firebase.initializeApp();
   });
@@ -69,8 +69,10 @@ void main() {
 
       expect(id, isNotEmpty);
 
-      final doc =
-          await firestore.collection(GroupCollections.groups).doc(id).get();
+      final doc = await firestore
+          .collection(GroupCollections.groups)
+          .doc(id)
+          .get();
       expect(doc.exists, isTrue);
       expect(doc.data(), {
         'name': 'Test',
@@ -154,10 +156,10 @@ void main() {
     });
 
     test('joinGroup creates join request and notification', () async {
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc('g1')
-          .set({'name': 'G', 'ownerUid': 'u1'});
+      await firestore.collection(GroupCollections.groups).doc('g1').set({
+        'name': 'G',
+        'ownerUid': 'u1',
+      });
 
       await service.joinGroup(groupId: 'g1', uid: 'u2', name: 'User');
 
@@ -230,8 +232,10 @@ void main() {
 
       await service.approveJoinRequest(groupId: 'g1', uid: 'u2');
 
-      final member =
-          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      final member = await groupRef
+          .collection(GroupCollections.members)
+          .doc('u2')
+          .get();
       expect(member.exists, isTrue);
       expect(member.data()?['name'], 'User');
       final request = await groupRef
@@ -274,8 +278,10 @@ void main() {
 
       await service.denyJoinRequest(groupId: 'g1', uid: 'u2');
 
-      final member =
-          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      final member = await groupRef
+          .collection(GroupCollections.members)
+          .doc('u2')
+          .get();
       expect(member.exists, isFalse);
       final request = await groupRef
           .collection(GroupCollections.joinRequests)
@@ -295,8 +301,10 @@ void main() {
 
       await service.leaveGroup(groupId: 'g1', uid: 'u2');
 
-      final member =
-          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      final member = await groupRef
+          .collection(GroupCollections.members)
+          .doc('u2')
+          .get();
       expect(member.exists, isFalse);
       final groupDoc = await groupRef.get();
       expect(groupDoc.data()?['memberCount'], 1);
@@ -320,8 +328,10 @@ void main() {
 
       final groupDoc = await groupRef.get();
       expect(groupDoc.data()?['memberCount'], 1);
-      final remaining =
-          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      final remaining = await groupRef
+          .collection(GroupCollections.members)
+          .doc('u2')
+          .get();
       expect(remaining.exists, isFalse);
     });
 
@@ -334,14 +344,12 @@ void main() {
         'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
       });
 
-      await service.promoteToAdmin(
-        groupId: 'g1',
-        ownerUid: 'owner',
-        uid: 'u2',
-      );
+      await service.promoteToAdmin(groupId: 'g1', ownerUid: 'owner', uid: 'u2');
 
-      final member =
-          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      final member = await groupRef
+          .collection(GroupCollections.members)
+          .doc('u2')
+          .get();
       expect(member.data()?['role'], 'admin');
     });
 
@@ -354,14 +362,12 @@ void main() {
         'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
       });
 
-      await service.demoteAdmin(
-        groupId: 'g1',
-        ownerUid: 'owner',
-        uid: 'u2',
-      );
+      await service.demoteAdmin(groupId: 'g1', ownerUid: 'owner', uid: 'u2');
 
-      final member =
-          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      final member = await groupRef
+          .collection(GroupCollections.members)
+          .doc('u2')
+          .get();
       expect(member.data()?['role'], 'member');
     });
 
@@ -388,10 +394,14 @@ void main() {
         throwsStateError,
       );
 
-      final member =
-          await groupRef.collection(GroupCollections.members).doc('u2').get();
-      final admin =
-          await groupRef.collection(GroupCollections.members).doc('u3').get();
+      final member = await groupRef
+          .collection(GroupCollections.members)
+          .doc('u2')
+          .get();
+      final admin = await groupRef
+          .collection(GroupCollections.members)
+          .doc('u3')
+          .get();
       expect(member.data()?['role'], 'member');
       expect(admin.data()?['role'], 'admin');
     });
@@ -414,21 +424,21 @@ void main() {
       final stored = GroupSchedule.fromFirestore(doc);
       expect(stored.chapters, schedule.chapters);
       expect(stored.date, schedule.date);
-      expect((doc.data()?['date'] as Timestamp).toDate(),
-          DateTime.utc(2024, 1, 1).toLocal());
+      expect(
+        (doc.data()?['date'] as Timestamp).toDate(),
+        DateTime.utc(2024, 1, 1).toLocal(),
+      );
     });
 
     test('updateSchedule notifies group members', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
-      await groupRef
-          .collection(GroupCollections.members)
-          .doc('u1')
-          .set({'uid': 'u1'});
-      await groupRef
-          .collection(GroupCollections.members)
-          .doc('u2')
-          .set({'uid': 'u2'});
+      await groupRef.collection(GroupCollections.members).doc('u1').set({
+        'uid': 'u1',
+      });
+      await groupRef.collection(GroupCollections.members).doc('u2').set({
+        'uid': 'u2',
+      });
       final schedule = GroupSchedule(
         date: DateTime(2024, 1, 1),
         chapters: const ['Gen 1'],
@@ -447,10 +457,14 @@ void main() {
           .collection(NotificationCollections.notifications)
           .get();
 
-      expect(notif1.docs.single.data()['type'],
-          NotificationType.groupScheduleUpdate.name);
-      expect(notif2.docs.single.data()['type'],
-          NotificationType.groupScheduleUpdate.name);
+      expect(
+        notif1.docs.single.data()['type'],
+        NotificationType.groupScheduleUpdate.name,
+      );
+      expect(
+        notif2.docs.single.data()['type'],
+        NotificationType.groupScheduleUpdate.name,
+      );
     });
 
     test('fetchTodaysChapters returns schedule for today', () async {
@@ -502,7 +516,10 @@ void main() {
         service.allGroups(),
         emits(
           isA<List<Group>>().having((l) => l.length, 'length', 3).having(
-              (l) => l.map((g) => g.id).toSet(), 'ids', {'g1', 'g2', 'g3'}),
+            (l) => l.map((g) => g.id).toSet(),
+            'ids',
+            {'g1', 'g2', 'g3'},
+          ),
         ),
       );
     });
@@ -533,47 +550,53 @@ void main() {
       await expectLater(
         service.groupsForUser('u1'),
         emitsThrough(
-          isA<List<Group>>()
-              .having((l) => l.length, 'length', 2)
-              .having((l) => l.map((g) => g.id).toSet(), 'ids', {'g1', 'g2'}),
+          isA<List<Group>>().having((l) => l.length, 'length', 2).having(
+            (l) => l.map((g) => g.id).toSet(),
+            'ids',
+            {'g1', 'g2'},
+          ),
         ),
       );
     });
 
-    test('groupsForUser includes owned groups without membership doc',
-        () async {
-      final owned = firestore.collection(GroupCollections.groups).doc('g1');
-      await owned.set({'name': 'G', 'ownerUid': 'u1'});
+    test(
+      'groupsForUser includes owned groups without membership doc',
+      () async {
+        final owned = firestore.collection(GroupCollections.groups).doc('g1');
+        await owned.set({'name': 'G', 'ownerUid': 'u1'});
 
-      await expectLater(
-        service.groupsForUser('u1'),
-        emitsThrough(
-          isA<List<Group>>()
-              .having((l) => l.length, 'length', 1)
-              .having((l) => l.first.id, 'id', 'g1'),
-        ),
-      );
-    });
+        await expectLater(
+          service.groupsForUser('u1'),
+          emitsThrough(
+            isA<List<Group>>()
+                .having((l) => l.length, 'length', 1)
+                .having((l) => l.first.id, 'id', 'g1'),
+          ),
+        );
+      },
+    );
 
-    test('groupsForUser returns owned group without owner membership doc',
-        () async {
-      final owned = firestore.collection(GroupCollections.groups).doc('g1');
-      await owned.set({'name': 'G', 'ownerUid': 'u1'});
-      await owned.collection(GroupCollections.members).doc('m2').set({
-        'uid': 'u2',
-        'role': 'member',
-        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
-      });
+    test(
+      'groupsForUser returns owned group without owner membership doc',
+      () async {
+        final owned = firestore.collection(GroupCollections.groups).doc('g1');
+        await owned.set({'name': 'G', 'ownerUid': 'u1'});
+        await owned.collection(GroupCollections.members).doc('m2').set({
+          'uid': 'u2',
+          'role': 'member',
+          'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+        });
 
-      await expectLater(
-        service.groupsForUser('u1'),
-        emitsThrough(
-          isA<List<Group>>()
-              .having((l) => l.length, 'length', 1)
-              .having((l) => l.first.id, 'id', 'g1'),
-        ),
-      );
-    });
+        await expectLater(
+          service.groupsForUser('u1'),
+          emitsThrough(
+            isA<List<Group>>()
+                .having((l) => l.length, 'length', 1)
+                .having((l) => l.first.id, 'id', 'g1'),
+          ),
+        );
+      },
+    );
 
     test('groupsForUser deduplicates owned membership groups', () async {
       final owned = firestore.collection(GroupCollections.groups).doc('g1');
@@ -616,11 +639,10 @@ void main() {
       await expectLater(
         service.memberNames('g1'),
         emitsThrough(
-          isA<List<String>>().having(
-            (l) => l.toSet(),
-            'names',
-            {'Alice', 'Bob'},
-          ),
+          isA<List<String>>().having((l) => l.toSet(), 'names', {
+            'Alice',
+            'Bob',
+          }),
         ),
       );
     });
@@ -644,55 +666,56 @@ void main() {
       await expectLater(
         service.memberNames('g1'),
         emitsThrough(
-          isA<List<String>>().having(
-            (l) => l.toSet(),
-            'names',
-            expected,
-          ),
+          isA<List<String>>().having((l) => l.toSet(), 'names', expected),
         ),
       );
     });
 
-    test('memberNames falls back to displayName or email when name is missing',
-        () async {
-      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+    test(
+      'memberNames falls back to displayName or email when name is missing',
+      () async {
+        final groupRef = firestore
+            .collection(GroupCollections.groups)
+            .doc('g1');
+        await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
 
-      // Member 1: Has name in users (Normal case)
-      await firestore.collection('users').doc('u1').set({'name': 'Alice'});
-      await groupRef.collection(GroupCollections.members).doc('m1').set({
-        'uid': 'u1',
-        'role': 'owner',
-      });
+        // Member 1: Has name in users (Normal case)
+        await firestore.collection('users').doc('u1').set({'name': 'Alice'});
+        await groupRef.collection(GroupCollections.members).doc('m1').set({
+          'uid': 'u1',
+          'role': 'owner',
+        });
 
-      // Member 2: Has displayName in users (Fallback case 1)
-      await firestore.collection('users').doc('u2').set({'displayName': 'Bob'});
-      await groupRef.collection(GroupCollections.members).doc('m2').set({
-        'uid': 'u2',
-        'role': 'member',
-      });
+        // Member 2: Has displayName in users (Fallback case 1)
+        await firestore.collection('users').doc('u2').set({
+          'displayName': 'Bob',
+        });
+        await groupRef.collection(GroupCollections.members).doc('m2').set({
+          'uid': 'u2',
+          'role': 'member',
+        });
 
-      // Member 3: Has email in users (Fallback case 2)
-      await firestore
-          .collection('users')
-          .doc('u3')
-          .set({'email': 'charlie@test.com'});
-      await groupRef.collection(GroupCollections.members).doc('m3').set({
-        'uid': 'u3',
-        'role': 'member',
-      });
+        // Member 3: Has email in users (Fallback case 2)
+        await firestore.collection('users').doc('u3').set({
+          'email': 'charlie@test.com',
+        });
+        await groupRef.collection(GroupCollections.members).doc('m3').set({
+          'uid': 'u3',
+          'role': 'member',
+        });
 
-      await expectLater(
-        service.memberNames('g1'),
-        emitsThrough(
-          isA<List<String>>().having(
-            (l) => l.toSet(),
-            'names',
-            {'Alice', 'Bob', 'charlie'},
+        await expectLater(
+          service.memberNames('g1'),
+          emitsThrough(
+            isA<List<String>>().having((l) => l.toSet(), 'names', {
+              'Alice',
+              'Bob',
+              'charlie',
+            }),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
 
     test('schedule streams list of entries', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
@@ -701,9 +724,9 @@ void main() {
           .collection(GroupCollections.schedule)
           .doc('2024-01-01')
           .set({
-        'date': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
-        'chapters': ['Gen 1']
-      });
+            'date': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+            'chapters': ['Gen 1'],
+          });
 
       await expectLater(
         service.schedule('g1'),
@@ -727,22 +750,34 @@ void main() {
 
       final crash = MockCrashlytics();
       ErrorLogger.crashlytics = crash;
-      when(() => crash.recordError(any(), any(),
+      when(
+        () => crash.recordError(
+          any(),
+          any(),
           reason: any(named: 'reason'),
           information: any(named: 'information'),
           printDetails: any(named: 'printDetails'),
-          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+          fatal: any(named: 'fatal'),
+        ),
+      ).thenAnswer((_) async {});
 
       final svc = GroupService(firestore: mockFs);
 
       await expectLater(
-          svc.createGroup(ownerUid: 'u1', name: 'G'), throwsA(same(err)));
+        svc.createGroup(ownerUid: 'u1', name: 'G'),
+        throwsA(same(err)),
+      );
 
-      verify(() => crash.recordError(err, any(),
+      verify(
+        () => crash.recordError(
+          err,
+          any(),
           reason: null,
           information: any(named: 'information'),
           printDetails: any(named: 'printDetails'),
-          fatal: false)).called(1);
+          fatal: false,
+        ),
+      ).called(1);
     });
 
     test('fetchTodaysChapters logs and returns empty list on error', () async {
@@ -754,28 +789,39 @@ void main() {
 
       when(() => mockFs.collection(GroupCollections.groups)).thenReturn(groups);
       when(() => groups.doc('g1')).thenReturn(groupDoc);
-      when(() => groupDoc.collection(GroupCollections.schedule))
-          .thenReturn(schedule);
+      when(
+        () => groupDoc.collection(GroupCollections.schedule),
+      ).thenReturn(schedule);
       when(() => schedule.doc(any())).thenReturn(scheduleDoc);
       when(() => scheduleDoc.get()).thenThrow(Exception('boom'));
 
       final crash = MockCrashlytics();
       ErrorLogger.crashlytics = crash;
-      when(() => crash.recordError(any(), any(),
+      when(
+        () => crash.recordError(
+          any(),
+          any(),
           reason: any(named: 'reason'),
           information: any(named: 'information'),
           printDetails: any(named: 'printDetails'),
-          fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+          fatal: any(named: 'fatal'),
+        ),
+      ).thenAnswer((_) async {});
 
       final svc = GroupService(firestore: mockFs);
       final chapters = await svc.fetchTodaysChapters('g1');
       expect(chapters, isEmpty);
 
-      verify(() => crash.recordError(any(), any(),
+      verify(
+        () => crash.recordError(
+          any(),
+          any(),
           reason: null,
           information: any(named: 'information'),
           printDetails: any(named: 'printDetails'),
-          fatal: false)).called(1);
+          fatal: false,
+        ),
+      ).called(1);
     });
 
     test('memberDailyCompletion streams progress for group members', () async {
@@ -801,8 +847,9 @@ void main() {
 
       await groupRef.collection(GroupCollections.schedule).doc(dateId).set({
         'date': Timestamp.fromDate(
-            DateTime.utc(today.year, today.month, today.day)),
-        'chapters': ['Gen 1', 'Gen 2'] // 2 chapters
+          DateTime.utc(today.year, today.month, today.day),
+        ),
+        'chapters': ['Gen 1', 'Gen 2'], // 2 chapters
       });
 
       // Progress: u1 read 1 chapter (50%)
@@ -883,8 +930,9 @@ void main() {
           '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
       await groupRef.collection(GroupCollections.schedule).doc(dateId).set({
         'date': Timestamp.fromDate(
-            DateTime.utc(today.year, today.month, today.day)),
-        'chapters': ['Gen 1']
+          DateTime.utc(today.year, today.month, today.day),
+        ),
+        'chapters': ['Gen 1'],
       });
 
       await expectLater(
@@ -913,13 +961,18 @@ void main() {
       await service.deleteGroup(groupId: 'g1', ownerUid: 'u1');
 
       expect((await groupRef.get()).exists, isFalse);
-      expect((await groupRef.collection(GroupCollections.members).get()).docs,
-          isEmpty);
-      expect((await groupRef.collection(GroupCollections.schedule).get()).docs,
-          isEmpty);
       expect(
-          (await groupRef.collection(GroupCollections.joinRequests).get()).docs,
-          isEmpty);
+        (await groupRef.collection(GroupCollections.members).get()).docs,
+        isEmpty,
+      );
+      expect(
+        (await groupRef.collection(GroupCollections.schedule).get()).docs,
+        isEmpty,
+      );
+      expect(
+        (await groupRef.collection(GroupCollections.joinRequests).get()).docs,
+        isEmpty,
+      );
     });
 
     test('deleteGroup throws if caller is not owner', () async {
@@ -934,124 +987,132 @@ void main() {
       expect((await groupRef.get()).exists, isTrue);
     });
 
-    test('memberOverallCompletion streams total progress for group members',
-        () async {
-      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
-
-      // Members
-      await groupRef.collection(GroupCollections.members).doc('u1').set({
-        'uid': 'u1',
-        'name': 'Alice',
-        'role': 'owner',
-      });
-      await groupRef.collection(GroupCollections.members).doc('u2').set({
-        'uid': 'u2',
-        'name': 'Bob',
-        'role': 'member',
-      });
-
-      // Schedule: Total 4 chapters
-      await groupRef
-          .collection(GroupCollections.schedule)
-          .doc('2024-01-01')
-          .set({
-        'date': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
-        'chapters': ['Gen 1', 'Gen 2'],
-      });
-      await groupRef
-          .collection(GroupCollections.schedule)
-          .doc('2024-01-02')
-          .set({
-        'date': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
-        'chapters': ['Gen 3', 'Gen 4'],
-      });
-
-      // Progress Summary
-      // u1: Completed 3 chapters (75%)
-      await groupRef
-          .collection('progressSummary')
-          .doc('data')
-          .collection('entries')
-          .doc('u1')
-          .set({'completed': 3});
-
-      // u2: Completed 0 chapters (0%) - No entry or entry with 0
-
-      await expectLater(
-        service.memberOverallCompletion('g1'),
-        emitsThrough(
-          isA<List<GroupMemberProgressData>>()
-              .having((l) => l.length, 'length', 2)
-              .having(
-                (l) => l.firstWhere((m) => m.uid == 'u1'),
-                'u1',
-                isA<GroupMemberProgressData>()
-                    .having((m) => m.completion, 'completion', 0.75)
-                    .having((m) => m.name, 'name', 'Alice'),
-              )
-              .having(
-                (l) => l.firstWhere((m) => m.uid == 'u2'),
-                'u2',
-                isA<GroupMemberProgressData>()
-                    .having((m) => m.completion, 'completion', 0.0)
-                    .having((m) => m.name, 'name', 'Bob'),
-              ),
-        ),
-      );
-    });
-
-    group('Recalc & Fix Progress', () {
-      test('recalcProgressForUserInGroup sums counts and updates summary',
-          () async {
-        final groupRef =
-            firestore.collection(GroupCollections.groups).doc('g1');
+    test(
+      'memberOverallCompletion streams total progress for group members',
+      () async {
+        final groupRef = firestore
+            .collection(GroupCollections.groups)
+            .doc('g1');
         await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+
+        // Members
         await groupRef.collection(GroupCollections.members).doc('u1').set({
           'uid': 'u1',
+          'name': 'Alice',
           'role': 'owner',
         });
+        await groupRef.collection(GroupCollections.members).doc('u2').set({
+          'uid': 'u2',
+          'name': 'Bob',
+          'role': 'member',
+        });
 
-        // Date 1: 2 items
-        await groupRef.collection('progress').doc('d1').set({});
+        // Schedule: Total 4 chapters
         await groupRef
-            .collection('progress')
-            .doc('d1')
-            .collection('entries')
-            .doc('u1')
-            .set({'count': 2, 'uid': 'u1', 'groupId': 'g1'});
-
-        // Date 2: 3 items
-        await groupRef.collection('progress').doc('d2').set({});
+            .collection(GroupCollections.schedule)
+            .doc('2024-01-01')
+            .set({
+              'date': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+              'chapters': ['Gen 1', 'Gen 2'],
+            });
         await groupRef
-            .collection('progress')
-            .doc('d2')
-            .collection('entries')
-            .doc('u1')
-            .set({'count': 3, 'uid': 'u1', 'groupId': 'g1'});
+            .collection(GroupCollections.schedule)
+            .doc('2024-01-02')
+            .set({
+              'date': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+              'chapters': ['Gen 3', 'Gen 4'],
+            });
 
-        // Pre-existing summary (wrong value to verify update)
+        // Progress Summary
+        // u1: Completed 3 chapters (75%)
         await groupRef
             .collection('progressSummary')
             .doc('data')
             .collection('entries')
             .doc('u1')
-            .set({'completed': 0});
+            .set({'completed': 3});
 
-        await service.recalcProgressForUserInGroup(groupId: 'g1', uid: 'u1');
+        // u2: Completed 0 chapters (0%) - No entry or entry with 0
 
-        final summary = await groupRef
-            .collection('progressSummary')
-            .doc('data')
-            .collection('entries')
-            .doc('u1')
-            .get();
-        expect(summary.data()?['completed'], 5);
-      });
+        await expectLater(
+          service.memberOverallCompletion('g1'),
+          emitsThrough(
+            isA<List<GroupMemberProgressData>>()
+                .having((l) => l.length, 'length', 2)
+                .having(
+                  (l) => l.firstWhere((m) => m.uid == 'u1'),
+                  'u1',
+                  isA<GroupMemberProgressData>()
+                      .having((m) => m.completion, 'completion', 0.75)
+                      .having((m) => m.name, 'name', 'Alice'),
+                )
+                .having(
+                  (l) => l.firstWhere((m) => m.uid == 'u2'),
+                  'u2',
+                  isA<GroupMemberProgressData>()
+                      .having((m) => m.completion, 'completion', 0.0)
+                      .having((m) => m.name, 'name', 'Bob'),
+                ),
+          ),
+        );
+      },
+    );
+
+    group('Recalc & Fix Progress', () {
+      test(
+        'recalcProgressForUserInGroup sums counts and updates summary',
+        () async {
+          final groupRef = firestore
+              .collection(GroupCollections.groups)
+              .doc('g1');
+          await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+          await groupRef.collection(GroupCollections.members).doc('u1').set({
+            'uid': 'u1',
+            'role': 'owner',
+          });
+
+          // Date 1: 2 items
+          await groupRef.collection('progress').doc('d1').set({});
+          await groupRef
+              .collection('progress')
+              .doc('d1')
+              .collection('entries')
+              .doc('u1')
+              .set({'count': 2, 'uid': 'u1', 'groupId': 'g1'});
+
+          // Date 2: 3 items
+          await groupRef.collection('progress').doc('d2').set({});
+          await groupRef
+              .collection('progress')
+              .doc('d2')
+              .collection('entries')
+              .doc('u1')
+              .set({'count': 3, 'uid': 'u1', 'groupId': 'g1'});
+
+          // Pre-existing summary (wrong value to verify update)
+          await groupRef
+              .collection('progressSummary')
+              .doc('data')
+              .collection('entries')
+              .doc('u1')
+              .set({'completed': 0});
+
+          await service.recalcProgressForUserInGroup(groupId: 'g1', uid: 'u1');
+
+          final summary = await groupRef
+              .collection('progressSummary')
+              .doc('data')
+              .collection('entries')
+              .doc('u1')
+              .get();
+          expect(summary.data()?['completed'], 5);
+        },
+      );
 
       test('recalcProgressForUserInGroup backfills missing count', () async {
-        final groupRef =
-            firestore.collection(GroupCollections.groups).doc('g1');
+        final groupRef = firestore
+            .collection(GroupCollections.groups)
+            .doc('g1');
         await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
         await groupRef.collection(GroupCollections.members).doc('u1').set({
           'uid': 'u1',
@@ -1067,7 +1128,7 @@ void main() {
             .doc('u1');
         await entryRef.set({
           'uid': 'u1',
-          'groupId': 'g1'
+          'groupId': 'g1',
         }); // Entry with uid/groupId but no count
         await entryRef.collection('items').doc('i1').set({});
         await entryRef.collection('items').doc('i2').set({});
@@ -1086,82 +1147,87 @@ void main() {
         expect(summary.data()?['completed'], 2);
       });
 
-      test('recalcProgressForUserInGroup does nothing if user not member/owner',
-          () async {
-        final groupRef =
-            firestore.collection(GroupCollections.groups).doc('g1');
-        await groupRef.set({'name': 'G', 'ownerUid': 'owner'});
-        // u1 is not a member
+      test(
+        'recalcProgressForUserInGroup does nothing if user not member/owner',
+        () async {
+          final groupRef = firestore
+              .collection(GroupCollections.groups)
+              .doc('g1');
+          await groupRef.set({'name': 'G', 'ownerUid': 'owner'});
+          // u1 is not a member
 
-        await groupRef.collection('progress').doc('d1').set({});
-        await groupRef
-            .collection('progress')
-            .doc('d1')
-            .collection('entries')
-            .doc('u1')
-            .set({'count': 5});
+          await groupRef.collection('progress').doc('d1').set({});
+          await groupRef
+              .collection('progress')
+              .doc('d1')
+              .collection('entries')
+              .doc('u1')
+              .set({'count': 5});
 
-        await service.recalcProgressForUserInGroup(groupId: 'g1', uid: 'u1');
+          await service.recalcProgressForUserInGroup(groupId: 'g1', uid: 'u1');
 
-        final summary = await groupRef
-            .collection('progressSummary')
-            .doc('data')
-            .collection('entries')
-            .doc('u1')
-            .get();
-        expect(summary.exists, isFalse);
-      });
+          final summary = await groupRef
+              .collection('progressSummary')
+              .doc('data')
+              .collection('entries')
+              .doc('u1')
+              .get();
+          expect(summary.exists, isFalse);
+        },
+      );
 
-      test('fixMemberProgressSummariesForUser updates all groups for user',
-          () async {
-        // Group 1
-        final g1 = firestore.collection(GroupCollections.groups).doc('g1');
-        await g1.set({'name': 'G1', 'ownerUid': 'u1'});
-        await g1
-            .collection(GroupCollections.members)
-            .doc('u1')
-            .set({'uid': 'u1', 'role': 'owner'});
-        await g1.collection('progress').doc('d1').set({});
-        await g1
-            .collection('progress')
-            .doc('d1')
-            .collection('entries')
-            .doc('u1')
-            .set({'count': 2, 'uid': 'u1', 'groupId': 'g1'});
+      test(
+        'fixMemberProgressSummariesForUser updates all groups for user',
+        () async {
+          // Group 1
+          final g1 = firestore.collection(GroupCollections.groups).doc('g1');
+          await g1.set({'name': 'G1', 'ownerUid': 'u1'});
+          await g1.collection(GroupCollections.members).doc('u1').set({
+            'uid': 'u1',
+            'role': 'owner',
+          });
+          await g1.collection('progress').doc('d1').set({});
+          await g1
+              .collection('progress')
+              .doc('d1')
+              .collection('entries')
+              .doc('u1')
+              .set({'count': 2, 'uid': 'u1', 'groupId': 'g1'});
 
-        // Group 2
-        final g2 = firestore.collection(GroupCollections.groups).doc('g2');
-        await g2.set({'name': 'G2', 'ownerUid': 'u2'});
-        await g2
-            .collection(GroupCollections.members)
-            .doc('u1')
-            .set({'uid': 'u1', 'role': 'member'});
-        await g2.collection('progress').doc('d1').set({});
-        await g2
-            .collection('progress')
-            .doc('d1')
-            .collection('entries')
-            .doc('u1')
-            .set({'count': 3, 'uid': 'u1', 'groupId': 'g2'});
+          // Group 2
+          final g2 = firestore.collection(GroupCollections.groups).doc('g2');
+          await g2.set({'name': 'G2', 'ownerUid': 'u2'});
+          await g2.collection(GroupCollections.members).doc('u1').set({
+            'uid': 'u1',
+            'role': 'member',
+          });
+          await g2.collection('progress').doc('d1').set({});
+          await g2
+              .collection('progress')
+              .doc('d1')
+              .collection('entries')
+              .doc('u1')
+              .set({'count': 3, 'uid': 'u1', 'groupId': 'g2'});
 
-        await service.fixMemberProgressSummariesForUser('u1');
+          await service.fixMemberProgressSummariesForUser('u1');
 
-        final s1 = await g1
-            .collection('progressSummary')
-            .doc('data')
-            .collection('entries')
-            .doc('u1')
-            .get();
-        expect(s1.data()?['completed'], 2);
+          final s1 = await g1
+              .collection('progressSummary')
+              .doc('data')
+              .collection('entries')
+              .doc('u1')
+              .get();
+          expect(s1.data()?['completed'], 2);
 
-        final s2 = await g2
-            .collection('progressSummary')
-            .doc('data')
-            .collection('entries')
-            .doc('u1')
-            .get();
-        expect(s2.data()?['completed'], 3);
-      });
+          final s2 = await g2
+              .collection('progressSummary')
+              .doc('data')
+              .collection('entries')
+              .doc('u1')
+              .get();
+          expect(s2.data()?['completed'], 3);
+        },
+      );
     });
 
     group('Error Handling (requires Mockito)', () {
@@ -1170,78 +1236,105 @@ void main() {
       // While brittle, these are necessary to ensure the service handles Firestore
       // outages gracefully.
 
-      test('groupsForUser logs and returns empty list on stream error',
-          () async {
-        final mockFs = MockFirebaseFirestore();
-        final memberQuery = MockQuery<Map<String, dynamic>>();
-        final groups = MockCollectionReference<Map<String, dynamic>>();
-        final ownerQuery = MockQuery<Map<String, dynamic>>();
-        final ownerSnap = MockQuerySnapshot<Map<String, dynamic>>();
-        final err = Exception('fail');
+      test(
+        'groupsForUser logs and returns empty list on stream error',
+        () async {
+          final mockFs = MockFirebaseFirestore();
+          final memberQuery = MockQuery<Map<String, dynamic>>();
+          final groups = MockCollectionReference<Map<String, dynamic>>();
+          final ownerQuery = MockQuery<Map<String, dynamic>>();
+          final ownerSnap = MockQuerySnapshot<Map<String, dynamic>>();
+          final err = Exception('fail');
 
-        when(() => mockFs.collectionGroup(GroupCollections.members))
-            .thenReturn(memberQuery);
-        when(() => memberQuery.where('uid', isEqualTo: 'u1'))
-            .thenReturn(memberQuery);
-        when(() => memberQuery.snapshots()).thenAnswer((_) {
-          return Stream<QuerySnapshot<Map<String, dynamic>>>.error(err);
-        });
+          when(
+            () => mockFs.collectionGroup(GroupCollections.members),
+          ).thenReturn(memberQuery);
+          when(
+            () => memberQuery.where('uid', isEqualTo: 'u1'),
+          ).thenReturn(memberQuery);
+          when(() => memberQuery.snapshots()).thenAnswer((_) {
+            return Stream<QuerySnapshot<Map<String, dynamic>>>.error(err);
+          });
 
-        when(() => mockFs.collection(GroupCollections.groups))
-            .thenReturn(groups);
-        when(() => groups.where('ownerUid', isEqualTo: 'u1'))
-            .thenReturn(ownerQuery);
-        when(() => ownerQuery.snapshots())
-            .thenAnswer((_) => Stream.value(ownerSnap));
-        when(() => ownerSnap.docs).thenReturn([]);
+          when(
+            () => mockFs.collection(GroupCollections.groups),
+          ).thenReturn(groups);
+          when(
+            () => groups.where('ownerUid', isEqualTo: 'u1'),
+          ).thenReturn(ownerQuery);
+          when(
+            () => ownerQuery.snapshots(),
+          ).thenAnswer((_) => Stream.value(ownerSnap));
+          when(() => ownerSnap.docs).thenReturn([]);
 
-        final joinQuery = MockQuery<Map<String, dynamic>>();
-        final joinSnap = MockQuerySnapshot<Map<String, dynamic>>();
+          final joinQuery = MockQuery<Map<String, dynamic>>();
+          final joinSnap = MockQuerySnapshot<Map<String, dynamic>>();
 
-        when(() => mockFs.collectionGroup(GroupCollections.joinRequests))
-            .thenReturn(joinQuery);
-        when(() => joinQuery.where('uid', isEqualTo: 'u1'))
-            .thenReturn(joinQuery);
-        when(() => joinQuery.snapshots())
-            .thenAnswer((_) => Stream.value(joinSnap));
-        when(() => joinSnap.docs).thenReturn([]);
+          when(
+            () => mockFs.collectionGroup(GroupCollections.joinRequests),
+          ).thenReturn(joinQuery);
+          when(
+            () => joinQuery.where('uid', isEqualTo: 'u1'),
+          ).thenReturn(joinQuery);
+          when(
+            () => joinQuery.snapshots(),
+          ).thenAnswer((_) => Stream.value(joinSnap));
+          when(() => joinSnap.docs).thenReturn([]);
 
-        final crash = MockCrashlytics();
-        ErrorLogger.crashlytics = crash;
-        when(() => crash.recordError(any(), any(),
-            reason: any(named: 'reason'),
-            information: any(named: 'information'),
-            printDetails: any(named: 'printDetails'),
-            fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+          final crash = MockCrashlytics();
+          ErrorLogger.crashlytics = crash;
+          when(
+            () => crash.recordError(
+              any(),
+              any(),
+              reason: any(named: 'reason'),
+              information: any(named: 'information'),
+              printDetails: any(named: 'printDetails'),
+              fatal: any(named: 'fatal'),
+            ),
+          ).thenAnswer((_) async {});
 
-        final svc = GroupService(firestore: mockFs);
+          final svc = GroupService(firestore: mockFs);
 
-        await expectLater(svc.groupsForUser('u1'), emits(isEmpty));
+          await expectLater(svc.groupsForUser('u1'), emits(isEmpty));
 
-        verify(() => crash.recordError(err, any(),
-            reason: null,
-            information: any(named: 'information'),
-            printDetails: any(named: 'printDetails'),
-            fatal: false)).called(1);
-      });
+          verify(
+            () => crash.recordError(
+              err,
+              any(),
+              reason: null,
+              information: any(named: 'information'),
+              printDetails: any(named: 'printDetails'),
+              fatal: false,
+            ),
+          ).called(1);
+        },
+      );
 
       test('allGroups logs and returns empty list on stream error', () async {
         final mockFs = MockFirebaseFirestore();
         final groups = MockCollectionReference<Map<String, dynamic>>();
         final err = Exception('fail');
 
-        when(() => mockFs.collection(GroupCollections.groups))
-            .thenReturn(groups);
+        when(
+          () => mockFs.collection(GroupCollections.groups),
+        ).thenReturn(groups);
         when(() => groups.snapshots()).thenAnswer(
-            (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err));
+          (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err),
+        );
 
         final crash = MockCrashlytics();
         ErrorLogger.crashlytics = crash;
-        when(() => crash.recordError(any(), any(),
+        when(
+          () => crash.recordError(
+            any(),
+            any(),
             reason: any(named: 'reason'),
             information: any(named: 'information'),
             printDetails: any(named: 'printDetails'),
-            fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+            fatal: any(named: 'fatal'),
+          ),
+        ).thenAnswer((_) async {});
 
         final svc = GroupService(firestore: mockFs);
 
@@ -1249,11 +1342,16 @@ void main() {
           await expectLater(svc.allGroups(), emits(isEmpty));
         }, (e, st) {});
 
-        verify(() => crash.recordError(err, any(),
+        verify(
+          () => crash.recordError(
+            err,
+            any(),
             reason: null,
             information: any(named: 'information'),
             printDetails: any(named: 'printDetails'),
-            fatal: false)).called(1);
+            fatal: false,
+          ),
+        ).called(1);
       });
 
       test('memberNames surfaces stream errors', () async {
@@ -1263,21 +1361,29 @@ void main() {
         final members = MockCollectionReference<Map<String, dynamic>>();
         final err = Exception('fail');
 
-        when(() => mockFs.collection(GroupCollections.groups))
-            .thenReturn(groups);
+        when(
+          () => mockFs.collection(GroupCollections.groups),
+        ).thenReturn(groups);
         when(() => groups.doc('g1')).thenReturn(groupDoc);
-        when(() => groupDoc.collection(GroupCollections.members))
-            .thenReturn(members);
+        when(
+          () => groupDoc.collection(GroupCollections.members),
+        ).thenReturn(members);
         when(() => members.snapshots()).thenAnswer(
-            (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err));
+          (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err),
+        );
 
         final crash = MockCrashlytics();
         ErrorLogger.crashlytics = crash;
-        when(() => crash.recordError(any(), any(),
+        when(
+          () => crash.recordError(
+            any(),
+            any(),
             reason: any(named: 'reason'),
             information: any(named: 'information'),
             printDetails: any(named: 'printDetails'),
-            fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+            fatal: any(named: 'fatal'),
+          ),
+        ).thenAnswer((_) async {});
 
         final svc = GroupService(firestore: mockFs);
 
@@ -1294,22 +1400,30 @@ void main() {
         final query = MockQuery<Map<String, dynamic>>();
         final err = Exception('fail');
 
-        when(() => mockFs.collection(GroupCollections.groups))
-            .thenReturn(groups);
+        when(
+          () => mockFs.collection(GroupCollections.groups),
+        ).thenReturn(groups);
         when(() => groups.doc('g1')).thenReturn(groupDoc);
-        when(() => groupDoc.collection(GroupCollections.schedule))
-            .thenReturn(schedule);
+        when(
+          () => groupDoc.collection(GroupCollections.schedule),
+        ).thenReturn(schedule);
         when(() => schedule.orderBy('date')).thenReturn(query);
         when(() => query.snapshots()).thenAnswer(
-            (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err));
+          (_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(err),
+        );
 
         final crash = MockCrashlytics();
         ErrorLogger.crashlytics = crash;
-        when(() => crash.recordError(any(), any(),
+        when(
+          () => crash.recordError(
+            any(),
+            any(),
             reason: any(named: 'reason'),
             information: any(named: 'information'),
             printDetails: any(named: 'printDetails'),
-            fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+            fatal: any(named: 'fatal'),
+          ),
+        ).thenAnswer((_) async {});
 
         final svc = GroupService(firestore: mockFs);
 
@@ -1333,40 +1447,55 @@ void main() {
         when(() => groupSnap.exists).thenReturn(true);
         when(() => groupSnap.data()).thenReturn({'ownerUid': 'owner'});
 
-        when(() => mockFs.collection(GroupCollections.groups))
-            .thenReturn(groups);
+        when(
+          () => mockFs.collection(GroupCollections.groups),
+        ).thenReturn(groups);
         when(() => groups.doc('g1')).thenReturn(groupDoc);
         when(() => groupDoc.get()).thenAnswer((_) async => groupSnap);
-        when(() => groupDoc.collection(GroupCollections.members))
-            .thenReturn(members);
+        when(
+          () => groupDoc.collection(GroupCollections.members),
+        ).thenReturn(members);
         when(() => members.doc('u1')).thenReturn(memberDoc);
         when(() => memberDoc.get()).thenAnswer((_) async => memberSnap);
         when(() => memberSnap.exists).thenReturn(false);
-        when(() => groupDoc.collection(GroupCollections.joinRequests))
-            .thenReturn(joinRequests);
+        when(
+          () => groupDoc.collection(GroupCollections.joinRequests),
+        ).thenReturn(joinRequests);
         when(() => joinRequests.doc('u1')).thenReturn(joinDoc);
         when(() => joinDoc.set(any())).thenThrow(err);
 
         final crash = MockCrashlytics();
         ErrorLogger.crashlytics = crash;
-        when(() => crash.recordError(any(), any(),
+        when(
+          () => crash.recordError(
+            any(),
+            any(),
             reason: any(named: 'reason'),
             information: any(named: 'information'),
             printDetails: any(named: 'printDetails'),
-            fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+            fatal: any(named: 'fatal'),
+          ),
+        ).thenAnswer((_) async {});
 
         final svc = GroupService(firestore: mockFs);
 
-        await expectLater(svc.joinGroup(groupId: 'g1', uid: 'u1', name: 'Name'),
-            throwsA(same(err)));
+        await expectLater(
+          svc.joinGroup(groupId: 'g1', uid: 'u1', name: 'Name'),
+          throwsA(same(err)),
+        );
 
         verify(() => joinRequests.doc('u1')).called(1);
         verify(() => joinDoc.set(any())).called(1);
-        verify(() => crash.recordError(err, any(),
+        verify(
+          () => crash.recordError(
+            err,
+            any(),
             reason: null,
             information: any(named: 'information'),
             printDetails: any(named: 'printDetails'),
-            fatal: false)).called(1);
+            fatal: false,
+          ),
+        ).called(1);
       });
 
       test('leaveGroup rethrows and logs on error', () async {
@@ -1379,11 +1508,13 @@ void main() {
         final groupSnap = MockDocumentSnapshot<Map<String, dynamic>>();
         final batch = MockWriteBatch();
 
-        when(() => mockFs.collection(GroupCollections.groups))
-            .thenReturn(groups);
+        when(
+          () => mockFs.collection(GroupCollections.groups),
+        ).thenReturn(groups);
         when(() => groups.doc('g1')).thenReturn(groupDoc);
-        when(() => groupDoc.collection(GroupCollections.members))
-            .thenReturn(members);
+        when(
+          () => groupDoc.collection(GroupCollections.members),
+        ).thenReturn(members);
         when(() => members.doc('u1')).thenReturn(memberDoc);
         when(() => memberDoc.get()).thenAnswer((_) async => memberSnap);
         when(() => memberSnap.exists).thenReturn(true);
@@ -1391,27 +1522,40 @@ void main() {
         when(() => groupSnap.exists).thenReturn(true);
         when(() => groupSnap.data()).thenReturn({'memberCount': 1});
         when(() => mockFs.batch()).thenReturn(batch);
-        when(() => batch.commit())
-            .thenAnswer((_) => Future<void>.error(Exception('fail')));
+        when(
+          () => batch.commit(),
+        ).thenAnswer((_) => Future<void>.error(Exception('fail')));
 
         final crash = MockCrashlytics();
         ErrorLogger.crashlytics = crash;
-        when(() => crash.recordError(any(), any(),
+        when(
+          () => crash.recordError(
+            any(),
+            any(),
             reason: any(named: 'reason'),
             information: any(named: 'information'),
             printDetails: any(named: 'printDetails'),
-            fatal: any(named: 'fatal'))).thenAnswer((_) async {});
+            fatal: any(named: 'fatal'),
+          ),
+        ).thenAnswer((_) async {});
 
         final svc = GroupService(firestore: mockFs);
 
         await expectLater(
-            svc.leaveGroup(groupId: 'g1', uid: 'u1'), throwsException);
+          svc.leaveGroup(groupId: 'g1', uid: 'u1'),
+          throwsException,
+        );
 
-        verify(() => crash.recordError(any(), any(),
+        verify(
+          () => crash.recordError(
+            any(),
+            any(),
             reason: null,
             information: any(named: 'information'),
             printDetails: any(named: 'printDetails'),
-            fatal: false)).called(1);
+            fatal: false,
+          ),
+        ).called(1);
       });
     });
   });

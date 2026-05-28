@@ -37,8 +37,10 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
     _scheduleStream = widget.groupService.schedule(widget.group.id);
     final user = widget.auth.currentUser;
     if (user != null) {
-      _progressStream =
-          widget.groupService.userProgressForGroup(widget.group.id, user.uid);
+      _progressStream = widget.groupService.userProgressForGroup(
+        widget.group.id,
+        user.uid,
+      );
     } else {
       _progressStream = Stream.value({});
     }
@@ -57,7 +59,7 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}';
   }
@@ -84,8 +86,9 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
     unawaited(widget.vibrationService.lightImpact());
 
     setState(() {
-      _optimisticProgress[dateId] =
-          !isRead ? (schedule.chapters.length.clamp(1, 999)) : 0;
+      _optimisticProgress[dateId] = !isRead
+          ? (schedule.chapters.length.clamp(1, 999))
+          : 0;
     });
 
     final success = await widget.groupService.toggleReadStatus(
@@ -132,11 +135,17 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
 
           final now = DateTime.now();
           final todayDate = DateTime(now.year, now.month, now.day);
-          final pastSchedule = scheduleSnapshot.data!
-              .where((s) => !DateTime(s.date.year, s.date.month, s.date.day)
-                  .isAfter(todayDate))
-              .toList()
-            ..sort((a, b) => b.date.compareTo(a.date)); // Newest first
+          final pastSchedule =
+              scheduleSnapshot.data!
+                  .where(
+                    (s) => !DateTime(
+                      s.date.year,
+                      s.date.month,
+                      s.date.day,
+                    ).isAfter(todayDate),
+                  )
+                  .toList()
+                ..sort((a, b) => b.date.compareTo(a.date)); // Newest first
 
           if (pastSchedule.isEmpty) {
             return const Center(child: Text('No readings to log'));
@@ -183,7 +192,10 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
   }
 
   Widget _buildCatchUpItem(
-      BuildContext context, GroupSchedule schedule, bool isRead) {
+    BuildContext context,
+    GroupSchedule schedule,
+    bool isRead,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -219,8 +231,9 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
                     Text(
                       _formatDayOfWeek(schedule.date),
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color:
-                            colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.6,
+                        ),
                       ),
                     ),
                   ],

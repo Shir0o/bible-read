@@ -68,9 +68,9 @@ class _SignupFormState extends State<SignupForm> {
     final confirm = _confirmController.text;
     if (email.isEmpty || password.isEmpty || confirm.isEmpty) return;
     if (password != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
       return;
     }
     setState(() {
@@ -98,10 +98,12 @@ class _SignupFormState extends State<SignupForm> {
       });
 
       if (mounted) {
-        unawaited(SuccessAnimation.show(
-          context,
-          vibrationService: widget.vibrationService,
-        ));
+        unawaited(
+          SuccessAnimation.show(
+            context,
+            vibrationService: widget.vibrationService,
+          ),
+        );
         widget.onComplete?.call();
       }
     } catch (e, st) {

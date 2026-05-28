@@ -18,8 +18,9 @@ class CommunityActivityItem extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     // Fallback time if timestamp is missing
-    final timeString =
-        log.timestamp != null ? _timeAgo(log.timestamp!) : 'today';
+    final timeString = log.timestamp != null
+        ? _timeAgo(log.timestamp!)
+        : 'today';
 
     final bool isComment = log.comments.isNotEmpty;
 
@@ -30,7 +31,8 @@ class CommunityActivityItem extends StatelessWidget {
         color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.1)),
+          color: colorScheme.outlineVariant.withValues(alpha: 0.1),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,8 +52,9 @@ class CommunityActivityItem extends StatelessWidget {
                 child: Text(
                   log.name.isNotEmpty ? log.name[0].toUpperCase() : '?',
                   style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurfaceVariant),
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
               Positioned(
@@ -60,11 +63,14 @@ class CommunityActivityItem extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color:
-                        isComment ? colorScheme.tertiary : colorScheme.primary,
+                    color: isComment
+                        ? colorScheme.tertiary
+                        : colorScheme.primary,
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: colorScheme.surfaceContainer, width: 2),
+                      color: colorScheme.surfaceContainer,
+                      width: 2,
+                    ),
                   ),
                   child: Icon(
                     isComment ? Icons.chat_bubble : Icons.check,
@@ -84,27 +90,33 @@ class CommunityActivityItem extends StatelessWidget {
               children: [
                 RichText(
                   text: TextSpan(
-                    style: AppTextStyles.body(context)
-                        .copyWith(color: colorScheme.onSurface),
+                    style: AppTextStyles.body(
+                      context,
+                    ).copyWith(color: colorScheme.onSurface),
                     children: [
                       TextSpan(
-                          text: log.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                        text: log.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       if (isComment) ...[
                         const TextSpan(text: ' commented on '),
                         TextSpan(
-                            text:
-                                'daily reading', // Placeholder since we don't have book ref
-                            style: TextStyle(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w600)),
+                          text:
+                              'daily reading', // Placeholder since we don't have book ref
+                          style: TextStyle(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ] else ...[
                         const TextSpan(text: ' completed '),
                         TextSpan(
-                            text: 'daily reading',
-                            style: TextStyle(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w600)),
+                          text: 'daily reading',
+                          style: TextStyle(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ],
                   ),
@@ -114,12 +126,15 @@ class CommunityActivityItem extends StatelessWidget {
                     margin: const EdgeInsets.only(top: 8),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.3),
+                      color: colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.3,
+                      ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: colorScheme.outlineVariant
-                              .withValues(alpha: 0.1)),
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.1,
+                        ),
+                      ),
                     ),
                     child: Text(
                       '"${log.comments.last.message}"',
@@ -133,8 +148,9 @@ class CommunityActivityItem extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   timeString,
-                  style: AppTextStyles.body(context).copyWith(
-                      fontSize: 12, color: colorScheme.onSurfaceVariant),
+                  style: AppTextStyles.body(
+                    context,
+                  ).copyWith(fontSize: 12, color: colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -142,8 +158,9 @@ class CommunityActivityItem extends StatelessWidget {
           IconButton(
             icon: Icon(
               log.liked ? Icons.favorite : Icons.favorite_border,
-              color:
-                  log.liked ? colorScheme.error : colorScheme.onSurfaceVariant,
+              color: log.liked
+                  ? colorScheme.error
+                  : colorScheme.onSurfaceVariant,
               size: 20,
             ),
             onPressed: onLike,

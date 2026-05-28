@@ -44,11 +44,12 @@ void main() {
 
     when(() => auth.currentUser).thenReturn(user);
 
-    when(() =>
-            readingPlanService.getAvailablePlans(userId: any(named: 'userId')))
-        .thenAnswer((_) async => []);
-    when(() => readingPlanService.getActivePlans(any()))
-        .thenAnswer((_) => Stream.value([]));
+    when(
+      () => readingPlanService.getAvailablePlans(userId: any(named: 'userId')),
+    ).thenAnswer((_) async => []);
+    when(
+      () => readingPlanService.getActivePlans(any()),
+    ).thenAnswer((_) => Stream.value([]));
   });
 
   Widget buildSubject({NavigatorObserver? navigatorObserver}) {
@@ -60,9 +61,9 @@ void main() {
   }
 
   testWidgets('renders loading state initially', (tester) async {
-    when(() =>
-            readingPlanService.getAvailablePlans(userId: any(named: 'userId')))
-        .thenAnswer((_) => Completer<List<ReadingPlan>>().future);
+    when(
+      () => readingPlanService.getAvailablePlans(userId: any(named: 'userId')),
+    ).thenAnswer((_) => Completer<List<ReadingPlan>>().future);
 
     await tester.pumpApp(buildSubject());
 
@@ -70,13 +71,15 @@ void main() {
     expect(find.text('Start a Reading Plan'), findsNothing);
   });
 
-  testWidgets('renders no active plan card when user has no plans',
-      (tester) async {
-    when(() =>
-            readingPlanService.getAvailablePlans(userId: any(named: 'userId')))
-        .thenAnswer((_) async => []);
-    when(() => readingPlanService.getActivePlans('test_uid'))
-        .thenAnswer((_) => Stream.value([]));
+  testWidgets('renders no active plan card when user has no plans', (
+    tester,
+  ) async {
+    when(
+      () => readingPlanService.getAvailablePlans(userId: any(named: 'userId')),
+    ).thenAnswer((_) async => []);
+    when(
+      () => readingPlanService.getActivePlans('test_uid'),
+    ).thenAnswer((_) => Stream.value([]));
 
     await tester.pumpApp(buildSubject());
     await tester.pumpAndSettle();
@@ -85,8 +88,9 @@ void main() {
     expect(find.text('Create Plan'), findsOneWidget);
   });
 
-  testWidgets('renders active plan card when user has an active plan',
-      (tester) async {
+  testWidgets('renders active plan card when user has an active plan', (
+    tester,
+  ) async {
     final plan = ReadingPlan(
       id: 'plan_1',
       title: 'Bible in a Year',
@@ -104,11 +108,12 @@ void main() {
       lastReadDate: DateTime.now(),
     );
 
-    when(() =>
-            readingPlanService.getAvailablePlans(userId: any(named: 'userId')))
-        .thenAnswer((_) async => [plan]);
-    when(() => readingPlanService.getActivePlans('test_uid'))
-        .thenAnswer((_) => Stream.value([progress]));
+    when(
+      () => readingPlanService.getAvailablePlans(userId: any(named: 'userId')),
+    ).thenAnswer((_) async => [plan]);
+    when(
+      () => readingPlanService.getActivePlans('test_uid'),
+    ).thenAnswer((_) => Stream.value([progress]));
 
     await tester.pumpApp(buildSubject());
     await tester.pumpAndSettle();
@@ -136,11 +141,12 @@ void main() {
       lastReadDate: DateTime.now(),
     );
 
-    when(() =>
-            readingPlanService.getAvailablePlans(userId: any(named: 'userId')))
-        .thenAnswer((_) async => [plan]);
-    when(() => readingPlanService.getActivePlans('test_uid'))
-        .thenAnswer((_) => Stream.value([progress]));
+    when(
+      () => readingPlanService.getAvailablePlans(userId: any(named: 'userId')),
+    ).thenAnswer((_) async => [plan]);
+    when(
+      () => readingPlanService.getActivePlans('test_uid'),
+    ).thenAnswer((_) => Stream.value([progress]));
 
     final observer = MockNavigatorObserver();
     await tester.pumpApp(buildSubject(navigatorObserver: observer));
@@ -170,11 +176,12 @@ void main() {
       lastReadDate: DateTime.now(),
     );
 
-    when(() =>
-            readingPlanService.getAvailablePlans(userId: any(named: 'userId')))
-        .thenAnswer((_) async => [plan]);
-    when(() => readingPlanService.getActivePlans('test_uid'))
-        .thenAnswer((_) => Stream.value([progress]));
+    when(
+      () => readingPlanService.getAvailablePlans(userId: any(named: 'userId')),
+    ).thenAnswer((_) async => [plan]);
+    when(
+      () => readingPlanService.getActivePlans('test_uid'),
+    ).thenAnswer((_) => Stream.value([progress]));
 
     await tester.pumpApp(buildSubject());
     await tester.pumpAndSettle();

@@ -174,8 +174,9 @@ class AppTheme {
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: colorScheme.surface,
         indicatorColor: colorScheme.secondaryContainer,
-        selectedIconTheme:
-            IconThemeData(color: colorScheme.onSecondaryContainer),
+        selectedIconTheme: IconThemeData(
+          color: colorScheme.onSecondaryContainer,
+        ),
         unselectedIconTheme: IconThemeData(color: colorScheme.onSurfaceVariant),
         selectedLabelTextStyle: themedText.labelMedium?.copyWith(
           color: colorScheme.onSurface,
@@ -197,10 +198,13 @@ class AppSpacing {
   static const double vPadding = 16;
   static const double vPaddingSmall = 8;
 
-  static const EdgeInsets screen =
-      EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding);
-  static const EdgeInsets horizontal =
-      EdgeInsets.symmetric(horizontal: hPadding);
+  static const EdgeInsets screen = EdgeInsets.symmetric(
+    horizontal: hPadding,
+    vertical: vPadding,
+  );
+  static const EdgeInsets horizontal = EdgeInsets.symmetric(
+    horizontal: hPadding,
+  );
   static const EdgeInsets list = EdgeInsets.symmetric(
     horizontal: hPadding,
     vertical: vPaddingSmall,

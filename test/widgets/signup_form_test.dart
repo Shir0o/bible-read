@@ -26,8 +26,10 @@ class RecordingAuth extends MockFirebaseAuth {
     createCalled = true;
     this.email = email;
     this.password = password;
-    return super
-        .createUserWithEmailAndPassword(email: email, password: password);
+    return super.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
   }
 }
 
@@ -96,50 +98,57 @@ void main() {
 
   const vibration = _TestVibrationService();
 
-  testWidgets('creates account and writes user document then calls onComplete',
-      (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final auth = RecordingAuth();
-    var completed = false;
+  testWidgets(
+    'creates account and writes user document then calls onComplete',
+    (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final auth = RecordingAuth();
+      var completed = false;
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SignupForm(
-            auth: auth,
-            firestore: firestore,
-            onComplete: () => completed = true,
-            vibrationService: vibration,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SignupForm(
+              auth: auth,
+              firestore: firestore,
+              onComplete: () => completed = true,
+              vibrationService: vibration,
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.enterText(
-        find.byKey(const Key('signupEmailField')), 'user@example.com');
-    await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
-    await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
-    await tester.tap(find.text('Sign Up'));
-    await tester.pumpAndSettle();
-
-    expect(auth.createCalled, isTrue);
-    expect(auth.email, 'user@example.com');
-    expect(auth.password, 'pw');
-    final uid = auth.currentUser!.uid;
-    final displayName = auth.currentUser!.displayName ?? '';
-    final doc = await firestore.collection('users').doc(uid).get();
-    expect(doc.exists, isTrue);
-    expect(doc.data()?['name'], displayName);
-    expect(doc.data()?['email'], 'user@example.com');
-    expect(completed, isTrue);
-    expect(find.byType(SuccessAnimation), findsOneWidget);
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pump(const Duration(seconds: 1));
-    addTearDown(() async {
-      await tester.pumpWidget(Container());
+      await tester.enterText(
+        find.byKey(const Key('signupEmailField')),
+        'user@example.com',
+      );
+      await tester.enterText(
+        find.byKey(const Key('signupPasswordField')),
+        'pw',
+      );
+      await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
+      await tester.tap(find.text('Sign Up'));
       await tester.pumpAndSettle();
-    });
-  });
+
+      expect(auth.createCalled, isTrue);
+      expect(auth.email, 'user@example.com');
+      expect(auth.password, 'pw');
+      final uid = auth.currentUser!.uid;
+      final displayName = auth.currentUser!.displayName ?? '';
+      final doc = await firestore.collection('users').doc(uid).get();
+      expect(doc.exists, isTrue);
+      expect(doc.data()?['name'], displayName);
+      expect(doc.data()?['email'], 'user@example.com');
+      expect(completed, isTrue);
+      expect(find.byType(SuccessAnimation), findsOneWidget);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
+      addTearDown(() async {
+        await tester.pumpWidget(Container());
+        await tester.pumpAndSettle();
+      });
+    },
+  );
 
   testWidgets('shows snackbar when passwords do not match', (tester) async {
     final firestore = FakeFirebaseFirestore();
@@ -158,7 +167,9 @@ void main() {
     );
 
     await tester.enterText(
-        find.byKey(const Key('signupEmailField')), 'user@example.com');
+      find.byKey(const Key('signupEmailField')),
+      'user@example.com',
+    );
     await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw1');
     await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw2');
     await tester.tap(find.text('Sign Up'));
@@ -189,7 +200,9 @@ void main() {
     });
 
     await tester.enterText(
-        find.byKey(const Key('signupEmailField')), 'user@example.com');
+      find.byKey(const Key('signupEmailField')),
+      'user@example.com',
+    );
     await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
     await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
     await tester.runAsync(() async {
@@ -201,8 +214,9 @@ void main() {
     expect(find.text('Failed to sign up. Please try again.'), findsOneWidget);
   });
 
-  testWidgets('shows error snackbar when auth returns null user',
-      (tester) async {
+  testWidgets('shows error snackbar when auth returns null user', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final auth = NullUserAuth();
 
@@ -219,7 +233,9 @@ void main() {
     );
     tester.takeException(); // Clear any leftovers
     await tester.enterText(
-        find.byKey(const Key('signupEmailField')), 'user@example.com');
+      find.byKey(const Key('signupEmailField')),
+      'user@example.com',
+    );
     await tester.enterText(find.byKey(const Key('signupPasswordField')), 'pw');
     await tester.enterText(find.byKey(const Key('signupConfirmField')), 'pw');
     await tester.runAsync(() async {

@@ -74,33 +74,37 @@ class AppHeader extends StatelessWidget {
                           width: 40,
                           height: 40,
                           child: Theme(
-                            data: Theme.of(context).copyWith(
-                              splashFactory: NoSplash.splashFactory,
-                            ),
+                            data: Theme.of(
+                              context,
+                            ).copyWith(splashFactory: NoSplash.splashFactory),
                             child: InkWell(
                               onTap: () {
                                 vibrationService.lightImpact();
-                                NavigationMenuScope.maybeOf(context)
-                                    ?.showMenu(context);
+                                NavigationMenuScope.maybeOf(
+                                  context,
+                                )?.showMenu(context);
                               },
                             ),
                           ),
                         )
                       : Theme(
-                          data: Theme.of(context).copyWith(
-                            splashFactory: NoSplash.splashFactory,
-                          ),
+                          data: Theme.of(
+                            context,
+                          ).copyWith(splashFactory: NoSplash.splashFactory),
                           child: InkWell(
                             onTap: () {
                               vibrationService.lightImpact();
-                              NavigationMenuScope.maybeOf(context)
-                                  ?.showMenu(context);
+                              NavigationMenuScope.maybeOf(
+                                context,
+                              )?.showMenu(context);
                             },
                             child: SizedBox(
                               width: 40,
                               height: 40,
-                              child: Icon(Icons.person,
-                                  color: colorScheme.onSurfaceVariant),
+                              child: Icon(
+                                Icons.person,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                         ),
@@ -146,8 +150,9 @@ class AppHeader extends StatelessWidget {
             const SizedBox(width: 12),
             StreamBuilder<List<AppNotification>>(
               stream: user != null
-                  ? NotificationService(firestore: firestore)
-                      .notifications(user.uid)
+                  ? NotificationService(
+                      firestore: firestore,
+                    ).notifications(user.uid)
                   : Stream.value([]),
               builder: (context, snapshot) {
                 final unreadCount =
@@ -160,8 +165,8 @@ class AppHeader extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: colorScheme.surfaceContainer,
                     border: Border.all(
-                        color:
-                            colorScheme.outlineVariant.withValues(alpha: 0.1)),
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.1),
+                    ),
                   ),
                   child: Stack(
                     children: [
@@ -179,8 +184,9 @@ class AppHeader extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => NotificationCenterPage(
-                                  service:
-                                      NotificationService(firestore: firestore),
+                                  service: NotificationService(
+                                    firestore: firestore,
+                                  ),
                                   auth: auth,
                                   vibrationService: vibrationService,
                                 ),
@@ -202,8 +208,9 @@ class AppHeader extends StatelessWidget {
                               color: colorScheme.tertiary,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                  color: colorScheme.surfaceContainer,
-                                  width: 2),
+                                color: colorScheme.surfaceContainer,
+                                width: 2,
+                              ),
                             ),
                           ),
                         ),

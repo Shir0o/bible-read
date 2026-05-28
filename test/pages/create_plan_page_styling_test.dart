@@ -13,17 +13,20 @@ void main() {
     firestore = FakeFirebaseFirestore();
   });
 
-  testWidgets('Custom Plan section expansion and goal selection',
-      (WidgetTester tester) async {
+  testWidgets('Custom Plan section expansion and goal selection', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1000, 2000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(MaterialApp(
-      theme: ThemeData(useMaterial3: true),
-      home: CreatePlanPage(auth: auth, firestore: firestore),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(useMaterial3: true),
+        home: CreatePlanPage(auth: auth, firestore: firestore),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Verify basic page structure
@@ -60,10 +63,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(MaterialApp(
-      theme: ThemeData(useMaterial3: true),
-      home: CreatePlanPage(auth: auth, firestore: firestore),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(useMaterial3: true),
+        home: CreatePlanPage(auth: auth, firestore: firestore),
+      ),
+    );
     await tester.pumpAndSettle();
 
     final customPlanFinder = find.text('Custom Plan');

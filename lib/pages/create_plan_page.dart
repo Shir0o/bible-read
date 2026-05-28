@@ -7,11 +7,7 @@ import '../services/reading_plan_service.dart';
 import '../services/reference_parser.dart';
 import 'plan_detail_page.dart';
 
-enum _PlanGoalMethod {
-  endDate,
-  versesPerDay,
-  chaptersPerDay,
-}
+enum _PlanGoalMethod { endDate, versesPerDay, chaptersPerDay }
 
 class CreatePlanPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -39,7 +35,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     3,
     4,
     5,
-    6
+    6,
   }; // 1 = Mon, 6 = Sat (no Sun default)
   final Set<String> _selectedBooks = Set.from(ReferenceParser.allBooks);
   int? _customChaptersPerDay;
@@ -55,7 +51,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         'Exodus',
         'Leviticus',
         'Numbers',
-        'Deuteronomy'
+        'Deuteronomy',
       ],
       'Books of History': [
         'Joshua',
@@ -69,14 +65,14 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         '2 Chronicles',
         'Ezra',
         'Nehemiah',
-        'Esther'
+        'Esther',
       ],
       'Books of Poetry': [
         'Job',
         'Psalm',
         'Proverbs',
         'Ecclesiastes',
-        'Song of Songs'
+        'Song of Songs',
       ],
       'Books of Prophecy': [
         'Isaiah',
@@ -95,7 +91,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         'Zephaniah',
         'Haggai',
         'Zechariah',
-        'Malachi'
+        'Malachi',
       ],
     },
     'New Testament': {
@@ -122,7 +118,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         '1 John',
         '2 John',
         '3 John',
-        'Jude'
+        'Jude',
       ],
       'Prophecy': ['Revelation'],
     },
@@ -164,9 +160,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  surfaceContainerHigh:
-                      Theme.of(context).colorScheme.surfaceContainerHigh,
-                ),
+              surfaceContainerHigh: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHigh,
+            ),
           ),
           child: child!,
         );
@@ -249,9 +246,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating plan: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error creating plan: $e')));
       }
     } finally {
       if (mounted) {
@@ -262,10 +259,13 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
   String _capitalizeWords(String input) {
     if (input.isEmpty) return input;
-    return input.split(' ').map((word) {
-      if (word.isEmpty) return word;
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
-    }).join(' ');
+    return input
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return word;
+          return word[0].toUpperCase() + word.substring(1).toLowerCase();
+        })
+        .join(' ');
   }
 
   String _generateDescription() {
@@ -295,7 +295,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     'Sep',
     'Oct',
     'Nov',
-    'Dec'
+    'Dec',
   ];
 
   @override
@@ -304,8 +304,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Enroll in New Plan',
-            style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Enroll in New Plan',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: colorScheme.surface,
         scrolledUnderElevation: 0,
       ),
@@ -314,10 +316,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         children: [
           ListView(
             padding: const EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 16,
-                bottom: 100), // padding for bottom button
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: 100,
+            ), // padding for bottom button
             children: [
               TextField(
                 controller: _titleController,
@@ -345,11 +348,17 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                 ),
               ),
 
-              _buildPlanTypeOption(PlanType.sequential, 'Sequentially',
-                  'Read from Genesis to Revelation'),
+              _buildPlanTypeOption(
+                PlanType.sequential,
+                'Sequentially',
+                'Read from Genesis to Revelation',
+              ),
               const SizedBox(height: 8),
-              _buildPlanTypeOption(PlanType.portions, 'Old & New Testaments',
-                  'Balanced daily portions from both'),
+              _buildPlanTypeOption(
+                PlanType.portions,
+                'Old & New Testaments',
+                'Balanced daily portions from both',
+              ),
               const SizedBox(height: 8),
               _buildPlanTypeOption(
                 PlanType.threeOldOneNew,
@@ -359,10 +368,16 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
               ),
               const SizedBox(height: 8),
               _buildPlanTypeOption(
-                  PlanType.otOnly, 'Old Testament Only', 'Genesis to Malachi'),
+                PlanType.otOnly,
+                'Old Testament Only',
+                'Genesis to Malachi',
+              ),
               const SizedBox(height: 8),
-              _buildPlanTypeOption(PlanType.ntOnly, 'New Testament Only',
-                  'Matthew to Revelation'),
+              _buildPlanTypeOption(
+                PlanType.ntOnly,
+                'New Testament Only',
+                'Matthew to Revelation',
+              ),
               const SizedBox(height: 24),
 
               // Configuration Section
@@ -379,16 +394,20 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Plan Duration',
-                              style: TextStyle(fontWeight: FontWeight.w500)),
+                          const Text(
+                            'Plan Duration',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
                           Container(
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               color: colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(24),
                               border: Border.all(
-                                  color: colorScheme.outlineVariant
-                                      .withValues(alpha: 0.5)),
+                                color: colorScheme.outlineVariant.withValues(
+                                  alpha: 0.5,
+                                ),
+                              ),
                             ),
                             child: Row(
                               children: [
@@ -399,7 +418,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                   }),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 6),
+                                      horizontal: 16,
+                                      vertical: 6,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: _years == 1
                                           ? colorScheme.primary
@@ -425,7 +446,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                   }),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 6),
+                                      horizontal: 16,
+                                      vertical: 6,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: _years == 2
                                           ? colorScheme.primary
@@ -455,8 +478,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Active Reading Days',
-                              style: TextStyle(fontWeight: FontWeight.w500)),
+                          const Text(
+                            'Active Reading Days',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -484,9 +509,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.calendar_today_outlined,
-                                    size: 20,
-                                    color: colorScheme.onSurfaceVariant),
+                                Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 20,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
                                 const SizedBox(width: 12),
                                 const Text('Start Date'),
                               ],
@@ -517,12 +544,17 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Plan Duration',
-                              style: TextStyle(fontWeight: FontWeight.w500)),
-                          Text('1 Year',
-                              style: TextStyle(
-                                  color: colorScheme.primary,
-                                  fontWeight: FontWeight.w600)),
+                          const Text(
+                            'Plan Duration',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          Text(
+                            '1 Year',
+                            style: TextStyle(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -535,9 +567,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.calendar_today_outlined,
-                                    size: 20,
-                                    color: colorScheme.onSurfaceVariant),
+                                Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 20,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
                                 const SizedBox(width: 12),
                                 const Text('Start Date'),
                               ],
@@ -562,8 +596,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
               // Custom Plan Section
               Container(
                 decoration: BoxDecoration(
-                  color:
-                      colorScheme.surfaceContainerHigh.withValues(alpha: 0.5),
+                  color: colorScheme.surfaceContainerHigh.withValues(
+                    alpha: 0.5,
+                  ),
                   border: Border.all(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                     style: BorderStyle.solid,
@@ -586,12 +621,16 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.tune,
-                                    color: colorScheme.primary, size: 20),
+                                Icon(
+                                  Icons.tune,
+                                  color: colorScheme.primary,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 12),
-                                const Text('Custom Plan',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.w500)),
+                                const Text(
+                                  'Custom Plan',
+                                  style: TextStyle(fontWeight: FontWeight.w500),
+                                ),
                               ],
                             ),
                             Icon(
@@ -618,15 +657,19 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                     ? () => _selectDate(context, false)
                                     : null,
                                 child: Container(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     border: Border(
-                                        bottom: BorderSide(
-                                            color: _goalMethod ==
-                                                    _PlanGoalMethod.endDate
-                                                ? colorScheme.primary
-                                                : colorScheme.outlineVariant)),
+                                      bottom: BorderSide(
+                                        color:
+                                            _goalMethod ==
+                                                _PlanGoalMethod.endDate
+                                            ? colorScheme.primary
+                                            : colorScheme.outlineVariant,
+                                      ),
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
@@ -635,7 +678,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                             ? '${_months[_endDate!.month - 1]} ${_endDate!.day}, ${_endDate!.year}'
                                             : 'Select Date',
                                         style: TextStyle(
-                                          color: _goalMethod ==
+                                          color:
+                                              _goalMethod ==
                                                   _PlanGoalMethod.endDate
                                               ? colorScheme.primary
                                               : colorScheme.onSurfaceVariant,
@@ -644,12 +688,15 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                         ),
                                       ),
                                       const Spacer(),
-                                      Icon(Icons.calendar_today,
-                                          size: 16,
-                                          color: _goalMethod ==
-                                                  _PlanGoalMethod.endDate
-                                              ? colorScheme.primary
-                                              : colorScheme.onSurfaceVariant),
+                                      Icon(
+                                        Icons.calendar_today,
+                                        size: 16,
+                                        color:
+                                            _goalMethod ==
+                                                _PlanGoalMethod.endDate
+                                            ? colorScheme.primary
+                                            : colorScheme.onSurfaceVariant,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -661,8 +708,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                               'Amount of verses to read per day:',
                               _buildNumericField(
                                 value: _customVersesPerDay,
-                                onChanged: (val) => setState(() =>
-                                    _customVersesPerDay = int.tryParse(val)),
+                                onChanged: (val) => setState(
+                                  () => _customVersesPerDay = int.tryParse(val),
+                                ),
                                 enabled:
                                     _goalMethod == _PlanGoalMethod.versesPerDay,
                               ),
@@ -673,9 +721,12 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                               'Amount of chapters to read per day:',
                               _buildNumericField(
                                 value: _customChaptersPerDay,
-                                onChanged: (val) => setState(() =>
-                                    _customChaptersPerDay = int.tryParse(val)),
-                                enabled: _goalMethod ==
+                                onChanged: (val) => setState(
+                                  () =>
+                                      _customChaptersPerDay = int.tryParse(val),
+                                ),
+                                enabled:
+                                    _goalMethod ==
                                     _PlanGoalMethod.chaptersPerDay,
                               ),
                             ),
@@ -688,8 +739,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            ..._bookCategories.entries.map((entry) =>
-                                _buildBookCategory(entry.key, entry.value)),
+                            ..._bookCategories.entries.map(
+                              (entry) =>
+                                  _buildBookCategory(entry.key, entry.value),
+                            ),
                           ],
                         ),
                       ),
@@ -709,9 +762,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
               decoration: BoxDecoration(
                 color: colorScheme.surface.withValues(alpha: 0.95),
                 border: Border(
-                    top: BorderSide(
-                        color:
-                            colorScheme.outlineVariant.withValues(alpha: 0.2))),
+                  top: BorderSide(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+                  ),
+                ),
               ),
               child: FilledButton(
                 onPressed: _isCreating ? null : _createPlan,
@@ -720,17 +774,25 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   foregroundColor: colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(32)),
+                    borderRadius: BorderRadius.circular(32),
+                  ),
                 ),
                 child: _isCreating
                     ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            color: colorScheme.onPrimary, strokeWidth: 2))
-                    : const Text('Start My Plan',
+                          color: colorScheme.onPrimary,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Start My Plan',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -739,8 +801,12 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     );
   }
 
-  Widget _buildPlanTypeOption(PlanType type, String title, String subtitle,
-      {bool showInfo = false}) {
+  Widget _buildPlanTypeOption(
+    PlanType type,
+    String title,
+    String subtitle, {
+    bool showInfo = false,
+  }) {
     final isSelected = _selectedType == type;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -770,14 +836,21 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 15)),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text(subtitle,
-                          style: TextStyle(
-                              color: colorScheme.onSurfaceVariant,
-                              fontSize: 12)),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -807,8 +880,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.info_outline,
-                        size: 16, color: colorScheme.primary),
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: colorScheme.primary,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -862,7 +938,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   }
 
   Widget _buildGoalOption(
-      _PlanGoalMethod method, String label, Widget inputField) {
+    _PlanGoalMethod method,
+    String label,
+    Widget inputField,
+  ) {
     final isSelected = _goalMethod == method;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -903,10 +982,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           ),
         ),
         const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.only(left: 30),
-          child: inputField,
-        ),
+        Padding(padding: const EdgeInsets.only(left: 30), child: inputField),
       ],
     );
   }
@@ -934,7 +1010,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         decoration: InputDecoration(
           hintText: 'Enter amount',
           hintStyle: TextStyle(
-              fontSize: 14, color: colorScheme.onSurfaceVariant.withAlpha(150)),
+            fontSize: 14,
+            color: colorScheme.onSurfaceVariant.withAlpha(150),
+          ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
           border: InputBorder.none,
         ),
@@ -943,14 +1021,17 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   }
 
   Widget _buildBookCategory(
-      String name, Map<String, List<String>> subcategories) {
+    String name,
+    Map<String, List<String>> subcategories,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     final allBooksInCategory = subcategories.values.expand((e) => e).toList();
-    final isFullySelected =
-        allBooksInCategory.every((book) => _selectedBooks.contains(book));
+    final isFullySelected = allBooksInCategory.every(
+      (book) => _selectedBooks.contains(book),
+    );
     final isPartiallySelected =
         allBooksInCategory.any((book) => _selectedBooks.contains(book)) &&
-            !isFullySelected;
+        !isFullySelected;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -985,14 +1066,19 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       _selectedBooks.addAll(allBooksInCategory);
                     } else {
                       _selectedBooks.removeWhere(
-                          (book) => allBooksInCategory.contains(book));
+                        (book) => allBooksInCategory.contains(book),
+                      );
                     }
                   });
                 },
               ),
-              title: Text(name,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 14)),
+              title: Text(
+                name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
               trailing: Icon(
                 _expandedCategories.contains(name)
                     ? Icons.expand_less
@@ -1018,8 +1104,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
   Widget _buildBookSubcategory(String name, List<String> books) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isFullySelected =
-        books.every((book) => _selectedBooks.contains(book));
+    final isFullySelected = books.every(
+      (book) => _selectedBooks.contains(book),
+    );
     final isPartiallySelected =
         books.any((book) => _selectedBooks.contains(book)) && !isFullySelected;
 
@@ -1031,8 +1118,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           visualDensity: VisualDensity.compact,
           leading: Checkbox(
             visualDensity: VisualDensity.compact,
-            value:
-                isFullySelected ? true : (isPartiallySelected ? null : false),
+            value: isFullySelected
+                ? true
+                : (isPartiallySelected ? null : false),
             tristate: true,
             onChanged: (val) {
               setState(() {

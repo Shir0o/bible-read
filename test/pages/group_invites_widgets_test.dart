@@ -35,16 +35,16 @@ void main() {
 
     // Default stubs
     when(() => groupService.firestore).thenReturn(firestore);
-    when(() => groupService.userInvites(any()))
-        .thenAnswer((_) => Stream.value([]));
-    when(() => groupService.groupsForUser(any()))
-        .thenAnswer((_) => Stream.value([]));
+    when(
+      () => groupService.userInvites(any()),
+    ).thenAnswer((_) => Stream.value([]));
+    when(
+      () => groupService.groupsForUser(any()),
+    ).thenAnswer((_) => Stream.value([]));
   });
 
   Widget createWidget(Widget child) {
-    return MaterialApp(
-      home: child,
-    );
+    return MaterialApp(home: child);
   }
 
   group('GroupDetailPage Widget Tests', () {
@@ -56,18 +56,22 @@ void main() {
         isPublic: true,
       );
 
-      when(() => groupService.schedule(any()))
-          .thenAnswer((_) => Stream.value([]));
-      when(() => groupService.memberDailyCompletion(any(),
-          date: any(named: 'date'))).thenAnswer((_) => Stream.value([]));
-      when(() => groupService.memberOverallCompletion(any()))
-          .thenAnswer((_) => Stream.value([]));
+      when(
+        () => groupService.schedule(any()),
+      ).thenAnswer((_) => Stream.value([]));
+      when(
+        () =>
+            groupService.memberDailyCompletion(any(), date: any(named: 'date')),
+      ).thenAnswer((_) => Stream.value([]));
+      when(
+        () => groupService.memberOverallCompletion(any()),
+      ).thenAnswer((_) => Stream.value([]));
 
-      await tester.pumpWidget(createWidget(GroupDetailPage(
-        group: group,
-        groupService: groupService,
-        auth: auth,
-      )));
+      await tester.pumpWidget(
+        createWidget(
+          GroupDetailPage(group: group, groupService: groupService, auth: auth),
+        ),
+      );
 
       expect(find.text('Join Group'), findsOneWidget);
     });
@@ -80,18 +84,22 @@ void main() {
         isPublic: false,
       );
 
-      when(() => groupService.schedule(any()))
-          .thenAnswer((_) => Stream.value([]));
-      when(() => groupService.memberDailyCompletion(any(),
-          date: any(named: 'date'))).thenAnswer((_) => Stream.value([]));
-      when(() => groupService.memberOverallCompletion(any()))
-          .thenAnswer((_) => Stream.value([]));
+      when(
+        () => groupService.schedule(any()),
+      ).thenAnswer((_) => Stream.value([]));
+      when(
+        () =>
+            groupService.memberDailyCompletion(any(), date: any(named: 'date')),
+      ).thenAnswer((_) => Stream.value([]));
+      when(
+        () => groupService.memberOverallCompletion(any()),
+      ).thenAnswer((_) => Stream.value([]));
 
-      await tester.pumpWidget(createWidget(GroupDetailPage(
-        group: group,
-        groupService: groupService,
-        auth: auth,
-      )));
+      await tester.pumpWidget(
+        createWidget(
+          GroupDetailPage(group: group, groupService: groupService, auth: auth),
+        ),
+      );
 
       expect(find.text('Request to Join'), findsOneWidget);
     });
@@ -111,15 +119,16 @@ void main() {
         ),
       ];
 
-      when(() => groupService.userInvites('user1'))
-          .thenAnswer((_) => Stream.value(invites));
-      when(() => groupService.groupsForUser('user1'))
-          .thenAnswer((_) => Stream.value([]));
+      when(
+        () => groupService.userInvites('user1'),
+      ).thenAnswer((_) => Stream.value(invites));
+      when(
+        () => groupService.groupsForUser('user1'),
+      ).thenAnswer((_) => Stream.value([]));
 
-      await tester.pumpWidget(createWidget(GroupsPage(
-        groupService: groupService,
-        auth: auth,
-      )));
+      await tester.pumpWidget(
+        createWidget(GroupsPage(groupService: groupService, auth: auth)),
+      );
 
       await tester.pump(); // Start stream
       await tester.pump(); // Rebuild with data
@@ -135,19 +144,22 @@ void main() {
   group('InviteMemberPage Widget Tests', () {
     testWidgets('shows friends list by default', (tester) async {
       final group = Group(id: 'g1', name: 'G1', ownerUid: 'user1');
-      final friends = [
-        Friend(uid: 'friend1', name: 'Friend One'),
-      ];
+      final friends = [Friend(uid: 'friend1', name: 'Friend One')];
 
-      when(() => friendService.friends('user1'))
-          .thenAnswer((_) => Stream.value(friends));
+      when(
+        () => friendService.friends('user1'),
+      ).thenAnswer((_) => Stream.value(friends));
 
-      await tester.pumpWidget(createWidget(InviteMemberPage(
-        group: group,
-        groupService: groupService,
-        friendService: friendService,
-        auth: auth,
-      )));
+      await tester.pumpWidget(
+        createWidget(
+          InviteMemberPage(
+            group: group,
+            groupService: groupService,
+            friendService: friendService,
+            auth: auth,
+          ),
+        ),
+      );
 
       await tester.pump(); // Start stream
       await tester.pump(); // Rebuild with data
@@ -156,12 +168,11 @@ void main() {
       expect(find.text('Friend One'), findsOneWidget);
     });
 
-    testWidgets('shows invited status for friends with pending invites',
-        (tester) async {
+    testWidgets('shows invited status for friends with pending invites', (
+      tester,
+    ) async {
       final group = Group(id: 'g1', name: 'G1', ownerUid: 'user1');
-      final friends = [
-        Friend(uid: 'friend1', name: 'Friend One'),
-      ];
+      final friends = [Friend(uid: 'friend1', name: 'Friend One')];
 
       await firestore
           .collection(GroupCollections.groups)
@@ -169,23 +180,28 @@ void main() {
           .collection(GroupCollections.invites)
           .doc('friend1')
           .set({
-        'groupId': 'g1',
-        'groupName': 'G1',
-        'senderUid': 'user1',
-        'senderName': 'User One',
-        'recipientUid': 'friend1',
-        'timestamp': DateTime.now(),
-      });
+            'groupId': 'g1',
+            'groupName': 'G1',
+            'senderUid': 'user1',
+            'senderName': 'User One',
+            'recipientUid': 'friend1',
+            'timestamp': DateTime.now(),
+          });
 
-      when(() => friendService.friends('user1'))
-          .thenAnswer((_) => Stream.value(friends));
+      when(
+        () => friendService.friends('user1'),
+      ).thenAnswer((_) => Stream.value(friends));
 
-      await tester.pumpWidget(createWidget(InviteMemberPage(
-        group: group,
-        groupService: groupService,
-        friendService: friendService,
-        auth: auth,
-      )));
+      await tester.pumpWidget(
+        createWidget(
+          InviteMemberPage(
+            group: group,
+            groupService: groupService,
+            friendService: friendService,
+            auth: auth,
+          ),
+        ),
+      );
 
       await tester.pump();
       await tester.pump();
@@ -196,12 +212,11 @@ void main() {
       expect(find.widgetWithText(ElevatedButton, 'Invite'), findsNothing);
     });
 
-    testWidgets('shows member status for friends already in the group',
-        (tester) async {
+    testWidgets('shows member status for friends already in the group', (
+      tester,
+    ) async {
       final group = Group(id: 'g1', name: 'G1', ownerUid: 'user1');
-      final friends = [
-        Friend(uid: 'friend1', name: 'Friend One'),
-      ];
+      final friends = [Friend(uid: 'friend1', name: 'Friend One')];
 
       await firestore
           .collection(GroupCollections.groups)
@@ -209,20 +224,25 @@ void main() {
           .collection(GroupCollections.members)
           .doc('friend1')
           .set({
-        'uid': 'friend1',
-        'role': 'member',
-        'joinedAt': DateTime.now(),
-      });
+            'uid': 'friend1',
+            'role': 'member',
+            'joinedAt': DateTime.now(),
+          });
 
-      when(() => friendService.friends('user1'))
-          .thenAnswer((_) => Stream.value(friends));
+      when(
+        () => friendService.friends('user1'),
+      ).thenAnswer((_) => Stream.value(friends));
 
-      await tester.pumpWidget(createWidget(InviteMemberPage(
-        group: group,
-        groupService: groupService,
-        friendService: friendService,
-        auth: auth,
-      )));
+      await tester.pumpWidget(
+        createWidget(
+          InviteMemberPage(
+            group: group,
+            groupService: groupService,
+            friendService: friendService,
+            auth: auth,
+          ),
+        ),
+      );
 
       await tester.pump();
       await tester.pump();

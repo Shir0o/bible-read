@@ -8,17 +8,11 @@ void main() {
   testWidgets('displays member progress', (tester) async {
     final membersStream = Stream.value([
       const GroupMemberProgressData(uid: '1', name: 'Alice', completion: 1),
-      const GroupMemberProgressData(
-        uid: '2',
-        name: 'Bob',
-        completion: 0.5,
-      ),
+      const GroupMemberProgressData(uid: '2', name: 'Bob', completion: 0.5),
     ]);
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: GroupMembersSection(membersStream: membersStream),
-        ),
+        home: Scaffold(body: GroupMembersSection(membersStream: membersStream)),
       ),
     );
 
@@ -32,7 +26,8 @@ void main() {
 
     final indicators = tester
         .widgetList<LinearProgressIndicator>(
-            find.byType(LinearProgressIndicator))
+          find.byType(LinearProgressIndicator),
+        )
         .toList();
     expect(indicators, hasLength(2));
     expect(indicators[0].value, 1);

@@ -31,9 +31,9 @@ class BadgeIcon extends StatelessWidget {
     this.locked = false,
     this.size = 24,
   }) : assert(
-          (imageUrl != null ? 1 : 0) + (iconData != null ? 1 : 0) == 1,
-          'Provide exactly one badge source.',
-        );
+         (imageUrl != null ? 1 : 0) + (iconData != null ? 1 : 0) == 1,
+         'Provide exactly one badge source.',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +46,7 @@ class BadgeIcon extends StatelessWidget {
         placeholder: (context, url) => SizedBox(
           width: size,
           height: size,
-          child: const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
         errorWidget: (context, url, error) =>
             Icon(Icons.image_not_supported, size: size),
@@ -60,15 +58,13 @@ class BadgeIcon extends StatelessWidget {
     return Stack(
       alignment: Alignment.center,
       children: [
-        Opacity(
-          opacity: locked ? 0.3 : 1.0,
-          child: image,
-        ),
+        Opacity(opacity: locked ? 0.3 : 1.0, child: image),
         if (locked)
           Icon(
             Icons.lock,
-            color:
-                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.7),
             size: 16,
           ),
       ],

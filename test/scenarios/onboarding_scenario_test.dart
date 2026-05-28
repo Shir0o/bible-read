@@ -22,93 +22,105 @@ void main() {
   });
 
   testWidgets(
-      'Onboarding Scenario: User launches app, sees welcome, logs in, lands on home',
-      (tester) async {
-    await mockNetworkImagesFor(() async {
-      // Setup
-      final auth = MockFirebaseAuth(signedIn: false);
-      final firestore = FakeFirebaseFirestore();
-      final messaging = MockFirebaseMessaging();
-      final functions = MockFirebaseFunctions();
-      final vibration = StubVibrationService();
-      final seeder = FirebaseSeeder(firestore);
+    'Onboarding Scenario: User launches app, sees welcome, logs in, lands on home',
+    (tester) async {
+      await mockNetworkImagesFor(() async {
+        // Setup
+        final auth = MockFirebaseAuth(signedIn: false);
+        final firestore = FakeFirebaseFirestore();
+        final messaging = MockFirebaseMessaging();
+        final functions = MockFirebaseFunctions();
+        final vibration = StubVibrationService();
+        final seeder = FirebaseSeeder(firestore);
 
-      // Stub messaging
-      when(() => messaging.getToken()).thenAnswer((_) async => 'fake_token');
+        // Stub messaging
+        when(() => messaging.getToken()).thenAnswer((_) async => 'fake_token');
 
-      // Create user in Auth (but ensure signed out initially)
-      await auth.createUserWithEmailAndPassword(
-          email: 'test@example.com', password: 'password123');
-      await auth.signOut();
+        // Create user in Auth (but ensure signed out initially)
+        await auth.createUserWithEmailAndPassword(
+          email: 'test@example.com',
+          password: 'password123',
+        );
+        await auth.signOut();
 
-      // Seed Firestore user data
-      await auth.signInWithEmailAndPassword(
-          email: 'test@example.com', password: 'password123');
-      final uid = auth.currentUser!.uid;
-      await auth.signOut();
-      await seeder.seedUser(
-          uid: uid, email: 'test@example.com', name: 'Test User');
+        // Seed Firestore user data
+        await auth.signInWithEmailAndPassword(
+          email: 'test@example.com',
+          password: 'password123',
+        );
+        final uid = auth.currentUser!.uid;
+        await auth.signOut();
+        await seeder.seedUser(
+          uid: uid,
+          email: 'test@example.com',
+          name: 'Test User',
+        );
 
-      await tester.pumpApp(
-        MainPage(
-          auth: auth,
-          firestore: firestore,
-          messaging: messaging,
-          functions: functions,
-          sendLikeNotification: (
-              {required ownerUid, required likerName}) async {},
-          sendCommentNotification: (
-              {required ownerUid, required commenterName}) async {},
-          vibrationService: vibration,
-          googleSignInProvider: () => MockGoogleSignIn(),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpApp(
+          MainPage(
+            auth: auth,
+            firestore: firestore,
+            messaging: messaging,
+            functions: functions,
+            sendLikeNotification:
+                ({required ownerUid, required likerName}) async {},
+            sendCommentNotification:
+                ({required ownerUid, required commenterName}) async {},
+            vibrationService: vibration,
+            googleSignInProvider: () => MockGoogleSignIn(),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Check if stuck on loading
-      if (find.byType(CircularProgressIndicator).evaluate().isNotEmpty) {
-        // Force a pump
-        await tester.pump(const Duration(seconds: 1));
-      }
+        // Check if stuck on loading
+        if (find.byType(CircularProgressIndicator).evaluate().isNotEmpty) {
+          // Force a pump
+          await tester.pump(const Duration(seconds: 1));
+        }
 
-      // Verify Welcome Page
-      expect(find.byType(WelcomePage), findsOneWidget);
+        // Verify Welcome Page
+        expect(find.byType(WelcomePage), findsOneWidget);
 
-      // Tap "I already have an account"
-      await tester.tap(find.text('I already have an account'));
-      await tester.pumpAndSettle();
+        // Tap "I already have an account"
+        await tester.tap(find.text('I already have an account'));
+        await tester.pumpAndSettle();
 
-      // Verify Login Page
-      expect(find.byType(LoginPage), findsOneWidget);
+        // Verify Login Page
+        expect(find.byType(LoginPage), findsOneWidget);
 
-      // Enter credentials
-      await tester.enterText(
-          find.byKey(const Key('loginEmailField')), 'test@example.com');
-      await tester.enterText(
-          find.byKey(const Key('loginPasswordField')), 'password123');
-      await tester.pump();
+        // Enter credentials
+        await tester.enterText(
+          find.byKey(const Key('loginEmailField')),
+          'test@example.com',
+        );
+        await tester.enterText(
+          find.byKey(const Key('loginPasswordField')),
+          'password123',
+        );
+        await tester.pump();
 
-      // Tap Login Button
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
-      await tester.pump();
+        // Tap Login Button
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
+        await tester.pump();
 
-      // Wait for auth
-      await tester.pumpAndSettle();
+        // Wait for auth
+        await tester.pumpAndSettle();
 
-      // Set display name in Auth after login (since MockUser from login won't have it)
-      await auth.currentUser!.updateDisplayName('Test User');
-      await tester.pump();
+        // Set display name in Auth after login (since MockUser from login won't have it)
+        await auth.currentUser!.updateDisplayName('Test User');
+        await tester.pump();
 
-      // Verify Home Page
-      expect(find.byType(HomePage), findsOneWidget);
-      await tester.pumpAndSettle();
+        // Verify Home Page
+        expect(find.byType(HomePage), findsOneWidget);
+        await tester.pumpAndSettle();
 
-      // Navigate to Community where user name is displayed
-      await tester.tap(find.text('Community'));
-      await tester.pumpAndSettle();
+        // Navigate to Community where user name is displayed
+        await tester.tap(find.text('Community'));
+        await tester.pumpAndSettle();
 
-      // Verify user is displayed
-      expect(find.textContaining('Test'), findsOneWidget);
-    });
-  });
+        // Verify user is displayed
+        expect(find.textContaining('Test'), findsOneWidget);
+      });
+    },
+  );
 }

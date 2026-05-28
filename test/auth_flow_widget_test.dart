@@ -41,12 +41,15 @@ void main() {
     mockGoogleSignInPlatform = MockGoogleSignInPlatform();
     GoogleSignInPlatform.instance = mockGoogleSignInPlatform;
     when(() => mockGoogleSignInPlatform.init(any())).thenAnswer((_) async {});
-    when(() => mockGoogleSignInPlatform.attemptLightweightAuthentication(any()))
-        .thenAnswer((_) async => null);
-    when(() => mockGoogleSignInPlatform.signOut(any()))
-        .thenAnswer((_) async {});
-    when(() => mockGoogleSignInPlatform.authenticationEvents)
-        .thenAnswer((_) => const Stream.empty());
+    when(
+      () => mockGoogleSignInPlatform.attemptLightweightAuthentication(any()),
+    ).thenAnswer((_) async => null);
+    when(
+      () => mockGoogleSignInPlatform.signOut(any()),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockGoogleSignInPlatform.authenticationEvents,
+    ).thenAnswer((_) => const Stream.empty());
   });
 
   testWidgets('Comprehensive Auth Flow Test', (tester) async {
@@ -55,11 +58,7 @@ void main() {
 
     // Start the app
     await tester.pumpWidget(
-      MyApp(
-        appCheckFailed: false,
-        firestore: firestore,
-        auth: auth,
-      ),
+      MyApp(appCheckFailed: false, firestore: firestore, auth: auth),
     );
     await tester.pumpAndSettle();
 
@@ -85,9 +84,13 @@ void main() {
     // 5. Fill Signup Form
     await tester.enterText(find.byType(TextFormField).at(0), 'Test User');
     await tester.enterText(
-        find.byKey(const Key('signupEmailField')), 'test@example.com');
+      find.byKey(const Key('signupEmailField')),
+      'test@example.com',
+    );
     await tester.enterText(
-        find.byKey(const Key('signupPasswordField')), 'password123');
+      find.byKey(const Key('signupPasswordField')),
+      'password123',
+    );
 
     await tester.pumpAndSettle();
 
@@ -104,8 +107,10 @@ void main() {
     expect(auth.currentUser!.displayName, 'Test User');
 
     // 6b. Verify Firestore data
-    final userDoc =
-        await firestore.collection('users').doc(auth.currentUser!.uid).get();
+    final userDoc = await firestore
+        .collection('users')
+        .doc(auth.currentUser!.uid)
+        .get();
     expect(userDoc.exists, isTrue);
     expect(userDoc.data()?['name'], 'Test User');
     expect(userDoc.data()?['email'], 'test@example.com');
@@ -141,9 +146,13 @@ void main() {
 
     // 12. Login with correct credentials
     await tester.enterText(
-        find.byKey(const Key('loginEmailField')), 'test@example.com');
+      find.byKey(const Key('loginEmailField')),
+      'test@example.com',
+    );
     await tester.enterText(
-        find.byKey(const Key('loginPasswordField')), 'password123');
+      find.byKey(const Key('loginPasswordField')),
+      'password123',
+    );
     await tester.ensureVisible(loginButton);
     await tester.tap(loginButton);
     await tester.pumpAndSettle();

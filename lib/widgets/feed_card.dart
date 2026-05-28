@@ -28,10 +28,7 @@ class FeedCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: colorScheme.outlineVariant,
-          width: 0.5,
-        ),
+        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
       ),
       color: colorScheme.surfaceContainerLow,
       child: Padding(
@@ -65,9 +62,9 @@ class FeedCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     'Read today',
-                    style: AppTextStyles.bodySmall(context).copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: AppTextStyles.bodySmall(
+                      context,
+                    ).copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -93,9 +90,9 @@ class FeedCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       _buildLikeText(log.likeNames),
-                      style: AppTextStyles.bodySmall(context).copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                      style: AppTextStyles.bodySmall(
+                        context,
+                      ).copyWith(color: colorScheme.onSurfaceVariant),
                     ),
                   ),
                 ],
@@ -159,10 +156,7 @@ class _ActionButton extends StatelessWidget {
     final child = Container(
       width: 40,
       height: 40,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
       child: Icon(icon, color: color, size: 21),
     );
 

@@ -20,24 +20,27 @@ void main() {
       expect(callCount, 1);
     });
 
-    test('getOrFetch returns cached value on second access within TTL',
-        () async {
-      var callCount = 0;
-      Future<String> fetcher() async {
-        callCount++;
-        return 'value1';
-      }
+    test(
+      'getOrFetch returns cached value on second access within TTL',
+      () async {
+        var callCount = 0;
+        Future<String> fetcher() async {
+          callCount++;
+          return 'value1';
+        }
 
-      await cache.getOrFetch<String>('key1', fetcher);
-      final result = await cache.getOrFetch<String>('key1', fetcher);
+        await cache.getOrFetch<String>('key1', fetcher);
+        final result = await cache.getOrFetch<String>('key1', fetcher);
 
-      expect(result, 'value1');
-      expect(callCount, 1, reason: 'fetcher should only be called once');
-    });
+        expect(result, 'value1');
+        expect(callCount, 1, reason: 'fetcher should only be called once');
+      },
+    );
 
     test('getOrFetch re-fetches after TTL expires', () async {
-      final shortCache =
-          DataCacheService(defaultTtl: const Duration(milliseconds: 50));
+      final shortCache = DataCacheService(
+        defaultTtl: const Duration(milliseconds: 50),
+      );
       var callCount = 0;
 
       Future<String> fetcher() async {
@@ -107,8 +110,9 @@ void main() {
     });
 
     test('peek returns null for expired entry', () async {
-      final shortCache =
-          DataCacheService(defaultTtl: const Duration(milliseconds: 50));
+      final shortCache = DataCacheService(
+        defaultTtl: const Duration(milliseconds: 50),
+      );
       await shortCache.getOrFetch<String>('key1', () async => 'val');
 
       await Future.delayed(const Duration(milliseconds: 60));
@@ -131,14 +135,10 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 60));
 
       var callCount = 0;
-      final result2 = await cache.getOrFetch<String>(
-        'short_lived',
-        () async {
-          callCount++;
-          return 'val2';
-        },
-        ttl: const Duration(milliseconds: 50),
-      );
+      final result2 = await cache.getOrFetch<String>('short_lived', () async {
+        callCount++;
+        return 'val2';
+      }, ttl: const Duration(milliseconds: 50));
       expect(result2, 'val2');
       expect(callCount, 1);
     });

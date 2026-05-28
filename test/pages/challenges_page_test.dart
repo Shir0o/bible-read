@@ -25,14 +25,16 @@ void main() {
   });
 
   testWidgets('ChallengesPage renders correctly with tabs', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: ChallengesPage(
-        auth: auth,
-        firestore: firestore,
-        friendService: friendService,
-        vibrationService: vibrationService,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChallengesPage(
+          auth: auth,
+          firestore: firestore,
+          friendService: friendService,
+          vibrationService: vibrationService,
+        ),
       ),
-    ));
+    );
 
     expect(find.text('Challenges'), findsOneWidget);
     expect(find.byType(TabBar), findsOneWidget);
@@ -40,17 +42,20 @@ void main() {
     expect(find.byType(TabBarView), findsOneWidget);
   });
 
-  testWidgets('ChallengesPage shows Seasonal Challenges by default',
-      (tester) async {
+  testWidgets('ChallengesPage shows Seasonal Challenges by default', (
+    tester,
+  ) async {
     // Should show "No active season" because Firestore is empty
-    await tester.pumpWidget(MaterialApp(
-      home: ChallengesPage(
-        auth: auth,
-        firestore: firestore,
-        friendService: friendService,
-        vibrationService: vibrationService,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChallengesPage(
+          auth: auth,
+          firestore: firestore,
+          friendService: friendService,
+          vibrationService: vibrationService,
+        ),
       ),
-    ));
+    );
 
     await tester.pumpAndSettle();
 

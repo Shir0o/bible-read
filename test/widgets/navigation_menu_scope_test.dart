@@ -16,8 +16,9 @@ class _RecordingVibrationService extends VibrationService {}
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('NavigationMenuScope.of returns scope and throws when absent',
-      (tester) async {
+  testWidgets('NavigationMenuScope.of returns scope and throws when absent', (
+    tester,
+  ) async {
     NavigationMenuScope? capturedScope;
 
     await tester.pumpWidget(
@@ -89,13 +90,16 @@ void main() {
 
     expect(
       buildScope(
-              navigate: alternateOnNavigate, adminRoleService: baseAdminService)
-          .updateShouldNotify(baseScope),
+        navigate: alternateOnNavigate,
+        adminRoleService: baseAdminService,
+      ).updateShouldNotify(baseScope),
       isTrue,
     );
     expect(
-      buildScope(friendsIndex: 5, adminRoleService: baseAdminService)
-          .updateShouldNotify(baseScope),
+      buildScope(
+        friendsIndex: 5,
+        adminRoleService: baseAdminService,
+      ).updateShouldNotify(baseScope),
       isTrue,
     );
     expect(
@@ -106,14 +110,16 @@ void main() {
       isTrue,
     );
     expect(
-      buildScope(adminRoleService: differentAdminService)
-          .updateShouldNotify(baseScope),
+      buildScope(
+        adminRoleService: differentAdminService,
+      ).updateShouldNotify(baseScope),
       isTrue,
     );
 
     expect(
-      buildScope(adminRoleService: baseAdminService)
-          .updateShouldNotify(baseScope),
+      buildScope(
+        adminRoleService: baseAdminService,
+      ).updateShouldNotify(baseScope),
       isFalse,
     );
   });
@@ -126,8 +132,9 @@ void main() {
     late BuildContext childContext;
 
     when(() => adminRoleService.cachedAdminRole).thenReturn(false);
-    when(() => adminRoleService.isAdmin(allowStale: any(named: 'allowStale')))
-        .thenAnswer((_) async => false);
+    when(
+      () => adminRoleService.isAdmin(allowStale: any(named: 'allowStale')),
+    ).thenAnswer((_) async => false);
 
     await tester.pumpWidget(
       MaterialApp(

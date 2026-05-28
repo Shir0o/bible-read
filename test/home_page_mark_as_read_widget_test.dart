@@ -63,12 +63,12 @@ void main() {
         .collection('plan_progress')
         .doc('plan_1')
         .set({
-      'planId': 'plan_1',
-      'userId': 'u1',
-      'startDate': Timestamp.fromDate(now),
-      'completedDays': [],
-      'isArchived': false,
-    });
+          'planId': 'plan_1',
+          'userId': 'u1',
+          'startDate': Timestamp.fromDate(now),
+          'completedDays': [],
+          'isArchived': false,
+        });
 
     // Initialize summary data
     await firestore
@@ -77,11 +77,11 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 0,
-      'totalReadDays': 0,
-      'pastWeekReadDates': [],
-      'pastMonthReadDates': [],
-    });
+          'streak': 0,
+          'totalReadDays': 0,
+          'pastWeekReadDates': [],
+          'pastMonthReadDates': [],
+        });
 
     // Seed user preferences to auto-mark plan as read
     await firestore
@@ -89,9 +89,7 @@ void main() {
         .doc('u1')
         .collection('settings')
         .doc('general')
-        .set({
-      'autoMarkPlanRead': true,
-    });
+        .set({'autoMarkPlanRead': true});
 
     // 2. Launch the app
     await tester.pumpWidget(
@@ -132,8 +130,11 @@ void main() {
         .doc(todayKey)
         .get();
 
-    expect(readDoc.exists, isTrue,
-        reason: 'Reading document should be created in Firestore');
+    expect(
+      readDoc.exists,
+      isTrue,
+      reason: 'Reading document should be created in Firestore',
+    );
     expect(readDoc.data()?['read'], isTrue);
 
     // Check plan progress
@@ -144,9 +145,13 @@ void main() {
         .doc('plan_1')
         .get();
 
-    final completedDays =
-        List<int>.from(progressDoc.data()?['completedDays'] ?? []);
-    expect(completedDays, contains(1),
-        reason: 'Day 1 should be marked as completed in the plan progress');
+    final completedDays = List<int>.from(
+      progressDoc.data()?['completedDays'] ?? [],
+    );
+    expect(
+      completedDays,
+      contains(1),
+      reason: 'Day 1 should be marked as completed in the plan progress',
+    );
   });
 }

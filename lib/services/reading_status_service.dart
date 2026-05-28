@@ -103,9 +103,9 @@ class ReadingStatusService {
     DateTime Function()? dateProvider,
     DateTime Function()? nowProvider,
     this.cache,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        nowProvider = nowProvider ?? dateProvider ?? DateTime.now;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       nowProvider = nowProvider ?? dateProvider ?? DateTime.now;
 
   /// Cache key for the current user's reading status.
   String get _cacheKey {
@@ -165,10 +165,10 @@ class ReadingStatusService {
       // Kick off all reads in parallel.
       final snapshots =
           await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-        userDocRef.get(),
-        userDocRef.collection('reading').doc(dateKey).get(),
-        userDocRef.collection('summary').doc('data').get(),
-      ], eagerError: true);
+            userDocRef.get(),
+            userDocRef.collection('reading').doc(dateKey).get(),
+            userDocRef.collection('summary').doc('data').get(),
+          ], eagerError: true);
 
       final userDoc = snapshots[0];
       final todayDoc = snapshots[1];
@@ -215,8 +215,8 @@ class ReadingStatusService {
       final graceCreditsAvailable = graceCreditsRaw is int
           ? graceCreditsRaw
           : graceCreditsRaw is num
-              ? graceCreditsRaw.toInt()
-              : 0;
+          ? graceCreditsRaw.toInt()
+          : 0;
       final graceCreditsMonth =
           (data['graceCreditsMonth'] as String?) ?? defaultMonthKey;
       var weekDates = List<String>.from(data['pastWeekReadDates'] ?? []);
@@ -457,8 +457,9 @@ class ReadingStatusService {
       } else {
         final todayKey = formatDate(today);
         if (readDateSet.contains(todayKey)) {
-          final pastMonth =
-              List<String>.from(summaryData['pastMonthReadDates'] ?? []);
+          final pastMonth = List<String>.from(
+            summaryData['pastMonthReadDates'] ?? [],
+          );
           if (!pastMonth.contains(todayKey)) {
             oldTotalReadDays += 1;
           }
@@ -481,10 +482,14 @@ class ReadingStatusService {
         monthStatus[key] = readDateSet.contains(key);
       }
 
-      final pastWeekReadDates =
-          weekStatus.entries.where((e) => e.value).map((e) => e.key).toList();
-      final pastMonthReadDates =
-          monthStatus.entries.where((e) => e.value).map((e) => e.key).toList();
+      final pastWeekReadDates = weekStatus.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList();
+      final pastMonthReadDates = monthStatus.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList();
 
       final sortedDates = readDateSet.map(DateTime.parse).toList()..sort();
 
@@ -511,14 +516,15 @@ class ReadingStatusService {
 
       final currentMonthCredits =
           summaryComputation.monthLedgers[currentMonthKey] ??
-              _MonthlyCreditLedger(
-                monthKey: currentMonthKey,
-                monthStart: DateTime(today.year, today.month, 1),
-              );
+          _MonthlyCreditLedger(
+            monthKey: currentMonthKey,
+            monthStart: DateTime(today.year, today.month, 1),
+          );
 
       final streak = summaryComputation.streak;
-      final longestStreak =
-          streak > oldLongestStreak ? streak : oldLongestStreak;
+      final longestStreak = streak > oldLongestStreak
+          ? streak
+          : oldLongestStreak;
 
       await summaryDocRef.set({
         'streak': streak,
@@ -741,7 +747,7 @@ class _SummaryComputation {
 
 class _MonthlyCreditLedger {
   _MonthlyCreditLedger({required this.monthKey, required DateTime monthStart})
-      : _credits = Queue<_Credit>() {
+    : _credits = Queue<_Credit>() {
     final start = _dateOnly(monthStart);
     _credits.add(_Credit(start));
     _credits.add(_Credit(start));

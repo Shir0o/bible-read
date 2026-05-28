@@ -51,7 +51,7 @@ class SeasonalChallengeCard extends StatelessWidget {
   /// Custom builder for the remaining time label. Receives the build context
   /// and the duration until the season ends.
   final String Function(BuildContext context, Duration remaining)?
-      remainingTimeBuilder;
+  remainingTimeBuilder;
 
   /// Optional override for the current time, enabling deterministic tests.
   final DateTime Function()? nowBuilder;
@@ -85,13 +85,13 @@ class SeasonalChallengeCard extends StatelessWidget {
     final materialLocalizations = MaterialLocalizations.of(context);
     final titleStyle =
         theme.textTheme.titleMedium?.merge(AppTextStyles.subtitle(context)) ??
-            AppTextStyles.subtitle(context);
+        AppTextStyles.subtitle(context);
     final bodyStyle =
         theme.textTheme.bodyMedium?.merge(AppTextStyles.body(context)) ??
-            AppTextStyles.body(context);
+        AppTextStyles.body(context);
     final subtleStyle =
         theme.textTheme.bodySmall?.merge(AppTextStyles.body(context)) ??
-            AppTextStyles.body(context);
+        AppTextStyles.body(context);
 
     final now = nowBuilder?.call() ?? DateTime.now();
     final ended = now.isAfter(season.endDate);
@@ -99,12 +99,13 @@ class SeasonalChallengeCard extends StatelessWidget {
     final remainingText = ended
         ? (seasonEndedLabel ?? 'Season ended')
         : remainingTimeBuilder?.call(context, remaining) ??
-            _defaultRemainingTime(materialLocalizations, remaining);
+              _defaultRemainingTime(materialLocalizations, remaining);
 
     final goal = challenge.goal <= 0 ? 1 : challenge.goal;
     final clampedProgress = math.max(0, progress.totalProgress);
-    final completion =
-        challenge.goal <= 0 ? 1.0 : (clampedProgress / goal).clamp(0.0, 1.0);
+    final completion = challenge.goal <= 0
+        ? 1.0
+        : (clampedProgress / goal).clamp(0.0, 1.0);
     final progressText =
         '${materialLocalizations.formatDecimal(clampedProgress)} / '
                 '${materialLocalizations.formatDecimal(challenge.goal)} '
@@ -116,18 +117,18 @@ class SeasonalChallengeCard extends StatelessWidget {
 
     final buildCard = onTap == null
         ? ({required Widget child, EdgeInsetsGeometry? margin}) =>
-            CommonStyles.buildCard(
-              context: context,
-              margin: margin,
-              child: child,
-            )
+              CommonStyles.buildCard(
+                context: context,
+                margin: margin,
+                child: child,
+              )
         : ({required Widget child, EdgeInsetsGeometry? margin}) =>
-            CommonStyles.buildTappableCard(
-              context: context,
-              onTap: onTap,
-              margin: margin,
-              child: child,
-            );
+              CommonStyles.buildTappableCard(
+                context: context,
+                onTap: onTap,
+                margin: margin,
+                child: child,
+              );
 
     return buildCard(
       margin: margin,
@@ -138,10 +139,7 @@ class SeasonalChallengeCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(challenge.description, style: bodyStyle),
           const SizedBox(height: 16),
-          LinearProgressIndicator(
-            value: completion,
-            minHeight: 8,
-          ),
+          LinearProgressIndicator(value: completion, minHeight: 8),
           const SizedBox(height: 8),
           Text(progressText, style: subtleStyle),
           const SizedBox(height: 12),
@@ -150,12 +148,7 @@ class SeasonalChallengeCard extends StatelessWidget {
             children: [
               Icon(Icons.schedule, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  remainingText,
-                  style: subtleStyle,
-                ),
-              ),
+              Expanded(child: Text(remainingText, style: subtleStyle)),
             ],
           ),
           const SizedBox(height: 12),
@@ -168,14 +161,17 @@ class SeasonalChallengeCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(reward.title,
-                        style: bodyStyle.copyWith(fontWeight: FontWeight.w600)),
+                    Text(
+                      reward.title,
+                      style: bodyStyle.copyWith(fontWeight: FontWeight.w600),
+                    ),
                     if (reward.description.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(reward.description, style: subtleStyle),
                     ],
-                    if (_rewardAmountText(materialLocalizations)
-                        .isNotEmpty) ...[
+                    if (_rewardAmountText(
+                      materialLocalizations,
+                    ).isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
                         _rewardAmountText(materialLocalizations),
@@ -204,8 +200,9 @@ class SeasonalChallengeCard extends StatelessWidget {
     if (reward.amount <= 0 && reward.type.isEmpty) {
       return '';
     }
-    final formattedAmount =
-        reward.amount > 0 ? localizations.formatDecimal(reward.amount) : '';
+    final formattedAmount = reward.amount > 0
+        ? localizations.formatDecimal(reward.amount)
+        : '';
     if (formattedAmount.isEmpty) {
       return reward.type;
     }

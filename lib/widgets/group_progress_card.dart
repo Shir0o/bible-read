@@ -37,8 +37,11 @@ class GroupProgressCard extends StatelessWidget {
     // Calculate time-based expected progress
     int totalChapters = 0;
     int expectedCompletedChapters = 0;
-    final today =
-        DateTime(currentDate.year, currentDate.month, currentDate.day);
+    final today = DateTime(
+      currentDate.year,
+      currentDate.month,
+      currentDate.day,
+    );
 
     String? currentBook;
 
@@ -64,8 +67,9 @@ class GroupProgressCard extends StatelessWidget {
       }
     }
 
-    final timePercent =
-        totalChapters > 0 ? expectedCompletedChapters / totalChapters : 0.0;
+    final timePercent = totalChapters > 0
+        ? expectedCompletedChapters / totalChapters
+        : 0.0;
 
     return StreamBuilder<List<GroupMemberProgressData>>(
       stream: groupService.memberOverallCompletion(groupId),
@@ -74,7 +78,7 @@ class GroupProgressCard extends StatelessWidget {
         final double actualPercent = members.isEmpty
             ? 0.0
             : members.map((m) => m.completion).reduce((a, b) => a + b) /
-                members.length;
+                  members.length;
 
         final percentDisplay = (actualPercent * 100).round();
         final bool isOnTrack = actualPercent >= timePercent;
@@ -96,10 +100,7 @@ class GroupProgressCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'GROUP PROGRESS',
-                        style: theme.textTheme.labelSmall,
-                      ),
+                      Text('GROUP PROGRESS', style: theme.textTheme.labelSmall),
                       const SizedBox(height: 4),
                       Text(
                         '$percentDisplay%',
@@ -110,8 +111,10 @@ class GroupProgressCard extends StatelessWidget {
                     ],
                   ),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: isOnTrack
                           ? colorScheme.primaryContainer
@@ -135,10 +138,12 @@ class GroupProgressCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: actualPercent,
                   minHeight: 16,
-                  backgroundColor:
-                      colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                  backgroundColor: colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.2,
+                  ),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    colorScheme.primary,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -169,8 +174,11 @@ class GroupProgressCard extends StatelessWidget {
                         ),
                       );
                     },
-                    icon: Icon(Icons.calendar_month,
-                        size: 18, color: colorScheme.primary),
+                    icon: Icon(
+                      Icons.calendar_month,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
                     label: Text(
                       'View Full Schedule',
                       style: TextStyle(
@@ -181,9 +189,11 @@ class GroupProgressCard extends StatelessWidget {
                     ),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                          color: colorScheme.primary.withValues(alpha: 0.3)),
+                        color: colorScheme.primary.withValues(alpha: 0.3),
+                      ),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),

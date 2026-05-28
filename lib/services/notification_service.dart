@@ -20,7 +20,7 @@ class NotificationService {
 
   /// Creates a [NotificationService] using [FirebaseFirestore.instance] by default.
   NotificationService({FirebaseFirestore? firestore})
-      : firestore = firestore ?? FirebaseFirestore.instance;
+    : firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Stream of notifications for [uid] ordered by timestamp descending.
   Stream<List<AppNotification>> notifications(String uid) {
@@ -30,9 +30,11 @@ class NotificationService {
         .collection(NotificationCollections.notifications)
         .orderBy('timestamp', descending: true)
         .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => AppNotification.fromFirestore(d.id, d.data()))
-            .toList());
+        .map(
+          (snap) => snap.docs
+              .map((d) => AppNotification.fromFirestore(d.id, d.data()))
+              .toList(),
+        );
   }
 
   /// Marks the notification [notificationId] for [uid] as read.

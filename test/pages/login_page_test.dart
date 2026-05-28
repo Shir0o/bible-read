@@ -48,13 +48,17 @@ class RecordingAuth extends MockFirebaseAuth {
   }
 
   @override
-  Future<void> sendPasswordResetEmail(
-      {required String email, ActionCodeSettings? actionCodeSettings}) async {
+  Future<void> sendPasswordResetEmail({
+    required String email,
+    ActionCodeSettings? actionCodeSettings,
+  }) async {
     sendPasswordResetEmailCalled = true;
     resetEmail = email;
     await Future.delayed(const Duration(milliseconds: 10));
     return super.sendPasswordResetEmail(
-        email: email, actionCodeSettings: actionCodeSettings);
+      email: email,
+      actionCodeSettings: actionCodeSettings,
+    );
   }
 }
 
@@ -87,23 +91,30 @@ void main() {
   });
 
   group('LoginPage', () {
-    testWidgets('signs in with email and navigates to MainPage',
-        (tester) async {
+    testWidgets('signs in with email and navigates to MainPage', (
+      tester,
+    ) async {
       await mockNetworkImagesFor(() async {
         final auth = RecordingAuth();
         SharedPreferences.setMockInitialValues({});
 
-        await tester.pumpWidget(MaterialApp(
-          home: LoginPage(
-            auth: auth,
-            mainPageBuilder: (_) => const TestMainPage(),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: LoginPage(
+              auth: auth,
+              mainPageBuilder: (_) => const TestMainPage(),
+            ),
           ),
-        ));
+        );
 
         await tester.enterText(
-            find.byKey(const Key('loginEmailField')), 'user@my-company.com');
+          find.byKey(const Key('loginEmailField')),
+          'user@my-company.com',
+        );
         await tester.enterText(
-            find.byKey(const Key('loginPasswordField')), 'pw');
+          find.byKey(const Key('loginPasswordField')),
+          'pw',
+        );
         // Button text is 'Login' in new UI
         await tester.tap(find.text('Login'));
         await tester.pumpAndSettle();
@@ -115,19 +126,22 @@ void main() {
       });
     });
 
-    testWidgets('signs in with Google and navigates to MainPage',
-        (tester) async {
+    testWidgets('signs in with Google and navigates to MainPage', (
+      tester,
+    ) async {
       await mockNetworkImagesFor(() async {
         final auth = RecordingAuth();
         SharedPreferences.setMockInitialValues({});
 
-        await tester.pumpWidget(MaterialApp(
-          home: LoginPage(
-            auth: auth,
-            googleSignInProvider: () => GoogleSignIn.instance,
-            mainPageBuilder: (_) => const TestMainPage(),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: LoginPage(
+              auth: auth,
+              googleSignInProvider: () => GoogleSignIn.instance,
+              mainPageBuilder: (_) => const TestMainPage(),
+            ),
           ),
-        ));
+        );
 
         final googleButton = find.text('Continue with Google');
         await tester.ensureVisible(googleButton);
@@ -199,9 +213,13 @@ void main() {
         await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
 
         await tester.enterText(
-            find.byKey(const Key('loginEmailField')), 'fail@test.com');
+          find.byKey(const Key('loginEmailField')),
+          'fail@test.com',
+        );
         await tester.enterText(
-            find.byKey(const Key('loginPasswordField')), 'wrong');
+          find.byKey(const Key('loginPasswordField')),
+          'wrong',
+        );
         await tester.tap(find.text('Login'));
         await tester.pump(); // Start future
         await tester.pump(); // Resolve future (error)
@@ -210,9 +228,12 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(
-            find.widgetWithText(
-                SnackBar, 'Failed to sign in. Please check credentials.'),
-            findsOneWidget);
+          find.widgetWithText(
+            SnackBar,
+            'Failed to sign in. Please check credentials.',
+          ),
+          findsOneWidget,
+        );
         expect(auth.signInCalled, isTrue);
       });
     });
@@ -238,9 +259,13 @@ void main() {
         await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
 
         await tester.enterText(
-            find.byKey(const Key('loginEmailField')), 'invalid-email');
+          find.byKey(const Key('loginEmailField')),
+          'invalid-email',
+        );
         await tester.enterText(
-            find.byKey(const Key('loginPasswordField')), 'password');
+          find.byKey(const Key('loginPasswordField')),
+          'password',
+        );
         await tester.tap(find.text('Login'));
         await tester.pump();
         await tester.pumpAndSettle();
@@ -250,19 +275,22 @@ void main() {
       });
     });
 
-    testWidgets('verifies semantics for Forgot Password and Sign up links',
-        (tester) async {
+    testWidgets('verifies semantics for Forgot Password and Sign up links', (
+      tester,
+    ) async {
       await mockNetworkImagesFor(() async {
         final auth = RecordingAuth();
         await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
 
-        final forgotPasswordFinder =
-            find.byKey(const Key('forgotPasswordSemantics'));
+        final forgotPasswordFinder = find.byKey(
+          const Key('forgotPasswordSemantics'),
+        );
         final signUpFinder = find.byKey(const Key('signUpSemantics'));
 
         // Verify Forgot Password semantics
-        final forgotPasswordSemantics =
-            tester.getSemantics(forgotPasswordFinder);
+        final forgotPasswordSemantics = tester.getSemantics(
+          forgotPasswordFinder,
+        );
         final forgotPasswordData = forgotPasswordSemantics.getSemanticsData();
         // ignore: deprecated_member_use
         expect(forgotPasswordData.hasFlag(SemanticsFlag.isButton), isTrue);
@@ -291,11 +319,15 @@ void main() {
         when(() => vibrationService.mediumImpact()).thenAnswer((_) async {});
         when(() => vibrationService.lightImpact()).thenAnswer((_) async {});
 
-        await tester.pumpWidget(MaterialApp(
-            home: LoginPage(auth: auth, vibrationService: vibrationService)));
+        await tester.pumpWidget(
+          MaterialApp(
+            home: LoginPage(auth: auth, vibrationService: vibrationService),
+          ),
+        );
 
-        final forgotPasswordFinder =
-            find.byKey(const Key('forgotPasswordSemantics'));
+        final forgotPasswordFinder = find.byKey(
+          const Key('forgotPasswordSemantics'),
+        );
 
         // Tap Forgot Password
         await tester.ensureVisible(forgotPasswordFinder);
@@ -307,16 +339,20 @@ void main() {
 
         // Enter email
         await tester.enterText(
-            find.descendant(
-                of: find.byType(AlertDialog), matching: find.byType(TextField)),
-            'reset@test.com');
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byType(TextField),
+          ),
+          'reset@test.com',
+        );
         await tester.pump();
 
         // Submit via keyboard
         await tester.testTextInput.receiveAction(TextInputAction.send);
         await tester.pump(); // Trigger setState
         await tester.pump(
-            const Duration(milliseconds: 100)); // Allow future to complete
+          const Duration(milliseconds: 100),
+        ); // Allow future to complete
         await tester.pumpAndSettle(); // Allow dialog to close
 
         // Verify API call
@@ -324,8 +360,10 @@ void main() {
         expect(auth.resetEmail, 'reset@test.com');
 
         // Verify Success SnackBar
-        expect(find.widgetWithText(SnackBar, 'Password reset email sent'),
-            findsOneWidget);
+        expect(
+          find.widgetWithText(SnackBar, 'Password reset email sent'),
+          findsOneWidget,
+        );
         // Verify haptic feedback
         verify(() => vibrationService.mediumImpact()).called(1);
         // Verify dialog closed
@@ -334,44 +372,53 @@ void main() {
     });
 
     testWidgets(
-        'triggers heavy impact vibration on invalid email in reset dialog',
-        (tester) async {
-      await mockNetworkImagesFor(() async {
-        final auth = RecordingAuth();
-        final vibrationService = MockVibrationService();
-        when(() => vibrationService.heavyImpact()).thenAnswer((_) async {});
-        when(() => vibrationService.lightImpact()).thenAnswer((_) async {});
+      'triggers heavy impact vibration on invalid email in reset dialog',
+      (tester) async {
+        await mockNetworkImagesFor(() async {
+          final auth = RecordingAuth();
+          final vibrationService = MockVibrationService();
+          when(() => vibrationService.heavyImpact()).thenAnswer((_) async {});
+          when(() => vibrationService.lightImpact()).thenAnswer((_) async {});
 
-        await tester.pumpWidget(MaterialApp(
-            home: LoginPage(auth: auth, vibrationService: vibrationService)));
+          await tester.pumpWidget(
+            MaterialApp(
+              home: LoginPage(auth: auth, vibrationService: vibrationService),
+            ),
+          );
 
-        final forgotPasswordFinder =
-            find.byKey(const Key('forgotPasswordSemantics'));
+          final forgotPasswordFinder = find.byKey(
+            const Key('forgotPasswordSemantics'),
+          );
 
-        // Tap Forgot Password
-        await tester.ensureVisible(forgotPasswordFinder);
-        await tester.tap(forgotPasswordFinder);
-        await tester.pumpAndSettle();
+          // Tap Forgot Password
+          await tester.ensureVisible(forgotPasswordFinder);
+          await tester.tap(forgotPasswordFinder);
+          await tester.pumpAndSettle();
 
-        // Enter invalid email
-        await tester.enterText(
+          // Enter invalid email
+          await tester.enterText(
             find.descendant(
-                of: find.byType(AlertDialog), matching: find.byType(TextField)),
-            'invalid-email');
-        await tester.pump();
+              of: find.byType(AlertDialog),
+              matching: find.byType(TextField),
+            ),
+            'invalid-email',
+          );
+          await tester.pump();
 
-        // Tap Send Link
-        await tester.tap(find.text('Send Link'));
-        await tester.pump();
-        await tester.pumpAndSettle();
+          // Tap Send Link
+          await tester.tap(find.text('Send Link'));
+          await tester.pump();
+          await tester.pumpAndSettle();
 
-        // Verify haptic feedback
-        verify(() => vibrationService.heavyImpact()).called(1);
-        // Verify error SnackBar
-        expect(
+          // Verify haptic feedback
+          verify(() => vibrationService.heavyImpact()).called(1);
+          // Verify error SnackBar
+          expect(
             find.widgetWithText(SnackBar, 'Please enter a valid email address'),
-            findsOneWidget);
-      });
-    });
+            findsOneWidget,
+          );
+        });
+      },
+    );
   });
 }

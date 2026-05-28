@@ -27,12 +27,13 @@ void main() {
     // Members
     for (var m = 0; m < members; m++) {
       batch.set(
-          firestore
-              .collection('groups')
-              .doc(groupId)
-              .collection('members')
-              .doc('user_$m'),
-          {'uid': 'user_$m', 'role': 'member'});
+        firestore
+            .collection('groups')
+            .doc(groupId)
+            .collection('members')
+            .doc('user_$m'),
+        {'uid': 'user_$m', 'role': 'member'},
+      );
       opCount++;
     }
 

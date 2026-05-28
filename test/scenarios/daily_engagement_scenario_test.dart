@@ -18,8 +18,9 @@ void main() {
     GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
   });
 
-  testWidgets('Daily Engagement Scenario: User completes daily reading',
-      (tester) async {
+  testWidgets('Daily Engagement Scenario: User completes daily reading', (
+    tester,
+  ) async {
     await mockNetworkImagesFor(() async {
       // Setup
       final auth = MockFirebaseAuth(signedIn: false);
@@ -30,11 +31,15 @@ void main() {
       // Create services manually
       final notificationService = NotificationService(firestore: firestore);
       final groupService = GroupService(
-          firestore: firestore, notificationService: notificationService);
+        firestore: firestore,
+        notificationService: notificationService,
+      );
 
       // Seed User
       final userCred = await auth.createUserWithEmailAndPassword(
-          email: 'reader@example.com', password: 'password');
+        email: 'reader@example.com',
+        password: 'password',
+      );
       final uid = userCred.user!.uid;
       await seeder.seedUser(uid: uid, name: 'Reader');
 
@@ -53,10 +58,7 @@ void main() {
       await seeder.seedGroupSchedule(
         groupId: groupId,
         schedule: [
-          GroupSchedule(
-            date: today,
-            chapters: ['Gen 1', 'Gen 2'],
-          ),
+          GroupSchedule(date: today, chapters: ['Gen 1', 'Gen 2']),
         ],
       );
 

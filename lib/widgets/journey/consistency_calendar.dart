@@ -36,8 +36,10 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
   @override
   void initState() {
     super.initState();
-    _readingStatusService =
-        ReadingStatusService(firestore: widget.firestore, auth: widget.auth);
+    _readingStatusService = ReadingStatusService(
+      firestore: widget.firestore,
+      auth: widget.auth,
+    );
     _currentMonth = DateTime(_currentMonth.year, _currentMonth.month, 1);
 
     if (widget.initialReadDates != null) {
@@ -49,8 +51,11 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
 
   void _changeMonth(int delta) {
     setState(() {
-      _currentMonth =
-          DateTime(_currentMonth.year, _currentMonth.month + delta, 1);
+      _currentMonth = DateTime(
+        _currentMonth.year,
+        _currentMonth.month + delta,
+        1,
+      );
     });
     _loadStats();
   }
@@ -64,14 +69,20 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
     }
 
     try {
-      final daysInMonth =
-          DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
+      final daysInMonth = DateTime(
+        _currentMonth.year,
+        _currentMonth.month + 1,
+        0,
+      ).day;
 
       final statusMap = await _readingStatusService.getReadStatusForRange(
         uid,
         daysInMonth,
-        referenceDate:
-            DateTime(_currentMonth.year, _currentMonth.month, daysInMonth),
+        referenceDate: DateTime(
+          _currentMonth.year,
+          _currentMonth.month,
+          daysInMonth,
+        ),
       );
 
       final readDates = statusMap.entries
@@ -130,9 +141,9 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
             Text(
               'Consistency',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
             ),
             const SizedBox(height: 12),
           ],
@@ -176,8 +187,9 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                           const SizedBox(width: 16),
                           IconButton(
                             icon: const Icon(Icons.chevron_right),
-                            onPressed:
-                                isCurrentMonth ? null : () => _changeMonth(1),
+                            onPressed: isCurrentMonth
+                                ? null
+                                : () => _changeMonth(1),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
                             style: IconButton.styleFrom(
@@ -202,8 +214,9 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                         colorScheme,
                         label: 'Missed',
                         color: Colors.transparent,
-                        borderColor:
-                            colorScheme.outlineVariant.withValues(alpha: 0.5),
+                        borderColor: colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       _buildLegendItem(
@@ -223,8 +236,12 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
     );
   }
 
-  Widget _buildLegendItem(ColorScheme colorScheme,
-      {required String label, required Color color, Color? borderColor}) {
+  Widget _buildLegendItem(
+    ColorScheme colorScheme, {
+    required String label,
+    required Color color,
+    Color? borderColor,
+  }) {
     return Row(
       children: [
         Container(
@@ -272,15 +289,17 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
               );
             }).toList(),
           ),
-          const TableRow(children: [
-            SizedBox(height: 8),
-            SizedBox(height: 8),
-            SizedBox(height: 8),
-            SizedBox(height: 8),
-            SizedBox(height: 8),
-            SizedBox(height: 8),
-            SizedBox(height: 8),
-          ]),
+          const TableRow(
+            children: [
+              SizedBox(height: 8),
+              SizedBox(height: 8),
+              SizedBox(height: 8),
+              SizedBox(height: 8),
+              SizedBox(height: 8),
+              SizedBox(height: 8),
+              SizedBox(height: 8),
+            ],
+          ),
           // Skeleton rows
           for (int i = 0; i < 5; i++)
             TableRow(
@@ -288,11 +307,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                 return const Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 4),
-                    child: Skeleton(
-                      width: 32,
-                      height: 32,
-                      radius: 16,
-                    ),
+                    child: Skeleton(width: 32, height: 32, radius: 16),
                   ),
                 );
               }),
@@ -302,13 +317,19 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
     }
 
     final firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
-    final daysInMonth =
-        DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
+    final daysInMonth = DateTime(
+      _currentMonth.year,
+      _currentMonth.month + 1,
+      0,
+    ).day;
     final weekdayOffset = firstDay.weekday % 7;
 
     // Previous month filler
-    final prevMonthDays =
-        DateTime(_currentMonth.year, _currentMonth.month, 0).day;
+    final prevMonthDays = DateTime(
+      _currentMonth.year,
+      _currentMonth.month,
+      0,
+    ).day;
 
     final cells = <Widget>[];
 
@@ -357,8 +378,9 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                     ? colorScheme.onPrimary
                     : (isToday ? colorScheme.primary : colorScheme.onSurface),
                 fontSize: 12,
-                fontWeight:
-                    isRead || isToday ? FontWeight.bold : FontWeight.normal,
+                fontWeight: isRead || isToday
+                    ? FontWeight.bold
+                    : FontWeight.normal,
               ),
             ),
           ),
@@ -413,15 +435,17 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
 
     // Spacer Row
     rows.add(
-      const TableRow(children: [
-        SizedBox(height: 8),
-        SizedBox(height: 8),
-        SizedBox(height: 8),
-        SizedBox(height: 8),
-        SizedBox(height: 8),
-        SizedBox(height: 8),
-        SizedBox(height: 8),
-      ]),
+      const TableRow(
+        children: [
+          SizedBox(height: 8),
+          SizedBox(height: 8),
+          SizedBox(height: 8),
+          SizedBox(height: 8),
+          SizedBox(height: 8),
+          SizedBox(height: 8),
+          SizedBox(height: 8),
+        ],
+      ),
     );
 
     // Day Rows

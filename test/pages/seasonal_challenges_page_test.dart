@@ -44,19 +44,19 @@ Future<void> _seedChallenge({
       .collection('challenges')
       .doc(challengeId)
       .set({
-    'seasonId': seasonId,
-    'title': 'Read $goal chapters',
-    'description': 'Stay consistent every day.',
-    'metric': 'chapters',
-    'goal': goal,
-    'reward': const SeasonalReward(
-      id: 'r1',
-      type: 'points',
-      title: 'Bonus Points',
-      description: 'Extra rewards for reading.',
-      amount: 25,
-    ).toFirestore(),
-  });
+        'seasonId': seasonId,
+        'title': 'Read $goal chapters',
+        'description': 'Stay consistent every day.',
+        'metric': 'chapters',
+        'goal': goal,
+        'reward': const SeasonalReward(
+          id: 'r1',
+          type: 'points',
+          title: 'Bonus Points',
+          description: 'Extra rewards for reading.',
+          amount: 25,
+        ).toFirestore(),
+      });
 }
 
 String _formatDay(DateTime date) =>
@@ -72,13 +72,16 @@ void main() {
 
     setUp(() {
       firestore = FakeFirebaseFirestore();
-      auth =
-          MockFirebaseAuth(mockUser: MockUser(uid: 'user-1'), signedIn: true);
+      auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'user-1'),
+        signedIn: true,
+      );
       now = DateTime.now();
     });
 
-    testWidgets('renders active challenges for the current season',
-        (tester) async {
+    testWidgets('renders active challenges for the current season', (
+      tester,
+    ) async {
       const seasonId = 'spring';
       await _seedSeason(
         firestore: firestore,
@@ -102,21 +105,15 @@ void main() {
               .doc('user-1')
               .collection('seasonChallenges')
               .doc('${seasonId}_$challengeId')
-              .set(
-            {
-              'rewardClaimedAt': Timestamp.fromDate(now),
-            },
-            SetOptions(merge: true),
-          );
+              .set({
+                'rewardClaimedAt': Timestamp.fromDate(now),
+              }, SetOptions(merge: true));
         },
       );
 
       await tester.pumpWidget(
         MaterialApp(
-          home: SeasonalChallengesPage(
-            auth: auth,
-            service: service,
-          ),
+          home: SeasonalChallengesPage(auth: auth, service: service),
         ),
       );
 
@@ -127,8 +124,9 @@ void main() {
       expect(find.byType(SeasonalChallengeCard), findsOneWidget);
     });
 
-    testWidgets('claiming a reward updates progress and shows snackbar',
-        (tester) async {
+    testWidgets('claiming a reward updates progress and shows snackbar', (
+      tester,
+    ) async {
       const seasonId = 'spring';
       const challengeId = 'c1';
       await _seedSeason(
@@ -150,14 +148,15 @@ void main() {
           .collection('seasonChallenges')
           .doc('${seasonId}_$challengeId')
           .set({
-        'uid': 'user-1',
-        'seasonId': seasonId,
-        'challengeId': challengeId,
-        'totalProgress': 5,
-        'dailyProgress': {dayKey: 5},
-        'completedAt':
-            Timestamp.fromDate(now.subtract(const Duration(days: 1))),
-      });
+            'uid': 'user-1',
+            'seasonId': seasonId,
+            'challengeId': challengeId,
+            'totalProgress': 5,
+            'dailyProgress': {dayKey: 5},
+            'completedAt': Timestamp.fromDate(
+              now.subtract(const Duration(days: 1)),
+            ),
+          });
 
       final service = SeasonalChallengeService(
         firestore: firestore,
@@ -168,30 +167,22 @@ void main() {
               .doc('user-1')
               .collection('seasonChallenges')
               .doc('${seasonId}_$challengeId')
-              .set(
-            {
-              'rewardClaimedAt': Timestamp.fromDate(now),
-            },
-            SetOptions(merge: true),
-          );
+              .set({
+                'rewardClaimedAt': Timestamp.fromDate(now),
+              }, SetOptions(merge: true));
 
           await firestore
               .collection('users')
               .doc('user-1')
               .collection('seasonRewards')
               .doc('${seasonId}_$challengeId')
-              .set({
-            'claimedAt': Timestamp.fromDate(now),
-          });
+              .set({'claimedAt': Timestamp.fromDate(now)});
         },
       );
 
       await tester.pumpWidget(
         MaterialApp(
-          home: SeasonalChallengesPage(
-            auth: auth,
-            service: service,
-          ),
+          home: SeasonalChallengesPage(auth: auth, service: service),
         ),
       );
 
@@ -214,8 +205,9 @@ void main() {
       expect(progressDoc.data()?['rewardClaimedAt'], isNotNull);
     });
 
-    testWidgets('shows error message when challenge stream fails',
-        (tester) async {
+    testWidgets('shows error message when challenge stream fails', (
+      tester,
+    ) async {
       const seasonId = 'spring';
       await _seedSeason(
         firestore: firestore,
@@ -224,25 +216,17 @@ void main() {
         end: now.add(const Duration(days: 20)),
       );
 
-      final service = _FailingChallengeService(
-        firestore: firestore,
-      );
+      final service = _FailingChallengeService(firestore: firestore);
 
       await tester.pumpWidget(
         MaterialApp(
-          home: SeasonalChallengesPage(
-            auth: auth,
-            service: service,
-          ),
+          home: SeasonalChallengesPage(auth: auth, service: service),
         ),
       );
 
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Failed to load seasonal challenges.'),
-        findsOneWidget,
-      );
+      expect(find.text('Failed to load seasonal challenges.'), findsOneWidget);
     });
   });
 }

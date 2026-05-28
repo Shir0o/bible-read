@@ -32,10 +32,11 @@ class SeasonalChallengePaths {
 }
 
 /// Signature for invoking the seasonal challenge reward Cloud Function.
-typedef ClaimSeasonalChallengeRewardFn = Future<void> Function({
-  required String seasonId,
-  required String challengeId,
-});
+typedef ClaimSeasonalChallengeRewardFn =
+    Future<void> Function({
+      required String seasonId,
+      required String challengeId,
+    });
 
 /// Provides helpers for reading seasonal challenges and updating progress.
 class SeasonalChallengeService {
@@ -50,9 +51,9 @@ class SeasonalChallengeService {
     FirebaseFirestore? firestore,
     DateTime Function()? clock,
     ClaimSeasonalChallengeRewardFn? claimRewardFn,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        _clock = clock ?? DateTime.now,
-        _claimRewardFn = claimRewardFn ?? _defaultClaimSeasonalChallengeReward;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       _clock = clock ?? DateTime.now,
+       _claimRewardFn = claimRewardFn ?? _defaultClaimSeasonalChallengeReward;
 
   /// Returns the currently active season, if any.
   Future<Season?> fetchActiveSeason() async {
@@ -84,16 +85,21 @@ class SeasonalChallengeService {
         .collection(SeasonalChallengePaths.seasons)
         .doc(seasonId)
         .collection(SeasonalChallengePaths.challenges);
-    return query.snapshots().map((snapshot) {
-      return snapshot.docs
-          .map((doc) => SeasonalChallenge.fromFirestore(seasonId, doc))
-          .toList();
-    }).transform(StreamTransformer.fromHandlers(
-      handleError: (error, stackTrace, sink) {
-        unawaited(ErrorLogger.log(error, stackTrace));
-        sink.addError(error, stackTrace);
-      },
-    ));
+    return query
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => SeasonalChallenge.fromFirestore(seasonId, doc))
+              .toList();
+        })
+        .transform(
+          StreamTransformer.fromHandlers(
+            handleError: (error, stackTrace, sink) {
+              unawaited(ErrorLogger.log(error, stackTrace));
+              sink.addError(error, stackTrace);
+            },
+          ),
+        );
   }
 
   /// Streams a user's progress for [challengeId] within [seasonId].
@@ -103,17 +109,22 @@ class SeasonalChallengeService {
     required String challengeId,
   }) {
     final doc = _progressDoc(uid, seasonId, challengeId);
-    return doc.snapshots().map((snapshot) {
-      if (!snapshot.exists) {
-        return null;
-      }
-      return SeasonalChallengeProgress.fromFirestore(snapshot);
-    }).transform(StreamTransformer.fromHandlers(
-      handleError: (error, stackTrace, sink) {
-        unawaited(ErrorLogger.log(error, stackTrace));
-        sink.addError(error, stackTrace);
-      },
-    ));
+    return doc
+        .snapshots()
+        .map((snapshot) {
+          if (!snapshot.exists) {
+            return null;
+          }
+          return SeasonalChallengeProgress.fromFirestore(snapshot);
+        })
+        .transform(
+          StreamTransformer.fromHandlers(
+            handleError: (error, stackTrace, sink) {
+              unawaited(ErrorLogger.log(error, stackTrace));
+              sink.addError(error, stackTrace);
+            },
+          ),
+        );
   }
 
   /// Increments the daily progress for [challenge] by [amount].
@@ -124,8 +135,11 @@ class SeasonalChallengeService {
   }) async {
     try {
       if (amount <= 0) {
-        final existing =
-            await _progressDoc(uid, challenge.seasonId, challenge.id).get();
+        final existing = await _progressDoc(
+          uid,
+          challenge.seasonId,
+          challenge.id,
+        ).get();
         if (!existing.exists) {
           return SeasonalChallengeProgress(
             id: _progressId(challenge.seasonId, challenge.id),
@@ -161,7 +175,8 @@ class SeasonalChallengeService {
         final updatedMap = Map<String, int>.from(progress.dailyProgress);
         updatedMap[dayKey] = (updatedMap[dayKey] ?? 0) + appliedAmount;
         final newTotal = progress.totalProgress + appliedAmount;
-        final completedAt = progress.completedAt ??
+        final completedAt =
+            progress.completedAt ??
             (challenge.goal > 0 && newTotal >= challenge.goal ? now : null);
 
         final updatedProgress = SeasonalChallengeProgress(
@@ -225,12 +240,10 @@ class SeasonalChallengeService {
     required String seasonId,
     required String challengeId,
   }) async {
-    final callable = FirebaseFunctions.instanceFor(region: 'us-central1')
-        .httpsCallable('claimSeasonalChallengeReward');
-    await callable.call({
-      'seasonId': seasonId,
-      'challengeId': challengeId,
-    });
+    final callable = FirebaseFunctions.instanceFor(
+      region: 'us-central1',
+    ).httpsCallable('claimSeasonalChallengeReward');
+    await callable.call({'seasonId': seasonId, 'challengeId': challengeId});
   }
 
   DocumentReference<Map<String, dynamic>> _progressDoc(

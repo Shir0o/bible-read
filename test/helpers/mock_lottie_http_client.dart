@@ -37,8 +37,11 @@ class _MockHttpClientRequest extends Fake implements HttpClientRequest {
 }
 
 class _MockHttpClientResponse extends Fake implements HttpClientResponse {
-  final Uint8List _body = Uint8List.fromList(utf8.encode(
-      '{"v":"5.7.6","fr":30,"ip":0,"op":30,"w":100,"h":100,"nm":"empty","ddd":0,"assets":[],"layers":[]}'));
+  final Uint8List _body = Uint8List.fromList(
+    utf8.encode(
+      '{"v":"5.7.6","fr":30,"ip":0,"op":30,"w":100,"h":100,"nm":"empty","ddd":0,"assets":[],"layers":[]}',
+    ),
+  );
 
   @override
   int get statusCode => HttpStatus.ok;

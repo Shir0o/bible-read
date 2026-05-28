@@ -17,10 +17,10 @@ class _NoSemanticsBinding extends AutomatedTestWidgetsFlutterBinding {
 
 class RecordingFriendService extends FriendService {
   RecordingFriendService({required FakeFirebaseFirestore firestore})
-      : super(
-          firestore: firestore,
-          notificationService: NotificationService(firestore: firestore),
-        );
+    : super(
+        firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
+      );
 
   String? lastEmail;
   bool nudged = false;
@@ -47,10 +47,10 @@ class RecordingFriendService extends FriendService {
 
 class FailingFriendService extends FriendService {
   FailingFriendService({required FakeFirebaseFirestore firestore})
-      : super(
-          firestore: firestore,
-          notificationService: NotificationService(firestore: firestore),
-        );
+    : super(
+        firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
+      );
 
   @override
   Future<void> sendFriendRequestByEmail({
@@ -125,8 +125,10 @@ void main() {
     await pumpPage(tester);
 
     expect(find.text('No friends yet'), findsOneWidget);
-    expect(find.text('Invite friends to track your reading journey together.'),
-        findsOneWidget);
+    expect(
+      find.text('Invite friends to track your reading journey together.'),
+      findsOneWidget,
+    );
     expect(find.byIcon(Icons.groups_outlined), findsOneWidget);
     expect(find.text('Find Friends'), findsOneWidget);
   });
@@ -171,8 +173,9 @@ void main() {
     expect(service.nudged, isTrue);
   });
 
-  testWidgets('encouragement button changes appearance after send',
-      (tester) async {
+  testWidgets('encouragement button changes appearance after send', (
+    tester,
+  ) async {
     await firestore
         .collection('users')
         .doc('u1')
@@ -183,23 +186,27 @@ void main() {
     await pumpPage(tester);
 
     // Initial state: Enabled color (null in code means default icon color)
-    final initialIcon =
-        tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
+    final initialIcon = tester.widget<Icon>(
+      find.byIcon(Icons.auto_awesome_outlined),
+    );
     expect(initialIcon.color, isNull);
 
     await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
     await settle(tester);
 
     // After tap: Disabled color
-    final nudgedIcon =
-        tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
+    final nudgedIcon = tester.widget<Icon>(
+      find.byIcon(Icons.auto_awesome_outlined),
+    );
     expect(nudgedIcon.color, isNotNull);
 
     // Also verify onPressed is NOT null
-    final button = tester.widget<IconButton>(find.ancestor(
-      of: find.byIcon(Icons.auto_awesome_outlined),
-      matching: find.byType(IconButton),
-    ));
+    final button = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byIcon(Icons.auto_awesome_outlined),
+        matching: find.byType(IconButton),
+      ),
+    );
     expect(button.onPressed, isNotNull);
   });
 
@@ -219,17 +226,21 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await settle(tester);
     await tester.enterText(
-        find.byKey(const Key('addFriendEmailField')), 'x@example.com');
+      find.byKey(const Key('addFriendEmailField')),
+      'x@example.com',
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Send'));
     await settle(tester);
 
-    final button =
-        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Send'));
+    final button = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Send'),
+    );
     expect(button.onPressed, isNotNull);
   });
 
-  testWidgets('already sent nudge updates appearance/interaction',
-      (tester) async {
+  testWidgets('already sent nudge updates appearance/interaction', (
+    tester,
+  ) async {
     final already = AlreadySentFriendService(firestore: firestore);
     await firestore
         .collection('users')
@@ -252,18 +263,21 @@ void main() {
     await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
     await settle(tester);
 
-    final button = tester.widget<IconButton>(find.ancestor(
-      of: find.byIcon(Icons.auto_awesome_outlined),
-      matching: find.byType(IconButton),
-    ));
+    final button = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byIcon(Icons.auto_awesome_outlined),
+        matching: find.byType(IconButton),
+      ),
+    );
     expect(button.onPressed, isNotNull);
 
     // Verify snackbar "Encouragement already sent today"
     expect(find.text('Encouragement already sent today'), findsOneWidget);
   });
 
-  testWidgets('existing nudge log updates encouragement button appearance',
-      (tester) async {
+  testWidgets('existing nudge log updates encouragement button appearance', (
+    tester,
+  ) async {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
     await firestore
@@ -279,18 +293,20 @@ void main() {
         .collection('nudges')
         .doc('f1')
         .set({
-      'timestamp': Timestamp.fromDate(start.add(const Duration(hours: 1)))
-    });
+          'timestamp': Timestamp.fromDate(start.add(const Duration(hours: 1))),
+        });
 
     await pumpPage(tester);
 
     final icon = tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
     expect(icon.color, isNotNull);
 
-    final button = tester.widget<IconButton>(find.ancestor(
-      of: find.byIcon(Icons.auto_awesome_outlined),
-      matching: find.byType(IconButton),
-    ));
+    final button = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byIcon(Icons.auto_awesome_outlined),
+        matching: find.byType(IconButton),
+      ),
+    );
     expect(button.onPressed, isNotNull);
   });
 }

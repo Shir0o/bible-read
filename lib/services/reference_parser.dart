@@ -270,7 +270,8 @@ class ReferenceParser {
 
     // Match optional ordinal, a book name, then a chapter number; ignore verses.
     final re = RegExp(
-        r'^\s*(?:(\d|[Ii]{1,3})\s*)?([A-Za-z][A-Za-z .]*?)\s*(\d+)(?::.*)?\s*$');
+      r'^\s*(?:(\d|[Ii]{1,3})\s*)?([A-Za-z][A-Za-z .]*?)\s*(\d+)(?::.*)?\s*$',
+    );
     final m = re.firstMatch(raw);
     if (m == null) {
       return raw; // Could not parse; leave as-is.
@@ -372,8 +373,9 @@ class ReferenceParser {
 
     for (final part in parts) {
       if (RegExp(r'[-–—]|\bto\b', caseSensitive: false).hasMatch(part)) {
-        final rangeSplit =
-            part.split(RegExp(r'[-–—]|\bto\b', caseSensitive: false));
+        final rangeSplit = part.split(
+          RegExp(r'[-–—]|\bto\b', caseSensitive: false),
+        );
         if (rangeSplit.length >= 2) {
           var start = _parseEndpoint(rangeSplit.first.trim());
           // Inherit book from previous entry if start is number-only
@@ -461,8 +463,9 @@ class ReferenceParser {
         final del = dp[i - 1][j] + 1;
         final ins = dp[i][j - 1] + 1;
         final sub = dp[i - 1][j - 1] + cost;
-        dp[i][j] =
-            del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
+        dp[i][j] = del < ins
+            ? (del < sub ? del : sub)
+            : (ins < sub ? ins : sub);
       }
     }
     return dp[m][n];
@@ -470,7 +473,8 @@ class ReferenceParser {
 
   static _Ref? _parseEndpoint(String s) {
     final re = RegExp(
-        r'^\s*(?:(\d|[Ii]{1,3})\s*)?([A-Za-z][A-Za-z .]*?)(?:\s+(\d+))?\s*$');
+      r'^\s*(?:(\d|[Ii]{1,3})\s*)?([A-Za-z][A-Za-z .]*?)(?:\s+(\d+))?\s*$',
+    );
     final m = re.firstMatch(s);
     if (m == null) return null;
     final ordStr = m.group(1);

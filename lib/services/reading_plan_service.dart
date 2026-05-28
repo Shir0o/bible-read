@@ -45,8 +45,10 @@ class ReadingPlanService {
     } catch (e) {
       // Try fetching directly from Firestore if not in cache
       try {
-        final doc =
-            await firestore.collection('custom_plans').doc(planId).get();
+        final doc = await firestore
+            .collection('custom_plans')
+            .doc(planId)
+            .get();
         if (doc.exists) {
           final data = doc.data()!;
           data['id'] = doc.id;
@@ -68,8 +70,11 @@ class ReadingPlanService {
   }
 
   /// Starts a reading plan for a user.
-  Future<void> startPlan(String userId, String planId,
-      {DateTime? startDate}) async {
+  Future<void> startPlan(
+    String userId,
+    String planId, {
+    DateTime? startDate,
+  }) async {
     final progress = UserPlanProgress(
       planId: planId,
       userId: userId,
@@ -104,9 +109,9 @@ class ReadingPlanService {
         .doc(planId)
         .snapshots()
         .map((doc) {
-      if (!doc.exists) return null;
-      return UserPlanProgress.fromFirestore(doc);
-    });
+          if (!doc.exists) return null;
+          return UserPlanProgress.fromFirestore(doc);
+        });
   }
 
   /// Streams all active (non-archived) plans for a user.
@@ -118,10 +123,10 @@ class ReadingPlanService {
         .where('isArchived', isEqualTo: false)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => UserPlanProgress.fromFirestore(doc))
-          .toList();
-    });
+          return snapshot.docs
+              .map((doc) => UserPlanProgress.fromFirestore(doc))
+              .toList();
+        });
   }
 
   /// Streams all archived plans for a user.
@@ -133,15 +138,18 @@ class ReadingPlanService {
         .where('isArchived', isEqualTo: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => UserPlanProgress.fromFirestore(doc))
-          .toList();
-    });
+          return snapshot.docs
+              .map((doc) => UserPlanProgress.fromFirestore(doc))
+              .toList();
+        });
   }
 
   /// Sets the archived status of a plan.
   Future<void> setPlanArchived(
-      String userId, String planId, bool isArchived) async {
+    String userId,
+    String planId,
+    bool isArchived,
+  ) async {
     await firestore
         .collection('users')
         .doc(userId)
@@ -218,7 +226,10 @@ class ReadingPlanService {
   /// Calculates the scheduled day for a given date based on the plan start date.
   /// Returns null if the date is before the start or after the end.
   ReadingPlanDay? getScheduledDay(
-      ReadingPlan plan, DateTime startDate, DateTime targetDate) {
+    ReadingPlan plan,
+    DateTime startDate,
+    DateTime targetDate,
+  ) {
     // Normalize dates to ignore time components
     final start = DateTime(startDate.year, startDate.month, startDate.day);
     final target = DateTime(targetDate.year, targetDate.month, targetDate.day);

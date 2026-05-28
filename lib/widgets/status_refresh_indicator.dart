@@ -3,12 +3,7 @@ import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-enum _RefreshStatus {
-  idle,
-  loading,
-  success,
-  error,
-}
+enum _RefreshStatus { idle, loading, success, error }
 
 class StatusRefreshIndicator extends StatefulWidget {
   final Widget child;
@@ -68,8 +63,10 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
 
     // Start indeterminate/slow animation
     _progressController.reset();
-    _progressController.animateTo(0.95,
-        duration: StatusRefreshIndicator.loadingAnimationDuration);
+    _progressController.animateTo(
+      0.95,
+      duration: StatusRefreshIndicator.loadingAnimationDuration,
+    );
 
     try {
       await widget.onRefresh();
@@ -80,8 +77,10 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
           _message = 'Refreshed successfully';
         });
         // Fast finish
-        await _progressController.animateTo(1.0,
-            duration: StatusRefreshIndicator.successAnimationDuration);
+        await _progressController.animateTo(
+          1.0,
+          duration: StatusRefreshIndicator.successAnimationDuration,
+        );
         // Keep success state visible
         await Future.delayed(StatusRefreshIndicator.successDelay);
       }
@@ -167,8 +166,10 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                 builder: (context, _) {
                   // Clamp the container height to maxHeight
                   final double containerHeight =
-                      (widget.maxHeight * controller.value)
-                          .clamp(0.0, widget.maxHeight);
+                      (widget.maxHeight * controller.value).clamp(
+                        0.0,
+                        widget.maxHeight,
+                      );
 
                   // Only show content if we have some height
                   if (containerHeight <= 0) return const SizedBox.shrink();
@@ -176,9 +177,7 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                   return Container(
                     height: containerHeight,
                     width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                    ),
+                    decoration: BoxDecoration(color: colorScheme.surface),
                     clipBehavior: Clip.hardEdge,
                     child: OverflowBox(
                       maxHeight: widget.maxHeight,
@@ -220,16 +219,16 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                                       _getStatusText(controller),
                                       style: AppTheme.textTheme.bodyMedium
                                           ?.copyWith(
-                                        color: colorScheme.onSurface,
-                                        fontWeight: FontWeight.bold,
-                                        shadows: [
-                                          Shadow(
-                                            offset: const Offset(0, 1),
-                                            blurRadius: 2,
-                                            color: colorScheme.shadow,
+                                            color: colorScheme.onSurface,
+                                            fontWeight: FontWeight.bold,
+                                            shadows: [
+                                              Shadow(
+                                                offset: const Offset(0, 1),
+                                                blurRadius: 2,
+                                                color: colorScheme.shadow,
+                                              ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
                                     ),
                                   ),
                                 ),

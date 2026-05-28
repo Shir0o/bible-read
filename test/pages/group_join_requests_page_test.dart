@@ -130,8 +130,9 @@ void main() {
     expect(find.text('Failed to load join requests'), findsOneWidget);
   });
 
-  testWidgets('approving request updates service and shows snackbar',
-      (tester) async {
+  testWidgets('approving request updates service and shows snackbar', (
+    tester,
+  ) async {
     const groupId = 'g-approve';
     const uid = 'alice';
 
@@ -145,26 +146,23 @@ void main() {
         .doc(groupId)
         .collection(GroupCollections.joinRequests)
         .doc(uid)
-        .set({
-      'uid': uid,
-      'name': 'Alice',
-    });
+        .set({'uid': uid, 'name': 'Alice'});
 
     final service = _RecordingGroupService(firestore: firestore);
 
-    await pumpPage(
-      tester,
-      groupId: groupId,
-      groupService: service,
-    );
+    await pumpPage(tester, groupId: groupId, groupService: service);
 
     await tester.pumpAndSettle();
 
     expect(find.text('Alice'), findsOneWidget);
 
-    await tester.tap(find.byWidgetPredicate((widget) =>
-        widget is Semantics &&
-        widget.properties.label == 'Approve join request from Alice'));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label == 'Approve join request from Alice',
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(service.approveCalled, isTrue);
@@ -187,8 +185,9 @@ void main() {
     expect(memberSnap.exists, isTrue);
   });
 
-  testWidgets('denying request updates service and shows snackbar',
-      (tester) async {
+  testWidgets('denying request updates service and shows snackbar', (
+    tester,
+  ) async {
     const groupId = 'g-deny';
     const uid = 'eve';
 
@@ -202,26 +201,23 @@ void main() {
         .doc(groupId)
         .collection(GroupCollections.joinRequests)
         .doc(uid)
-        .set({
-      'uid': uid,
-      'name': 'Eve',
-    });
+        .set({'uid': uid, 'name': 'Eve'});
 
     final service = _RecordingGroupService(firestore: firestore);
 
-    await pumpPage(
-      tester,
-      groupId: groupId,
-      groupService: service,
-    );
+    await pumpPage(tester, groupId: groupId, groupService: service);
 
     await tester.pumpAndSettle();
 
     expect(find.text('Eve'), findsOneWidget);
 
-    await tester.tap(find.byWidgetPredicate((widget) =>
-        widget is Semantics &&
-        widget.properties.label == 'Deny join request from Eve'));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label == 'Deny join request from Eve',
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(service.denyCalled, isTrue);

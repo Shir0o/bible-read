@@ -68,6 +68,7 @@ analyze_output.txt
 
 .gemini/
 .claude/
+.antigravitycli/
 gha-creds-*.json
 
 # Android build

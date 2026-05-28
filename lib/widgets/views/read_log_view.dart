@@ -20,11 +20,13 @@ class ReadLogView extends StatefulWidget {
   final Future<void> Function({
     required String ownerUid,
     required String likerName,
-  }) onSendLikeNotification;
+  })
+  onSendLikeNotification;
   final Future<void> Function({
     required String ownerUid,
     required String commenterName,
-  }) onSendCommentNotification;
+  })
+  onSendCommentNotification;
   final DateTime Function() dateProvider;
   final VibrationService? vibrationService;
 
@@ -38,9 +40,9 @@ class ReadLogView extends StatefulWidget {
     DateTime Function()? dateProvider,
     this.tabController,
     this.vibrationService,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        dateProvider = dateProvider ?? DateTime.now;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       dateProvider = dateProvider ?? DateTime.now;
 
   final TabController? tabController;
 
@@ -216,8 +218,10 @@ class _ReadLogViewState extends State<ReadLogView>
           setState(() => _logs[index] = original);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content:
-                    Text('Failed to remove encouragement. Please try again.')),
+              content: Text(
+                'Failed to remove encouragement. Please try again.',
+              ),
+            ),
           );
         }
       }
@@ -260,7 +264,8 @@ class _ReadLogViewState extends State<ReadLogView>
           setState(() => _logs[index] = original);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Failed to encourage. Please try again.')),
+              content: Text('Failed to encourage. Please try again.'),
+            ),
           );
         }
       }
@@ -275,8 +280,9 @@ class _ReadLogViewState extends State<ReadLogView>
     super.build(context);
     return Scaffold(
       body: Container(
-        decoration:
-            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
+        decoration: CommonStyles.backgroundDecoration(
+          Theme.of(context).colorScheme,
+        ),
         child: SkeletonLoader(
           loading: _loading,
           skeleton: _readToday
@@ -296,93 +302,88 @@ class _ReadLogViewState extends State<ReadLogView>
                   ),
                 )
               : widget.auth.currentUser == null
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.people_outline,
-                              size: 48,
-                              color:
-                                  Theme.of(context).colorScheme.outlineVariant,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Sign in to see who\'s reading today',
-                              style: AppTextStyles.subtitle(context).copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Join the community and encourage others.',
-                              style: AppTextStyles.body(context).copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.people_outline,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.outlineVariant,
                         ),
-                      ),
-                    )
-                  : _logs.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(48.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.wb_sunny_outlined,
-                                  size: 48,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .outlineVariant,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Be the first light today',
-                                  style:
-                                      AppTextStyles.subtitle(context).copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Read your passage and be an encouragement to others.',
-                                  style: AppTextStyles.body(context).copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                    height: 1.5,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Sign in to see who\'s reading today',
+                          style: AppTextStyles.subtitle(context).copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.only(
-                            top: 16.0,
-                            bottom: 48.0,
-                            left: 16,
-                            right: 16,
-                          ),
-                          child: ReadLogList(
-                            logs: _logs,
-                            onToggleLike: _toggleLike,
-                            vibrationService: widget.vibrationService,
-                          ),
+                          textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Join the community and encourage others.',
+                          style: AppTextStyles.body(context).copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : _logs.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(48.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.wb_sunny_outlined,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Be the first light today',
+                          style: AppTextStyles.subtitle(context).copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Read your passage and be an encouragement to others.',
+                          style: AppTextStyles.body(context).copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.only(
+                    top: 16.0,
+                    bottom: 48.0,
+                    left: 16,
+                    right: 16,
+                  ),
+                  child: ReadLogList(
+                    logs: _logs,
+                    onToggleLike: _toggleLike,
+                    vibrationService: widget.vibrationService,
+                  ),
+                ),
         ),
       ),
     );

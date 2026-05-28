@@ -63,11 +63,15 @@ class ReadLog {
     final data = doc.data() ?? <String, dynamic>{};
 
     final likesFuture = doc.reference.collection('likes').get();
-    final commentsFuture =
-        doc.reference.collection('comments').orderBy('timestamp').get();
+    final commentsFuture = doc.reference
+        .collection('comments')
+        .orderBy('timestamp')
+        .get();
 
-    final results = await Future.wait<QuerySnapshot<Map<String, dynamic>>>(
-        [likesFuture, commentsFuture]);
+    final results = await Future.wait<QuerySnapshot<Map<String, dynamic>>>([
+      likesFuture,
+      commentsFuture,
+    ]);
     final likeDocs = results[0].docs;
     final commentsSnap = results[1];
 
@@ -75,8 +79,9 @@ class ReadLog {
     final likeNames = likeDocs
         .map((d) => (d.data()['name'] ?? 'Unknown').toString())
         .toList();
-    final comments =
-        commentsSnap.docs.map((d) => Comment.fromFirestore(d)).toList();
+    final comments = commentsSnap.docs
+        .map((d) => Comment.fromFirestore(d))
+        .toList();
     final name = (data['name'] ?? doc.id).toString().split(' ').first;
     return ReadLog(
       uid: doc.id,
@@ -91,29 +96,29 @@ class ReadLog {
 
   /// Parses a [ReadLog] from JSON.
   factory ReadLog.fromJson(Map<String, dynamic> json) => ReadLog(
-        uid: json['uid'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        likeNames: List<String>.from(json['likeNames'] as List? ?? []),
-        comments: (json['comments'] as List<dynamic>? ?? [])
-            .map((c) => Comment.fromJson(Map<String, dynamic>.from(c as Map)))
-            .toList(),
-        liked: json['liked'] as bool? ?? false,
-        firstReader: json['firstReader'] as bool? ?? false,
-        timestamp: json['timestamp'] != null
-            ? (json['timestamp'] is Timestamp
-                ? (json['timestamp'] as Timestamp).toDate()
-                : DateTime.tryParse(json['timestamp'].toString()))
-            : null,
-      );
+    uid: json['uid'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+    likeNames: List<String>.from(json['likeNames'] as List? ?? []),
+    comments: (json['comments'] as List<dynamic>? ?? [])
+        .map((c) => Comment.fromJson(Map<String, dynamic>.from(c as Map)))
+        .toList(),
+    liked: json['liked'] as bool? ?? false,
+    firstReader: json['firstReader'] as bool? ?? false,
+    timestamp: json['timestamp'] != null
+        ? (json['timestamp'] is Timestamp
+              ? (json['timestamp'] as Timestamp).toDate()
+              : DateTime.tryParse(json['timestamp'].toString()))
+        : null,
+  );
 
   /// Converts this log to JSON.
   Map<String, dynamic> toJson() => {
-        'uid': uid,
-        'name': name,
-        'likeNames': likeNames,
-        'comments': comments.map((c) => c.toJson()).toList(),
-        'liked': liked,
-        'firstReader': firstReader,
-        'timestamp': timestamp?.toIso8601String(),
-      };
+    'uid': uid,
+    'name': name,
+    'likeNames': likeNames,
+    'comments': comments.map((c) => c.toJson()).toList(),
+    'liked': liked,
+    'firstReader': firstReader,
+    'timestamp': timestamp?.toIso8601String(),
+  };
 }

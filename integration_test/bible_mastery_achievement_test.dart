@@ -1,7 +1,7 @@
 import 'package:bible_read/main.dart' as app;
 import 'package:bible_read/pages/bible_progress_page.dart';
 import 'package:bible_read/pages/main_page.dart';
-import 'package:bible_read/pages/user_profile_page.dart';
+import 'package:bible_read/pages/settings_page.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -119,18 +119,14 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
 
-    // Tap Profile
-    final profileItem = find.text('Profile');
-    expect(profileItem, findsOneWidget);
-    await tester.tap(profileItem);
+    // Tap Settings
+    final settingsItem = find.text('Settings');
+    expect(settingsItem, findsOneWidget);
+    await tester.tap(settingsItem);
     await tester.pumpAndSettle();
 
-    // Verify on UserProfilePage
-    expect(find.byType(UserProfilePage), findsOneWidget);
-    expect(find.text('Achievements'), findsOneWidget);
-
-    // Verify the badge is visible
-    expect(find.text('NT Starter'), findsOneWidget);
-    await takeScreenshot(tester, '07_mastery_badge');
+    // Verify on SettingsPage
+    expect(find.byType(SettingsPage), findsOneWidget);
+    await takeScreenshot(tester, '07_settings_page');
   });
 }

@@ -57,7 +57,8 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
       builder: (context) => AlertDialog(
         title: Text('Leave "${plan.title}"?'),
         content: const Text(
-            'Would you like to archive this plan to keep your progress, or delete it permanently?'),
+          'Would you like to archive this plan to keep your progress, or delete it permanently?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -76,7 +77,8 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
               _deletePlanPermanently(plan);
             },
             style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error),
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Delete Permanently'),
           ),
         ],
@@ -89,9 +91,9 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
     if (user != null) {
       _planService.setPlanArchived(user.uid, plan.id, true).then((_) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('"${plan.title}" archived')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('"${plan.title}" archived')));
         }
       });
     }
@@ -157,12 +159,13 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                       final plan = allPlans.firstWhere(
                         (p) => p.id == progress.planId,
                         orElse: () => ReadingPlan(
-                            id: 'unknown',
-                            title: 'Unknown Plan',
-                            description: '',
-                            durationDays: 0,
-                            tags: [],
-                            schedule: []),
+                          id: 'unknown',
+                          title: 'Unknown Plan',
+                          description: '',
+                          durationDays: 0,
+                          tags: [],
+                          schedule: [],
+                        ),
                       );
                       return (plan: plan, progress: progress);
                     })
@@ -174,12 +177,13 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                       final plan = allPlans.firstWhere(
                         (p) => p.id == progress.planId,
                         orElse: () => ReadingPlan(
-                            id: 'unknown',
-                            title: 'Unknown Plan',
-                            description: '',
-                            durationDays: 0,
-                            tags: [],
-                            schedule: []),
+                          id: 'unknown',
+                          title: 'Unknown Plan',
+                          description: '',
+                          durationDays: 0,
+                          tags: [],
+                          schedule: [],
+                        ),
                       );
                       return (plan: plan, progress: progress);
                     })
@@ -210,29 +214,28 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: colorScheme.primaryContainer
-                                    .withValues(alpha: 0.2),
+                                color: colorScheme.primaryContainer.withValues(
+                                  alpha: 0.2,
+                                ),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Text(
                                 '${activePlansData.length} Ongoing',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(
-                                      color: colorScheme.primary,
-                                    ),
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(color: colorScheme.primary),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      ...activePlansData.map((data) => _buildActivePlanCard(
-                            context,
-                            colorScheme,
-                            data.plan,
-                            data.progress,
-                          )),
+                      ...activePlansData.map(
+                        (data) => _buildActivePlanCard(
+                          context,
+                          colorScheme,
+                          data.plan,
+                          data.progress,
+                        ),
+                      ),
                     ],
 
                     // Archive Section
@@ -257,12 +260,14 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                           ],
                         ),
                       ),
-                      ...archivedPlansData.map((data) => _buildArchivedPlanCard(
-                            context,
-                            colorScheme,
-                            data.plan,
-                            data.progress,
-                          )),
+                      ...archivedPlansData.map(
+                        (data) => _buildArchivedPlanCard(
+                          context,
+                          colorScheme,
+                          data.plan,
+                          data.progress,
+                        ),
+                      ),
                     ],
                   ],
                 );
@@ -298,10 +303,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            plan.title,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text(plan.title, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
             plan.description,
@@ -316,9 +318,9 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
               Text(
                 '$percentString complete',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
+                ),
               ),
               Text(
                 '$completedCount/$totalCount days',
@@ -374,8 +376,10 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                   side: BorderSide(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                   ),
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 20,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -419,10 +423,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  plan.title,
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
+                Text(plan.title, style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 4),
                 Text(
                   '$percentString complete ($completedCount/$totalCount days)',

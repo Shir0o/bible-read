@@ -49,68 +49,77 @@ void main() {
   }
 
   testWidgets(
-      'Correctly shows Actual Group Progress (25%) instead of Time Progress',
-      (tester) async {
-    // 1. Setup Group
-    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    'Correctly shows Actual Group Progress (25%) instead of Time Progress',
+    (tester) async {
+      // 1. Setup Group
+      await firestore.collection('groups').doc('g1').set(group.toFirestore());
 
-    // 2. Setup Members (u1, u2)
-    final membersRef =
-        firestore.collection('groups').doc('g1').collection('members');
-    await membersRef
-        .doc('u1')
-        .set({'uid': 'u1', 'name': 'User 1', 'role': 'owner'});
-    await membersRef
-        .doc('u2')
-        .set({'uid': 'u2', 'name': 'User 2', 'role': 'member'});
-
-    // 3. Setup Schedule (100 days, 1 chapter/day)
-    final scheduleRef =
-        firestore.collection('groups').doc('g1').collection('schedule');
-    for (int i = 0; i < 100; i++) {
-      final date = DateTime(2024, 1, 1).add(Duration(days: i));
-      final dateId =
-          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      await scheduleRef.doc(dateId).set({
-        'date': Timestamp.fromDate(date),
-        'chapters': ['Ch $i'],
+      // 2. Setup Members (u1, u2)
+      final membersRef = firestore
+          .collection('groups')
+          .doc('g1')
+          .collection('members');
+      await membersRef.doc('u1').set({
+        'uid': 'u1',
+        'name': 'User 1',
+        'role': 'owner',
       });
-    }
+      await membersRef.doc('u2').set({
+        'uid': 'u2',
+        'name': 'User 2',
+        'role': 'member',
+      });
 
-    // 4. Setup Progress Summary
-    // u1 has read 50 chapters (50%).
-    // u2 has read 0 chapters (0%).
-    // Average = 25%.
-    final summaryRef = firestore
-        .collection('groups')
-        .doc('g1')
-        .collection('progressSummary')
-        .doc('data')
-        .collection('entries');
+      // 3. Setup Schedule (100 days, 1 chapter/day)
+      final scheduleRef = firestore
+          .collection('groups')
+          .doc('g1')
+          .collection('schedule');
+      for (int i = 0; i < 100; i++) {
+        final date = DateTime(2024, 1, 1).add(Duration(days: i));
+        final dateId =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        await scheduleRef.doc(dateId).set({
+          'date': Timestamp.fromDate(date),
+          'chapters': ['Ch $i'],
+        });
+      }
 
-    await summaryRef.doc('u1').set({'completed': 50});
-    await summaryRef.doc('u2').set({'completed': 0});
+      // 4. Setup Progress Summary
+      // u1 has read 50 chapters (50%).
+      // u2 has read 0 chapters (0%).
+      // Average = 25%.
+      final summaryRef = firestore
+          .collection('groups')
+          .doc('g1')
+          .collection('progressSummary')
+          .doc('data')
+          .collection('entries');
 
-    // 5. Set Current Date to Day 80 (80% Time Progress)
-    final currentDate = DateTime(2024, 1, 1).add(const Duration(days: 80));
+      await summaryRef.doc('u1').set({'completed': 50});
+      await summaryRef.doc('u2').set({'completed': 0});
 
-    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-    final service = GroupService(firestore: firestore);
+      // 5. Set Current Date to Day 80 (80% Time Progress)
+      final currentDate = DateTime(2024, 1, 1).add(const Duration(days: 80));
 
-    await pumpPage(
-      tester,
-      service: service,
-      auth: auth,
-      currentDate: currentDate,
-    );
+      auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final service = GroupService(firestore: firestore);
 
-    // Expected Behavior: Shows 25% (Actual Progress)
-    expect(find.text('25%'), findsOneWidget);
+      await pumpPage(
+        tester,
+        service: service,
+        auth: auth,
+        currentDate: currentDate,
+      );
 
-    // Status should be "Behind" (25% < 81%)
-    expect(find.text('Behind'), findsOneWidget);
+      // Expected Behavior: Shows 25% (Actual Progress)
+      expect(find.text('25%'), findsOneWidget);
 
-    // Text description update
-    expect(find.textContaining('25% through the Book of Ch'), findsOneWidget);
-  });
+      // Status should be "Behind" (25% < 81%)
+      expect(find.text('Behind'), findsOneWidget);
+
+      // Text description update
+      expect(find.textContaining('25% through the Book of Ch'), findsOneWidget);
+    },
+  );
 }

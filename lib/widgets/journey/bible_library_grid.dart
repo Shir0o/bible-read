@@ -47,7 +47,8 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
       _completedStream = widget.initialCompletedByBook != null
           ? Stream.value(widget.initialCompletedByBook!)
           : Stream.fromFuture(
-              _bibleProgressService.completedChaptersByBook(user.uid));
+              _bibleProgressService.completedChaptersByBook(user.uid),
+            );
     } else {
       _completedStream = Stream.value({});
     }
@@ -68,9 +69,9 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                 Text(
                   'Bible Library',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
                 ),
                 TextButton(
                   onPressed: () {
@@ -127,8 +128,9 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                 }
 
                 final totalBooks = ReferenceParser.allBooks.length;
-                final overallProgress =
-                    totalBooks > 0 ? completedBooksCount / totalBooks : 0.0;
+                final overallProgress = totalBooks > 0
+                    ? completedBooksCount / totalBooks
+                    : 0.0;
                 final overallPercentText =
                     '${(overallProgress * 100).toInt()}%';
 
@@ -265,8 +267,9 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                 color: colorScheme.surfaceContainer,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: colorScheme.outlineVariant
-                                      .withValues(alpha: 0.2),
+                                  color: colorScheme.outlineVariant.withValues(
+                                    alpha: 0.2,
+                                  ),
                                 ),
                               ),
                               child: Row(
@@ -325,8 +328,9 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                 color: colorScheme.surfaceContainer,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: colorScheme.outlineVariant
-                                      .withValues(alpha: 0.2),
+                                  color: colorScheme.outlineVariant.withValues(
+                                    alpha: 0.2,
+                                  ),
                                 ),
                               ),
                               child: Row(

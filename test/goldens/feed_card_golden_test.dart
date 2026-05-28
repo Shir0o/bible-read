@@ -27,10 +27,7 @@ void main() {
   group('FeedCard Golden Test', () {
     testWidgets('FeedCard - Light Mode', (tester) async {
       await tester.pumpGolden(
-        FeedCard(
-          log: log,
-          onToggleLike: () {},
-        ),
+        FeedCard(log: log, onToggleLike: () {}),
         brightness: Brightness.light,
       );
       await expectLater(
@@ -41,10 +38,7 @@ void main() {
 
     testWidgets('FeedCard - Dark Mode', (tester) async {
       await tester.pumpGolden(
-        FeedCard(
-          log: log,
-          onToggleLike: () {},
-        ),
+        FeedCard(log: log, onToggleLike: () {}),
         brightness: Brightness.dark,
       );
       await expectLater(
@@ -55,10 +49,7 @@ void main() {
 
     testWidgets('FeedCard - Large Text', (tester) async {
       await tester.pumpGolden(
-        FeedCard(
-          log: log,
-          onToggleLike: () {},
-        ),
+        FeedCard(log: log, onToggleLike: () {}),
         brightness: Brightness.light,
         textScaleFactor: 1.5,
       );

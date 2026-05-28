@@ -5,8 +5,9 @@ import 'package:bible_read/widgets/read_log_list.dart';
 import 'package:bible_read/models/read_log.dart';
 
 void main() {
-  testWidgets('FeedCard displays correctly and like button works',
-      (tester) async {
+  testWidgets('FeedCard displays correctly and like button works', (
+    tester,
+  ) async {
     String? likedUid;
     final logs = [
       ReadLog(
@@ -22,10 +23,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ReadLogList(
-            logs: logs,
-            onToggleLike: (uid) => likedUid = uid,
-          ),
+          body: ReadLogList(logs: logs, onToggleLike: (uid) => likedUid = uid),
         ),
       ),
     );
@@ -59,10 +57,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ReadLogList(
-            logs: logs,
-            onToggleLike: (_) {},
-          ),
+          body: ReadLogList(logs: logs, onToggleLike: (_) {}),
         ),
       ),
     );

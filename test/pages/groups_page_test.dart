@@ -80,10 +80,10 @@ void main() {
         .collection('members')
         .doc('m1')
         .set({
-      'uid': 'u1',
-      'role': 'owner',
-      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
-    });
+          'uid': 'u1',
+          'role': 'owner',
+          'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+        });
     await firestore.collection('groups').doc('g2').set({
       'name': 'Other',
       'ownerUid': 'u2',
@@ -95,10 +95,10 @@ void main() {
         .collection('members')
         .doc('u1')
         .set({
-      'uid': 'u1',
-      'role': 'member',
-      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
-    });
+          'uid': 'u1',
+          'role': 'member',
+          'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+        });
 
     await pumpPage(tester, GroupService(firestore: firestore));
 
@@ -118,10 +118,10 @@ void main() {
         .collection('members')
         .doc('u1')
         .set({
-      'uid': 'u1',
-      'role': 'member',
-      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
-    });
+          'uid': 'u1',
+          'role': 'member',
+          'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+        });
     await firestore.collection('groups').doc('g2').set({
       'name': 'Other',
       'ownerUid': 'u2',
@@ -153,16 +153,14 @@ void main() {
     expect(find.text('New Group Plan'), findsOneWidget);
   });
 
-  testWidgets('shows empty state with create button when no groups exist',
-      (tester) async {
+  testWidgets('shows empty state with create button when no groups exist', (
+    tester,
+  ) async {
     final service = RecordingGroupService(firestore: firestore);
     await pumpPage(tester, service);
 
     expect(find.text('You haven\'t joined any groups yet.'), findsOneWidget);
-    expect(
-      find.text('Join or Create Group'),
-      findsOneWidget,
-    );
+    expect(find.text('Join or Create Group'), findsOneWidget);
     expect(find.byIcon(Icons.add_circle), findsOneWidget);
 
     await tester.tap(find.text('Join or Create Group'));

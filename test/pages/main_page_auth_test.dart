@@ -1,7 +1,7 @@
 import 'package:bible_read/pages/auth_selection_page.dart';
 import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/main_page.dart';
-import 'package:bible_read/pages/user_profile_page.dart';
+import 'package:bible_read/pages/settings_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -91,8 +91,12 @@ class MockHttpClientResponse extends Fake implements HttpClientResponse {
       HttpClientResponseCompressionState.notCompressed;
 
   @override
-  StreamSubscription<List<int>> listen(void Function(List<int> event)? onData,
-      {Function? onError, void Function()? onDone, bool? cancelOnError}) {
+  StreamSubscription<List<int>> listen(
+    void Function(List<int> event)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) {
     // 1x1 transparent pixel png
     final List<int> bytes = [
       0x89,
@@ -161,10 +165,14 @@ class MockHttpClientResponse extends Fake implements HttpClientResponse {
       0xAE,
       0x42,
       0x60,
-      0x82
+      0x82,
     ];
-    return Stream<List<int>>.value(bytes).listen(onData,
-        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+    return Stream<List<int>>.value(bytes).listen(
+      onData,
+      onError: onError,
+      onDone: onDone,
+      cancelOnError: cancelOnError,
+    );
   }
 }
 
@@ -182,8 +190,9 @@ void main() {
     GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
   });
 
-  testWidgets('Authenticated user sees responsive scaffold with home',
-      (tester) async {
+  testWidgets('Authenticated user sees responsive scaffold with home', (
+    tester,
+  ) async {
     final user = MockUser(uid: 'u1', email: 'test@example.com');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
     final firestore = FakeFirebaseFirestore();
@@ -203,9 +212,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.byType(ResponsiveScaffold), findsOneWidget);
-    expect(find.byType(UserProfilePage), findsNothing);
-    expect(find.text('Home'),
-        findsOneWidget); // Assuming Home tab is selected by default
+    expect(find.byType(SettingsPage), findsNothing);
+    expect(
+      find.text('Home'),
+      findsOneWidget,
+    ); // Assuming Home tab is selected by default
   });
 
   testWidgets('Unauthenticated user navigation flow', (tester) async {

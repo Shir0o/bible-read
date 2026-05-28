@@ -22,56 +22,55 @@ void main() {
     service = FriendService(
       firestore: firestore,
       notificationService: NotificationService(firestore: firestore),
-      acceptFriendRequestFn: ({
-        required String fromUid,
-        required String toUid,
-        required String fromName,
-        required String toName,
-      }) async {
-        acceptCalled = true;
-        await firestore
-            .collection(FriendCollections.users)
-            .doc(fromUid)
-            .collection(FriendCollections.sentRequests)
-            .doc(toUid)
-            .delete();
-        await firestore
-            .collection(FriendCollections.users)
-            .doc(toUid)
-            .collection(FriendCollections.receivedRequests)
-            .doc(fromUid)
-            .delete();
-        await firestore
-            .collection(FriendCollections.users)
-            .doc(fromUid)
-            .collection(FriendCollections.friends)
-            .doc(toUid)
-            .set({'timestamp': Timestamp.now(), 'name': toName});
-        await firestore
-            .collection(FriendCollections.users)
-            .doc(toUid)
-            .collection(FriendCollections.friends)
-            .doc(fromUid)
-            .set({'timestamp': Timestamp.now(), 'name': fromName});
-      },
-      deleteFriendRequestPairFn: ({
-        required String fromUid,
-        required String toUid,
-      }) async {
-        deleteCalled = true;
-        await firestore
-            .collection(FriendCollections.users)
-            .doc(fromUid)
-            .collection(FriendCollections.sentRequests)
-            .doc(toUid)
-            .delete();
-        await firestore
-            .collection(FriendCollections.users)
-            .doc(toUid)
-            .collection(FriendCollections.receivedRequests)
-            .doc(fromUid)
-            .delete();
-      },
+      acceptFriendRequestFn:
+          ({
+            required String fromUid,
+            required String toUid,
+            required String fromName,
+            required String toName,
+          }) async {
+            acceptCalled = true;
+            await firestore
+                .collection(FriendCollections.users)
+                .doc(fromUid)
+                .collection(FriendCollections.sentRequests)
+                .doc(toUid)
+                .delete();
+            await firestore
+                .collection(FriendCollections.users)
+                .doc(toUid)
+                .collection(FriendCollections.receivedRequests)
+                .doc(fromUid)
+                .delete();
+            await firestore
+                .collection(FriendCollections.users)
+                .doc(fromUid)
+                .collection(FriendCollections.friends)
+                .doc(toUid)
+                .set({'timestamp': Timestamp.now(), 'name': toName});
+            await firestore
+                .collection(FriendCollections.users)
+                .doc(toUid)
+                .collection(FriendCollections.friends)
+                .doc(fromUid)
+                .set({'timestamp': Timestamp.now(), 'name': fromName});
+          },
+      deleteFriendRequestPairFn:
+          ({required String fromUid, required String toUid}) async {
+            deleteCalled = true;
+            await firestore
+                .collection(FriendCollections.users)
+                .doc(fromUid)
+                .collection(FriendCollections.sentRequests)
+                .doc(toUid)
+                .delete();
+            await firestore
+                .collection(FriendCollections.users)
+                .doc(toUid)
+                .collection(FriendCollections.receivedRequests)
+                .doc(fromUid)
+                .delete();
+          },
     );
   });
 
@@ -102,8 +101,9 @@ void main() {
     expect(find.text('Alice'), findsOneWidget);
   });
 
-  testWidgets('accepting request adds friend and removes request',
-      (tester) async {
+  testWidgets('accepting request adds friend and removes request', (
+    tester,
+  ) async {
     await service.sendFriendRequest(
       fromUid: 'a',
       fromName: 'Alice',
@@ -112,9 +112,13 @@ void main() {
 
     await pumpRequestWidget(tester);
 
-    await tester.tap(find.byWidgetPredicate((widget) =>
-        widget is Semantics &&
-        widget.properties.label == 'Accept friend request from Alice'));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label == 'Accept friend request from Alice',
+      ),
+    );
     await tester.pumpAndSettle();
 
     final friendDocA = await firestore
@@ -150,8 +154,9 @@ void main() {
     expect(acceptCalled, isTrue);
   });
 
-  testWidgets('declining request removes it without adding friends',
-      (tester) async {
+  testWidgets('declining request removes it without adding friends', (
+    tester,
+  ) async {
     await service.sendFriendRequest(
       fromUid: 'a',
       fromName: 'Alice',
@@ -160,9 +165,13 @@ void main() {
 
     await pumpRequestWidget(tester);
 
-    await tester.tap(find.byWidgetPredicate((widget) =>
-        widget is Semantics &&
-        widget.properties.label == 'Decline friend request from Alice'));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label == 'Decline friend request from Alice',
+      ),
+    );
     await tester.pumpAndSettle();
 
     final sentDoc = await firestore

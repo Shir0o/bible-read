@@ -25,9 +25,9 @@ class AddFriendPage extends StatefulWidget {
     FriendService? friendService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-  })  : friendService = friendService ?? FriendService(),
-        auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService();
+  }) : friendService = friendService ?? FriendService(),
+       auth = auth ?? FirebaseAuth.instance,
+       vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<AddFriendPage> createState() => _AddFriendPageState();
@@ -41,8 +41,9 @@ class _AddFriendPageState extends State<AddFriendPage> {
     return Scaffold(
       appBar: CommonStyles.buildAppBar(context, 'Add Friend'),
       body: Container(
-        decoration:
-            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
+        decoration: CommonStyles.backgroundDecoration(
+          Theme.of(context).colorScheme,
+        ),
         padding: const EdgeInsets.all(16.0),
         child: Center(
           child: SingleChildScrollView(

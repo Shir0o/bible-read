@@ -13,11 +13,7 @@ class LoginForm extends StatefulWidget {
   final VoidCallback? onComplete;
 
   /// Creates a [LoginForm].
-  const LoginForm({
-    super.key,
-    required this.auth,
-    this.onComplete,
-  });
+  const LoginForm({super.key, required this.auth, this.onComplete});
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -59,7 +55,8 @@ class _LoginFormState extends State<LoginForm> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Failed to sign in. Please check credentials.')),
+            content: Text('Failed to sign in. Please check credentials.'),
+          ),
         );
       }
     } finally {

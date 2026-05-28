@@ -1,5 +1,5 @@
 import 'package:bible_read/pages/feedback_page.dart';
-import 'package:bible_read/pages/user_profile_page.dart';
+import 'package:bible_read/pages/settings_page.dart';
 import 'package:bible_read/services/feedback_service.dart';
 import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/notification_service.dart';
@@ -33,14 +33,17 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Feedback flows', () {
-    testWidgets('UserProfilePage bug feedback flow submits report',
-        (tester) async {
+    testWidgets('SettingsPage bug feedback flow submits report', (
+      tester,
+    ) async {
       final mockService = _MockFeedbackService();
-      when(() => mockService.submitBugReport(
-            title: 'Crash on load',
-            description: 'The app crashes after opening.',
-            reproductionSteps: 'Open the app and wait 5 seconds.',
-          )).thenAnswer((_) async {});
+      when(
+        () => mockService.submitBugReport(
+          title: 'Crash on load',
+          description: 'The app crashes after opening.',
+          reproductionSteps: 'Open the app and wait 5 seconds.',
+        ),
+      ).thenAnswer((_) async {});
 
       final mockAuth = MockFirebaseAuth(
         signedIn: true,
@@ -54,25 +57,29 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: UserProfilePage(
+          home: SettingsPage(
             auth: mockAuth,
             firestore: fakeFirestore,
             friendService: FriendService(
               firestore: fakeFirestore,
-              notificationService:
-                  NotificationService(firestore: fakeFirestore),
-              acceptFriendRequestFn: (
-                  {required fromUid,
-                  required toUid,
-                  required fromName,
-                  required toName}) async {},
-              deleteFriendRequestPairFn: (
-                  {required fromUid, required toUid}) async {},
-              sendNudgeNotificationFn: (
-                      {required fromUid,
-                      required toUid,
-                      required fromName}) async =>
-                  NudgeResult.sent,
+              notificationService: NotificationService(
+                firestore: fakeFirestore,
+              ),
+              acceptFriendRequestFn:
+                  ({
+                    required fromUid,
+                    required toUid,
+                    required fromName,
+                    required toName,
+                  }) async {},
+              deleteFriendRequestPairFn:
+                  ({required fromUid, required toUid}) async {},
+              sendNudgeNotificationFn:
+                  ({
+                    required fromUid,
+                    required toUid,
+                    required fromName,
+                  }) async => NudgeResult.sent,
             ),
             vibrationService: const _NoopVibrationService(),
             feedbackService: mockService,
@@ -81,7 +88,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Report a Bug'));
+      final bugFinder = find.text('Report a Bug');
+      await tester.ensureVisible(bugFinder);
+      await tester.tap(bugFinder);
       await tester.pumpAndSettle();
       expect(find.byType(FeedbackPage), findsOneWidget);
 
@@ -102,25 +111,30 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      verify(() => mockService.submitBugReport(
-            title: 'Crash on load',
-            description: 'The app crashes after opening.',
-            reproductionSteps: 'Open the app and wait 5 seconds.',
-          )).called(1);
+      verify(
+        () => mockService.submitBugReport(
+          title: 'Crash on load',
+          description: 'The app crashes after opening.',
+          reproductionSteps: 'Open the app and wait 5 seconds.',
+        ),
+      ).called(1);
       expect(
         find.text('Bug report submitted! Thank you for letting us know.'),
         findsOneWidget,
       );
     });
 
-    testWidgets('AppMenuSheet feedback button submits feature request',
-        (tester) async {
+    testWidgets('AppMenuSheet feedback button submits feature request', (
+      tester,
+    ) async {
       final mockService = _MockFeedbackService();
-      when(() => mockService.submitFeatureRequest(
-            title: 'Daily reminder',
-            description: 'Send me a reminder every morning.',
-            reproductionSteps: null,
-          )).thenAnswer((_) async {});
+      when(
+        () => mockService.submitFeatureRequest(
+          title: 'Daily reminder',
+          description: 'Send me a reminder every morning.',
+          reproductionSteps: null,
+        ),
+      ).thenAnswer((_) async {});
 
       late BuildContext capturedContext;
 
@@ -175,11 +189,13 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      verify(() => mockService.submitFeatureRequest(
-            title: 'Daily reminder',
-            description: 'Send me a reminder every morning.',
-            reproductionSteps: null,
-          )).called(1);
+      verify(
+        () => mockService.submitFeatureRequest(
+          title: 'Daily reminder',
+          description: 'Send me a reminder every morning.',
+          reproductionSteps: null,
+        ),
+      ).called(1);
       expect(
         find.text('Feature request submitted! Thanks for the suggestion.'),
         findsOneWidget,

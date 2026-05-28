@@ -39,12 +39,14 @@ class SeasonalChallengesView extends StatelessWidget {
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return const Center(
-                  child: Text('Failed to load seasonal challenges.'));
+                child: Text('Failed to load seasonal challenges.'),
+              );
             }
             final challenges = snapshot.data ?? [];
             if (challenges.isEmpty) {
               return const Center(
-                  child: Text('No active challenges at the moment.'));
+                child: Text('No active challenges at the moment.'),
+              );
             }
 
             return ListView.builder(
@@ -123,7 +125,8 @@ class _SeasonalChallengeItem extends StatelessWidget {
         challengeId: challenge.id,
       ),
       builder: (context, snapshot) {
-        final progress = snapshot.data ??
+        final progress =
+            snapshot.data ??
             SeasonalChallengeProgress(
               id: '',
               uid: user.uid,

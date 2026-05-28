@@ -118,10 +118,7 @@ class _SkeletonLoaderState extends State<SkeletonLoader> {
               key: const ValueKey('skeleton'),
               child: widget.skeleton,
             )
-          : KeyedSubtree(
-              key: const ValueKey('content'),
-              child: widget.child,
-            ),
+          : KeyedSubtree(key: const ValueKey('content'), child: widget.child),
     );
   }
 }

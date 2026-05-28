@@ -37,7 +37,8 @@ class HomePage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })? markFirstReader;
+  })?
+  markFirstReader;
 
   HomePage({
     super.key,
@@ -52,22 +53,28 @@ class HomePage extends StatefulWidget {
     BibleProgressService? bibleProgressService,
     ReadingPlanService? readingPlanService,
     UserPreferencesService? userPreferencesService,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        readingStatusService = readingStatusService ??
-            ReadingStatusService(
-                firestore: firestore ?? FirebaseFirestore.instance,
-                auth: auth ?? FirebaseAuth.instance),
-        readingPlanService = readingPlanService ??
-            ReadingPlanService(
-                firestore: firestore ?? FirebaseFirestore.instance),
-        userPreferencesService = userPreferencesService ??
-            UserPreferencesService(
-                firestore: firestore ?? FirebaseFirestore.instance),
-        vibrationService = vibrationService ?? const VibrationService(),
-        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-        bibleProgressService =
-            bibleProgressService ?? BibleProgressService(firestore: firestore);
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       readingStatusService =
+           readingStatusService ??
+           ReadingStatusService(
+             firestore: firestore ?? FirebaseFirestore.instance,
+             auth: auth ?? FirebaseAuth.instance,
+           ),
+       readingPlanService =
+           readingPlanService ??
+           ReadingPlanService(
+             firestore: firestore ?? FirebaseFirestore.instance,
+           ),
+       userPreferencesService =
+           userPreferencesService ??
+           UserPreferencesService(
+             firestore: firestore ?? FirebaseFirestore.instance,
+           ),
+       vibrationService = vibrationService ?? const VibrationService(),
+       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+       bibleProgressService =
+           bibleProgressService ?? BibleProgressService(firestore: firestore);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -122,7 +129,9 @@ class _HomePageState extends State<HomePage>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1000));
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
     _loadInitialData();
     _setupSyncListener();
     _animationController.forward();
@@ -164,19 +173,22 @@ class _HomePageState extends State<HomePage>
         .collection('users')
         .doc(uid)
         .snapshots(includeMetadataChanges: true)
-        .listen((snapshot) {
-      final hasPendingWrites = snapshot.metadata.hasPendingWrites;
-      if (!_disposed && mounted && _isSyncing != hasPendingWrites) {
-        setState(() {
-          _isSyncing = hasPendingWrites;
-        });
-      }
-    }, onError: (e, st) {
-      if (kDebugMode) {
-        debugPrint('Error in sync listener: $e');
-      }
-      ErrorLogger.log(e, st);
-    });
+        .listen(
+          (snapshot) {
+            final hasPendingWrites = snapshot.metadata.hasPendingWrites;
+            if (!_disposed && mounted && _isSyncing != hasPendingWrites) {
+              setState(() {
+                _isSyncing = hasPendingWrites;
+              });
+            }
+          },
+          onError: (e, st) {
+            if (kDebugMode) {
+              debugPrint('Error in sync listener: $e');
+            }
+            ErrorLogger.log(e, st);
+          },
+        );
   }
 
   @override
@@ -234,29 +246,31 @@ class _HomePageState extends State<HomePage>
     bool firstEvent = true;
 
     _prefSub?.cancel();
-    _prefSub = widget.userPreferencesService.streamPreferences(uid).listen(
-      (prefs) {
-        if (!_disposed && mounted) {
-          setState(() {
-            _userPrefs = prefs;
-          });
-        }
-        if (firstEvent) {
-          firstEvent = false;
-          completer.complete();
-        }
-      },
-      onError: (e, st) {
-        if (kDebugMode) {
-          debugPrint('Error loading preferences: $e');
-        }
-        ErrorLogger.log(e, st);
-        if (firstEvent) {
-          firstEvent = false;
-          completer.complete(); // Still complete to avoid hanging
-        }
-      },
-    );
+    _prefSub = widget.userPreferencesService
+        .streamPreferences(uid)
+        .listen(
+          (prefs) {
+            if (!_disposed && mounted) {
+              setState(() {
+                _userPrefs = prefs;
+              });
+            }
+            if (firstEvent) {
+              firstEvent = false;
+              completer.complete();
+            }
+          },
+          onError: (e, st) {
+            if (kDebugMode) {
+              debugPrint('Error loading preferences: $e');
+            }
+            ErrorLogger.log(e, st);
+            if (firstEvent) {
+              firstEvent = false;
+              completer.complete(); // Still complete to avoid hanging
+            }
+          },
+        );
 
     return completer.future;
   }
@@ -269,49 +283,59 @@ class _HomePageState extends State<HomePage>
     bool firstEvent = true;
 
     // Listen to the stream for real-time updates
-    widget.readingPlanService.getActivePlans(uid).listen((plans) async {
-      if (plans.isEmpty) {
-        if (!_disposed && mounted) {
-          setState(() {
-            _currentPlan = null;
+    widget.readingPlanService
+        .getActivePlans(uid)
+        .listen(
+          (plans) async {
+            if (plans.isEmpty) {
+              if (!_disposed && mounted) {
+                setState(() {
+                  _currentPlan = null;
 
-            _scheduledDay = null;
-          });
-        }
-        if (firstEvent) {
-          firstEvent = false;
-          completer.complete();
-        }
-        return;
-      }
+                  _scheduledDay = null;
+                });
+              }
+              if (firstEvent) {
+                firstEvent = false;
+                completer.complete();
+              }
+              return;
+            }
 
-      // Just take the first one for now as we don't have multi-plan UI yet
-      final progress = plans.first;
-      final plan = await widget.readingPlanService
-          .getPlanById(progress.planId, userId: uid);
+            // Just take the first one for now as we don't have multi-plan UI yet
+            final progress = plans.first;
+            final plan = await widget.readingPlanService.getPlanById(
+              progress.planId,
+              userId: uid,
+            );
 
-      if (plan != null) {
-        final day = widget.readingPlanService
-            .getScheduledDay(plan, progress.startDate, widget.dateProvider());
+            if (plan != null) {
+              final day = widget.readingPlanService.getScheduledDay(
+                plan,
+                progress.startDate,
+                widget.dateProvider(),
+              );
 
-        if (!_disposed && mounted) {
-          setState(() {
-            _currentPlan = plan;
-            _scheduledDay = day;
-          });
-        }
-      }
+              if (!_disposed && mounted) {
+                setState(() {
+                  _currentPlan = plan;
+                  _scheduledDay = day;
+                });
+              }
+            }
 
-      if (firstEvent) {
-        firstEvent = false;
-        completer.complete();
-      }
-    }, onError: (e) {
-      if (firstEvent) {
-        firstEvent = false;
-        completer.completeError(e);
-      }
-    });
+            if (firstEvent) {
+              firstEvent = false;
+              completer.complete();
+            }
+          },
+          onError: (e) {
+            if (firstEvent) {
+              firstEvent = false;
+              completer.completeError(e);
+            }
+          },
+        );
 
     return completer.future;
   }
@@ -405,15 +429,18 @@ class _HomePageState extends State<HomePage>
             .doc(user.uid)
             .collection('reading')
             .doc(dateKey)
-            .set({
-          'read': true,
-        }, SetOptions(merge: true)),
+            .set({'read': true}, SetOptions(merge: true)),
       ];
 
       // Mark plan day if relevant
       if (markPlan && _currentPlan != null && _scheduledDay != null) {
-        backendWrites.add(widget.readingPlanService
-            .markDayComplete(user.uid, _currentPlan!.id, _scheduledDay!.day));
+        backendWrites.add(
+          widget.readingPlanService.markDayComplete(
+            user.uid,
+            _currentPlan!.id,
+            _scheduledDay!.day,
+          ),
+        );
         markedPlanDay = true;
       }
 
@@ -438,8 +465,13 @@ class _HomePageState extends State<HomePage>
       if (markedPlanDay && _currentPlan != null && _scheduledDay != null) {
         try {
           await widget.readingPlanService.unmarkDayComplete(
-              user.uid, _currentPlan!.id, _scheduledDay!.day);
-        } catch (_) {/* ignore rollback errors */}
+            user.uid,
+            _currentPlan!.id,
+            _scheduledDay!.day,
+          );
+        } catch (_) {
+          /* ignore rollback errors */
+        }
       }
 
       if (!_disposed && mounted) {
@@ -670,8 +702,9 @@ class _HomePageState extends State<HomePage>
         child: Text(
           'User not signed in.',
           style: AppTextStyles.subtitle(context).copyWith(
-            color:
-                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
       );
@@ -694,8 +727,10 @@ class _HomePageState extends State<HomePage>
                 return FadeTransition(
                   opacity: animation,
                   child: ScaleTransition(
-                    scale:
-                        Tween<double>(begin: 0.9, end: 1.0).animate(animation),
+                    scale: Tween<double>(
+                      begin: 0.9,
+                      end: 1.0,
+                    ).animate(animation),
                     child: child,
                   ),
                 );
@@ -729,8 +764,9 @@ class _HomePageState extends State<HomePage>
                           Text(
                             'TODAY\'S READING',
                             style: AppTextStyles.caption(context).copyWith(
-                              color: colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.7),
+                              color: colorScheme.onSurfaceVariant.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 32),
@@ -740,8 +776,9 @@ class _HomePageState extends State<HomePage>
                               fontSize: 26,
                               fontWeight: FontWeight.w400,
                               height: 1.3,
-                              color:
-                                  colorScheme.onSurface.withValues(alpha: 0.9),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.9,
+                              ),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -755,8 +792,9 @@ class _HomePageState extends State<HomePage>
                               child: Tooltip(
                                 message: 'Mark as read',
                                 child: FilledButton(
-                                  onPressed:
-                                      _toggleLoading ? null : _toggleReadStatus,
+                                  onPressed: _toggleLoading
+                                      ? null
+                                      : _toggleReadStatus,
                                   child: _toggleLoading
                                       ? SizedBox(
                                           width: 24,
@@ -790,8 +828,9 @@ class _HomePageState extends State<HomePage>
                           Text(
                             'Daily Reading',
                             style: AppTextStyles.caption(context).copyWith(
-                              color: colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.7),
+                              color: colorScheme.onSurfaceVariant.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -800,8 +839,9 @@ class _HomePageState extends State<HomePage>
                             style: AppTextStyles.title(context).copyWith(
                               fontSize: 26,
                               fontWeight: FontWeight.w400,
-                              color:
-                                  colorScheme.onSurface.withValues(alpha: 0.9),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.9,
+                              ),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -815,8 +855,9 @@ class _HomePageState extends State<HomePage>
                               child: Tooltip(
                                 message: 'Mark as read',
                                 child: FilledButton.tonal(
-                                  onPressed:
-                                      _toggleLoading ? null : _toggleReadStatus,
+                                  onPressed: _toggleLoading
+                                      ? null
+                                      : _toggleReadStatus,
                                   style: FilledButton.styleFrom(
                                     elevation: 0,
                                     shape: RoundedRectangleBorder(
@@ -838,9 +879,7 @@ class _HomePageState extends State<HomePage>
                                         )
                                       : const Row(
                                           mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text('Yes, I read'),
-                                          ],
+                                          children: [Text('Yes, I read')],
                                         ),
                                 ),
                               ),
@@ -871,11 +910,11 @@ class _HomePageState extends State<HomePage>
                               children: [
                                 Text(
                                   'Reading this week',
-                                  style:
-                                      AppTextStyles.bodySmall(context).copyWith(
-                                    color: colorScheme.onSurfaceVariant
-                                        .withValues(alpha: 0.6),
-                                  ),
+                                  style: AppTextStyles.bodySmall(context)
+                                      .copyWith(
+                                        color: colorScheme.onSurfaceVariant
+                                            .withValues(alpha: 0.6),
+                                      ),
                                 ),
                                 const SizedBox(height: 8),
                                 Container(
@@ -885,8 +924,9 @@ class _HomePageState extends State<HomePage>
                                         .withValues(alpha: 0.3),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                      color: colorScheme.outline
-                                          .withValues(alpha: 0.1),
+                                      color: colorScheme.outline.withValues(
+                                        alpha: 0.1,
+                                      ),
                                     ),
                                   ),
                                   child: ClipRRect(
@@ -895,12 +935,13 @@ class _HomePageState extends State<HomePage>
                                       value: _pastWeek.isEmpty
                                           ? 0.0
                                           : _pastWeek.where((d) => d).length /
-                                              7.0,
+                                                7.0,
                                       minHeight: 10,
                                       backgroundColor: Colors.transparent,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.primary
-                                            .withValues(alpha: 0.6),
+                                        colorScheme.primary.withValues(
+                                          alpha: 0.6,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -911,9 +952,9 @@ class _HomePageState extends State<HomePage>
                           const SizedBox(height: 24),
                           RichText(
                             text: TextSpan(
-                              style: AppTextStyles.bodySmall(context).copyWith(
-                                color: colorScheme.outline,
-                              ),
+                              style: AppTextStyles.bodySmall(
+                                context,
+                              ).copyWith(color: colorScheme.outline),
                               children: [
                                 TextSpan(
                                   text: '$_currentStreak',

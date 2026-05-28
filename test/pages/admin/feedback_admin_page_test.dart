@@ -10,9 +10,11 @@ import 'package:mock_exceptions/mock_exceptions.dart';
 import 'package:bible_read/services/error_logger.dart';
 
 class _AdminRoleStub extends AdminRoleService {
-  _AdminRoleStub(this._isAdmin,
-      {required FirebaseAuth auth, required FirebaseFirestore firestore})
-      : super(auth: auth, firestore: firestore);
+  _AdminRoleStub(
+    this._isAdmin, {
+    required FirebaseAuth auth,
+    required FirebaseFirestore firestore,
+  }) : super(auth: auth, firestore: firestore);
 
   final bool _isAdmin;
 
@@ -52,22 +54,16 @@ void main() {
     }
 
     testWidgets('denies access when user is not admin', (tester) async {
-      final service = _AdminRoleStub(
-        false,
-        auth: auth,
-        firestore: firestore,
-      );
+      final service = _AdminRoleStub(false, auth: auth, firestore: firestore);
 
       await pumpPage(tester, adminRoleService: service);
 
-      expect(
-        find.textContaining('do not have permission'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('do not have permission'), findsOneWidget);
     });
 
-    testWidgets('marking an item resolved updates status and notes',
-        (tester) async {
+    testWidgets('marking an item resolved updates status and notes', (
+      tester,
+    ) async {
       final service = _AdminRoleStub(true, auth: auth, firestore: firestore);
       final timestamp = Timestamp.now();
       await firestore.collection('bugReports').doc('bug1').set({
@@ -103,20 +99,20 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Status: resolved'), findsOneWidget);
-      expect(
-        find.text('Resolution notes: Fixed in build 123'),
-        findsOneWidget,
-      );
+      expect(find.text('Resolution notes: Fixed in build 123'), findsOneWidget);
 
-      final updated =
-          await firestore.collection('bugReports').doc('bug1').get();
+      final updated = await firestore
+          .collection('bugReports')
+          .doc('bug1')
+          .get();
       expect(updated.data()?['status'], 'resolved');
       expect(updated.data()?['resolutionNotes'], 'Fixed in build 123');
       expect(updated.data()?['resolvedAt'], isA<Timestamp>());
     });
 
-    testWidgets('marking not applicable updates status and filter',
-        (tester) async {
+    testWidgets('marking not applicable updates status and filter', (
+      tester,
+    ) async {
       final service = _AdminRoleStub(true, auth: auth, firestore: firestore);
       final timestamp = Timestamp.now();
       await firestore.collection('featureRequests').doc('feature1').set({
@@ -141,8 +137,9 @@ void main() {
         findsOneWidget,
       );
 
-      await tester
-          .tap(find.byKey(const ValueKey('notApplicableButton_feature1')));
+      await tester.tap(
+        find.byKey(const ValueKey('notApplicableButton_feature1')),
+      );
       await tester.pumpAndSettle();
 
       await tester.enterText(
@@ -152,8 +149,9 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('submitResolutionNotes')));
       await tester.pumpAndSettle();
 
-      await tester
-          .tap(find.byKey(const ValueKey('statusFilter_featureRequests')));
+      await tester.tap(
+        find.byKey(const ValueKey('statusFilter_featureRequests')),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.text('Not Applicable').last);
       await tester.pumpAndSettle();
@@ -164,17 +162,22 @@ void main() {
         findsOneWidget,
       );
       expect(
-          find.byKey(const ValueKey('feedbackCard_feature1')), findsOneWidget);
+        find.byKey(const ValueKey('feedbackCard_feature1')),
+        findsOneWidget,
+      );
 
-      final updated =
-          await firestore.collection('featureRequests').doc('feature1').get();
+      final updated = await firestore
+          .collection('featureRequests')
+          .doc('feature1')
+          .get();
       expect(updated.data()?['status'], 'notApplicable');
       expect(updated.data()?['resolutionNotes'], 'Not aligned with roadmap');
       expect(updated.data()?['resolvedAt'], isA<Timestamp>());
     });
 
-    testWidgets('failed update shows error and reverts optimistic state',
-        (tester) async {
+    testWidgets('failed update shows error and reverts optimistic state', (
+      tester,
+    ) async {
       final service = _AdminRoleStub(true, auth: auth, firestore: firestore);
       final timestamp = Timestamp.now();
       final docRef = firestore.collection('bugReports').doc('bug-error');
@@ -190,7 +193,9 @@ void main() {
         'email': 'debugger@example.com',
       });
 
-      whenCalling(Invocation.method(#update, [anything])).on(docRef).thenThrow(
+      whenCalling(Invocation.method(#update, [anything]))
+          .on(docRef)
+          .thenThrow(
             FirebaseException(
               plugin: 'FakeFirestore',
               code: 'permission-denied',

@@ -62,12 +62,12 @@ class AppNotification {
 
   /// Serializes this notification for Firestore.
   Map<String, dynamic> toFirestore() => {
-        'type': type.name,
-        if (fromUid != null) 'fromUid': fromUid,
-        if (senderUid != null) 'senderUid': senderUid,
-        if (message != null) 'message': message,
-        if (groupId != null) 'groupId': groupId,
-        'timestamp': Timestamp.fromDate(timestamp),
-        'read': read,
-      };
+    'type': type.name,
+    if (fromUid != null) 'fromUid': fromUid,
+    if (senderUid != null) 'senderUid': senderUid,
+    if (message != null) 'message': message,
+    if (groupId != null) 'groupId': groupId,
+    'timestamp': Timestamp.fromDate(timestamp),
+    'read': read,
+  };
 }

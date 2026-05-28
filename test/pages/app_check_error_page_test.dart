@@ -7,9 +7,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('shows app check error message', (tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: AppCheckErrorPage()),
-    );
+    await tester.pumpWidget(const MaterialApp(home: AppCheckErrorPage()));
     await tester.pumpAndSettle();
 
     expect(

@@ -1,13 +1,7 @@
 import '../models/reading_plan.dart';
 import 'reference_parser.dart';
 
-enum PlanType {
-  sequential,
-  portions,
-  threeOldOneNew,
-  otOnly,
-  ntOnly,
-}
+enum PlanType { sequential, portions, threeOldOneNew, otOnly, ntOnly }
 
 class PlanGenerator {
   /// Generates a reading plan based on the specified type and parameters.
@@ -78,17 +72,38 @@ class PlanGenerator {
     } else if (endDate != null) {
       // Custom end date: calculate duration and chapters per day
       return _generateFixedDuration(
-          id, title, description, allChapters, startDate, endDate, readingDays);
+        id,
+        title,
+        description,
+        allChapters,
+        startDate,
+        endDate,
+        readingDays,
+      );
     } else if (customChaptersPerDay != null) {
       // Custom amount per day (chapters)
-      return _generateFixedPace(id, title, description, allChapters, startDate,
-          customChaptersPerDay, readingDays);
+      return _generateFixedPace(
+        id,
+        title,
+        description,
+        allChapters,
+        startDate,
+        customChaptersPerDay,
+        readingDays,
+      );
     } else if (customVersesPerDay != null) {
       // Custom amount per day (verses) - approximate to chapters
       // Bible has ~31,102 verses / 1,189 chapters ≈ 26 verses per chapter
       final int chaptersPerDay = (customVersesPerDay / 26).ceil().clamp(1, 100);
-      return _generateFixedPace(id, title, description, allChapters, startDate,
-          chaptersPerDay, readingDays);
+      return _generateFixedPace(
+        id,
+        title,
+        description,
+        allChapters,
+        startDate,
+        chaptersPerDay,
+        readingDays,
+      );
     } else {
       // Fixed years (1 or 2)
       final durationDays = years * 365;
@@ -106,7 +121,11 @@ class PlanGenerator {
   }
 
   static ReadingPlan _generateThreeOldOneNew(
-      String id, String title, String description, DateTime startDate) {
+    String id,
+    String title,
+    String description,
+    DateTime startDate,
+  ) {
     // "To complete the 'Three in the Old and One in the New' schedule in one year,
     // you must read three OT chapters on six days and one NT chapter on five days."
     // OT: 3 chapters * 6 days = 18 chapters/week.
@@ -197,8 +216,10 @@ class PlanGenerator {
       int remainingChapters = allChapters.length - chaptersAssigned;
       int count = (remainingChapters / remainingDays).ceil();
 
-      final daily =
-          allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
+      final daily = allChapters.sublist(
+        chaptersAssigned,
+        chaptersAssigned + count,
+      );
       // We use the date relative index as 'day' for the ReadingPlan model
       // or should 'day' be the calendar day since start?
       // ReadingPlan model uses 1-indexed sequential days.
@@ -241,8 +262,10 @@ class PlanGenerator {
         count = allChapters.length - chaptersAssigned;
       }
 
-      final daily =
-          allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
+      final daily = allChapters.sublist(
+        chaptersAssigned,
+        chaptersAssigned + count,
+      );
       schedule.add(ReadingPlanDay(day: dayCount, readings: daily));
       chaptersAssigned += count;
     }
@@ -269,7 +292,13 @@ class PlanGenerator {
   ) {
     if (type == PlanType.portions) {
       return _generatePortions(
-          id, title, description, startDate, durationDays, readingDays);
+        id,
+        title,
+        description,
+        startDate,
+        durationDays,
+        readingDays,
+      );
     }
 
     // Sequential
@@ -280,8 +309,10 @@ class PlanGenerator {
       int remainingChapters = allChapters.length - chaptersAssigned;
       int count = (remainingChapters / remainingDays).ceil();
 
-      final daily =
-          allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
+      final daily = allChapters.sublist(
+        chaptersAssigned,
+        chaptersAssigned + count,
+      );
       schedule.add(ReadingPlanDay(day: i + 1, readings: daily));
       chaptersAssigned += count;
       if (chaptersAssigned >= allChapters.length) break;
@@ -334,8 +365,9 @@ class PlanGenerator {
       int otRemaining = otChapters.length - otAssigned;
       if (otRemaining > 0) {
         int otCount = (otRemaining / remainingDays).ceil();
-        todayReadings
-            .addAll(otChapters.sublist(otAssigned, otAssigned + otCount));
+        todayReadings.addAll(
+          otChapters.sublist(otAssigned, otAssigned + otCount),
+        );
         otAssigned += otCount;
       }
 
@@ -343,8 +375,9 @@ class PlanGenerator {
       int ntRemaining = ntChapters.length - ntAssigned;
       if (ntRemaining > 0) {
         int ntCount = (ntRemaining / remainingDays).ceil();
-        todayReadings
-            .addAll(ntChapters.sublist(ntAssigned, ntAssigned + ntCount));
+        todayReadings.addAll(
+          ntChapters.sublist(ntAssigned, ntAssigned + ntCount),
+        );
         ntAssigned += ntCount;
       }
 

@@ -49,11 +49,13 @@ void main() {
       registerFallbackValue(groupDoc);
       registerFallbackValue(memberDoc); // For batch.delete(memberRef)
 
-      when(() => mockFirestore.collection(GroupCollections.groups))
-          .thenReturn(groupsCollection);
+      when(
+        () => mockFirestore.collection(GroupCollections.groups),
+      ).thenReturn(groupsCollection);
       when(() => groupsCollection.doc(any())).thenReturn(groupDoc);
-      when(() => groupDoc.collection(GroupCollections.members))
-          .thenReturn(membersCollection);
+      when(
+        () => groupDoc.collection(GroupCollections.members),
+      ).thenReturn(membersCollection);
       when(() => membersCollection.doc(any())).thenReturn(memberDoc);
       when(() => memberDoc.get()).thenAnswer((_) async => memberSnap);
       when(() => memberSnap.exists).thenReturn(true);
@@ -72,11 +74,13 @@ void main() {
       final entriesCollection = MockCollectionReference<Map<String, dynamic>>();
       final entryDoc = MockDocumentReference<Map<String, dynamic>>();
 
-      when(() => groupDoc.collection('progressSummary'))
-          .thenReturn(summaryCollection);
+      when(
+        () => groupDoc.collection('progressSummary'),
+      ).thenReturn(summaryCollection);
       when(() => summaryCollection.doc('data')).thenReturn(summaryDoc);
-      when(() => summaryDoc.collection('entries'))
-          .thenReturn(entriesCollection);
+      when(
+        () => summaryDoc.collection('entries'),
+      ).thenReturn(entriesCollection);
       when(() => entriesCollection.doc(any())).thenReturn(entryDoc);
       when(() => entryDoc.delete()).thenAnswer((_) async {});
 
@@ -88,10 +92,12 @@ void main() {
           MockCollectionReference<Map<String, dynamic>>();
       final datesQuerySnapshot = MockQuerySnapshot<Map<String, dynamic>>();
 
-      when(() => groupDoc.collection('progress'))
-          .thenReturn(progressCollection);
-      when(() => progressCollection.get())
-          .thenAnswer((_) async => datesQuerySnapshot);
+      when(
+        () => groupDoc.collection('progress'),
+      ).thenReturn(progressCollection);
+      when(
+        () => progressCollection.get(),
+      ).thenAnswer((_) async => datesQuerySnapshot);
 
       // Setup 2 dates
       final dateDoc1 = MockQueryDocumentSnapshot<Map<String, dynamic>>();
@@ -122,10 +128,12 @@ void main() {
 
       final itemsSnapshot1 = MockQuerySnapshot<Map<String, dynamic>>();
       final itemsSnapshot2 = MockQuerySnapshot<Map<String, dynamic>>();
-      when(() => itemsCollection1.get())
-          .thenAnswer((_) async => itemsSnapshot1);
-      when(() => itemsCollection2.get())
-          .thenAnswer((_) async => itemsSnapshot2);
+      when(
+        () => itemsCollection1.get(),
+      ).thenAnswer((_) async => itemsSnapshot1);
+      when(
+        () => itemsCollection2.get(),
+      ).thenAnswer((_) async => itemsSnapshot2);
 
       // 2 items in date 1, 3 items in date 2
       final itemDoc1_1 = MockQueryDocumentSnapshot<Map<String, dynamic>>();
@@ -149,8 +157,9 @@ void main() {
       when(() => itemDoc2_1.reference).thenReturn(itemDocRef2_1);
       when(() => itemDoc2_2.reference).thenReturn(itemDocRef2_2);
       when(() => itemDoc2_3.reference).thenReturn(itemDocRef2_3);
-      when(() => itemsSnapshot2.docs)
-          .thenReturn([itemDoc2_1, itemDoc2_2, itemDoc2_3]);
+      when(
+        () => itemsSnapshot2.docs,
+      ).thenReturn([itemDoc2_1, itemDoc2_2, itemDoc2_3]);
 
       when(() => itemDocRef2_1.delete()).thenAnswer((_) async {});
       when(() => itemDocRef2_2.delete()).thenAnswer((_) async {});

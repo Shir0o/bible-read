@@ -67,12 +67,15 @@ void main() {
     await pumpUntilSettled(tester);
   }
 
-  testWidgets('members list items have accessible semantic labels',
-      (tester) async {
+  testWidgets('members list items have accessible semantic labels', (
+    tester,
+  ) async {
     // Setup group and members
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
-    final members =
-        firestore.collection('groups').doc('g1').collection('members');
+    final members = firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members');
 
     // User 1: Read today
     await members.doc('u1').set({
@@ -99,11 +102,7 @@ void main() {
         .doc(dateKey)
         .collection('entries')
         .doc('u1')
-        .set({
-      'uid': 'u1',
-      'done': true,
-      'count': 1,
-    });
+        .set({'uid': 'u1', 'done': true, 'count': 1});
 
     // Add item to subcollection so completion is calculated correctly
     await firestore
@@ -124,9 +123,9 @@ void main() {
         .collection('schedule')
         .doc(dateKey)
         .set({
-      'date': Timestamp.fromDate(DateTime(2020, 1, 1)),
-      'chapters': ['Gen 1'],
-    });
+          'date': Timestamp.fromDate(DateTime(2020, 1, 1)),
+          'chapters': ['Gen 1'],
+        });
 
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 

@@ -32,10 +32,7 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
         centerTitle: false,
       ),
       backgroundColor: colorScheme.surface,
-      body: ReadingPlansView(
-        firestore: widget.firestore,
-        auth: widget.auth,
-      ),
+      body: ReadingPlansView(firestore: widget.firestore, auth: widget.auth),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.of(context).push(
@@ -52,9 +49,7 @@ class _ReadingPlansPageState extends State<ReadingPlansPage> {
         },
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 4,
         tooltip: 'Create New Plan',
         child: const Icon(Icons.add, size: 28),

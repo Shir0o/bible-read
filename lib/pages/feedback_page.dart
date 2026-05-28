@@ -16,8 +16,8 @@ class FeedbackPage extends StatelessWidget {
     FeedbackService? feedbackService,
     VibrationService? vibrationService,
     this.parentMessenger,
-  })  : feedbackService = feedbackService ?? FeedbackService(),
-        vibrationService = vibrationService ?? const VibrationService();
+  }) : feedbackService = feedbackService ?? FeedbackService(),
+       vibrationService = vibrationService ?? const VibrationService();
 
   /// Tab displayed when the page opens.
   final FeedbackTab initialTab;
@@ -40,8 +40,10 @@ class FeedbackPage extends StatelessWidget {
       initialIndex: initialTab.index,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Feedback',
-              style: CommonStyles.appBarTitleText(colorScheme)),
+          title: Text(
+            'Feedback',
+            style: CommonStyles.appBarTitleText(colorScheme),
+          ),
           backgroundColor: colorScheme.surface,
           bottom: const TabBar(
             tabs: [

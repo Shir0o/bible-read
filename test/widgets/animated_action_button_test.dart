@@ -27,11 +27,14 @@ void main() {
       ),
     );
 
-    final state = tester.state<State<AnimatedActionButton>>(
-      find.byType(AnimatedActionButton),
-    ) as dynamic;
-    final gesture =
-        await tester.startGesture(tester.getCenter(find.byType(FilledButton)));
+    final state =
+        tester.state<State<AnimatedActionButton>>(
+              find.byType(AnimatedActionButton),
+            )
+            as dynamic;
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(FilledButton)),
+    );
     await tester.pumpAndSettle();
 
     expect(state.animation.value, closeTo(0.96, 0.02));
@@ -53,8 +56,9 @@ void main() {
         ),
       ),
     );
-    final gesture =
-        await tester.startGesture(tester.getCenter(find.byType(FilledButton)));
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(FilledButton)),
+    );
     await tester.pump();
     expect(service.tapCount, 1);
     await gesture.up();
@@ -72,8 +76,9 @@ void main() {
         ),
       ),
     );
-    final gesture =
-        await tester.startGesture(tester.getCenter(find.byType(FilledButton)));
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(FilledButton)),
+    );
     await tester.pump();
     expect(service.tapCount, 0);
     await gesture.up();

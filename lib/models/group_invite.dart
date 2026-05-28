@@ -36,7 +36,8 @@ class GroupInvite {
 
   /// Reads a [GroupInvite] from a Firestore document.
   factory GroupInvite.fromFirestore(
-      DocumentSnapshot<Map<String, dynamic>> doc) {
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final data = doc.data() ?? <String, dynamic>{};
     return GroupInvite(
       id: doc.id,
@@ -51,11 +52,11 @@ class GroupInvite {
 
   /// Serializes this invite for Firestore.
   Map<String, dynamic> toFirestore() => {
-        'groupId': groupId,
-        'groupName': groupName,
-        'senderUid': senderUid,
-        'senderName': senderName,
-        'recipientUid': recipientUid,
-        'timestamp': FieldValue.serverTimestamp(),
-      };
+    'groupId': groupId,
+    'groupName': groupName,
+    'senderUid': senderUid,
+    'senderName': senderName,
+    'recipientUid': recipientUid,
+    'timestamp': FieldValue.serverTimestamp(),
+  };
 }

@@ -65,10 +65,14 @@ void main() {
 
     expect(find.text('New Group Plan'), findsOneWidget);
     expect(find.text('Reading Plan'), findsOneWidget);
-    expect(find.text('Select the books you\'ll be reading together.'),
-        findsOneWidget);
-    expect(find.byType(TextField),
-        findsNWidgets(2)); // Book search + Find people (disabled)
+    expect(
+      find.text('Select the books you\'ll be reading together.'),
+      findsOneWidget,
+    );
+    expect(
+      find.byType(TextField),
+      findsNWidgets(2),
+    ); // Book search + Find people (disabled)
     expect(find.text('Timeline'), findsOneWidget);
     expect(find.text('Frequency'), findsOneWidget);
     expect(find.text('Members'), findsOneWidget);
@@ -106,10 +110,12 @@ void main() {
     await tester.pump();
 
     expect(find.text('Please select at least one book.'), findsOneWidget);
-    verifyNever(() => groupService.createGroup(
-          ownerUid: any(named: 'ownerUid'),
-          name: any(named: 'name'),
-        ));
+    verifyNever(
+      () => groupService.createGroup(
+        ownerUid: any(named: 'ownerUid'),
+        name: any(named: 'name'),
+      ),
+    );
   });
 
   testWidgets('shows error if creating without end date', (tester) async {
@@ -127,8 +133,9 @@ void main() {
     expect(find.text('Please select an end date.'), findsOneWidget);
   });
 
-  testWidgets('creates schedule and navigates on success', skip: true,
-      (tester) async {
+  testWidgets('creates schedule and navigates on success', skip: true, (
+    tester,
+  ) async {
     final observer = MockNavigatorObserver();
     await tester.pumpApp(buildSubject(navigatorObserver: observer));
 
@@ -146,24 +153,33 @@ void main() {
     await tester.pumpAndSettle();
 
     // 3. Mock Service calls
-    when(() => groupService.createGroup(
-          ownerUid: any(named: 'ownerUid'),
-          name: any(named: 'name'),
-        )).thenAnswer((_) async => 'group_123');
+    when(
+      () => groupService.createGroup(
+        ownerUid: any(named: 'ownerUid'),
+        name: any(named: 'name'),
+      ),
+    ).thenAnswer((_) async => 'group_123');
 
-    when(() => groupService.updateScheduleBatch(
-          groupId: any(named: 'groupId'),
-          schedules: any(named: 'schedules'),
-        )).thenAnswer((_) async {});
+    when(
+      () => groupService.updateScheduleBatch(
+        groupId: any(named: 'groupId'),
+        schedules: any(named: 'schedules'),
+      ),
+    ).thenAnswer((_) async {});
 
     // Stubs for GroupDetailPage
-    when(() => groupService.schedule('group_123'))
-        .thenAnswer((_) => Stream.value(<GroupSchedule>[]));
-    when(() => groupService.memberOverallCompletion('group_123'))
-        .thenAnswer((_) => Stream.value(<GroupMemberProgressData>[]));
-    when(() => groupService.memberDailyCompletion('group_123',
-            date: any(named: 'date')))
-        .thenAnswer((_) => Stream.value(<GroupMemberProgressData>[]));
+    when(
+      () => groupService.schedule('group_123'),
+    ).thenAnswer((_) => Stream.value(<GroupSchedule>[]));
+    when(
+      () => groupService.memberOverallCompletion('group_123'),
+    ).thenAnswer((_) => Stream.value(<GroupMemberProgressData>[]));
+    when(
+      () => groupService.memberDailyCompletion(
+        'group_123',
+        date: any(named: 'date'),
+      ),
+    ).thenAnswer((_) => Stream.value(<GroupMemberProgressData>[]));
 
     // 4. Create
     await tester.tap(find.text('Create Schedule'));
@@ -175,22 +191,29 @@ void main() {
     await tester.pumpAndSettle();
 
     // 5. Verify Calls
-    verify(() => groupService.createGroup(
-          ownerUid: any(named: 'ownerUid'),
-          name: any(named: 'name'),
-        )).called(1);
+    verify(
+      () => groupService.createGroup(
+        ownerUid: any(named: 'ownerUid'),
+        name: any(named: 'name'),
+      ),
+    ).called(1);
 
-    verify(() => groupService.updateScheduleBatch(
-          groupId: 'group_123',
-          schedules: any(named: 'schedules'),
-        )).called(1);
+    verify(
+      () => groupService.updateScheduleBatch(
+        groupId: 'group_123',
+        schedules: any(named: 'schedules'),
+      ),
+    ).called(1);
 
     verify(() => vibrationService.mediumImpact()).called(1);
 
     // 6. Verify Navigation
-    verify(() => observer.didReplace(
+    verify(
+      () => observer.didReplace(
         newRoute: any(named: 'newRoute'),
-        oldRoute: any(named: 'oldRoute'))).called(1);
+        oldRoute: any(named: 'oldRoute'),
+      ),
+    ).called(1);
 
     expect(find.byType(GroupDetailPage), findsOneWidget);
   });

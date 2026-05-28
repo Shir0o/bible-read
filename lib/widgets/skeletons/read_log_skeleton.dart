@@ -8,8 +8,12 @@ class ReadLogSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      padding:
-          const EdgeInsets.only(top: 16.0, bottom: 48.0, left: 16, right: 16),
+      padding: const EdgeInsets.only(
+        top: 16.0,
+        bottom: 48.0,
+        left: 16,
+        right: 16,
+      ),
       itemCount: 5,
       itemBuilder: (context, index) {
         return CommonStyles.buildTappableCard(

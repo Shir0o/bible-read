@@ -59,9 +59,7 @@ class _ChallengesPageState extends State<ChallengesPage>
           indicatorColor: colorScheme.primary,
           dividerColor: Colors.transparent,
           isScrollable: true,
-          tabs: const [
-            Tab(text: 'Seasonal'),
-          ],
+          tabs: const [Tab(text: 'Seasonal')],
         ),
       ),
       body: TabBarView(

@@ -18,10 +18,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: FeedCard(
-            log: log,
-            onToggleLike: () {},
-          ),
+          body: FeedCard(log: log, onToggleLike: () {}),
         ),
       ),
     );
@@ -44,16 +41,25 @@ void main() {
 
     // We expect it to have button flag
     // ignore: deprecated_member_use
-    expect(encourageData.hasFlag(SemanticsFlag.isButton), isTrue,
-        reason: 'Encourage should be a button');
+    expect(
+      encourageData.hasFlag(SemanticsFlag.isButton),
+      isTrue,
+      reason: 'Encourage should be a button',
+    );
     // We expect it to be enabled
     // ignore: deprecated_member_use
-    expect(encourageData.hasFlag(SemanticsFlag.isEnabled), isTrue,
-        reason: 'Encourage should be enabled');
+    expect(
+      encourageData.hasFlag(SemanticsFlag.isEnabled),
+      isTrue,
+      reason: 'Encourage should be enabled',
+    );
     // We expect it to be selected (because liked=true)
     // ignore: deprecated_member_use
-    expect(encourageData.hasFlag(SemanticsFlag.isSelected), isTrue,
-        reason: 'Encourage should be selected');
+    expect(
+      encourageData.hasFlag(SemanticsFlag.isSelected),
+      isTrue,
+      reason: 'Encourage should be selected',
+    );
 
     expect(find.text('Comment'), findsNothing);
     expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsNothing);
@@ -72,10 +78,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: FeedCard(
-            log: log,
-            onToggleLike: () {},
-          ),
+          body: FeedCard(log: log, onToggleLike: () {}),
         ),
       ),
     );
@@ -98,10 +101,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: FeedCard(
-            log: log,
-            onToggleLike: () {},
-          ),
+          body: FeedCard(log: log, onToggleLike: () {}),
         ),
       ),
     );
@@ -109,8 +109,10 @@ void main() {
     // Find MergeSemantics wrapping the Read today row.
     // We can look for MergeSemantics ancestor of "Read today" text.
     final readTodayText = find.text('Read today');
-    final mergeSemantics =
-        find.ancestor(of: readTodayText, matching: find.byType(MergeSemantics));
+    final mergeSemantics = find.ancestor(
+      of: readTodayText,
+      matching: find.byType(MergeSemantics),
+    );
     expect(mergeSemantics, findsOneWidget);
   });
 }

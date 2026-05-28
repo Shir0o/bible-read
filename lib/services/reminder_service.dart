@@ -25,7 +25,7 @@ class ReminderService {
 
   Future<void> init({
     required void Function(fln.NotificationResponse)?
-        onDidReceiveNotificationResponse,
+    onDidReceiveNotificationResponse,
   }) async {
     if (_initialized) return;
 
@@ -42,9 +42,9 @@ class ReminderService {
 
     const fln.InitializationSettings initializationSettings =
         fln.InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsDarwin,
-    );
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsDarwin,
+        );
 
     await flutterLocalNotificationsPlugin.initialize(
       settings: initializationSettings,
@@ -78,7 +78,13 @@ class ReminderService {
   tz.TZDateTime _nextInstance(TimeOfDay time) {
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduledDate = tz.TZDateTime(
-        tz.local, now.year, now.month, now.day, time.hour, time.minute);
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      time.hour,
+      time.minute,
+    );
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
@@ -107,9 +113,6 @@ class ReminderService {
     final enabled = prefs.getBool(_prefEnabled) ?? false;
     final hour = prefs.getInt(_prefHour) ?? 7; // Default 7 AM
     final minute = prefs.getInt(_prefMinute) ?? 0;
-    return {
-      'enabled': enabled,
-      'time': TimeOfDay(hour: hour, minute: minute),
-    };
+    return {'enabled': enabled, 'time': TimeOfDay(hour: hour, minute: minute)};
   }
 }

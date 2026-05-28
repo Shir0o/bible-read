@@ -40,11 +40,11 @@ class Group {
 
   /// Serializes this group for Firestore.
   Map<String, dynamic> toFirestore() => {
-        'name': name,
-        'ownerUid': ownerUid,
-        'memberCount': memberCount,
-        'isPublic': isPublic,
-      };
+    'name': name,
+    'ownerUid': ownerUid,
+    'memberCount': memberCount,
+    'isPublic': isPublic,
+  };
 
   @override
   bool operator ==(Object other) {

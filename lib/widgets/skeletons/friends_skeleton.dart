@@ -16,14 +16,14 @@ class FriendsSkeleton extends StatelessWidget {
           onTap: () {},
           margin: const EdgeInsets.only(bottom: 8),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 12.0,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: const [
-                Expanded(
-                  child: Skeleton(width: 120, height: 16),
-                ),
+                Expanded(child: Skeleton(width: 120, height: 16)),
                 SizedBox(width: 16),
                 Skeleton(width: 40, height: 40, radius: 20), // Icon Button
               ],

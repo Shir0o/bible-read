@@ -12,8 +12,10 @@ class FakeGroupService extends GroupService {
   FakeGroupService() : super(firestore: FakeFirebaseFirestore());
 
   @override
-  Stream<List<GroupMemberProgressData>> memberOverallCompletion(String groupId,
-      {String? includeUid}) {
+  Stream<List<GroupMemberProgressData>> memberOverallCompletion(
+    String groupId, {
+    String? includeUid,
+  }) {
     return Stream.value([
       const GroupMemberProgressData(uid: 'u1', name: 'User 1', completion: 0.5),
       const GroupMemberProgressData(uid: 'u2', name: 'User 2', completion: 0.2),
@@ -33,18 +35,19 @@ void main() {
     groupService = FakeGroupService();
   });
 
-  testWidgets('GroupCard renders correctly with InkWell and Semantics',
-      (tester) async {
-    final group =
-        Group(id: 'g1', name: 'Test Group', ownerUid: 'u1', memberCount: 2);
+  testWidgets('GroupCard renders correctly with InkWell and Semantics', (
+    tester,
+  ) async {
+    final group = Group(
+      id: 'g1',
+      name: 'Test Group',
+      ownerUid: 'u1',
+      memberCount: 2,
+    );
 
     await tester.pumpApp(
       Scaffold(
-        body: GroupCard(
-          group: group,
-          groupService: groupService,
-          onTap: () {},
-        ),
+        body: GroupCard(group: group, groupService: groupService, onTap: () {}),
       ),
     );
 
@@ -55,7 +58,9 @@ void main() {
     expect(find.text('Test Group'), findsOneWidget);
     expect(find.text('35%'), findsOneWidget);
     expect(
-        find.textContaining('Reading: Genesis 1, Genesis 2'), findsOneWidget);
+      find.textContaining('Reading: Genesis 1, Genesis 2'),
+      findsOneWidget,
+    );
 
     // Verify InkWell exists (Visual feedback)
     expect(find.byType(InkWell), findsOneWidget);

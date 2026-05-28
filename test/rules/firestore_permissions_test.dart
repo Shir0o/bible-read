@@ -13,8 +13,10 @@ void main() {
   group('Firestore rules text', () {
     test('contains season collection access rules', () {
       final seasonsBlock = _findMatchBlock(rulesText, '/seasons/{seasonId}');
-      final challengesBlock =
-          _findMatchBlock(seasonsBlock, '/challenges/{challengeId}');
+      final challengesBlock = _findMatchBlock(
+        seasonsBlock,
+        '/challenges/{challengeId}',
+      );
 
       expect(
         _normalizeWhitespace(_extractAllowExpression(seasonsBlock, 'read')),
@@ -36,10 +38,14 @@ void main() {
 
     test('contains user season progress rules', () {
       final usersBlock = _findMatchBlock(rulesText, '/users/{userId}');
-      final progressBlock =
-          _findMatchBlock(usersBlock, '/seasonChallenges/{docId}');
-      final rewardsBlock =
-          _findMatchBlock(usersBlock, '/seasonRewards/{docId}');
+      final progressBlock = _findMatchBlock(
+        usersBlock,
+        '/seasonChallenges/{docId}',
+      );
+      final rewardsBlock = _findMatchBlock(
+        usersBlock,
+        '/seasonRewards/{docId}',
+      );
       final cacheBlock = _findMatchBlock(usersBlock, '/cache/{docId}');
 
       expect(
@@ -88,10 +94,7 @@ void main() {
 
   group('Season challenge progress behaviour', () {
     test('owner can read progress document', () {
-      expect(
-        _canReadSeasonProgress(authUid: 'alice', userId: 'alice'),
-        isTrue,
-      );
+      expect(_canReadSeasonProgress(authUid: 'alice', userId: 'alice'), isTrue);
     });
 
     test('owner can write valid progress flags', () {
@@ -133,47 +136,29 @@ void main() {
 
   group('Season rewards behaviour', () {
     test('owner can read reward', () {
-      expect(
-        _canReadSeasonReward(authUid: 'alice', userId: 'alice'),
-        isTrue,
-      );
+      expect(_canReadSeasonReward(authUid: 'alice', userId: 'alice'), isTrue);
     });
 
     test('writes to reward denied', () {
-      expect(
-        _canWriteSeasonReward(authUid: 'alice', userId: 'alice'),
-        isFalse,
-      );
+      expect(_canWriteSeasonReward(authUid: 'alice', userId: 'alice'), isFalse);
     });
 
     test('other users cannot read reward', () {
-      expect(
-        _canReadSeasonReward(authUid: 'bob', userId: 'alice'),
-        isFalse,
-      );
+      expect(_canReadSeasonReward(authUid: 'bob', userId: 'alice'), isFalse);
     });
   });
 
   group('User cache behaviour', () {
     test('owner can read cache', () {
-      expect(
-        _canReadUserCache(authUid: 'alice', userId: 'alice'),
-        isTrue,
-      );
+      expect(_canReadUserCache(authUid: 'alice', userId: 'alice'), isTrue);
     });
 
     test('owner can write cache', () {
-      expect(
-        _canWriteUserCache(authUid: 'alice', userId: 'alice'),
-        isTrue,
-      );
+      expect(_canWriteUserCache(authUid: 'alice', userId: 'alice'), isTrue);
     });
 
     test('other user cannot write cache', () {
-      expect(
-        _canWriteUserCache(authUid: 'bob', userId: 'alice'),
-        isFalse,
-      );
+      expect(_canWriteUserCache(authUid: 'bob', userId: 'alice'), isFalse);
     });
   });
 
@@ -195,10 +180,7 @@ void main() {
         'resolutionNotes': null,
       };
 
-      expect(
-        _canCreateFeedback(authUid: 'alice', data: data),
-        isTrue,
-      );
+      expect(_canCreateFeedback(authUid: 'alice', data: data), isTrue);
     });
 
     test('authenticated user can create feature request', () {
@@ -214,10 +196,7 @@ void main() {
         'resolutionNotes': null,
       };
 
-      expect(
-        _canCreateFeedback(authUid: 'feature-user', data: data),
-        isTrue,
-      );
+      expect(_canCreateFeedback(authUid: 'feature-user', data: data), isTrue);
     });
 
     test('missing required feedback fields is rejected', () {
@@ -231,10 +210,7 @@ void main() {
         'resolutionNotes': null,
       };
 
-      expect(
-        _canCreateFeedback(authUid: 'alice', data: data),
-        isFalse,
-      );
+      expect(_canCreateFeedback(authUid: 'alice', data: data), isFalse);
     });
 
     test('unauthenticated feedback submission denied', () {
@@ -250,17 +226,16 @@ void main() {
         'resolutionNotes': null,
       };
 
-      expect(
-        _canCreateFeedback(authUid: null, data: data),
-        isFalse,
-      );
+      expect(_canCreateFeedback(authUid: null, data: data), isFalse);
     });
   });
 }
 
 String _findMatchBlock(String source, String path) {
-  final pattern =
-      RegExp('match\\s+${RegExp.escape(path)}\\s*\\{', multiLine: true);
+  final pattern = RegExp(
+    'match\\s+${RegExp.escape(path)}\\s*\\{',
+    multiLine: true,
+  );
   final match = pattern.firstMatch(source);
   if (match == null) {
     throw StateError('Could not find match block for path $path');
@@ -306,8 +281,10 @@ bool _canReadSeasonChallenge(String? authUid) => authUid != null;
 
 bool _canWriteSeasonChallenge(String? authUid) => false;
 
-bool _canReadSeasonProgress(
-    {required String? authUid, required String userId}) {
+bool _canReadSeasonProgress({
+  required String? authUid,
+  required String userId,
+}) {
   return authUid != null && authUid == userId;
 }
 

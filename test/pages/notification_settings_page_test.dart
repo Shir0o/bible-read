@@ -36,8 +36,10 @@ void main() {
         .doc('vibration')
         .set({'enabled': false});
 
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
     final service = NotificationPreferencesService(firestore: firestore);
 
     await tester.pumpWidget(
@@ -64,7 +66,8 @@ void main() {
     }
 
     final likeSwitch = tester.widget<SwitchListTile>(
-        find.widgetWithText(SwitchListTile, 'Like Notifications'));
+      find.widgetWithText(SwitchListTile, 'Like Notifications'),
+    );
     expect(likeSwitch.value, isFalse);
 
     await tester.tap(find.widgetWithText(SwitchListTile, 'Like Notifications'));
@@ -79,7 +82,8 @@ void main() {
     expect(doc.data()?['enabled'], true);
 
     final vibrationSwitch = tester.widget<SwitchListTile>(
-        find.widgetWithText(SwitchListTile, 'Vibration'));
+      find.widgetWithText(SwitchListTile, 'Vibration'),
+    );
     expect(vibrationSwitch.value, isFalse);
 
     await tester.tap(find.widgetWithText(SwitchListTile, 'Vibration'));

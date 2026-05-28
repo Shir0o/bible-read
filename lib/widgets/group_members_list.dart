@@ -27,10 +27,7 @@ class GroupMembersList extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Members',
-              style: theme.textTheme.titleMedium,
-            ),
+            Text('Members', style: theme.textTheme.titleMedium),
             StreamBuilder<List<GroupMemberProgressData>>(
               stream: groupService.memberDailyCompletion(
                 groupId,
@@ -64,19 +61,24 @@ class GroupMembersList extends StatelessWidget {
             builder: (context, snapshot) {
               if (snapshot.hasError) {
                 return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('Failed to load members'));
+                  padding: EdgeInsets.all(16),
+                  child: Text('Failed to load members'),
+                );
               }
               if (!snapshot.hasData) {
                 return const Center(
-                    child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: CircularProgressIndicator()));
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
               }
               final members = snapshot.data!;
               if (members.isEmpty) {
                 return const Padding(
-                    padding: EdgeInsets.all(16), child: Text('No members'));
+                  padding: EdgeInsets.all(16),
+                  child: Text('No members'),
+                );
               }
 
               return ListView.separated(
@@ -105,8 +107,9 @@ class GroupMembersList extends StatelessWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.3),
+                                color: colorScheme.onSurfaceVariant.withValues(
+                                  alpha: 0.3,
+                                ),
                               ),
                             ),
                             child: ClipOval(
@@ -135,8 +138,9 @@ class GroupMembersList extends StatelessWidget {
                                       fontWeight: FontWeight.w500,
                                       color: isRead
                                           ? colorScheme.onSurface
-                                          : colorScheme.onSurface
-                                              .withValues(alpha: 0.8),
+                                          : colorScheme.onSurface.withValues(
+                                              alpha: 0.8,
+                                            ),
                                     ),
                                   ),
                                   Text(
@@ -166,8 +170,9 @@ class GroupMembersList extends StatelessWidget {
                                 border: isRead
                                     ? null
                                     : Border.all(
-                                        color: colorScheme.outline
-                                            .withValues(alpha: 0.3),
+                                        color: colorScheme.outline.withValues(
+                                          alpha: 0.3,
+                                        ),
                                       ),
                               ),
                               child: Center(
@@ -176,8 +181,9 @@ class GroupMembersList extends StatelessWidget {
                                   size: 18,
                                   color: isRead
                                       ? colorScheme.primary
-                                      : colorScheme.outline
-                                          .withValues(alpha: 0.5),
+                                      : colorScheme.outline.withValues(
+                                          alpha: 0.5,
+                                        ),
                                 ),
                               ),
                             ),

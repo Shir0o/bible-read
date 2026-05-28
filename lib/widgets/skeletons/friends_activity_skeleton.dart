@@ -30,7 +30,8 @@ class _ActivityItemSkeleton extends StatelessWidget {
         color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.1)),
+          color: colorScheme.outlineVariant.withValues(alpha: 0.1),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,8 +50,9 @@ class _ActivityItemSkeleton extends StatelessWidget {
                   width: double.infinity,
                   height: 36,
                   radius: 12,
-                  color: colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.3),
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.3,
+                  ),
                 ),
               ],
             ),

@@ -18,7 +18,8 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
 
   @override
   Future<AuthenticationResults?> attemptLightweightAuthentication(
-      AttemptLightweightAuthenticationParameters params) async {
+    AttemptLightweightAuthenticationParameters params,
+  ) async {
     silentSignInCount++;
     if (signInError != null) throw signInError!;
     if (user == null) return null;
@@ -30,7 +31,8 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
 
   @override
   Future<AuthenticationResults> authenticate(
-      AuthenticateParameters params) async {
+    AuthenticateParameters params,
+  ) async {
     signInCalled = true;
     if (signInError != null) throw signInError!;
     if (user == null) {
@@ -63,13 +65,15 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
 
   @override
   Future<ClientAuthorizationTokenData?> clientAuthorizationTokensForScopes(
-      ClientAuthorizationTokensForScopesParameters params) async {
+    ClientAuthorizationTokensForScopesParameters params,
+  ) async {
     return const ClientAuthorizationTokenData(accessToken: 'accessToken');
   }
 
   @override
   Future<ServerAuthorizationTokenData?> serverAuthorizationTokensForScopes(
-      ServerAuthorizationTokensForScopesParameters params) async {
+    ServerAuthorizationTokensForScopesParameters params,
+  ) async {
     return const ServerAuthorizationTokenData(serverAuthCode: 'serverAuthCode');
   }
 
@@ -78,5 +82,6 @@ class FakeGoogleSignInPlatform extends GoogleSignInPlatform
 
   @override
   Future<void> clearAuthorizationToken(
-      ClearAuthorizationTokenParams params) async {}
+    ClearAuthorizationTokenParams params,
+  ) async {}
 }

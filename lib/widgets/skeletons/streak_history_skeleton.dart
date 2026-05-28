@@ -14,9 +14,7 @@ class StreakHistorySkeleton extends StatelessWidget {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Skeleton(width: 200, height: 40, radius: 20),
-            ],
+            children: const [Skeleton(width: 200, height: 40, radius: 20)],
           ),
           const SizedBox(height: 12),
           CommonStyles.buildCard(
@@ -53,9 +51,10 @@ class StreakHistorySkeleton extends StatelessWidget {
                   spacing: 12,
                   runSpacing: 12,
                   children: List.generate(
-                      35,
-                      (index) =>
-                          const Skeleton(width: 32, height: 32, radius: 16)),
+                    35,
+                    (index) =>
+                        const Skeleton(width: 32, height: 32, radius: 16),
+                  ),
                 ),
               ],
             ),

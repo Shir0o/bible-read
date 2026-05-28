@@ -57,7 +57,7 @@ class WeekStreakCalendar extends StatelessWidget {
       'Wednesday',
       'Thursday',
       'Friday',
-      'Saturday'
+      'Saturday',
     ];
 
     return CommonStyles.buildCard(
@@ -76,8 +76,9 @@ class WeekStreakCalendar extends StatelessWidget {
                 ),
               Text(
                 'Week of $_weekLabel',
-                style: AppTextStyles.body(context)
-                    .copyWith(fontWeight: FontWeight.bold),
+                style: AppTextStyles.body(
+                  context,
+                ).copyWith(fontWeight: FontWeight.bold),
               ),
               if (showNavigation)
                 IconButton(
@@ -91,11 +92,7 @@ class WeekStreakCalendar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(7, (i) {
-              final date = DateTime(
-                sunday.year,
-                sunday.month,
-                sunday.day + i,
-              );
+              final date = DateTime(sunday.year, sunday.month, sunday.day + i);
               final filled = readDates.any((d) => _isSameDay(d, date));
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -106,8 +103,9 @@ class WeekStreakCalendar extends StatelessWidget {
                     children: [
                       Text(
                         days[i],
-                        style:
-                            AppTextStyles.body(context).copyWith(fontSize: 10),
+                        style: AppTextStyles.body(
+                          context,
+                        ).copyWith(fontSize: 10),
                       ),
                       const SizedBox(height: 4),
                       Tooltip(

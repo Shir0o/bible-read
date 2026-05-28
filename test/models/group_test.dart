@@ -43,12 +43,7 @@ void main() {
       final doc = await firestore.collection('groups').doc('g1').get();
 
       final actual = Group.fromFirestore(doc);
-      const expected = Group(
-        id: 'g1',
-        name: '',
-        ownerUid: '',
-        memberCount: 0,
-      );
+      const expected = Group(id: 'g1', name: '', ownerUid: '', memberCount: 0);
 
       expect(actual, equals(expected));
     });
@@ -62,15 +57,12 @@ void main() {
         isPublic: true,
       );
       final map = group.toFirestore();
-      expect(
-        map,
-        {
-          'name': 'Test',
-          'ownerUid': 'u1',
-          'memberCount': 5,
-          'isPublic': true,
-        },
-      );
+      expect(map, {
+        'name': 'Test',
+        'ownerUid': 'u1',
+        'memberCount': 5,
+        'isPublic': true,
+      });
     });
   });
 }

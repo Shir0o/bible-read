@@ -57,10 +57,9 @@ class _FindGroupCardState extends State<FindGroupCard> {
             children: [
               Text(
                 widget.group.name,
-                style: AppTextStyles.title(context).copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTextStyles.title(
+                  context,
+                ).copyWith(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               FutureBuilder<List<String>>(
@@ -117,7 +116,10 @@ class _FindGroupCardState extends State<FindGroupCard> {
                     return const SizedBox.shrink();
                   }
                   return _buildMemberStack(
-                      context, members, widget.group.memberCount);
+                    context,
+                    members,
+                    widget.group.memberCount,
+                  );
                 },
               ),
               // Join Button
@@ -129,15 +131,14 @@ class _FindGroupCardState extends State<FindGroupCard> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 10,
+                  ),
                 ),
                 child: const Text(
                   'Join Group',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
               ),
             ],
@@ -147,8 +148,11 @@ class _FindGroupCardState extends State<FindGroupCard> {
     );
   }
 
-  Widget _buildMemberStack(BuildContext context,
-      List<GroupMemberProgressData> members, int totalCount) {
+  Widget _buildMemberStack(
+    BuildContext context,
+    List<GroupMemberProgressData> members,
+    int totalCount,
+  ) {
     final displayMembers = members.take(3).toList();
     final remainder = totalCount > 3 ? totalCount - 3 : 0;
 
@@ -180,7 +184,10 @@ class _FindGroupCardState extends State<FindGroupCard> {
   }
 
   Widget _buildAvatar(
-      BuildContext context, GroupMemberProgressData member, double size) {
+    BuildContext context,
+    GroupMemberProgressData member,
+    double size,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Container(

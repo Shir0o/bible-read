@@ -62,15 +62,17 @@ class ProfileSummaryCard extends StatelessWidget {
                           errorWidget: (context, url, error) => Icon(
                             Icons.person_outline,
                             size: 32,
-                            color: colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.5),
+                            color: colorScheme.onSurfaceVariant.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                         )
                       : Icon(
                           Icons.person_outline,
                           size: 32,
-                          color: colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.5),
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.5,
+                          ),
                         ),
                 ),
               ),
@@ -92,8 +94,10 @@ class ProfileSummaryCard extends StatelessWidget {
 
               // "View Profile" Affordance (Subtle)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(20),

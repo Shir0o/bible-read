@@ -22,8 +22,9 @@ void main() {
     GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
   });
 
-  testWidgets('Reading Scenario: User opens group and sees today\'s reading',
-      (tester) async {
+  testWidgets('Reading Scenario: User opens group and sees today\'s reading', (
+    tester,
+  ) async {
     await mockNetworkImagesFor(() async {
       final auth = MockFirebaseAuth(signedIn: false);
       final firestore = FakeFirebaseFirestore();
@@ -37,7 +38,9 @@ void main() {
 
       // Create user and get UID
       final cred = await auth.createUserWithEmailAndPassword(
-          email: 'reader@example.com', password: 'password');
+        email: 'reader@example.com',
+        password: 'password',
+      );
       final uid = cred.user!.uid;
       await auth.signOut();
 
@@ -45,10 +48,11 @@ void main() {
       await seeder.seedUser(uid: uid, name: 'Reader');
       final groupId = 'g1';
       await seeder.seedGroup(
-          groupId: groupId,
-          ownerUid: uid,
-          members: [uid],
-          name: 'Reading Group');
+        groupId: groupId,
+        ownerUid: uid,
+        members: [uid],
+        name: 'Reading Group',
+      );
 
       // Seed group schedule for today
       final today = DateTime.now();
@@ -64,7 +68,10 @@ void main() {
 
       // Seed ReadingPlan
       await seeder.seedReadingPlan(
-          planId: 'plan1', name: 'Test Plan', chaptersPerDay: 1);
+        planId: 'plan1',
+        name: 'Test Plan',
+        chaptersPerDay: 1,
+      );
 
       final now = DateTime.now();
       await firestore.collection('groups').doc(groupId).update({
@@ -77,10 +84,10 @@ void main() {
           firestore: firestore,
           messaging: messaging,
           functions: functions,
-          sendLikeNotification: (
-              {required ownerUid, required likerName}) async {},
-          sendCommentNotification: (
-              {required ownerUid, required commenterName}) async {},
+          sendLikeNotification:
+              ({required ownerUid, required likerName}) async {},
+          sendCommentNotification:
+              ({required ownerUid, required commenterName}) async {},
           vibrationService: vibration,
           googleSignInProvider: () => MockGoogleSignIn(),
         ),
@@ -92,9 +99,13 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(
-          find.byKey(const Key('loginEmailField')), 'reader@example.com');
+        find.byKey(const Key('loginEmailField')),
+        'reader@example.com',
+      );
       await tester.enterText(
-          find.byKey(const Key('loginPasswordField')), 'password');
+        find.byKey(const Key('loginPasswordField')),
+        'password',
+      );
       await tester.pump();
 
       await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));

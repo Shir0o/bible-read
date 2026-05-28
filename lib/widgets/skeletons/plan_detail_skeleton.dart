@@ -54,10 +54,9 @@ class PlanDetailSkeleton extends StatelessWidget {
         borderRadius: BorderRadius.circular(isToday ? 24 : 16),
         border: isToday
             ? Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.2),
               )
             : null,
       ),
@@ -91,12 +90,11 @@ class PlanDetailSkeleton extends StatelessWidget {
             height: 24,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.05),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.05),
             ),
-          )
+          ),
         ],
       ),
     );

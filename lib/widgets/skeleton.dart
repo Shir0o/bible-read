@@ -63,18 +63,15 @@ class _SkeletonState extends State<Skeleton>
           width: widget.width,
           height: widget.height,
           decoration: ShapeDecoration(
-            shape: widget.shape ??
+            shape:
+                widget.shape ??
                 RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(widget.radius),
                 ),
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: [
-                baseColor,
-                highlightColor,
-                baseColor,
-              ],
+              colors: [baseColor, highlightColor, baseColor],
               stops: const [0.1, 0.5, 0.9],
               transform: _SlidingGradientTransform(
                 slidePercent: _animation.value,

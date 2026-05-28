@@ -22,9 +22,9 @@ class CreateGroupPage extends StatefulWidget {
     GroupService? groupService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-  })  : groupService = groupService ?? GroupService(),
-        auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService();
+  }) : groupService = groupService ?? GroupService(),
+       auth = auth ?? FirebaseAuth.instance,
+       vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<CreateGroupPage> createState() => _CreateGroupPageState();
@@ -40,8 +40,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   DateTime? _endDate;
   List<int> _selectedWeekdays = [1, 2, 3, 4, 5, 6, 7]; // Mon-Sun
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _chaptersController =
-      TextEditingController(text: '3');
+  final TextEditingController _chaptersController = TextEditingController(
+    text: '3',
+  );
   ScheduleMode _scheduleMode = ScheduleMode.endDate;
   bool _isCreating = false;
 
@@ -171,8 +172,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       if (fixedChapters == null || fixedChapters <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content:
-                  Text('Please enter a valid number of chapters per day.')),
+            content: Text('Please enter a valid number of chapters per day.'),
+          ),
         );
         return;
       }
@@ -245,9 +246,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create group: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to create group: $e')));
       }
     } finally {
       if (mounted) {
@@ -303,9 +304,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                           return const Iterable<String>.empty();
                         }
                         return ReferenceParser.allBooks.where((String option) {
-                          return option
-                              .toLowerCase()
-                              .contains(textEditingValue.text.toLowerCase());
+                          return option.toLowerCase().contains(
+                            textEditingValue.text.toLowerCase(),
+                          );
                         });
                       },
                       onSelected: (String selection) {
@@ -313,21 +314,21 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                       },
                       fieldViewBuilder:
                           (context, controller, focusNode, onEditingComplete) {
-                        return TextField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          onEditingComplete: onEditingComplete,
-                          decoration: InputDecoration(
-                            hintText: 'Search for a book...',
-                            prefixIcon: const Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            filled: true,
-                            fillColor: colorScheme.surfaceContainerHighest,
-                          ),
-                        );
-                      },
+                            return TextField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              onEditingComplete: onEditingComplete,
+                              decoration: InputDecoration(
+                                hintText: 'Search for a book...',
+                                prefixIcon: const Icon(Icons.search),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                filled: true,
+                                fillColor: colorScheme.surfaceContainerHighest,
+                              ),
+                            );
+                          },
                       optionsViewBuilder: (context, onSelected, options) {
                         return Align(
                           alignment: Alignment.topLeft,
@@ -336,19 +337,22 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                             borderRadius: BorderRadius.circular(8),
                             child: ConstrainedBox(
                               constraints: const BoxConstraints(
-                                  maxHeight: 200,
-                                  maxWidth: 300), // Approximate width
+                                maxHeight: 200,
+                                maxWidth: 300,
+                              ), // Approximate width
                               child: ListView.builder(
                                 padding: EdgeInsets.zero,
                                 shrinkWrap: true,
                                 itemCount: options.length,
                                 itemBuilder: (BuildContext context, int index) {
-                                  final String option =
-                                      options.elementAt(index);
+                                  final String option = options.elementAt(
+                                    index,
+                                  );
                                   return InkWell(
                                     onTap: () {
-                                      unawaited(widget.vibrationService
-                                          .lightImpact());
+                                      unawaited(
+                                        widget.vibrationService.lightImpact(),
+                                      );
                                       onSelected(option);
                                     },
                                     child: Semantics(
@@ -380,8 +384,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                           selectedColor: colorScheme.primary,
                           labelStyle: TextStyle(color: colorScheme.onPrimary),
                           onDeleted: () => _removeBook(book),
-                          deleteIconColor:
-                              colorScheme.onPrimary.withValues(alpha: 0.8),
+                          deleteIconColor: colorScheme.onPrimary.withValues(
+                            alpha: 0.8,
+                          ),
                           checkmarkColor: colorScheme.onPrimary,
                         );
                       }).toList(),
@@ -396,16 +401,19 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.info_outline,
-                                color: colorScheme.primary),
+                            Icon(
+                              Icons.info_outline,
+                              color: colorScheme.primary,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text.rich(
                                 TextSpan(
                                   text:
                                       'This selection contains approximately ',
-                                  style:
-                                      TextStyle(color: colorScheme.onSurface),
+                                  style: TextStyle(
+                                    color: colorScheme.onSurface,
+                                  ),
                                   children: [
                                     TextSpan(
                                       text: '$_totalChapters chapters',
@@ -514,8 +522,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                    suffixIcon:
-                                        const Icon(Icons.calendar_today),
+                                    suffixIcon: const Icon(
+                                      Icons.calendar_today,
+                                    ),
                                   ),
                                   child: Text(
                                     _endDate == null
@@ -532,7 +541,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                               controller: _chaptersController,
                               keyboardType: TextInputType.number,
                               inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly
+                                FilteringTextInputFormatter.digitsOnly,
                               ],
                               decoration: InputDecoration(
                                 labelText: 'Chapters / Day',
@@ -553,8 +562,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                     const SizedBox(height: 16),
                     Text(
                       'Frequency',
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(color: colorScheme.onSurfaceVariant),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     // Quick Presets
@@ -642,13 +652,17 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         _endDate != null)
                       Row(
                         children: [
-                          Icon(Icons.speed,
-                              size: 16, color: colorScheme.secondary),
+                          Icon(
+                            Icons.speed,
+                            size: 16,
+                            color: colorScheme.secondary,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'Pace: ~${_pace.toStringAsFixed(1)} chapters / day',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: colorScheme.secondary),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.secondary,
+                            ),
                           ),
                         ],
                       ),
@@ -656,13 +670,17 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         _estimatedEndDate != null)
                       Row(
                         children: [
-                          Icon(Icons.event_note,
-                              size: 16, color: colorScheme.secondary),
+                          Icon(
+                            Icons.event_note,
+                            size: 16,
+                            color: colorScheme.secondary,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'Estimated End Date: ${_estimatedEndDate!.month}/${_estimatedEndDate!.day}/${_estimatedEndDate!.year}',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: colorScheme.secondary),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.secondary,
+                            ),
                           ),
                         ],
                       ),
@@ -697,8 +715,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                  content: Text(
-                                      'Link copied to clipboard (simulation)')),
+                                content: Text(
+                                  'Link copied to clipboard (simulation)',
+                                ),
+                              ),
                             );
                           },
                           icon: const Icon(Icons.link, size: 18),
@@ -717,7 +737,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         hintText: 'Find people...',
                         prefixIcon: const Icon(Icons.person_search),
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30)),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                         filled: true,
                         fillColor: colorScheme.surface,
                       ),
@@ -769,7 +790,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                       ? const SizedBox(
                           width: 24,
                           height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2))
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : const Icon(Icons.add),
                   label: Text(_isCreating ? 'Creating...' : 'Create Schedule'),
                   style: FilledButton.styleFrom(
@@ -778,7 +800,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     textStyle: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),

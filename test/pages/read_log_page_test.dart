@@ -52,13 +52,22 @@ class ThrowingDocumentReference
     Map<String, dynamic> docsData,
     Map<String, dynamic> rootParent,
     Map<String, dynamic> snapshotStreamControllerRoot,
-  ) : super(firestore, path, id, root, docsData, rootParent,
-            snapshotStreamControllerRoot, null);
+  ) : super(
+        firestore,
+        path,
+        id,
+        root,
+        docsData,
+        rootParent,
+        snapshotStreamControllerRoot,
+        null,
+      );
 
   @override
   CollectionReference<Map<String, dynamic>> collection(String collectionPath) {
-    final base = super.collection(collectionPath)
-        as MockCollectionReference<Map<String, dynamic>>;
+    final base =
+        super.collection(collectionPath)
+            as MockCollectionReference<Map<String, dynamic>>;
     return ThrowingCollectionReference(
       firestore as FakeFirebaseFirestore,
       base.path,
@@ -97,8 +106,16 @@ class ThrowingRewardsDocumentReference
     Map<String, dynamic> docsData,
     Map<String, dynamic> rootParent,
     Map<String, dynamic> snapshotStreamControllerRoot,
-  ) : super(firestore, path, id, root, docsData, rootParent,
-            snapshotStreamControllerRoot, null);
+  ) : super(
+        firestore,
+        path,
+        id,
+        root,
+        docsData,
+        rootParent,
+        snapshotStreamControllerRoot,
+        null,
+      );
 
   @override
   Future<DocumentSnapshot<Map<String, dynamic>>> get([
@@ -163,8 +180,16 @@ class ThrowingWriteLikesDocumentReference
     Map<String, dynamic> docsData,
     Map<String, dynamic> rootParent,
     Map<String, dynamic> snapshotStreamControllerRoot,
-  ) : super(firestore, path, id, root, docsData, rootParent,
-            snapshotStreamControllerRoot, null);
+  ) : super(
+        firestore,
+        path,
+        id,
+        root,
+        docsData,
+        rootParent,
+        snapshotStreamControllerRoot,
+        null,
+      );
 
   @override
   Future<void> set(Map<String, dynamic> data, [SetOptions? options]) async {
@@ -213,13 +238,22 @@ class ThrowingWriteEntriesDocumentReference
     Map<String, dynamic> docsData,
     Map<String, dynamic> rootParent,
     Map<String, dynamic> snapshotStreamControllerRoot,
-  ) : super(firestore, path, id, root, docsData, rootParent,
-            snapshotStreamControllerRoot, null);
+  ) : super(
+        firestore,
+        path,
+        id,
+        root,
+        docsData,
+        rootParent,
+        snapshotStreamControllerRoot,
+        null,
+      );
 
   @override
   CollectionReference<Map<String, dynamic>> collection(String collectionPath) {
-    final base = super.collection(collectionPath)
-        as MockCollectionReference<Map<String, dynamic>>;
+    final base =
+        super.collection(collectionPath)
+            as MockCollectionReference<Map<String, dynamic>>;
     if (collectionPath == 'likes') {
       return ThrowingWriteLikesCollectionReference(
         firestore as FakeFirebaseFirestore,
@@ -269,13 +303,22 @@ class ThrowingWriteDateDocumentReference
     Map<String, dynamic> docsData,
     Map<String, dynamic> rootParent,
     Map<String, dynamic> snapshotStreamControllerRoot,
-  ) : super(firestore, path, id, root, docsData, rootParent,
-            snapshotStreamControllerRoot, null);
+  ) : super(
+        firestore,
+        path,
+        id,
+        root,
+        docsData,
+        rootParent,
+        snapshotStreamControllerRoot,
+        null,
+      );
 
   @override
   CollectionReference<Map<String, dynamic>> collection(String collectionPath) {
-    final base = super.collection(collectionPath)
-        as MockCollectionReference<Map<String, dynamic>>;
+    final base =
+        super.collection(collectionPath)
+            as MockCollectionReference<Map<String, dynamic>>;
     if (collectionPath == 'entries') {
       return ThrowingWriteEntriesCollectionReference(
         firestore as FakeFirebaseFirestore,
@@ -376,8 +419,7 @@ void main() {
         user,
         firestore: firestore,
         dateProvider: () => fixedDate,
-        markFirstReader: (
-            {required String dateKey, required String uid}) async {
+        markFirstReader: ({required String dateKey, required String uid}) async {
           called = true;
           expect(uid, 'u1');
           final expectedKey =
@@ -398,10 +440,10 @@ void main() {
         user,
         firestore: firestore,
         dateProvider: () => fixedDate,
-        markFirstReader: (
-            {required String dateKey, required String uid}) async {
-          return {'first': true};
-        },
+        markFirstReader:
+            ({required String dateKey, required String uid}) async {
+              return {'first': true};
+            },
       );
 
       final achievementDoc = await firestore
@@ -418,17 +460,26 @@ void main() {
       final firestore = FakeFirebaseFirestore();
       final auth = MockFirebaseAuth();
 
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(
+        MaterialApp(
           home: ReadLogPage(
-        firestore: firestore,
-        auth: auth,
-        dateProvider: () => fixedDate,
-        onSendLikeNotification: (
-            {required String ownerUid, required String likerName}) async {},
-        onSendCommentNotification: (
-            {required String ownerUid, required String commenterName}) async {},
-        vibrationService: const StubVibrationService(),
-      )));
+            firestore: firestore,
+            auth: auth,
+            dateProvider: () => fixedDate,
+            onSendLikeNotification:
+                ({
+                  required String ownerUid,
+                  required String likerName,
+                }) async {},
+            onSendCommentNotification:
+                ({
+                  required String ownerUid,
+                  required String commenterName,
+                }) async {},
+            vibrationService: const StubVibrationService(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Sign in to see who\'s reading today'), findsOneWidget);
@@ -447,10 +498,10 @@ void main() {
           .collection('entries')
           .doc('u1')
           .set({
-        'name': 'User One',
-        'email': 'u1@test.com',
-        'timestamp': Timestamp.now()
-      });
+            'name': 'User One',
+            'email': 'u1@test.com',
+            'timestamp': Timestamp.now(),
+          });
       await firestore
           .collection('read_logs')
           .doc(dateKey)
@@ -460,17 +511,26 @@ void main() {
           .doc('l1')
           .set({'timestamp': Timestamp.now(), 'name': 'Liker'});
 
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(
+        MaterialApp(
           home: ReadLogPage(
-        firestore: firestore,
-        auth: MockFirebaseAuth(mockUser: user, signedIn: true),
-        dateProvider: () => fixedDate,
-        onSendLikeNotification: (
-            {required String ownerUid, required String likerName}) async {},
-        onSendCommentNotification: (
-            {required String ownerUid, required String commenterName}) async {},
-        vibrationService: const StubVibrationService(),
-      )));
+            firestore: firestore,
+            auth: MockFirebaseAuth(mockUser: user, signedIn: true),
+            dateProvider: () => fixedDate,
+            onSendLikeNotification:
+                ({
+                  required String ownerUid,
+                  required String likerName,
+                }) async {},
+            onSendCommentNotification:
+                ({
+                  required String ownerUid,
+                  required String commenterName,
+                }) async {},
+            vibrationService: const StubVibrationService(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('User'), findsOneWidget);
@@ -494,27 +554,35 @@ void main() {
           .collection('entries')
           .doc('u1')
           .set({
-        'name': 'User One',
-        'email': 'u1@test.com',
-        'firstReader': true,
-        'timestamp': Timestamp.now(),
+            'name': 'User One',
+            'email': 'u1@test.com',
+            'firstReader': true,
+            'timestamp': Timestamp.now(),
+          });
+      await firestore.collection('daily_rewards').doc(dateKey).set({
+        'uid': 'u1',
       });
-      await firestore
-          .collection('daily_rewards')
-          .doc(dateKey)
-          .set({'uid': 'u1'});
 
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(
+        MaterialApp(
           home: ReadLogPage(
-        firestore: firestore,
-        auth: MockFirebaseAuth(mockUser: user, signedIn: true),
-        dateProvider: () => fixedDate,
-        onSendLikeNotification: (
-            {required String ownerUid, required String likerName}) async {},
-        onSendCommentNotification: (
-            {required String ownerUid, required String commenterName}) async {},
-        vibrationService: const StubVibrationService(),
-      )));
+            firestore: firestore,
+            auth: MockFirebaseAuth(mockUser: user, signedIn: true),
+            dateProvider: () => fixedDate,
+            onSendLikeNotification:
+                ({
+                  required String ownerUid,
+                  required String likerName,
+                }) async {},
+            onSendCommentNotification:
+                ({
+                  required String ownerUid,
+                  required String commenterName,
+                }) async {},
+            vibrationService: const StubVibrationService(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       /* Gamification removed
@@ -529,8 +597,9 @@ void main() {
       expect(find.byType(BadgeIcon), findsNothing);
     });
 
-    testWidgets('renders feed when daily reward is inaccessible',
-        (tester) async {
+    testWidgets('renders feed when daily reward is inaccessible', (
+      tester,
+    ) async {
       final firestore = ThrowingRewardsFirestore();
       final user = MockUser(uid: 'u1');
       final dateKey =
@@ -541,30 +610,41 @@ void main() {
           .collection('entries')
           .doc('u1')
           .set({
-        'name': 'User One',
-        'email': 'u1@test.com',
-        'timestamp': Timestamp.now(),
-      });
+            'name': 'User One',
+            'email': 'u1@test.com',
+            'timestamp': Timestamp.now(),
+          });
 
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(
+        MaterialApp(
           home: ReadLogPage(
-        firestore: firestore,
-        auth: MockFirebaseAuth(mockUser: user, signedIn: true),
-        dateProvider: () => fixedDate,
-        onSendLikeNotification: (
-            {required String ownerUid, required String likerName}) async {},
-        onSendCommentNotification: (
-            {required String ownerUid, required String commenterName}) async {},
-        vibrationService: const StubVibrationService(),
-      )));
+            firestore: firestore,
+            auth: MockFirebaseAuth(mockUser: user, signedIn: true),
+            dateProvider: () => fixedDate,
+            onSendLikeNotification:
+                ({
+                  required String ownerUid,
+                  required String likerName,
+                }) async {},
+            onSendCommentNotification:
+                ({
+                  required String ownerUid,
+                  required String commenterName,
+                }) async {},
+            vibrationService: const StubVibrationService(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('User'), findsOneWidget);
       expect(find.text('Read today'), findsOneWidget);
       expect(
-          find.text(
-              'Unable to load today\'s readers.\nPlease check your connection.'),
-          findsNothing);
+        find.text(
+          'Unable to load today\'s readers.\nPlease check your connection.',
+        ),
+        findsNothing,
+      );
       expect(find.byType(BadgeIcon), findsNothing);
     });
 
@@ -580,29 +660,40 @@ void main() {
           .collection('entries')
           .doc('u2')
           .set({
-        'name': 'User Two',
-        'email': 'u2@test.com',
-        'timestamp': Timestamp.now()
-      });
+            'name': 'User Two',
+            'email': 'u2@test.com',
+            'timestamp': Timestamp.now(),
+          });
 
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(
+        MaterialApp(
           home: ReadLogPage(
-        firestore: firestore,
-        auth: auth,
-        dateProvider: () => fixedDate,
-        onSendLikeNotification: (
-            {required String ownerUid, required String likerName}) async {},
-        onSendCommentNotification: (
-            {required String ownerUid, required String commenterName}) async {},
-        vibrationService: const StubVibrationService(),
-      )));
+            firestore: firestore,
+            auth: auth,
+            dateProvider: () => fixedDate,
+            onSendLikeNotification:
+                ({
+                  required String ownerUid,
+                  required String likerName,
+                }) async {},
+            onSendCommentNotification:
+                ({
+                  required String ownerUid,
+                  required String commenterName,
+                }) async {},
+            vibrationService: const StubVibrationService(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Likes
       await tester.tap(find.byIcon(Icons.favorite_border_rounded));
       await tester.pumpAndSettle();
       expect(
-          find.byIcon(Icons.favorite_rounded), findsOneWidget); // Expect filled
+        find.byIcon(Icons.favorite_rounded),
+        findsOneWidget,
+      ); // Expect filled
 
       final likeDoc = await firestore
           .collection('read_logs')
@@ -617,8 +708,10 @@ void main() {
       // Unlikes
       await tester.tap(find.byIcon(Icons.favorite_rounded));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.favorite_border_rounded),
-          findsOneWidget); // Expect outline
+      expect(
+        find.byIcon(Icons.favorite_border_rounded),
+        findsOneWidget,
+      ); // Expect outline
 
       final likeDocDeleted = await firestore
           .collection('read_logs')
@@ -633,26 +726,39 @@ void main() {
 
     testWidgets('shows fallback text when Firestore fails', (tester) async {
       final firestore = ThrowingFirestore();
-      final auth =
-          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1'),
+        signedIn: true,
+      );
 
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(
+        MaterialApp(
           home: ReadLogPage(
-        firestore: firestore,
-        auth: auth,
-        dateProvider: () => fixedDate,
-        onSendLikeNotification: (
-            {required String ownerUid, required String likerName}) async {},
-        onSendCommentNotification: (
-            {required String ownerUid, required String commenterName}) async {},
-        vibrationService: const StubVibrationService(),
-      )));
+            firestore: firestore,
+            auth: auth,
+            dateProvider: () => fixedDate,
+            onSendLikeNotification:
+                ({
+                  required String ownerUid,
+                  required String likerName,
+                }) async {},
+            onSendCommentNotification:
+                ({
+                  required String ownerUid,
+                  required String commenterName,
+                }) async {},
+            vibrationService: const StubVibrationService(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(
-          find.text(
-              'Unable to load today\'s readers.\nPlease check your connection.'),
-          findsOneWidget);
+        find.text(
+          'Unable to load today\'s readers.\nPlease check your connection.',
+        ),
+        findsOneWidget,
+      );
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
@@ -668,22 +774,31 @@ void main() {
           .collection('entries')
           .doc('u2')
           .set({
-        'name': 'User Two',
-        'email': 'u2@test.com',
-        'timestamp': Timestamp.now(),
-      });
+            'name': 'User Two',
+            'email': 'u2@test.com',
+            'timestamp': Timestamp.now(),
+          });
 
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(
+        MaterialApp(
           home: ReadLogPage(
-        firestore: firestore,
-        auth: auth,
-        dateProvider: () => fixedDate,
-        onSendLikeNotification: (
-            {required String ownerUid, required String likerName}) async {},
-        onSendCommentNotification: (
-            {required String ownerUid, required String commenterName}) async {},
-        vibrationService: const StubVibrationService(),
-      )));
+            firestore: firestore,
+            auth: auth,
+            dateProvider: () => fixedDate,
+            onSendLikeNotification:
+                ({
+                  required String ownerUid,
+                  required String likerName,
+                }) async {},
+            onSendCommentNotification:
+                ({
+                  required String ownerUid,
+                  required String commenterName,
+                }) async {},
+            vibrationService: const StubVibrationService(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);

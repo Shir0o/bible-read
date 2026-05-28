@@ -32,9 +32,9 @@ void main() {
         .collection('schedule')
         .doc(dateId)
         .set({
-      'date': today,
-      'chapters': List.generate(chaptersPerDay, (i) => 'Gen ${i + 1}'),
-    });
+          'date': today,
+          'chapters': List.generate(chaptersPerDay, (i) => 'Gen ${i + 1}'),
+        });
 
     // Create members and progress
     var batch = firestore.batch();
@@ -43,16 +43,13 @@ void main() {
       final uid = 'user_$i';
       // Member
       batch.set(
-          firestore
-              .collection('groups')
-              .doc(groupId)
-              .collection('members')
-              .doc(uid),
-          {
-            'uid': uid,
-            'name': 'User $i',
-            'role': 'member',
-          });
+        firestore
+            .collection('groups')
+            .doc(groupId)
+            .collection('members')
+            .doc(uid),
+        {'uid': uid, 'name': 'User $i', 'role': 'member'},
+      );
       opCount++;
 
       // Progress Entry

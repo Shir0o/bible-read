@@ -54,10 +54,18 @@ class MockHttpClientResponse extends Fake implements HttpClientResponse {
       HttpClientResponseCompressionState.notCompressed;
 
   @override
-  StreamSubscription<List<int>> listen(void Function(List<int> event)? onData,
-      {Function? onError, void Function()? onDone, bool? cancelOnError}) {
-    return Stream<List<int>>.empty().listen(onData,
-        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+  StreamSubscription<List<int>> listen(
+    void Function(List<int> event)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) {
+    return Stream<List<int>>.empty().listen(
+      onData,
+      onError: onError,
+      onDone: onDone,
+      cancelOnError: cancelOnError,
+    );
   }
 }
 
@@ -149,7 +157,9 @@ void main() {
 
     // Enter Password
     await tester.enterText(
-        find.byKey(const Key('signupPasswordField')), 'password');
+      find.byKey(const Key('signupPasswordField')),
+      'password',
+    );
 
     // Tap Create Account
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
@@ -173,8 +183,9 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('SignupPage shows validation errors for empty fields',
-      (tester) async {
+  testWidgets('SignupPage shows validation errors for empty fields', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: SignupPage(
@@ -206,11 +217,17 @@ void main() {
     );
 
     await tester.enterText(
-        find.widgetWithText(TextFormField, 'Full Name'), 'Test User');
+      find.widgetWithText(TextFormField, 'Full Name'),
+      'Test User',
+    );
     await tester.enterText(
-        find.byKey(const Key('signupEmailField')), 'invalid-email');
+      find.byKey(const Key('signupEmailField')),
+      'invalid-email',
+    );
     await tester.enterText(
-        find.byKey(const Key('signupPasswordField')), 'password');
+      find.byKey(const Key('signupPasswordField')),
+      'password',
+    );
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
     await tester.pump();
@@ -231,11 +248,17 @@ void main() {
     );
 
     await tester.enterText(
-        find.widgetWithText(TextFormField, 'Full Name'), 'Test User');
+      find.widgetWithText(TextFormField, 'Full Name'),
+      'Test User',
+    );
     await tester.enterText(
-        find.byKey(const Key('signupEmailField')), 'user@example.com');
+      find.byKey(const Key('signupEmailField')),
+      'user@example.com',
+    );
     await tester.enterText(
-        find.byKey(const Key('signupPasswordField')), '12345');
+      find.byKey(const Key('signupPasswordField')),
+      '12345',
+    );
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
     await tester.pump();
@@ -243,8 +266,9 @@ void main() {
     expect(find.text('Password must be at least 6 characters'), findsOneWidget);
   });
 
-  testWidgets('Social button has correct semantics and tooltip',
-      (tester) async {
+  testWidgets('Social button has correct semantics and tooltip', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: SignupPage(
@@ -285,10 +309,12 @@ void main() {
         final children = span.children;
         if (children == null) return false;
 
-        bool hasTerms =
-            children.any((c) => c is TextSpan && c.text == 'Terms of Service');
-        bool hasPrivacy =
-            children.any((c) => c is TextSpan && c.text == 'Privacy Policy');
+        bool hasTerms = children.any(
+          (c) => c is TextSpan && c.text == 'Terms of Service',
+        );
+        bool hasPrivacy = children.any(
+          (c) => c is TextSpan && c.text == 'Privacy Policy',
+        );
         return hasTerms && hasPrivacy;
       }
       return false;
@@ -299,15 +325,19 @@ void main() {
     final richText = tester.widget<RichText>(richTextFinder);
     final textSpan = richText.text as TextSpan;
 
-    final termsSpan = textSpan.children!
-            .firstWhere((c) => (c as TextSpan).text == 'Terms of Service')
-        as TextSpan;
+    final termsSpan =
+        textSpan.children!.firstWhere(
+              (c) => (c as TextSpan).text == 'Terms of Service',
+            )
+            as TextSpan;
     expect(termsSpan.recognizer, isNotNull);
     expect(termsSpan.recognizer, isA<TapGestureRecognizer>());
 
-    final privacySpan = textSpan.children!
-            .firstWhere((c) => (c as TextSpan).text == 'Privacy Policy')
-        as TextSpan;
+    final privacySpan =
+        textSpan.children!.firstWhere(
+              (c) => (c as TextSpan).text == 'Privacy Policy',
+            )
+            as TextSpan;
     expect(privacySpan.recognizer, isNotNull);
     expect(privacySpan.recognizer, isA<TapGestureRecognizer>());
   });
@@ -339,10 +369,7 @@ void main() {
     final semanticsHandle = tester.ensureSemantics();
     expect(
       tester.getSemantics(find.byKey(const Key('loginLinkSemantics'))),
-      matchesSemantics(
-        label: 'Log in',
-        isButton: true,
-      ),
+      matchesSemantics(label: 'Log in', isButton: true),
     );
     semanticsHandle.dispose();
 

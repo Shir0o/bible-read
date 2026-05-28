@@ -14,17 +14,15 @@ void main() {
 
       expect(
         result,
-        equals(
-          <String>[
-            'John 3',
-            'John 4',
-            'John 5',
-            'Deuteronomy 28',
-            'Deuteronomy 29',
-            'Deuteronomy 30',
-            'Deuteronomy 31',
-          ],
-        ),
+        equals(<String>[
+          'John 3',
+          'John 4',
+          'John 5',
+          'Deuteronomy 28',
+          'Deuteronomy 29',
+          'Deuteronomy 30',
+          'Deuteronomy 31',
+        ]),
       );
       expect(result.every(isCanonical), isTrue);
     });
@@ -36,17 +34,15 @@ void main() {
 
       expect(
         result,
-        equals(
-          <String>[
-            'John 1',
-            'Mark 2',
-            'Mark 3',
-            'Luke 4',
-            'Luke 5',
-            'Acts 1',
-            'Acts 2',
-          ],
-        ),
+        equals(<String>[
+          'John 1',
+          'Mark 2',
+          'Mark 3',
+          'Luke 4',
+          'Luke 5',
+          'Acts 1',
+          'Acts 2',
+        ]),
       );
       expect(result.every(isCanonical), isTrue);
     });
@@ -54,15 +50,7 @@ void main() {
     test('parses ordinal book names', () {
       final result = ReferenceParser.parseChaptersList('II Tim 3, 1 John 2');
 
-      expect(
-        result,
-        equals(
-          <String>[
-            '2 Timothy 3',
-            '1 John 2',
-          ],
-        ),
-      );
+      expect(result, equals(<String>['2 Timothy 3', '1 John 2']));
       expect(result.every(isCanonical), isTrue);
     });
 
@@ -79,31 +67,14 @@ void main() {
     test('expands cross-book ranges', () {
       final result = ReferenceParser.parseChaptersList('Genesis 50 - Exodus 2');
 
-      expect(
-        result,
-        equals(
-          <String>[
-            'Genesis 50',
-            'Exodus 1',
-            'Exodus 2',
-          ],
-        ),
-      );
+      expect(result, equals(<String>['Genesis 50', 'Exodus 1', 'Exodus 2']));
       expect(result.every(isCanonical), isTrue);
     });
 
     test('expands complex cross-book ranges', () {
       final result = ReferenceParser.parseChaptersList('2 John 1 - 3 John 1');
 
-      expect(
-        result,
-        equals(
-          <String>[
-            '2 John 1',
-            '3 John 1',
-          ],
-        ),
-      );
+      expect(result, equals(<String>['2 John 1', '3 John 1']));
       expect(result.every(isCanonical), isTrue);
     });
 
@@ -124,16 +95,7 @@ void main() {
 
     test('handles reversed ranges', () {
       final result = ReferenceParser.parseChaptersList('John 5-3');
-      expect(
-        result,
-        equals(
-          <String>[
-            'John 3',
-            'John 4',
-            'John 5',
-          ],
-        ),
-      );
+      expect(result, equals(<String>['John 3', 'John 4', 'John 5']));
       expect(result.every(isCanonical), isTrue);
     });
 

@@ -24,9 +24,9 @@ class FriendRequestsPage extends StatelessWidget {
     FriendService? friendService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-  })  : friendService = friendService ?? FriendService(),
-        auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService();
+  }) : friendService = friendService ?? FriendService(),
+       auth = auth ?? FirebaseAuth.instance,
+       vibrationService = vibrationService ?? const VibrationService();
 
   @override
   Widget build(BuildContext context) {
@@ -35,15 +35,18 @@ class FriendRequestsPage extends StatelessWidget {
       appBar: CommonStyles.buildAppBar(
         context,
         'Friend Requests',
-        leading: BackButton(onPressed: () {
-          unawaited(vibrationService.lightImpact());
-          Navigator.of(context).pop();
-        }),
+        leading: BackButton(
+          onPressed: () {
+            unawaited(vibrationService.lightImpact());
+            Navigator.of(context).pop();
+          },
+        ),
         automaticallyImplyLeading: true,
       ),
       body: Container(
-        decoration:
-            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
+        decoration: CommonStyles.backgroundDecoration(
+          Theme.of(context).colorScheme,
+        ),
         child: user == null
             ? const Center(child: Text('Please sign in'))
             : Padding(

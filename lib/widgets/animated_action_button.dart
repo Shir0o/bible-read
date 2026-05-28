@@ -50,8 +50,9 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
   static const double _pressedElevation = 1;
   static const double _disabledElevation = 0;
 
-  static const BorderRadius _cornerRadius =
-      BorderRadius.all(Radius.circular(14));
+  static const BorderRadius _cornerRadius = BorderRadius.all(
+    Radius.circular(14),
+  );
 
   late final AnimationController _scaleController;
   late final WidgetStatesController _statesController;
@@ -102,27 +103,29 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
     final bool hovered = states.contains(WidgetState.hovered);
     final bool focused = states.contains(WidgetState.focused);
 
-    final double targetScale = (disabled
-            ? _baseScale
-            : pressed
+    final double targetScale =
+        (disabled
+                ? _baseScale
+                : pressed
                 ? _pressedScale
                 : (hovered || focused)
-                    ? _hoveredScale
-                    : _baseScale)
-        .clamp(_minScale, _hoveredScale);
+                ? _hoveredScale
+                : _baseScale)
+            .clamp(_minScale, _hoveredScale);
     final double targetElevation = disabled
         ? _disabledElevation
         : pressed
-            ? _pressedElevation
-            : (hovered || focused)
-                ? _hoverElevation
-                : _restElevation;
+        ? _pressedElevation
+        : (hovered || focused)
+        ? _hoverElevation
+        : _restElevation;
 
     final Duration duration = pressed
         ? const Duration(milliseconds: 90)
         : const Duration(milliseconds: 220);
-    final Curve curve =
-        pressed ? Curves.easeInOutCubicEmphasized : Curves.easeOutBack;
+    final Curve curve = pressed
+        ? Curves.easeInOutCubicEmphasized
+        : Curves.easeOutBack;
 
     _scaleController.animateTo(targetScale, duration: duration, curve: curve);
 

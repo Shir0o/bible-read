@@ -45,29 +45,32 @@ void main() {
     final error = Exception('boom');
     final stack = StackTrace.current;
 
-    when(() => mock.recordError(
-          error,
-          stack,
-          reason: null,
-          information: const [],
-          printDetails: null,
-          fatal: false,
-        )).thenAnswer((_) async {});
+    when(
+      () => mock.recordError(
+        error,
+        stack,
+        reason: null,
+        information: const [],
+        printDetails: null,
+        fatal: false,
+      ),
+    ).thenAnswer((_) async {});
 
     await ErrorLogger.log(error, stack);
 
-    verify(() => mock.recordError(
-          error,
-          stack,
-          reason: null,
-          information: const [],
-          printDetails: null,
-          fatal: false,
-        )).called(1);
+    verify(
+      () => mock.recordError(
+        error,
+        stack,
+        reason: null,
+        information: const [],
+        printDetails: null,
+        fatal: false,
+      ),
+    ).called(1);
   });
 
-  test('log does not call Crashlytics when Firebase is uninitialized',
-      () async {
+  test('log does not call Crashlytics when Firebase is uninitialized', () async {
     final original = Firebase.delegatePackingProperty;
     Firebase.delegatePackingProperty = _EmptyFirebasePlatform();
     // Clear the crashlytics mock to simulate uninitialized state
@@ -96,24 +99,28 @@ void main() {
     final error = Exception('boom');
     final stack = StackTrace.current;
 
-    when(() => mock.recordError(
-          error,
-          stack,
-          reason: null,
-          information: const [],
-          printDetails: null,
-          fatal: false,
-        )).thenThrow(Exception('fail'));
+    when(
+      () => mock.recordError(
+        error,
+        stack,
+        reason: null,
+        information: const [],
+        printDetails: null,
+        fatal: false,
+      ),
+    ).thenThrow(Exception('fail'));
 
     await expectLater(ErrorLogger.log(error, stack), completes);
 
-    verify(() => mock.recordError(
-          error,
-          stack,
-          reason: null,
-          information: const [],
-          printDetails: null,
-          fatal: false,
-        )).called(1);
+    verify(
+      () => mock.recordError(
+        error,
+        stack,
+        reason: null,
+        information: const [],
+        printDetails: null,
+        fatal: false,
+      ),
+    ).called(1);
   });
 }

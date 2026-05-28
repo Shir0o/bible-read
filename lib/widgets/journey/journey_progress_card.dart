@@ -35,7 +35,7 @@ class JourneyProgressCard extends StatefulWidget {
     this.showTitle = true,
     this.isLoading = false,
   }) : readingPlanService =
-            readingPlanService ?? ReadingPlanService(firestore: firestore);
+           readingPlanService ?? ReadingPlanService(firestore: firestore);
 
   @override
   State<JourneyProgressCard> createState() => _JourneyProgressCardState();
@@ -56,8 +56,9 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
     super.initState();
     _allPlansFuture = widget.initialPlans != null
         ? Future.value(widget.initialPlans)
-        : widget.readingPlanService
-            .getAvailablePlans(userId: widget.auth.currentUser?.uid);
+        : widget.readingPlanService.getAvailablePlans(
+            userId: widget.auth.currentUser?.uid,
+          );
     final user = widget.auth.currentUser;
     if (user != null) {
       _activePlansStream = widget.initialProgress != null
@@ -69,7 +70,9 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
   }
 
   _ActivePlanData _computeActivePlan(
-      List<ReadingPlan> plans, List<UserPlanProgress> userProgressList) {
+    List<ReadingPlan> plans,
+    List<UserPlanProgress> userProgressList,
+  ) {
     ReadingPlan? activePlan;
     UserPlanProgress? activeProgress;
 
@@ -115,9 +118,9 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                 Text(
                   'My Personal Journey',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
                 ),
                 TextButton(
                   onPressed: () async {
@@ -133,7 +136,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                       setState(() {
                         _allPlansFuture = widget.readingPlanService
                             .getAvailablePlans(
-                                userId: widget.auth.currentUser?.uid);
+                              userId: widget.auth.currentUser?.uid,
+                            );
                       });
                     }
                   },
@@ -172,8 +176,10 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                     final userProgressList = progressSnapshot.data ?? [];
 
                     // 3. Compute Active Plan (Extracted logic)
-                    final activeData =
-                        _computeActivePlan(plans, userProgressList);
+                    final activeData = _computeActivePlan(
+                      plans,
+                      userProgressList,
+                    );
                     final activePlan = activeData.plan;
                     final activeProgress = activeData.progress;
 
@@ -242,7 +248,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
         side: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.2)),
+          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -274,7 +281,8 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                   setState(() {
                     _allPlansFuture = widget.readingPlanService
                         .getAvailablePlans(
-                            userId: widget.auth.currentUser?.uid);
+                          userId: widget.auth.currentUser?.uid,
+                        );
                   });
                 }
               },
@@ -330,8 +338,9 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                           color: colorScheme.surfaceContainer,
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.1),
+                            color: colorScheme.onSurfaceVariant.withValues(
+                              alpha: 0.1,
+                            ),
                           ),
                           boxShadow: AppSpacing.cardShadow(context),
                         ),
@@ -351,9 +360,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                           children: [
                             Text(
                               plan.title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
+                              style: Theme.of(context).textTheme.titleLarge
                                   ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18,

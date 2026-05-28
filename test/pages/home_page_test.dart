@@ -42,39 +42,42 @@ void main() {
   });
   tearDownAll(resetHttpOverrides);
 
-  testWidgets('show "How did your reading go today?" and button when not read',
-      (
+  testWidgets(
+    'show "How did your reading go today?" and button when not read',
+    (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1'),
+        signedIn: true,
+      );
+
+      // Initial state: not read today
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HomePage(
+            firestore: firestore,
+            auth: auth,
+            vibrationService: _StubVibrationService(),
+            bibleProgressService: _StubBibleProgressService(),
+            dateProvider: () => DateTime.now(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('How did your reading go today?'), findsOneWidget);
+      expect(
+        find.text('Yes, I read'),
+        findsOneWidget,
+      ); // Can be FilledButton or FilledButton.tonal
+      expect(find.byType(FilledButton), findsOneWidget);
+      expect(find.text('Thank you for being here.'), findsNothing);
+    },
+  );
+
+  testWidgets('show "Thank you for being here." when read today', (
     tester,
   ) async {
-    final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(
-      mockUser: MockUser(uid: 'u1'),
-      signedIn: true,
-    );
-
-    // Initial state: not read today
-    await tester.pumpWidget(
-      MaterialApp(
-        home: HomePage(
-          firestore: firestore,
-          auth: auth,
-          vibrationService: _StubVibrationService(),
-          bibleProgressService: _StubBibleProgressService(),
-          dateProvider: () => DateTime.now(),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('How did your reading go today?'), findsOneWidget);
-    expect(find.text('Yes, I read'),
-        findsOneWidget); // Can be FilledButton or FilledButton.tonal
-    expect(find.byType(FilledButton), findsOneWidget);
-    expect(find.text('Thank you for being here.'), findsNothing);
-  });
-
-  testWidgets('show "Thank you for being here." when read today',
-      (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
@@ -179,10 +182,10 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 5,
-      'totalReadDays': 5,
-      'pastWeekReadDates': [], // Empty for now
-    });
+          'streak': 5,
+          'totalReadDays': 5,
+          'pastWeekReadDates': [], // Empty for now
+        });
 
     // Also mark as read today so the streak UI is visible
     final today = DateTime.now();
@@ -211,8 +214,10 @@ void main() {
 
     // Verify streak text (RichText)
     // RichText content aggregates to "5 day streak  •  5 days total"
-    expect(find.text('5 day streak  •  5 days total', findRichText: true),
-        findsOneWidget);
+    expect(
+      find.text('5 day streak  •  5 days total', findRichText: true),
+      findsOneWidget,
+    );
 
     // Verify progress bar elements
     expect(find.text('Reading this week'), findsOneWidget);
@@ -263,8 +268,9 @@ void main() {
     expect(find.byType(HomePageSkeleton), findsNothing);
   });
 
-  testWidgets('respects autoMarkPlanRead preference when marking read',
-      (tester) async {
+  testWidgets('respects autoMarkPlanRead preference when marking read', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
@@ -330,7 +336,9 @@ void main() {
 
     // Test CASE 2: Preference is ON
     await prefsService.updatePreferences(
-        'u1', const UserPreferences(autoMarkPlanRead: true));
+      'u1',
+      const UserPreferences(autoMarkPlanRead: true),
+    );
 
     // Reset read status for today to allow re-testing on "same day" in test
     final today = DateTime.now();
@@ -382,7 +390,7 @@ void main() {
 
 class MockReadingStatusService extends ReadingStatusService {
   MockReadingStatusService()
-      : super(firestore: FakeFirebaseFirestore(), auth: MockFirebaseAuth());
+    : super(firestore: FakeFirebaseFirestore(), auth: MockFirebaseAuth());
 
   @override
   Future<ReadingStatus> fetchStatus({bool forceRefresh = false}) async {

@@ -23,8 +23,9 @@ void main() {
   setupPathProviderMocks();
   setupSqfliteMock();
 
-  testWidgets('HomePage Streak Golden Test (Not Read Today - Streak Absent)',
-      (tester) async {
+  testWidgets('HomePage Streak Golden Test (Not Read Today - Streak Absent)', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
@@ -37,10 +38,10 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 12,
-      'pastWeekReadDates': ['2024-07-28', '2024-07-29'], // Sun, Mon
-      'graceCreditsAvailable': 0,
-    });
+          'streak': 12,
+          'pastWeekReadDates': ['2024-07-28', '2024-07-29'], // Sun, Mon
+          'graceCreditsAvailable': 0,
+        });
 
     final service = ReadingStatusService(
       firestore: firestore,
@@ -74,8 +75,9 @@ void main() {
     );
   });
 
-  testWidgets('HomePage Streak Golden Test (Read Today - Streak Visible)',
-      (tester) async {
+  testWidgets('HomePage Streak Golden Test (Read Today - Streak Visible)', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
@@ -88,14 +90,14 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-      'streak': 12,
-      'pastWeekReadDates': [
-        '2024-07-28',
-        '2024-07-29',
-        '2024-07-30'
-      ], // Sun, Mon, Tue
-      'graceCreditsAvailable': 0,
-    });
+          'streak': 12,
+          'pastWeekReadDates': [
+            '2024-07-28',
+            '2024-07-29',
+            '2024-07-30',
+          ], // Sun, Mon, Tue
+          'graceCreditsAvailable': 0,
+        });
 
     final service = ReadingStatusService(
       firestore: firestore,

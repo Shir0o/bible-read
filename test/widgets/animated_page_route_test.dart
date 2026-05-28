@@ -12,8 +12,9 @@ class _DummyPage extends StatelessWidget {
 }
 
 void main() {
-  testWidgets('animatedPageRoute builds fade and scale transitions',
-      (tester) async {
+  testWidgets('animatedPageRoute builds fade and scale transitions', (
+    tester,
+  ) async {
     await tester.pumpWidget(const MaterialApp(home: Scaffold()));
     final route = animatedPageRoute(const _DummyPage());
     final animation = const AlwaysStoppedAnimation<double>(0.5);
