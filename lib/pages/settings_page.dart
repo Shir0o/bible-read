@@ -84,7 +84,6 @@ class SettingsPage extends StatefulWidget {
 class SettingsPageState extends State<SettingsPage> {
   bool _isSigningIn = false;
   bool _isSigningOut = false;
-  bool _loading = true;
 
   late final UserPreferencesService _prefsService;
   UserPreferences _prefs = const UserPreferences();
@@ -97,12 +96,6 @@ class SettingsPageState extends State<SettingsPage> {
     _prefsService = widget.userPreferencesService ??
         UserPreferencesService(firestore: widget.firestore);
     _loadPreferences();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-      });
-    });
   }
 
   Future<void> _loadPreferences() async {
@@ -117,26 +110,49 @@ class SettingsPageState extends State<SettingsPage> {
     }
 
     _prefSub?.cancel();
-    _prefSub = _prefsService.streamPreferences(uid).listen((prefs) {
-      if (mounted) {
-        setState(() {
-          _prefs = prefs;
-          _prefsLoading = false;
-        });
-      }
-    });
+    _prefSub = _prefsService.streamPreferences(uid).listen(
+      (prefs) {
+        if (mounted) {
+          setState(() {
+            _prefs = prefs;
+            _prefsLoading = false;
+          });
+        }
+      },
+      onError: (error, stackTrace) {
+        ErrorLogger.log(error, stackTrace);
+        if (mounted) {
+          setState(() {
+            _prefsLoading = false;
+          });
+        }
+      },
+    );
   }
 
   Future<void> _updatePreference(bool value) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
 
+    final oldPrefs = _prefs;
     final newPrefs = _prefs.copyWith(autoMarkPlanRead: value);
     setState(() {
       _prefs = newPrefs;
     });
 
-    await _prefsService.updatePreferences(uid, newPrefs);
+    try {
+      await _prefsService.updatePreferences(uid, newPrefs);
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        setState(() {
+          _prefs = oldPrefs;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update preference')),
+        );
+      }
+    }
   }
 
   @override
@@ -242,9 +258,7 @@ class SettingsPageState extends State<SettingsPage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     Widget body;
-    if (_loading) {
-      body = const CircularProgressIndicator();
-    } else if (firebaseUser == null && googleUser == null) {
+    if (firebaseUser == null && googleUser == null) {
       body = Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(

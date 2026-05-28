@@ -59,12 +59,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('shows loading then auth options', (tester) async {
+  testWidgets('shows auth options', (tester) async {
     await tester.pumpWidget(MaterialApp(home: SettingsPage()));
-
-    // Initially loading indicator
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-
     await tester.pumpAndSettle();
 
     expect(find.text('Sign in with Google'), findsOneWidget);
@@ -193,10 +189,6 @@ void main() {
       final account = await GoogleSignIn.instance.authenticate();
 
       await tester.pumpWidget(MaterialApp(home: SettingsPage(user: account)));
-
-      // Loading indicator shown first
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-
       await tester.pumpAndSettle();
 
       expect(find.text('Test User'), findsOneWidget);
