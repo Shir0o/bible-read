@@ -68,15 +68,15 @@ class SeasonalChallenge {
 
   /// Serializes this challenge for Firestore writes.
   Map<String, dynamic> toFirestore() => {
-        'seasonId': seasonId,
-        'title': title,
-        'description': description,
-        'metric': metric,
-        'goal': goal,
-        'dailyCap': dailyCap,
-        'repeatable': repeatable,
-        if (reward != null) 'reward': reward!.toFirestore(),
-      };
+    'seasonId': seasonId,
+    'title': title,
+    'description': description,
+    'metric': metric,
+    'goal': goal,
+    'dailyCap': dailyCap,
+    'repeatable': repeatable,
+    if (reward != null) 'reward': reward!.toFirestore(),
+  };
 
   static int _asInt(Object? value) {
     if (value is int) {

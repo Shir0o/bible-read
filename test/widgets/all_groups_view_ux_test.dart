@@ -31,14 +31,17 @@ void main() {
     fakeFirestore = FakeFirebaseFirestore();
 
     // Stub GroupService methods
-    when(() => mockGroupService.allGroups())
-        .thenAnswer((_) => Stream.value([]));
-    when(() => mockGroupService.groupsForUser(any()))
-        .thenAnswer((_) => Stream.value([]));
+    when(
+      () => mockGroupService.allGroups(),
+    ).thenAnswer((_) => Stream.value([]));
+    when(
+      () => mockGroupService.groupsForUser(any()),
+    ).thenAnswer((_) => Stream.value([]));
     when(() => mockGroupService.firestore).thenReturn(fakeFirestore);
     // Stub fixMemberProgressSummariesForUser as it is called in init
-    when(() => mockGroupService.fixMemberProgressSummariesForUser(any()))
-        .thenAnswer((_) async {});
+    when(
+      () => mockGroupService.fixMemberProgressSummariesForUser(any()),
+    ).thenAnswer((_) async {});
     when(() => mockVibrationService.lightImpact()).thenAnswer((_) async {});
   });
 
@@ -52,8 +55,9 @@ void main() {
     );
   }
 
-  testWidgets('Find Groups view renders correctly',
-      (WidgetTester tester) async {
+  testWidgets('Find Groups view renders correctly', (
+    WidgetTester tester,
+  ) async {
     // Act
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();

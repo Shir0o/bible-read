@@ -59,8 +59,12 @@ class MockHttpClientResponse extends Fake implements HttpClientResponse {
       HttpClientResponseCompressionState.notCompressed;
 
   @override
-  StreamSubscription<List<int>> listen(void Function(List<int> event)? onData,
-      {Function? onError, void Function()? onDone, bool? cancelOnError}) {
+  StreamSubscription<List<int>> listen(
+    void Function(List<int> event)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) {
     // 1x1 transparent pixel png
     final List<int> bytes = [
       0x89,
@@ -129,10 +133,14 @@ class MockHttpClientResponse extends Fake implements HttpClientResponse {
       0xAE,
       0x42,
       0x60,
-      0x82
+      0x82,
     ];
-    return Stream<List<int>>.value(bytes).listen(onData,
-        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+    return Stream<List<int>>.value(bytes).listen(
+      onData,
+      onError: onError,
+      onDone: onDone,
+      cancelOnError: cancelOnError,
+    );
   }
 }
 
@@ -378,7 +386,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final hasNav = find.byType(NavigationBar).evaluate().isNotEmpty ||
+    final hasNav =
+        find.byType(NavigationBar).evaluate().isNotEmpty ||
         find.byType(NavigationRail).evaluate().isNotEmpty;
     expect(hasNav, isTrue);
 
@@ -390,16 +399,15 @@ void main() {
 
     expect(find.byType(FriendsPage), findsOneWidget);
 
-    final hasNavAfter = find
-            .byType(NavigationBar, skipOffstage: false)
-            .evaluate()
-            .isNotEmpty ||
+    final hasNavAfter =
+        find.byType(NavigationBar, skipOffstage: false).evaluate().isNotEmpty ||
         find.byType(NavigationRail, skipOffstage: false).evaluate().isNotEmpty;
     expect(hasNavAfter, isTrue);
   });
 
-  testWidgets('_navigateFromMenu triggers vibration before updating index',
-      (tester) async {
+  testWidgets('_navigateFromMenu triggers vibration before updating index', (
+    tester,
+  ) async {
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
       signedIn: true,
@@ -430,8 +438,9 @@ void main() {
     expect(state.selectedIndex, 0); // Stays 0 as Friends is a pushed page
   });
 
-  testWidgets('_navigateFromMenu does not vibrate when navigation blocked',
-      (tester) async {
+  testWidgets('_navigateFromMenu does not vibrate when navigation blocked', (
+    tester,
+  ) async {
     final auth = MockFirebaseAuth();
     final vibration = _RecordingVibrationService();
     await tester.pumpWidget(
@@ -456,8 +465,9 @@ void main() {
     expect(state.selectedIndex, 0); // Blocked by auth, stays at 0
   });
 
-  testWidgets('_onItemTapped exits without vibration when blocked',
-      (tester) async {
+  testWidgets('_onItemTapped exits without vibration when blocked', (
+    tester,
+  ) async {
     final vibration = _RecordingVibrationService();
     await tester.pumpWidget(
       MaterialApp(
@@ -499,21 +509,22 @@ void main() {
           auth: auth,
           messaging: FakeFirebaseMessaging(null),
           vibrationService: _RecordingVibrationService(),
-          readLogPageBuilder: ({
-            Key? key,
-            FirebaseFirestore? firestore,
-            FirebaseAuth? auth,
-            required SendLikeNotification onSendLikeNotification,
-            required SendCommentNotification onSendCommentNotification,
-          }) {
-            return testPage = TestReadLogPage(
-              key: key,
-              firestore: firestore,
-              auth: auth,
-              onSendLikeNotification: onSendLikeNotification,
-              onSendCommentNotification: onSendCommentNotification,
-            );
-          },
+          readLogPageBuilder:
+              ({
+                Key? key,
+                FirebaseFirestore? firestore,
+                FirebaseAuth? auth,
+                required SendLikeNotification onSendLikeNotification,
+                required SendCommentNotification onSendCommentNotification,
+              }) {
+                return testPage = TestReadLogPage(
+                  key: key,
+                  firestore: firestore,
+                  auth: auth,
+                  onSendLikeNotification: onSendLikeNotification,
+                  onSendCommentNotification: onSendCommentNotification,
+                );
+              },
         ),
       ),
     );
@@ -653,8 +664,10 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 500));
 
-    final userDoc =
-        await fakeFirestore.collection('users').doc(testUser.uid).get();
+    final userDoc = await fakeFirestore
+        .collection('users')
+        .doc(testUser.uid)
+        .get();
 
     expect(userDoc.exists, isTrue);
     expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
@@ -704,12 +717,12 @@ void main() {
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
           vibrationService: _RecordingVibrationService(),
-          sendLikeNotification: (
-              {required String ownerUid, required String likerName}) async {
-            wasCalled = true;
-            calledUid = ownerUid;
-            calledName = likerName;
-          },
+          sendLikeNotification:
+              ({required String ownerUid, required String likerName}) async {
+                wasCalled = true;
+                calledUid = ownerUid;
+                calledName = likerName;
+              },
         ),
       ),
     );
@@ -790,12 +803,13 @@ void main() {
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
           vibrationService: _RecordingVibrationService(),
-          sendCommentNotification: ({
-            required String ownerUid,
-            required String commenterName,
-          }) async {
-            // No-op
-          },
+          sendCommentNotification:
+              ({
+                required String ownerUid,
+                required String commenterName,
+              }) async {
+                // No-op
+              },
         ),
       ),
     );

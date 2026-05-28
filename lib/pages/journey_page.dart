@@ -62,10 +62,13 @@ class _JourneyPageState extends State<JourneyPage>
     }
 
     final readingPlanService = ReadingPlanService(firestore: widget.firestore);
-    final bibleProgressService =
-        BibleProgressService(firestore: widget.firestore);
-    final readingStatusService =
-        ReadingStatusService(firestore: widget.firestore, auth: widget.auth);
+    final bibleProgressService = BibleProgressService(
+      firestore: widget.firestore,
+    );
+    final readingStatusService = ReadingStatusService(
+      firestore: widget.firestore,
+      auth: widget.auth,
+    );
     final cache = widget.cache;
 
     try {
@@ -95,8 +98,11 @@ class _JourneyPageState extends State<JourneyPage>
         readingPlanService.getAvailablePlans(userId: user.uid),
         readingPlanService.getActivePlans(user.uid).first,
         bibleProgressService.completedChaptersByBook(user.uid),
-        readingStatusService.getReadStatusForRange(user.uid, daysInMonth,
-            referenceDate: now),
+        readingStatusService.getReadStatusForRange(
+          user.uid,
+          daysInMonth,
+          referenceDate: now,
+        ),
       ]);
 
       final plans = results[0] as List<ReadingPlan>;
@@ -110,13 +116,14 @@ class _JourneyPageState extends State<JourneyPage>
 
       // Store in cache for next tab switch
       cache?.put<_JourneyData>(
-          cacheKey,
-          _JourneyData(
-            plans: plans,
-            progress: progress,
-            completedByBook: completedByBook,
-            readDates: readDates,
-          ));
+        cacheKey,
+        _JourneyData(
+          plans: plans,
+          progress: progress,
+          completedByBook: completedByBook,
+          readDates: readDates,
+        ),
+      );
 
       if (mounted) {
         setState(() {

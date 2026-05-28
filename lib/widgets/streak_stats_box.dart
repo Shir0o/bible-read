@@ -43,14 +43,22 @@ class StreakStatsBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Current streak: $currentStreak',
-              style: AppTextStyles.body(context)),
-          Text('Longest streak: $longestStreak',
-              style: AppTextStyles.body(context)),
-          Text('Total read days: $totalReadDays',
-              style: AppTextStyles.body(context)),
-          Text('$periodLabel: $periodCount',
-              style: AppTextStyles.body(context)),
+          Text(
+            'Current streak: $currentStreak',
+            style: AppTextStyles.body(context),
+          ),
+          Text(
+            'Longest streak: $longestStreak',
+            style: AppTextStyles.body(context),
+          ),
+          Text(
+            'Total read days: $totalReadDays',
+            style: AppTextStyles.body(context),
+          ),
+          Text(
+            '$periodLabel: $periodCount',
+            style: AppTextStyles.body(context),
+          ),
           if (remainingGraceCredits != null)
             Text(
               'Grace credits remaining: $remainingGraceCredits',

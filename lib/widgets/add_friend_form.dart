@@ -74,12 +74,10 @@ class _AddFriendFormState extends State<AddFriendForm> {
         toEmail: email,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Request sent')));
-      SuccessAnimation.show(
+      ScaffoldMessenger.of(
         context,
-        vibrationService: widget.vibrationService,
-      );
+      ).showSnackBar(const SnackBar(content: Text('Request sent')));
+      SuccessAnimation.show(context, vibrationService: widget.vibrationService);
       widget.onComplete?.call();
     } catch (e, st) {
       await ErrorLogger.log(e, st);

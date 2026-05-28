@@ -36,14 +36,16 @@ import '../widgets/offline_banner.dart';
 import 'app_check_error_page.dart';
 import 'read_log_page.dart';
 
-typedef SendLikeNotification = Future<void> Function({
-  required String ownerUid,
-  required String likerName,
-});
-typedef SendCommentNotification = Future<void> Function({
-  required String ownerUid,
-  required String commenterName,
-});
+typedef SendLikeNotification =
+    Future<void> Function({
+      required String ownerUid,
+      required String likerName,
+    });
+typedef SendCommentNotification =
+    Future<void> Function({
+      required String ownerUid,
+      required String commenterName,
+    });
 
 class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -55,7 +57,8 @@ class MainPage extends StatefulWidget {
     FirebaseAuth? auth,
     required SendLikeNotification onSendLikeNotification,
     required SendCommentNotification onSendCommentNotification,
-  }) readLogPageBuilder;
+  })
+  readLogPageBuilder;
   final SendLikeNotification? sendLikeNotification;
   final SendCommentNotification? sendCommentNotification;
   final FirebaseMessaging messaging;
@@ -72,7 +75,8 @@ class MainPage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })? markFirstReader;
+  })?
+  markFirstReader;
 
   MainPage({
     super.key,
@@ -90,18 +94,19 @@ class MainPage extends StatefulWidget {
       FirebaseAuth? auth,
       required SendLikeNotification onSendLikeNotification,
       required SendCommentNotification onSendCommentNotification,
-    })? readLogPageBuilder,
+    })?
+    readLogPageBuilder,
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
     this.functions,
     this.onNavigate,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        auth = auth ?? FirebaseAuth.instance,
-        messaging = messaging ?? FirebaseMessaging.instance,
-        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-        vibrationService = vibrationService ?? const VibrationService(),
-        readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       auth = auth ?? FirebaseAuth.instance,
+       messaging = messaging ?? FirebaseMessaging.instance,
+       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+       vibrationService = vibrationService ?? const VibrationService(),
+       readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
 
   @override
   State<MainPage> createState() => MainPageState();
@@ -139,7 +144,8 @@ class MainPageState extends State<MainPage> {
     _cacheService = DataCacheService();
     _connectivityService = ConnectivityService();
     // ... rest of init ...
-    _readingStatusService = widget.readingStatusService ??
+    _readingStatusService =
+        widget.readingStatusService ??
         ReadingStatusService(
           firestore: widget.firestore,
           auth: widget.auth,
@@ -149,8 +155,9 @@ class MainPageState extends State<MainPage> {
         widget.friendService ?? FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
     _readingPlanService = ReadingPlanService(firestore: widget.firestore);
-    _userPreferencesService =
-        UserPreferencesService(firestore: widget.firestore);
+    _userPreferencesService = UserPreferencesService(
+      firestore: widget.firestore,
+    );
 
     _adminRoleService = AdminRoleService(
       firestore: widget.firestore,
@@ -179,12 +186,14 @@ class MainPageState extends State<MainPage> {
         readingStatusService: _readingStatusService,
         vibrationService: widget.vibrationService,
         readLogBuilder: widget.readLogPageBuilder,
-        onSendLikeNotification: widget.sendLikeNotification ??
+        onSendLikeNotification:
+            widget.sendLikeNotification ??
             ({required String ownerUid, required String likerName}) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) return;
               await user.getIdToken(true);
-              final functions = widget.functions ??
+              final functions =
+                  widget.functions ??
                   FirebaseFunctions.instanceFor(region: 'us-central1');
               final callable = functions.httpsCallable('sendLikeNotification');
               await callable.call({
@@ -192,15 +201,18 @@ class MainPageState extends State<MainPage> {
                 'likerName': likerName,
               });
             },
-        onSendCommentNotification: widget.sendCommentNotification ??
+        onSendCommentNotification:
+            widget.sendCommentNotification ??
             ({required String ownerUid, required String commenterName}) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) return;
               await user.getIdToken(true);
-              final functions = widget.functions ??
+              final functions =
+                  widget.functions ??
                   FirebaseFunctions.instanceFor(region: 'us-central1');
-              final callable =
-                  functions.httpsCallable('sendCommentNotification');
+              final callable = functions.httpsCallable(
+                'sendCommentNotification',
+              );
               await callable.call({
                 'ownerUid': ownerUid,
                 'commenterName': commenterName,
@@ -284,32 +296,36 @@ class MainPageState extends State<MainPage> {
       switch (index) {
         case 4: // Friends
           Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => FriendsPage(
-                        auth: widget.auth,
-                        friendService: _friendService,
-                      )));
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  FriendsPage(auth: widget.auth, friendService: _friendService),
+            ),
+          );
           break;
         case 5: // Challenges
           Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => ChallengesPage(
-                        auth: widget.auth,
-                        firestore: widget.firestore,
-                        friendService: _friendService,
-                        vibrationService: widget.vibrationService,
-                      )));
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChallengesPage(
+                auth: widget.auth,
+                firestore: widget.firestore,
+                friendService: _friendService,
+                vibrationService: widget.vibrationService,
+              ),
+            ),
+          );
           break;
         case 7: // History
           Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => StreakHistoryPage(
-                        auth: widget.auth,
-                        firestore: widget.firestore,
-                      )));
+            context,
+            MaterialPageRoute(
+              builder: (_) => StreakHistoryPage(
+                auth: widget.auth,
+                firestore: widget.firestore,
+              ),
+            ),
+          );
           break;
         case 10: // Sign Out
           unawaited(clearSilentSignInFlag());
@@ -355,9 +371,7 @@ class MainPageState extends State<MainPage> {
           // If the stream is still waiting and we don't have a currentUser yet, show loader.
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
+              body: Center(child: CircularProgressIndicator()),
             );
           }
 
@@ -406,17 +420,20 @@ class MainPageState extends State<MainPage> {
         // We have a user! Show the responsive UI immediately.
         final destinations = const [
           NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: 'Home'),
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.people_outlined),
-              selectedIcon: Icon(Icons.people),
-              label: 'Community'),
+            icon: Icon(Icons.people_outlined),
+            selectedIcon: Icon(Icons.people),
+            label: 'Community',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.map_outlined),
-              selectedIcon: Icon(Icons.map),
-              label: 'Journey'),
+            icon: Icon(Icons.map_outlined),
+            selectedIcon: Icon(Icons.map),
+            label: 'Journey',
+          ),
         ];
 
         return PopScope(
@@ -436,14 +453,16 @@ class MainPageState extends State<MainPage> {
             auth: widget.auth,
             firestore: widget.firestore,
             child: ResponsiveScaffold(
-              selectedIndex:
-                  _selectedIndex >= _pages.length ? 0 : _selectedIndex,
+              selectedIndex: _selectedIndex >= _pages.length
+                  ? 0
+                  : _selectedIndex,
               contentIndex: _selectedIndex,
               onDestinationSelected: _onItemTapped,
               pages: _pages,
               destinations: destinations,
-              offlineBanner:
-                  OfflineBanner(connectivityService: _connectivityService),
+              offlineBanner: OfflineBanner(
+                connectivityService: _connectivityService,
+              ),
             ),
           ),
         );

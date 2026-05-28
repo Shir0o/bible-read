@@ -40,8 +40,9 @@ void main() {
 
     when(() => mockAuth.currentUser).thenReturn(mockUser);
     when(() => mockUser.uid).thenReturn('test_uid');
-    when(() => mockGroupService.userProgressForGroup(any(), any()))
-        .thenAnswer((_) => Stream.value(<String, int>{}));
+    when(
+      () => mockGroupService.userProgressForGroup(any(), any()),
+    ).thenAnswer((_) => Stream.value(<String, int>{}));
   });
 
   Widget createWidgetUnderTest() {
@@ -67,8 +68,9 @@ void main() {
       GroupSchedule(date: tomorrow, chapters: ['Genesis 3']),
     ];
 
-    when(() => mockGroupService.schedule('test_group'))
-        .thenAnswer((_) => Stream.value(schedules));
+    when(
+      () => mockGroupService.schedule('test_group'),
+    ).thenAnswer((_) => Stream.value(schedules));
 
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();
@@ -83,8 +85,9 @@ void main() {
   });
 
   testWidgets('FullSchedulePage handles empty schedule', (tester) async {
-    when(() => mockGroupService.schedule('test_group'))
-        .thenAnswer((_) => Stream.value([]));
+    when(
+      () => mockGroupService.schedule('test_group'),
+    ).thenAnswer((_) => Stream.value([]));
 
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();

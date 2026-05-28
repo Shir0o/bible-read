@@ -38,20 +38,24 @@ void main() {
 
   testWidgets('AuthSelectionPage renders correctly', (tester) async {
     await mockNetworkImagesFor(() async {
-      await tester.pumpWidget(MaterialApp(
-        home: AuthSelectionPage(
-          auth: MockFirebaseAuth(),
-          firestore: FakeFirebaseFirestore(),
-          googleSignInProvider: () => GoogleSignIn.instance,
-          vibrationService: MockVibrationService(),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AuthSelectionPage(
+            auth: MockFirebaseAuth(),
+            firestore: FakeFirebaseFirestore(),
+            googleSignInProvider: () => GoogleSignIn.instance,
+            vibrationService: MockVibrationService(),
+          ),
         ),
-      ));
+      );
 
       expect(find.text('Join the Community'), findsOneWidget);
       expect(
-          find.text(
-              'Sign up to track your progress and connect with your reading group.'),
-          findsOneWidget);
+        find.text(
+          'Sign up to track your progress and connect with your reading group.',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Continue with Google'), findsOneWidget);
       expect(find.text('Sign up with email'), findsOneWidget);
       expect(find.text('Log in'), findsOneWidget);
@@ -60,14 +64,16 @@ void main() {
 
   testWidgets('Navigates to SignupPage', (tester) async {
     await mockNetworkImagesFor(() async {
-      await tester.pumpWidget(MaterialApp(
-        home: AuthSelectionPage(
-          auth: MockFirebaseAuth(),
-          firestore: FakeFirebaseFirestore(),
-          googleSignInProvider: () => GoogleSignIn.instance,
-          vibrationService: MockVibrationService(),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AuthSelectionPage(
+            auth: MockFirebaseAuth(),
+            firestore: FakeFirebaseFirestore(),
+            googleSignInProvider: () => GoogleSignIn.instance,
+            vibrationService: MockVibrationService(),
+          ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Sign up with email'));
       await tester.pumpAndSettle();
@@ -77,14 +83,16 @@ void main() {
 
   testWidgets('Navigates to LoginPage', (tester) async {
     await mockNetworkImagesFor(() async {
-      await tester.pumpWidget(MaterialApp(
-        home: AuthSelectionPage(
-          auth: MockFirebaseAuth(),
-          firestore: FakeFirebaseFirestore(),
-          googleSignInProvider: () => GoogleSignIn.instance,
-          vibrationService: MockVibrationService(),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AuthSelectionPage(
+            auth: MockFirebaseAuth(),
+            firestore: FakeFirebaseFirestore(),
+            googleSignInProvider: () => GoogleSignIn.instance,
+            vibrationService: MockVibrationService(),
+          ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Log in'));
       await tester.pumpAndSettle();

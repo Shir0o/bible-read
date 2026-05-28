@@ -26,12 +26,11 @@ void main() {
       when(() => vibrationService.mediumImpact()).thenAnswer((_) async {});
       when(() => vibrationService.heavyImpact()).thenAnswer((_) async {});
 
-      await tester.pumpWidget(MaterialApp(
-        home: LoginPage(
-          auth: auth,
-          vibrationService: vibrationService,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LoginPage(auth: auth, vibrationService: vibrationService),
         ),
-      ));
+      );
 
       // Wait for the autofocus to kick in.
       await tester.pump();
@@ -53,8 +52,11 @@ void main() {
       expect(editableTextFinder, findsOneWidget);
 
       final editableText = tester.widget<EditableText>(editableTextFinder);
-      expect(editableText.focusNode.hasFocus, isTrue,
-          reason: 'Email field should have focus');
+      expect(
+        editableText.focusNode.hasFocus,
+        isTrue,
+        reason: 'Email field should have focus',
+      );
     });
   });
 }

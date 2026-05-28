@@ -1,10 +1,7 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-enum ConnectionStatus {
-  online,
-  offline,
-}
+enum ConnectionStatus { online, offline }
 
 class ConnectivityService {
   final Connectivity _connectivity;
@@ -12,7 +9,7 @@ class ConnectivityService {
       StreamController<ConnectionStatus>.broadcast();
 
   ConnectivityService({Connectivity? connectivity})
-      : _connectivity = connectivity ?? Connectivity() {
+    : _connectivity = connectivity ?? Connectivity() {
     _init();
   }
 

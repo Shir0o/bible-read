@@ -32,10 +32,10 @@ class SignupPage extends StatefulWidget {
     GoogleSignIn Function()? googleSignInProvider,
     VibrationService? vibrationService,
     this.mainPageBuilder,
-  })  : auth = auth ?? FirebaseAuth.instance,
-        firestore = firestore ?? FirebaseFirestore.instance,
-        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-        vibrationService = vibrationService ?? const VibrationService();
+  }) : auth = auth ?? FirebaseAuth.instance,
+       firestore = firestore ?? FirebaseFirestore.instance,
+       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+       vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<SignupPage> createState() => _SignupPageState();
@@ -75,8 +75,8 @@ class _SignupPageState extends State<SignupPage> {
 
   bool _isValidEmail(String email) {
     return RegExp(
-            r"^[a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9-]+\.[a-zA-Z]+$")
-        .hasMatch(email);
+      r"^[a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9-]+\.[a-zA-Z]+$",
+    ).hasMatch(email);
   }
 
   Future<void> _handleSignupError(Object error, StackTrace stackTrace) async {
@@ -130,10 +130,12 @@ class _SignupPageState extends State<SignupPage> {
       });
 
       if (mounted) {
-        unawaited(SuccessAnimation.show(
-          context,
-          vibrationService: widget.vibrationService,
-        ));
+        unawaited(
+          SuccessAnimation.show(
+            context,
+            vibrationService: widget.vibrationService,
+          ),
+        );
 
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
@@ -167,9 +169,7 @@ class _SignupPageState extends State<SignupPage> {
       final GoogleSignInAccount account = await googleSignIn.authenticate();
 
       final GoogleSignInAuthentication auth = account.authentication;
-      final credential = GoogleAuthProvider.credential(
-        idToken: auth.idToken,
-      );
+      final credential = GoogleAuthProvider.credential(idToken: auth.idToken);
 
       await widget.auth.signInWithCredential(credential);
 
@@ -185,9 +185,9 @@ class _SignupPageState extends State<SignupPage> {
       if (error is GoogleSignInException &&
           error.code == GoogleSignInExceptionCode.canceled) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Sign in cancelled')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Sign in cancelled')));
         }
       } else {
         if (kDebugMode) {
@@ -195,9 +195,9 @@ class _SignupPageState extends State<SignupPage> {
         }
         ErrorLogger.log(error, st);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Something went wrong')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
         }
       }
     } finally {
@@ -224,7 +224,8 @@ class _SignupPageState extends State<SignupPage> {
           enabledBorder: UnderlineInputBorder(
             borderRadius: inputRadius,
             borderSide: BorderSide(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
           ),
           focusedBorder: UnderlineInputBorder(
             borderRadius: inputRadius,
@@ -259,12 +260,15 @@ class _SignupPageState extends State<SignupPage> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon:
-                          Icon(Icons.arrow_back, color: colorScheme.onSurface),
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: colorScheme.onSurface,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                       style: IconButton.styleFrom(
-                        backgroundColor:
-                            colorScheme.surface.withValues(alpha: 0),
+                        backgroundColor: colorScheme.surface.withValues(
+                          alpha: 0,
+                        ),
                         shape: const CircleBorder(),
                       ),
                     ),
@@ -312,8 +316,9 @@ class _SignupPageState extends State<SignupPage> {
                             // Full Name
                             TextFormField(
                               controller: _nameController,
-                              style: textTheme.bodyLarge
-                                  ?.copyWith(color: colorScheme.onSurface),
+                              style: textTheme.bodyLarge?.copyWith(
+                                color: colorScheme.onSurface,
+                              ),
                               textCapitalization: TextCapitalization.words,
                               autofillHints: const [AutofillHints.name],
                               textInputAction: TextInputAction.next,
@@ -333,8 +338,9 @@ class _SignupPageState extends State<SignupPage> {
                             TextFormField(
                               key: const Key('signupEmailField'),
                               controller: _emailController,
-                              style: textTheme.bodyLarge
-                                  ?.copyWith(color: colorScheme.onSurface),
+                              style: textTheme.bodyLarge?.copyWith(
+                                color: colorScheme.onSurface,
+                              ),
                               keyboardType: TextInputType.emailAddress,
                               autofillHints: const [AutofillHints.email],
                               textInputAction: TextInputAction.next,
@@ -357,8 +363,9 @@ class _SignupPageState extends State<SignupPage> {
                             TextFormField(
                               key: const Key('signupPasswordField'),
                               controller: _passwordController,
-                              style: textTheme.bodyLarge
-                                  ?.copyWith(color: colorScheme.onSurface),
+                              style: textTheme.bodyLarge?.copyWith(
+                                color: colorScheme.onSurface,
+                              ),
                               obscureText: !_isPasswordVisible,
                               autofillHints: const [AutofillHints.newPassword],
                               textInputAction: TextInputAction.done,
@@ -404,12 +411,13 @@ class _SignupPageState extends State<SignupPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
                       child: RichText(
                         text: TextSpan(
-                          style: textTheme.labelSmall
-                              ?.copyWith(color: colorScheme.onSurfaceVariant),
+                          style: textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                           children: [
                             const TextSpan(
-                                text:
-                                    'By creating an account, you agree to our '),
+                              text: 'By creating an account, you agree to our ',
+                            ),
                             TextSpan(
                               text: 'Terms of Service',
                               style: textTheme.labelSmall?.copyWith(
@@ -454,8 +462,10 @@ class _SignupPageState extends State<SignupPage> {
                                 height: 24,
                                 width: 24,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: colorScheme.onPrimary))
+                                  strokeWidth: 2,
+                                  color: colorScheme.onPrimary,
+                                ),
+                              )
                             : Text(
                                 'Create Account',
                                 style: textTheme.titleSmall?.copyWith(

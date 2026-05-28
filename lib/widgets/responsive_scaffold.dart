@@ -83,8 +83,9 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
                     onDestinationSelected: widget.onDestinationSelected,
                     labelType: NavigationRailLabelType.all,
                     leading: const SizedBox(height: 16),
-                    destinations:
-                        widget.destinations.asMap().entries.map((entry) {
+                    destinations: widget.destinations.asMap().entries.map((
+                      entry,
+                    ) {
                       final d = entry.value;
                       return NavigationRailDestination(
                         icon: d.icon,

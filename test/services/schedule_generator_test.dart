@@ -13,16 +13,18 @@ void main() {
       expect(schedule, isEmpty);
     });
 
-    test('generateSchedule returns empty list for end date before start date',
-        () {
-      final schedule = ScheduleGenerator.generateSchedule(
-        books: ['Genesis'],
-        startDate: DateTime(2023, 1, 2),
-        endDate: DateTime(2023, 1, 1),
-        selectedWeekdays: [1, 2, 3, 4, 5, 6, 7],
-      );
-      expect(schedule, isEmpty);
-    });
+    test(
+      'generateSchedule returns empty list for end date before start date',
+      () {
+        final schedule = ScheduleGenerator.generateSchedule(
+          books: ['Genesis'],
+          startDate: DateTime(2023, 1, 2),
+          endDate: DateTime(2023, 1, 1),
+          selectedWeekdays: [1, 2, 3, 4, 5, 6, 7],
+        );
+        expect(schedule, isEmpty);
+      },
+    );
 
     test('generateSchedule returns empty list for no selected weekdays', () {
       final schedule = ScheduleGenerator.generateSchedule(

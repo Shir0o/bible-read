@@ -80,7 +80,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                   subtitle: Text(_formatDate(now)),
                   onTap: () => Navigator.pop(context, now),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 if (jan1.isBefore(now)) ...[
                   const SizedBox(height: 8),
@@ -90,7 +91,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                     subtitle: const Text('Catch up or join late'),
                     onTap: () => Navigator.pop(context, jan1),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ],
                 const SizedBox(height: 8),
@@ -110,7 +112,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                     }
                   },
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ],
             ),
@@ -120,8 +123,11 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     );
 
     if (pickedDate != null) {
-      await _planService.startPlan(user.uid, widget.plan.id,
-          startDate: pickedDate);
+      await _planService.startPlan(
+        user.uid,
+        widget.plan.id,
+        startDate: pickedDate,
+      );
     }
   }
 
@@ -138,7 +144,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}';
   }
@@ -163,10 +169,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
           icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(
-          widget.plan.title,
-          style: theme.textTheme.titleLarge,
-        ),
+        title: Text(widget.plan.title, style: theme.textTheme.titleLarge),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
@@ -181,7 +184,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         builder: (context, snapshot) {
           final isLoading =
               snapshot.connectionState == ConnectionState.waiting &&
-                  snapshot.data == null;
+              snapshot.data == null;
           final streamProgress = snapshot.data;
           final isStarted = streamProgress != null;
 
@@ -206,7 +209,10 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   }
 
   Future<void> _toggleDay(
-      int dayNumber, bool wasCompleted, Set<int> completedDays) async {
+    int dayNumber,
+    bool wasCompleted,
+    Set<int> completedDays,
+  ) async {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
@@ -215,9 +221,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     final previousOptimistic = _optimisticCompletedDays != null
         ? Set<int>.from(_optimisticCompletedDays!)
         : (await _planService.getPlanProgress(user.uid, widget.plan.id).first)
-                ?.completedDays
-                .toSet() ??
-            {};
+                  ?.completedDays
+                  .toSet() ??
+              {};
 
     setState(() {
       final newCompletedDays = Set<int>.from(completedDays);
@@ -232,7 +238,10 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     try {
       if (wasCompleted) {
         await _planService.unmarkDayComplete(
-            user.uid, widget.plan.id, dayNumber);
+          user.uid,
+          widget.plan.id,
+          dayNumber,
+        );
       } else {
         await _planService.markDayComplete(user.uid, widget.plan.id, dayNumber);
       }
@@ -302,7 +311,8 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
   Future<void> _scrollToFirstUnchecked() async {
     if (_hasScrolledToUnchecked) return;
 
-    final completedDays = widget.optimisticCompletedDays ??
+    final completedDays =
+        widget.optimisticCompletedDays ??
         widget.progress?.completedDays.toSet() ??
         {};
 
@@ -322,10 +332,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
 
         // 1. Initial jump to a position slightly above the target
         // We use alignment: 0.3 to put it a bit lower than the top initially
-        Scrollable.ensureVisible(
-          context,
-          alignment: 0.3,
-        );
+        Scrollable.ensureVisible(context, alignment: 0.3);
 
         // 2. Short delay to let the jump settle
         await Future.delayed(const Duration(milliseconds: 100));
@@ -352,7 +359,8 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
       return _buildNotStartedState(context, colorScheme);
     }
 
-    final completedDays = widget.optimisticCompletedDays ??
+    final completedDays =
+        widget.optimisticCompletedDays ??
         widget.progress?.completedDays.toSet() ??
         {};
 
@@ -387,40 +395,37 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
             padding: const EdgeInsets.only(bottom: 24, left: 8, right: 8),
             child: Text(
               widget.plan.description,
-              style: AppTextStyles.body(context).copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: AppTextStyles.body(
+                context,
+              ).copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ),
           if (past.isNotEmpty) ...[
             _buildSectionHeader(context, 'Past Readings'),
-            ...past.map((day) => _buildScheduleItem(
-                  context,
-                  day,
-                  startDate,
-                  completedDays,
-                  isPast: true,
-                )),
+            ...past.map(
+              (day) => _buildScheduleItem(
+                context,
+                day,
+                startDate,
+                completedDays,
+                isPast: true,
+              ),
+            ),
             const SizedBox(height: 16),
           ],
           if (today.isNotEmpty) ...[
             _buildSectionHeader(context, 'Today', isHighlight: true),
-            ...today.map((day) => _buildTodayItem(
-                  context,
-                  day,
-                  startDate,
-                  completedDays,
-                )),
+            ...today.map(
+              (day) => _buildTodayItem(context, day, startDate, completedDays),
+            ),
             const SizedBox(height: 16),
           ],
           if (upcoming.isNotEmpty) ...[
             _buildSectionHeader(context, 'Upcoming'),
-            ...upcoming.map((day) => _buildScheduleItem(
-                  context,
-                  day,
-                  startDate,
-                  completedDays,
-                )),
+            ...upcoming.map(
+              (day) =>
+                  _buildScheduleItem(context, day, startDate, completedDays),
+            ),
           ],
           const SizedBox(height: 80),
         ],
@@ -441,9 +446,9 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
               children: [
                 Text(
                   widget.plan.description,
-                  style: AppTextStyles.body(context).copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: AppTextStyles.body(
+                    context,
+                  ).copyWith(color: colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -465,20 +470,25 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
           ),
           const Divider(),
           _buildSectionHeader(context, 'Plan Preview'),
-          ...widget.plan.schedule.map((day) => _buildScheduleItem(
-                context,
-                day,
-                DateTime.now(),
-                {},
-                isStarted: false,
-              )),
+          ...widget.plan.schedule.map(
+            (day) => _buildScheduleItem(
+              context,
+              day,
+              DateTime.now(),
+              {},
+              isStarted: false,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title,
-      {bool isHighlight = false}) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title, {
+    bool isHighlight = false,
+  }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Padding(
@@ -486,8 +496,9 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
       child: Text(
         title.toUpperCase(),
         style: theme.textTheme.labelMedium?.copyWith(
-          color:
-              isHighlight ? colorScheme.primary : colorScheme.onSurfaceVariant,
+          color: isHighlight
+              ? colorScheme.primary
+              : colorScheme.onSurfaceVariant,
         ),
       ),
     );
@@ -543,8 +554,9 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                       Text(
                         widget.formatDayOfWeek(date),
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.6),
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                       ),
                     ],
@@ -568,30 +580,28 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w500,
                           color: colorScheme.onSurface.withValues(alpha: 0.8),
-                          decoration:
-                              isCompleted ? TextDecoration.lineThrough : null,
+                          decoration: isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
                       ),
                     ],
                   ),
                 ),
                 if (isCompleted)
-                  Icon(
-                    Icons.check_circle,
-                    color: colorScheme.primary,
-                    size: 24,
-                  )
+                  Icon(Icons.check_circle, color: colorScheme.primary, size: 24)
                 else
                   Container(
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: colorScheme.outline.withValues(alpha: 0.4),
-                          width: 1,
-                        )),
-                  )
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.4),
+                        width: 1,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -621,9 +631,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
             ? colorScheme.surfaceContainerHigh
             : colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.5),
-        ),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
             color: colorScheme.primary.withValues(alpha: 0.05),
@@ -675,30 +683,25 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                     Text(
                       day.readings.join(', '),
                       style: theme.textTheme.titleMedium?.copyWith(
-                        decoration:
-                            isCompleted ? TextDecoration.lineThrough : null,
+                        decoration: isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                   ],
                 ),
               ),
               if (isCompleted)
-                Icon(
-                  Icons.check_circle,
-                  color: colorScheme.primary,
-                  size: 24,
-                )
+                Icon(Icons.check_circle, color: colorScheme.primary, size: 24)
               else
                 Container(
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: colorScheme.primary,
-                        width: 2,
-                      )),
-                )
+                    shape: BoxShape.circle,
+                    border: Border.all(color: colorScheme.primary, width: 2),
+                  ),
+                ),
             ],
           ),
         ),

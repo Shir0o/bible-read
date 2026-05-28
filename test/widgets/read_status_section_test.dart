@@ -72,8 +72,9 @@ void main() {
     expect(find.text('Streak freezes left: 2'), findsOneWidget);
   });
 
-  testWidgets('shows streak freeze info dialog when tapping info icon',
-      (tester) async {
+  testWidgets('shows streak freeze info dialog when tapping info icon', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(

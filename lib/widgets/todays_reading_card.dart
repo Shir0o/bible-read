@@ -26,14 +26,16 @@ class TodaysReadingCard extends StatelessWidget {
     required bool read,
     required Set<int> currentlyChecked,
     required bool hasChapters,
-  }) onToggle;
+  })
+  onToggle;
 
   /// Callback to notify the parent of latest snapshots for its own logic.
   final Function({
     required Set<int> rawChecked,
     required bool baseDone,
     required int totalChapters,
-  })? onSnapshotsUpdated;
+  })?
+  onSnapshotsUpdated;
 
   const TodaysReadingCard({
     super.key,
@@ -70,10 +72,7 @@ class TodaysReadingCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Today's Reading",
-          style: theme.textTheme.titleMedium,
-        ),
+        Text("Today's Reading", style: theme.textTheme.titleMedium),
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
@@ -87,10 +86,7 @@ class TodaysReadingCard extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              Text(
-                dateString,
-                style: theme.textTheme.labelSmall,
-              ),
+              Text(dateString, style: theme.textTheme.labelSmall),
               const SizedBox(height: 8),
               Text(
                 readingTitle,
@@ -130,8 +126,9 @@ class TodaysReadingCard extends StatelessWidget {
                         // Determine effective read status
                         final isRead = hasChapters
                             ? (pendingReadOverride ??
-                                (totalChapters > 0 &&
-                                    rawCheckedSnapshot.length >= totalChapters))
+                                  (totalChapters > 0 &&
+                                      rawCheckedSnapshot.length >=
+                                          totalChapters))
                             : (pendingReadOverride ?? baseDone);
 
                         return SizedBox(
@@ -149,8 +146,9 @@ class TodaysReadingCard extends StatelessWidget {
                               Icons.check_circle,
                               color: isRead
                                   ? colorScheme.onPrimary
-                                  : colorScheme.onPrimary
-                                      .withValues(alpha: 0.7),
+                                  : colorScheme.onPrimary.withValues(
+                                      alpha: 0.7,
+                                    ),
                               fill: isRead ? 1.0 : 0.0,
                             ),
                             label: Text(isRead ? 'Read' : 'Mark as Read'),
@@ -194,7 +192,7 @@ class TodaysReadingCard extends StatelessWidget {
       'September',
       'October',
       'November',
-      'December'
+      'December',
     ];
     return '${months[date.month - 1]} ${date.day}';
   }

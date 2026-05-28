@@ -18,10 +18,10 @@ class NotificationPreferences {
   /// Creates [NotificationPreferences] with the provided [values]. Missing types
   /// default to `true`.
   NotificationPreferences({Map<NotificationType, bool>? values})
-      : values = {
-          for (final type in NotificationType.values)
-            type: (values ?? {})[type] ?? true,
-        };
+    : values = {
+        for (final type in NotificationType.values)
+          type: (values ?? {})[type] ?? true,
+      };
 
   /// Returns whether notifications of [type] are enabled.
   bool operator [](NotificationType type) => values[type] ?? true;
@@ -39,8 +39,6 @@ class NotificationPreferences {
 
   /// Converts preferences to a Firestore-compatible map.
   Map<String, dynamic> toFirestore() {
-    return {
-      for (final entry in values.entries) entry.key.name: entry.value,
-    };
+    return {for (final entry in values.entries) entry.key.name: entry.value};
   }
 }

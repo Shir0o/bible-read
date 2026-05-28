@@ -40,8 +40,9 @@ class SeasonalChallengeProgress {
     this.updatedAt,
     this.completedAt,
     this.rewardClaimedAt,
-  }) : dailyProgress =
-            Map<String, int>.unmodifiable(dailyProgress ?? <String, int>{});
+  }) : dailyProgress = Map<String, int>.unmodifiable(
+         dailyProgress ?? <String, int>{},
+       );
 
   /// Reads progress from Firestore.
   factory SeasonalChallengeProgress.fromFirestore(

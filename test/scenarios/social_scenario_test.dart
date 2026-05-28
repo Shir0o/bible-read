@@ -18,8 +18,9 @@ void main() {
     GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
   });
 
-  testWidgets('Social Scenario: User navigates to Friends and sends a request',
-      (tester) async {
+  testWidgets('Social Scenario: User navigates to Friends and sends a request', (
+    tester,
+  ) async {
     final auth = MockFirebaseAuth(signedIn: true);
     final firestore = FakeFirebaseFirestore();
     final messaging = MockFirebaseMessaging();
@@ -36,7 +37,10 @@ void main() {
 
     // Seed another user to add
     await seeder.seedUser(
-        uid: 'bob_uid', name: 'Bob', email: 'bob@example.com');
+      uid: 'bob_uid',
+      name: 'Bob',
+      email: 'bob@example.com',
+    );
 
     await tester.pumpApp(
       MainPage(
@@ -44,10 +48,10 @@ void main() {
         firestore: firestore,
         messaging: messaging,
         functions: functions,
-        sendLikeNotification: (
-            {required ownerUid, required likerName}) async {},
-        sendCommentNotification: (
-            {required ownerUid, required commenterName}) async {},
+        sendLikeNotification:
+            ({required ownerUid, required likerName}) async {},
+        sendCommentNotification:
+            ({required ownerUid, required commenterName}) async {},
         vibrationService: vibration,
         googleSignInProvider: () => MockGoogleSignIn(),
       ),
@@ -120,8 +124,10 @@ void main() {
         .collection('friendRequestsReceived')
         .get();
     expect(requests.docs.length, 1);
-    expect(requests.docs.first.data()['fromUid'],
-        isNull); // It uses docId as fromUid now
+    expect(
+      requests.docs.first.data()['fromUid'],
+      isNull,
+    ); // It uses docId as fromUid now
     // Actually, sendFriendRequest uses fromUid as docId in receivedRequests.
     // Let's check receivedRequests docId.
     expect(requests.docs.first.id, currentUser.uid);

@@ -93,17 +93,11 @@ void main() {
   testWidgets('WeekStreakCalendar highlights provided read dates', (
     tester,
   ) async {
-    final readDates = {
-      fixedNow,
-      DateTime(2024, 1, 9),
-    };
+    final readDates = {fixedNow, DateTime(2024, 1, 9)};
     await tester.pumpWidget(
       MaterialApp(
         home: Material(
-          child: WeekStreakCalendar(
-            readDates: readDates,
-            sunday: fixedSunday,
-          ),
+          child: WeekStreakCalendar(readDates: readDates, sunday: fixedSunday),
         ),
       ),
     );
@@ -113,17 +107,11 @@ void main() {
   testWidgets('MonthStreakCalendar highlights provided read dates', (
     tester,
   ) async {
-    final readDates = {
-      DateTime(2024, 1, 1),
-      DateTime(2024, 1, 2),
-    };
+    final readDates = {DateTime(2024, 1, 1), DateTime(2024, 1, 2)};
     await tester.pumpWidget(
       MaterialApp(
         home: Material(
-          child: MonthStreakCalendar(
-            readDates: readDates,
-            month: fixedMonth,
-          ),
+          child: MonthStreakCalendar(readDates: readDates, month: fixedMonth),
         ),
       ),
     );
@@ -131,40 +119,41 @@ void main() {
   });
 
   testWidgets(
-      'MonthStreakCalendar provides accessible semantics and adapts layout', (
-    tester,
-  ) async {
-    final readDates = {DateTime(2024, 1, 15)};
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: SizedBox(
-              width: 320, // Simulate narrow phone
-              child: MonthStreakCalendar(
-                readDates: readDates,
-                month: DateTime(2024, 1, 1),
+    'MonthStreakCalendar provides accessible semantics and adapts layout',
+    (tester) async {
+      final readDates = {DateTime(2024, 1, 15)};
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 320, // Simulate narrow phone
+                child: MonthStreakCalendar(
+                  readDates: readDates,
+                  month: DateTime(2024, 1, 1),
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    // Verify semantics for a read day
-    expect(find.bySemanticsLabel('January 15, Read'), findsOneWidget);
+      // Verify semantics for a read day
+      expect(find.bySemanticsLabel('January 15, Read'), findsOneWidget);
 
-    // Verify semantics for an unread day
-    expect(find.bySemanticsLabel('January 16, Not read'), findsOneWidget);
+      // Verify semantics for an unread day
+      expect(find.bySemanticsLabel('January 16, Not read'), findsOneWidget);
 
-    // Check that we can find the Container with minHeight constraint
-    final containerFinder = find.byWidgetPredicate(
-      (widget) => widget is Container && widget.constraints?.minHeight == 48.0,
-    );
-    // There are 31 days in Jan, plus maybe padding days.
-    // 31 days + offset (Jan 1 2024 is Monday, offset 1) = 32 cells.
-    // However, padding cells are SizedBox.shrink().
-    // So 31 days should have minHeight 48.
-    expect(containerFinder, findsAtLeastNWidgets(31));
-  });
+      // Check that we can find the Container with minHeight constraint
+      final containerFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is Container && widget.constraints?.minHeight == 48.0,
+      );
+      // There are 31 days in Jan, plus maybe padding days.
+      // 31 days + offset (Jan 1 2024 is Monday, offset 1) = 32 cells.
+      // However, padding cells are SizedBox.shrink().
+      // So 31 days should have minHeight 48.
+      expect(containerFinder, findsAtLeastNWidgets(31));
+    },
+  );
 }

@@ -15,17 +15,15 @@ void main() {
     mockGroupService = MockGroupService();
   });
 
-  testWidgets('GroupProgressCard displays correct percentage and status',
-      (tester) async {
+  testWidgets('GroupProgressCard displays correct percentage and status', (
+    tester,
+  ) async {
     final schedule = [
       GroupSchedule(
         date: DateTime(2026, 1, 1),
         chapters: ['Genesis 1', 'Genesis 2'],
       ),
-      GroupSchedule(
-        date: DateTime(2026, 1, 2),
-        chapters: ['Genesis 3'],
-      ),
+      GroupSchedule(date: DateTime(2026, 1, 2), chapters: ['Genesis 3']),
     ];
 
     // Total chapters = 3
@@ -62,17 +60,15 @@ void main() {
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
   });
 
-  testWidgets('GroupProgressCard displays Behind status when progress is low',
-      (tester) async {
+  testWidgets('GroupProgressCard displays Behind status when progress is low', (
+    tester,
+  ) async {
     final schedule = [
       GroupSchedule(
         date: DateTime(2026, 1, 1),
         chapters: ['Genesis 1', 'Genesis 2'],
       ),
-      GroupSchedule(
-        date: DateTime(2026, 1, 2),
-        chapters: ['Genesis 3'],
-      ),
+      GroupSchedule(date: DateTime(2026, 1, 2), chapters: ['Genesis 3']),
     ];
 
     // Total chapters = 3

@@ -113,8 +113,9 @@ void main() {
     await pumpUntilSettled(tester);
   }
 
-  testWidgets('tapping Edit navigates to EditGroupPage for admins',
-      (tester) async {
+  testWidgets('tapping Edit navigates to EditGroupPage for admins', (
+    tester,
+  ) async {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
     await firestore
         .collection('groups')
@@ -122,10 +123,10 @@ void main() {
         .collection('members')
         .doc('u1')
         .set({
-      'uid': 'u1',
-      'role': 'owner',
-      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
-    });
+          'uid': 'u1',
+          'role': 'owner',
+          'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+        });
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 
     await pumpPage(
@@ -175,8 +176,10 @@ void main() {
 
   testWidgets('displays members and schedule for today', (tester) async {
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
-    final members =
-        firestore.collection('groups').doc('g1').collection('members');
+    final members = firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members');
     await members.doc('u1').set({
       'uid': 'u1',
       'role': 'owner',
@@ -195,9 +198,9 @@ void main() {
         .collection('schedule')
         .doc('2020-01-01')
         .set({
-      'date': Timestamp.fromDate(DateTime(2020, 1, 1)),
-      'chapters': ['Gen 1'],
-    });
+          'date': Timestamp.fromDate(DateTime(2020, 1, 1)),
+          'chapters': ['Gen 1'],
+        });
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 
     await pumpPage(
@@ -225,10 +228,10 @@ void main() {
         .collection('members')
         .doc('u3')
         .set({
-      'uid': 'u3',
-      'role': 'member',
-      'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 3)),
-    });
+          'uid': 'u3',
+          'role': 'member',
+          'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 3)),
+        });
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u3'), signedIn: true);
     await pumpPage(
       tester,
@@ -410,9 +413,9 @@ void main() {
         .collection('schedule')
         .doc('2024-07-01')
         .set({
-      'date': Timestamp.fromDate(DateTime(2024, 7, 1)),
-      'chapters': ['Gen 1', 'Gen 2'],
-    });
+          'date': Timestamp.fromDate(DateTime(2024, 7, 1)),
+          'chapters': ['Gen 1', 'Gen 2'],
+        });
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u2'), signedIn: true);
 
     await pumpPage(

@@ -8,15 +8,12 @@ import '../theme/app_theme.dart';
 /// app bars to ensure the same look and feel throughout the app.
 class CommonStyles {
   static BoxDecoration backgroundDecoration(ColorScheme colorScheme) =>
-      BoxDecoration(
-        color: colorScheme.surface,
-      );
+      BoxDecoration(color: colorScheme.surface);
 
-  static TextStyle appBarTitleText(ColorScheme colorScheme) =>
-      AppTheme.textTheme.titleLarge!.copyWith(
-        fontWeight: FontWeight.w700,
-        color: colorScheme.onSurface,
-      );
+  static TextStyle appBarTitleText(ColorScheme colorScheme) => AppTheme
+      .textTheme
+      .titleLarge!
+      .copyWith(fontWeight: FontWeight.w700, color: colorScheme.onSurface);
 
   /// Builds a card with the app's standard padding and rounded corners.
   ///
@@ -35,12 +32,10 @@ class CommonStyles {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: colorScheme.outlineVariant,
-          width: 0.5,
-        ),
+        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
       ),
-      margin: margin ??
+      margin:
+          margin ??
           const EdgeInsets.symmetric(
             horizontal: AppSpacing.hPadding,
             vertical: AppSpacing.vPaddingSmall,
@@ -67,12 +62,10 @@ class CommonStyles {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: radius,
-        side: BorderSide(
-          color: colorScheme.outlineVariant,
-          width: 0.5,
-        ),
+        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
       ),
-      margin: margin ??
+      margin:
+          margin ??
           const EdgeInsets.symmetric(
             horizontal: AppSpacing.hPadding,
             vertical: AppSpacing.vPaddingSmall,

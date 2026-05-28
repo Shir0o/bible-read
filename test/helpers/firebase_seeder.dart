@@ -25,9 +25,7 @@ class FirebaseSeeder {
         .doc(uid)
         .collection('summary')
         .doc('data')
-        .set({
-      'streak': 0,
-    });
+        .set({'streak': 0});
   }
 
   Future<void> seedGroup({
@@ -54,9 +52,9 @@ class FirebaseSeeder {
           .collection('members')
           .doc(memberUid)
           .set({
-        'joinedAt': FieldValue.serverTimestamp(),
-        'role': memberUid == ownerUid ? 'owner' : 'member',
-      });
+            'joinedAt': FieldValue.serverTimestamp(),
+            'role': memberUid == ownerUid ? 'owner' : 'member',
+          });
 
       // Initialize member progress
       await firestore
@@ -64,10 +62,7 @@ class FirebaseSeeder {
           .doc(groupId)
           .collection('progress')
           .doc(memberUid)
-          .set({
-        'count': 0,
-        'lastRead': null,
-      });
+          .set({'count': 0, 'lastRead': null});
     }
   }
 
@@ -90,10 +85,7 @@ class FirebaseSeeder {
           .doc(planId)
           .collection('items')
           .doc(i.toString())
-          .set({
-        'ref': 'Gen $i',
-        'desc': 'Description $i',
-      });
+          .set({'ref': 'Gen $i', 'desc': 'Description $i'});
     }
   }
 

@@ -12,9 +12,10 @@ class BibleProgressService {
   BibleProgressService({
     FirebaseFirestore? firestore,
     GroupService? groupService,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        groupService = groupService ??
-            GroupService(firestore: firestore ?? FirebaseFirestore.instance);
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       groupService =
+           groupService ??
+           GroupService(firestore: firestore ?? FirebaseFirestore.instance);
 
   /// Firestore instance used for reads.
   final FirebaseFirestore firestore;
@@ -60,10 +61,12 @@ class BibleProgressService {
         return <String, Set<int>>{};
       }
 
-      final groupRef =
-          firestore.collection(GroupCollections.groups).doc(group.id);
-      final scheduleSnap =
-          await groupRef.collection(GroupCollections.schedule).get();
+      final groupRef = firestore
+          .collection(GroupCollections.groups)
+          .doc(group.id);
+      final scheduleSnap = await groupRef
+          .collection(GroupCollections.schedule)
+          .get();
 
       // Process all schedule items in parallel
       final itemFutures = scheduleSnap.docs.map((scheduleDoc) async {
@@ -72,16 +75,19 @@ class BibleProgressService {
           return null;
         }
 
-        final dateId =
-            scheduleDoc.id.isNotEmpty ? scheduleDoc.id : _dateId(schedule.date);
+        final dateId = scheduleDoc.id.isNotEmpty
+            ? scheduleDoc.id
+            : _dateId(schedule.date);
         final entrySnap = groupEntries[dateId];
         if (entrySnap == null) {
           return null;
         }
 
         // Check completion status
-        final checkedIndices =
-            await _loadCheckedIndices(entrySnap, schedule.chapters.length);
+        final checkedIndices = await _loadCheckedIndices(
+          entrySnap,
+          schedule.chapters.length,
+        );
 
         if (checkedIndices.isEmpty) {
           return null;
@@ -132,8 +138,9 @@ class BibleProgressService {
       if (ReferenceParser.allBooks.contains(book)) {
         final count = ReferenceParser.chapterCount(book) ?? 0;
         if (count > 0) {
-          final chapters =
-              Set<int>.from(List<int>.generate(count, (i) => i + 1));
+          final chapters = Set<int>.from(
+            List<int>.generate(count, (i) => i + 1),
+          );
           finalResult[book] = chapters;
         }
       }

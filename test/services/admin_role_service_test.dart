@@ -8,11 +8,8 @@ class _CountingAdminRoleService extends AdminRoleService {
   _CountingAdminRoleService(
     Queue<bool> responses, {
     super.cacheDuration = const Duration(minutes: 5),
-  })  : _responses = responses,
-        super(
-          auth: MockFirebaseAuth(),
-          firestore: FakeFirebaseFirestore(),
-        );
+  }) : _responses = responses,
+       super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
 
   final Queue<bool> _responses;
   int fetchCount = 0;
@@ -42,34 +39,36 @@ void main() {
       expect(service.fetchCount, previousFetches);
     });
 
-    test('stale cache returns quickly while refreshing in background',
-        () async {
-      final service = _CountingAdminRoleService(
-        ListQueue<bool>.from([true]),
-        cacheDuration: const Duration(milliseconds: 100),
-      );
+    test(
+      'stale cache returns quickly while refreshing in background',
+      () async {
+        final service = _CountingAdminRoleService(
+          ListQueue<bool>.from([true]),
+          cacheDuration: const Duration(milliseconds: 100),
+        );
 
-      service.primeCacheForTest(
-        false,
-        timestamp: DateTime.now().subtract(const Duration(seconds: 1)),
-      );
+        service.primeCacheForTest(
+          false,
+          timestamp: DateTime.now().subtract(const Duration(seconds: 1)),
+        );
 
-      expect(service.hasValidCache, isFalse);
-      final stopwatch = Stopwatch()..start();
-      final result = await service.isAdmin();
-      stopwatch.stop();
+        expect(service.hasValidCache, isFalse);
+        final stopwatch = Stopwatch()..start();
+        final result = await service.isAdmin();
+        stopwatch.stop();
 
-      expect(result, isFalse);
-      expect(stopwatch.elapsed, lessThan(const Duration(milliseconds: 20)));
+        expect(result, isFalse);
+        expect(stopwatch.elapsed, lessThan(const Duration(milliseconds: 20)));
 
-      final refreshFuture = service.refreshing;
+        final refreshFuture = service.refreshing;
 
-      expect(refreshFuture, isNotNull);
-      expect(await refreshFuture, isTrue);
+        expect(refreshFuture, isNotNull);
+        expect(await refreshFuture, isTrue);
 
-      expect(service.fetchCount, 1);
-      expect(service.cachedAdminRole, isTrue);
-      expect(service.hasValidCache, isTrue);
-    });
+        expect(service.fetchCount, 1);
+        expect(service.cachedAdminRole, isTrue);
+        expect(service.hasValidCache, isTrue);
+      },
+    );
   });
 }

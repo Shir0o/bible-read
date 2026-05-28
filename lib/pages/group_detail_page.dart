@@ -22,12 +22,13 @@ import 'group_join_requests_page.dart';
 import 'invite_member_page.dart';
 import 'group_catch_up_page.dart';
 
-typedef GroupDatePicker = Future<DateTime?> Function({
-  required BuildContext context,
-  required DateTime initialDate,
-  required DateTime firstDate,
-  required DateTime lastDate,
-});
+typedef GroupDatePicker =
+    Future<DateTime?> Function({
+      required BuildContext context,
+      required DateTime initialDate,
+      required DateTime firstDate,
+      required DateTime lastDate,
+    });
 
 /// Page showing the members and schedule for a group.
 class GroupDetailPage extends StatefulWidget {
@@ -68,12 +69,14 @@ class GroupDetailPage extends StatefulWidget {
     DateTime? currentDate,
   }) {
     final resolvedGroupService = groupService ?? GroupService();
-    final resolvedBibleProgressService = bibleProgressService ??
+    final resolvedBibleProgressService =
+        bibleProgressService ??
         BibleProgressService(
           firestore: resolvedGroupService.firestore,
           groupService: resolvedGroupService,
         );
-    final resolvedFriendService = friendService ??
+    final resolvedFriendService =
+        friendService ??
         FriendService(firestore: resolvedGroupService.firestore);
 
     return GroupDetailPage._(
@@ -425,11 +428,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final isOwner = userUid != null && userUid == widget.group.ownerUid;
     final memberStream = user != null
         ? widget.groupService.firestore
-            .collection(GroupCollections.groups)
-            .doc(widget.group.id)
-            .collection(GroupCollections.members)
-            .doc(user.uid)
-            .snapshots()
+              .collection(GroupCollections.groups)
+              .doc(widget.group.id)
+              .collection(GroupCollections.members)
+              .doc(user.uid)
+              .snapshots()
         : null;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -514,8 +517,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   final now = _now;
                   final today = DateTime(now.year, now.month, now.day);
                   final todaySchedule = schedule.where((s) {
-                    final sDate =
-                        DateTime(s.date.year, s.date.month, s.date.day);
+                    final sDate = DateTime(
+                      s.date.year,
+                      s.date.month,
+                      s.date.day,
+                    );
                     return sDate.isAtSameMomentAs(today);
                   }).firstOrNull;
 
@@ -536,8 +542,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                             if (isPending) {
                               return const Padding(
                                 padding: EdgeInsets.only(bottom: 24),
-                                child: Text('Join request pending',
-                                    textAlign: TextAlign.center),
+                                child: Text(
+                                  'Join request pending',
+                                  textAlign: TextAlign.center,
+                                ),
                               );
                             }
                             return Padding(
@@ -556,9 +564,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(widget.group.isPublic
-                                            ? 'Joined group'
-                                            : 'Join request sent'),
+                                        content: Text(
+                                          widget.group.isPublic
+                                              ? 'Joined group'
+                                              : 'Join request sent',
+                                        ),
                                       ),
                                     );
                                   } catch (e, st) {
@@ -574,9 +584,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                     );
                                   }
                                 },
-                                child: Text(widget.group.isPublic
-                                    ? 'Join Group'
-                                    : 'Request to Join'),
+                                child: Text(
+                                  widget.group.isPublic
+                                      ? 'Join Group'
+                                      : 'Request to Join',
+                                ),
                               ),
                             );
                           },
@@ -600,33 +612,40 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           vibrationService: widget.vibrationService,
                           isMember: isMember,
                           currentDate: _now,
-                          pendingReadOverride: _pendingReadOverrides[
-                              _dateKey(todaySchedule.date)],
-                          pendingChapterOverrides: _pendingChapterOverrides[
-                              _dateKey(todaySchedule.date)],
-                          onToggle: ({
-                            required read,
-                            required currentlyChecked,
-                            required hasChapters,
-                          }) {
-                            _handleScheduleReadToggle(
-                              schedule: todaySchedule,
-                              read: read,
-                              currentlyChecked: currentlyChecked,
-                              hasChapters: hasChapters,
-                            );
-                          },
-                          onSnapshotsUpdated: ({
-                            required rawChecked,
-                            required baseDone,
-                            required totalChapters,
-                          }) {
-                            final dateKey = _dateKey(todaySchedule.date);
-                            _latestRawCheckedSnapshots[dateKey] = rawChecked;
-                            _latestBaseDoneSnapshots[dateKey] = baseDone;
-                            _latestChapterCountSnapshots[dateKey] =
-                                totalChapters;
-                          },
+                          pendingReadOverride:
+                              _pendingReadOverrides[_dateKey(
+                                todaySchedule.date,
+                              )],
+                          pendingChapterOverrides:
+                              _pendingChapterOverrides[_dateKey(
+                                todaySchedule.date,
+                              )],
+                          onToggle:
+                              ({
+                                required read,
+                                required currentlyChecked,
+                                required hasChapters,
+                              }) {
+                                _handleScheduleReadToggle(
+                                  schedule: todaySchedule,
+                                  read: read,
+                                  currentlyChecked: currentlyChecked,
+                                  hasChapters: hasChapters,
+                                );
+                              },
+                          onSnapshotsUpdated:
+                              ({
+                                required rawChecked,
+                                required baseDone,
+                                required totalChapters,
+                              }) {
+                                final dateKey = _dateKey(todaySchedule.date);
+                                _latestRawCheckedSnapshots[dateKey] =
+                                    rawChecked;
+                                _latestBaseDoneSnapshots[dateKey] = baseDone;
+                                _latestChapterCountSnapshots[dateKey] =
+                                    totalChapters;
+                              },
                         ),
                         const SizedBox(height: 24),
                       ],
@@ -678,9 +697,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
-          textStyle: theme.textTheme.titleMedium?.copyWith(
-            fontSize: 16,
-          ),
+          textStyle: theme.textTheme.titleMedium?.copyWith(fontSize: 16),
         ),
       ),
     );

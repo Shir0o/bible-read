@@ -25,10 +25,9 @@ void main() {
     });
 
     test('toFirestore outputs expected map', () {
-      final prefs = NotificationPreferences(values: {
-        NotificationType.like: false,
-        NotificationType.comment: true,
-      });
+      final prefs = NotificationPreferences(
+        values: {NotificationType.like: false, NotificationType.comment: true},
+      );
       final map = prefs.toFirestore();
       expect(map['like'], isFalse);
       expect(map['comment'], isTrue);

@@ -62,8 +62,10 @@ void main() {
 
   testWidgets('back button navigates to previous index', (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
 
     await tester.pumpWidget(
       MaterialApp(

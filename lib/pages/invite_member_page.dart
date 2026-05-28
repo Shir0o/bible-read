@@ -25,10 +25,10 @@ class InviteMemberPage extends StatefulWidget {
     FriendService? friendService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-  })  : groupService = groupService ?? GroupService(),
-        friendService = friendService ?? FriendService(),
-        auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService();
+  }) : groupService = groupService ?? GroupService(),
+       friendService = friendService ?? FriendService(),
+       auth = auth ?? FirebaseAuth.instance,
+       vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<InviteMemberPage> createState() => _InviteMemberPageState();
@@ -123,9 +123,9 @@ class _InviteMemberPageState extends State<InviteMemberPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to send invite')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to send invite')));
       }
     }
   }
@@ -142,8 +142,9 @@ class _InviteMemberPageState extends State<InviteMemberPage> {
         leading: BackButton(onPressed: () => Navigator.pop(context)),
       ),
       body: Container(
-        decoration:
-            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
+        decoration: CommonStyles.backgroundDecoration(
+          Theme.of(context).colorScheme,
+        ),
         child: Column(
           children: [
             Padding(
@@ -174,8 +175,8 @@ class _InviteMemberPageState extends State<InviteMemberPage> {
               child: _isSearching
                   ? const Center(child: CircularProgressIndicator())
                   : _searchController.text.isNotEmpty
-                      ? _buildSearchResults()
-                      : _buildFriendsList(user.uid),
+                  ? _buildSearchResults()
+                  : _buildFriendsList(user.uid),
             ),
           ],
         ),
@@ -238,10 +239,7 @@ class _InviteMemberPageState extends State<InviteMemberPage> {
                 itemCount: friends.length,
                 itemBuilder: (context, index) {
                   final friend = friends[index];
-                  return _buildUserTile(
-                    uid: friend.uid,
-                    name: friend.name,
-                  );
+                  return _buildUserTile(uid: friend.uid, name: friend.name);
                 },
               );
             },
@@ -278,8 +276,9 @@ class _InviteMemberPageState extends State<InviteMemberPage> {
 
             return ListTile(
               leading: CircleAvatar(
-                backgroundImage:
-                    photoUrl != null ? NetworkImage(photoUrl) : null,
+                backgroundImage: photoUrl != null
+                    ? NetworkImage(photoUrl)
+                    : null,
                 child: photoUrl == null ? const Icon(Icons.person) : null,
               ),
               title: Text(name),
@@ -289,14 +288,14 @@ class _InviteMemberPageState extends State<InviteMemberPage> {
                       label: 'Member',
                     )
                   : hasPendingInvite
-                      ? const _InviteStatusChip(
-                          icon: Icons.mark_email_read_outlined,
-                          label: 'Invited',
-                        )
-                      : ElevatedButton(
-                          onPressed: () => _sendInvite(uid, name),
-                          child: const Text('Invite'),
-                        ),
+                  ? const _InviteStatusChip(
+                      icon: Icons.mark_email_read_outlined,
+                      label: 'Invited',
+                    )
+                  : ElevatedButton(
+                      onPressed: () => _sendInvite(uid, name),
+                      child: const Text('Invite'),
+                    ),
             );
           },
         );
@@ -309,21 +308,14 @@ class _InviteStatusChip extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _InviteStatusChip({
-    required this.icon,
-    required this.label,
-  });
+  const _InviteStatusChip({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Chip(
-      avatar: Icon(
-        icon,
-        size: 18,
-        color: colorScheme.primary,
-      ),
+      avatar: Icon(icon, size: 18, color: colorScheme.primary),
       label: Text(label),
       side: BorderSide(color: colorScheme.outlineVariant),
       backgroundColor: colorScheme.surfaceContainerHighest,

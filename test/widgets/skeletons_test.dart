@@ -10,7 +10,8 @@ void main() {
   group('Skeletons', () {
     testWidgets('GroupListSkeleton builds correctly', (tester) async {
       await tester.pumpWidget(
-          const MaterialApp(home: Scaffold(body: GroupListSkeleton())));
+        const MaterialApp(home: Scaffold(body: GroupListSkeleton())),
+      );
       expect(find.byType(GroupListSkeleton), findsOneWidget);
       // Should find multiple skeletons inside (ListView items * lines per item)
       // Just basic smoke test for crashes
@@ -18,25 +19,29 @@ void main() {
 
     testWidgets('ReadLogSkeleton builds correctly', (tester) async {
       await tester.pumpWidget(
-          const MaterialApp(home: Scaffold(body: ReadLogSkeleton())));
+        const MaterialApp(home: Scaffold(body: ReadLogSkeleton())),
+      );
       expect(find.byType(ReadLogSkeleton), findsOneWidget);
     });
 
     testWidgets('ReadLogEmptySkeleton builds correctly', (tester) async {
       await tester.pumpWidget(
-          const MaterialApp(home: Scaffold(body: ReadLogEmptySkeleton())));
+        const MaterialApp(home: Scaffold(body: ReadLogEmptySkeleton())),
+      );
       expect(find.byType(ReadLogEmptySkeleton), findsOneWidget);
     });
 
     testWidgets('FriendsSkeleton builds correctly', (tester) async {
       await tester.pumpWidget(
-          const MaterialApp(home: Scaffold(body: FriendsSkeleton())));
+        const MaterialApp(home: Scaffold(body: FriendsSkeleton())),
+      );
       expect(find.byType(FriendsSkeleton), findsOneWidget);
     });
 
     testWidgets('StreakHistorySkeleton builds correctly', (tester) async {
       await tester.pumpWidget(
-          const MaterialApp(home: Scaffold(body: StreakHistorySkeleton())));
+        const MaterialApp(home: Scaffold(body: StreakHistorySkeleton())),
+      );
       expect(find.byType(StreakHistorySkeleton), findsOneWidget);
     });
   });

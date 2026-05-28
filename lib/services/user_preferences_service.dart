@@ -8,7 +8,7 @@ class UserPreferencesService {
 
   /// Creates a [UserPreferencesService].
   UserPreferencesService({FirebaseFirestore? firestore})
-      : firestore = firestore ?? FirebaseFirestore.instance;
+    : firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Fetches the [UserPreferences] for a given user.
   Future<UserPreferences> fetchPreferences(String uid) async {

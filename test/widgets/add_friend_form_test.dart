@@ -19,10 +19,10 @@ class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
 
 class RecordingFriendService extends FriendService {
   RecordingFriendService({required FakeFirebaseFirestore firestore})
-      : super(
-          firestore: firestore,
-          notificationService: NotificationService(firestore: firestore),
-        );
+    : super(
+        firestore: firestore,
+        notificationService: NotificationService(firestore: firestore),
+      );
 
   String? lastEmail;
   bool throwError = false;
@@ -68,16 +68,20 @@ void main() {
     );
     ErrorLogger.muteForTest = true;
     ErrorLogger.crashlytics = MockCrashlytics();
-    when(() => ErrorLogger.crashlytics!.recordError(
-          any(),
-          any(),
-          fatal: any(named: 'fatal'),
-        )).thenAnswer((_) async {});
+    when(
+      () => ErrorLogger.crashlytics!.recordError(
+        any(),
+        any(),
+        fatal: any(named: 'fatal'),
+      ),
+    ).thenAnswer((_) async {});
   });
 
   Future<void> pumpForm(WidgetTester tester) async {
-    final vibrationService =
-        VibrationService(auth: auth, prefsService: StubPrefsService());
+    final vibrationService = VibrationService(
+      auth: auth,
+      prefsService: StubPrefsService(),
+    );
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -92,8 +96,9 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('sends lowercase email and clears field on success',
-      (tester) async {
+  testWidgets('sends lowercase email and clears field on success', (
+    tester,
+  ) async {
     await pumpForm(tester);
     addTearDown(() async {
       await tester.pumpWidget(Container());
@@ -101,7 +106,9 @@ void main() {
     });
 
     await tester.enterText(
-        find.byKey(const Key('addFriendEmailField')), 'Friend@Example.COM');
+      find.byKey(const Key('addFriendEmailField')),
+      'Friend@Example.COM',
+    );
     await tester.tap(find.text('Send'));
     await tester.pump();
 
@@ -116,17 +123,20 @@ void main() {
     expect(find.text('Request sent'), findsOneWidget);
     expect(find.byType(SuccessAnimation), findsOneWidget);
     expect(find.byKey(const ValueKey('spinner')), findsNothing);
-    final textField =
-        tester.widget<TextField>(find.byKey(const Key('addFriendEmailField')));
+    final textField = tester.widget<TextField>(
+      find.byKey(const Key('addFriendEmailField')),
+    );
     expect(textField.controller!.text, isEmpty);
-    ScaffoldMessenger.of(tester.element(find.byType(SnackBar)))
-        .hideCurrentSnackBar();
+    ScaffoldMessenger.of(
+      tester.element(find.byType(SnackBar)),
+    ).hideCurrentSnackBar();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('shows error snackbar and re-enables button on failure',
-      (tester) async {
+  testWidgets('shows error snackbar and re-enables button on failure', (
+    tester,
+  ) async {
     service.throwError = true;
     await pumpForm(tester);
     addTearDown(() async {
@@ -135,7 +145,9 @@ void main() {
     });
 
     await tester.enterText(
-        find.byKey(const Key('addFriendEmailField')), 'friend@example.com');
+      find.byKey(const Key('addFriendEmailField')),
+      'friend@example.com',
+    );
     final buttonFinder = find.byType(AnimatedActionButton);
     tester.takeException(); // Clear any leftovers
     await tester.tap(buttonFinder);
@@ -150,12 +162,17 @@ void main() {
 
     expect(service.lastEmail, 'friend@example.com');
     expect(
-        find.text('Failed to send request. Please try again.'), findsOneWidget);
-    final textField =
-        tester.widget<TextField>(find.byKey(const Key('addFriendEmailField')));
+      find.text('Failed to send request. Please try again.'),
+      findsOneWidget,
+    );
+    final textField = tester.widget<TextField>(
+      find.byKey(const Key('addFriendEmailField')),
+    );
     expect(textField.controller!.text, 'friend@example.com');
     expect(find.byKey(const ValueKey('spinner')), findsNothing);
     expect(
-        tester.widget<AnimatedActionButton>(buttonFinder).onPressed, isNotNull);
+      tester.widget<AnimatedActionButton>(buttonFinder).onPressed,
+      isNotNull,
+    );
   });
 }

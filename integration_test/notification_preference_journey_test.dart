@@ -1,7 +1,6 @@
-import 'package:bible_read/pages/general_settings_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/notification_settings_page.dart';
-import 'package:bible_read/pages/user_profile_page.dart';
+import 'package:bible_read/pages/settings_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -70,15 +69,11 @@ void main() {
     await tester.tap(find.byTooltip('Open menu'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Profile'));
+    await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
-    expect(find.byType(UserProfilePage), findsOneWidget);
+    expect(find.byType(SettingsPage), findsOneWidget);
 
-    // 3. Navigate to General Settings and Toggle
-    await tester.tap(find.text('General Settings'));
-    await tester.pumpAndSettle();
-    expect(find.byType(GeneralSettingsPage), findsOneWidget);
-
+    // 3. Toggle switch on SettingsPage directly
     final autoMarkSwitch = find.byType(Switch).first;
     expect(tester.widget<Switch>(autoMarkSwitch).value, isFalse);
 
@@ -94,10 +89,6 @@ void main() {
         .doc('general')
         .get();
     expect(generalDoc.data()?['autoMarkPlanRead'], isTrue);
-
-    // 4. Back to Profile
-    await tester.pageBack();
-    await tester.pumpAndSettle();
 
     // 5. Navigate to Notification Settings and Toggle
     await tester.tap(find.text('Notification Settings'));

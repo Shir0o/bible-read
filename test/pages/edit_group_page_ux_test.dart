@@ -35,8 +35,10 @@ void main() {
   });
 
   Future<void> pumpPage(WidgetTester tester) async {
-    tester.view.physicalSize =
-        const Size(1080, 2400); // Set a large mobile screen size
+    tester.view.physicalSize = const Size(
+      1080,
+      2400,
+    ); // Set a large mobile screen size
     tester.view.devicePixelRatio = 3.0;
 
     await tester.pumpWidget(
@@ -52,8 +54,9 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Frequency presets fire haptic feedback and update selection',
-      (tester) async {
+  testWidgets('Frequency presets fire haptic feedback and update selection', (
+    tester,
+  ) async {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
@@ -64,8 +67,11 @@ void main() {
 
     final scrollableFinder = find.byType(Scrollable).first;
     final frequencyFinder = find.text('Frequency');
-    await tester.scrollUntilVisible(frequencyFinder, 500,
-        scrollable: scrollableFinder);
+    await tester.scrollUntilVisible(
+      frequencyFinder,
+      500,
+      scrollable: scrollableFinder,
+    );
     expect(frequencyFinder, findsOneWidget);
 
     final weekdaysChip = find.widgetWithText(ActionChip, 'Weekdays');
@@ -90,7 +96,10 @@ void main() {
         .widgetList<ChoiceChip>(find.byType(ChoiceChip))
         .where((c) => c.selected)
         .length;
-    expect(selectedDayChips, 5,
-        reason: 'Weekdays preset should select Mon–Fri only');
+    expect(
+      selectedDayChips,
+      5,
+      reason: 'Weekdays preset should select Mon–Fri only',
+    );
   });
 }

@@ -29,10 +29,10 @@ class AuthSelectionPage extends StatefulWidget {
     GoogleSignIn Function()? googleSignInProvider,
     VibrationService? vibrationService,
     this.mainPageBuilder,
-  })  : auth = auth ?? FirebaseAuth.instance,
-        firestore = firestore ?? FirebaseFirestore.instance,
-        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-        vibrationService = vibrationService ?? const VibrationService();
+  }) : auth = auth ?? FirebaseAuth.instance,
+       firestore = firestore ?? FirebaseFirestore.instance,
+       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+       vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<AuthSelectionPage> createState() => _AuthSelectionPageState();
@@ -55,18 +55,16 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
       final GoogleSignInAccount account = await googleSignIn.authenticate();
 
       final GoogleSignInAuthentication auth = account.authentication;
-      final credential = GoogleAuthProvider.credential(
-        idToken: auth.idToken,
-      );
+      final credential = GoogleAuthProvider.credential(idToken: auth.idToken);
 
       await widget.auth.signInWithCredential(credential);
     } catch (error, st) {
       if (error is GoogleSignInException &&
           error.code == GoogleSignInExceptionCode.canceled) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Sign in cancelled')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Sign in cancelled')));
         }
       } else {
         if (kDebugMode) {
@@ -74,9 +72,9 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
         }
         ErrorLogger.log(error, st);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Something went wrong')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
         }
       }
     } finally {
@@ -155,7 +153,10 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                           height: 24,
                           width: 24,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: colorScheme.onSurface))
+                            strokeWidth: 2,
+                            color: colorScheme.onSurface,
+                          ),
+                        )
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -242,7 +243,9 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                     borderRadius: BorderRadius.circular(4),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8.0, vertical: 4.0),
+                        horizontal: 8.0,
+                        vertical: 4.0,
+                      ),
                       child: Text(
                         'Log in',
                         style: textTheme.bodyMedium?.copyWith(

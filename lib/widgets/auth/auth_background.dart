@@ -6,10 +6,7 @@ import '../../theme/app_theme.dart';
 class AuthBackground extends StatelessWidget {
   final WidgetBuilder builder;
 
-  const AuthBackground({
-    super.key,
-    required this.builder,
-  });
+  const AuthBackground({super.key, required this.builder});
 
   @override
   Widget build(BuildContext context) {

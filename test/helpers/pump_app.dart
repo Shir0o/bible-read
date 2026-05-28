@@ -11,13 +11,16 @@ extension PumpApp on WidgetTester {
     await mockNetworkImagesFor(() async {
       await pumpWidget(
         MaterialApp(
-          theme:
-              AppTheme.appTheme(AppTheme.seededColorScheme(Brightness.light)),
-          darkTheme:
-              AppTheme.appTheme(AppTheme.seededColorScheme(Brightness.dark)),
+          theme: AppTheme.appTheme(
+            AppTheme.seededColorScheme(Brightness.light),
+          ),
+          darkTheme: AppTheme.appTheme(
+            AppTheme.seededColorScheme(Brightness.dark),
+          ),
           home: widget,
-          navigatorObservers:
-              navigatorObserver != null ? [navigatorObserver] : [],
+          navigatorObservers: navigatorObserver != null
+              ? [navigatorObserver]
+              : [],
         ),
       );
     });

@@ -47,33 +47,37 @@ void main() {
       stopwatch.stop();
 
       debugPrint(
-          'PERF: groupsForUser (60 groups) took ${stopwatch.elapsedMilliseconds}ms');
+        'PERF: groupsForUser (60 groups) took ${stopwatch.elapsedMilliseconds}ms',
+      );
       expect(groups.length, 60);
     });
 
-    test('fixMemberProgressSummariesForUser baseline performance (60 groups)',
-        () async {
-      final uid = 'user1';
-      for (var i = 0; i < 60; i++) {
-        final groupId = 'group_$i';
-        await firestore.collection('groups').doc(groupId).set({
-          'name': 'Group $i',
-          'ownerUid': 'other',
-        });
-        await firestore
-            .collection('groups')
-            .doc(groupId)
-            .collection('members')
-            .doc(uid)
-            .set({'uid': uid});
-      }
+    test(
+      'fixMemberProgressSummariesForUser baseline performance (60 groups)',
+      () async {
+        final uid = 'user1';
+        for (var i = 0; i < 60; i++) {
+          final groupId = 'group_$i';
+          await firestore.collection('groups').doc(groupId).set({
+            'name': 'Group $i',
+            'ownerUid': 'other',
+          });
+          await firestore
+              .collection('groups')
+              .doc(groupId)
+              .collection('members')
+              .doc(uid)
+              .set({'uid': uid});
+        }
 
-      final stopwatch = Stopwatch()..start();
-      await service.fixMemberProgressSummariesForUser(uid);
-      stopwatch.stop();
+        final stopwatch = Stopwatch()..start();
+        await service.fixMemberProgressSummariesForUser(uid);
+        stopwatch.stop();
 
-      debugPrint(
-          'PERF: fixMemberProgressSummariesForUser (60 groups) took ${stopwatch.elapsedMilliseconds}ms');
-    });
+        debugPrint(
+          'PERF: fixMemberProgressSummariesForUser (60 groups) took ${stopwatch.elapsedMilliseconds}ms',
+        );
+      },
+    );
   });
 }

@@ -37,14 +37,16 @@ void main() {
       FlutterError.onError = originalOnError;
     });
 
-    await tester.pumpWidget(MaterialApp(
-      home: JourneyPage(
-        auth: auth,
-        firestore: firestore,
-        vibrationService: const VibrationService(),
-        dateProvider: () => DateTime.now(),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: JourneyPage(
+          auth: auth,
+          firestore: firestore,
+          vibrationService: const VibrationService(),
+          dateProvider: () => DateTime.now(),
+        ),
       ),
-    ));
+    );
 
     // Allow futures to settle
     await tester.pumpAndSettle();

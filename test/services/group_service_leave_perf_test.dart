@@ -52,7 +52,7 @@ void main() {
             '2024-${(i ~/ 30 + 1).toString().padLeft(2, '0')}-${(i % 30 + 1).toString().padLeft(2, '0')}';
         scheduleBatch.set(groupRef.collection('schedule').doc(dateId), {
           'date': Timestamp.now(),
-          'chapters': ['Gen 1']
+          'chapters': ['Gen 1'],
         });
       }
       await scheduleBatch.commit();
@@ -67,11 +67,7 @@ void main() {
 
         // Create entry for leaver
         final entryRef = dateRef.collection('entries').doc('leaver');
-        await entryRef.set({
-          'count': 3,
-          'uid': 'leaver',
-          'groupId': 'g1',
-        });
+        await entryRef.set({'count': 3, 'uid': 'leaver', 'groupId': 'g1'});
 
         // Add items for the entry
         for (var i = 0; i < 3; i++) {
@@ -89,8 +85,10 @@ void main() {
       print('leaveGroup took: ${stopwatch.elapsedMilliseconds}ms');
 
       // Verify deletion
-      final memberSnap =
-          await groupRef.collection('members').doc('leaver').get();
+      final memberSnap = await groupRef
+          .collection('members')
+          .doc('leaver')
+          .get();
       expect(memberSnap.exists, false);
 
       // Verify progress cleanup
@@ -99,8 +97,11 @@ void main() {
       for (final dateDoc in progressDates.docs) {
         final entryRef = dateDoc.reference.collection('entries').doc('leaver');
         final entrySnap = await entryRef.get();
-        expect(entrySnap.exists, false,
-            reason: 'Entry for leaver should be deleted in date ${dateDoc.id}');
+        expect(
+          entrySnap.exists,
+          false,
+          reason: 'Entry for leaver should be deleted in date ${dateDoc.id}',
+        );
       }
     });
   });

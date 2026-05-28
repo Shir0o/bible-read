@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('BibleLibraryGrid displays progress correctly from initial data',
-      (tester) async {
+  testWidgets('BibleLibraryGrid displays progress correctly from initial data', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);

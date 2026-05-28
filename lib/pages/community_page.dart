@@ -38,11 +38,13 @@ class CommunityPage extends StatefulWidget {
   final Future<void> Function({
     required String ownerUid,
     required String likerName,
-  }) onSendLikeNotification;
+  })
+  onSendLikeNotification;
   final Future<void> Function({
     required String ownerUid,
     required String commenterName,
-  }) onSendCommentNotification;
+  })
+  onSendCommentNotification;
   final DateTime Function() dateProvider;
 
   // Optional builder kept for compatibility
@@ -50,13 +52,18 @@ class CommunityPage extends StatefulWidget {
     Key? key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-    required Future<void> Function(
-            {required String ownerUid, required String likerName})
-        onSendLikeNotification,
-    required Future<void> Function(
-            {required String ownerUid, required String commenterName})
-        onSendCommentNotification,
-  })? readLogBuilder;
+    required Future<void> Function({
+      required String ownerUid,
+      required String likerName,
+    })
+    onSendLikeNotification,
+    required Future<void> Function({
+      required String ownerUid,
+      required String commenterName,
+    })
+    onSendCommentNotification,
+  })?
+  readLogBuilder;
 
   const CommunityPage({
     super.key,
@@ -116,10 +123,14 @@ class _CommunityPageState extends State<CommunityPage>
 
     try {
       final results = await Future.wait([
-        _groupsStream.first
-            .timeout(const Duration(seconds: 5), onTimeout: () => []),
-        _friendsActivityStream.first
-            .timeout(const Duration(seconds: 5), onTimeout: () => []),
+        _groupsStream.first.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => [],
+        ),
+        _friendsActivityStream.first.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => [],
+        ),
       ]);
 
       final groups = results[0] as List<Group>;
@@ -129,17 +140,14 @@ class _CommunityPageState extends State<CommunityPage>
       if (groups.isNotEmpty) {
         final firstGroup = groups.first;
         final details = await Future.wait([
-          widget.groupService.schedule(firstGroup.id).first.timeout(
-                const Duration(seconds: 2),
-                onTimeout: () => [],
-              ),
+          widget.groupService
+              .schedule(firstGroup.id)
+              .first
+              .timeout(const Duration(seconds: 2), onTimeout: () => []),
           widget.groupService
               .memberOverallCompletion(firstGroup.id, includeUid: user.uid)
               .first
-              .timeout(
-                const Duration(seconds: 2),
-                onTimeout: () => [],
-              ),
+              .timeout(const Duration(seconds: 2), onTimeout: () => []),
         ]);
 
         if (mounted) {
@@ -185,24 +193,27 @@ class _CommunityPageState extends State<CommunityPage>
           .collection('entries')
           .snapshots()
           .asyncMap((entriesSnap) async {
-        final logs = await Future.wait(entriesSnap.docs.map((doc) {
-          return ReadLog.fromFirestore(doc, currentUid: user.uid);
-        }));
+            final logs = await Future.wait(
+              entriesSnap.docs.map((doc) {
+                return ReadLog.fromFirestore(doc, currentUid: user.uid);
+              }),
+            );
 
-        // 3. Filter by friends + self
-        final filtered =
-            logs.where((log) => friendUids.contains(log.uid)).toList();
+            // 3. Filter by friends + self
+            final filtered = logs
+                .where((log) => friendUids.contains(log.uid))
+                .toList();
 
-        // Sort by timestamp if available, else name
-        filtered.sort((a, b) {
-          if (a.timestamp != null && b.timestamp != null) {
-            return b.timestamp!.compareTo(a.timestamp!);
-          }
-          return a.name.compareTo(b.name);
-        });
+            // Sort by timestamp if available, else name
+            filtered.sort((a, b) {
+              if (a.timestamp != null && b.timestamp != null) {
+                return b.timestamp!.compareTo(a.timestamp!);
+              }
+              return a.name.compareTo(b.name);
+            });
 
-        return filtered;
-      });
+            return filtered;
+          });
     });
   }
 
@@ -255,7 +266,9 @@ class _CommunityPageState extends State<CommunityPage>
         await likeRef.set({'timestamp': Timestamp.now(), 'name': likerName});
         if (logUid != user.uid) {
           await widget.onSendLikeNotification(
-              ownerUid: logUid, likerName: likerName);
+            ownerUid: logUid,
+            likerName: likerName,
+          );
         }
       }
       // After success, we can eventually clear from optimisticLogs when stream catches up,
@@ -307,7 +320,9 @@ class _CommunityPageState extends State<CommunityPage>
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 8),
+                          horizontal: 4,
+                          vertical: 8,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -334,7 +349,8 @@ class _CommunityPageState extends State<CommunityPage>
                               style: TextButton.styleFrom(
                                 foregroundColor: colorScheme.primary,
                                 textStyle: const TextStyle(
-                                    fontWeight: FontWeight.bold),
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                               child: const Text('View All'),
                             ),
@@ -350,8 +366,8 @@ class _CommunityPageState extends State<CommunityPage>
                             skeleton: const JourneyProgressCardSkeleton(
                               padding: EdgeInsets.zero,
                             ),
-                            child: (snapshot.hasData &&
-                                    snapshot.data!.isNotEmpty)
+                            child:
+                                (snapshot.hasData && snapshot.data!.isNotEmpty)
                                 ? CommunityGroupProgressCard(
                                     group: snapshot.data!.first,
                                     groupService: widget.groupService,
@@ -379,10 +395,9 @@ class _CommunityPageState extends State<CommunityPage>
                     children: [
                       Text(
                         'Friends Activity',
-                        style: AppTextStyles.title(context).copyWith(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppTextStyles.title(
+                          context,
+                        ).copyWith(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -425,7 +440,8 @@ class _CommunityPageState extends State<CommunityPage>
                                 child: Text(
                                   'No recent activity.',
                                   style: AppTextStyles.body(context).copyWith(
-                                      color: colorScheme.onSurfaceVariant),
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                             ),
@@ -433,16 +449,16 @@ class _CommunityPageState extends State<CommunityPage>
                         : SliverPadding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             sliver: SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  final log = logs[index];
-                                  return CommunityActivityItem(
-                                    log: log,
-                                    onLike: () => _toggleLike(log.uid),
-                                  );
-                                },
-                                childCount: logs.length,
-                              ),
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                index,
+                              ) {
+                                final log = logs[index];
+                                return CommunityActivityItem(
+                                  log: log,
+                                  onLike: () => _toggleLike(log.uid),
+                                );
+                              }, childCount: logs.length),
                             ),
                           ),
                   );

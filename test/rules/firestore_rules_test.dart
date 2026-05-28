@@ -29,9 +29,13 @@ void main() {
       expect(rulesText.contains('match /invites/{uid}'), isTrue);
 
       expect(
-          rulesText.contains('allow create: if request.auth != null;'), isTrue);
+        rulesText.contains('allow create: if request.auth != null;'),
+        isTrue,
+      );
       expect(
-          rulesText.contains('allow read: if request.auth != null;'), isTrue);
+        rulesText.contains('allow read: if request.auth != null;'),
+        isTrue,
+      );
       expect(rulesText.contains('allow update: if isOwnerOrAdmin();'), isTrue);
       expect(rulesText.contains('allow write: if isOwnerOrAdmin();'), isTrue);
     });
@@ -42,9 +46,13 @@ void main() {
       expect(rulesText.contains('match /seasonChallenges/{docId}'), isTrue);
       expect(rulesText.contains('match /seasonRewards/{docId}'), isTrue);
       expect(
-          rulesText.contains('request.resource.data.progress == true'), isTrue);
+        rulesText.contains('request.resource.data.progress == true'),
+        isTrue,
+      );
       expect(
-          rulesText.contains('request.resource.data.claimed == false'), isTrue);
+        rulesText.contains('request.resource.data.claimed == false'),
+        isTrue,
+      );
     });
 
     test('includes cache collection rules', () {

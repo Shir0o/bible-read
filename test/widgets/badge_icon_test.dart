@@ -14,12 +14,7 @@ void main() {
   testWidgets('shows lock icon when locked', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: BadgeIcon(
-            iconData: Icons.star,
-            locked: true,
-          ),
-        ),
+        home: Scaffold(body: BadgeIcon(iconData: Icons.star, locked: true)),
       ),
     );
     await tester.pumpAndSettle();
@@ -30,12 +25,7 @@ void main() {
   testWidgets('hides lock icon when unlocked', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: BadgeIcon(
-            iconData: Icons.star,
-            locked: false,
-          ),
-        ),
+        home: Scaffold(body: BadgeIcon(iconData: Icons.star, locked: false)),
       ),
     );
     await tester.pumpAndSettle();

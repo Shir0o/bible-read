@@ -22,11 +22,7 @@ class PostReadSkeleton extends StatelessWidget {
             const SizedBox(height: 24),
 
             // "Thank you for being here" Text Skeleton
-            const Skeleton(
-              width: 200,
-              height: 32,
-              radius: 8,
-            ),
+            const Skeleton(width: 200, height: 32, radius: 8),
 
             const Spacer(),
 
@@ -38,18 +34,10 @@ class PostReadSkeleton extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // "Reading this week" Label
-                    const Skeleton(
-                      width: 100,
-                      height: 12,
-                      radius: 4,
-                    ),
+                    const Skeleton(width: 100, height: 12, radius: 4),
                     const SizedBox(height: 8),
                     // Progress Bar
-                    const Skeleton(
-                      width: 240,
-                      height: 10,
-                      radius: 8,
-                    ),
+                    const Skeleton(width: 240, height: 10, radius: 8),
                   ],
                 ),
               ),
@@ -58,11 +46,7 @@ class PostReadSkeleton extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Streak Text Skeleton
-            const Skeleton(
-              width: 120,
-              height: 16,
-              radius: 4,
-            ),
+            const Skeleton(width: 120, height: 16, radius: 4),
 
             const SizedBox(height: 32),
           ],

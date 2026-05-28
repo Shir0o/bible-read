@@ -13,10 +13,7 @@ void main() {
   group('ScheduleItemTile Golden Test', () {
     testWidgets('ScheduleItemTile - Light', (tester) async {
       await tester.pumpGolden(
-        ScheduleItemTile(
-          schedule: schedule,
-          onTap: () {},
-        ),
+        ScheduleItemTile(schedule: schedule, onTap: () {}),
         brightness: Brightness.light,
       );
       await expectLater(
@@ -27,10 +24,7 @@ void main() {
 
     testWidgets('ScheduleItemTile - Dark', (tester) async {
       await tester.pumpGolden(
-        ScheduleItemTile(
-          schedule: schedule,
-          onTap: () {},
-        ),
+        ScheduleItemTile(schedule: schedule, onTap: () {}),
         brightness: Brightness.dark,
       );
       await expectLater(

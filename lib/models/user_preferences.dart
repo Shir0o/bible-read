@@ -5,9 +5,7 @@ class UserPreferences {
   final bool autoMarkPlanRead;
 
   /// Creates a [UserPreferences] instance.
-  const UserPreferences({
-    this.autoMarkPlanRead = false,
-  });
+  const UserPreferences({this.autoMarkPlanRead = false});
 
   /// Reads preferences from Firestore data.
   factory UserPreferences.fromFirestore(Map<String, dynamic>? data) {
@@ -17,14 +15,10 @@ class UserPreferences {
   }
 
   /// Serializes preferences for Firestore.
-  Map<String, dynamic> toFirestore() => {
-        'autoMarkPlanRead': autoMarkPlanRead,
-      };
+  Map<String, dynamic> toFirestore() => {'autoMarkPlanRead': autoMarkPlanRead};
 
   /// Creates a copy of this preferences object with the given fields replaced.
-  UserPreferences copyWith({
-    bool? autoMarkPlanRead,
-  }) {
+  UserPreferences copyWith({bool? autoMarkPlanRead}) {
     return UserPreferences(
       autoMarkPlanRead: autoMarkPlanRead ?? this.autoMarkPlanRead,
     );

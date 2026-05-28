@@ -20,11 +20,14 @@ void main() {
     final cacheManager = MockCacheManager();
 
     // Stub cacheManager to avoid errors during widget construction
-    when(() => cacheManager.getFileStream(any(),
-            key: any(named: 'key'),
-            headers: any(named: 'headers'),
-            withProgress: any(named: 'withProgress')))
-        .thenAnswer((_) => const Stream.empty());
+    when(
+      () => cacheManager.getFileStream(
+        any(),
+        key: any(named: 'key'),
+        headers: any(named: 'headers'),
+        withProgress: any(named: 'withProgress'),
+      ),
+    ).thenAnswer((_) => const Stream.empty());
 
     await tester.pumpGolden(
       LoginPage(

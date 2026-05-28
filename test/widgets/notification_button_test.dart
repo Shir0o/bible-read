@@ -12,7 +12,7 @@ import 'package:bible_read/services/vibration_service.dart';
 
 class FakeNotificationService extends NotificationService {
   FakeNotificationService({this.data = const []})
-      : super(firestore: FakeFirebaseFirestore());
+    : super(firestore: FakeFirebaseFirestore());
 
   final List<AppNotification> data;
 
@@ -33,16 +33,18 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('renders new icon and tooltip', (tester) async {
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
     final service = FakeNotificationService(data: []);
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          appBar: AppBar(actions: [
-            NotificationButton(service: service, auth: auth),
-          ]),
+          appBar: AppBar(
+            actions: [NotificationButton(service: service, auth: auth)],
+          ),
         ),
       ),
     );
@@ -52,10 +54,13 @@ void main() {
     expect(find.byTooltip('Notifications'), findsOneWidget);
   });
 
-  testWidgets('shows badge for unread notifications and navigates',
-      (tester) async {
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u2'), signedIn: true);
+  testWidgets('shows badge for unread notifications and navigates', (
+    tester,
+  ) async {
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u2'),
+      signedIn: true,
+    );
     final n1 = AppNotification(
       id: 'n1',
       type: NotificationType.like,
@@ -76,13 +81,15 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          appBar: AppBar(actions: [
-            NotificationButton(
-              service: service,
-              auth: auth,
-              vibrationService: vibrationService,
-            ),
-          ]),
+          appBar: AppBar(
+            actions: [
+              NotificationButton(
+                service: service,
+                auth: auth,
+                vibrationService: vibrationService,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -104,10 +111,12 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          appBar: AppBar(actions: [
-            if (auth.currentUser != null)
-              NotificationButton(service: service, auth: auth),
-          ]),
+          appBar: AppBar(
+            actions: [
+              if (auth.currentUser != null)
+                NotificationButton(service: service, auth: auth),
+            ],
+          ),
         ),
       ),
     );

@@ -71,37 +71,42 @@ void main() {
       expect(requestDoc.exists, isTrue);
     });
 
-    test('joinGroup does not request access for existing private member',
-        () async {
-      final groupId = await groupService.createGroup(
-        ownerUid: 'owner',
-        name: 'Private Group',
-        isPublic: false,
-      );
-      await groupService.joinGroupDirectly(
-        groupId: groupId,
-        uid: 'user1',
-        name: 'User One',
-      );
+    test(
+      'joinGroup does not request access for existing private member',
+      () async {
+        final groupId = await groupService.createGroup(
+          ownerUid: 'owner',
+          name: 'Private Group',
+          isPublic: false,
+        );
+        await groupService.joinGroupDirectly(
+          groupId: groupId,
+          uid: 'user1',
+          name: 'User One',
+        );
 
-      await groupService.joinGroup(
-        groupId: groupId,
-        uid: 'user1',
-        name: 'User One',
-        isPublic: false,
-      );
+        await groupService.joinGroup(
+          groupId: groupId,
+          uid: 'user1',
+          name: 'User One',
+          isPublic: false,
+        );
 
-      final requestDoc = await firestore
-          .collection('groups')
-          .doc(groupId)
-          .collection('joinRequests')
-          .doc('user1')
-          .get();
-      final groupDoc = await firestore.collection('groups').doc(groupId).get();
+        final requestDoc = await firestore
+            .collection('groups')
+            .doc(groupId)
+            .collection('joinRequests')
+            .doc('user1')
+            .get();
+        final groupDoc = await firestore
+            .collection('groups')
+            .doc(groupId)
+            .get();
 
-      expect(requestDoc.exists, isFalse);
-      expect(groupDoc.data()?['memberCount'], equals(2));
-    });
+        expect(requestDoc.exists, isFalse);
+        expect(groupDoc.data()?['memberCount'], equals(2));
+      },
+    );
 
     test('sendGroupInvite creates invite and notification', () async {
       final groupName = 'Test Group';
@@ -138,8 +143,10 @@ void main() {
           .get();
 
       expect(notificationSnap.docs.length, equals(1));
-      expect(notificationSnap.docs.first.data()['type'],
-          equals(NotificationType.groupInvite.name));
+      expect(
+        notificationSnap.docs.first.data()['type'],
+        equals(NotificationType.groupInvite.name),
+      );
     });
 
     test('sendGroupInvite requires existing group admin', () async {
@@ -275,45 +282,47 @@ void main() {
       expect(groupDoc.data()?['memberCount'], equals(1));
     });
 
-    test('respondToGroupInvite (Decline) deletes invite and cleans up',
-        () async {
-      final groupId = await groupService.createGroup(
-        ownerUid: 'owner',
-        name: 'Test Group',
-      );
-      final recipientUid = 'user1';
+    test(
+      'respondToGroupInvite (Decline) deletes invite and cleans up',
+      () async {
+        final groupId = await groupService.createGroup(
+          ownerUid: 'owner',
+          name: 'Test Group',
+        );
+        final recipientUid = 'user1';
 
-      await groupService.sendGroupInvite(
-        groupId: groupId,
-        groupName: 'Test Group',
-        senderUid: 'owner',
-        senderName: 'Owner',
-        recipientUid: recipientUid,
-      );
+        await groupService.sendGroupInvite(
+          groupId: groupId,
+          groupName: 'Test Group',
+          senderUid: 'owner',
+          senderName: 'Owner',
+          recipientUid: recipientUid,
+        );
 
-      await groupService.respondToGroupInvite(
-        groupId: groupId,
-        uid: recipientUid,
-        name: 'User One',
-        accept: false,
-      );
+        await groupService.respondToGroupInvite(
+          groupId: groupId,
+          uid: recipientUid,
+          name: 'User One',
+          accept: false,
+        );
 
-      final memberDoc = await firestore
-          .collection('groups')
-          .doc(groupId)
-          .collection('members')
-          .doc(recipientUid)
-          .get();
-      final inviteDoc = await firestore
-          .collection('groups')
-          .doc(groupId)
-          .collection('invites')
-          .doc(recipientUid)
-          .get();
+        final memberDoc = await firestore
+            .collection('groups')
+            .doc(groupId)
+            .collection('members')
+            .doc(recipientUid)
+            .get();
+        final inviteDoc = await firestore
+            .collection('groups')
+            .doc(groupId)
+            .collection('invites')
+            .doc(recipientUid)
+            .get();
 
-      expect(memberDoc.exists, isFalse);
-      expect(inviteDoc.exists, isFalse);
-    });
+        expect(memberDoc.exists, isFalse);
+        expect(inviteDoc.exists, isFalse);
+      },
+    );
 
     test('approveJoinRequest cannot approve missing request', () async {
       final groupId = await groupService.createGroup(

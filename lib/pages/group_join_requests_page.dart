@@ -34,9 +34,9 @@ class GroupJoinRequestsPage extends StatelessWidget {
     GroupService? groupService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-  })  : groupService = groupService ?? GroupService(),
-        auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService();
+  }) : groupService = groupService ?? GroupService(),
+       auth = auth ?? FirebaseAuth.instance,
+       vibrationService = vibrationService ?? const VibrationService();
 
   @override
   Widget build(BuildContext context) {
@@ -53,11 +53,13 @@ class GroupJoinRequestsPage extends StatelessWidget {
         automaticallyImplyLeading: true,
       ),
       body: Container(
-        decoration:
-            CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
+        decoration: CommonStyles.backgroundDecoration(
+          Theme.of(context).colorScheme,
+        ),
         padding: const EdgeInsets.all(16),
         child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: joinRequestsStream ??
+          stream:
+              joinRequestsStream ??
               groupService.firestore
                   .collection(GroupCollections.groups)
                   .doc(groupId)
@@ -117,8 +119,9 @@ class GroupJoinRequestsPage extends StatelessWidget {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content:
-                                          Text('Failed to approve request'),
+                                      content: Text(
+                                        'Failed to approve request',
+                                      ),
                                     ),
                                   );
                                 }

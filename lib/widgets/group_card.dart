@@ -30,7 +30,7 @@ class GroupCard extends StatelessWidget {
         final double groupCompletion = members.isEmpty
             ? 0.0
             : members.map((m) => m.completion).reduce((a, b) => a + b) /
-                members.length;
+                  members.length;
 
         return FutureBuilder<List<String>>(
           future: groupService.fetchTodaysChapters(group.id),
@@ -50,8 +50,9 @@ class GroupCard extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Material(
-                  color: colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.3),
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.3,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                     side: BorderSide(
@@ -81,11 +82,11 @@ class GroupCard extends StatelessWidget {
                                     const SizedBox(height: 4),
                                     Text(
                                       readingText,
-                                      style:
-                                          theme.textTheme.bodyMedium?.copyWith(
-                                        color: colorScheme.primary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            color: colorScheme.primary,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -98,10 +99,8 @@ class GroupCard extends StatelessWidget {
                                 children: [
                                   Text(
                                     '${(groupCompletion * 100).toInt()}%',
-                                    style:
-                                        theme.textTheme.headlineSmall?.copyWith(
-                                      color: colorScheme.primary,
-                                    ),
+                                    style: theme.textTheme.headlineSmall
+                                        ?.copyWith(color: colorScheme.primary),
                                   ),
                                   Text(
                                     'Group Goal',
@@ -121,7 +120,8 @@ class GroupCard extends StatelessWidget {
                               backgroundColor:
                                   colorScheme.surfaceContainerHighest,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                  colorScheme.primary),
+                                colorScheme.primary,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -151,7 +151,9 @@ class GroupCard extends StatelessWidget {
   }
 
   Widget _buildMemberStack(
-      BuildContext context, List<GroupMemberProgressData> members) {
+    BuildContext context,
+    List<GroupMemberProgressData> members,
+  ) {
     if (members.isEmpty) return const SizedBox.shrink();
 
     // Take top 3 + remainder
@@ -177,7 +179,6 @@ class GroupCard extends StatelessWidget {
           // Actually, let's look at the image.
           // User 1 is leftmost. User 2 is to the right of User 1, overlapping User 1?
           // No, usually it's `Flex` with negative margin.
-
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [

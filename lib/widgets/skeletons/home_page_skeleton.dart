@@ -14,20 +14,12 @@ class HomePageSkeleton extends StatelessWidget {
           children: [
             // "Did you read today?" Title Skeleton
             // Size 24 font ~ 32px height visually including line height
-            const Skeleton(
-              width: 220,
-              height: 32,
-              radius: 8,
-            ),
+            const Skeleton(width: 220, height: 32, radius: 8),
 
             const SizedBox(height: 48),
 
             // "Yes, I read" Button Skeleton (Full width)
-            const Skeleton(
-              width: double.infinity,
-              height: 80,
-              radius: 24,
-            ),
+            const Skeleton(width: double.infinity, height: 80, radius: 24),
           ],
         ),
       ),

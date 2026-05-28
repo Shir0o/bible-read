@@ -22,71 +22,72 @@ void main() {
   });
 
   testWidgets(
-      'Scenario: Complete book via group reading and verify library update',
-      (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final user = MockUser(uid: 'u1', displayName: 'Test User');
-    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+    'Scenario: Complete book via group reading and verify library update',
+    (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final user = MockUser(uid: 'u1', displayName: 'Test User');
+      final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
-    // 1. Seed a group where Ruth (4 chapters) is scheduled
-    final groupRef = firestore.collection('groups').doc('g1');
-    await groupRef.set({'ownerUid': user.uid, 'name': 'Ruth Study'});
-    await groupRef.collection('members').doc(user.uid).set({'uid': user.uid});
+      // 1. Seed a group where Ruth (4 chapters) is scheduled
+      final groupRef = firestore.collection('groups').doc('g1');
+      await groupRef.set({'ownerUid': user.uid, 'name': 'Ruth Study'});
+      await groupRef.collection('members').doc(user.uid).set({'uid': user.uid});
 
-    // Ruth 1-4 scheduled on one day
-    final chapters = ['Ruth 1', 'Ruth 2', 'Ruth 3', 'Ruth 4'];
-    await groupRef.collection('schedule').doc('2024-05-01').set({
-      'chapters': chapters,
-      'date': Timestamp.fromDate(DateTime(2024, 5, 1)),
-    });
+      // Ruth 1-4 scheduled on one day
+      final chapters = ['Ruth 1', 'Ruth 2', 'Ruth 3', 'Ruth 4'];
+      await groupRef.collection('schedule').doc('2024-05-01').set({
+        'chapters': chapters,
+        'date': Timestamp.fromDate(DateTime(2024, 5, 1)),
+      });
 
-    // 2. Mark as read in Firestore
-    await groupRef
-        .collection('progress')
-        .doc('2024-05-01')
-        .collection('entries')
-        .doc(user.uid)
-        .set({
-      'uid': user.uid,
-      'done': true,
-      'count': 4,
-      'dateId': '2024-05-01',
-    });
+      // 2. Mark as read in Firestore
+      await groupRef
+          .collection('progress')
+          .doc('2024-05-01')
+          .collection('entries')
+          .doc(user.uid)
+          .set({
+            'uid': user.uid,
+            'done': true,
+            'count': 4,
+            'dateId': '2024-05-01',
+          });
 
-    // 3. Pump Journey Page
-    await tester.pumpWidget(
-      MaterialApp(
-        home: JourneyPage(
-          auth: auth,
-          firestore: firestore,
-          vibrationService: const VibrationService(),
-          dateProvider: () => DateTime(2024, 5, 1),
+      // 3. Pump Journey Page
+      await tester.pumpWidget(
+        MaterialApp(
+          home: JourneyPage(
+            auth: auth,
+            firestore: firestore,
+            vibrationService: const VibrationService(),
+            dateProvider: () => DateTime(2024, 5, 1),
+          ),
         ),
-      ),
-    );
+      );
 
-    // Allow for initial data loading (1000ms delay in JourneyPage)
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
+      // Allow for initial data loading (1000ms delay in JourneyPage)
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
 
-    // 4. Verify Bible Library shows 1 book completed
-    // We use a more specific finder to avoid matching dates in calendar
-    final oneText = find.byWidgetPredicate((widget) {
-      if (widget is Text && widget.data == '1') {
-        return widget.style?.fontSize == 20;
-      }
-      return false;
-    });
-    expect(oneText, findsOneWidget);
-    expect(find.text('of 66 Books'), findsOneWidget);
+      // 4. Verify Bible Library shows 1 book completed
+      // We use a more specific finder to avoid matching dates in calendar
+      final oneText = find.byWidgetPredicate((widget) {
+        if (widget is Text && widget.data == '1') {
+          return widget.style?.fontSize == 20;
+        }
+        return false;
+      });
+      expect(oneText, findsOneWidget);
+      expect(find.text('of 66 Books'), findsOneWidget);
 
-    // 5. Navigate to Detailed Progress
-    await tester.tap(find.text('See All'));
-    await tester.pumpAndSettle();
+      // 5. Navigate to Detailed Progress
+      await tester.tap(find.text('See All'));
+      await tester.pumpAndSettle();
 
-    // 6. Verify Ruth is marked as completed in Detailed Progress
-    // Ruth is in 'History' category
-    expect(find.text('HISTORY'), findsOneWidget);
-    expect(find.bySemanticsLabel('Ruth, Completed'), findsOneWidget);
-  });
+      // 6. Verify Ruth is marked as completed in Detailed Progress
+      // Ruth is in 'History' category
+      expect(find.text('HISTORY'), findsOneWidget);
+      expect(find.bySemanticsLabel('Ruth, Completed'), findsOneWidget);
+    },
+  );
 }

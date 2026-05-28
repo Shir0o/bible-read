@@ -37,9 +37,7 @@ class CommunityGroupProgressCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      decoration: BoxDecoration(
-        boxShadow: AppSpacing.cardShadow(context),
-      ),
+      decoration: BoxDecoration(boxShadow: AppSpacing.cardShadow(context)),
       child: Material(
         color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(24),
@@ -73,8 +71,9 @@ class CommunityGroupProgressCard extends StatelessWidget {
                         color: colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color:
-                              colorScheme.outlineVariant.withValues(alpha: 0.2),
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.2,
+                          ),
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -108,12 +107,13 @@ class CommunityGroupProgressCard extends StatelessWidget {
 
                           if (schedule.isNotEmpty) {
                             // Find index of today or next upcoming
-                            final index = schedule
-                                .indexWhere((s) => !s.date.isBefore(today));
+                            final index = schedule.indexWhere(
+                              (s) => !s.date.isBefore(today),
+                            );
                             if (index != -1) {
-                              if (schedule[index]
-                                  .date
-                                  .isAtSameMomentAs(today)) {
+                              if (schedule[index].date.isAtSameMomentAs(
+                                today,
+                              )) {
                                 currentDay = index + 1;
                               } else {
                                 currentDay = index + 1; // Upcoming
@@ -129,8 +129,9 @@ class CommunityGroupProgressCard extends StatelessWidget {
                             children: [
                               Text(
                                 group.name,
-                                style: AppTextStyles.title(context)
-                                    .copyWith(fontSize: 18),
+                                style: AppTextStyles.title(
+                                  context,
+                                ).copyWith(fontSize: 18),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -139,7 +140,9 @@ class CommunityGroupProgressCard extends StatelessWidget {
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: colorScheme.primaryContainer,
                                       borderRadius: BorderRadius.circular(6),
@@ -166,15 +169,19 @@ class CommunityGroupProgressCard extends StatelessWidget {
                               const SizedBox(height: 12),
                               StreamBuilder<List<GroupMemberProgressData>>(
                                 stream: groupService.memberOverallCompletion(
-                                    group.id,
-                                    includeUid: user.uid),
+                                  group.id,
+                                  includeUid: user.uid,
+                                ),
                                 initialData: initialProgress,
                                 builder: (context, progressSnap) {
                                   final members = progressSnap.data ?? [];
                                   final myProgress = members.firstWhere(
                                     (m) => m.uid == user.uid,
                                     orElse: () => GroupMemberProgressData(
-                                        uid: '', name: '', completion: 0.0),
+                                      uid: '',
+                                      name: '',
+                                      completion: 0.0,
+                                    ),
                                   );
                                   final percent = myProgress.completion;
 
@@ -190,11 +197,11 @@ class CommunityGroupProgressCard extends StatelessWidget {
                                             '${(percent * 100).toInt()}% of Schedule',
                                             style: AppTextStyles.body(context)
                                                 .copyWith(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color:
-                                                  colorScheme.onSurfaceVariant,
-                                            ),
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -208,7 +215,8 @@ class CommunityGroupProgressCard extends StatelessWidget {
                                               .surfaceContainerHighest,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
-                                                  colorScheme.primary),
+                                                colorScheme.primary,
+                                              ),
                                         ),
                                       ),
                                     ],
@@ -244,8 +252,11 @@ class CommunityGroupProgressCard extends StatelessWidget {
                               ),
                             );
                           },
-                          icon: Icon(Icons.calendar_today,
-                              size: 18, color: colorScheme.primary),
+                          icon: Icon(
+                            Icons.calendar_today,
+                            size: 18,
+                            color: colorScheme.primary,
+                          ),
                           label: Text(
                             'Schedule',
                             style: TextStyle(
@@ -256,10 +267,11 @@ class CommunityGroupProgressCard extends StatelessWidget {
                           ),
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(
-                                color:
-                                    colorScheme.primary.withValues(alpha: 0.3)),
+                              color: colorScheme.primary.withValues(alpha: 0.3),
+                            ),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             padding: EdgeInsets.zero,
                           ),
                         ),
@@ -295,7 +307,8 @@ class CommunityGroupProgressCard extends StatelessWidget {
                             backgroundColor: colorScheme.primaryContainer,
                             foregroundColor: colorScheme.onPrimaryContainer,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             elevation: 0,
                             padding: EdgeInsets.zero,
                           ),

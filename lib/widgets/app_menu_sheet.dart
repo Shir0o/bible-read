@@ -14,7 +14,7 @@ import 'animated_page_route.dart';
 import '../pages/notification_center_page.dart';
 import '../services/notification_service.dart';
 
-import '../pages/user_profile_page.dart';
+import '../pages/settings_page.dart';
 import '../services/google_sign_in_factory.dart';
 
 class AppMenuSheet extends StatefulWidget {
@@ -114,15 +114,17 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
   }
 
   List<_MenuItem> _buildFullMenuList(
-      FirebaseAuth auth, FirebaseFirestore firestore) {
+    FirebaseAuth auth,
+    FirebaseFirestore firestore,
+  ) {
     final items = [
       _MenuItem(
-        icon: Icons.person,
-        label: 'Profile',
+        icon: Icons.settings,
+        label: 'Settings',
         onTap: (context) {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => UserProfilePage(
+              builder: (_) => SettingsPage(
                 auth: auth,
                 firestore: firestore,
                 googleSignInProvider: createGoogleSignIn,
@@ -148,21 +150,9 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
           );
         },
       ),
-      _MenuItem(
-        icon: Icons.emoji_events,
-        label: 'Challenges',
-        index: 5,
-      ),
-      _MenuItem(
-        icon: Icons.people,
-        label: 'Friends',
-        index: 4,
-      ),
-      _MenuItem(
-        icon: Icons.logout,
-        label: 'Sign Out',
-        index: 10,
-      ),
+      _MenuItem(icon: Icons.emoji_events, label: 'Challenges', index: 5),
+      _MenuItem(icon: Icons.people, label: 'Friends', index: 4),
+      _MenuItem(icon: Icons.logout, label: 'Sign Out', index: 10),
       _MenuItem(
         icon: Icons.feedback,
         label: 'Feedback',
@@ -206,16 +196,8 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
 
   List<_MenuItem> _buildFallbackMenuList() {
     return [
-      _MenuItem(
-        icon: Icons.people,
-        label: 'Friends',
-        index: 4,
-      ),
-      _MenuItem(
-        icon: Icons.logout,
-        label: 'Sign Out',
-        index: 10,
-      ),
+      _MenuItem(icon: Icons.people, label: 'Friends', index: 4),
+      _MenuItem(icon: Icons.logout, label: 'Sign Out', index: 10),
       _MenuItem(
         icon: Icons.feedback,
         label: 'Feedback',
@@ -264,9 +246,8 @@ class _MenuContents extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
-    final textStyle = theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ) ??
+    final textStyle =
+        theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600) ??
         const TextStyle(fontWeight: FontWeight.w600);
 
     return Container(
@@ -301,7 +282,8 @@ class _MenuContents extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'Menu',
-                style: theme.textTheme.titleMedium?.copyWith(
+                style:
+                    theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ) ??
                     const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
@@ -309,15 +291,17 @@ class _MenuContents extends StatelessWidget {
               const SizedBox(height: 20),
               Builder(
                 builder: (context) {
-                  final double availableWidth =
-                      MediaQuery.of(context).size.width;
+                  final double availableWidth = MediaQuery.of(
+                    context,
+                  ).size.width;
                   final bool compact = availableWidth < 360;
                   final double horizontalPadding = 40.0; // 20 on each side
                   final double contentWidth =
                       availableWidth - horizontalPadding;
 
-                  final double baseWidth =
-                      compact ? contentWidth : (contentWidth - 16) / 2;
+                  final double baseWidth = compact
+                      ? contentWidth
+                      : (contentWidth - 16) / 2;
                   final double buttonWidth = compact
                       ? baseWidth
                       : baseWidth.clamp(140.0, 240.0).toDouble();
@@ -407,8 +391,10 @@ class _MenuItem {
     required this.icon,
     required this.label,
     this.onTap,
-  }) : assert(index != null || onTap != null,
-            'Either index or onTap must be provided.');
+  }) : assert(
+         index != null || onTap != null,
+         'Either index or onTap must be provided.',
+       );
 
   final int? index;
   final IconData icon;

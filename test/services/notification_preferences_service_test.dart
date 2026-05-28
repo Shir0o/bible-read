@@ -64,8 +64,9 @@ void main() {
       when(() => userDoc.collection('notificationPrefs')).thenReturn(prefsCol);
       when(() => prefsCol.get()).thenAnswer((_) async {
         reads++;
-        when(() => snap.docs)
-            .thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[]);
+        when(
+          () => snap.docs,
+        ).thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[]);
         return snap;
       });
 

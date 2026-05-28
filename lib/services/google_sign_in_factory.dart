@@ -132,7 +132,8 @@ User? _safeCurrentUser() {
 Future<void> clearSilentSignInFlag() => _setHasSignedInBefore(false);
 
 Future<void> _onAuthenticationEvent(
-    GoogleSignInAuthenticationEvent event) async {
+  GoogleSignInAuthenticationEvent event,
+) async {
   if (event is! GoogleSignInAuthenticationEventSignIn) return;
   final account = event.user;
   final idToken = account.authentication.idToken;
@@ -140,8 +141,9 @@ Future<void> _onAuthenticationEvent(
 
   final current = _firebaseAuth.currentUser;
   if (current != null) {
-    final isGoogleProvider =
-        current.providerData.any((p) => p.providerId == 'google.com');
+    final isGoogleProvider = current.providerData.any(
+      (p) => p.providerId == 'google.com',
+    );
     if (isGoogleProvider && current.email == account.email) {
       return;
     }

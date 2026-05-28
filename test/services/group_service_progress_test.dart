@@ -66,9 +66,9 @@ void main() {
           .collection('schedule')
           .doc(did)
           .set({
-        'date': Timestamp.fromDate(date),
-        'chapters': ['Gen 1', 'Gen 2']
-      });
+            'date': Timestamp.fromDate(date),
+            'chapters': ['Gen 1', 'Gen 2'],
+          });
 
       // 3. Setup Progress
       // u1: 1 item checked (50%)
@@ -160,34 +160,36 @@ void main() {
     });
 
     test(
-        'memberDailyCompletion fetches names from users collection if missing in member doc',
-        () async {
-      final groupId = 'g1';
-      final now = DateTime.now();
-      final date = DateTime.utc(now.year, now.month, now.day);
+      'memberDailyCompletion fetches names from users collection if missing in member doc',
+      () async {
+        final groupId = 'g1';
+        final now = DateTime.now();
+        final date = DateTime.utc(now.year, now.month, now.day);
 
-      await firestore.collection('groups').doc(groupId).set({
-        'name': 'G1',
-        'ownerUid': 'u1',
-      });
-      // Member doc without name
-      await firestore
-          .collection('groups')
-          .doc(groupId)
-          .collection('members')
-          .doc('u1')
-          .set({'uid': 'u1'}); // Name missing here
+        await firestore.collection('groups').doc(groupId).set({
+          'name': 'G1',
+          'ownerUid': 'u1',
+        });
+        // Member doc without name
+        await firestore
+            .collection('groups')
+            .doc(groupId)
+            .collection('members')
+            .doc('u1')
+            .set({'uid': 'u1'}); // Name missing here
 
-      // User doc has name
-      await firestore.collection('users').doc('u1').set({
-        'name': 'Real Name',
-      });
+        // User doc has name
+        await firestore.collection('users').doc('u1').set({
+          'name': 'Real Name',
+        });
 
-      final stream = service.memberDailyCompletion(groupId, date: date);
-      final result = await stream
-          .firstWhere((l) => l.isNotEmpty && l.first.name == 'Real Name');
+        final stream = service.memberDailyCompletion(groupId, date: date);
+        final result = await stream.firstWhere(
+          (l) => l.isNotEmpty && l.first.name == 'Real Name',
+        );
 
-      expect(result.first.name, 'Real Name');
-    });
+        expect(result.first.name, 'Real Name');
+      },
+    );
   });
 }

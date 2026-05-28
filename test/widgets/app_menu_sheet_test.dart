@@ -22,7 +22,7 @@ class _StubVibrationService extends VibrationService {
 
 class _AlwaysAdminService extends AdminRoleService {
   _AlwaysAdminService()
-      : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
+    : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
 
   @override
   Future<bool> isAdmin({bool allowStale = true}) async => true;
@@ -30,7 +30,7 @@ class _AlwaysAdminService extends AdminRoleService {
 
 class _NeverAdminService extends AdminRoleService {
   _NeverAdminService()
-      : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
+    : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
 
   @override
   Future<bool> isAdmin({bool allowStale = true}) async => false;
@@ -38,7 +38,7 @@ class _NeverAdminService extends AdminRoleService {
 
 class _StaleCachedAdminService extends AdminRoleService {
   _StaleCachedAdminService(bool cachedValue)
-      : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore()) {
+    : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore()) {
     primeCacheForTest(
       cachedValue,
       timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
@@ -60,8 +60,9 @@ void main() {
     await Firebase.initializeApp();
   });
 
-  testWidgets('selecting menu item notifies listener and closes sheet',
-      (tester) async {
+  testWidgets('selecting menu item notifies listener and closes sheet', (
+    tester,
+  ) async {
     final vibrationService = _StubVibrationService();
     int? lastIndex;
 
@@ -151,7 +152,9 @@ void main() {
     expect(find.text('Feedback Inbox'), findsOneWidget);
 
     final scrollable = find.descendant(
-        of: find.byType(AppMenuSheet), matching: find.byType(Scrollable));
+      of: find.byType(AppMenuSheet),
+      matching: find.byType(Scrollable),
+    );
     await tester.scrollUntilVisible(
       find.text('Feedback Inbox'),
       200.0,
@@ -163,8 +166,9 @@ void main() {
     expect(find.byType(FeedbackAdminPage), findsOneWidget);
   });
 
-  testWidgets('menu uses cached admin value without waiting for refresh',
-      (tester) async {
+  testWidgets('menu uses cached admin value without waiting for refresh', (
+    tester,
+  ) async {
     final adminRoleService = _StaleCachedAdminService(true);
 
     await tester.pumpWidget(

@@ -36,26 +36,30 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
     setState(() {
       _processing.add(uid);
     });
-    final future = op().then((_) {}).catchError((e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to process friend request: $e');
-      }
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        setState(() {
-          _processing.remove(uid);
+    final future = op()
+        .then((_) {})
+        .catchError((e, st) {
+          if (kDebugMode) {
+            debugPrint('Failed to process friend request: $e');
+          }
+          ErrorLogger.log(e, st);
+          if (mounted) {
+            setState(() {
+              _processing.remove(uid);
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to update request. Please try again.'),
+              ),
+            );
+          }
+        })
+        .whenComplete(() {
+          _pending.remove(uid);
+          if (mounted && _processing.remove(uid)) {
+            setState(() {});
+          }
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Failed to update request. Please try again.')),
-        );
-      }
-    }).whenComplete(() {
-      _pending.remove(uid);
-      if (mounted && _processing.remove(uid)) {
-        setState(() {});
-      }
-    });
     _pending[uid] = future;
   }
 
@@ -70,8 +74,9 @@ class _FriendRequestWidgetState extends State<FriendRequestWidget> {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
-        final requests =
-            snapshot.data!.where((r) => !_processing.contains(r.uid)).toList();
+        final requests = snapshot.data!
+            .where((r) => !_processing.contains(r.uid))
+            .toList();
         if (requests.isEmpty) {
           return const Center(child: Text('No friend requests'));
         }

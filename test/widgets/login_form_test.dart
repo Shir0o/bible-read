@@ -43,24 +43,24 @@ class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('signs in with entered credentials and calls onComplete',
-      (tester) async {
+  testWidgets('signs in with entered credentials and calls onComplete', (
+    tester,
+  ) async {
     final auth = RecordingAuth();
     var completed = false;
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: LoginForm(
-            auth: auth,
-            onComplete: () => completed = true,
-          ),
+          body: LoginForm(auth: auth, onComplete: () => completed = true),
         ),
       ),
     );
 
     await tester.enterText(
-        find.byKey(const Key('loginEmailField')), 'user@example.com');
+      find.byKey(const Key('loginEmailField')),
+      'user@example.com',
+    );
     await tester.enterText(find.byKey(const Key('loginPasswordField')), 'pw');
     await tester.tap(find.text('Sign In'));
     await tester.pumpAndSettle();
@@ -71,28 +71,29 @@ void main() {
     expect(completed, isTrue);
   });
 
-  testWidgets('logs error and shows snackbar when sign in fails',
-      (tester) async {
+  testWidgets('logs error and shows snackbar when sign in fails', (
+    tester,
+  ) async {
     setupFirebaseCoreMocks();
     await Firebase.initializeApp();
     final auth = FailingAuth();
     final crashlytics = MockCrashlytics();
     ErrorLogger.crashlytics = crashlytics;
 
-    when(() => crashlytics.recordError(
-          any(),
-          any(),
-          reason: null,
-          information: const [],
-          printDetails: null,
-          fatal: false,
-        )).thenAnswer((_) async {});
+    when(
+      () => crashlytics.recordError(
+        any(),
+        any(),
+        reason: null,
+        information: const [],
+        printDetails: null,
+        fatal: false,
+      ),
+    ).thenAnswer((_) async {});
 
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: LoginForm(auth: auth),
-        ),
+        home: Scaffold(body: LoginForm(auth: auth)),
       ),
     );
     addTearDown(() async {
@@ -101,19 +102,23 @@ void main() {
     });
 
     await tester.enterText(
-        find.byKey(const Key('loginEmailField')), 'user@example.com');
+      find.byKey(const Key('loginEmailField')),
+      'user@example.com',
+    );
     await tester.enterText(find.byKey(const Key('loginPasswordField')), 'pw');
     await tester.tap(find.text('Sign In'));
     await tester.pumpAndSettle();
 
-    verify(() => crashlytics.recordError(
-          any(),
-          any(),
-          reason: null,
-          information: const [],
-          printDetails: null,
-          fatal: false,
-        )).called(1);
+    verify(
+      () => crashlytics.recordError(
+        any(),
+        any(),
+        reason: null,
+        information: const [],
+        printDetails: null,
+        fatal: false,
+      ),
+    ).called(1);
     expect(find.textContaining('Failed to sign in'), findsOneWidget);
   }, skip: true);
 
@@ -121,29 +126,33 @@ void main() {
     final auth = RecordingAuth();
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: LoginForm(auth: auth),
-        ),
+        home: Scaffold(body: LoginForm(auth: auth)),
       ),
     );
 
-    final emailField =
-        tester.widget<TextField>(find.byKey(const Key('loginEmailField')));
+    final emailField = tester.widget<TextField>(
+      find.byKey(const Key('loginEmailField')),
+    );
     expect(emailField.keyboardType, TextInputType.emailAddress);
     expect(emailField.textInputAction, TextInputAction.next);
     expect(emailField.autofillHints, contains(AutofillHints.email));
 
-    final passwordField =
-        tester.widget<TextField>(find.byKey(const Key('loginPasswordField')));
+    final passwordField = tester.widget<TextField>(
+      find.byKey(const Key('loginPasswordField')),
+    );
     expect(passwordField.textInputAction, TextInputAction.done);
     expect(passwordField.autofillHints, contains(AutofillHints.password));
     expect(passwordField.onSubmitted, isNotNull);
 
     // Test onSubmitted triggers submit
     await tester.enterText(
-        find.byKey(const Key('loginEmailField')), 'test@example.com');
+      find.byKey(const Key('loginEmailField')),
+      'test@example.com',
+    );
     await tester.enterText(
-        find.byKey(const Key('loginPasswordField')), 'password');
+      find.byKey(const Key('loginPasswordField')),
+      'password',
+    );
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
@@ -154,9 +163,7 @@ void main() {
     final auth = RecordingAuth();
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: LoginForm(auth: auth),
-        ),
+        home: Scaffold(body: LoginForm(auth: auth)),
       ),
     );
 
@@ -167,10 +174,7 @@ void main() {
     );
 
     // Initial state: obscured
-    expect(
-      tester.widget<TextField>(passwordFieldFinder).obscureText,
-      isTrue,
-    );
+    expect(tester.widget<TextField>(passwordFieldFinder).obscureText, isTrue);
     var semantics = tester.getSemantics(toggleButtonFinder);
     var data = semantics.getSemanticsData();
     expect(data.tooltip, 'Show password');
@@ -185,10 +189,7 @@ void main() {
     await tester.pump();
 
     // State: visible
-    expect(
-      tester.widget<TextField>(passwordFieldFinder).obscureText,
-      isFalse,
-    );
+    expect(tester.widget<TextField>(passwordFieldFinder).obscureText, isFalse);
     semantics = tester.getSemantics(toggleButtonFinder);
     data = semantics.getSemanticsData();
     expect(data.tooltip, 'Hide password');
@@ -203,9 +204,6 @@ void main() {
     await tester.pump();
 
     // State: obscured
-    expect(
-      tester.widget<TextField>(passwordFieldFinder).obscureText,
-      isTrue,
-    );
+    expect(tester.widget<TextField>(passwordFieldFinder).obscureText, isTrue);
   });
 }

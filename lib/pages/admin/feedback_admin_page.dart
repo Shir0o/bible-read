@@ -58,12 +58,13 @@ class FeedbackAdminPage extends StatefulWidget {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     AdminRoleService? adminRoleService,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        adminRoleService = adminRoleService ??
-            AdminRoleService(
-              firestore: firestore ?? FirebaseFirestore.instance,
-              auth: auth ?? FirebaseAuth.instance,
-            );
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       adminRoleService =
+           adminRoleService ??
+           AdminRoleService(
+             firestore: firestore ?? FirebaseFirestore.instance,
+             auth: auth ?? FirebaseAuth.instance,
+           );
 
   /// Firestore instance supplying feedback data.
   final FirebaseFirestore firestore;
@@ -100,18 +101,14 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
 
         if (waiting) {
           return Scaffold(
-            appBar: AppBar(
-              title: const Text('Feedback Inbox'),
-            ),
+            appBar: AppBar(title: const Text('Feedback Inbox')),
             body: const Center(child: CircularProgressIndicator()),
           );
         }
 
         if (!hasAccess) {
           return Scaffold(
-            appBar: AppBar(
-              title: const Text('Feedback Inbox'),
-            ),
+            appBar: AppBar(title: const Text('Feedback Inbox')),
             body: const Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
@@ -340,10 +337,7 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
     final path = ref.path;
     final previous = _optimisticOverrides[path];
     setState(() {
-      _optimisticOverrides[path] = {
-        ...?previous,
-        ...payload,
-      };
+      _optimisticOverrides[path] = {...?previous, ...payload};
     });
 
     try {
@@ -354,9 +348,9 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
       setState(() {
         _optimisticOverrides.remove(path);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Feedback status updated.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Feedback status updated.')));
     } catch (error, stackTrace) {
       ErrorLogger.log(error, stackTrace);
       if (!mounted) {
@@ -433,9 +427,8 @@ class _FeedbackEntryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final titleStyle = theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w700,
-        ) ??
+    final titleStyle =
+        theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700) ??
         const TextStyle(fontSize: 18, fontWeight: FontWeight.w700);
     final bodyStyle = theme.textTheme.bodyMedium;
     final rawStatus = (data['status'] as String? ?? 'unknown');
@@ -461,8 +454,10 @@ class _FeedbackEntryCard extends StatelessWidget {
             if (updatedAt != null)
               Text('Updated: $updatedAt', style: bodyStyle),
             const SizedBox(height: 12),
-            Text(data['description'] as String? ?? 'No description',
-                style: bodyStyle),
+            Text(
+              data['description'] as String? ?? 'No description',
+              style: bodyStyle,
+            ),
             if (steps != null && steps.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text('Reproduction steps:', style: bodyStyle),
@@ -478,9 +473,11 @@ class _FeedbackEntryCard extends StatelessWidget {
             if (resolvedAt != null)
               Text('Resolved: $resolvedAt', style: bodyStyle),
             if (notes != null && notes.isNotEmpty)
-              Text('Resolution notes: $notes',
-                  key: ValueKey('resolutionNotes_${document.id}'),
-                  style: bodyStyle),
+              Text(
+                'Resolution notes: $notes',
+                key: ValueKey('resolutionNotes_${document.id}'),
+                style: bodyStyle,
+              ),
             if (notes == null || notes.isEmpty)
               const Text('Resolution notes: —'),
             const SizedBox(height: 12),

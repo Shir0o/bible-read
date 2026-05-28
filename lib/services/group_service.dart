@@ -40,12 +40,15 @@ class GroupService {
   final NotificationService notificationService;
 
   /// Creates a [GroupService] using [FirebaseFirestore.instance] by default.
-  GroupService(
-      {FirebaseFirestore? firestore, NotificationService? notificationService})
-      : firestore = firestore ?? FirebaseFirestore.instance,
-        notificationService = notificationService ??
-            NotificationService(
-                firestore: firestore ?? FirebaseFirestore.instance);
+  GroupService({
+    FirebaseFirestore? firestore,
+    NotificationService? notificationService,
+  }) : firestore = firestore ?? FirebaseFirestore.instance,
+       notificationService =
+           notificationService ??
+           NotificationService(
+             firestore: firestore ?? FirebaseFirestore.instance,
+           );
 
   static Future<void> _safeLog(Object e, StackTrace? st) async {
     try {
@@ -92,8 +95,10 @@ class GroupService {
       });
       // Best-effort: populate owner's display name and photo on member record.
       try {
-        final userSnap =
-            await firestore.collection('users').doc(ownerUid).get();
+        final userSnap = await firestore
+            .collection('users')
+            .doc(ownerUid)
+            .get();
         final data = userSnap.data();
         if (data != null) {
           final chosen = _resolveDisplayName(data);
@@ -172,8 +177,9 @@ class GroupService {
     String? photoUrl,
   }) async {
     try {
-      final groupRef =
-          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupRef = firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId);
       final groupSnap = await groupRef.get();
       if (!groupSnap.exists) {
         throw StateError('Group does not exist');
@@ -266,8 +272,9 @@ class GroupService {
           fromUid: uid,
           senderUid: uid,
           groupId: groupId,
-          message:
-              name.isNotEmpty ? '$name requested to join your group' : null,
+          message: name.isNotEmpty
+              ? '$name requested to join your group'
+              : null,
           timestamp: DateTime.now(),
           read: false,
         );
@@ -293,8 +300,9 @@ class GroupService {
     required String recipientUid,
   }) async {
     try {
-      final groupRef =
-          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupRef = firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId);
       final groupSnap = await groupRef.get();
       if (!groupSnap.exists) {
         throw StateError('Group does not exist');
@@ -383,8 +391,9 @@ class GroupService {
     required bool accept,
   }) async {
     try {
-      final groupRef =
-          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupRef = firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId);
       final inviteRef = groupRef.collection(GroupCollections.invites).doc(uid);
 
       if (accept) {
@@ -427,10 +436,12 @@ class GroupService {
     required String uid,
   }) async {
     try {
-      final groupRef =
-          firestore.collection(GroupCollections.groups).doc(groupId);
-      final requestRef =
-          groupRef.collection(GroupCollections.joinRequests).doc(uid);
+      final groupRef = firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId);
+      final requestRef = groupRef
+          .collection(GroupCollections.joinRequests)
+          .doc(uid);
       final requestSnap = await requestRef.get();
       if (!requestSnap.exists) {
         throw StateError('Cannot approve a missing join request.');
@@ -489,8 +500,9 @@ class GroupService {
     required String uid,
   }) async {
     try {
-      final groupRef =
-          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupRef = firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId);
       final memberRef = groupRef.collection(GroupCollections.members).doc(uid);
       final memberSnap = await memberRef.get();
       if (!memberSnap.exists) {
@@ -533,21 +545,26 @@ class GroupService {
           for (var i = 0; i < missingDates.length; i += chunkSize) {
             final chunk = missingDates.sublist(
               i,
-              i + chunkSize > missingDates.length ? missingDates.length : i + chunkSize,
+              i + chunkSize > missingDates.length
+                  ? missingDates.length
+                  : i + chunkSize,
             );
             final results = await Future.wait(
-              chunk.map((d) => d.reference
-                  .collection('entries')
-                  .doc(uid)
-                  .get()
-                  .then<DocumentSnapshot<Map<String, dynamic>>?>((s) => s)
-                  .catchError((Object e, StackTrace st) {
-                _safeLog(e, st);
-                return null;
-              })),
+              chunk.map(
+                (d) => d.reference
+                    .collection('entries')
+                    .doc(uid)
+                    .get()
+                    .then<DocumentSnapshot<Map<String, dynamic>>?>((s) => s)
+                    .catchError((Object e, StackTrace st) {
+                      _safeLog(e, st);
+                      return null;
+                    }),
+              ),
             );
             fallbackSnaps.addAll(
-                results.whereType<DocumentSnapshot<Map<String, dynamic>>>());
+              results.whereType<DocumentSnapshot<Map<String, dynamic>>>(),
+            );
           }
         }
 
@@ -599,8 +616,9 @@ class GroupService {
     required String uid,
   }) async {
     try {
-      final groupRef =
-          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupRef = firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId);
       final groupSnap = await groupRef.get();
       final actualOwner = groupSnap.data()?['ownerUid'] as String?;
       if (actualOwner != ownerUid) {
@@ -635,8 +653,9 @@ class GroupService {
     required String uid,
   }) async {
     try {
-      final groupRef =
-          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupRef = firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId);
       final groupSnap = await groupRef.get();
       final actualOwner = groupSnap.data()?['ownerUid'] as String?;
       if (actualOwner != ownerUid) {
@@ -674,12 +693,12 @@ class GroupService {
     if (data != null && data.containsKey('memberCount')) {
       return;
     }
-    final membersSnap =
-        await groupRef.collection(GroupCollections.members).get();
-    await groupRef.set(
-      {'memberCount': membersSnap.docs.length},
-      SetOptions(merge: true),
-    );
+    final membersSnap = await groupRef
+        .collection(GroupCollections.members)
+        .get();
+    await groupRef.set({
+      'memberCount': membersSnap.docs.length,
+    }, SetOptions(merge: true));
   }
 
   /// Update or create a [schedule] entry for [groupId].
@@ -691,16 +710,19 @@ class GroupService {
     try {
       final docId = _dateId(schedule.date);
       final utcDate = DateTime.utc(
-          schedule.date.year, schedule.date.month, schedule.date.day);
+        schedule.date.year,
+        schedule.date.month,
+        schedule.date.day,
+      );
       await firestore
           .collection(GroupCollections.groups)
           .doc(groupId)
           .collection(GroupCollections.schedule)
           .doc(docId)
           .set({
-        'date': Timestamp.fromDate(utcDate),
-        'chapters': schedule.chapters,
-      });
+            'date': Timestamp.fromDate(utcDate),
+            'chapters': schedule.chapters,
+          });
     } catch (e, st) {
       await _safeLog(e, st);
       rethrow;
@@ -717,27 +739,29 @@ class GroupService {
 
       // ⚡ Bolt: Use Future.wait to parallelize sending schedule update
       // notifications instead of waiting for each one sequentially.
-      await Future.wait(members.docs.map((doc) async {
-        final uid = doc.id;
-        try {
-          final notificationId = firestore
-              .collection(NotificationCollections.users)
-              .doc(uid)
-              .collection(NotificationCollections.notifications)
-              .doc()
-              .id;
-          final notification = AppNotification(
-            id: notificationId,
-            type: NotificationType.groupScheduleUpdate,
-            timestamp: DateTime.now(),
-            read: false,
-          );
-          await notificationService.addNotification(uid, notification);
-        } catch (e, st) {
-          await _safeLog(e, st);
-          // continue notifying other members
-        }
-      }));
+      await Future.wait(
+        members.docs.map((doc) async {
+          final uid = doc.id;
+          try {
+            final notificationId = firestore
+                .collection(NotificationCollections.users)
+                .doc(uid)
+                .collection(NotificationCollections.notifications)
+                .doc()
+                .id;
+            final notification = AppNotification(
+              id: notificationId,
+              type: NotificationType.groupScheduleUpdate,
+              timestamp: DateTime.now(),
+              read: false,
+            );
+            await notificationService.addNotification(uid, notification);
+          } catch (e, st) {
+            await _safeLog(e, st);
+            // continue notifying other members
+          }
+        }),
+      );
     } catch (e, st) {
       await _safeLog(e, st);
       // Do not rethrow: schedule has been updated successfully.
@@ -754,7 +778,10 @@ class GroupService {
       for (final schedule in schedules) {
         final docId = _dateId(schedule.date);
         final utcDate = DateTime.utc(
-            schedule.date.year, schedule.date.month, schedule.date.day);
+          schedule.date.year,
+          schedule.date.month,
+          schedule.date.day,
+        );
         final docRef = firestore
             .collection(GroupCollections.groups)
             .doc(groupId)
@@ -779,8 +806,9 @@ class GroupService {
   }) async {
     try {
       final docId = _dateId(date);
-      final groupRef =
-          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupRef = firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId);
       // Delete schedule doc
       await groupRef.collection(GroupCollections.schedule).doc(docId).delete();
 
@@ -790,34 +818,38 @@ class GroupService {
 
       // ⚡ Bolt: Use Future.wait to parallelize deleting progress entries
       // instead of deleting them sequentially.
-      await Future.wait(entries.docs.map((entry) async {
-        final uid = entry.id;
-        final cnt = (entry.data()['count'] as num?)?.toInt() ?? 0;
-        try {
-          if (cnt > 0) {
-            // Decrement cached total for this member.
-            await groupRef
-                .collection('progressSummary')
-                .doc('data')
-                .collection('entries')
-                .doc(uid)
-                .set({
-              'completed': FieldValue.increment(-cnt),
-              'uid': uid,
-            }, SetOptions(merge: true));
+      await Future.wait(
+        entries.docs.map((entry) async {
+          final uid = entry.id;
+          final cnt = (entry.data()['count'] as num?)?.toInt() ?? 0;
+          try {
+            if (cnt > 0) {
+              // Decrement cached total for this member.
+              await groupRef
+                  .collection('progressSummary')
+                  .doc('data')
+                  .collection('entries')
+                  .doc(uid)
+                  .set({
+                    'completed': FieldValue.increment(-cnt),
+                    'uid': uid,
+                  }, SetOptions(merge: true));
+            }
+            // Delete items and entry
+            final items = await entry.reference.collection('items').get();
+            await Future.wait(
+              items.docs.map((it) async {
+                try {
+                  await it.reference.delete();
+                } catch (_) {}
+              }),
+            );
+            await entry.reference.delete();
+          } catch (e, st) {
+            await _safeLog(e, st);
           }
-          // Delete items and entry
-          final items = await entry.reference.collection('items').get();
-          await Future.wait(items.docs.map((it) async {
-            try {
-              await it.reference.delete();
-            } catch (_) {}
-          }));
-          await entry.reference.delete();
-        } catch (e, st) {
-          await _safeLog(e, st);
-        }
-      }));
+        }),
+      );
       // Delete the progress date doc itself
       try {
         await dateRef.delete();
@@ -856,24 +888,24 @@ class GroupService {
   /// Stream of all groups in the database.
   Stream<List<Group>> allGroups() {
     return Stream<List<Group>>.multi((controller) {
-      final sub =
-          firestore.collection(GroupCollections.groups).snapshots().listen(
-        (snap) async {
-          if (controller.isClosed) return;
-          try {
-            controller.add(
-              snap.docs.map(Group.fromFirestore).toList(),
-            );
-          } catch (e, st) {
-            await _safeLog(e, st);
-            if (!controller.isClosed) controller.add(<Group>[]);
-          }
-        },
-        onError: (e, st) async {
-          await _safeLog(e, st);
-          if (!controller.isClosed) controller.add(<Group>[]);
-        },
-      );
+      final sub = firestore
+          .collection(GroupCollections.groups)
+          .snapshots()
+          .listen(
+            (snap) async {
+              if (controller.isClosed) return;
+              try {
+                controller.add(snap.docs.map(Group.fromFirestore).toList());
+              } catch (e, st) {
+                await _safeLog(e, st);
+                if (!controller.isClosed) controller.add(<Group>[]);
+              }
+            },
+            onError: (e, st) async {
+              await _safeLog(e, st);
+              if (!controller.isClosed) controller.add(<Group>[]);
+            },
+          );
 
       controller.onCancel = () => sub.cancel();
     });
@@ -919,7 +951,8 @@ class GroupService {
       }
 
       Future<void> handleMember(
-          QuerySnapshot<Map<String, dynamic>> snap) async {
+        QuerySnapshot<Map<String, dynamic>> snap,
+      ) async {
         try {
           final ids = snap.docs
               .map((doc) => doc.reference.parent.parent?.id)
@@ -944,7 +977,8 @@ class GroupService {
       }
 
       Future<void> handleJoinRequest(
-          QuerySnapshot<Map<String, dynamic>> snap) async {
+        QuerySnapshot<Map<String, dynamic>> snap,
+      ) async {
         try {
           final ids = snap.docs
               .map((doc) => doc.reference.parent.parent?.id)
@@ -999,9 +1033,9 @@ class GroupService {
         .collection(GroupCollections.members)
         .snapshots()
         .handleError((e, st) {
-      unawaited(_safeLog(e, st));
-      throw e;
-    });
+          unawaited(_safeLog(e, st));
+          throw e;
+        });
     return snaps.asyncMap((snap) async {
       try {
         final names = <String>[];
@@ -1028,10 +1062,12 @@ class GroupService {
             i,
             i + 30 > missingUids.length ? missingUids.length : i + 30,
           );
-          futures.add(firestore
-              .collection('users')
-              .where(FieldPath.documentId, whereIn: batch)
-              .get());
+          futures.add(
+            firestore
+                .collection('users')
+                .where(FieldPath.documentId, whereIn: batch)
+                .get(),
+          );
         }
 
         final results = await Future.wait(futures);
@@ -1067,9 +1103,9 @@ class GroupService {
         .collection(GroupCollections.members)
         .snapshots()
         .handleError((e, st) {
-      unawaited(_safeLog(e, st));
-      throw e;
-    });
+          unawaited(_safeLog(e, st));
+          throw e;
+        });
 
     // Group-scoped per-date entries marking completion
     final progressSnaps = firestore
@@ -1107,7 +1143,8 @@ class GroupService {
               }
             }
             final resolved = await _fetchUserInfos(
-                order.where((uid) => !providedNames.containsKey(uid)).toList());
+              order.where((uid) => !providedNames.containsKey(uid)).toList(),
+            );
             if (controller.isClosed) return;
             controller.add([
               for (final uid in order)
@@ -1116,14 +1153,18 @@ class GroupService {
                   name: providedNames[uid] ?? resolved[uid]?.name ?? uid,
                   photoUrl: resolved[uid]?.photoUrl,
                   completion: 0.0,
-                )
+                ),
             ]);
             return;
           }
           if (progress == null) return;
           final list = await _buildMemberDailyCompletion(
-              members, progress, includeUid,
-              groupId: groupId, date: targetDate);
+            members,
+            progress,
+            includeUid,
+            groupId: groupId,
+            date: targetDate,
+          );
           if (!controller.isClosed) {
             controller.add(list);
           }
@@ -1185,9 +1226,9 @@ class GroupService {
         .collection(GroupCollections.members)
         .snapshots()
         .handleError((e, st) {
-      unawaited(_safeLog(e, st));
-      throw e;
-    });
+          unawaited(_safeLog(e, st));
+          throw e;
+        });
 
     final scheduleSnaps = firestore
         .collection(GroupCollections.groups)
@@ -1195,9 +1236,9 @@ class GroupService {
         .collection(GroupCollections.schedule)
         .snapshots()
         .handleError((e, st) {
-      unawaited(_safeLog(e, st));
-      throw e;
-    });
+          unawaited(_safeLog(e, st));
+          throw e;
+        });
 
     final entriesSnaps = firestore
         .collection(GroupCollections.groups)
@@ -1207,9 +1248,9 @@ class GroupService {
         .collection('entries')
         .snapshots()
         .handleError((e, st) {
-      unawaited(_safeLog(e, st));
-      throw e;
-    });
+          unawaited(_safeLog(e, st));
+          throw e;
+        });
 
     return Stream<List<GroupMemberProgressData>>.multi((controller) {
       QuerySnapshot<Map<String, dynamic>>? latestMembers;
@@ -1287,7 +1328,7 @@ class GroupService {
                     photoUrl:
                         providedPhotos[uid] ?? resolvedInfos[uid]?.photoUrl,
                     completion: 0.0,
-                  )
+                  ),
               ]);
             }
             return;
@@ -1312,7 +1353,7 @@ class GroupService {
                   name: providedNames[uid] ?? resolvedInfos[uid]?.name ?? uid,
                   photoUrl: providedPhotos[uid] ?? resolvedInfos[uid]?.photoUrl,
                   completion: ((counts[uid] ?? 0) / totalItems).clamp(0.0, 1.0),
-                )
+                ),
             ]);
           }
         } catch (e, st) {
@@ -1321,24 +1362,33 @@ class GroupService {
         }
       }
 
-      final subMembers = membersSnaps.listen((snap) {
-        latestMembers = snap;
-        unawaited(emit());
-      }, onError: (e, st) {
-        if (!controller.isClosed) controller.addError(e, st);
-      });
-      final subSched = scheduleSnaps.listen((snap) {
-        latestSchedule = snap;
-        unawaited(emit());
-      }, onError: (e, st) {
-        if (!controller.isClosed) controller.addError(e, st);
-      });
-      final subEntries = entriesSnaps.listen((snap) {
-        latestEntries = snap;
-        unawaited(emit());
-      }, onError: (e, st) {
-        if (!controller.isClosed) controller.addError(e, st);
-      });
+      final subMembers = membersSnaps.listen(
+        (snap) {
+          latestMembers = snap;
+          unawaited(emit());
+        },
+        onError: (e, st) {
+          if (!controller.isClosed) controller.addError(e, st);
+        },
+      );
+      final subSched = scheduleSnaps.listen(
+        (snap) {
+          latestSchedule = snap;
+          unawaited(emit());
+        },
+        onError: (e, st) {
+          if (!controller.isClosed) controller.addError(e, st);
+        },
+      );
+      final subEntries = entriesSnaps.listen(
+        (snap) {
+          latestEntries = snap;
+          unawaited(emit());
+        },
+        onError: (e, st) {
+          if (!controller.isClosed) controller.addError(e, st);
+        },
+      );
 
       controller.onCancel = () {
         subMembers.cancel();
@@ -1394,7 +1444,7 @@ class GroupService {
             name: providedNames[uid] ?? resolvedInfos[uid]?.name ?? uid,
             photoUrl: providedPhotos[uid] ?? resolvedInfos[uid]?.photoUrl,
             completion: 0.0,
-          )
+          ),
       ];
     } catch (e, st) {
       await _safeLog(e, st);
@@ -1479,7 +1529,7 @@ class GroupService {
             name: providedNames[uid] ?? resolvedInfos[uid]?.name ?? uid,
             photoUrl: providedPhotos[uid] ?? resolvedInfos[uid]?.photoUrl,
             completion: 0.0,
-          )
+          ),
       ];
     }
 
@@ -1503,7 +1553,7 @@ class GroupService {
           name: providedNames[uid] ?? resolvedInfos[uid]?.name ?? uid,
           photoUrl: providedPhotos[uid] ?? resolvedInfos[uid]?.photoUrl,
           completion: ((counts[uid] ?? 0) / totalItems).clamp(0.0, 1.0),
-        )
+        ),
     ];
   }
 
@@ -1518,10 +1568,12 @@ class GroupService {
     for (var i = 0; i < uniqueUids.length; i += 30) {
       final end = i + 30 > uniqueUids.length ? uniqueUids.length : i + 30;
       final batch = uniqueUids.sublist(i, end);
-      futures.add(firestore
-          .collection('users')
-          .where(FieldPath.documentId, whereIn: batch)
-          .get());
+      futures.add(
+        firestore
+            .collection('users')
+            .where(FieldPath.documentId, whereIn: batch)
+            .get(),
+      );
     }
 
     final infos = <String, _UserInfo>{};
@@ -1552,9 +1604,9 @@ class GroupService {
         .orderBy('date')
         .snapshots()
         .handleError((e, st) {
-      unawaited(_safeLog(e, st));
-      throw e;
-    });
+          unawaited(_safeLog(e, st));
+          throw e;
+        });
     return snaps.asyncMap((snap) async {
       try {
         return snap.docs.map(GroupSchedule.fromFirestore).toList();
@@ -1571,10 +1623,9 @@ class GroupService {
     required String name,
   }) async {
     try {
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .set({'name': name}, SetOptions(merge: true));
+      await firestore.collection(GroupCollections.groups).doc(groupId).set({
+        'name': name,
+      }, SetOptions(merge: true));
     } catch (e, st) {
       await _safeLog(e, st);
       rethrow;
@@ -1587,10 +1638,9 @@ class GroupService {
     required bool isPublic,
   }) async {
     try {
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .set({'isPublic': isPublic}, SetOptions(merge: true));
+      await firestore.collection(GroupCollections.groups).doc(groupId).set({
+        'isPublic': isPublic,
+      }, SetOptions(merge: true));
     } catch (e, st) {
       await _safeLog(e, st);
       rethrow;
@@ -1654,17 +1704,21 @@ class GroupService {
         for (var i = 0; i < allDateDocs.length; i += chunkSize) {
           final chunk = allDateDocs.sublist(
             i,
-            i + chunkSize > allDateDocs.length ? allDateDocs.length : i + chunkSize,
+            i + chunkSize > allDateDocs.length
+                ? allDateDocs.length
+                : i + chunkSize,
           );
 
-          final entriesSnapshots = await Future.wait(chunk.map((d) async {
-            try {
-              return await d.reference.collection('entries').get();
-            } catch (e, st) {
-              await _safeLog(e, st);
-              return null;
-            }
-          }));
+          final entriesSnapshots = await Future.wait(
+            chunk.map((d) async {
+              try {
+                return await d.reference.collection('entries').get();
+              } catch (e, st) {
+                await _safeLog(e, st);
+                return null;
+              }
+            }),
+          );
 
           for (final snap in entriesSnapshots) {
             if (snap != null) {
@@ -1689,8 +1743,10 @@ class GroupService {
 
       // 3. progressSummary
       try {
-        final summarySnap =
-            await groupRef.collection('progressSummary').doc('data').get();
+        final summarySnap = await groupRef
+            .collection('progressSummary')
+            .doc('data')
+            .get();
         if (summarySnap.exists) {
           await summarySnap.reference.delete();
         }
@@ -1705,7 +1761,8 @@ class GroupService {
         await groupRef.delete();
       } else {
         throw StateError(
-            'Failed to clean up all sub-collections: ${failures.join(', ')}. Group document preserved.');
+          'Failed to clean up all sub-collections: ${failures.join(', ')}. Group document preserved.',
+        );
       }
     } catch (e, st) {
       await _safeLog(e, st);
@@ -1733,16 +1790,19 @@ class GroupService {
     required String uid,
   }) async {
     try {
-      final groupRef =
-          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupRef = firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId);
       final groupSnap = await groupRef.get();
       if (!groupSnap.exists) return;
       final ownerUid = groupSnap.data()?['ownerUid'] as String?;
       final isOwner = ownerUid == uid;
 
       // Ensure user is a member or owner before proceeding.
-      final memberSnap =
-          await groupRef.collection(GroupCollections.members).doc(uid).get();
+      final memberSnap = await groupRef
+          .collection(GroupCollections.members)
+          .doc(uid)
+          .get();
       if (!memberSnap.exists && !isOwner) return;
 
       // ⚡ Bolt: Use a hybrid approach. First, try fetching all entries using a single
@@ -1770,9 +1830,13 @@ class GroupService {
         for (var i = 0; i < missingDates.length; i += chunkSize) {
           final chunk = missingDates.sublist(
             i,
-            i + chunkSize > missingDates.length ? missingDates.length : i + chunkSize,
+            i + chunkSize > missingDates.length
+                ? missingDates.length
+                : i + chunkSize,
           );
-          final futures = chunk.map((d) => d.reference.collection('entries').doc(uid).get());
+          final futures = chunk.map(
+            (d) => d.reference.collection('entries').doc(uid).get(),
+          );
           fallbackSnaps.addAll(await Future.wait(futures));
         }
       }
@@ -1794,11 +1858,13 @@ class GroupService {
         // Backfill groupId if missing — but only when count is present, since the
         // count-repair branch below already writes groupId in the same set().
         if (data != null && !data.containsKey('groupId') && count != null) {
-          unawaited(entryRef.set({
-            'groupId': groupId,
-            'uid': uid,
-            'dateId': entryRef.parent.parent?.id,
-          }, SetOptions(merge: true)));
+          unawaited(
+            entryRef.set({
+              'groupId': groupId,
+              'uid': uid,
+              'dateId': entryRef.parent.parent?.id,
+            }, SetOptions(merge: true)),
+          );
         }
 
         if (count != null) {
@@ -1854,10 +1920,12 @@ class GroupService {
     for (var i = 0; i < uniqueIds.length; i += 30) {
       final end = i + 30 > uniqueIds.length ? uniqueIds.length : i + 30;
       final batch = uniqueIds.sublist(i, end);
-      futures.add(firestore
-          .collection(GroupCollections.groups)
-          .where(FieldPath.documentId, whereIn: batch)
-          .get());
+      futures.add(
+        firestore
+            .collection(GroupCollections.groups)
+            .where(FieldPath.documentId, whereIn: batch)
+            .get(),
+      );
     }
 
     final results = await Future.wait(futures);
@@ -1955,13 +2023,14 @@ class GroupService {
       await db.runTransaction((tx) async {
         final snapshots =
             await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-          tx.get(entryRef),
-          tx.get(summaryRef),
-        ]);
+              tx.get(entryRef),
+              tx.get(summaryRef),
+            ]);
         final entrySnap = snapshots[0];
         final summarySnap = snapshots[1];
         final nowTs = FieldValue.serverTimestamp();
-        final currentCount = (entrySnap.data()?['count'] as num?)?.toInt() ??
+        final currentCount =
+            (entrySnap.data()?['count'] as num?)?.toInt() ??
             (currentlyChecked?.length ?? 0);
         final desiredCount = read ? schedule.chapters.length : 0;
         final delta = desiredCount - currentCount;
@@ -1977,17 +2046,14 @@ class GroupService {
               'ts': nowTs,
             });
           }
-          tx.set(
-              entryRef,
-              {
-                'done': true,
-                'ts': nowTs,
-                'uid': uid,
-                'groupId': groupId,
-                'dateId': dateKey,
-                'count': desiredCount,
-              },
-              SetOptions(merge: true));
+          tx.set(entryRef, {
+            'done': true,
+            'ts': nowTs,
+            'uid': uid,
+            'groupId': groupId,
+            'dateId': dateKey,
+            'count': desiredCount,
+          }, SetOptions(merge: true));
         } else {
           if (currentlyChecked != null && currentlyChecked.isNotEmpty) {
             for (final idx in currentlyChecked) {
@@ -2013,13 +2079,10 @@ class GroupService {
 
         if (delta != 0) {
           final updatedCompleted = prevCompleted + delta;
-          tx.set(
-              summaryRef,
-              {
-                'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
-                'uid': uid,
-              },
-              SetOptions(merge: true));
+          tx.set(summaryRef, {
+            'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
+            'uid': uid,
+          }, SetOptions(merge: true));
         }
       });
       return true;
@@ -2039,18 +2102,18 @@ class GroupService {
         .where('uid', isEqualTo: uid)
         .snapshots()
         .map((snap) {
-      final progress = <String, int>{};
-      for (final doc in snap.docs) {
-        final data = doc.data();
-        final dateId = data['dateId'] as String?;
-        final count = (data['count'] as num?)?.toInt() ?? 0;
-        final done = data['done'] as bool? ?? false;
-        if (dateId != null) {
-          progress[dateId] = count > 0 ? count : (done ? 1 : 0);
-        }
-      }
-      return progress;
-    });
+          final progress = <String, int>{};
+          for (final doc in snap.docs) {
+            final data = doc.data();
+            final dateId = data['dateId'] as String?;
+            final count = (data['count'] as num?)?.toInt() ?? 0;
+            final done = data['done'] as bool? ?? false;
+            if (dateId != null) {
+              progress[dateId] = count > 0 ? count : (done ? 1 : 0);
+            }
+          }
+          return progress;
+        });
   }
 }
 

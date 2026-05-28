@@ -7,23 +7,18 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../helpers/fake_google_sign_in_platform.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:bible_read/pages/user_profile_page.dart';
-import 'package:bible_read/widgets/badge_icon.dart';
+import 'package:bible_read/pages/settings_page.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TrackingAuth extends MockFirebaseAuth {
-  TrackingAuth()
-      : super(
-          mockUser: MockUser(photoURL: ''),
-        );
+  TrackingAuth() : super(mockUser: MockUser(photoURL: ''));
 
   bool signInCalled = false;
   bool signOutCalled = false;
@@ -65,11 +60,7 @@ void main() {
   });
 
   testWidgets('shows loading then auth options', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UserProfilePage(),
-      ),
-    );
+    await tester.pumpWidget(MaterialApp(home: SettingsPage()));
 
     // Initially loading indicator
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -86,7 +77,7 @@ void main() {
       final vibration = _RecordingVibrationService();
       await tester.pumpWidget(
         MaterialApp(
-          home: UserProfilePage(
+          home: SettingsPage(
             auth: MockFirebaseAuth(),
             firestore: FakeFirebaseFirestore(),
             vibrationService: vibration,
@@ -106,7 +97,7 @@ void main() {
       final vibration = _RecordingVibrationService();
       await tester.pumpWidget(
         MaterialApp(
-          home: UserProfilePage(
+          home: SettingsPage(
             auth: MockFirebaseAuth(),
             firestore: FakeFirebaseFirestore(),
             vibrationService: vibration,
@@ -131,7 +122,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: UserProfilePage(
+          home: SettingsPage(
             auth: auth,
             mainPageBuilder: (_) => MainPage(
               auth: auth,
@@ -157,13 +148,7 @@ void main() {
     GoogleSignInPlatform.instance = googlePlatform;
     final auth = TrackingAuth();
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UserProfilePage(
-          auth: auth,
-        ),
-      ),
-    );
+    await tester.pumpWidget(MaterialApp(home: SettingsPage(auth: auth)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Sign in with Google'));
@@ -175,18 +160,13 @@ void main() {
   });
 
   testWidgets('sign in failure shows snackbar', (tester) async {
-    final googlePlatform =
-        FakeGoogleSignInPlatform(signInError: Exception('fail'));
+    final googlePlatform = FakeGoogleSignInPlatform(
+      signInError: Exception('fail'),
+    );
     GoogleSignInPlatform.instance = googlePlatform;
     final auth = TrackingAuth();
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UserProfilePage(
-          auth: auth,
-        ),
-      ),
-    );
+    await tester.pumpWidget(MaterialApp(home: SettingsPage(auth: auth)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Sign in with Google'));
@@ -207,20 +187,12 @@ void main() {
         id: 'id',
         displayName: 'Test User',
       );
-      final googlePlatform = FakeGoogleSignInPlatform(
-        user: userData,
-      );
+      final googlePlatform = FakeGoogleSignInPlatform(user: userData);
       GoogleSignInPlatform.instance = googlePlatform;
 
       final account = await GoogleSignIn.instance.authenticate();
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: UserProfilePage(
-            user: account,
-          ),
-        ),
-      );
+      await tester.pumpWidget(MaterialApp(home: SettingsPage(user: account)));
 
       // Loading indicator shown first
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -233,8 +205,9 @@ void main() {
     });
   });
 
-  testWidgets('shows firebase user info when no google user provided',
-      (tester) async {
+  testWidgets('shows firebase user info when no google user provided', (
+    tester,
+  ) async {
     await mockNetworkImagesFor(() async {
       final auth = MockFirebaseAuth(
         mockUser: MockUser(
@@ -246,13 +219,12 @@ void main() {
         signedIn: true,
       );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: UserProfilePage(
-            auth: auth,
-          ),
+      await tester.pumpWidget(MaterialApp(
+        home: SettingsPage(
+          auth: auth,
+          firestore: FakeFirebaseFirestore(),
         ),
-      );
+      ));
 
       await tester.pumpAndSettle();
 
@@ -278,9 +250,10 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: UserProfilePage(
+          home: SettingsPage(
             user: account,
             auth: auth,
+            firestore: FakeFirebaseFirestore(),
             mainPageBuilder: (_) => MainPage(
               auth: auth,
               firestore: FakeFirebaseFirestore(),
@@ -303,12 +276,14 @@ void main() {
     await mockNetworkImagesFor(() async {
       final vibration = _RecordingVibrationService();
       final firestore = FakeFirebaseFirestore();
-      final auth =
-          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1'),
+        signedIn: true,
+      );
 
       await tester.pumpWidget(
         MaterialApp(
-          home: UserProfilePage(
+          home: SettingsPage(
             auth: auth,
             firestore: firestore,
             vibrationService: vibration,
@@ -321,37 +296,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(vibration.lightCount, 1);
-    });
-  });
-
-  testWidgets('shows achievements summary for signed in user', (tester) async {
-    await mockNetworkImagesFor(() async {
-      final firestore = FakeFirebaseFirestore();
-      final user = MockUser(uid: 'u1');
-      final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
-
-      await firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('achievements')
-          .doc('a1')
-          .set({
-        'title': 'Test',
-        'type': 't',
-        'dateUnlocked': Timestamp.fromDate(DateTime(2025)),
-      });
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: UserProfilePage(
-            auth: auth,
-            firestore: firestore,
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byType(BadgeIcon), findsOneWidget);
     });
   });
 }

@@ -89,13 +89,16 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
               style: TextButton.styleFrom(
                 foregroundColor: colorScheme.primary,
                 textStyle: const TextStyle(fontWeight: FontWeight.w600),
-                backgroundColor:
-                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                backgroundColor: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.3,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
               ),
               child: _markingAllRead
                   ? SizedBox(
@@ -118,7 +121,8 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(
-                      child: Text('Error loading notifications'));
+                    child: Text('Error loading notifications'),
+                  );
                 }
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
@@ -133,8 +137,9 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                         Icon(
                           Icons.notifications_none_outlined,
                           size: 64,
-                          color: colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.5),
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.5,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -168,24 +173,28 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                   children: [
                     if (newNotifications.isNotEmpty) ...[
                       _buildSectionHeader(context, 'New'),
-                      ...newNotifications.map((n) => _NotificationItem(
-                            key: ValueKey(n.id),
-                            notification: n,
-                            service: widget.service,
-                            auth: widget.auth,
-                            vibrationService: widget.vibrationService,
-                          )),
+                      ...newNotifications.map(
+                        (n) => _NotificationItem(
+                          key: ValueKey(n.id),
+                          notification: n,
+                          service: widget.service,
+                          auth: widget.auth,
+                          vibrationService: widget.vibrationService,
+                        ),
+                      ),
                     ],
                     if (earlierNotifications.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       _buildSectionHeader(context, 'Earlier this week'),
-                      ...earlierNotifications.map((n) => _NotificationItem(
-                            key: ValueKey(n.id),
-                            notification: n,
-                            service: widget.service,
-                            auth: widget.auth,
-                            vibrationService: widget.vibrationService,
-                          )),
+                      ...earlierNotifications.map(
+                        (n) => _NotificationItem(
+                          key: ValueKey(n.id),
+                          notification: n,
+                          service: widget.service,
+                          auth: widget.auth,
+                          vibrationService: widget.vibrationService,
+                        ),
+                      ),
                     ],
                   ],
                 );
@@ -200,10 +209,10 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
       child: Text(
         title,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              letterSpacing: 0.5,
-            ),
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -258,8 +267,10 @@ class _NotificationItemState extends State<_NotificationItem> {
     if (!widget.notification.read) {
       // Mark as read
       try {
-        await widget.service
-            .markRead(widget.auth.currentUser!.uid, widget.notification.id);
+        await widget.service.markRead(
+          widget.auth.currentUser!.uid,
+          widget.notification.id,
+        );
       } catch (e) {
         // Ignore error
       }
@@ -535,17 +546,19 @@ class _NotificationItemState extends State<_NotificationItem> {
       );
     }
 
-    return Text(
-      text,
-      style: Theme.of(context).textTheme.bodyMedium,
-    );
+    return Text(text, style: Theme.of(context).textTheme.bodyMedium);
   }
 
   List<InlineSpan> _buildTextSpans(
-      BuildContext context, String name, String rawMessage) {
+    BuildContext context,
+    String name,
+    String rawMessage,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
-    final boldStyle =
-        TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface);
+    final boldStyle = TextStyle(
+      fontWeight: FontWeight.bold,
+      color: colorScheme.onSurface,
+    );
 
     if (rawMessage.startsWith(name)) {
       return [

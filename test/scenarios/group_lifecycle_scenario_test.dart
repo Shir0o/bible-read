@@ -17,8 +17,9 @@ void main() {
     GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
   });
 
-  testWidgets('Group Lifecycle Scenario: User creates a new group',
-      (tester) async {
+  testWidgets('Group Lifecycle Scenario: User creates a new group', (
+    tester,
+  ) async {
     await mockNetworkImagesFor(() async {
       // Setup
       final auth = MockFirebaseAuth(signedIn: false);
@@ -29,11 +30,15 @@ void main() {
       // Create services manually
       final notificationService = NotificationService(firestore: firestore);
       final groupService = GroupService(
-          firestore: firestore, notificationService: notificationService);
+        firestore: firestore,
+        notificationService: notificationService,
+      );
 
       // Seed User
       final userCred = await auth.createUserWithEmailAndPassword(
-          email: 'creator@example.com', password: 'password');
+        email: 'creator@example.com',
+        password: 'password',
+      );
       final uid = userCred.user!.uid;
       await seeder.seedUser(uid: uid, name: 'Creator');
 
@@ -80,7 +85,9 @@ void main() {
 
       // Enter chapters per day
       await tester.enterText(
-          find.widgetWithText(TextField, 'Chapters / Day'), '5');
+        find.widgetWithText(TextField, 'Chapters / Day'),
+        '5',
+      );
       await tester.pumpAndSettle();
 
       // 4. Tap "Create Schedule"

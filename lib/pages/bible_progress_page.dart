@@ -41,8 +41,13 @@ class BibleProgressPageState extends State<BibleProgressPage> {
   final Map<String, bool> _localOverrides = {};
 
   static const List<MapEntry<String, List<String>>> _categories = [
-    MapEntry('Pentateuch',
-        ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']),
+    MapEntry('Pentateuch', [
+      'Genesis',
+      'Exodus',
+      'Leviticus',
+      'Numbers',
+      'Deuteronomy',
+    ]),
     MapEntry('History', [
       'Joshua',
       'Judges',
@@ -55,10 +60,15 @@ class BibleProgressPageState extends State<BibleProgressPage> {
       '2 Chronicles',
       'Ezra',
       'Nehemiah',
-      'Esther'
+      'Esther',
     ]),
-    MapEntry('Poetry',
-        ['Job', 'Psalm', 'Proverbs', 'Ecclesiastes', 'Song of Songs']),
+    MapEntry('Poetry', [
+      'Job',
+      'Psalm',
+      'Proverbs',
+      'Ecclesiastes',
+      'Song of Songs',
+    ]),
     MapEntry('Prophecy', [
       'Isaiah',
       'Jeremiah',
@@ -76,7 +86,7 @@ class BibleProgressPageState extends State<BibleProgressPage> {
       'Zephaniah',
       'Haggai',
       'Zechariah',
-      'Malachi'
+      'Malachi',
     ]),
     MapEntry('Gospels & Acts', ['Matthew', 'Mark', 'Luke', 'John', 'Acts']),
     MapEntry('Epistles', [
@@ -100,7 +110,7 @@ class BibleProgressPageState extends State<BibleProgressPage> {
       '1 John',
       '2 John',
       '3 John',
-      'Jude'
+      'Jude',
     ]),
     MapEntry('Prophecy', ['Revelation']),
   ];
@@ -126,8 +136,9 @@ class BibleProgressPageState extends State<BibleProgressPage> {
     }
 
     try {
-      final data =
-          await _bibleProgressService.completedChaptersByBook(user.uid);
+      final data = await _bibleProgressService.completedChaptersByBook(
+        user.uid,
+      );
       if (mounted) {
         setState(() {
           _currentData = data;
@@ -135,7 +146,8 @@ class BibleProgressPageState extends State<BibleProgressPage> {
         });
 
         // Trigger scroll logic
-        final String? targetBook = widget.initialScrollToBook ??
+        final String? targetBook =
+            widget.initialScrollToBook ??
             await _bibleProgressService.getLastCheckedBook(user.uid);
 
         if (targetBook != null) {
@@ -237,9 +249,9 @@ class BibleProgressPageState extends State<BibleProgressPage> {
             .collection('bible_books')
             .doc(book)
             .set({
-          'completed': true,
-          'timestamp': FieldValue.serverTimestamp(),
-        });
+              'completed': true,
+              'timestamp': FieldValue.serverTimestamp(),
+            });
 
         // Award 'New Testament Starter' badge if this is the first book completed
         final booksSnap = await widget.firestore
@@ -255,10 +267,10 @@ class BibleProgressPageState extends State<BibleProgressPage> {
               .collection('achievements')
               .doc('nt_starter')
               .set({
-            'title': 'NT Starter',
-            'type': 'achievement',
-            'dateUnlocked': FieldValue.serverTimestamp(),
-          });
+                'title': 'NT Starter',
+                'type': 'achievement',
+                'dateUnlocked': FieldValue.serverTimestamp(),
+              });
         }
       } else {
         await widget.firestore
@@ -471,9 +483,12 @@ class BibleProgressPageState extends State<BibleProgressPage> {
                 child: Row(
                   children: [
                     Expanded(
-                        child: Divider(
-                            color: colorScheme.outlineVariant
-                                .withValues(alpha: 0.5))),
+                      child: Divider(
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text(
@@ -486,9 +501,12 @@ class BibleProgressPageState extends State<BibleProgressPage> {
                       ),
                     ),
                     Expanded(
-                        child: Divider(
-                            color: colorScheme.outlineVariant
-                                .withValues(alpha: 0.5))),
+                      child: Divider(
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -502,28 +520,24 @@ class BibleProgressPageState extends State<BibleProgressPage> {
                   crossAxisSpacing: 12,
                   childAspectRatio: 1.0,
                 ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final book = entry.value[index];
-                    final chapters = completedData[book] ?? {};
-                    final totalChapters =
-                        ReferenceParser.chapterCount(book) ?? 0;
-                    final isCompleted =
-                        totalChapters > 0 && chapters.length >= totalChapters;
-                    final abbr = _getAbbreviation(book);
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final book = entry.value[index];
+                  final chapters = completedData[book] ?? {};
+                  final totalChapters = ReferenceParser.chapterCount(book) ?? 0;
+                  final isCompleted =
+                      totalChapters > 0 && chapters.length >= totalChapters;
+                  final abbr = _getAbbreviation(book);
 
-                    final key = _bookKeys.putIfAbsent(book, () => GlobalKey());
+                  final key = _bookKeys.putIfAbsent(book, () => GlobalKey());
 
-                    return _BookGridItem(
-                      key: key,
-                      book: book,
-                      abbr: abbr,
-                      isUnlocked: isCompleted,
-                      onTap: () => handleBookTap(book, isCompleted),
-                    );
-                  },
-                  childCount: entry.value.length,
-                ),
+                  return _BookGridItem(
+                    key: key,
+                    book: book,
+                    abbr: abbr,
+                    isUnlocked: isCompleted,
+                    onTap: () => handleBookTap(book, isCompleted),
+                  );
+                }, childCount: entry.value.length),
               ),
             ),
           ],
@@ -569,8 +583,9 @@ class _BookGridItem extends StatelessWidget {
                 border: isUnlocked
                     ? null
                     : Border.all(
-                        color:
-                            colorScheme.outlineVariant.withValues(alpha: 0.5),
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                 boxShadow: isUnlocked
                     ? [
@@ -578,7 +593,7 @@ class _BookGridItem extends StatelessWidget {
                           color: colorScheme.primary.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
-                        )
+                        ),
                       ]
                     : null,
               ),

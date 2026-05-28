@@ -64,8 +64,10 @@ class ScheduleGenerator {
         }
 
         if (count > 0) {
-          final dailyChapters =
-              allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
+          final dailyChapters = allChapters.sublist(
+            chaptersAssigned,
+            chaptersAssigned + count,
+          );
           scheduleList.add(GroupSchedule(date: date, chapters: dailyChapters));
           chaptersAssigned += count;
         }
@@ -88,8 +90,9 @@ class ScheduleGenerator {
 
       if (readingDays.isEmpty) {
         // Fallback: put everything on start date if no days found (e.g. start=end=Saturday and weekdays only)
-        readingDays
-            .add(DateTime(startDate.year, startDate.month, startDate.day));
+        readingDays.add(
+          DateTime(startDate.year, startDate.month, startDate.day),
+        );
       }
 
       int totalChapters = allChapters.length;
@@ -107,8 +110,10 @@ class ScheduleGenerator {
         if (count > remainingChapters) count = remainingChapters;
 
         if (count > 0) {
-          final dailyChapters =
-              allChapters.sublist(chaptersAssigned, chaptersAssigned + count);
+          final dailyChapters = allChapters.sublist(
+            chaptersAssigned,
+            chaptersAssigned + count,
+          );
           scheduleList.add(GroupSchedule(date: date, chapters: dailyChapters));
           chaptersAssigned += count;
         }

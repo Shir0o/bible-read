@@ -12,7 +12,7 @@ class NotificationPreferencesService {
 
   /// Creates a [NotificationPreferencesService].
   NotificationPreferencesService({FirebaseFirestore? firestore})
-      : firestore = firestore ?? FirebaseFirestore.instance;
+    : firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Fetches preferences for the user with [uid]. Results are cached.
   Future<NotificationPreferences> fetchPreferences(String uid) async {

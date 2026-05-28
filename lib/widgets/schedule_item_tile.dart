@@ -47,24 +47,30 @@ class ScheduleItemTile extends StatelessWidget {
     final dateString = schedule.date.toIso8601String().split('T').first;
     final actions = <Widget>[];
     if (onEdit != null) {
-      actions.add(IconButton(
-        icon: const Icon(Icons.edit),
-        tooltip: 'Edit',
-        onPressed: onEdit,
-      ));
+      actions.add(
+        IconButton(
+          icon: const Icon(Icons.edit),
+          tooltip: 'Edit',
+          onPressed: onEdit,
+        ),
+      );
     }
     if (onDelete != null) {
-      actions.add(IconButton(
-        icon: const Icon(Icons.delete_outline),
-        tooltip: 'Delete',
-        onPressed: onDelete,
-      ));
+      actions.add(
+        IconButton(
+          icon: const Icon(Icons.delete_outline),
+          tooltip: 'Delete',
+          onPressed: onDelete,
+        ),
+      );
     }
     if (onToggleRead != null && currentUserRead != null) {
-      actions.add(Checkbox(
-        value: currentUserRead,
-        onChanged: (v) => onToggleRead?.call(v ?? false),
-      ));
+      actions.add(
+        Checkbox(
+          value: currentUserRead,
+          onChanged: (v) => onToggleRead?.call(v ?? false),
+        ),
+      );
     }
 
     final showPerChapter = checkedChapters != null && onToggleChapter != null;
@@ -78,8 +84,9 @@ class ScheduleItemTile extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 4),
           child: ListTile(
             title: Text(dateString),
-            subtitle:
-                showPerChapter ? null : Text(schedule.chapters.join(', ')),
+            subtitle: showPerChapter
+                ? null
+                : Text(schedule.chapters.join(', ')),
             contentPadding: EdgeInsets.zero,
             trailing: actions.isEmpty
                 ? null

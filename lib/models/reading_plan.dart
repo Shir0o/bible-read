@@ -6,10 +6,7 @@ class ReadingPlanDay {
   /// The list of chapter references for this day (e.g., "Genesis 1", "Matthew 1").
   final List<String> readings;
 
-  const ReadingPlanDay({
-    required this.day,
-    required this.readings,
-  });
+  const ReadingPlanDay({required this.day, required this.readings});
 
   factory ReadingPlanDay.fromJson(Map<String, dynamic> json) {
     return ReadingPlanDay(
@@ -18,10 +15,7 @@ class ReadingPlanDay {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'day': day,
-        'readings': readings,
-      };
+  Map<String, dynamic> toJson() => {'day': day, 'readings': readings};
 }
 
 /// Represents a structured reading plan.
@@ -44,22 +38,23 @@ class ReadingPlan {
 
   factory ReadingPlan.fromJson(Map<String, dynamic> json) {
     return ReadingPlan(
-        id: json['id'] as String,
-        title: json['title'] as String,
-        description: json['description'] as String,
-        durationDays: json['durationDays'] as int,
-        tags: List<String>.from(json['tags'] as List? ?? []),
-        schedule: (json['schedule'] as List)
-            .map((e) => ReadingPlanDay.fromJson(e as Map<String, dynamic>))
-            .toList());
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      durationDays: json['durationDays'] as int,
+      tags: List<String>.from(json['tags'] as List? ?? []),
+      schedule: (json['schedule'] as List)
+          .map((e) => ReadingPlanDay.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'description': description,
-        'durationDays': durationDays,
-        'tags': tags,
-        'schedule': schedule.map((e) => e.toJson()).toList(),
-      };
+    'id': id,
+    'title': title,
+    'description': description,
+    'durationDays': durationDays,
+    'tags': tags,
+    'schedule': schedule.map((e) => e.toJson()).toList(),
+  };
 }

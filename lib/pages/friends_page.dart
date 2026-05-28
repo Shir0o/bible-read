@@ -25,9 +25,9 @@ class FriendsPage extends StatelessWidget {
     FriendService? friendService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-  })  : friendService = friendService ?? FriendService(),
-        auth = auth ?? FirebaseAuth.instance,
-        vibrationService = vibrationService ?? const VibrationService();
+  }) : friendService = friendService ?? FriendService(),
+       auth = auth ?? FirebaseAuth.instance,
+       vibrationService = vibrationService ?? const VibrationService();
 
   @override
   Widget build(BuildContext context) {

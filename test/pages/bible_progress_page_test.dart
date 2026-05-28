@@ -21,7 +21,9 @@ void main() {
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
     await tester.pumpWidget(
-      MaterialApp(home: BibleProgressPage(firestore: firestore, auth: auth)),
+      MaterialApp(
+        home: BibleProgressPage(firestore: firestore, auth: auth),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -36,51 +38,49 @@ void main() {
   });
 
   testWidgets(
-      'BibleProgressPage shows completed status and handles optimistic toggle',
-      (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final user = MockUser(uid: 'u1');
-    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+    'BibleProgressPage shows completed status and handles optimistic toggle',
+    (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final user = MockUser(uid: 'u1');
+      final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
-    await tester.pumpWidget(
-      MaterialApp(home: BibleProgressPage(firestore: firestore, auth: auth)),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: BibleProgressPage(firestore: firestore, auth: auth),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    // 1. Initially Genesis is not completed
-    expect(
-      find.bySemanticsLabel('Genesis, Not completed'),
-      findsOneWidget,
-    );
+      // 1. Initially Genesis is not completed
+      expect(find.bySemanticsLabel('Genesis, Not completed'), findsOneWidget);
 
-    // 2. Tap to complete
-    await tester.tap(find.text('Gen'));
-    await tester.pumpAndSettle();
+      // 2. Tap to complete
+      await tester.tap(find.text('Gen'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Complete Genesis?'), findsOneWidget);
-    await tester.tap(find.text('Confirm'));
+      expect(find.text('Complete Genesis?'), findsOneWidget);
+      await tester.tap(find.text('Confirm'));
 
-    // 3. OPTIMISTIC CHECK: UI should update immediately after Confirm,
-    // even without waiting for Firestore or pumpAndSettle (though pump() is needed for next frame)
-    await tester.pump();
+      // 3. OPTIMISTIC CHECK: UI should update immediately after Confirm,
+      // even without waiting for Firestore or pumpAndSettle (though pump() is needed for next frame)
+      await tester.pump();
 
-    expect(
-      find.bySemanticsLabel('Genesis, Completed'),
-      findsOneWidget,
-    );
+      expect(find.bySemanticsLabel('Genesis, Completed'), findsOneWidget);
 
-    // 4. Verify Firestore was eventually called (optional but good)
-    final doc = await firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('bible_books')
-        .doc('Genesis')
-        .get();
-    expect(doc.exists, isTrue);
-  });
+      // 4. Verify Firestore was eventually called (optional but good)
+      final doc = await firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('bible_books')
+          .doc('Genesis')
+          .get();
+      expect(doc.exists, isTrue);
+    },
+  );
 
-  testWidgets('BibleProgressPage scrolls to initialScrollToBook',
-      (tester) async {
+  testWidgets('BibleProgressPage scrolls to initialScrollToBook', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final user = MockUser(uid: 'u1');
     final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
@@ -102,33 +102,28 @@ void main() {
   });
 
   testWidgets(
-      'BibleProgressPage scrolls to last checked book if no initial book',
-      (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final user = MockUser(uid: 'u1');
-    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+    'BibleProgressPage scrolls to last checked book if no initial book',
+    (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final user = MockUser(uid: 'u1');
+      final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
-    // Set last checked book to Revelation
-    await firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('bible_books')
-        .doc('Revelation')
-        .set({
-      'completed': true,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+      // Set last checked book to Revelation
+      await firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('bible_books')
+          .doc('Revelation')
+          .set({'completed': true, 'timestamp': FieldValue.serverTimestamp()});
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: BibleProgressPage(
-          firestore: firestore,
-          auth: auth,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: BibleProgressPage(firestore: firestore, auth: auth),
         ),
-      ),
-    );
-    await tester.pumpAndSettle(const Duration(seconds: 1));
+      );
+      await tester.pumpAndSettle(const Duration(seconds: 1));
 
-    expect(find.text('Rev'), findsOneWidget);
-  });
+      expect(find.text('Rev'), findsOneWidget);
+    },
+  );
 }

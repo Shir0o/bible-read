@@ -19,7 +19,8 @@ class UserPlanProgress {
   });
 
   factory UserPlanProgress.fromFirestore(
-      DocumentSnapshot<Map<String, dynamic>> doc) {
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final data = doc.data() ?? {};
     return UserPlanProgress(
       planId: data['planId'] as String,
@@ -32,14 +33,15 @@ class UserPlanProgress {
   }
 
   Map<String, dynamic> toFirestore() => {
-        'planId': planId,
-        'userId': userId,
-        'startDate': Timestamp.fromDate(startDate),
-        'completedDays': completedDays,
-        'lastReadDate':
-            lastReadDate != null ? Timestamp.fromDate(lastReadDate!) : null,
-        'isArchived': isArchived,
-      };
+    'planId': planId,
+    'userId': userId,
+    'startDate': Timestamp.fromDate(startDate),
+    'completedDays': completedDays,
+    'lastReadDate': lastReadDate != null
+        ? Timestamp.fromDate(lastReadDate!)
+        : null,
+    'isArchived': isArchived,
+  };
 
   UserPlanProgress copyWith({
     String? planId,

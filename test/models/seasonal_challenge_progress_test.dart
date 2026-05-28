@@ -19,9 +19,7 @@ void main() {
         'uid': 'uid',
         'seasonId': 'spring',
         'challengeId': 'read',
-        'dailyProgress': {
-          '2024-05-10': 2,
-        },
+        'dailyProgress': {'2024-05-10': 2},
         'totalProgress': 2,
         'updatedAt': Timestamp.fromDate(updated),
         'completedAt': Timestamp.fromDate(completed),
@@ -37,8 +35,9 @@ void main() {
       expect(progress.updatedAt, updated);
       expect(progress.completedAt, completed);
 
-      final serialized = progress.copyWith(
-          totalProgress: 3, dailyProgress: {'2024-05-10': 3}).toFirestore();
+      final serialized = progress
+          .copyWith(totalProgress: 3, dailyProgress: {'2024-05-10': 3})
+          .toFirestore();
       expect(serialized['totalProgress'], 3);
       expect(serialized['dailyProgress']['2024-05-10'], 3);
       expect(serialized['updatedAt'], isA<Timestamp>());

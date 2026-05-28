@@ -31,7 +31,8 @@ class FeedbackForm extends StatefulWidget {
     String title,
     String description,
     String? reproductionSteps,
-  ) onSubmit;
+  )
+  onSubmit;
 
   /// Messenger used to display success snack bars once the route closes.
   final ScaffoldMessengerState? parentMessenger;
@@ -129,8 +130,9 @@ class _FeedbackFormState extends State<FeedbackForm> {
       }
       ErrorLogger.log(error, stackTrace);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(_errorMessage)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_errorMessage)));
     } finally {
       if (mounted) {
         setState(() {
@@ -143,8 +145,9 @@ class _FeedbackFormState extends State<FeedbackForm> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration:
-          CommonStyles.backgroundDecoration(Theme.of(context).colorScheme),
+      decoration: CommonStyles.backgroundDecoration(
+        Theme.of(context).colorScheme,
+      ),
       width: double.infinity,
       child: Center(
         child: SingleChildScrollView(

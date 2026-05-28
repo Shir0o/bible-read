@@ -3,8 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 
 void main() {
-  testWidgets('ResponsiveScaffold shows NavigationBar on narrow screens',
-      (tester) async {
+  testWidgets('ResponsiveScaffold shows NavigationBar on narrow screens', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: MediaQuery(
@@ -16,7 +17,9 @@ void main() {
             destinations: const [
               NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
               NavigationDestination(
-                  icon: Icon(Icons.settings), label: 'Settings'),
+                icon: Icon(Icons.settings),
+                label: 'Settings',
+              ),
             ],
           ),
         ),
@@ -27,8 +30,9 @@ void main() {
     expect(find.byType(NavigationRail), findsNothing);
   });
 
-  testWidgets('ResponsiveScaffold shows NavigationRail on wide screens',
-      (tester) async {
+  testWidgets('ResponsiveScaffold shows NavigationRail on wide screens', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: MediaQuery(
@@ -40,7 +44,9 @@ void main() {
             destinations: const [
               NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
               NavigationDestination(
-                  icon: Icon(Icons.settings), label: 'Settings'),
+                icon: Icon(Icons.settings),
+                label: 'Settings',
+              ),
             ],
           ),
         ),
@@ -51,8 +57,9 @@ void main() {
     expect(find.byType(NavigationBar), findsNothing);
   });
 
-  testWidgets('ResponsiveScaffold handles navigation selection',
-      (tester) async {
+  testWidgets('ResponsiveScaffold handles navigation selection', (
+    tester,
+  ) async {
     int selectedIndex = 0;
 
     await tester.pumpWidget(
@@ -72,7 +79,9 @@ void main() {
                 destinations: const [
                   NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
                   NavigationDestination(
-                      icon: Icon(Icons.settings), label: 'Settings'),
+                    icon: Icon(Icons.settings),
+                    label: 'Settings',
+                  ),
                 ],
               ),
             );

@@ -44,8 +44,10 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
     _scheduleStream = widget.groupService.schedule(widget.group.id);
     final user = widget.auth.currentUser;
     if (user != null) {
-      _progressStream =
-          widget.groupService.userProgressForGroup(widget.group.id, user.uid);
+      _progressStream = widget.groupService.userProgressForGroup(
+        widget.group.id,
+        user.uid,
+      );
     } else {
       _progressStream = Stream.value({});
     }
@@ -65,10 +67,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
       _hasScrolledToToday = true;
 
       // 1. Initial jump to a position slightly above the target
-      Scrollable.ensureVisible(
-        targetContext,
-        alignment: 0.3,
-      );
+      Scrollable.ensureVisible(targetContext, alignment: 0.3);
 
       // 2. Short delay to let the jump settle
       await Future.delayed(const Duration(milliseconds: 100));
@@ -99,7 +98,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}';
   }
@@ -129,8 +128,9 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
     unawaited(widget.vibrationService.lightImpact());
 
     setState(() {
-      _optimisticProgress[dateId] =
-          !isRead ? (schedule.chapters.length.clamp(1, 999)) : 0;
+      _optimisticProgress[dateId] = !isRead
+          ? (schedule.chapters.length.clamp(1, 999))
+          : 0;
     });
 
     final success = await widget.groupService.toggleReadStatus(
@@ -170,10 +170,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
           icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(
-          'Full Schedule',
-          style: theme.textTheme.titleLarge,
-        ),
+        title: Text('Full Schedule', style: theme.textTheme.titleLarge),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
@@ -319,8 +316,11 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title,
-      {bool isHighlight = false}) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title, {
+    bool isHighlight = false,
+  }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Padding(
@@ -328,15 +328,21 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
       child: Text(
         title.toUpperCase(),
         style: theme.textTheme.labelMedium?.copyWith(
-          color:
-              isHighlight ? colorScheme.primary : colorScheme.onSurfaceVariant,
+          color: isHighlight
+              ? colorScheme.primary
+              : colorScheme.onSurfaceVariant,
         ),
       ),
     );
   }
 
-  Widget _buildScheduleItem(BuildContext context, GroupSchedule schedule,
-      {bool isPast = false, bool isRead = false, Key? key}) {
+  Widget _buildScheduleItem(
+    BuildContext context,
+    GroupSchedule schedule, {
+    bool isPast = false,
+    bool isRead = false,
+    Key? key,
+  }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final opacity = isPast ? 0.7 : 1.0;
@@ -377,8 +383,9 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
                       Text(
                         _formatDayOfWeek(schedule.date),
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.6),
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                       ),
                     ],
@@ -408,8 +415,12 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
     );
   }
 
-  Widget _buildTodayItem(BuildContext context, GroupSchedule schedule,
-      {bool isRead = false, Key? key}) {
+  Widget _buildTodayItem(
+    BuildContext context,
+    GroupSchedule schedule, {
+    bool isRead = false,
+    Key? key,
+  }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -471,11 +482,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
                 ),
               ),
               if (isRead)
-                Icon(
-                  Icons.check,
-                  color: colorScheme.primary,
-                  size: 24,
-                ),
+                Icon(Icons.check, color: colorScheme.primary, size: 24),
             ],
           ),
         ),

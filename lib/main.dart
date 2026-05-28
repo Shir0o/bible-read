@@ -32,9 +32,7 @@ void main() async {
   // Log whether the app is running in debug mode.
   debugPrint('kDebugMode: $kDebugMode');
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   bool appCheckFailed = false;
   try {
     if (kDebugMode) {
@@ -49,7 +47,8 @@ void main() async {
       } catch (e) {
         debugPrint('AppCheck getToken failed (normal for simulators): $e');
         debugPrint(
-            'TIP: If using an emulator, you may need to add a Debug Token in the Firebase Console under App Check.');
+          'TIP: If using an emulator, you may need to add a Debug Token in the Firebase Console under App Check.',
+        );
       }
     } else {
       await FirebaseAppCheck.instance.activate(
@@ -75,15 +74,18 @@ void main() async {
       appCheckFailed = true;
     }
   }
-  await FirebaseCrashlytics.instance
-      .setCrashlyticsCollectionEnabled(!kDebugMode);
+  await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+    !kDebugMode,
+  );
 
-  unawaited(initializeGoogleSignIn().catchError((Object error, StackTrace st) {
-    if (kDebugMode) {
-      debugPrint('Google Sign-In init failed: $error');
-    }
-    ErrorLogger.log(error, st);
-  }));
+  unawaited(
+    initializeGoogleSignIn().catchError((Object error, StackTrace st) {
+      if (kDebugMode) {
+        debugPrint('Google Sign-In init failed: $error');
+      }
+      ErrorLogger.log(error, st);
+    }),
+  );
 
   FlutterError.onError = (details) {
     if (kDebugMode) {
@@ -108,11 +110,9 @@ class NotificationNavigator {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
 
-  NotificationNavigator({
-    FirebaseAuth? auth,
-    FirebaseFirestore? firestore,
-  })  : auth = auth ?? FirebaseAuth.instance,
-        firestore = firestore ?? FirebaseFirestore.instance;
+  NotificationNavigator({FirebaseAuth? auth, FirebaseFirestore? firestore})
+    : auth = auth ?? FirebaseAuth.instance,
+      firestore = firestore ?? FirebaseFirestore.instance;
 
   Future<void> handleMessage(RemoteMessage message) async {
     if (message.data.isEmpty) return;
@@ -202,23 +202,25 @@ Future<void> _setupMessaging() async {
   final messaging = FirebaseMessaging.instance;
   if (kDebugMode) {
     // Don't block on permission in debug/tests to avoid hanging on system dialogs
-    unawaited(messaging.requestPermission().catchError((e) {
-      debugPrint('Permission request failed: $e');
-      return const NotificationSettings(
-        alert: AppleNotificationSetting.disabled,
-        announcement: AppleNotificationSetting.disabled,
-        authorizationStatus: AuthorizationStatus.notDetermined,
-        badge: AppleNotificationSetting.disabled,
-        carPlay: AppleNotificationSetting.disabled,
-        lockScreen: AppleNotificationSetting.disabled,
-        notificationCenter: AppleNotificationSetting.disabled,
-        showPreviews: AppleShowPreviewSetting.never,
-        sound: AppleNotificationSetting.disabled,
-        timeSensitive: AppleNotificationSetting.disabled,
-        criticalAlert: AppleNotificationSetting.disabled,
-        providesAppNotificationSettings: AppleNotificationSetting.disabled,
-      );
-    }));
+    unawaited(
+      messaging.requestPermission().catchError((e) {
+        debugPrint('Permission request failed: $e');
+        return const NotificationSettings(
+          alert: AppleNotificationSetting.disabled,
+          announcement: AppleNotificationSetting.disabled,
+          authorizationStatus: AuthorizationStatus.notDetermined,
+          badge: AppleNotificationSetting.disabled,
+          carPlay: AppleNotificationSetting.disabled,
+          lockScreen: AppleNotificationSetting.disabled,
+          notificationCenter: AppleNotificationSetting.disabled,
+          showPreviews: AppleShowPreviewSetting.never,
+          sound: AppleNotificationSetting.disabled,
+          timeSensitive: AppleNotificationSetting.disabled,
+          criticalAlert: AppleNotificationSetting.disabled,
+          providesAppNotificationSettings: AppleNotificationSetting.disabled,
+        );
+      }),
+    );
   } else {
     await messaging.requestPermission();
   }
@@ -248,24 +250,25 @@ Future<void> _setupMessaging() async {
     if (notification != null) {
       final payload = message.data.isEmpty ? null : jsonEncode(message.data);
       await ReminderService().flutterLocalNotificationsPlugin.show(
-            id: notification.hashCode,
-            title: notification.title,
-            body: notification.body,
-            notificationDetails: const NotificationDetails(
-              android: AndroidNotificationDetails(
-                'default_channel',
-                'Notifications',
-                importance: Importance.defaultImportance,
-              ),
-              iOS: DarwinNotificationDetails(),
-            ),
-            payload: payload,
-          );
+        id: notification.hashCode,
+        title: notification.title,
+        body: notification.body,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'default_channel',
+            'Notifications',
+            importance: Importance.defaultImportance,
+          ),
+          iOS: DarwinNotificationDetails(),
+        ),
+        payload: payload,
+      );
     }
   });
 
-  FirebaseMessaging.onMessageOpenedApp
-      .listen(notificationNavigator.handleMessage);
+  FirebaseMessaging.onMessageOpenedApp.listen(
+    notificationNavigator.handleMessage,
+  );
 
   final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
   if (initialMessage != null) {
@@ -279,10 +282,9 @@ Future<void> _setupMessaging() async {
     if (user != null) {
       final token = await messaging.getToken();
       if (token != null) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .set({'fcmToken': token}, SetOptions(merge: true));
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'fcmToken': token,
+        }, SetOptions(merge: true));
       }
     }
   });

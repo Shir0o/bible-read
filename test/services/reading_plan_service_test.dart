@@ -85,25 +85,27 @@ void main() {
 
     test('getNextDueDay returns correct day', () {
       final plan = ReadingPlan(
-          id: 'p1',
-          title: 'T',
-          description: 'D',
-          durationDays: 3,
-          tags: [],
-          schedule: [
-            ReadingPlanDay(day: 1, readings: []),
-            ReadingPlanDay(day: 2, readings: []),
-            ReadingPlanDay(day: 3, readings: []),
-          ]);
+        id: 'p1',
+        title: 'T',
+        description: 'D',
+        durationDays: 3,
+        tags: [],
+        schedule: [
+          ReadingPlanDay(day: 1, readings: []),
+          ReadingPlanDay(day: 2, readings: []),
+          ReadingPlanDay(day: 3, readings: []),
+        ],
+      );
 
       final service = ReadingPlanService(firestore: firestore);
 
       // No progress
       var progress = UserPlanProgress(
-          planId: 'p1',
-          userId: 'u1',
-          startDate: DateTime.now(),
-          completedDays: []);
+        planId: 'p1',
+        userId: 'u1',
+        startDate: DateTime.now(),
+        completedDays: [],
+      );
       expect(service.getNextDueDay(plan, progress)?.day, 1);
 
       // Day 1 done
