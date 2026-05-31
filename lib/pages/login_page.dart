@@ -32,10 +32,10 @@ class LoginPage extends StatefulWidget {
     VibrationService? vibrationService,
     this.cacheManager,
     this.mainPageBuilder,
-  }) : auth = auth ?? FirebaseAuth.instance,
-       firestore = firestore ?? FirebaseFirestore.instance,
-       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-       vibrationService = vibrationService ?? const VibrationService();
+  })  : auth = auth ?? FirebaseAuth.instance,
+        firestore = firestore ?? FirebaseFirestore.instance,
+        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -67,6 +67,22 @@ class _LoginPageState extends State<LoginPage> {
     if (_loading || _isGoogleSigningIn) return;
 
     if (!_formKey.currentState!.validate()) {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      if (email.isEmpty || password.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please fill in all fields'),
+          ),
+        );
+      } else if (!_isValidEmail(email)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter a valid email address'),
+          ),
+        );
+      }
       return;
     }
 
@@ -168,9 +184,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _handleForgotPassword() async {
-    final initialEmail = _isValidEmail(_emailController.text)
-        ? _emailController.text
-        : '';
+    final initialEmail =
+        _isValidEmail(_emailController.text) ? _emailController.text : '';
 
     await showDialog(
       context: context,
@@ -312,25 +327,47 @@ class _LoginPageState extends State<LoginPage> {
                                     child: Column(
                                       children: [
                                         // Email or Username
-                                        _buildStyledInput(
-                                          context: context,
-                                          controller: _emailController,
-                                          label: 'Email or Username',
-                                          key: const Key('loginEmailField'),
-                                          keyboardType:
-                                              TextInputType.emailAddress,
-                                          autofillHints: [AutofillHints.email],
-                                          textInputAction: TextInputAction.next,
-                                          autofocus: true,
-                                          validator: (value) {
-                                            if (value == null ||
-                                                value.trim().isEmpty) {
-                                              return 'Please fill in all fields';
-                                            }
-                                            if (!_isValidEmail(value.trim())) {
-                                              return 'Please enter a valid email address';
-                                            }
-                                            return null;
+                                        ValueListenableBuilder<
+                                            TextEditingValue>(
+                                          valueListenable: _emailController,
+                                          builder: (context, value, child) {
+                                            return _buildStyledInput(
+                                              context: context,
+                                              controller: _emailController,
+                                              label: 'Email or Username',
+                                              key: const Key('loginEmailField'),
+                                              keyboardType:
+                                                  TextInputType.emailAddress,
+                                              autofillHints: const [
+                                                AutofillHints.email,
+                                              ],
+                                              textInputAction:
+                                                  TextInputAction.next,
+                                              autofocus: true,
+                                              validator: (val) {
+                                                if (val == null ||
+                                                    val.trim().isEmpty) {
+                                                  return 'Please fill in all fields';
+                                                }
+                                                if (!_isValidEmail(
+                                                    val.trim())) {
+                                                  return 'Please enter a valid email address';
+                                                }
+                                                return null;
+                                              },
+                                              suffixIcon: value.text.isNotEmpty
+                                                  ? IconButton(
+                                                      icon: const Icon(
+                                                        Icons.clear,
+                                                      ),
+                                                      tooltip: 'Clear',
+                                                      onPressed: () {
+                                                        _emailController
+                                                            .clear();
+                                                      },
+                                                    )
+                                                  : null,
+                                            );
                                           },
                                         ),
                                         const SizedBox(height: 16), // gap-4
@@ -413,11 +450,10 @@ class _LoginPageState extends State<LoginPage> {
                                                 'Forgot Password?',
                                                 style: textTheme.bodyMedium
                                                     ?.copyWith(
-                                                      fontWeight: FontWeight
-                                                          .w600, // font-semibold
-                                                      color:
-                                                          colorScheme.primary,
-                                                    ),
+                                                  fontWeight: FontWeight
+                                                      .w600, // font-semibold
+                                                  color: colorScheme.primary,
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -455,13 +491,13 @@ class _LoginPageState extends State<LoginPage> {
                                           )
                                         : Text(
                                             'Login',
-                                            style: textTheme.labelLarge
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight
-                                                      .bold, // font-bold
-                                                  letterSpacing:
-                                                      0.5, // tracking-wide
-                                                ),
+                                            style:
+                                                textTheme.labelLarge?.copyWith(
+                                              fontWeight:
+                                                  FontWeight.bold, // font-bold
+                                              letterSpacing:
+                                                  0.5, // tracking-wide
+                                            ),
                                           ),
                                   ),
                                 ),
@@ -548,11 +584,10 @@ class _LoginPageState extends State<LoginPage> {
                                                 'Continue with Google',
                                                 style: textTheme.labelLarge
                                                     ?.copyWith(
-                                                      fontWeight: FontWeight
-                                                          .w600, // font-semibold
-                                                      color:
-                                                          colorScheme.onSurface,
-                                                    ),
+                                                  fontWeight: FontWeight
+                                                      .w600, // font-semibold
+                                                  color: colorScheme.onSurface,
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -619,11 +654,10 @@ class _LoginPageState extends State<LoginPage> {
                                                   'Sign up',
                                                   style: textTheme.bodyMedium
                                                       ?.copyWith(
-                                                        fontWeight: FontWeight
-                                                            .bold, // font-bold
-                                                        color:
-                                                            colorScheme.primary,
-                                                      ),
+                                                    fontWeight: FontWeight
+                                                        .bold, // font-bold
+                                                    color: colorScheme.primary,
+                                                  ),
                                                 ),
                                               ),
                                             ),
