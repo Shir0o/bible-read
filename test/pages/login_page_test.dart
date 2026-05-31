@@ -249,6 +249,10 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Please fill in all fields'), findsAtLeast(1));
+        expect(
+          find.widgetWithText(SnackBar, 'Please fill in all fields'),
+          findsOneWidget,
+        );
         expect(auth.signInCalled, isFalse);
       });
     });
@@ -270,8 +274,59 @@ void main() {
         await tester.pump();
         await tester.pumpAndSettle();
 
-        expect(find.text('Please enter a valid email address'), findsOneWidget);
+        expect(
+            find.text('Please enter a valid email address'), findsAtLeast(1));
+        expect(
+          find.widgetWithText(SnackBar, 'Please enter a valid email address'),
+          findsOneWidget,
+        );
         expect(auth.signInCalled, isFalse);
+      });
+    });
+
+    testWidgets('dynamic email clear button appears and clears input',
+        (tester) async {
+      await mockNetworkImagesFor(() async {
+        final auth = RecordingAuth();
+        await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
+
+        final emailFieldFinder = find.byKey(const Key('loginEmailField'));
+
+        // Initially no clear button
+        expect(
+            find.descendant(
+              of: emailFieldFinder,
+              matching: find.byIcon(Icons.clear),
+            ),
+            findsNothing);
+
+        // Enter some text
+        await tester.enterText(emailFieldFinder, 'some-text');
+        await tester.pump();
+
+        // Clear button should now appear
+        final clearButtonFinder = find.descendant(
+          of: emailFieldFinder,
+          matching: find.byIcon(Icons.clear),
+        );
+        expect(clearButtonFinder, findsOneWidget);
+
+        // Tap clear button
+        await tester.tap(clearButtonFinder);
+        await tester.pump();
+
+        // Email field should be empty, and clear button should be gone
+        final textField = find.descendant(
+          of: emailFieldFinder,
+          matching: find.byType(TextField),
+        );
+        expect(tester.widget<TextField>(textField).controller?.text, isEmpty);
+        expect(
+            find.descendant(
+              of: emailFieldFinder,
+              matching: find.byIcon(Icons.clear),
+            ),
+            findsNothing);
       });
     });
 
