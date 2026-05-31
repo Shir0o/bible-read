@@ -71,12 +71,14 @@ class _LoginPageState extends State<LoginPage> {
       final password = _passwordController.text;
 
       if (email.isEmpty || password.isEmpty) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please fill in all fields'),
           ),
         );
       } else if (!_isValidEmail(email)) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please enter a valid email address'),
@@ -114,6 +116,7 @@ class _LoginPageState extends State<LoginPage> {
       }
       ErrorLogger.log(e, st);
       if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to sign in. Please check credentials.'),
@@ -159,6 +162,7 @@ class _LoginPageState extends State<LoginPage> {
       if (error is GoogleSignInException &&
           error.code == GoogleSignInExceptionCode.canceled) {
         if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Sign in cancelled')));
@@ -169,6 +173,7 @@ class _LoginPageState extends State<LoginPage> {
         }
         ErrorLogger.log(error, st);
         if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
@@ -327,35 +332,33 @@ class _LoginPageState extends State<LoginPage> {
                                     child: Column(
                                       children: [
                                         // Email or Username
-                                        ValueListenableBuilder<
-                                            TextEditingValue>(
-                                          valueListenable: _emailController,
-                                          builder: (context, value, child) {
-                                            return _buildStyledInput(
-                                              context: context,
-                                              controller: _emailController,
-                                              label: 'Email or Username',
-                                              key: const Key('loginEmailField'),
-                                              keyboardType:
-                                                  TextInputType.emailAddress,
-                                              autofillHints: const [
-                                                AutofillHints.email,
-                                              ],
-                                              textInputAction:
-                                                  TextInputAction.next,
-                                              autofocus: true,
-                                              validator: (val) {
-                                                if (val == null ||
-                                                    val.trim().isEmpty) {
-                                                  return 'Please fill in all fields';
-                                                }
-                                                if (!_isValidEmail(
-                                                    val.trim())) {
-                                                  return 'Please enter a valid email address';
-                                                }
-                                                return null;
-                                              },
-                                              suffixIcon: value.text.isNotEmpty
+                                        _buildStyledInput(
+                                          context: context,
+                                          controller: _emailController,
+                                          label: 'Email or Username',
+                                          key: const Key('loginEmailField'),
+                                          keyboardType:
+                                              TextInputType.emailAddress,
+                                          autofillHints: const [
+                                            AutofillHints.email,
+                                          ],
+                                          textInputAction: TextInputAction.next,
+                                          autofocus: true,
+                                          validator: (val) {
+                                            if (val == null ||
+                                                val.trim().isEmpty) {
+                                              return 'Please fill in all fields';
+                                            }
+                                            if (!_isValidEmail(val.trim())) {
+                                              return 'Please enter a valid email address';
+                                            }
+                                            return null;
+                                          },
+                                          suffixIcon: ValueListenableBuilder<
+                                              TextEditingValue>(
+                                            valueListenable: _emailController,
+                                            builder: (context, value, child) {
+                                              return value.text.isNotEmpty
                                                   ? IconButton(
                                                       icon: const Icon(
                                                         Icons.clear,
@@ -366,9 +369,9 @@ class _LoginPageState extends State<LoginPage> {
                                                             .clear();
                                                       },
                                                     )
-                                                  : null,
-                                            );
-                                          },
+                                                  : const SizedBox.shrink();
+                                            },
+                                          ),
                                         ),
                                         const SizedBox(height: 16), // gap-4
                                         // Password
@@ -831,6 +834,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
           r"^[a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9-]+\.[a-zA-Z]+$",
         ).hasMatch(email)) {
       unawaited(widget.vibrationService.heavyImpact());
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid email address')),
       );
@@ -846,6 +850,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
       if (mounted) {
         unawaited(widget.vibrationService.mediumImpact());
         Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Password reset email sent')),
         );
@@ -857,6 +862,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
       }
       ErrorLogger.log(e, st);
       if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to send reset email. Please try again.'),
