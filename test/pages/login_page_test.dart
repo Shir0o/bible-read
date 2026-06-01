@@ -475,5 +475,69 @@ void main() {
         });
       },
     );
+
+    testWidgets(
+      'dynamic email clear button appears and clears input in forgot password dialog',
+      (tester) async {
+        await mockNetworkImagesFor(() async {
+          final auth = RecordingAuth();
+          final vibrationService = MockVibrationService();
+          when(() => vibrationService.lightImpact()).thenAnswer((_) async {});
+
+          await tester.pumpWidget(
+            MaterialApp(
+              home: LoginPage(auth: auth, vibrationService: vibrationService),
+            ),
+          );
+
+          final forgotPasswordFinder = find.byKey(
+            const Key('forgotPasswordSemantics'),
+          );
+
+          // Tap Forgot Password
+          await tester.ensureVisible(forgotPasswordFinder);
+          await tester.tap(forgotPasswordFinder);
+          await tester.pumpAndSettle();
+
+          final emailFieldFinder =
+              find.byKey(const Key('forgotPasswordEmailField'));
+
+          // Initially no clear button inside the text field
+          expect(
+            find.descendant(
+              of: emailFieldFinder,
+              matching: find.byIcon(Icons.clear),
+            ),
+            findsNothing,
+          );
+
+          // Enter text
+          await tester.enterText(emailFieldFinder, 'reset-email@test.com');
+          await tester.pump();
+
+          // Clear button should appear
+          final clearButtonFinder = find.descendant(
+            of: emailFieldFinder,
+            matching: find.byIcon(Icons.clear),
+          );
+          expect(clearButtonFinder, findsOneWidget);
+
+          // Tap clear button
+          await tester.tap(clearButtonFinder);
+          await tester.pump();
+
+          // Email field should be empty, and clear button should be gone
+          expect(tester.widget<TextField>(emailFieldFinder).controller?.text,
+              isEmpty);
+          expect(
+            find.descendant(
+              of: emailFieldFinder,
+              matching: find.byIcon(Icons.clear),
+            ),
+            findsNothing,
+          );
+        });
+      },
+    );
   });
 }

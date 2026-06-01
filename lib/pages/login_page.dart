@@ -796,14 +796,29 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
           ),
           const SizedBox(height: 16),
           TextField(
+            key: const Key('forgotPasswordEmailField'),
             controller: _controller,
             keyboardType: TextInputType.emailAddress,
             autofocus: true,
             textInputAction: TextInputAction.send,
             onSubmitted: (_) => _send(),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Email',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _controller,
+                builder: (context, value, child) {
+                  return value.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          tooltip: 'Clear email',
+                          onPressed: () {
+                            _controller.clear();
+                          },
+                        )
+                      : const SizedBox.shrink();
+                },
+              ),
             ),
           ),
         ],
