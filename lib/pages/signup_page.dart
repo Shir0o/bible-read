@@ -32,10 +32,10 @@ class SignupPage extends StatefulWidget {
     GoogleSignIn Function()? googleSignInProvider,
     VibrationService? vibrationService,
     this.mainPageBuilder,
-  }) : auth = auth ?? FirebaseAuth.instance,
-       firestore = firestore ?? FirebaseFirestore.instance,
-       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-       vibrationService = vibrationService ?? const VibrationService();
+  })  : auth = auth ?? FirebaseAuth.instance,
+        firestore = firestore ?? FirebaseFirestore.instance,
+        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<SignupPage> createState() => _SignupPageState();
@@ -82,6 +82,7 @@ class _SignupPageState extends State<SignupPage> {
   Future<void> _handleSignupError(Object error, StackTrace stackTrace) async {
     await ErrorLogger.log(error, stackTrace);
     if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Failed to sign up. Please try again.')),
     );
@@ -96,6 +97,25 @@ class _SignupPageState extends State<SignupPage> {
     if (_loading || _isGoogleSigningIn) return;
 
     if (!_formKey.currentState!.validate()) {
+      final name = _nameController.text.trim();
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      if (name.isEmpty || email.isEmpty || password.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please fill in all fields')),
+        );
+      } else if (!_isValidEmail(email)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a valid email address')),
+        );
+      } else if (password.length < 6) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Password must be at least 6 characters')),
+        );
+      }
       return;
     }
 
@@ -185,6 +205,7 @@ class _SignupPageState extends State<SignupPage> {
       if (error is GoogleSignInException &&
           error.code == GoogleSignInExceptionCode.canceled) {
         if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Sign in cancelled')));
@@ -195,6 +216,7 @@ class _SignupPageState extends State<SignupPage> {
         }
         ErrorLogger.log(error, st);
         if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
@@ -324,6 +346,21 @@ class _SignupPageState extends State<SignupPage> {
                               textInputAction: TextInputAction.next,
                               decoration: inputDecoration.copyWith(
                                 labelText: 'Full Name',
+                                suffixIcon:
+                                    ValueListenableBuilder<TextEditingValue>(
+                                  valueListenable: _nameController,
+                                  builder: (context, value, child) {
+                                    return value.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear),
+                                            tooltip: 'Clear name',
+                                            onPressed: () {
+                                              _nameController.clear();
+                                            },
+                                          )
+                                        : const SizedBox.shrink();
+                                  },
+                                ),
                               ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
@@ -346,6 +383,21 @@ class _SignupPageState extends State<SignupPage> {
                               textInputAction: TextInputAction.next,
                               decoration: inputDecoration.copyWith(
                                 labelText: 'Email',
+                                suffixIcon:
+                                    ValueListenableBuilder<TextEditingValue>(
+                                  valueListenable: _emailController,
+                                  builder: (context, value, child) {
+                                    return value.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear),
+                                            tooltip: 'Clear email',
+                                            onPressed: () {
+                                              _emailController.clear();
+                                            },
+                                          )
+                                        : const SizedBox.shrink();
+                                  },
+                                ),
                               ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {

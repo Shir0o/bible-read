@@ -202,6 +202,10 @@ void main() {
     await tester.pump();
 
     expect(find.text('Please fill in all fields'), findsAtLeast(3));
+    expect(
+      find.widgetWithText(SnackBar, 'Please fill in all fields'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('SignupPage shows error for invalid email', (tester) async {
@@ -232,7 +236,11 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
     await tester.pump();
 
-    expect(find.text('Please enter a valid email address'), findsOneWidget);
+    expect(find.text('Please enter a valid email address'), findsAtLeast(1));
+    expect(
+      find.widgetWithText(SnackBar, 'Please enter a valid email address'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('SignupPage shows error for short password', (tester) async {
@@ -263,7 +271,90 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
     await tester.pump();
 
-    expect(find.text('Password must be at least 6 characters'), findsOneWidget);
+    expect(
+        find.text('Password must be at least 6 characters'), findsAtLeast(1));
+    expect(
+      find.widgetWithText(SnackBar, 'Password must be at least 6 characters'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('dynamic clear buttons appear and clear input', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SignupPage(
+          auth: RecordingAuth(),
+          firestore: FakeFirebaseFirestore(),
+          vibrationService: MockVibrationService(),
+          googleSignInProvider: () => GoogleSignIn.instance,
+        ),
+      ),
+    );
+
+    final nameFieldFinder = find.widgetWithText(TextFormField, 'Full Name');
+    final emailFieldFinder = find.byKey(const Key('signupEmailField'));
+
+    // Initially no clear buttons are visible
+    expect(
+      find.descendant(of: nameFieldFinder, matching: find.byIcon(Icons.clear)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: emailFieldFinder, matching: find.byIcon(Icons.clear)),
+      findsNothing,
+    );
+
+    // Enter name
+    await tester.enterText(nameFieldFinder, 'John');
+    await tester.pump();
+
+    // Name clear button should appear
+    final nameClearFinder = find.descendant(
+      of: nameFieldFinder,
+      matching: find.byIcon(Icons.clear),
+    );
+    expect(nameClearFinder, findsOneWidget);
+
+    // Enter email
+    await tester.enterText(emailFieldFinder, 'john@example.com');
+    await tester.pump();
+
+    // Email clear button should appear
+    final emailClearFinder = find.descendant(
+      of: emailFieldFinder,
+      matching: find.byIcon(Icons.clear),
+    );
+    expect(emailClearFinder, findsOneWidget);
+
+    // Tap clear name
+    await tester.tap(nameClearFinder);
+    await tester.pump();
+
+    // Name field should be cleared
+    final nameTextField = find.descendant(
+      of: nameFieldFinder,
+      matching: find.byType(TextField),
+    );
+    expect(tester.widget<TextField>(nameTextField).controller?.text, isEmpty);
+    expect(
+      find.descendant(of: nameFieldFinder, matching: find.byIcon(Icons.clear)),
+      findsNothing,
+    );
+
+    // Tap clear email
+    await tester.tap(emailClearFinder);
+    await tester.pump();
+
+    // Email field should be cleared
+    final emailTextField = find.descendant(
+      of: emailFieldFinder,
+      matching: find.byType(TextField),
+    );
+    expect(tester.widget<TextField>(emailTextField).controller?.text, isEmpty);
+    expect(
+      find.descendant(of: emailFieldFinder, matching: find.byIcon(Icons.clear)),
+      findsNothing,
+    );
   });
 
   testWidgets('Social button has correct semantics and tooltip', (
@@ -325,19 +416,15 @@ void main() {
     final richText = tester.widget<RichText>(richTextFinder);
     final textSpan = richText.text as TextSpan;
 
-    final termsSpan =
-        textSpan.children!.firstWhere(
-              (c) => (c as TextSpan).text == 'Terms of Service',
-            )
-            as TextSpan;
+    final termsSpan = textSpan.children!.firstWhere(
+      (c) => (c as TextSpan).text == 'Terms of Service',
+    ) as TextSpan;
     expect(termsSpan.recognizer, isNotNull);
     expect(termsSpan.recognizer, isA<TapGestureRecognizer>());
 
-    final privacySpan =
-        textSpan.children!.firstWhere(
-              (c) => (c as TextSpan).text == 'Privacy Policy',
-            )
-            as TextSpan;
+    final privacySpan = textSpan.children!.firstWhere(
+      (c) => (c as TextSpan).text == 'Privacy Policy',
+    ) as TextSpan;
     expect(privacySpan.recognizer, isNotNull);
     expect(privacySpan.recognizer, isA<TapGestureRecognizer>());
   });
