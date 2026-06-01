@@ -79,6 +79,33 @@ class _SignupPageState extends State<SignupPage> {
     ).hasMatch(email);
   }
 
+  String? _validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please fill in all fields';
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please fill in all fields';
+    }
+    if (!_isValidEmail(value.trim())) {
+      return 'Please enter a valid email address';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please fill in all fields';
+    }
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    return null;
+  }
+
   Future<void> _handleSignupError(Object error, StackTrace stackTrace) async {
     await ErrorLogger.log(error, stackTrace);
     if (!mounted) return;
@@ -102,18 +129,22 @@ class _SignupPageState extends State<SignupPage> {
       final password = _passwordController.text;
 
       ScaffoldMessenger.of(context).clearSnackBars();
-      if (name.isEmpty || email.isEmpty || password.isEmpty) {
+
+      final nameError = _validateName(name);
+      final emailError = _validateEmail(email);
+      final passwordError = _validatePassword(password);
+
+      if (nameError != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill in all fields')),
+          SnackBar(content: Text(nameError)),
         );
-      } else if (!_isValidEmail(email)) {
+      } else if (emailError != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a valid email address')),
+          SnackBar(content: Text(emailError)),
         );
-      } else if (password.length < 6) {
+      } else if (passwordError != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Password must be at least 6 characters')),
+          SnackBar(content: Text(passwordError)),
         );
       }
       return;
@@ -336,21 +367,20 @@ class _SignupPageState extends State<SignupPage> {
                         child: Column(
                           children: [
                             // Full Name
-                            TextFormField(
-                              controller: _nameController,
-                              style: textTheme.bodyLarge?.copyWith(
-                                color: colorScheme.onSurface,
-                              ),
-                              textCapitalization: TextCapitalization.words,
-                              autofillHints: const [AutofillHints.name],
-                              textInputAction: TextInputAction.next,
-                              decoration: inputDecoration.copyWith(
-                                labelText: 'Full Name',
-                                suffixIcon:
-                                    ValueListenableBuilder<TextEditingValue>(
-                                  valueListenable: _nameController,
-                                  builder: (context, value, child) {
-                                    return value.text.isNotEmpty
+                            ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _nameController,
+                              builder: (context, value, child) {
+                                return TextFormField(
+                                  controller: _nameController,
+                                  style: textTheme.bodyLarge?.copyWith(
+                                    color: colorScheme.onSurface,
+                                  ),
+                                  textCapitalization: TextCapitalization.words,
+                                  autofillHints: const [AutofillHints.name],
+                                  textInputAction: TextInputAction.next,
+                                  decoration: inputDecoration.copyWith(
+                                    labelText: 'Full Name',
+                                    suffixIcon: value.text.isNotEmpty
                                         ? IconButton(
                                             icon: const Icon(Icons.clear),
                                             tooltip: 'Clear name',
@@ -358,36 +388,30 @@ class _SignupPageState extends State<SignupPage> {
                                               _nameController.clear();
                                             },
                                           )
-                                        : const SizedBox.shrink();
-                                  },
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Please fill in all fields';
-                                }
-                                return null;
+                                        : null,
+                                  ),
+                                  validator: _validateName,
+                                );
                               },
                             ),
                             const SizedBox(height: 20),
 
                             // Email
-                            TextFormField(
-                              key: const Key('signupEmailField'),
-                              controller: _emailController,
-                              style: textTheme.bodyLarge?.copyWith(
-                                color: colorScheme.onSurface,
-                              ),
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [AutofillHints.email],
-                              textInputAction: TextInputAction.next,
-                              decoration: inputDecoration.copyWith(
-                                labelText: 'Email',
-                                suffixIcon:
-                                    ValueListenableBuilder<TextEditingValue>(
-                                  valueListenable: _emailController,
-                                  builder: (context, value, child) {
-                                    return value.text.isNotEmpty
+                            ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _emailController,
+                              builder: (context, value, child) {
+                                return TextFormField(
+                                  key: const Key('signupEmailField'),
+                                  controller: _emailController,
+                                  style: textTheme.bodyLarge?.copyWith(
+                                    color: colorScheme.onSurface,
+                                  ),
+                                  keyboardType: TextInputType.emailAddress,
+                                  autofillHints: const [AutofillHints.email],
+                                  textInputAction: TextInputAction.next,
+                                  decoration: inputDecoration.copyWith(
+                                    labelText: 'Email',
+                                    suffixIcon: value.text.isNotEmpty
                                         ? IconButton(
                                             icon: const Icon(Icons.clear),
                                             tooltip: 'Clear email',
@@ -395,18 +419,10 @@ class _SignupPageState extends State<SignupPage> {
                                               _emailController.clear();
                                             },
                                           )
-                                        : const SizedBox.shrink();
-                                  },
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Please fill in all fields';
-                                }
-                                if (!_isValidEmail(value.trim())) {
-                                  return 'Please enter a valid email address';
-                                }
-                                return null;
+                                        : null,
+                                  ),
+                                  validator: _validateEmail,
+                                );
                               },
                             ),
                             const SizedBox(height: 20),
@@ -442,15 +458,7 @@ class _SignupPageState extends State<SignupPage> {
                                   },
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please fill in all fields';
-                                }
-                                if (value.length < 6) {
-                                  return 'Password must be at least 6 characters';
-                                }
-                                return null;
-                              },
+                              validator: _validatePassword,
                             ),
                           ],
                         ),
