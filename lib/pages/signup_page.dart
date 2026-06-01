@@ -32,10 +32,10 @@ class SignupPage extends StatefulWidget {
     GoogleSignIn Function()? googleSignInProvider,
     VibrationService? vibrationService,
     this.mainPageBuilder,
-  }) : auth = auth ?? FirebaseAuth.instance,
-       firestore = firestore ?? FirebaseFirestore.instance,
-       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-       vibrationService = vibrationService ?? const VibrationService();
+  })  : auth = auth ?? FirebaseAuth.instance,
+        firestore = firestore ?? FirebaseFirestore.instance,
+        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<SignupPage> createState() => _SignupPageState();
@@ -79,9 +79,37 @@ class _SignupPageState extends State<SignupPage> {
     ).hasMatch(email);
   }
 
+  String? _validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please fill in all fields';
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please fill in all fields';
+    }
+    if (!_isValidEmail(value.trim())) {
+      return 'Please enter a valid email address';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please fill in all fields';
+    }
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    return null;
+  }
+
   Future<void> _handleSignupError(Object error, StackTrace stackTrace) async {
     await ErrorLogger.log(error, stackTrace);
     if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Failed to sign up. Please try again.')),
     );
@@ -96,6 +124,29 @@ class _SignupPageState extends State<SignupPage> {
     if (_loading || _isGoogleSigningIn) return;
 
     if (!_formKey.currentState!.validate()) {
+      final name = _nameController.text.trim();
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+
+      final nameError = _validateName(name);
+      final emailError = _validateEmail(email);
+      final passwordError = _validatePassword(password);
+
+      if (nameError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(nameError)),
+        );
+      } else if (emailError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(emailError)),
+        );
+      } else if (passwordError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(passwordError)),
+        );
+      }
       return;
     }
 
@@ -185,6 +236,7 @@ class _SignupPageState extends State<SignupPage> {
       if (error is GoogleSignInException &&
           error.code == GoogleSignInExceptionCode.canceled) {
         if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Sign in cancelled')));
@@ -195,6 +247,7 @@ class _SignupPageState extends State<SignupPage> {
         }
         ErrorLogger.log(error, st);
         if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
@@ -314,47 +367,62 @@ class _SignupPageState extends State<SignupPage> {
                         child: Column(
                           children: [
                             // Full Name
-                            TextFormField(
-                              controller: _nameController,
-                              style: textTheme.bodyLarge?.copyWith(
-                                color: colorScheme.onSurface,
-                              ),
-                              textCapitalization: TextCapitalization.words,
-                              autofillHints: const [AutofillHints.name],
-                              textInputAction: TextInputAction.next,
-                              decoration: inputDecoration.copyWith(
-                                labelText: 'Full Name',
-                              ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Please fill in all fields';
-                                }
-                                return null;
+                            ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _nameController,
+                              builder: (context, value, child) {
+                                return TextFormField(
+                                  controller: _nameController,
+                                  style: textTheme.bodyLarge?.copyWith(
+                                    color: colorScheme.onSurface,
+                                  ),
+                                  textCapitalization: TextCapitalization.words,
+                                  autofillHints: const [AutofillHints.name],
+                                  textInputAction: TextInputAction.next,
+                                  decoration: inputDecoration.copyWith(
+                                    labelText: 'Full Name',
+                                    suffixIcon: value.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear),
+                                            tooltip: 'Clear name',
+                                            onPressed: () {
+                                              _nameController.clear();
+                                            },
+                                          )
+                                        : null,
+                                  ),
+                                  validator: _validateName,
+                                );
                               },
                             ),
                             const SizedBox(height: 20),
 
                             // Email
-                            TextFormField(
-                              key: const Key('signupEmailField'),
-                              controller: _emailController,
-                              style: textTheme.bodyLarge?.copyWith(
-                                color: colorScheme.onSurface,
-                              ),
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [AutofillHints.email],
-                              textInputAction: TextInputAction.next,
-                              decoration: inputDecoration.copyWith(
-                                labelText: 'Email',
-                              ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Please fill in all fields';
-                                }
-                                if (!_isValidEmail(value.trim())) {
-                                  return 'Please enter a valid email address';
-                                }
-                                return null;
+                            ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _emailController,
+                              builder: (context, value, child) {
+                                return TextFormField(
+                                  key: const Key('signupEmailField'),
+                                  controller: _emailController,
+                                  style: textTheme.bodyLarge?.copyWith(
+                                    color: colorScheme.onSurface,
+                                  ),
+                                  keyboardType: TextInputType.emailAddress,
+                                  autofillHints: const [AutofillHints.email],
+                                  textInputAction: TextInputAction.next,
+                                  decoration: inputDecoration.copyWith(
+                                    labelText: 'Email',
+                                    suffixIcon: value.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear),
+                                            tooltip: 'Clear email',
+                                            onPressed: () {
+                                              _emailController.clear();
+                                            },
+                                          )
+                                        : null,
+                                  ),
+                                  validator: _validateEmail,
+                                );
                               },
                             ),
                             const SizedBox(height: 20),
@@ -390,15 +458,7 @@ class _SignupPageState extends State<SignupPage> {
                                   },
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please fill in all fields';
-                                }
-                                if (value.length < 6) {
-                                  return 'Password must be at least 6 characters';
-                                }
-                                return null;
-                              },
+                              validator: _validatePassword,
                             ),
                           ],
                         ),
