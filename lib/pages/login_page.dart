@@ -795,20 +795,20 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
             'Enter your email address to receive a password reset link.',
           ),
           const SizedBox(height: 16),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: _controller,
-            builder: (context, value, child) {
-              return TextField(
-                key: const Key('forgotPasswordEmailField'),
-                controller: _controller,
-                keyboardType: TextInputType.emailAddress,
-                autofocus: true,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _send(),
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: value.text.isNotEmpty
+          TextField(
+            key: const Key('forgotPasswordEmailField'),
+            controller: _controller,
+            keyboardType: TextInputType.emailAddress,
+            autofocus: true,
+            textInputAction: TextInputAction.send,
+            onSubmitted: (_) => _send(),
+            decoration: InputDecoration(
+              labelText: 'Email',
+              border: const OutlineInputBorder(),
+              suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _controller,
+                builder: (context, value, child) {
+                  return value.text.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear),
                           tooltip: 'Clear email',
@@ -816,10 +816,10 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                             _controller.clear();
                           },
                         )
-                      : null,
-                ),
-              );
-            },
+                      : const SizedBox.shrink();
+                },
+              ),
+            ),
           ),
         ],
       ),
