@@ -20,8 +20,8 @@ class NotificationSettingsPage extends StatefulWidget {
     super.key,
     NotificationPreferencesService? service,
     FirebaseAuth? auth,
-  }) : service = service ?? NotificationPreferencesService(),
-       auth = auth ?? FirebaseAuth.instance;
+  })  : service = service ?? NotificationPreferencesService(),
+        auth = auth ?? FirebaseAuth.instance;
 
   @override
   State<NotificationSettingsPage> createState() =>
@@ -141,66 +141,66 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : (_prefs == null
-                  ? const Center(child: Text('Please sign in'))
-                  : ListView(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      children: [
-                        CommonStyles.buildTappableCard(
-                          context: context,
-                          onTap: () => _toggleReminder(!_reminderEnabled),
-                          margin: const EdgeInsets.symmetric(vertical: 4.0),
-                          child: Column(
-                            children: [
-                              SwitchListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: const Text('Daily Reminder'),
-                                value: _reminderEnabled,
-                                onChanged: _toggleReminder,
-                              ),
-                              if (_reminderEnabled) ...[
-                                const Divider(height: 1),
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: const Text('Time'),
-                                  trailing: Text(
-                                    _reminderTime.format(context),
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium,
-                                  ),
-                                  onTap: _pickTime,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        ...NotificationType.values.map((type) {
-                          final val = _prefs![type];
-                          return CommonStyles.buildTappableCard(
-                            context: context,
-                            onTap: () => _toggle(type, !val),
-                            margin: const EdgeInsets.symmetric(vertical: 4.0),
-                            child: SwitchListTile(
+                ? const Center(child: Text('Please sign in'))
+                : ListView(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    children: [
+                      CommonStyles.buildTappableCard(
+                        context: context,
+                        onTap: () => _toggleReminder(!_reminderEnabled),
+                        margin: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Column(
+                          children: [
+                            SwitchListTile(
                               contentPadding: EdgeInsets.zero,
-                              title: Text(_label(type)),
-                              value: val,
-                              onChanged: (v) => _toggle(type, v),
+                              title: const Text('Daily Reminder'),
+                              value: _reminderEnabled,
+                              onChanged: _toggleReminder,
                             ),
-                          );
-                        }),
-                        CommonStyles.buildTappableCard(
+                            if (_reminderEnabled) ...[
+                              const Divider(height: 1),
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: const Text('Time'),
+                                trailing: Text(
+                                  _reminderTime.format(context),
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium,
+                                ),
+                                onTap: _pickTime,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      ...NotificationType.values.map((type) {
+                        final val = _prefs![type];
+                        return CommonStyles.buildTappableCard(
                           context: context,
-                          onTap: () => _toggleVibration(!_vibrationEnabled),
+                          onTap: () => _toggle(type, !val),
                           margin: const EdgeInsets.symmetric(vertical: 4.0),
                           child: SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Vibration'),
-                            value: _vibrationEnabled,
-                            onChanged: _toggleVibration,
+                            title: Text(_label(type)),
+                            value: val,
+                            onChanged: (v) => _toggle(type, v),
                           ),
+                        );
+                      }),
+                      CommonStyles.buildTappableCard(
+                        context: context,
+                        onTap: () => _toggleVibration(!_vibrationEnabled),
+                        margin: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Vibration'),
+                          value: _vibrationEnabled,
+                          onChanged: _toggleVibration,
                         ),
-                      ],
-                    )),
+                      ),
+                    ],
+                  )),
       ),
     );
   }

@@ -141,9 +141,9 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
             Text(
               'Consistency',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
             ),
             const SizedBox(height: 12),
           ],
@@ -187,9 +187,8 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                           const SizedBox(width: 16),
                           IconButton(
                             icon: const Icon(Icons.chevron_right),
-                            onPressed: isCurrentMonth
-                                ? null
-                                : () => _changeMonth(1),
+                            onPressed:
+                                isCurrentMonth ? null : () => _changeMonth(1),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
                             style: IconButton.styleFrom(
@@ -378,9 +377,8 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                     ? colorScheme.onPrimary
                     : (isToday ? colorScheme.primary : colorScheme.onSurface),
                 fontSize: 12,
-                fontWeight: isRead || isToday
-                    ? FontWeight.bold
-                    : FontWeight.normal,
+                fontWeight:
+                    isRead || isToday ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ),

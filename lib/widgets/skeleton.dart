@@ -63,8 +63,7 @@ class _SkeletonState extends State<Skeleton>
           width: widget.width,
           height: widget.height,
           decoration: ShapeDecoration(
-            shape:
-                widget.shape ??
+            shape: widget.shape ??
                 RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(widget.radius),
                 ),

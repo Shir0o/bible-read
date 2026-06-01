@@ -25,10 +25,10 @@ class InviteMemberPage extends StatefulWidget {
     FriendService? friendService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-  }) : groupService = groupService ?? GroupService(),
-       friendService = friendService ?? FriendService(),
-       auth = auth ?? FirebaseAuth.instance,
-       vibrationService = vibrationService ?? const VibrationService();
+  })  : groupService = groupService ?? GroupService(),
+        friendService = friendService ?? FriendService(),
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<InviteMemberPage> createState() => _InviteMemberPageState();
@@ -175,8 +175,8 @@ class _InviteMemberPageState extends State<InviteMemberPage> {
               child: _isSearching
                   ? const Center(child: CircularProgressIndicator())
                   : _searchController.text.isNotEmpty
-                  ? _buildSearchResults()
-                  : _buildFriendsList(user.uid),
+                      ? _buildSearchResults()
+                      : _buildFriendsList(user.uid),
             ),
           ],
         ),
@@ -276,9 +276,8 @@ class _InviteMemberPageState extends State<InviteMemberPage> {
 
             return ListTile(
               leading: CircleAvatar(
-                backgroundImage: photoUrl != null
-                    ? NetworkImage(photoUrl)
-                    : null,
+                backgroundImage:
+                    photoUrl != null ? NetworkImage(photoUrl) : null,
                 child: photoUrl == null ? const Icon(Icons.person) : null,
               ),
               title: Text(name),
@@ -288,14 +287,14 @@ class _InviteMemberPageState extends State<InviteMemberPage> {
                       label: 'Member',
                     )
                   : hasPendingInvite
-                  ? const _InviteStatusChip(
-                      icon: Icons.mark_email_read_outlined,
-                      label: 'Invited',
-                    )
-                  : ElevatedButton(
-                      onPressed: () => _sendInvite(uid, name),
-                      child: const Text('Invite'),
-                    ),
+                      ? const _InviteStatusChip(
+                          icon: Icons.mark_email_read_outlined,
+                          label: 'Invited',
+                        )
+                      : ElevatedButton(
+                          onPressed: () => _sendInvite(uid, name),
+                          child: const Text('Invite'),
+                        ),
             );
           },
         );

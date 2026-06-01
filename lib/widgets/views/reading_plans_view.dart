@@ -221,7 +221,9 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
                               ),
                               child: Text(
                                 '${activePlansData.length} Ongoing',
-                                style: Theme.of(context).textTheme.labelSmall
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
                                     ?.copyWith(color: colorScheme.primary),
                               ),
                             ),
@@ -318,9 +320,9 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
               Text(
                 '$percentString complete',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
+                    ),
               ),
               Text(
                 '$completedCount/$totalCount days',

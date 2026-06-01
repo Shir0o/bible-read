@@ -52,9 +52,9 @@ class FirebaseSeeder {
           .collection('members')
           .doc(memberUid)
           .set({
-            'joinedAt': FieldValue.serverTimestamp(),
-            'role': memberUid == ownerUid ? 'owner' : 'member',
-          });
+        'joinedAt': FieldValue.serverTimestamp(),
+        'role': memberUid == ownerUid ? 'owner' : 'member',
+      });
 
       // Initialize member progress
       await firestore

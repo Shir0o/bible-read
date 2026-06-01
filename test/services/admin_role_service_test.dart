@@ -8,8 +8,8 @@ class _CountingAdminRoleService extends AdminRoleService {
   _CountingAdminRoleService(
     Queue<bool> responses, {
     super.cacheDuration = const Duration(minutes: 5),
-  }) : _responses = responses,
-       super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
+  })  : _responses = responses,
+        super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
 
   final Queue<bool> _responses;
   int fetchCount = 0;

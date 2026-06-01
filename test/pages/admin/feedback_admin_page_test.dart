@@ -101,10 +101,8 @@ void main() {
       expect(find.text('Status: resolved'), findsOneWidget);
       expect(find.text('Resolution notes: Fixed in build 123'), findsOneWidget);
 
-      final updated = await firestore
-          .collection('bugReports')
-          .doc('bug1')
-          .get();
+      final updated =
+          await firestore.collection('bugReports').doc('bug1').get();
       expect(updated.data()?['status'], 'resolved');
       expect(updated.data()?['resolutionNotes'], 'Fixed in build 123');
       expect(updated.data()?['resolvedAt'], isA<Timestamp>());
@@ -166,10 +164,8 @@ void main() {
         findsOneWidget,
       );
 
-      final updated = await firestore
-          .collection('featureRequests')
-          .doc('feature1')
-          .get();
+      final updated =
+          await firestore.collection('featureRequests').doc('feature1').get();
       expect(updated.data()?['status'], 'notApplicable');
       expect(updated.data()?['resolutionNotes'], 'Not aligned with roadmap');
       expect(updated.data()?['resolvedAt'], isA<Timestamp>());
@@ -193,9 +189,7 @@ void main() {
         'email': 'debugger@example.com',
       });
 
-      whenCalling(Invocation.method(#update, [anything]))
-          .on(docRef)
-          .thenThrow(
+      whenCalling(Invocation.method(#update, [anything])).on(docRef).thenThrow(
             FirebaseException(
               plugin: 'FakeFirestore',
               code: 'permission-denied',

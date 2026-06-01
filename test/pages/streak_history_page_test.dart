@@ -12,19 +12,19 @@ String _fmt(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
 String _monthName(int month) => const [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-][month - 1];
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ][month - 1];
 
 void main() {
   testWidgets('week and month views render correct day cells', (tester) async {
@@ -39,12 +39,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-          'streak': 0,
-          'longestStreak': 0,
-          'totalReadDays': 0,
-          'pastWeekReadDates': <String>[],
-          'pastMonthReadDates': <String>[],
-        });
+      'streak': 0,
+      'longestStreak': 0,
+      'totalReadDays': 0,
+      'pastWeekReadDates': <String>[],
+      'pastMonthReadDates': <String>[],
+    });
 
     await tester.pumpWidget(
       MaterialApp(
@@ -111,15 +111,15 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-          'streak': 0,
-          'longestStreak': 0,
-          'totalReadDays': 0,
-          'pastWeekReadDates': [
-            _fmt(currentWeekStart),
-            _fmt(currentWeekStart.add(const Duration(days: 1))),
-          ],
-          'pastMonthReadDates': <String>[],
-        });
+      'streak': 0,
+      'longestStreak': 0,
+      'totalReadDays': 0,
+      'pastWeekReadDates': [
+        _fmt(currentWeekStart),
+        _fmt(currentWeekStart.add(const Duration(days: 1))),
+      ],
+      'pastMonthReadDates': <String>[],
+    });
 
     for (int i = 0; i < 2; i++) {
       final day = currentWeekStart.add(Duration(days: i));
@@ -215,12 +215,12 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-          'streak': 0,
-          'longestStreak': 0,
-          'totalReadDays': 0,
-          'pastWeekReadDates': <String>[],
-          'pastMonthReadDates': <String>[],
-        });
+      'streak': 0,
+      'longestStreak': 0,
+      'totalReadDays': 0,
+      'pastWeekReadDates': <String>[],
+      'pastMonthReadDates': <String>[],
+    });
 
     for (int i = 0; i < 2; i++) {
       final day = prevMonthStart.add(Duration(days: i));

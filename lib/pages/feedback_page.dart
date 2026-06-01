@@ -16,8 +16,8 @@ class FeedbackPage extends StatelessWidget {
     FeedbackService? feedbackService,
     VibrationService? vibrationService,
     this.parentMessenger,
-  }) : feedbackService = feedbackService ?? FeedbackService(),
-       vibrationService = vibrationService ?? const VibrationService();
+  })  : feedbackService = feedbackService ?? FeedbackService(),
+        vibrationService = vibrationService ?? const VibrationService();
 
   /// Tab displayed when the page opens.
   final FeedbackTab initialTab;

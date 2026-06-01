@@ -27,11 +27,9 @@ void main() {
       ),
     );
 
-    final state =
-        tester.state<State<AnimatedActionButton>>(
-              find.byType(AnimatedActionButton),
-            )
-            as dynamic;
+    final state = tester.state<State<AnimatedActionButton>>(
+      find.byType(AnimatedActionButton),
+    ) as dynamic;
     final gesture = await tester.startGesture(
       tester.getCenter(find.byType(FilledButton)),
     );

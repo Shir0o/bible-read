@@ -55,10 +55,8 @@ void main() {
       await firestore.collection('groups').doc('g1').set(group.toFirestore());
 
       // 2. Setup Members (u1, u2)
-      final membersRef = firestore
-          .collection('groups')
-          .doc('g1')
-          .collection('members');
+      final membersRef =
+          firestore.collection('groups').doc('g1').collection('members');
       await membersRef.doc('u1').set({
         'uid': 'u1',
         'name': 'User 1',
@@ -71,10 +69,8 @@ void main() {
       });
 
       // 3. Setup Schedule (100 days, 1 chapter/day)
-      final scheduleRef = firestore
-          .collection('groups')
-          .doc('g1')
-          .collection('schedule');
+      final scheduleRef =
+          firestore.collection('groups').doc('g1').collection('schedule');
       for (int i = 0; i < 100; i++) {
         final date = DateTime(2024, 1, 1).add(Duration(days: i));
         final dateId =

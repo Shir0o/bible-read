@@ -8,6 +8,6 @@ void setupPathProviderMocks() {
   );
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        return '.';
-      });
+    return '.';
+  });
 }

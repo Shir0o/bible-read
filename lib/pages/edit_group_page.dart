@@ -72,9 +72,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
 
   Future<void> _loadData() async {
     try {
-      final schedule = await widget.groupService
-          .schedule(widget.group.id)
-          .first;
+      final schedule =
+          await widget.groupService.schedule(widget.group.id).first;
 
       if (schedule.isNotEmpty) {
         _startDate = schedule.first.date;
@@ -257,9 +256,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
         selectedWeekdays: _selectedWeekdays,
       );
 
-      final currentSchedule = await widget.groupService
-          .schedule(widget.group.id)
-          .first;
+      final currentSchedule =
+          await widget.groupService.schedule(widget.group.id).first;
       final newDateKeys = newSchedule
           .map((s) => '${s.date.year}-${s.date.month}-${s.date.day}')
           .toSet();
@@ -562,63 +560,63 @@ class _EditGroupPageState extends State<EditGroupPage> {
             }
             return ReferenceParser.allBooks.where((String option) {
               return option.toLowerCase().contains(
-                textEditingValue.text.toLowerCase(),
-              );
+                    textEditingValue.text.toLowerCase(),
+                  );
             });
           },
           onSelected: _addBook,
           fieldViewBuilder:
               (context, controller, focusNode, onEditingComplete) {
-                return TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  onEditingComplete: onEditingComplete,
-                  style: textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurface,
+            return TextField(
+              controller: controller,
+              focusNode: focusNode,
+              onEditingComplete: onEditingComplete,
+              style: textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Add another book...',
+                hintStyle: textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.7,
                   ),
-                  decoration: InputDecoration(
-                    hintText: 'Add another book...',
-                    hintStyle: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.7,
-                      ),
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    suffixIcon: Icon(
-                      Icons.arrow_drop_down,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide(
-                        color: colorScheme.outline.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide(
-                        color: colorScheme.outline.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide(
-                        color: colorScheme.primary,
-                        width: 2,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: colorScheme.surface,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                suffixIcon: Icon(
+                  Icons.arrow_drop_down,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(
+                    color: colorScheme.outline.withValues(alpha: 0.3),
                   ),
-                );
-              },
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(
+                    color: colorScheme.outline.withValues(alpha: 0.3),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: colorScheme.surface,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+              ),
+            );
+          },
           optionsViewBuilder: (context, onSelected, options) {
             return Align(
               alignment: Alignment.topLeft,

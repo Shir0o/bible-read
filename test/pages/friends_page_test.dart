@@ -17,10 +17,10 @@ class _NoSemanticsBinding extends AutomatedTestWidgetsFlutterBinding {
 
 class RecordingFriendService extends FriendService {
   RecordingFriendService({required FakeFirebaseFirestore firestore})
-    : super(
-        firestore: firestore,
-        notificationService: NotificationService(firestore: firestore),
-      );
+      : super(
+          firestore: firestore,
+          notificationService: NotificationService(firestore: firestore),
+        );
 
   String? lastEmail;
   bool nudged = false;
@@ -47,10 +47,10 @@ class RecordingFriendService extends FriendService {
 
 class FailingFriendService extends FriendService {
   FailingFriendService({required FakeFirebaseFirestore firestore})
-    : super(
-        firestore: firestore,
-        notificationService: NotificationService(firestore: firestore),
-      );
+      : super(
+          firestore: firestore,
+          notificationService: NotificationService(firestore: firestore),
+        );
 
   @override
   Future<void> sendFriendRequestByEmail({
@@ -293,8 +293,8 @@ void main() {
         .collection('nudges')
         .doc('f1')
         .set({
-          'timestamp': Timestamp.fromDate(start.add(const Duration(hours: 1))),
-        });
+      'timestamp': Timestamp.fromDate(start.add(const Duration(hours: 1))),
+    });
 
     await pumpPage(tester);
 

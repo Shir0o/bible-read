@@ -84,9 +84,8 @@ class ScheduleItemTile extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 4),
           child: ListTile(
             title: Text(dateString),
-            subtitle: showPerChapter
-                ? null
-                : Text(schedule.chapters.join(', ')),
+            subtitle:
+                showPerChapter ? null : Text(schedule.chapters.join(', ')),
             contentPadding: EdgeInsets.zero,
             trailing: actions.isEmpty
                 ? null

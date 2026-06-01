@@ -31,9 +31,9 @@ class BadgeIcon extends StatelessWidget {
     this.locked = false,
     this.size = 24,
   }) : assert(
-         (imageUrl != null ? 1 : 0) + (iconData != null ? 1 : 0) == 1,
-         'Provide exactly one badge source.',
-       );
+          (imageUrl != null ? 1 : 0) + (iconData != null ? 1 : 0) == 1,
+          'Provide exactly one badge source.',
+        );
 
   @override
   Widget build(BuildContext context) {

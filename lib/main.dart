@@ -111,8 +111,8 @@ class NotificationNavigator {
   final FirebaseFirestore firestore;
 
   NotificationNavigator({FirebaseAuth? auth, FirebaseFirestore? firestore})
-    : auth = auth ?? FirebaseAuth.instance,
-      firestore = firestore ?? FirebaseFirestore.instance;
+      : auth = auth ?? FirebaseAuth.instance,
+        firestore = firestore ?? FirebaseFirestore.instance;
 
   Future<void> handleMessage(RemoteMessage message) async {
     if (message.data.isEmpty) return;
@@ -250,19 +250,19 @@ Future<void> _setupMessaging() async {
     if (notification != null) {
       final payload = message.data.isEmpty ? null : jsonEncode(message.data);
       await ReminderService().flutterLocalNotificationsPlugin.show(
-        id: notification.hashCode,
-        title: notification.title,
-        body: notification.body,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'default_channel',
-            'Notifications',
-            importance: Importance.defaultImportance,
-          ),
-          iOS: DarwinNotificationDetails(),
-        ),
-        payload: payload,
-      );
+            id: notification.hashCode,
+            title: notification.title,
+            body: notification.body,
+            notificationDetails: const NotificationDetails(
+              android: AndroidNotificationDetails(
+                'default_channel',
+                'Notifications',
+                importance: Importance.defaultImportance,
+              ),
+              iOS: DarwinNotificationDetails(),
+            ),
+            payload: payload,
+          );
     }
   });
 

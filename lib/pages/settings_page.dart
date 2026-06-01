@@ -300,9 +300,8 @@ class SettingsPageState extends State<SettingsPage> {
         ),
       );
     } else {
-      final displayName = googleUser?.displayName ??
-          firebaseUser?.displayName ??
-          'No Name';
+      final displayName =
+          googleUser?.displayName ?? firebaseUser?.displayName ?? 'No Name';
       final email = googleUser?.email ?? firebaseUser?.email ?? '';
       final photoUrl = googleUser?.photoUrl;
 
@@ -332,8 +331,7 @@ class SettingsPageState extends State<SettingsPage> {
                             backgroundImage: imageProvider,
                             radius: 40,
                           ),
-                          placeholder: (context, url) =>
-                              const CircleAvatar(
+                          placeholder: (context, url) => const CircleAvatar(
                             radius: 40,
                             child: CircularProgressIndicator(),
                           ),
@@ -361,10 +359,7 @@ class SettingsPageState extends State<SettingsPage> {
                       const SizedBox(height: 4),
                       Text(
                         email,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
                       ),
@@ -415,7 +410,8 @@ class SettingsPageState extends State<SettingsPage> {
                         value: _prefs.autoMarkPlanRead,
                         onChanged: _updatePreference,
                         activeThumbColor: colorScheme.primary,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16.0),
                       ),
                     const Divider(height: 1, indent: 16, endIndent: 16),
                     ListTile(

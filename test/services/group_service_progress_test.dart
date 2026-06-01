@@ -66,9 +66,9 @@ void main() {
           .collection('schedule')
           .doc(did)
           .set({
-            'date': Timestamp.fromDate(date),
-            'chapters': ['Gen 1', 'Gen 2'],
-          });
+        'date': Timestamp.fromDate(date),
+        'chapters': ['Gen 1', 'Gen 2'],
+      });
 
       // 3. Setup Progress
       // u1: 1 item checked (50%)

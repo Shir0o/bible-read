@@ -18,9 +18,8 @@ class CommunityActivityItem extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     // Fallback time if timestamp is missing
-    final timeString = log.timestamp != null
-        ? _timeAgo(log.timestamp!)
-        : 'today';
+    final timeString =
+        log.timestamp != null ? _timeAgo(log.timestamp!) : 'today';
 
     final bool isComment = log.comments.isNotEmpty;
 
@@ -63,9 +62,8 @@ class CommunityActivityItem extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: isComment
-                        ? colorScheme.tertiary
-                        : colorScheme.primary,
+                    color:
+                        isComment ? colorScheme.tertiary : colorScheme.primary,
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: colorScheme.surfaceContainer,
@@ -158,9 +156,8 @@ class CommunityActivityItem extends StatelessWidget {
           IconButton(
             icon: Icon(
               log.liked ? Icons.favorite : Icons.favorite_border,
-              color: log.liked
-                  ? colorScheme.error
-                  : colorScheme.onSurfaceVariant,
+              color:
+                  log.liked ? colorScheme.error : colorScheme.onSurfaceVariant,
               size: 20,
             ),
             onPressed: onLike,

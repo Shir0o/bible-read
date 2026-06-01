@@ -26,16 +26,14 @@ class TodaysReadingCard extends StatelessWidget {
     required bool read,
     required Set<int> currentlyChecked,
     required bool hasChapters,
-  })
-  onToggle;
+  }) onToggle;
 
   /// Callback to notify the parent of latest snapshots for its own logic.
   final Function({
     required Set<int> rawChecked,
     required bool baseDone,
     required int totalChapters,
-  })?
-  onSnapshotsUpdated;
+  })? onSnapshotsUpdated;
 
   const TodaysReadingCard({
     super.key,
@@ -126,9 +124,8 @@ class TodaysReadingCard extends StatelessWidget {
                         // Determine effective read status
                         final isRead = hasChapters
                             ? (pendingReadOverride ??
-                                  (totalChapters > 0 &&
-                                      rawCheckedSnapshot.length >=
-                                          totalChapters))
+                                (totalChapters > 0 &&
+                                    rawCheckedSnapshot.length >= totalChapters))
                             : (pendingReadOverride ?? baseDone);
 
                         return SizedBox(

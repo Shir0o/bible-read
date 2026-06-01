@@ -160,10 +160,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-              surfaceContainerHigh: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHigh,
-            ),
+                  surfaceContainerHigh: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHigh,
+                ),
           ),
           child: child!,
         );
@@ -259,13 +259,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
   String _capitalizeWords(String input) {
     if (input.isEmpty) return input;
-    return input
-        .split(' ')
-        .map((word) {
-          if (word.isEmpty) return word;
-          return word[0].toUpperCase() + word.substring(1).toLowerCase();
-        })
-        .join(' ');
+    return input.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
   }
 
   String _generateDescription() {
@@ -663,8 +660,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                   decoration: BoxDecoration(
                                     border: Border(
                                       bottom: BorderSide(
-                                        color:
-                                            _goalMethod ==
+                                        color: _goalMethod ==
                                                 _PlanGoalMethod.endDate
                                             ? colorScheme.primary
                                             : colorScheme.outlineVariant,
@@ -678,8 +674,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                             ? '${_months[_endDate!.month - 1]} ${_endDate!.day}, ${_endDate!.year}'
                                             : 'Select Date',
                                         style: TextStyle(
-                                          color:
-                                              _goalMethod ==
+                                          color: _goalMethod ==
                                                   _PlanGoalMethod.endDate
                                               ? colorScheme.primary
                                               : colorScheme.onSurfaceVariant,
@@ -691,8 +686,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                       Icon(
                                         Icons.calendar_today,
                                         size: 16,
-                                        color:
-                                            _goalMethod ==
+                                        color: _goalMethod ==
                                                 _PlanGoalMethod.endDate
                                             ? colorScheme.primary
                                             : colorScheme.onSurfaceVariant,
@@ -725,8 +719,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                   () =>
                                       _customChaptersPerDay = int.tryParse(val),
                                 ),
-                                enabled:
-                                    _goalMethod ==
+                                enabled: _goalMethod ==
                                     _PlanGoalMethod.chaptersPerDay,
                               ),
                             ),
@@ -1031,7 +1024,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     );
     final isPartiallySelected =
         allBooksInCategory.any((book) => _selectedBooks.contains(book)) &&
-        !isFullySelected;
+            !isFullySelected;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -1118,9 +1111,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           visualDensity: VisualDensity.compact,
           leading: Checkbox(
             visualDensity: VisualDensity.compact,
-            value: isFullySelected
-                ? true
-                : (isPartiallySelected ? null : false),
+            value:
+                isFullySelected ? true : (isPartiallySelected ? null : false),
             tristate: true,
             onChanged: (val) {
               setState(() {

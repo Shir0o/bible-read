@@ -50,11 +50,11 @@ class ReadingPlan {
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'title': title,
-    'description': description,
-    'durationDays': durationDays,
-    'tags': tags,
-    'schedule': schedule.map((e) => e.toJson()).toList(),
-  };
+        'id': id,
+        'title': title,
+        'description': description,
+        'durationDays': durationDays,
+        'tags': tags,
+        'schedule': schedule.map((e) => e.toJson()).toList(),
+      };
 }

@@ -18,9 +18,8 @@ extension PumpApp on WidgetTester {
             AppTheme.seededColorScheme(Brightness.dark),
           ),
           home: widget,
-          navigatorObservers: navigatorObserver != null
-              ? [navigatorObserver]
-              : [],
+          navigatorObservers:
+              navigatorObserver != null ? [navigatorObserver] : [],
         ),
       );
     });

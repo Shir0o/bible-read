@@ -52,12 +52,12 @@ void main() {
         .collection('members')
         .doc('u1')
         .set({
-          'uid': 'u1',
-          'name': 'Owner',
-          'photoUrl': null,
-          'role': 'owner',
-          'joinedAt': Timestamp.now(),
-        });
+      'uid': 'u1',
+      'name': 'Owner',
+      'photoUrl': null,
+      'role': 'owner',
+      'joinedAt': Timestamp.now(),
+    });
 
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 

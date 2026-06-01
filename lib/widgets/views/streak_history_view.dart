@@ -99,18 +99,15 @@ class _StreakHistoryViewState extends State<StreakHistoryView>
 
     try {
       final userDocRef = widget.firestore.collection('users').doc(uid);
-      final summaryDoc = await userDocRef
-          .collection('summary')
-          .doc('data')
-          .get();
+      final summaryDoc =
+          await userDocRef.collection('summary').doc('data').get();
       final data = summaryDoc.data() ?? {};
       final now = DateTime.now();
       final currentMonthKey =
           '${now.year}-${now.month.toString().padLeft(2, '0')}';
       final bool isCurrentWeek =
           _period == _Period.week && _periodStart == _startOfWeek(now);
-      final bool isCurrentMonth =
-          _period == _Period.month &&
+      final bool isCurrentMonth = _period == _Period.month &&
           _periodStart.year == now.year &&
           _periodStart.month == now.month;
 

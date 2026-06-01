@@ -25,9 +25,9 @@ class AddFriendPage extends StatefulWidget {
     FriendService? friendService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-  }) : friendService = friendService ?? FriendService(),
-       auth = auth ?? FirebaseAuth.instance,
-       vibrationService = vibrationService ?? const VibrationService();
+  })  : friendService = friendService ?? FriendService(),
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<AddFriendPage> createState() => _AddFriendPageState();

@@ -19,10 +19,10 @@ class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
 
 class RecordingFriendService extends FriendService {
   RecordingFriendService({required FakeFirebaseFirestore firestore})
-    : super(
-        firestore: firestore,
-        notificationService: NotificationService(firestore: firestore),
-      );
+      : super(
+          firestore: firestore,
+          notificationService: NotificationService(firestore: firestore),
+        );
 
   String? lastEmail;
   bool throwError = false;

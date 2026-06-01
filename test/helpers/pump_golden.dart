@@ -62,7 +62,7 @@ class LocalFileComparatorWithThreshold extends LocalFileComparator {
   final double threshold;
 
   LocalFileComparatorWithThreshold(super.testFile, this.threshold)
-    : assert(threshold >= 0 && threshold <= 1);
+      : assert(threshold >= 0 && threshold <= 1);
 
   @override
   Future<bool> compare(Uint8List imageBytes, Uri golden) async {

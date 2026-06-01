@@ -52,11 +52,11 @@ class GroupInvite {
 
   /// Serializes this invite for Firestore.
   Map<String, dynamic> toFirestore() => {
-    'groupId': groupId,
-    'groupName': groupName,
-    'senderUid': senderUid,
-    'senderName': senderName,
-    'recipientUid': recipientUid,
-    'timestamp': FieldValue.serverTimestamp(),
-  };
+        'groupId': groupId,
+        'groupName': groupName,
+        'senderUid': senderUid,
+        'senderName': senderName,
+        'recipientUid': recipientUid,
+        'timestamp': FieldValue.serverTimestamp(),
+      };
 }

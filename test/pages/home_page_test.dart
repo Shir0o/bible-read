@@ -182,10 +182,10 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-          'streak': 5,
-          'totalReadDays': 5,
-          'pastWeekReadDates': [], // Empty for now
-        });
+      'streak': 5,
+      'totalReadDays': 5,
+      'pastWeekReadDates': [], // Empty for now
+    });
 
     // Also mark as read today so the streak UI is visible
     final today = DateTime.now();
@@ -390,7 +390,7 @@ void main() {
 
 class MockReadingStatusService extends ReadingStatusService {
   MockReadingStatusService()
-    : super(firestore: FakeFirebaseFirestore(), auth: MockFirebaseAuth());
+      : super(firestore: FakeFirebaseFirestore(), auth: MockFirebaseAuth());
 
   @override
   Future<ReadingStatus> fetchStatus({bool forceRefresh = false}) async {

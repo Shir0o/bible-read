@@ -146,8 +146,7 @@ class BibleProgressPageState extends State<BibleProgressPage> {
         });
 
         // Trigger scroll logic
-        final String? targetBook =
-            widget.initialScrollToBook ??
+        final String? targetBook = widget.initialScrollToBook ??
             await _bibleProgressService.getLastCheckedBook(user.uid);
 
         if (targetBook != null) {
@@ -249,9 +248,9 @@ class BibleProgressPageState extends State<BibleProgressPage> {
             .collection('bible_books')
             .doc(book)
             .set({
-              'completed': true,
-              'timestamp': FieldValue.serverTimestamp(),
-            });
+          'completed': true,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
 
         // Award 'New Testament Starter' badge if this is the first book completed
         final booksSnap = await widget.firestore
@@ -267,10 +266,10 @@ class BibleProgressPageState extends State<BibleProgressPage> {
               .collection('achievements')
               .doc('nt_starter')
               .set({
-                'title': 'NT Starter',
-                'type': 'achievement',
-                'dateUnlocked': FieldValue.serverTimestamp(),
-              });
+            'title': 'NT Starter',
+            'type': 'achievement',
+            'dateUnlocked': FieldValue.serverTimestamp(),
+          });
         }
       } else {
         await widget.firestore

@@ -25,7 +25,7 @@ class ReminderService {
 
   Future<void> init({
     required void Function(fln.NotificationResponse)?
-    onDidReceiveNotificationResponse,
+        onDidReceiveNotificationResponse,
   }) async {
     if (_initialized) return;
 
@@ -42,9 +42,9 @@ class ReminderService {
 
     const fln.InitializationSettings initializationSettings =
         fln.InitializationSettings(
-          android: initializationSettingsAndroid,
-          iOS: initializationSettingsDarwin,
-        );
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsDarwin,
+    );
 
     await flutterLocalNotificationsPlugin.initialize(
       settings: initializationSettings,

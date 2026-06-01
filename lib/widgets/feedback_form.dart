@@ -31,8 +31,7 @@ class FeedbackForm extends StatefulWidget {
     String title,
     String description,
     String? reproductionSteps,
-  )
-  onSubmit;
+  ) onSubmit;
 
   /// Messenger used to display success snack bars once the route closes.
   final ScaffoldMessengerState? parentMessenger;

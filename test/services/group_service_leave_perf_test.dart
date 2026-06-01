@@ -85,10 +85,8 @@ void main() {
       print('leaveGroup took: ${stopwatch.elapsedMilliseconds}ms');
 
       // Verify deletion
-      final memberSnap = await groupRef
-          .collection('members')
-          .doc('leaver')
-          .get();
+      final memberSnap =
+          await groupRef.collection('members').doc('leaver').get();
       expect(memberSnap.exists, false);
 
       // Verify progress cleanup

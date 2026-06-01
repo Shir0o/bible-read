@@ -109,31 +109,31 @@ class _FriendsViewState extends State<FriendsView>
           skeleton: const FriendsSkeleton(),
           child: snapshot.hasData
               ? snapshot.data!.isEmpty
-                    ? _buildEmptyState(context)
-                    : ListView(
-                        children: snapshot.data!
-                            .map(
-                              (f) => CommonStyles.buildCard(
-                                context: context,
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        f.name.isEmpty ? 'Friend' : f.name,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleMedium,
-                                      ),
+                  ? _buildEmptyState(context)
+                  : ListView(
+                      children: snapshot.data!
+                          .map(
+                            (f) => CommonStyles.buildCard(
+                              context: context,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      f.name.isEmpty ? 'Friend' : f.name,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
                                     ),
-                                    const SizedBox(width: 16),
-                                    _buildNudgeButton(user, f),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  _buildNudgeButton(user, f),
+                                ],
                               ),
-                            )
-                            .toList(),
-                      )
+                            ),
+                          )
+                          .toList(),
+                    )
               : const SizedBox.shrink(),
         );
       },
@@ -164,8 +164,8 @@ class _FriendsViewState extends State<FriendsView>
             Text(
               'Invite friends to track your reading journey together.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),

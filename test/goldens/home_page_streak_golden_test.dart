@@ -38,10 +38,10 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-          'streak': 12,
-          'pastWeekReadDates': ['2024-07-28', '2024-07-29'], // Sun, Mon
-          'graceCreditsAvailable': 0,
-        });
+      'streak': 12,
+      'pastWeekReadDates': ['2024-07-28', '2024-07-29'], // Sun, Mon
+      'graceCreditsAvailable': 0,
+    });
 
     final service = ReadingStatusService(
       firestore: firestore,
@@ -90,14 +90,14 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-          'streak': 12,
-          'pastWeekReadDates': [
-            '2024-07-28',
-            '2024-07-29',
-            '2024-07-30',
-          ], // Sun, Mon, Tue
-          'graceCreditsAvailable': 0,
-        });
+      'streak': 12,
+      'pastWeekReadDates': [
+        '2024-07-28',
+        '2024-07-29',
+        '2024-07-30',
+      ], // Sun, Mon, Tue
+      'graceCreditsAvailable': 0,
+    });
 
     final service = ReadingStatusService(
       firestore: firestore,

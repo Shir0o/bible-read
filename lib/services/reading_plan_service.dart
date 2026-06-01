@@ -45,10 +45,8 @@ class ReadingPlanService {
     } catch (e) {
       // Try fetching directly from Firestore if not in cache
       try {
-        final doc = await firestore
-            .collection('custom_plans')
-            .doc(planId)
-            .get();
+        final doc =
+            await firestore.collection('custom_plans').doc(planId).get();
         if (doc.exists) {
           final data = doc.data()!;
           data['id'] = doc.id;
@@ -109,9 +107,9 @@ class ReadingPlanService {
         .doc(planId)
         .snapshots()
         .map((doc) {
-          if (!doc.exists) return null;
-          return UserPlanProgress.fromFirestore(doc);
-        });
+      if (!doc.exists) return null;
+      return UserPlanProgress.fromFirestore(doc);
+    });
   }
 
   /// Streams all active (non-archived) plans for a user.
@@ -123,10 +121,10 @@ class ReadingPlanService {
         .where('isArchived', isEqualTo: false)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => UserPlanProgress.fromFirestore(doc))
-              .toList();
-        });
+      return snapshot.docs
+          .map((doc) => UserPlanProgress.fromFirestore(doc))
+          .toList();
+    });
   }
 
   /// Streams all archived plans for a user.
@@ -138,10 +136,10 @@ class ReadingPlanService {
         .where('isArchived', isEqualTo: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => UserPlanProgress.fromFirestore(doc))
-              .toList();
-        });
+      return snapshot.docs
+          .map((doc) => UserPlanProgress.fromFirestore(doc))
+          .toList();
+    });
   }
 
   /// Sets the archived status of a plan.

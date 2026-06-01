@@ -386,8 +386,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final hasNav =
-        find.byType(NavigationBar).evaluate().isNotEmpty ||
+    final hasNav = find.byType(NavigationBar).evaluate().isNotEmpty ||
         find.byType(NavigationRail).evaluate().isNotEmpty;
     expect(hasNav, isTrue);
 
@@ -399,8 +398,10 @@ void main() {
 
     expect(find.byType(FriendsPage), findsOneWidget);
 
-    final hasNavAfter =
-        find.byType(NavigationBar, skipOffstage: false).evaluate().isNotEmpty ||
+    final hasNavAfter = find
+            .byType(NavigationBar, skipOffstage: false)
+            .evaluate()
+            .isNotEmpty ||
         find.byType(NavigationRail, skipOffstage: false).evaluate().isNotEmpty;
     expect(hasNavAfter, isTrue);
   });
@@ -509,22 +510,21 @@ void main() {
           auth: auth,
           messaging: FakeFirebaseMessaging(null),
           vibrationService: _RecordingVibrationService(),
-          readLogPageBuilder:
-              ({
-                Key? key,
-                FirebaseFirestore? firestore,
-                FirebaseAuth? auth,
-                required SendLikeNotification onSendLikeNotification,
-                required SendCommentNotification onSendCommentNotification,
-              }) {
-                return testPage = TestReadLogPage(
-                  key: key,
-                  firestore: firestore,
-                  auth: auth,
-                  onSendLikeNotification: onSendLikeNotification,
-                  onSendCommentNotification: onSendCommentNotification,
-                );
-              },
+          readLogPageBuilder: ({
+            Key? key,
+            FirebaseFirestore? firestore,
+            FirebaseAuth? auth,
+            required SendLikeNotification onSendLikeNotification,
+            required SendCommentNotification onSendCommentNotification,
+          }) {
+            return testPage = TestReadLogPage(
+              key: key,
+              firestore: firestore,
+              auth: auth,
+              onSendLikeNotification: onSendLikeNotification,
+              onSendCommentNotification: onSendCommentNotification,
+            );
+          },
         ),
       ),
     );
@@ -664,10 +664,8 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 500));
 
-    final userDoc = await fakeFirestore
-        .collection('users')
-        .doc(testUser.uid)
-        .get();
+    final userDoc =
+        await fakeFirestore.collection('users').doc(testUser.uid).get();
 
     expect(userDoc.exists, isTrue);
     expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
@@ -717,12 +715,12 @@ void main() {
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
           vibrationService: _RecordingVibrationService(),
-          sendLikeNotification:
-              ({required String ownerUid, required String likerName}) async {
-                wasCalled = true;
-                calledUid = ownerUid;
-                calledName = likerName;
-              },
+          sendLikeNotification: (
+              {required String ownerUid, required String likerName}) async {
+            wasCalled = true;
+            calledUid = ownerUid;
+            calledName = likerName;
+          },
         ),
       ),
     );
@@ -803,13 +801,12 @@ void main() {
           firestore: fakeFirestore,
           messaging: FakeFirebaseMessaging(null),
           vibrationService: _RecordingVibrationService(),
-          sendCommentNotification:
-              ({
-                required String ownerUid,
-                required String commenterName,
-              }) async {
-                // No-op
-              },
+          sendCommentNotification: ({
+            required String ownerUid,
+            required String commenterName,
+          }) async {
+            // No-op
+          },
         ),
       ),
     );
