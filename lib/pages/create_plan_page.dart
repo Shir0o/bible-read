@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../services/plan_generator.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reference_parser.dart';
+import '../services/vibration_service.dart';
 import 'plan_detail_page.dart';
 
 enum _PlanGoalMethod { endDate, versesPerDay, chaptersPerDay }
@@ -12,11 +15,13 @@ enum _PlanGoalMethod { endDate, versesPerDay, chaptersPerDay }
 class CreatePlanPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final VibrationService vibrationService;
 
   const CreatePlanPage({
     super.key,
     required this.firestore,
     required this.auth,
+    this.vibrationService = const VibrationService(),
   });
 
   @override
@@ -803,126 +808,162 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     final isSelected = _selectedType == type;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return GestureDetector(
-      onTap: () => setState(() {
-        _selectedType = type;
-        if (type == PlanType.threeOldOneNew) {
-          _years = 1;
-        }
-      }),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? colorScheme.primary : Colors.transparent,
-            width: 1.5,
+    return Semantics(
+      checked: isSelected,
+      inMutuallyExclusiveGroup: true,
+      button: true,
+      label: '$title, $subtitle',
+      child: GestureDetector(
+        onTap: () {
+          unawaited(widget.vibrationService.lightImpact());
+          setState(() {
+            _selectedType = type;
+            if (type == PlanType.threeOldOneNew) {
+              _years = 1;
+            }
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? colorScheme.primary : Colors.transparent,
+              width: 1.5,
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected
+                            ? colorScheme.primary
+                            : colorScheme.outlineVariant,
+                        width: isSelected ? 6 : 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (showInfo && isSelected) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: colorScheme.primary,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          color: colorScheme.onSurfaceVariant,
-                          fontSize: 12,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'To complete this schedule in one year, you must read three OT chapters on six days and one NT chapter on five days. Choose another schedule type to specify days.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: colorScheme.onSurface,
+                            height: 1.4,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? colorScheme.primary
-                          : colorScheme.outlineVariant,
-                      width: isSelected ? 6 : 1.5,
-                    ),
-                  ),
-                ),
               ],
-            ),
-            if (showInfo && isSelected) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'To complete this schedule in one year, you must read three OT chapters on six days and one NT chapter on five days. Choose another schedule type to specify days.',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: colorScheme.onSurface,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  String _fullDayName(int day) {
+    const days = {
+      7: 'Sunday',
+      1: 'Monday',
+      2: 'Tuesday',
+      3: 'Wednesday',
+      4: 'Thursday',
+      5: 'Friday',
+      6: 'Saturday',
+    };
+    return days[day] ?? '';
   }
 
   Widget _dayCircle(int day, String label) {
     final isSelected = _readingDays.contains(day);
     final colorScheme = Theme.of(context).colorScheme;
 
-    return GestureDetector(
-      onTap: () => _toggleDay(day),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isSelected
-              ? colorScheme.primary
-              : colorScheme.surfaceContainerHighest,
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
+    return Semantics(
+      checked: isSelected,
+      button: true,
+      label: _fullDayName(day),
+      child: GestureDetector(
+        onTap: () {
+          unawaited(widget.vibrationService.lightImpact());
+          _toggleDay(day);
+        },
+        child: Container(
+          width: 48,
+          height: 48,
+          color: Colors.transparent,
+          alignment: Alignment.center,
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
               color: isSelected
-                  ? colorScheme.onPrimary
-                  : colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+                  ? colorScheme.primary
+                  : colorScheme.surfaceContainerHighest,
+            ),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isSelected
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
             ),
           ),
         ),
@@ -941,37 +982,50 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GestureDetector(
-          onTap: () => setState(() => _goalMethod = method),
-          child: Row(
-            children: [
-              Container(
-                width: 18,
-                height: 18,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isSelected
-                        ? colorScheme.primary
-                        : colorScheme.outlineVariant,
-                    width: isSelected ? 5.5 : 1.5,
+        Semantics(
+          checked: isSelected,
+          inMutuallyExclusiveGroup: true,
+          button: true,
+          label: label,
+          child: GestureDetector(
+            onTap: () {
+              unawaited(widget.vibrationService.lightImpact());
+              setState(() => _goalMethod = method);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              color: Colors.transparent,
+              child: Row(
+                children: [
+                  Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected
+                            ? colorScheme.primary
+                            : colorScheme.outlineVariant,
+                        width: isSelected ? 5.5 : 1.5,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected
-                        ? colorScheme.onSurface
-                        : colorScheme.onSurfaceVariant,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: isSelected
+                            ? colorScheme.onSurface
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 8),

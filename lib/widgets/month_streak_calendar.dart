@@ -80,7 +80,7 @@ class MonthStreakCalendar extends StatelessWidget {
                   '${_monthName(month.month)} $day, ${filled ? "Read" : "Not read"}',
               excludeSemantics: true,
               child: Container(
-                constraints: const BoxConstraints(minHeight: 48),
+                constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
                 alignment: Alignment.center,
                 child: Tooltip(
                   message: filled ? 'Read' : 'Not read',

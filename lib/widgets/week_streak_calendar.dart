@@ -99,28 +99,34 @@ class WeekStreakCalendar extends StatelessWidget {
                 child: Semantics(
                   label: '${fullDays[i]}, ${filled ? "Read" : "Not read"}',
                   excludeSemantics: true,
-                  child: Column(
-                    children: [
-                      Text(
-                        days[i],
-                        style: AppTextStyles.body(
-                          context,
-                        ).copyWith(fontSize: 10),
-                      ),
-                      const SizedBox(height: 4),
-                      Tooltip(
-                        message: filled ? 'Read' : 'Not read',
-                        child: Icon(
-                          filled
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
-                          color: filled
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.outlineVariant,
-                          size: 20,
+                  child: Container(
+                    constraints:
+                        const BoxConstraints(minHeight: 48, minWidth: 48),
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          days[i],
+                          style: AppTextStyles.body(
+                            context,
+                          ).copyWith(fontSize: 10),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Tooltip(
+                          message: filled ? 'Read' : 'Not read',
+                          child: Icon(
+                            filled
+                                ? Icons.check_circle
+                                : Icons.radio_button_unchecked,
+                            color: filled
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.outlineVariant,
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );

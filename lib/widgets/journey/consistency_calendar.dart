@@ -177,23 +177,15 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.chevron_left),
+                            tooltip: 'Previous month',
                             onPressed: () => _changeMonth(-1),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            style: IconButton.styleFrom(
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 8),
                           IconButton(
                             icon: const Icon(Icons.chevron_right),
+                            tooltip: 'Next month',
                             onPressed:
                                 isCurrentMonth ? null : () => _changeMonth(1),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            style: IconButton.styleFrom(
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
                           ),
                         ],
                       ),
@@ -359,26 +351,38 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
       final isToday = _isSameDay(DateTime.now(), date);
 
       cells.add(
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isRead ? colorScheme.primary : Colors.transparent,
-            border: isToday && !isRead
-                ? Border.all(color: colorScheme.primary.withValues(alpha: 0.5))
-                : null,
-          ),
-          child: Center(
-            child: Text(
-              '$i',
-              style: TextStyle(
-                color: isRead
-                    ? colorScheme.onPrimary
-                    : (isToday ? colorScheme.primary : colorScheme.onSurface),
-                fontSize: 12,
-                fontWeight:
-                    isRead || isToday ? FontWeight.bold : FontWeight.normal,
+        Semantics(
+          label:
+              '${_monthName(_currentMonth.month)} $i, ${_currentMonth.year}, ${isRead ? "Read" : "Missed"}${isToday ? " (Today)" : ""}',
+          excludeSemantics: true,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+            alignment: Alignment.center,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isRead ? colorScheme.primary : Colors.transparent,
+                border: isToday && !isRead
+                    ? Border.all(
+                        color: colorScheme.primary.withValues(alpha: 0.5))
+                    : null,
+              ),
+              child: Center(
+                child: Text(
+                  '$i',
+                  style: TextStyle(
+                    color: isRead
+                        ? colorScheme.onPrimary
+                        : (isToday
+                            ? colorScheme.primary
+                            : colorScheme.onSurface),
+                    fontSize: 12,
+                    fontWeight:
+                        isRead || isToday ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
               ),
             ),
           ),
