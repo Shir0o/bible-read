@@ -397,40 +397,42 @@ class ReadingStatusService {
       }
 
       if (missingDateIds.isNotEmpty) {
-        // ⚡ Bolt: Fetch missing logs in parallel (chunked to 30 to avoid overwhelming the network and match whereIn limits).
-        const chunkSize = 30;
-        for (var i = 0; i < missingDateIds.length; i += chunkSize) {
-          final chunk = missingDateIds.sublist(
+        // ⚡ Bolt: Use Future.wait to fetch all 30-item chunks concurrently via collectionGroup to avoid N+1 query latency.
+        final futures = <Future<QuerySnapshot<Map<String, dynamic>>>>[];
+        for (var i = 0; i < missingDateIds.length; i += 30) {
+          final batch = missingDateIds.sublist(
             i,
-            i + chunkSize > missingDateIds.length
-                ? missingDateIds.length
-                : i + chunkSize,
+            i + 30 > missingDateIds.length ? missingDateIds.length : i + 30,
           );
-          final futures = chunk.map((id) async {
-            try {
-              final entry = await firestore
-                  .collection('read_logs')
-                  .doc(id)
-                  .collection('entries')
-                  .doc(user.uid)
-                  .get();
-              if (entry.exists) {
-                return id;
-              }
-            } catch (e, st) {
-              // Best effort; log errors but don't fail summary update.
-              if (kDebugMode) debugPrint('Backfill check failed for $id: $e');
-              ErrorLogger.log(e, st);
-            }
-            return null;
-          });
+          futures.add(
+            firestore
+                .collectionGroup('entries')
+                .where('uid', isEqualTo: user.uid)
+                .where('dateId', whereIn: batch)
+                .get(),
+          );
+        }
 
-          final results = await Future.wait(futures);
-          for (final id in results) {
-            if (id != null) {
-              readDateSet.add(id);
+        try {
+          final snapshots = await Future.wait(futures);
+          for (final snap in snapshots) {
+            for (final doc in snap.docs) {
+              final data = doc.data();
+              String? dateId = data['dateId'] as String?;
+              if (dateId == null) {
+                try {
+                  dateId = doc.reference.parent.parent?.id;
+                } catch (_) {}
+              }
+              if (dateId != null && data['read'] != false) {
+                readDateSet.add(dateId);
+              }
             }
           }
+        } catch (e, st) {
+          // Best effort; log errors but don't fail summary update.
+          if (kDebugMode) debugPrint('Backfill check failed: $e');
+          ErrorLogger.log(e, st);
         }
       }
 

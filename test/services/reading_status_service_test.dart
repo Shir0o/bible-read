@@ -210,7 +210,11 @@ void main() {
             .doc(formatDate(date))
             .collection('entries')
             .doc(user.uid)
-            .set({'read': true});
+            .set({
+          'uid': user.uid,
+          'dateId': formatDate(date),
+          'read': true,
+        });
 
         final stats = await service.updateSummary();
         expect(stats.streak, 1);
