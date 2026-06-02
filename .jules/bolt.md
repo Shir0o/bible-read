@@ -1,16 +1,3 @@
-## 2024-05-19 - Firestore whereIn limit optimization
-**Learning:** Firestore's `whereIn` array queries have a hard limit of 30 elements. Batching queries (like fetching user data by `uid`) using this maximum limit is a safe and robust way to mitigate N+1 query bottlenecks in a single Dart stream. Using smaller chunks (like 10) leaves performance on the table for no structural benefit.
-**Action:** When working with Firestore `whereIn` queries, default to chunk sizes of 30 unless memory or network constraints dictate otherwise.
-
-## 2026-03-09 - Parallelizing sequential async recalculations
-**Learning:** Sequential `await` in for-loops across multiple Firestore collections can create significant latency. Parallelizing these operations using `Future.wait` on an iterable map is a straightforward yet highly effective architectural improvement. While `FakeFirebaseFirestore` might not demonstrate a timing speedup due to its synchronous execution model, the design pattern is essential for real-world Firestore efficiency.
-**Action:** Always check for sequential `await` calls within loops that perform independent asynchronous operations and refactor them to use `Future.wait` when possible.
-
-## 2024-05-20 - Sequential document fetches
-**Learning:** Sequential `await` calls inside a loop for fetching individual Firestore documents create a severe N+1 query bottleneck.
-**Action:** When a list of specific document paths is known (and `whereIn` cannot be easily used), use chunked `Future.wait` to fetch them concurrently, ensuring errors are caught within the individual futures so the entire batch doesn't fail.
-
-
-## 2024-05-21 - Parallelizing group member notifications
-**Learning:** Sequential `await` calls inside a loop for creating notifications (e.g., in `updateSchedule` for `GroupService`) create an unnecessary bottleneck, especially for larger groups. Parallelizing these operations using `Future.wait` improves performance.
-**Action:** When creating notification documents for multiple users or processing independent asynchronous tasks, use chunked `Future.wait` or un-chunked `Future.wait` (if the limit isn't huge and independent execution is fine) to execute them concurrently instead of using sequential `await` within a `for` loop.
+## 2024-10-31 - N+1 Query in Backfilling Reading Logs
+**Learning:** We replaced a sequential N+1 query loop with a `Future.wait` and batching limit loop of 30 that used `collectionGroup('entries')` paired with `whereIn` to solve the N+1 issue.
+**Action:** Always favor bulk fetching with bounded batch execution sizes (`whereIn` supports up to 30) paired with `Future.wait` over N+1 loops where document IDs are known and fetching by specific criteria like `uid`.
