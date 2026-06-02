@@ -67,9 +67,8 @@ class GroupProgressCard extends StatelessWidget {
       }
     }
 
-    final timePercent = totalChapters > 0
-        ? expectedCompletedChapters / totalChapters
-        : 0.0;
+    final timePercent =
+        totalChapters > 0 ? expectedCompletedChapters / totalChapters : 0.0;
 
     return StreamBuilder<List<GroupMemberProgressData>>(
       stream: groupService.memberOverallCompletion(groupId),
@@ -78,7 +77,7 @@ class GroupProgressCard extends StatelessWidget {
         final double actualPercent = members.isEmpty
             ? 0.0
             : members.map((m) => m.completion).reduce((a, b) => a + b) /
-                  members.length;
+                members.length;
 
         final percentDisplay = (actualPercent * 100).round();
         final bool isOnTrack = actualPercent >= timePercent;

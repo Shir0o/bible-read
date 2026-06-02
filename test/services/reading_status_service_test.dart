@@ -309,10 +309,8 @@ void main() {
         expect(stats.graceCreditsUsed, 0);
         expect(stats.graceCreditsAvailable, 2);
 
-        final summaryDoc = await userDoc
-            .collection('summary')
-            .doc('data')
-            .get();
+        final summaryDoc =
+            await userDoc.collection('summary').doc('data').get();
         final data = summaryDoc.data()!;
         expect(data['graceCreditsMonth'], '2024-07');
         expect(data['graceCreditsUsed'], 0);
@@ -412,10 +410,8 @@ void main() {
         expect(stats.graceCreditsUsed, 2);
         expect(stats.graceCreditsAvailable, 1);
 
-        final summaryDoc = await userDoc
-            .collection('summary')
-            .doc('data')
-            .get();
+        final summaryDoc =
+            await userDoc.collection('summary').doc('data').get();
         expect(summaryDoc.data()?['graceCreditsUsed'], 2);
         expect(summaryDoc.data()?['graceCreditsAvailable'], 1);
       },

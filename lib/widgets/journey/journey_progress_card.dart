@@ -35,7 +35,7 @@ class JourneyProgressCard extends StatefulWidget {
     this.showTitle = true,
     this.isLoading = false,
   }) : readingPlanService =
-           readingPlanService ?? ReadingPlanService(firestore: firestore);
+            readingPlanService ?? ReadingPlanService(firestore: firestore);
 
   @override
   State<JourneyProgressCard> createState() => _JourneyProgressCardState();
@@ -118,9 +118,9 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                 Text(
                   'My Personal Journey',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
                 ),
                 TextButton(
                   onPressed: () async {
@@ -134,10 +134,10 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                     );
                     if (edited == true && mounted) {
                       setState(() {
-                        _allPlansFuture = widget.readingPlanService
-                            .getAvailablePlans(
-                              userId: widget.auth.currentUser?.uid,
-                            );
+                        _allPlansFuture =
+                            widget.readingPlanService.getAvailablePlans(
+                          userId: widget.auth.currentUser?.uid,
+                        );
                       });
                     }
                   },
@@ -279,10 +279,10 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                 );
                 if (edited == true && mounted) {
                   setState(() {
-                    _allPlansFuture = widget.readingPlanService
-                        .getAvailablePlans(
-                          userId: widget.auth.currentUser?.uid,
-                        );
+                    _allPlansFuture =
+                        widget.readingPlanService.getAvailablePlans(
+                      userId: widget.auth.currentUser?.uid,
+                    );
                   });
                 }
               },
@@ -360,7 +360,9 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                           children: [
                             Text(
                               plan.title,
-                              style: Theme.of(context).textTheme.titleLarge
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
                                   ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18,

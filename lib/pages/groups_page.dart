@@ -26,9 +26,9 @@ class GroupsPage extends StatefulWidget {
     GroupService? groupService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-  }) : groupService = groupService ?? GroupService(),
-       auth = auth ?? FirebaseAuth.instance,
-       vibrationService = vibrationService ?? const VibrationService();
+  })  : groupService = groupService ?? GroupService(),
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<GroupsPage> createState() => _GroupsPageState();

@@ -22,9 +22,9 @@ class CreateGroupPage extends StatefulWidget {
     GroupService? groupService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
-  }) : groupService = groupService ?? GroupService(),
-       auth = auth ?? FirebaseAuth.instance,
-       vibrationService = vibrationService ?? const VibrationService();
+  })  : groupService = groupService ?? GroupService(),
+        auth = auth ?? FirebaseAuth.instance,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<CreateGroupPage> createState() => _CreateGroupPageState();
@@ -305,8 +305,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         }
                         return ReferenceParser.allBooks.where((String option) {
                           return option.toLowerCase().contains(
-                            textEditingValue.text.toLowerCase(),
-                          );
+                                textEditingValue.text.toLowerCase(),
+                              );
                         });
                       },
                       onSelected: (String selection) {
@@ -314,21 +314,21 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                       },
                       fieldViewBuilder:
                           (context, controller, focusNode, onEditingComplete) {
-                            return TextField(
-                              controller: controller,
-                              focusNode: focusNode,
-                              onEditingComplete: onEditingComplete,
-                              decoration: InputDecoration(
-                                hintText: 'Search for a book...',
-                                prefixIcon: const Icon(Icons.search),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                filled: true,
-                                fillColor: colorScheme.surfaceContainerHighest,
-                              ),
-                            );
-                          },
+                        return TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          onEditingComplete: onEditingComplete,
+                          decoration: InputDecoration(
+                            hintText: 'Search for a book...',
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            filled: true,
+                            fillColor: colorScheme.surfaceContainerHighest,
+                          ),
+                        );
+                      },
                       optionsViewBuilder: (context, onSelected, options) {
                         return Align(
                           alignment: Alignment.topLeft,

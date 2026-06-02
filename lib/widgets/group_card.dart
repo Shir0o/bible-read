@@ -30,7 +30,7 @@ class GroupCard extends StatelessWidget {
         final double groupCompletion = members.isEmpty
             ? 0.0
             : members.map((m) => m.completion).reduce((a, b) => a + b) /
-                  members.length;
+                members.length;
 
         return FutureBuilder<List<String>>(
           future: groupService.fetchTodaysChapters(group.id),
@@ -82,11 +82,11 @@ class GroupCard extends StatelessWidget {
                                     const SizedBox(height: 4),
                                     Text(
                                       readingText,
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: colorScheme.primary,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        color: colorScheme.primary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),

@@ -44,19 +44,19 @@ Future<void> _seedChallenge({
       .collection('challenges')
       .doc(challengeId)
       .set({
-        'seasonId': seasonId,
-        'title': 'Read $goal chapters',
-        'description': 'Stay consistent every day.',
-        'metric': 'chapters',
-        'goal': goal,
-        'reward': const SeasonalReward(
-          id: 'r1',
-          type: 'points',
-          title: 'Bonus Points',
-          description: 'Extra rewards for reading.',
-          amount: 25,
-        ).toFirestore(),
-      });
+    'seasonId': seasonId,
+    'title': 'Read $goal chapters',
+    'description': 'Stay consistent every day.',
+    'metric': 'chapters',
+    'goal': goal,
+    'reward': const SeasonalReward(
+      id: 'r1',
+      type: 'points',
+      title: 'Bonus Points',
+      description: 'Extra rewards for reading.',
+      amount: 25,
+    ).toFirestore(),
+  });
 }
 
 String _formatDay(DateTime date) =>
@@ -106,8 +106,8 @@ void main() {
               .collection('seasonChallenges')
               .doc('${seasonId}_$challengeId')
               .set({
-                'rewardClaimedAt': Timestamp.fromDate(now),
-              }, SetOptions(merge: true));
+            'rewardClaimedAt': Timestamp.fromDate(now),
+          }, SetOptions(merge: true));
         },
       );
 
@@ -148,15 +148,15 @@ void main() {
           .collection('seasonChallenges')
           .doc('${seasonId}_$challengeId')
           .set({
-            'uid': 'user-1',
-            'seasonId': seasonId,
-            'challengeId': challengeId,
-            'totalProgress': 5,
-            'dailyProgress': {dayKey: 5},
-            'completedAt': Timestamp.fromDate(
-              now.subtract(const Duration(days: 1)),
-            ),
-          });
+        'uid': 'user-1',
+        'seasonId': seasonId,
+        'challengeId': challengeId,
+        'totalProgress': 5,
+        'dailyProgress': {dayKey: 5},
+        'completedAt': Timestamp.fromDate(
+          now.subtract(const Duration(days: 1)),
+        ),
+      });
 
       final service = SeasonalChallengeService(
         firestore: firestore,
@@ -168,8 +168,8 @@ void main() {
               .collection('seasonChallenges')
               .doc('${seasonId}_$challengeId')
               .set({
-                'rewardClaimedAt': Timestamp.fromDate(now),
-              }, SetOptions(merge: true));
+            'rewardClaimedAt': Timestamp.fromDate(now),
+          }, SetOptions(merge: true));
 
           await firestore
               .collection('users')

@@ -184,7 +184,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         builder: (context, snapshot) {
           final isLoading =
               snapshot.connectionState == ConnectionState.waiting &&
-              snapshot.data == null;
+                  snapshot.data == null;
           final streamProgress = snapshot.data;
           final isStarted = streamProgress != null;
 
@@ -221,9 +221,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     final previousOptimistic = _optimisticCompletedDays != null
         ? Set<int>.from(_optimisticCompletedDays!)
         : (await _planService.getPlanProgress(user.uid, widget.plan.id).first)
-                  ?.completedDays
-                  .toSet() ??
-              {};
+                ?.completedDays
+                .toSet() ??
+            {};
 
     setState(() {
       final newCompletedDays = Set<int>.from(completedDays);
@@ -311,8 +311,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
   Future<void> _scrollToFirstUnchecked() async {
     if (_hasScrolledToUnchecked) return;
 
-    final completedDays =
-        widget.optimisticCompletedDays ??
+    final completedDays = widget.optimisticCompletedDays ??
         widget.progress?.completedDays.toSet() ??
         {};
 
@@ -359,8 +358,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
       return _buildNotStartedState(context, colorScheme);
     }
 
-    final completedDays =
-        widget.optimisticCompletedDays ??
+    final completedDays = widget.optimisticCompletedDays ??
         widget.progress?.completedDays.toSet() ??
         {};
 
@@ -496,9 +494,8 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
       child: Text(
         title.toUpperCase(),
         style: theme.textTheme.labelMedium?.copyWith(
-          color: isHighlight
-              ? colorScheme.primary
-              : colorScheme.onSurfaceVariant,
+          color:
+              isHighlight ? colorScheme.primary : colorScheme.onSurfaceVariant,
         ),
       ),
     );
@@ -580,9 +577,8 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w500,
                           color: colorScheme.onSurface.withValues(alpha: 0.8),
-                          decoration: isCompleted
-                              ? TextDecoration.lineThrough
-                              : null,
+                          decoration:
+                              isCompleted ? TextDecoration.lineThrough : null,
                         ),
                       ),
                     ],
@@ -683,9 +679,8 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                     Text(
                       day.readings.join(', '),
                       style: theme.textTheme.titleMedium?.copyWith(
-                        decoration: isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
+                        decoration:
+                            isCompleted ? TextDecoration.lineThrough : null,
                       ),
                     ),
                   ],

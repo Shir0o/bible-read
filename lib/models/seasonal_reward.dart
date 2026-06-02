@@ -60,13 +60,13 @@ class SeasonalReward {
 
   /// Serializes the reward for Firestore writes.
   Map<String, dynamic> toFirestore() => {
-    if (id.isNotEmpty) 'id': id,
-    'type': type,
-    'title': title,
-    'description': description,
-    'iconUrl': iconUrl,
-    'amount': amount,
-  };
+        if (id.isNotEmpty) 'id': id,
+        'type': type,
+        'title': title,
+        'description': description,
+        'iconUrl': iconUrl,
+        'amount': amount,
+      };
 
   static int _asInt(Object? value) {
     if (value is int) {

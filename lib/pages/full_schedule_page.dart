@@ -128,9 +128,8 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
     unawaited(widget.vibrationService.lightImpact());
 
     setState(() {
-      _optimisticProgress[dateId] = !isRead
-          ? (schedule.chapters.length.clamp(1, 999))
-          : 0;
+      _optimisticProgress[dateId] =
+          !isRead ? (schedule.chapters.length.clamp(1, 999)) : 0;
     });
 
     final success = await widget.groupService.toggleReadStatus(
@@ -328,9 +327,8 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
       child: Text(
         title.toUpperCase(),
         style: theme.textTheme.labelMedium?.copyWith(
-          color: isHighlight
-              ? colorScheme.primary
-              : colorScheme.onSurfaceVariant,
+          color:
+              isHighlight ? colorScheme.primary : colorScheme.onSurfaceVariant,
         ),
       ),
     );

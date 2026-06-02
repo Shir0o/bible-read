@@ -31,9 +31,11 @@ class OfflineBanner extends StatelessWidget {
                       Text(
                         'Offline Mode - Using Cached Data',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onErrorContainer,
-                          fontWeight: FontWeight.bold,
-                        ),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onErrorContainer,
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                     ],
                   ),

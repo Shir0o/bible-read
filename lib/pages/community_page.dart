@@ -38,13 +38,11 @@ class CommunityPage extends StatefulWidget {
   final Future<void> Function({
     required String ownerUid,
     required String likerName,
-  })
-  onSendLikeNotification;
+  }) onSendLikeNotification;
   final Future<void> Function({
     required String ownerUid,
     required String commenterName,
-  })
-  onSendCommentNotification;
+  }) onSendCommentNotification;
   final DateTime Function() dateProvider;
 
   // Optional builder kept for compatibility
@@ -55,15 +53,12 @@ class CommunityPage extends StatefulWidget {
     required Future<void> Function({
       required String ownerUid,
       required String likerName,
-    })
-    onSendLikeNotification,
+    }) onSendLikeNotification,
     required Future<void> Function({
       required String ownerUid,
       required String commenterName,
-    })
-    onSendCommentNotification,
-  })?
-  readLogBuilder;
+    }) onSendCommentNotification,
+  })? readLogBuilder;
 
   const CommunityPage({
     super.key,
@@ -193,27 +188,26 @@ class _CommunityPageState extends State<CommunityPage>
           .collection('entries')
           .snapshots()
           .asyncMap((entriesSnap) async {
-            final logs = await Future.wait(
-              entriesSnap.docs.map((doc) {
-                return ReadLog.fromFirestore(doc, currentUid: user.uid);
-              }),
-            );
+        final logs = await Future.wait(
+          entriesSnap.docs.map((doc) {
+            return ReadLog.fromFirestore(doc, currentUid: user.uid);
+          }),
+        );
 
-            // 3. Filter by friends + self
-            final filtered = logs
-                .where((log) => friendUids.contains(log.uid))
-                .toList();
+        // 3. Filter by friends + self
+        final filtered =
+            logs.where((log) => friendUids.contains(log.uid)).toList();
 
-            // Sort by timestamp if available, else name
-            filtered.sort((a, b) {
-              if (a.timestamp != null && b.timestamp != null) {
-                return b.timestamp!.compareTo(a.timestamp!);
-              }
-              return a.name.compareTo(b.name);
-            });
+        // Sort by timestamp if available, else name
+        filtered.sort((a, b) {
+          if (a.timestamp != null && b.timestamp != null) {
+            return b.timestamp!.compareTo(a.timestamp!);
+          }
+          return a.name.compareTo(b.name);
+        });
 
-            return filtered;
-          });
+        return filtered;
+      });
     });
   }
 
@@ -366,8 +360,8 @@ class _CommunityPageState extends State<CommunityPage>
                             skeleton: const JourneyProgressCardSkeleton(
                               padding: EdgeInsets.zero,
                             ),
-                            child:
-                                (snapshot.hasData && snapshot.data!.isNotEmpty)
+                            child: (snapshot.hasData &&
+                                    snapshot.data!.isNotEmpty)
                                 ? CommunityGroupProgressCard(
                                     group: snapshot.data!.first,
                                     groupService: widget.groupService,

@@ -107,10 +107,8 @@ void main() {
     expect(auth.currentUser!.displayName, 'Test User');
 
     // 6b. Verify Firestore data
-    final userDoc = await firestore
-        .collection('users')
-        .doc(auth.currentUser!.uid)
-        .get();
+    final userDoc =
+        await firestore.collection('users').doc(auth.currentUser!.uid).get();
     expect(userDoc.exists, isTrue);
     expect(userDoc.data()?['name'], 'Test User');
     expect(userDoc.data()?['email'], 'test@example.com');

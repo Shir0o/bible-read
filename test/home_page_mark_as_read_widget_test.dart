@@ -63,12 +63,12 @@ void main() {
         .collection('plan_progress')
         .doc('plan_1')
         .set({
-          'planId': 'plan_1',
-          'userId': 'u1',
-          'startDate': Timestamp.fromDate(now),
-          'completedDays': [],
-          'isArchived': false,
-        });
+      'planId': 'plan_1',
+      'userId': 'u1',
+      'startDate': Timestamp.fromDate(now),
+      'completedDays': [],
+      'isArchived': false,
+    });
 
     // Initialize summary data
     await firestore
@@ -77,11 +77,11 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({
-          'streak': 0,
-          'totalReadDays': 0,
-          'pastWeekReadDates': [],
-          'pastMonthReadDates': [],
-        });
+      'streak': 0,
+      'totalReadDays': 0,
+      'pastWeekReadDates': [],
+      'pastMonthReadDates': [],
+    });
 
     // Seed user preferences to auto-mark plan as read
     await firestore

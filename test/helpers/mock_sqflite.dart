@@ -12,25 +12,25 @@ void setupSqfliteMock() {
   for (final channel in channels) {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-          if (methodCall.method == 'getDatabasesPath') {
-            return '.';
-          }
-          if (methodCall.method == 'openDatabase') {
-            return 1;
-          }
-          if (methodCall.method == 'query') {
-            return [];
-          }
-          if (methodCall.method == 'insert') {
-            return 1;
-          }
-          if (methodCall.method == 'update') {
-            return 1;
-          }
-          if (methodCall.method == 'delete') {
-            return 1;
-          }
-          return null;
-        });
+      if (methodCall.method == 'getDatabasesPath') {
+        return '.';
+      }
+      if (methodCall.method == 'openDatabase') {
+        return 1;
+      }
+      if (methodCall.method == 'query') {
+        return [];
+      }
+      if (methodCall.method == 'insert') {
+        return 1;
+      }
+      if (methodCall.method == 'update') {
+        return 1;
+      }
+      if (methodCall.method == 'delete') {
+        return 1;
+      }
+      return null;
+    });
   }
 }

@@ -125,8 +125,7 @@ class _SeasonalChallengeItem extends StatelessWidget {
         challengeId: challenge.id,
       ),
       builder: (context, snapshot) {
-        final progress =
-            snapshot.data ??
+        final progress = snapshot.data ??
             SeasonalChallengeProgress(
               id: '',
               uid: user.uid,

@@ -18,7 +18,8 @@ void main() {
     GoogleSignInPlatform.instance = FakeGoogleSignInPlatform();
   });
 
-  testWidgets('Social Scenario: User navigates to Friends and sends a request', (
+  testWidgets('Social Scenario: User navigates to Friends and sends a request',
+      (
     tester,
   ) async {
     final auth = MockFirebaseAuth(signedIn: true);
@@ -48,10 +49,10 @@ void main() {
         firestore: firestore,
         messaging: messaging,
         functions: functions,
-        sendLikeNotification:
-            ({required ownerUid, required likerName}) async {},
-        sendCommentNotification:
-            ({required ownerUid, required commenterName}) async {},
+        sendLikeNotification: (
+            {required ownerUid, required likerName}) async {},
+        sendCommentNotification: (
+            {required ownerUid, required commenterName}) async {},
         vibrationService: vibration,
         googleSignInProvider: () => MockGoogleSignIn(),
       ),

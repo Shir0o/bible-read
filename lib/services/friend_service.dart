@@ -51,25 +51,23 @@ class Friend {
 }
 
 /// Signature for calling the `acceptFriendRequest` Cloud Function.
-typedef AcceptFriendRequestFn =
-    Future<void> Function({
-      required String fromUid,
-      required String toUid,
-      required String fromName,
-      required String toName,
-    });
+typedef AcceptFriendRequestFn = Future<void> Function({
+  required String fromUid,
+  required String toUid,
+  required String fromName,
+  required String toName,
+});
 
 /// Signature for calling the `deleteFriendRequestPair` Cloud Function.
-typedef DeleteFriendRequestPairFn =
-    Future<void> Function({required String fromUid, required String toUid});
+typedef DeleteFriendRequestPairFn = Future<void> Function(
+    {required String fromUid, required String toUid});
 
 /// Signature for calling the `sendNudgeNotification` Cloud Function.
-typedef SendNudgeNotificationFn =
-    Future<NudgeResult> Function({
-      required String fromUid,
-      required String toUid,
-      required String fromName,
-    });
+typedef SendNudgeNotificationFn = Future<NudgeResult> Function({
+  required String fromUid,
+  required String toUid,
+  required String fromName,
+});
 
 /// Possible outcomes when sending a nudge.
 enum NudgeResult {
@@ -107,15 +105,15 @@ class FriendService {
     AcceptFriendRequestFn? acceptFriendRequestFn,
     DeleteFriendRequestPairFn? deleteFriendRequestPairFn,
     SendNudgeNotificationFn? sendNudgeNotificationFn,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       notificationService =
-           notificationService ??
-           NotificationService(
-             firestore: firestore ?? FirebaseFirestore.instance,
-           ),
-       _acceptFn = acceptFriendRequestFn ?? _defaultAcceptFriendRequest,
-       _deleteFn = deleteFriendRequestPairFn ?? _defaultDeleteFriendRequestPair,
-       _nudgeFn = sendNudgeNotificationFn ?? _defaultSendNudgeNotification;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        notificationService = notificationService ??
+            NotificationService(
+              firestore: firestore ?? FirebaseFirestore.instance,
+            ),
+        _acceptFn = acceptFriendRequestFn ?? _defaultAcceptFriendRequest,
+        _deleteFn =
+            deleteFriendRequestPairFn ?? _defaultDeleteFriendRequestPair,
+        _nudgeFn = sendNudgeNotificationFn ?? _defaultSendNudgeNotification;
 
   /// Default implementation that invokes the Cloud Function.
   static Future<void> _defaultAcceptFriendRequest({
@@ -206,9 +204,8 @@ class FriendService {
       type: NotificationType.friendRequest,
       fromUid: fromUid,
       senderUid: fromUid,
-      message: fromName.isNotEmpty
-          ? '$fromName sent you a friend request'
-          : null,
+      message:
+          fromName.isNotEmpty ? '$fromName sent you a friend request' : null,
       timestamp: DateTime.now(),
       read: false,
     );
@@ -265,11 +262,11 @@ class FriendService {
         .doc(fromUid)
         .delete()
         .catchError((e, st) {
-          if (kDebugMode) {
-            debugPrint('Failed to remove received request for $fromUid: $e');
-          }
-          ErrorLogger.log(e, st);
-        });
+      if (kDebugMode) {
+        debugPrint('Failed to remove received request for $fromUid: $e');
+      }
+      ErrorLogger.log(e, st);
+    });
 
     try {
       final snap = await firestore
@@ -308,11 +305,11 @@ class FriendService {
         .doc(fromUid)
         .delete()
         .catchError((e, st) {
-          if (kDebugMode) {
-            debugPrint('Failed to remove received request for $fromUid: $e');
-          }
-          ErrorLogger.log(e, st);
-        });
+      if (kDebugMode) {
+        debugPrint('Failed to remove received request for $fromUid: $e');
+      }
+      ErrorLogger.log(e, st);
+    });
 
     try {
       final snap = await firestore

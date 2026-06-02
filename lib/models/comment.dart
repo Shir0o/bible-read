@@ -50,25 +50,25 @@ class Comment {
       timestamp: ts is String
           ? DateTime.tryParse(ts) ?? DateTime.now()
           : ts is int
-          ? DateTime.fromMillisecondsSinceEpoch(ts)
-          : DateTime.now(),
+              ? DateTime.fromMillisecondsSinceEpoch(ts)
+              : DateTime.now(),
     );
   }
 
   /// Serializes this comment for Firestore.
   Map<String, dynamic> toFirestore() => {
-    'uid': uid,
-    'authorName': authorName,
-    'message': message,
-    'timestamp': Timestamp.fromDate(timestamp),
-  };
+        'uid': uid,
+        'authorName': authorName,
+        'message': message,
+        'timestamp': Timestamp.fromDate(timestamp),
+      };
 
   /// Converts this comment to JSON.
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'uid': uid,
-    'authorName': authorName,
-    'message': message,
-    'timestamp': timestamp.toIso8601String(),
-  };
+        'id': id,
+        'uid': uid,
+        'authorName': authorName,
+        'message': message,
+        'timestamp': timestamp.toIso8601String(),
+      };
 }

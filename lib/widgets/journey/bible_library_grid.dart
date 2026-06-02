@@ -69,9 +69,9 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                 Text(
                   'Bible Library',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
                 ),
                 TextButton(
                   onPressed: () {
@@ -128,9 +128,8 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                 }
 
                 final totalBooks = ReferenceParser.allBooks.length;
-                final overallProgress = totalBooks > 0
-                    ? completedBooksCount / totalBooks
-                    : 0.0;
+                final overallProgress =
+                    totalBooks > 0 ? completedBooksCount / totalBooks : 0.0;
                 final overallPercentText =
                     '${(overallProgress * 100).toInt()}%';
 

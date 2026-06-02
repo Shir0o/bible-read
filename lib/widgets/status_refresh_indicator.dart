@@ -167,9 +167,9 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                   // Clamp the container height to maxHeight
                   final double containerHeight =
                       (widget.maxHeight * controller.value).clamp(
-                        0.0,
-                        widget.maxHeight,
-                      );
+                    0.0,
+                    widget.maxHeight,
+                  );
 
                   // Only show content if we have some height
                   if (containerHeight <= 0) return const SizedBox.shrink();
@@ -219,16 +219,16 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                                       _getStatusText(controller),
                                       style: AppTheme.textTheme.bodyMedium
                                           ?.copyWith(
-                                            color: colorScheme.onSurface,
-                                            fontWeight: FontWeight.bold,
-                                            shadows: [
-                                              Shadow(
-                                                offset: const Offset(0, 1),
-                                                blurRadius: 2,
-                                                color: colorScheme.shadow,
-                                              ),
-                                            ],
+                                        color: colorScheme.onSurface,
+                                        fontWeight: FontWeight.bold,
+                                        shadows: [
+                                          Shadow(
+                                            offset: const Offset(0, 1),
+                                            blurRadius: 2,
+                                            color: colorScheme.shadow,
                                           ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),

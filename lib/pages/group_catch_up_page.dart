@@ -86,9 +86,8 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
     unawaited(widget.vibrationService.lightImpact());
 
     setState(() {
-      _optimisticProgress[dateId] = !isRead
-          ? (schedule.chapters.length.clamp(1, 999))
-          : 0;
+      _optimisticProgress[dateId] =
+          !isRead ? (schedule.chapters.length.clamp(1, 999)) : 0;
     });
 
     final success = await widget.groupService.toggleReadStatus(
@@ -135,17 +134,16 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
 
           final now = DateTime.now();
           final todayDate = DateTime(now.year, now.month, now.day);
-          final pastSchedule =
-              scheduleSnapshot.data!
-                  .where(
-                    (s) => !DateTime(
-                      s.date.year,
-                      s.date.month,
-                      s.date.day,
-                    ).isAfter(todayDate),
-                  )
-                  .toList()
-                ..sort((a, b) => b.date.compareTo(a.date)); // Newest first
+          final pastSchedule = scheduleSnapshot.data!
+              .where(
+                (s) => !DateTime(
+                  s.date.year,
+                  s.date.month,
+                  s.date.day,
+                ).isAfter(todayDate),
+              )
+              .toList()
+            ..sort((a, b) => b.date.compareTo(a.date)); // Newest first
 
           if (pastSchedule.isEmpty) {
             return const Center(child: Text('No readings to log'));

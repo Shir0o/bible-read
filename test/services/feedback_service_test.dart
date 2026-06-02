@@ -29,9 +29,8 @@ void main() {
         reproductionSteps: 'Open the app after installing update.',
       );
 
-      final snapshot = await firestore
-          .collection(FeedbackCollections.bugReports)
-          .get();
+      final snapshot =
+          await firestore.collection(FeedbackCollections.bugReports).get();
       expect(snapshot.docs, hasLength(1));
       final data = snapshot.docs.first.data();
       expect(data['uid'], equals('user-123'));

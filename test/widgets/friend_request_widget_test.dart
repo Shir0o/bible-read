@@ -22,55 +22,54 @@ void main() {
     service = FriendService(
       firestore: firestore,
       notificationService: NotificationService(firestore: firestore),
-      acceptFriendRequestFn:
-          ({
-            required String fromUid,
-            required String toUid,
-            required String fromName,
-            required String toName,
-          }) async {
-            acceptCalled = true;
-            await firestore
-                .collection(FriendCollections.users)
-                .doc(fromUid)
-                .collection(FriendCollections.sentRequests)
-                .doc(toUid)
-                .delete();
-            await firestore
-                .collection(FriendCollections.users)
-                .doc(toUid)
-                .collection(FriendCollections.receivedRequests)
-                .doc(fromUid)
-                .delete();
-            await firestore
-                .collection(FriendCollections.users)
-                .doc(fromUid)
-                .collection(FriendCollections.friends)
-                .doc(toUid)
-                .set({'timestamp': Timestamp.now(), 'name': toName});
-            await firestore
-                .collection(FriendCollections.users)
-                .doc(toUid)
-                .collection(FriendCollections.friends)
-                .doc(fromUid)
-                .set({'timestamp': Timestamp.now(), 'name': fromName});
-          },
-      deleteFriendRequestPairFn:
-          ({required String fromUid, required String toUid}) async {
-            deleteCalled = true;
-            await firestore
-                .collection(FriendCollections.users)
-                .doc(fromUid)
-                .collection(FriendCollections.sentRequests)
-                .doc(toUid)
-                .delete();
-            await firestore
-                .collection(FriendCollections.users)
-                .doc(toUid)
-                .collection(FriendCollections.receivedRequests)
-                .doc(fromUid)
-                .delete();
-          },
+      acceptFriendRequestFn: ({
+        required String fromUid,
+        required String toUid,
+        required String fromName,
+        required String toName,
+      }) async {
+        acceptCalled = true;
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(toUid)
+            .delete();
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(toUid)
+            .collection(FriendCollections.receivedRequests)
+            .doc(fromUid)
+            .delete();
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.friends)
+            .doc(toUid)
+            .set({'timestamp': Timestamp.now(), 'name': toName});
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(toUid)
+            .collection(FriendCollections.friends)
+            .doc(fromUid)
+            .set({'timestamp': Timestamp.now(), 'name': fromName});
+      },
+      deleteFriendRequestPairFn: (
+          {required String fromUid, required String toUid}) async {
+        deleteCalled = true;
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(fromUid)
+            .collection(FriendCollections.sentRequests)
+            .doc(toUid)
+            .delete();
+        await firestore
+            .collection(FriendCollections.users)
+            .doc(toUid)
+            .collection(FriendCollections.receivedRequests)
+            .doc(fromUid)
+            .delete();
+      },
     );
   });
 

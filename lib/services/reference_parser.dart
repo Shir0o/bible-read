@@ -463,9 +463,8 @@ class ReferenceParser {
         final del = dp[i - 1][j] + 1;
         final ins = dp[i][j - 1] + 1;
         final sub = dp[i - 1][j - 1] + cost;
-        dp[i][j] = del < ins
-            ? (del < sub ? del : sub)
-            : (ins < sub ? ins : sub);
+        dp[i][j] =
+            del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
       }
     }
     return dp[m][n];

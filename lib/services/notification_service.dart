@@ -20,7 +20,7 @@ class NotificationService {
 
   /// Creates a [NotificationService] using [FirebaseFirestore.instance] by default.
   NotificationService({FirebaseFirestore? firestore})
-    : firestore = firestore ?? FirebaseFirestore.instance;
+      : firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Stream of notifications for [uid] ordered by timestamp descending.
   Stream<List<AppNotification>> notifications(String uid) {

@@ -180,13 +180,13 @@ void main() {
           .collection(GroupCollections.invites)
           .doc('friend1')
           .set({
-            'groupId': 'g1',
-            'groupName': 'G1',
-            'senderUid': 'user1',
-            'senderName': 'User One',
-            'recipientUid': 'friend1',
-            'timestamp': DateTime.now(),
-          });
+        'groupId': 'g1',
+        'groupName': 'G1',
+        'senderUid': 'user1',
+        'senderName': 'User One',
+        'recipientUid': 'friend1',
+        'timestamp': DateTime.now(),
+      });
 
       when(
         () => friendService.friends('user1'),
@@ -224,10 +224,10 @@ void main() {
           .collection(GroupCollections.members)
           .doc('friend1')
           .set({
-            'uid': 'friend1',
-            'role': 'member',
-            'joinedAt': DateTime.now(),
-          });
+        'uid': 'friend1',
+        'role': 'member',
+        'joinedAt': DateTime.now(),
+      });
 
       when(
         () => friendService.friends('user1'),

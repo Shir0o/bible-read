@@ -98,10 +98,8 @@ void main() {
             .collection('joinRequests')
             .doc('user1')
             .get();
-        final groupDoc = await firestore
-            .collection('groups')
-            .doc(groupId)
-            .get();
+        final groupDoc =
+            await firestore.collection('groups').doc(groupId).get();
 
         expect(requestDoc.exists, isFalse);
         expect(groupDoc.data()?['memberCount'], equals(2));

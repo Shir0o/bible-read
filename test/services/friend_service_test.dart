@@ -24,62 +24,61 @@ void main() {
       friendService = FriendService(
         firestore: firestore,
         notificationService: NotificationService(firestore: firestore),
-        acceptFriendRequestFn:
-            ({
-              required String fromUid,
-              required String toUid,
-              required String fromName,
-              required String toName,
-            }) async {
-              acceptCalled = true;
-              lastAcceptArgs = {
-                'fromUid': fromUid,
-                'toUid': toUid,
-                'fromName': fromName,
-                'toName': toName,
-              };
-              await firestore
-                  .collection(FriendCollections.users)
-                  .doc(fromUid)
-                  .collection(FriendCollections.sentRequests)
-                  .doc(toUid)
-                  .delete();
-              await firestore
-                  .collection(FriendCollections.users)
-                  .doc(toUid)
-                  .collection(FriendCollections.receivedRequests)
-                  .doc(fromUid)
-                  .delete();
-              await firestore
-                  .collection(FriendCollections.users)
-                  .doc(fromUid)
-                  .collection(FriendCollections.friends)
-                  .doc(toUid)
-                  .set({'timestamp': Timestamp.now(), 'name': toName});
-              await firestore
-                  .collection(FriendCollections.users)
-                  .doc(toUid)
-                  .collection(FriendCollections.friends)
-                  .doc(fromUid)
-                  .set({'timestamp': Timestamp.now(), 'name': fromName});
-            },
-        deleteFriendRequestPairFn:
-            ({required String fromUid, required String toUid}) async {
-              deleteCalled = true;
-              lastDeleteArgs = {'fromUid': fromUid, 'toUid': toUid};
-              await firestore
-                  .collection(FriendCollections.users)
-                  .doc(fromUid)
-                  .collection(FriendCollections.sentRequests)
-                  .doc(toUid)
-                  .delete();
-              await firestore
-                  .collection(FriendCollections.users)
-                  .doc(toUid)
-                  .collection(FriendCollections.receivedRequests)
-                  .doc(fromUid)
-                  .delete();
-            },
+        acceptFriendRequestFn: ({
+          required String fromUid,
+          required String toUid,
+          required String fromName,
+          required String toName,
+        }) async {
+          acceptCalled = true;
+          lastAcceptArgs = {
+            'fromUid': fromUid,
+            'toUid': toUid,
+            'fromName': fromName,
+            'toName': toName,
+          };
+          await firestore
+              .collection(FriendCollections.users)
+              .doc(fromUid)
+              .collection(FriendCollections.sentRequests)
+              .doc(toUid)
+              .delete();
+          await firestore
+              .collection(FriendCollections.users)
+              .doc(toUid)
+              .collection(FriendCollections.receivedRequests)
+              .doc(fromUid)
+              .delete();
+          await firestore
+              .collection(FriendCollections.users)
+              .doc(fromUid)
+              .collection(FriendCollections.friends)
+              .doc(toUid)
+              .set({'timestamp': Timestamp.now(), 'name': toName});
+          await firestore
+              .collection(FriendCollections.users)
+              .doc(toUid)
+              .collection(FriendCollections.friends)
+              .doc(fromUid)
+              .set({'timestamp': Timestamp.now(), 'name': fromName});
+        },
+        deleteFriendRequestPairFn: (
+            {required String fromUid, required String toUid}) async {
+          deleteCalled = true;
+          lastDeleteArgs = {'fromUid': fromUid, 'toUid': toUid};
+          await firestore
+              .collection(FriendCollections.users)
+              .doc(fromUid)
+              .collection(FriendCollections.sentRequests)
+              .doc(toUid)
+              .delete();
+          await firestore
+              .collection(FriendCollections.users)
+              .doc(toUid)
+              .collection(FriendCollections.receivedRequests)
+              .doc(fromUid)
+              .delete();
+        },
       );
     });
 
@@ -432,20 +431,19 @@ void main() {
         friendService = FriendService(
           firestore: firestore,
           notificationService: NotificationService(firestore: firestore),
-          sendNudgeNotificationFn:
-              ({
-                required String fromUid,
-                required String toUid,
-                required String fromName,
-              }) async {
-                called = true;
-                lastArgs = {
-                  'fromUid': fromUid,
-                  'toUid': toUid,
-                  'fromName': fromName,
-                };
-                return NudgeResult.sent;
-              },
+          sendNudgeNotificationFn: ({
+            required String fromUid,
+            required String toUid,
+            required String fromName,
+          }) async {
+            called = true;
+            lastArgs = {
+              'fromUid': fromUid,
+              'toUid': toUid,
+              'fromName': fromName,
+            };
+            return NudgeResult.sent;
+          },
         );
 
         final result = await friendService.nudgeFriend(
@@ -478,10 +476,10 @@ void main() {
             .collection(FriendCollections.nudges)
             .doc(todayUid)
             .set({
-              'timestamp': Timestamp.fromDate(
-                start.add(const Duration(hours: 1)),
-              ),
-            });
+          'timestamp': Timestamp.fromDate(
+            start.add(const Duration(hours: 1)),
+          ),
+        });
 
         await firestore
             .collection(FriendCollections.users)
@@ -489,10 +487,10 @@ void main() {
             .collection(FriendCollections.nudges)
             .doc(yesterdayUid)
             .set({
-              'timestamp': Timestamp.fromDate(
-                start.subtract(const Duration(days: 1)),
-              ),
-            });
+          'timestamp': Timestamp.fromDate(
+            start.subtract(const Duration(days: 1)),
+          ),
+        });
 
         final result = await friendService.nudgedToday(uid).first;
         expect(result, {todayUid});

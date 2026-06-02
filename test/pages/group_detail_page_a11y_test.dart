@@ -72,10 +72,8 @@ void main() {
   ) async {
     // Setup group and members
     await firestore.collection('groups').doc('g1').set(group.toFirestore());
-    final members = firestore
-        .collection('groups')
-        .doc('g1')
-        .collection('members');
+    final members =
+        firestore.collection('groups').doc('g1').collection('members');
 
     // User 1: Read today
     await members.doc('u1').set({
@@ -123,9 +121,9 @@ void main() {
         .collection('schedule')
         .doc(dateKey)
         .set({
-          'date': Timestamp.fromDate(DateTime(2020, 1, 1)),
-          'chapters': ['Gen 1'],
-        });
+      'date': Timestamp.fromDate(DateTime(2020, 1, 1)),
+      'chapters': ['Gen 1'],
+    });
 
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 

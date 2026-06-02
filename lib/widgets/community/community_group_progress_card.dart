@@ -112,8 +112,8 @@ class CommunityGroupProgressCard extends StatelessWidget {
                             );
                             if (index != -1) {
                               if (schedule[index].date.isAtSameMomentAs(
-                                today,
-                              )) {
+                                    today,
+                                  )) {
                                 currentDay = index + 1;
                               } else {
                                 currentDay = index + 1; // Upcoming
@@ -197,11 +197,11 @@ class CommunityGroupProgressCard extends StatelessWidget {
                                             '${(percent * 100).toInt()}% of Schedule',
                                             style: AppTextStyles.body(context)
                                                 .copyWith(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: colorScheme
-                                                      .onSurfaceVariant,
-                                                ),
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color:
+                                                  colorScheme.onSurfaceVariant,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -215,8 +215,8 @@ class CommunityGroupProgressCard extends StatelessWidget {
                                               .surfaceContainerHighest,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
-                                                colorScheme.primary,
-                                              ),
+                                            colorScheme.primary,
+                                          ),
                                         ),
                                       ),
                                     ],

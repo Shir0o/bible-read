@@ -15,10 +15,8 @@ void main() {
         'date': Timestamp.fromDate(date),
         'chapters': ['Gen 1', 'Exo 2'],
       });
-      final doc = await firestore
-          .collection('schedule')
-          .doc('2024-01-01')
-          .get();
+      final doc =
+          await firestore.collection('schedule').doc('2024-01-01').get();
 
       final schedule = GroupSchedule.fromFirestore(doc);
       expect(schedule.date.toUtc(), date.toUtc());
@@ -31,10 +29,8 @@ void main() {
         'date': 'not a timestamp',
         'chapters': ['Gen 1', 2, true],
       });
-      final doc = await firestore
-          .collection('schedule')
-          .doc('2024-01-02')
-          .get();
+      final doc =
+          await firestore.collection('schedule').doc('2024-01-02').get();
 
       final schedule = GroupSchedule.fromFirestore(doc);
       expect(schedule.date.toUtc(), DateTime(2024, 1, 2).toUtc());

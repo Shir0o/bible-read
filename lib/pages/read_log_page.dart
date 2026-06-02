@@ -19,13 +19,11 @@ class ReadLogPage extends StatefulWidget {
   final Future<void> Function({
     required String ownerUid,
     required String likerName,
-  })
-  onSendLikeNotification;
+  }) onSendLikeNotification;
   final Future<void> Function({
     required String ownerUid,
     required String commenterName,
-  })
-  onSendCommentNotification;
+  }) onSendCommentNotification;
   final DateTime Function() dateProvider;
   final VibrationService? vibrationService;
 
@@ -38,9 +36,9 @@ class ReadLogPage extends StatefulWidget {
     required this.onSendCommentNotification,
     DateTime Function()? dateProvider,
     this.vibrationService,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       dateProvider = dateProvider ?? DateTime.now;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        dateProvider = dateProvider ?? DateTime.now;
 
   @override
   State<ReadLogPage> createState() => _ReadLogPageState();
@@ -52,8 +50,7 @@ class ReadLogPage extends StatefulWidget {
     Future<Map<String, dynamic>?> Function({
       required String dateKey,
       required String uid,
-    })?
-    markFirstReader,
+    })? markFirstReader,
     DateTime Function()? dateProvider,
   }) async {
     final db = firestore ?? FirebaseFirestore.instance;
@@ -66,12 +63,12 @@ class ReadLogPage extends StatefulWidget {
         .collection('entries')
         .doc(user.uid)
         .set({
-          'name': (user.displayName ?? '').split(' ').first,
-          'email': user.email?.toLowerCase() ?? '',
-          'uid': user.uid,
-          'timestamp': Timestamp.now(),
-          'dateId': dateKey,
-        });
+      'name': (user.displayName ?? '').split(' ').first,
+      'email': user.email?.toLowerCase() ?? '',
+      'uid': user.uid,
+      'timestamp': Timestamp.now(),
+      'dateId': dateKey,
+    });
 
     // Keep the per-user reading collection in sync for streak calculations.
     try {
@@ -95,9 +92,9 @@ class ReadLogPage extends StatefulWidget {
               .collection('achievements')
               .doc('firstReader')
               .set({
-                'dateUnlocked': Timestamp.now(),
-                'dateKey': dateKey,
-              }, SetOptions(merge: true));
+            'dateUnlocked': Timestamp.now(),
+            'dateKey': dateKey,
+          }, SetOptions(merge: true));
         } catch (_) {
           // Best-effort; the read-log entry already succeeded.
         }
@@ -136,8 +133,7 @@ class _ReadLogPageState extends State<ReadLogPage> {
         key: _viewKey,
         firestore: widget.firestore,
         auth: widget.auth,
-        readingStatusService:
-            widget.readingStatusService ??
+        readingStatusService: widget.readingStatusService ??
             ReadingStatusService(
               firestore: widget.firestore,
               auth: widget.auth,

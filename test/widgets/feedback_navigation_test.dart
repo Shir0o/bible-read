@@ -65,21 +65,20 @@ void main() {
               notificationService: NotificationService(
                 firestore: fakeFirestore,
               ),
-              acceptFriendRequestFn:
-                  ({
-                    required fromUid,
-                    required toUid,
-                    required fromName,
-                    required toName,
-                  }) async {},
-              deleteFriendRequestPairFn:
-                  ({required fromUid, required toUid}) async {},
-              sendNudgeNotificationFn:
-                  ({
-                    required fromUid,
-                    required toUid,
-                    required fromName,
-                  }) async => NudgeResult.sent,
+              acceptFriendRequestFn: ({
+                required fromUid,
+                required toUid,
+                required fromName,
+                required toName,
+              }) async {},
+              deleteFriendRequestPairFn: (
+                  {required fromUid, required toUid}) async {},
+              sendNudgeNotificationFn: ({
+                required fromUid,
+                required toUid,
+                required fromName,
+              }) async =>
+                  NudgeResult.sent,
             ),
             vibrationService: const _NoopVibrationService(),
             feedbackService: mockService,

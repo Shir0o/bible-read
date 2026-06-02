@@ -49,8 +49,8 @@ void main() {
     const channel = MethodChannel('plugins.flutter.io/firebase_crashlytics');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-          return null;
-        });
+      return null;
+    });
 
     await Firebase.initializeApp();
   });
@@ -69,10 +69,8 @@ void main() {
 
       expect(id, isNotEmpty);
 
-      final doc = await firestore
-          .collection(GroupCollections.groups)
-          .doc(id)
-          .get();
+      final doc =
+          await firestore.collection(GroupCollections.groups).doc(id).get();
       expect(doc.exists, isTrue);
       expect(doc.data(), {
         'name': 'Test',
@@ -232,10 +230,8 @@ void main() {
 
       await service.approveJoinRequest(groupId: 'g1', uid: 'u2');
 
-      final member = await groupRef
-          .collection(GroupCollections.members)
-          .doc('u2')
-          .get();
+      final member =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
       expect(member.exists, isTrue);
       expect(member.data()?['name'], 'User');
       final request = await groupRef
@@ -278,10 +274,8 @@ void main() {
 
       await service.denyJoinRequest(groupId: 'g1', uid: 'u2');
 
-      final member = await groupRef
-          .collection(GroupCollections.members)
-          .doc('u2')
-          .get();
+      final member =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
       expect(member.exists, isFalse);
       final request = await groupRef
           .collection(GroupCollections.joinRequests)
@@ -301,10 +295,8 @@ void main() {
 
       await service.leaveGroup(groupId: 'g1', uid: 'u2');
 
-      final member = await groupRef
-          .collection(GroupCollections.members)
-          .doc('u2')
-          .get();
+      final member =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
       expect(member.exists, isFalse);
       final groupDoc = await groupRef.get();
       expect(groupDoc.data()?['memberCount'], 1);
@@ -328,10 +320,8 @@ void main() {
 
       final groupDoc = await groupRef.get();
       expect(groupDoc.data()?['memberCount'], 1);
-      final remaining = await groupRef
-          .collection(GroupCollections.members)
-          .doc('u2')
-          .get();
+      final remaining =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
       expect(remaining.exists, isFalse);
     });
 
@@ -346,10 +336,8 @@ void main() {
 
       await service.promoteToAdmin(groupId: 'g1', ownerUid: 'owner', uid: 'u2');
 
-      final member = await groupRef
-          .collection(GroupCollections.members)
-          .doc('u2')
-          .get();
+      final member =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
       expect(member.data()?['role'], 'admin');
     });
 
@@ -364,10 +352,8 @@ void main() {
 
       await service.demoteAdmin(groupId: 'g1', ownerUid: 'owner', uid: 'u2');
 
-      final member = await groupRef
-          .collection(GroupCollections.members)
-          .doc('u2')
-          .get();
+      final member =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
       expect(member.data()?['role'], 'member');
     });
 
@@ -394,14 +380,10 @@ void main() {
         throwsStateError,
       );
 
-      final member = await groupRef
-          .collection(GroupCollections.members)
-          .doc('u2')
-          .get();
-      final admin = await groupRef
-          .collection(GroupCollections.members)
-          .doc('u3')
-          .get();
+      final member =
+          await groupRef.collection(GroupCollections.members).doc('u2').get();
+      final admin =
+          await groupRef.collection(GroupCollections.members).doc('u3').get();
       expect(member.data()?['role'], 'member');
       expect(admin.data()?['role'], 'admin');
     });
@@ -674,9 +656,8 @@ void main() {
     test(
       'memberNames falls back to displayName or email when name is missing',
       () async {
-        final groupRef = firestore
-            .collection(GroupCollections.groups)
-            .doc('g1');
+        final groupRef =
+            firestore.collection(GroupCollections.groups).doc('g1');
         await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
 
         // Member 1: Has name in users (Normal case)
@@ -724,9 +705,9 @@ void main() {
           .collection(GroupCollections.schedule)
           .doc('2024-01-01')
           .set({
-            'date': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
-            'chapters': ['Gen 1'],
-          });
+        'date': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+        'chapters': ['Gen 1'],
+      });
 
       await expectLater(
         service.schedule('g1'),
@@ -990,9 +971,8 @@ void main() {
     test(
       'memberOverallCompletion streams total progress for group members',
       () async {
-        final groupRef = firestore
-            .collection(GroupCollections.groups)
-            .doc('g1');
+        final groupRef =
+            firestore.collection(GroupCollections.groups).doc('g1');
         await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
 
         // Members
@@ -1012,16 +992,16 @@ void main() {
             .collection(GroupCollections.schedule)
             .doc('2024-01-01')
             .set({
-              'date': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
-              'chapters': ['Gen 1', 'Gen 2'],
-            });
+          'date': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+          'chapters': ['Gen 1', 'Gen 2'],
+        });
         await groupRef
             .collection(GroupCollections.schedule)
             .doc('2024-01-02')
             .set({
-              'date': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
-              'chapters': ['Gen 3', 'Gen 4'],
-            });
+          'date': Timestamp.fromDate(DateTime.utc(2024, 1, 2)),
+          'chapters': ['Gen 3', 'Gen 4'],
+        });
 
         // Progress Summary
         // u1: Completed 3 chapters (75%)
@@ -1062,9 +1042,8 @@ void main() {
       test(
         'recalcProgressForUserInGroup sums counts and updates summary',
         () async {
-          final groupRef = firestore
-              .collection(GroupCollections.groups)
-              .doc('g1');
+          final groupRef =
+              firestore.collection(GroupCollections.groups).doc('g1');
           await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
           await groupRef.collection(GroupCollections.members).doc('u1').set({
             'uid': 'u1',
@@ -1110,9 +1089,8 @@ void main() {
       );
 
       test('recalcProgressForUserInGroup backfills missing count', () async {
-        final groupRef = firestore
-            .collection(GroupCollections.groups)
-            .doc('g1');
+        final groupRef =
+            firestore.collection(GroupCollections.groups).doc('g1');
         await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
         await groupRef.collection(GroupCollections.members).doc('u1').set({
           'uid': 'u1',
@@ -1150,9 +1128,8 @@ void main() {
       test(
         'recalcProgressForUserInGroup does nothing if user not member/owner',
         () async {
-          final groupRef = firestore
-              .collection(GroupCollections.groups)
-              .doc('g1');
+          final groupRef =
+              firestore.collection(GroupCollections.groups).doc('g1');
           await groupRef.set({'name': 'G', 'ownerUid': 'owner'});
           // u1 is not a member
 

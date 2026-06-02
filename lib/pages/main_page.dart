@@ -36,16 +36,14 @@ import '../widgets/offline_banner.dart';
 import 'app_check_error_page.dart';
 import 'read_log_page.dart';
 
-typedef SendLikeNotification =
-    Future<void> Function({
-      required String ownerUid,
-      required String likerName,
-    });
-typedef SendCommentNotification =
-    Future<void> Function({
-      required String ownerUid,
-      required String commenterName,
-    });
+typedef SendLikeNotification = Future<void> Function({
+  required String ownerUid,
+  required String likerName,
+});
+typedef SendCommentNotification = Future<void> Function({
+  required String ownerUid,
+  required String commenterName,
+});
 
 class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -57,8 +55,7 @@ class MainPage extends StatefulWidget {
     FirebaseAuth? auth,
     required SendLikeNotification onSendLikeNotification,
     required SendCommentNotification onSendCommentNotification,
-  })
-  readLogPageBuilder;
+  }) readLogPageBuilder;
   final SendLikeNotification? sendLikeNotification;
   final SendCommentNotification? sendCommentNotification;
   final FirebaseMessaging messaging;
@@ -75,8 +72,7 @@ class MainPage extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function({
     required String dateKey,
     required String uid,
-  })?
-  markFirstReader;
+  })? markFirstReader;
 
   MainPage({
     super.key,
@@ -94,19 +90,18 @@ class MainPage extends StatefulWidget {
       FirebaseAuth? auth,
       required SendLikeNotification onSendLikeNotification,
       required SendCommentNotification onSendCommentNotification,
-    })?
-    readLogPageBuilder,
+    })? readLogPageBuilder,
     this.sendLikeNotification,
     this.sendCommentNotification,
     this.appCheckFailed = false,
     this.functions,
     this.onNavigate,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance,
-       messaging = messaging ?? FirebaseMessaging.instance,
-       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-       vibrationService = vibrationService ?? const VibrationService(),
-       readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance,
+        messaging = messaging ?? FirebaseMessaging.instance,
+        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+        vibrationService = vibrationService ?? const VibrationService(),
+        readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
 
   @override
   State<MainPage> createState() => MainPageState();
@@ -144,8 +139,7 @@ class MainPageState extends State<MainPage> {
     _cacheService = DataCacheService();
     _connectivityService = ConnectivityService();
     // ... rest of init ...
-    _readingStatusService =
-        widget.readingStatusService ??
+    _readingStatusService = widget.readingStatusService ??
         ReadingStatusService(
           firestore: widget.firestore,
           auth: widget.auth,
@@ -186,14 +180,12 @@ class MainPageState extends State<MainPage> {
         readingStatusService: _readingStatusService,
         vibrationService: widget.vibrationService,
         readLogBuilder: widget.readLogPageBuilder,
-        onSendLikeNotification:
-            widget.sendLikeNotification ??
+        onSendLikeNotification: widget.sendLikeNotification ??
             ({required String ownerUid, required String likerName}) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) return;
               await user.getIdToken(true);
-              final functions =
-                  widget.functions ??
+              final functions = widget.functions ??
                   FirebaseFunctions.instanceFor(region: 'us-central1');
               final callable = functions.httpsCallable('sendLikeNotification');
               await callable.call({
@@ -201,14 +193,12 @@ class MainPageState extends State<MainPage> {
                 'likerName': likerName,
               });
             },
-        onSendCommentNotification:
-            widget.sendCommentNotification ??
+        onSendCommentNotification: widget.sendCommentNotification ??
             ({required String ownerUid, required String commenterName}) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) return;
               await user.getIdToken(true);
-              final functions =
-                  widget.functions ??
+              final functions = widget.functions ??
                   FirebaseFunctions.instanceFor(region: 'us-central1');
               final callable = functions.httpsCallable(
                 'sendCommentNotification',
@@ -453,9 +443,8 @@ class MainPageState extends State<MainPage> {
             auth: widget.auth,
             firestore: widget.firestore,
             child: ResponsiveScaffold(
-              selectedIndex: _selectedIndex >= _pages.length
-                  ? 0
-                  : _selectedIndex,
+              selectedIndex:
+                  _selectedIndex >= _pages.length ? 0 : _selectedIndex,
               contentIndex: _selectedIndex,
               onDestinationSelected: _onItemTapped,
               pages: _pages,

@@ -24,8 +24,8 @@ class FeedbackService {
   /// Creates a [FeedbackService] using the default Firebase instances when none
   /// are provided.
   FeedbackService({FirebaseFirestore? firestore, FirebaseAuth? auth})
-    : firestore = firestore ?? FirebaseFirestore.instance,
-      auth = auth ?? FirebaseAuth.instance;
+      : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance;
 
   /// Submits a bug report with the provided [title], [description], and optional
   /// [reproductionSteps].

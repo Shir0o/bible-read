@@ -45,12 +45,12 @@ class Season {
 
   /// Serializes this season for Firestore writes.
   Map<String, dynamic> toFirestore() => {
-    'title': title,
-    'description': description,
-    'startDate': Timestamp.fromDate(startDate),
-    'endDate': Timestamp.fromDate(endDate),
-    'bannerImageUrl': bannerImageUrl,
-  };
+        'title': title,
+        'description': description,
+        'startDate': Timestamp.fromDate(startDate),
+        'endDate': Timestamp.fromDate(endDate),
+        'bannerImageUrl': bannerImageUrl,
+      };
 
   /// Returns whether the season is currently active relative to [now].
   bool isActive(DateTime now) {

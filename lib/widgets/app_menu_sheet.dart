@@ -248,7 +248,7 @@ class _MenuContents extends StatelessWidget {
     final ColorScheme colorScheme = theme.colorScheme;
     final textStyle =
         theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600) ??
-        const TextStyle(fontWeight: FontWeight.w600);
+            const TextStyle(fontWeight: FontWeight.w600);
 
     return Container(
       decoration: BoxDecoration(
@@ -282,8 +282,7 @@ class _MenuContents extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'Menu',
-                style:
-                    theme.textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ) ??
                     const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
@@ -299,9 +298,8 @@ class _MenuContents extends StatelessWidget {
                   final double contentWidth =
                       availableWidth - horizontalPadding;
 
-                  final double baseWidth = compact
-                      ? contentWidth
-                      : (contentWidth - 16) / 2;
+                  final double baseWidth =
+                      compact ? contentWidth : (contentWidth - 16) / 2;
                   final double buttonWidth = compact
                       ? baseWidth
                       : baseWidth.clamp(140.0, 240.0).toDouble();
@@ -392,9 +390,9 @@ class _MenuItem {
     required this.label,
     this.onTap,
   }) : assert(
-         index != null || onTap != null,
-         'Either index or onTap must be provided.',
-       );
+          index != null || onTap != null,
+          'Either index or onTap must be provided.',
+        );
 
   final int? index;
   final IconData icon;

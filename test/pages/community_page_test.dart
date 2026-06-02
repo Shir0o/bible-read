@@ -56,10 +56,10 @@ void main() {
           readingPlanService: readingPlanService,
           readingStatusService: readingStatusService,
           vibrationService: vibration,
-          onSendLikeNotification:
-              ({required ownerUid, required likerName}) async {},
-          onSendCommentNotification:
-              ({required ownerUid, required commenterName}) async {},
+          onSendLikeNotification: (
+              {required ownerUid, required likerName}) async {},
+          onSendCommentNotification: (
+              {required ownerUid, required commenterName}) async {},
           dateProvider: () => date ?? DateTime(2024, 1, 1),
         ),
       ),
@@ -105,11 +105,11 @@ void main() {
         .collection('members')
         .doc('u1')
         .set({
-          'uid': 'u1',
-          'role': 'owner',
-          'joinedAt': Timestamp.now(),
-          'name': 'Test User',
-        });
+      'uid': 'u1',
+      'role': 'owner',
+      'joinedAt': Timestamp.now(),
+      'name': 'Test User',
+    });
     // Setup schedule
     await firestore
         .collection('groups')
@@ -117,9 +117,9 @@ void main() {
         .collection('schedule')
         .doc('2024-01-01')
         .set({
-          'date': Timestamp.fromDate(DateTime(2024, 1, 1)),
-          'chapters': ['Gen 1'],
-        });
+      'date': Timestamp.fromDate(DateTime(2024, 1, 1)),
+      'chapters': ['Gen 1'],
+    });
 
     await pumpPage(tester);
 
@@ -176,11 +176,11 @@ void main() {
         .doc('u1')
         .collection('comments')
         .add({
-          'uid': 'u1',
-          'name': 'Test',
-          'message': 'Great chapter',
-          'timestamp': Timestamp.now(),
-        });
+      'uid': 'u1',
+      'name': 'Test',
+      'message': 'Great chapter',
+      'timestamp': Timestamp.now(),
+    });
 
     await pumpPage(tester);
 

@@ -36,20 +36,20 @@ void main() {
             .collection(SeasonalChallengePaths.seasons)
             .doc('past')
             .set({
-              'title': 'Past Season',
-              'description': 'Already finished',
-              'startDate': Timestamp.fromDate(DateTime(2023, 1, 1)),
-              'endDate': Timestamp.fromDate(DateTime(2023, 1, 31)),
-            });
+          'title': 'Past Season',
+          'description': 'Already finished',
+          'startDate': Timestamp.fromDate(DateTime(2023, 1, 1)),
+          'endDate': Timestamp.fromDate(DateTime(2023, 1, 31)),
+        });
         await firestore
             .collection(SeasonalChallengePaths.seasons)
             .doc('spring2024')
             .set({
-              'title': 'Spring 2024',
-              'description': 'Active season',
-              'startDate': Timestamp.fromDate(DateTime(2024, 5, 1)),
-              'endDate': Timestamp.fromDate(DateTime(2024, 5, 31)),
-            });
+          'title': 'Spring 2024',
+          'description': 'Active season',
+          'startDate': Timestamp.fromDate(DateTime(2024, 5, 1)),
+          'endDate': Timestamp.fromDate(DateTime(2024, 5, 31)),
+        });
 
         final season = await service.fetchActiveSeason();
 
@@ -63,29 +63,29 @@ void main() {
           .collection(SeasonalChallengePaths.seasons)
           .doc('summer2024')
           .set({
-            'title': 'Summer 2024',
-            'description': 'Summer fun',
-            'startDate': Timestamp.fromDate(DateTime(2024, 6, 1)),
-            'endDate': Timestamp.fromDate(DateTime(2024, 6, 30)),
-          });
+        'title': 'Summer 2024',
+        'description': 'Summer fun',
+        'startDate': Timestamp.fromDate(DateTime(2024, 6, 1)),
+        'endDate': Timestamp.fromDate(DateTime(2024, 6, 30)),
+      });
       await firestore
           .collection(SeasonalChallengePaths.seasons)
           .doc('summer2024')
           .collection(SeasonalChallengePaths.challenges)
           .doc('memorize')
           .set({
-            'title': 'Memorize verses',
-            'description': 'Commit verses to memory',
-            'metric': 'verses',
-            'goal': 3,
-            'reward': {
-              'id': 'verse_badge',
-              'type': 'badge',
-              'title': 'Verse Badge',
-              'description': 'Reward for memorizing verses',
-              'amount': 1,
-            },
-          });
+        'title': 'Memorize verses',
+        'description': 'Commit verses to memory',
+        'metric': 'verses',
+        'goal': 3,
+        'reward': {
+          'id': 'verse_badge',
+          'type': 'badge',
+          'title': 'Verse Badge',
+          'description': 'Reward for memorizing verses',
+          'amount': 1,
+        },
+      });
 
       final challenges = await service.streamChallenges('summer2024').first;
 
@@ -201,8 +201,8 @@ void main() {
               .collection(SeasonalChallengePaths.userSeasonChallenges)
               .doc('${seasonId}_$challengeId')
               .set({
-                'rewardClaimedAt': Timestamp.fromDate(now),
-              }, SetOptions(merge: true));
+            'rewardClaimedAt': Timestamp.fromDate(now),
+          }, SetOptions(merge: true));
           await firestore
               .collection(SeasonalChallengePaths.users)
               .doc('user3')

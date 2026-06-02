@@ -47,11 +47,11 @@ class SyncingIndicator extends StatelessWidget {
                       Text(
                         'Syncing...',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w500,
-                        ),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
                     ],
                   ),

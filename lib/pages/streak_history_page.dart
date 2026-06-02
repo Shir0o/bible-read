@@ -15,8 +15,8 @@ class StreakHistoryPage extends StatelessWidget {
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       auth = auth ?? FirebaseAuth.instance;
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        auth = auth ?? FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {

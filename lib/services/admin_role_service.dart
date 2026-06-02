@@ -11,8 +11,8 @@ class AdminRoleService {
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     this.cacheDuration = const Duration(minutes: 5),
-  }) : auth = auth ?? FirebaseAuth.instance,
-       firestore = firestore ?? FirebaseFirestore.instance;
+  })  : auth = auth ?? FirebaseAuth.instance,
+        firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Firebase authentication instance used to determine the current user.
   @protected
@@ -69,20 +69,17 @@ class AdminRoleService {
   }
 
   Future<bool> _refreshCache() {
-    _refreshing ??= fetchAdminRole()
-        .then((value) {
-          _cachedAdminRole = value;
-          _cacheTimestamp = DateTime.now();
-          return value;
-        })
-        .catchError((_) {
-          _cacheTimestamp = DateTime.now();
-          _cachedAdminRole ??= false;
-          return _cachedAdminRole!;
-        })
-        .whenComplete(() {
-          _refreshing = null;
-        });
+    _refreshing ??= fetchAdminRole().then((value) {
+      _cachedAdminRole = value;
+      _cacheTimestamp = DateTime.now();
+      return value;
+    }).catchError((_) {
+      _cacheTimestamp = DateTime.now();
+      _cachedAdminRole ??= false;
+      return _cachedAdminRole!;
+    }).whenComplete(() {
+      _refreshing = null;
+    });
     _lastRefresh = _refreshing;
 
     return _refreshing!;

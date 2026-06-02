@@ -23,9 +23,9 @@ class FakeGroupService extends GroupService {
 
   @override
   Future<List<String>> fetchTodaysChapters(String groupId) async => [
-    'Genesis 1',
-    'Genesis 2',
-  ];
+        'Genesis 1',
+        'Genesis 2',
+      ];
 }
 
 void main() {

@@ -70,7 +70,8 @@ void main() {
     ).called(1);
   });
 
-  test('log does not call Crashlytics when Firebase is uninitialized', () async {
+  test('log does not call Crashlytics when Firebase is uninitialized',
+      () async {
     final original = Firebase.delegatePackingProperty;
     Firebase.delegatePackingProperty = _EmptyFirebasePlatform();
     // Clear the crashlytics mock to simulate uninitialized state

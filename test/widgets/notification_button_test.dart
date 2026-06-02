@@ -12,7 +12,7 @@ import 'package:bible_read/services/vibration_service.dart';
 
 class FakeNotificationService extends NotificationService {
   FakeNotificationService({this.data = const []})
-    : super(firestore: FakeFirebaseFirestore());
+      : super(firestore: FakeFirebaseFirestore());
 
   final List<AppNotification> data;
 

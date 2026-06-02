@@ -47,11 +47,11 @@ void main() {
           .collection('entries')
           .doc(user.uid)
           .set({
-            'uid': user.uid,
-            'done': true,
-            'count': 4,
-            'dateId': '2024-05-01',
-          });
+        'uid': user.uid,
+        'done': true,
+        'count': 4,
+        'dateId': '2024-05-01',
+      });
 
       // 3. Pump Journey Page
       await tester.pumpWidget(

@@ -146,8 +146,8 @@ class _AllGroupsViewState extends State<AllGroupsView>
                   // 2. Name contains query.
                   final filtered = allGroups.where((g) {
                     final nameMatch = g.name.toLowerCase().contains(
-                      _searchQuery,
-                    );
+                          _searchQuery,
+                        );
                     return g.isPublic && nameMatch;
                   }).toList();
 

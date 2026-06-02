@@ -22,7 +22,7 @@ class _StubVibrationService extends VibrationService {
 
 class _AlwaysAdminService extends AdminRoleService {
   _AlwaysAdminService()
-    : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
+      : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
 
   @override
   Future<bool> isAdmin({bool allowStale = true}) async => true;
@@ -30,7 +30,7 @@ class _AlwaysAdminService extends AdminRoleService {
 
 class _NeverAdminService extends AdminRoleService {
   _NeverAdminService()
-    : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
+      : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
 
   @override
   Future<bool> isAdmin({bool allowStale = true}) async => false;
@@ -38,7 +38,7 @@ class _NeverAdminService extends AdminRoleService {
 
 class _StaleCachedAdminService extends AdminRoleService {
   _StaleCachedAdminService(bool cachedValue)
-    : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore()) {
+      : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore()) {
     primeCacheForTest(
       cachedValue,
       timestamp: DateTime.now().subtract(const Duration(minutes: 10)),

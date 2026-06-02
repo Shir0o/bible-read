@@ -33,15 +33,14 @@ class UserPlanProgress {
   }
 
   Map<String, dynamic> toFirestore() => {
-    'planId': planId,
-    'userId': userId,
-    'startDate': Timestamp.fromDate(startDate),
-    'completedDays': completedDays,
-    'lastReadDate': lastReadDate != null
-        ? Timestamp.fromDate(lastReadDate!)
-        : null,
-    'isArchived': isArchived,
-  };
+        'planId': planId,
+        'userId': userId,
+        'startDate': Timestamp.fromDate(startDate),
+        'completedDays': completedDays,
+        'lastReadDate':
+            lastReadDate != null ? Timestamp.fromDate(lastReadDate!) : null,
+        'isArchived': isArchived,
+      };
 
   UserPlanProgress copyWith({
     String? planId,

@@ -9,7 +9,7 @@ class ConnectivityService {
       StreamController<ConnectionStatus>.broadcast();
 
   ConnectivityService({Connectivity? connectivity})
-    : _connectivity = connectivity ?? Connectivity() {
+      : _connectivity = connectivity ?? Connectivity() {
     _init();
   }
 

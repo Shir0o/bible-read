@@ -58,13 +58,12 @@ class FeedbackAdminPage extends StatefulWidget {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     AdminRoleService? adminRoleService,
-  }) : firestore = firestore ?? FirebaseFirestore.instance,
-       adminRoleService =
-           adminRoleService ??
-           AdminRoleService(
-             firestore: firestore ?? FirebaseFirestore.instance,
-             auth: auth ?? FirebaseAuth.instance,
-           );
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        adminRoleService = adminRoleService ??
+            AdminRoleService(
+              firestore: firestore ?? FirebaseFirestore.instance,
+              auth: auth ?? FirebaseAuth.instance,
+            );
 
   /// Firestore instance supplying feedback data.
   final FirebaseFirestore firestore;
@@ -429,7 +428,7 @@ class _FeedbackEntryCard extends StatelessWidget {
     final theme = Theme.of(context);
     final titleStyle =
         theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700) ??
-        const TextStyle(fontSize: 18, fontWeight: FontWeight.w700);
+            const TextStyle(fontSize: 18, fontWeight: FontWeight.w700);
     final bodyStyle = theme.textTheme.bodyMedium;
     final rawStatus = (data['status'] as String? ?? 'unknown');
     final status = rawStatus.toLowerCase();

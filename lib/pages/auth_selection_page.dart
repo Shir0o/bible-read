@@ -29,10 +29,10 @@ class AuthSelectionPage extends StatefulWidget {
     GoogleSignIn Function()? googleSignInProvider,
     VibrationService? vibrationService,
     this.mainPageBuilder,
-  }) : auth = auth ?? FirebaseAuth.instance,
-       firestore = firestore ?? FirebaseFirestore.instance,
-       googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-       vibrationService = vibrationService ?? const VibrationService();
+  })  : auth = auth ?? FirebaseAuth.instance,
+        firestore = firestore ?? FirebaseFirestore.instance,
+        googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<AuthSelectionPage> createState() => _AuthSelectionPageState();
