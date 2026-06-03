@@ -46,7 +46,8 @@ void main() {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => FeedbackPage(
-                          feedbackService: FeedbackService(auth: auth, firestore: firestore),
+                          feedbackService:
+                              FeedbackService(auth: auth, firestore: firestore),
                         ),
                       ),
                     );
@@ -65,10 +66,13 @@ void main() {
       await tester.pumpAndSettle();
 
       // Submit Bug Report
-      await tester.enterText(find.byKey(const ValueKey('bugTitleField')), 'Crash on home');
-      await tester.enterText(find.byKey(const ValueKey('bugDescriptionField')), 'The app crashes when I tap home.');
-      await tester.enterText(find.byKey(const ValueKey('bugStepsField')), '1. Open app\n2. Tap home');
-      
+      await tester.enterText(
+          find.byKey(const ValueKey('bugTitleField')), 'Crash on home');
+      await tester.enterText(find.byKey(const ValueKey('bugDescriptionField')),
+          'The app crashes when I tap home.');
+      await tester.enterText(find.byKey(const ValueKey('bugStepsField')),
+          '1. Open app\n2. Tap home');
+
       final submitBugButton = find.byKey(const ValueKey('bugSubmitButton'));
       await tester.ensureVisible(submitBugButton);
       await tester.tap(submitBugButton);
@@ -91,10 +95,14 @@ void main() {
       await tester.tap(find.text('Request a Feature'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byKey(const ValueKey('featureTitleField')), 'Dark mode');
-      await tester.enterText(find.byKey(const ValueKey('featureDescriptionField')), 'I want dark mode.');
-      
-      final submitFeatureButton = find.byKey(const ValueKey('featureSubmitButton'));
+      await tester.enterText(
+          find.byKey(const ValueKey('featureTitleField')), 'Dark mode');
+      await tester.enterText(
+          find.byKey(const ValueKey('featureDescriptionField')),
+          'I want dark mode.');
+
+      final submitFeatureButton =
+          find.byKey(const ValueKey('featureSubmitButton'));
       await tester.ensureVisible(submitFeatureButton);
       await tester.tap(submitFeatureButton);
       await tester.pumpAndSettle();
@@ -119,13 +127,14 @@ void main() {
       // Mock admin user
       final adminUser = MockUser(uid: 'admin1', email: 'admin@test.com');
       final adminAuth = MockFirebaseAuth(mockUser: adminUser, signedIn: true);
-      
+
       // Set admin role in Firestore
       await firestore.collection('users').doc('admin1').set({
         'role': 'admin',
       });
 
-      final adminRoleService = AdminRoleService(auth: adminAuth, firestore: firestore);
+      final adminRoleService =
+          AdminRoleService(auth: adminAuth, firestore: firestore);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -147,9 +156,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Enter notes in dialog
-      expect(find.byKey(const ValueKey('resolutionNotesField')), findsOneWidget);
-      await tester.enterText(find.byKey(const ValueKey('resolutionNotesField')), 'Fixed in v1.1');
-      
+      expect(
+          find.byKey(const ValueKey('resolutionNotesField')), findsOneWidget);
+      await tester.enterText(
+          find.byKey(const ValueKey('resolutionNotesField')), 'Fixed in v1.1');
+
       // Find the "Mark Resolved" button IN THE DIALOG
       // The dialog also has a "Mark Resolved" button from the `confirmLabel`
       final dialogButton = find.descendant(
@@ -180,7 +191,8 @@ void main() {
       final adminUser = MockUser(uid: 'admin2', email: 'admin2@test.com');
       final adminAuth = MockFirebaseAuth(mockUser: adminUser, signedIn: true);
       await firestore.collection('users').doc('admin2').set({'role': 'admin'});
-      final adminRoleService = AdminRoleService(auth: adminAuth, firestore: firestore);
+      final adminRoleService =
+          AdminRoleService(auth: adminAuth, firestore: firestore);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -205,8 +217,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Enter notes in dialog
-      await tester.enterText(find.byKey(const ValueKey('resolutionNotesField')), 'Out of scope');
-      
+      await tester.enterText(
+          find.byKey(const ValueKey('resolutionNotesField')), 'Out of scope');
+
       final dialogButton = find.descendant(
         of: find.byType(AlertDialog),
         matching: find.text('Mark Not Applicable'),

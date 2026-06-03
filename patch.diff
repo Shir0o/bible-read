@@ -1,0 +1,21 @@
+--- test/widgets/status_refresh_indicator_test.dart
++++ test/widgets/status_refresh_indicator_test.dart
+@@ -62,8 +62,13 @@
+       await tester.pump(StatusRefreshIndicator.successDelay);
+       // Run finally block and rebuild
+       await tester.pump();
+       await tester.pump();
+-      await tester.pumpAndSettle();
+-      expect(find.text('Refreshed successfully'), findsNothing);
++
++      // Important: Ensure CustomRefreshIndicator settles completely. We need to
++      // manually advance the clock to let all internal animations of custom_refresh_indicator
++      // finish, or use pumpAndSettle if possible. Sometimes pumpAndSettle times out if there
++      // are continuous animations. Let's see if we can use it.
++
++      // Wait for CustomRefreshIndicator to settle
++      await tester.pumpAndSettle();
++
++      expect(find.text('Refreshed successfully'), findsNothing);
+       expect(find.text('Refreshing...'), findsNothing);
+     },
