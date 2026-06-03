@@ -1039,25 +1039,27 @@ class GroupService {
           }
         }
 
-        final futures = <Future<QuerySnapshot<Map<String, dynamic>>>>[];
-        // ⚡ Bolt: Fetch missing users in chunks of 30 (Firestore whereIn limit) to reduce N+1 queries by 3x.
+        // ⚡ Bolt: Fetch missing users in parallel to reduce N+1 queries.
+        // Use mapped gets to avoid limit constraints and reduce query payload size.
+        final chunkedFutures =
+            <Future<List<DocumentSnapshot<Map<String, dynamic>>>>>[];
         for (var i = 0; i < missingUids.length; i += 30) {
           final batch = missingUids.sublist(
             i,
             i + 30 > missingUids.length ? missingUids.length : i + 30,
           );
-          futures.add(
-            firestore
-                .collection('users')
-                .where(FieldPath.documentId, whereIn: batch)
-                .get(),
+          chunkedFutures.add(
+            Future.wait(
+              batch.map((uid) => firestore.collection('users').doc(uid).get()),
+            ),
           );
         }
 
-        final results = await Future.wait(futures);
-        for (final query in results) {
-          for (final user in query.docs) {
-            final chosen = _resolveDisplayName(user.data());
+        final results = await Future.wait(chunkedFutures);
+        for (final chunkResults in results) {
+          for (final user in chunkResults) {
+            if (!user.exists) continue;
+            final chosen = _resolveDisplayName(user.data()!);
             if (chosen != null) {
               names.add(chosen);
             }
@@ -1547,16 +1549,16 @@ class GroupService {
     }
 
     final uniqueUids = uids.toSet().toList();
-    final futures = <Future<QuerySnapshot<Map<String, dynamic>>>>[];
-    // ⚡ Bolt: Fetch missing users in chunks of 30 (Firestore whereIn limit) to reduce N+1 queries by 3x.
+    // ⚡ Bolt: Fetch missing users in parallel to reduce N+1 queries.
+    // Use mapped gets to avoid limit constraints and reduce query payload size.
+    final futures = <Future<List<DocumentSnapshot<Map<String, dynamic>>>>>[];
     for (var i = 0; i < uniqueUids.length; i += 30) {
       final end = i + 30 > uniqueUids.length ? uniqueUids.length : i + 30;
       final batch = uniqueUids.sublist(i, end);
       futures.add(
-        firestore
-            .collection('users')
-            .where(FieldPath.documentId, whereIn: batch)
-            .get(),
+        Future.wait(
+          batch.map((uid) => firestore.collection('users').doc(uid).get()),
+        ),
       );
     }
 
@@ -1566,9 +1568,10 @@ class GroupService {
     }
 
     final results = await Future.wait(futures);
-    for (final query in results) {
-      for (final user in query.docs) {
-        final data = user.data();
+    for (final chunkResults in results) {
+      for (final user in chunkResults) {
+        if (!user.exists) continue;
+        final data = user.data()!;
         final chosen = _resolveDisplayName(data);
         final photoUrl = (data['photoURL'] as String?)?.trim();
         if (chosen != null) {
@@ -2105,11 +2108,4 @@ class _UserInfo {
   final String name;
   final String? photoUrl;
   _UserInfo(this.name, this.photoUrl);
-}
-
-class _FetchResult {
-  final String collection;
-  final List<DocumentReference> refs;
-  final Object? error;
-  const _FetchResult(this.collection, this.refs, this.error);
 }
