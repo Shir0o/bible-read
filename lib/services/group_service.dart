@@ -1664,39 +1664,14 @@ class GroupService {
         GroupCollections.joinRequests,
       ];
 
-      // Fetch base subcollection snaps in parallel.
-      final baseSnaps = await Future.wait(
-        baseCollections.map((coll) async {
-          try {
-            final snap = await groupRef.collection(coll).get();
-            return _FetchResult(
-                coll, snap.docs.map((d) => d.reference).toList(), null);
-          } catch (e, st) {
-            await _safeLog(e, st);
-            return _FetchResult(coll, const <DocumentReference>[], e);
-          }
-        }),
-      );
-
-      final refsToDelete = <DocumentReference>[];
-      for (final result in baseSnaps) {
-        if (result.error != null) {
-          failures.add(result.collection);
-        } else {
-          refsToDelete.addAll(result.refs);
-        }
-      }
-
-      if (refsToDelete.isNotEmpty) {
+      for (final coll in baseCollections) {
         try {
-          await _deleteInBatches(refsToDelete);
-        } catch (e, st) {
-          // If the batch delete fails, mark all collections that had elements as failed.
-          for (final result in baseSnaps) {
-            if (result.refs.isNotEmpty) {
-              failures.add(result.collection);
-            }
+          final snap = await groupRef.collection(coll).get();
+          if (snap.docs.isNotEmpty) {
+            await _deleteInBatches(snap.docs.map((d) => d.reference).toList());
           }
+        } catch (e, st) {
+          failures.add(coll);
           await _safeLog(e, st);
         }
       }
