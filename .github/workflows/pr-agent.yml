@@ -21,4 +21,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CONFIG__MODEL: "google_ai_studio/gemini-1.5-pro"
+          # gemini-1.5-pro isn't in PR-Agent's built-in MAX_TOKENS registry, so it
+          # must be given a token limit explicitly or every run aborts with
+          # "Failed to generate prediction with any model".
+          CONFIG__CUSTOM_MODEL_MAX_TOKENS: "1048576"
+          # Avoid the default fallback chain (which points at a model we can't
+          # reach) — fall back to the same Gemini model instead.
+          CONFIG__FALLBACK_MODELS: '["google_ai_studio/gemini-1.5-pro"]'
           GOOGLE_AI_STUDIO__GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
