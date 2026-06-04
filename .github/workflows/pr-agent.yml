@@ -20,5 +20,12 @@ jobs:
         uses: the-pr-agent/pr-agent@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONFIG__MODEL: "google_ai_studio/gemini-1.5-pro"
+          # Model id must use LiteLLM's provider prefix (gemini/...), NOT PR-Agent's
+          # config-section name (google_ai_studio/...). The latter makes LiteLLM
+          # abort with "LLM Provider NOT provided". The API key still comes from the
+          # GOOGLE_AI_STUDIO__GEMINI_API_KEY env var below.
+          CONFIG__MODEL: "gemini/gemini-1.5-pro"
+          # Override the default fallback chain (which points at a model we can't
+          # reach) — fall back to the same Gemini model instead.
+          CONFIG__FALLBACK_MODELS: '["gemini/gemini-1.5-pro"]'
           GOOGLE_AI_STUDIO__GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
