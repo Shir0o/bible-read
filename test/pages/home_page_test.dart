@@ -268,7 +268,7 @@ void main() {
     expect(find.byType(HomePageSkeleton), findsNothing);
   });
 
-  testWidgets('respects autoMarkPlanRead preference when marking read', (
+  testWidgets('habit tap never advances the plan, even when coupling is on', (
     tester,
   ) async {
     final firestore = FakeFirebaseFirestore();
@@ -376,7 +376,9 @@ void main() {
     // Verify UI updated, NO prompt
     expect(find.text('Update Reading Plan?'), findsNothing);
 
-    // Verify plan progress WAS updated automatically
+    // Coupling is one-directional: the bare habit tap must NOT advance the
+    // plan even when "Reading counts as showing up" is on. Only finishing a
+    // plan reading may record the habit (the reverse direction).
     progressDoc = await firestore
         .collection('users')
         .doc('u1')
@@ -384,7 +386,7 @@ void main() {
         .doc('p1')
         .get();
     progress = UserPlanProgress.fromFirestore(progressDoc);
-    expect(progress.completedDays, contains(1));
+    expect(progress.completedDays, isEmpty);
   });
 }
 
