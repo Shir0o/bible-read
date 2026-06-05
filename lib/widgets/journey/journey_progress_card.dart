@@ -12,6 +12,7 @@ import '../../pages/create_plan_page.dart';
 import '../schedule_preview.dart';
 import '../skeleton.dart';
 import '../skeleton_loader.dart';
+import '../catch_up_status_row.dart';
 import '../../theme/app_theme.dart';
 
 import '../../services/vibration_service.dart';
@@ -25,6 +26,7 @@ class JourneyProgressCard extends StatefulWidget {
   final List<UserPlanProgress>? initialProgress;
   final bool showTitle;
   final bool isLoading;
+  final DateTime Function() dateProvider;
 
   JourneyProgressCard({
     super.key,
@@ -36,6 +38,7 @@ class JourneyProgressCard extends StatefulWidget {
     this.initialProgress,
     this.showTitle = true,
     this.isLoading = false,
+    this.dateProvider = DateTime.now,
   }) : readingPlanService =
             readingPlanService ?? ReadingPlanService(firestore: firestore);
 
@@ -448,7 +451,31 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+                  // Catch-up banner (no bounce-to-Today button — Journey owns
+                  // the long arc). Tapping opens the plan's schedule.
+                  CatchUpStatusRow(
+                    status: CatchUpEngine.forPersonalPlan(
+                      plan,
+                      progress,
+                      today: widget.dateProvider(),
+                    ),
+                    onTap: () {
+                      unawaited(widget.vibrationService.lightImpact());
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => PlanDetailPage(
+                            plan: plan,
+                            firestore: widget.firestore,
+                            auth: widget.auth,
+                            initialProgress: progress,
+                            vibrationService: widget.vibrationService,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   // Button
                   SizedBox(
                     width: double.infinity,

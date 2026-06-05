@@ -19,6 +19,7 @@ import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
 
 import '../services/vibration_service.dart';
+import '../widgets/catch_up_status_row.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
@@ -999,74 +1000,17 @@ class _HomePageState extends State<HomePage>
           ),
         ),
         const SizedBox(height: 10),
-        _buildCatchUpRow(context),
+        // Reuse the shared catch-up row (#720) so Home, Journey and Community
+        // present the engine-computed behind/on-track state identically.
+        CatchUpStatusRow(
+          status: CatchUpEngine.forPersonalPlan(
+            _activePlan!,
+            _activeProgress!,
+            today: widget.dateProvider(),
+          ),
+          onTap: _openPlanSchedule,
+        ),
       ],
-    );
-  }
-
-  /// Gentle catch-up row driven by [CatchUpEngine]: shows how many readings are
-  /// behind (no red, no "overdue") and links into the plan's full schedule.
-  Widget _buildCatchUpRow(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = Theme.of(context);
-    final status = CatchUpEngine.forPersonalPlan(
-      _activePlan!,
-      _activeProgress!,
-      today: widget.dateProvider(),
-    );
-    final behind = status.behindCount;
-    final isBehind = behind > 0;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: _openPlanSchedule,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: isBehind
-              ? colorScheme.tertiaryContainer.withValues(alpha: 0.4)
-              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              isBehind ? Icons.eco_outlined : Icons.calendar_today_outlined,
-              size: 20,
-              color: isBehind ? colorScheme.tertiary : colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isBehind
-                        ? '$behind reading${behind == 1 ? '' : 's'} to revisit'
-                        : 'You’re on track',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isBehind
-                          ? colorScheme.tertiary
-                          : colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    isBehind
-                        ? 'Catch up any order — no rush'
-                        : 'View your reading schedule',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right,
-                size: 20, color: colorScheme.onSurfaceVariant),
-          ],
-        ),
-      ),
     );
   }
 

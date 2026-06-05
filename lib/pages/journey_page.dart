@@ -176,6 +176,7 @@ class _JourneyPageState extends State<JourneyPage>
                         initialProgress: _progress,
                         isLoading: _isLoading,
                         vibrationService: widget.vibrationService,
+                        dateProvider: widget.dateProvider,
                       ),
                       const SizedBox(height: 32),
                       BibleLibraryGrid(
