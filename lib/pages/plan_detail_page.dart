@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
+import '../services/catch_up_engine.dart';
 import '../services/reading_plan_service.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/schedule_preview.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/plan_detail_skeleton.dart';
 import '../services/vibration_service.dart';
@@ -290,6 +292,9 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
   final Map<int, GlobalKey> _itemKeys = {};
   bool _hasScrolledToUnchecked = false;
 
+  /// In the not-started preview, whether the full schedule list is expanded.
+  bool _showFullSchedule = false;
+
   @override
   void initState() {
     super.initState();
@@ -467,16 +472,36 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
             ),
           ),
           const Divider(),
-          _buildSectionHeader(context, 'Plan Preview'),
-          ...widget.plan.schedule.map(
-            (day) => _buildScheduleItem(
-              context,
-              day,
-              DateTime.now(),
-              {},
-              isStarted: false,
+          const SizedBox(height: 8),
+          SchedulePreview(
+            status: CatchUpEngine.forPersonalPlan(
+              widget.plan,
+              UserPlanProgress(
+                planId: widget.plan.id,
+                userId: '',
+                startDate: DateTime.now(),
+                completedDays: const [],
+              ),
+              today: DateTime.now(),
             ),
+            title: widget.plan.title,
+            onViewFull: _showFullSchedule
+                ? null
+                : () => setState(() => _showFullSchedule = true),
           ),
+          if (_showFullSchedule) ...[
+            const SizedBox(height: 16),
+            _buildSectionHeader(context, 'Full Schedule'),
+            ...widget.plan.schedule.map(
+              (day) => _buildScheduleItem(
+                context,
+                day,
+                DateTime.now(),
+                {},
+                isStarted: false,
+              ),
+            ),
+          ],
         ],
       ),
     );
