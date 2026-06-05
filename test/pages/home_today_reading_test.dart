@@ -126,6 +126,54 @@ void main() {
   );
 
   testWidgets(
+    'read state + active plan fits a phone viewport (no overflow)',
+    (tester) async {
+      // Default 800x600 test surface — the size at which CI caught a 20px
+      // overflow before the SliverToBoxAdapter fix.
+      final firestore = FakeFirebaseFirestore();
+      final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final planService = ReadingPlanService(firestore: firestore);
+      await _seedPlan(firestore, planService, now: DateTime.now());
+
+      // Already showed up today.
+      final today = DateTime.now();
+      final dateKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('reading')
+          .doc(dateKey)
+          .set({'read': true});
+      await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('summary')
+          .doc('data')
+          .set({'streak': 5, 'totalReadDays': 5, 'pastWeekReadDates': []});
+
+      await tester.pumpWidget(
+        _host(HomePage(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: const VibrationService(),
+          bibleProgressService: _StubBibleProgressService(),
+          readingPlanService: planService,
+          dateProvider: DateTime.now,
+        )),
+      );
+      await tester.pumpAndSettle();
+
+      // Affirmation hero, plan reading card and habit stats all coexist…
+      expect(find.text('Thank you for being here'), findsOneWidget);
+      expect(find.text('Today’s reading'), findsOneWidget);
+      expect(find.text('Reading this week'), findsOneWidget);
+      // …without a layout overflow.
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'plan card mark advances the plan and asks the coupling question once',
     (tester) async {
       final firestore = FakeFirebaseFirestore();

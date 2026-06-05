@@ -614,8 +614,10 @@ class _HomePageState extends State<HomePage>
                 child: CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
-                    SliverFillRemaining(
-                      hasScrollBody: false,
+                    // SliverToBoxAdapter (not SliverFillRemaining) so the
+                    // habit-first column takes its natural height and scrolls
+                    // when it exceeds the viewport, rather than overflowing.
+                    SliverToBoxAdapter(
                       child: _buildMinimalContent(context),
                     ),
                   ],
@@ -724,10 +726,8 @@ class _HomePageState extends State<HomePage>
       bottom: false,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        // MainAxisSize.min keeps the column bounded under
-        // SliverFillRemaining(hasScrollBody: false), which hands down an
-        // unbounded max-height; content is top-aligned and scrolls if it
-        // exceeds the viewport.
+        // Content is top-aligned (habit hero first) and laid out at its natural
+        // height; the enclosing CustomScrollView scrolls it when tall.
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
