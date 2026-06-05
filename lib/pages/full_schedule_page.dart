@@ -4,9 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/group.dart';
+import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
+import '../widgets/member_presence_stack.dart';
 
 class FullSchedulePage extends StatefulWidget {
   final Group group;
@@ -197,6 +199,10 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
           // Sort schedule just in case
           fullSchedule.sort((a, b) => a.date.compareTo(b.date));
 
+          // Cadence-aware label for the current reading anchor: weekly group
+          // plans read "This week", daily plans read "Today" (issue #721).
+          final cadenceLabel = _cadenceLabel(fullSchedule);
+
           return StreamBuilder<Map<String, int>>(
             stream: _progressStream,
             builder: (context, progressSnapshot) {
@@ -276,11 +282,18 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
                             ? count > 0
                             : count >= s.chapters.length;
                         final isFirstToday = s == todayList.first;
-                        return _buildTodayItem(
-                          context,
-                          s,
-                          isRead: isRead,
+                        return _TodayAnchorCard(
                           key: isFirstToday ? _todayKey : null,
+                          group: widget.group,
+                          groupService: widget.groupService,
+                          schedule: s,
+                          isRead: isRead,
+                          isMember: widget.isMember,
+                          currentUid: widget.auth.currentUser?.uid,
+                          cadenceLabel: cadenceLabel,
+                          dateLabel:
+                              '${_formatDayOfWeek(s.date)} ${_formatDate(s.date)}',
+                          onToggle: () => _handleToggle(s, isRead),
                         );
                       }),
                       const SizedBox(height: 16),
@@ -413,76 +426,225 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
     );
   }
 
-  Widget _buildTodayItem(
-    BuildContext context,
-    GroupSchedule schedule, {
-    bool isRead = false,
-    Key? key,
-  }) {
+  /// Infers cadence from the median gap between consecutive schedule dates.
+  /// A gap of ~7 days means a weekly group plan ("This week"); otherwise the
+  /// current reading is labelled "Today".
+  String _cadenceLabel(List<GroupSchedule> schedule) {
+    if (schedule.length < 2) return 'Today';
+    final gaps = <int>[];
+    for (var i = 1; i < schedule.length; i++) {
+      gaps.add(schedule[i].date.difference(schedule[i - 1].date).inDays.abs());
+    }
+    gaps.sort();
+    final median = gaps[gaps.length ~/ 2];
+    return median >= 4 ? 'This week' : 'Today';
+  }
+}
+
+/// "with your group" anchor for the current reading — shows member presence
+/// (who has already read it) and a warm "I read this with the group" action.
+/// Ports the design's `TodayAnchor` (schedule.jsx) for issue #721.
+class _TodayAnchorCard extends StatelessWidget {
+  final Group group;
+  final GroupService groupService;
+  final GroupSchedule schedule;
+  final bool isRead;
+  final bool isMember;
+  final String? currentUid;
+  final String cadenceLabel;
+  final String dateLabel;
+  final VoidCallback onToggle;
+
+  const _TodayAnchorCard({
+    super.key,
+    required this.group,
+    required this.groupService,
+    required this.schedule,
+    required this.isRead,
+    required this.isMember,
+    required this.currentUid,
+    required this.cadenceLabel,
+    required this.dateLabel,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Container(
-      key: key,
       margin: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
-        onTap: widget.isMember ? () => _handleToggle(schedule, isRead) : null,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainer,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: colorScheme.primary.withValues(alpha: isRead ? 0.8 : 0.5),
-              width: isRead ? 2 : 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: colorScheme.primary.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              SizedBox(
-                width: 56,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _formatDate(schedule.date),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                    Text(
-                      _formatDayOfWeek(schedule.date),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: colorScheme.primary.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ],
+              Text(
+                '$cadenceLabel · with your group',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      schedule.chapters.join(', '),
-                      style: theme.textTheme.titleMedium,
-                    ),
-                  ],
+              Text(
+                dateLabel,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
               ),
-              if (isRead)
-                Icon(Icons.check, color: colorScheme.primary, size: 24),
             ],
           ),
+          const SizedBox(height: 8),
+          Text(
+            schedule.chapters.join(', '),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 14),
+          _buildPresence(context),
+          const SizedBox(height: 16),
+          if (isMember) _buildAction(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPresence(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return StreamBuilder<List<GroupMemberProgressData>>(
+      stream: groupService.memberDailyCompletion(group.id, date: schedule.date),
+      builder: (context, snapshot) {
+        final readers = (snapshot.data ?? [])
+            .where((m) => m.completion >= 1.0 && m.uid != currentUid)
+            .toList();
+
+        final names = readers.take(2).map((r) => r.name.split(' ').first);
+        final more = readers.length - names.length;
+        final String label;
+        if (readers.isEmpty) {
+          label = 'Be the first to read this';
+        } else {
+          final more1 = more > 0
+              ? ' & $more other${more > 1 ? 's' : ''}'
+              : '';
+          label = '${names.join(', ')}$more1 have read';
+        }
+
+        return Row(
+          children: [
+            if (readers.isNotEmpty) ...[
+              MemberPresenceStack(
+                members: readers,
+                size: 26,
+                max: 4,
+                showDoneBadge: false,
+              ),
+              const SizedBox(width: 11),
+            ],
+            Expanded(
+              child: Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildAction(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    if (!isRead) {
+      return SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: FilledButton.icon(
+          onPressed: onToggle,
+          icon: const Icon(Icons.check, size: 18),
+          label: const Text(
+            'I read this with the group',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          style: FilledButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return InkWell(
+      onTap: onToggle,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: colorScheme.primary.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: colorScheme.primary,
+              ),
+              child: Icon(
+                Icons.check,
+                size: 17,
+                color: colorScheme.onPrimary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'You read with your group today.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.close, size: 13, color: colorScheme.primary),
+                const SizedBox(width: 4),
+                Text(
+                  'Undo',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

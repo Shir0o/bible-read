@@ -1,4 +1,5 @@
 import 'package:bible_read/models/group.dart';
+import 'package:bible_read/models/group_member_progress.dart';
 import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/pages/full_schedule_page.dart';
 import 'package:bible_read/services/group_service.dart';
@@ -43,6 +44,12 @@ void main() {
     when(
       () => mockGroupService.userProgressForGroup(any(), any()),
     ).thenAnswer((_) => Stream.value(<String, int>{}));
+    when(
+      () => mockGroupService.memberDailyCompletion(
+        any(),
+        date: any(named: 'date'),
+      ),
+    ).thenAnswer((_) => Stream.value(<GroupMemberProgressData>[]));
   });
 
   Widget createWidgetUnderTest() {
