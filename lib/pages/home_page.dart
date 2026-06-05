@@ -14,7 +14,6 @@ import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/user_preferences_service.dart';
 import '../models/reading_plan.dart';
-import '../models/user_preferences.dart';
 
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
@@ -104,7 +103,6 @@ class _HomePageState extends State<HomePage>
   /// Whether the page is currently performing its initial data fetch.
   bool _initialLoading = true;
   bool _isSyncing = false;
-  bool _prefsLoaded = false;
   List<bool> _pastWeek = [];
   List<bool> _pastMonth = [];
   Set<DateTime> _readDates = {};
@@ -112,9 +110,6 @@ class _HomePageState extends State<HomePage>
   int _totalReadDays = 0;
 
   // Plan state
-  ReadingPlan? _currentPlan;
-  UserPreferences _userPrefs = const UserPreferences();
-  StreamSubscription<UserPreferences>? _prefSub;
   StreamSubscription<DocumentSnapshot>? _syncSub;
 
   ReadingPlanDay? _scheduledDay;
@@ -145,13 +140,6 @@ class _HomePageState extends State<HomePage>
         }
       }),
       _loadActivePlan(showLoading: false),
-      _loadUserPreferences().then((_) {
-        if (!_disposed && mounted) {
-          setState(() {
-            _prefsLoaded = true;
-          });
-        }
-      }),
     ];
 
     await Future.wait(futures);
@@ -193,7 +181,6 @@ class _HomePageState extends State<HomePage>
     if (oldWidget.auth != widget.auth) {
       setState(() {
         _initialLoading = true;
-        _prefsLoaded = false;
       });
       _setupSyncListener();
       unawaited(_loadInitialData());
@@ -234,41 +221,6 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  Future<void> _loadUserPreferences() async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-
-    final completer = Completer<void>();
-    bool firstEvent = true;
-
-    _prefSub?.cancel();
-    _prefSub = widget.userPreferencesService.streamPreferences(uid).listen(
-      (prefs) {
-        if (!_disposed && mounted) {
-          setState(() {
-            _userPrefs = prefs;
-          });
-        }
-        if (firstEvent) {
-          firstEvent = false;
-          completer.complete();
-        }
-      },
-      onError: (e, st) {
-        if (kDebugMode) {
-          debugPrint('Error loading preferences: $e');
-        }
-        ErrorLogger.log(e, st);
-        if (firstEvent) {
-          firstEvent = false;
-          completer.complete(); // Still complete to avoid hanging
-        }
-      },
-    );
-
-    return completer.future;
-  }
-
   Future<void> _loadActivePlan({bool showLoading = true}) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
@@ -282,8 +234,6 @@ class _HomePageState extends State<HomePage>
         if (plans.isEmpty) {
           if (!_disposed && mounted) {
             setState(() {
-              _currentPlan = null;
-
               _scheduledDay = null;
             });
           }
@@ -310,7 +260,6 @@ class _HomePageState extends State<HomePage>
 
           if (!_disposed && mounted) {
             setState(() {
-              _currentPlan = plan;
               _scheduledDay = day;
             });
           }
@@ -392,22 +341,14 @@ class _HomePageState extends State<HomePage>
     } catch (_) {}
     final refreshedUser = widget.auth.currentUser;
 
-    // Also track if we successfully marked the plan day
-    bool markedPlanDay = false;
-
     try {
       final dateKey =
           '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
-      // Determine if we should mark the plan day.
-      // We do this immediately (optimistically) before waiting for daily reading writes.
-      bool markPlan = false;
-      if (_currentPlan != null && _scheduledDay != null) {
-        if (_prefsLoaded) {
-          markPlan = _userPrefs.autoMarkPlanRead;
-        }
-      }
-
+      // The daily habit is a pure presence mark — it never advances any plan.
+      // Coupling is one-directional: finishing a plan reading may optionally
+      // record the habit (see PlanDetailPage), but the bare habit tap does not
+      // touch plan progress.
       final List<Future<void>> backendWrites = [
         ReadLogPage.writeReadLogEntry(
           refreshedUser ?? user,
@@ -423,18 +364,6 @@ class _HomePageState extends State<HomePage>
             .doc(dateKey)
             .set({'read': true}, SetOptions(merge: true)),
       ];
-
-      // Mark plan day if relevant
-      if (markPlan && _currentPlan != null && _scheduledDay != null) {
-        backendWrites.add(
-          widget.readingPlanService.markDayComplete(
-            user.uid,
-            _currentPlan!.id,
-            _scheduledDay!.day,
-          ),
-        );
-        markedPlanDay = true;
-      }
 
       // Execute all backend writes in parallel
       await Future.wait(backendWrites);
@@ -452,19 +381,6 @@ class _HomePageState extends State<HomePage>
         debugPrint('Failed to mark reading: $e');
       }
       ErrorLogger.log(e, st);
-
-      // Revert plan day if needed (though it's idempotent mostly)
-      if (markedPlanDay && _currentPlan != null && _scheduledDay != null) {
-        try {
-          await widget.readingPlanService.unmarkDayComplete(
-            user.uid,
-            _currentPlan!.id,
-            _scheduledDay!.day,
-          );
-        } catch (_) {
-          /* ignore rollback errors */
-        }
-      }
 
       if (!_disposed && mounted) {
         // Revert to previous state and notify the user.
@@ -981,7 +897,6 @@ class _HomePageState extends State<HomePage>
   void dispose() {
     _disposed = true;
     _animationController.dispose();
-    _prefSub?.cancel();
     _syncSub?.cancel();
     super.dispose();
   }

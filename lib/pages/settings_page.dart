@@ -135,7 +135,10 @@ class SettingsPageState extends State<SettingsPage> {
     if (uid == null) return;
 
     final oldPrefs = _prefs;
-    final newPrefs = _prefs.copyWith(autoMarkPlanRead: value);
+    // Setting the toggle manually also resolves the one-time prompt, so it
+    // won't pop later when finishing a plan reading.
+    final newPrefs =
+        _prefs.copyWith(autoMarkPlanRead: value, syncPromptAnswered: true);
     setState(() {
       _prefs = newPrefs;
     });
@@ -403,9 +406,9 @@ class SettingsPageState extends State<SettingsPage> {
                       )
                     else
                       SwitchListTile(
-                        title: const Text('Auto-mark Plan Reading'),
+                        title: const Text('Reading counts as showing up'),
                         subtitle: const Text(
-                          'Automatically mark today\'s reading in your personal plan when you mark your daily reading as complete.',
+                          'When you finish a reading from a plan, it also counts as showing up for the day. Marking "I read today" on its own never moves a plan.',
                         ),
                         value: _prefs.autoMarkPlanRead,
                         onChanged: _updatePreference,

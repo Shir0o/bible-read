@@ -83,13 +83,14 @@ void main() {
       'pastMonthReadDates': [],
     });
 
-    // Seed user preferences to auto-mark plan as read
+    // Seed "Reading counts as showing up" ON. Coupling is one-directional, so
+    // even with this enabled the bare habit tap must NOT advance the plan.
     await firestore
         .collection('users')
         .doc('u1')
         .collection('settings')
         .doc('general')
-        .set({'autoMarkPlanRead': true});
+        .set({'autoMarkPlanRead': true, 'syncPromptAnswered': true});
 
     // 2. Launch the app
     await tester.pumpWidget(
@@ -150,8 +151,9 @@ void main() {
     );
     expect(
       completedDays,
-      contains(1),
-      reason: 'Day 1 should be marked as completed in the plan progress',
+      isEmpty,
+      reason: 'The habit tap must never advance the plan (one-directional '
+          'coupling); only finishing a plan reading may record the habit.',
     );
   });
 }
