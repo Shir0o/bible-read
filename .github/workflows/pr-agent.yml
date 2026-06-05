@@ -24,8 +24,13 @@ jobs:
           # config-section name (google_ai_studio/...). The latter makes LiteLLM
           # abort with "LLM Provider NOT provided". The API key still comes from the
           # GOOGLE_AI_STUDIO__GEMINI_API_KEY env var below.
-          CONFIG__MODEL: "gemini/gemini-1.5-pro"
+          #
+          # gemini-1.5-pro was retired from the Google AI Studio (Generative
+          # Language) API — it now returns "is not found for API version v1beta,
+          # or is not supported for generateContent", which surfaced as
+          # "Failed to generate code suggestions for PR". Use a current model.
+          CONFIG__MODEL: "gemini/gemini-2.5-flash"
           # Override the default fallback chain (which points at a model we can't
-          # reach) — fall back to the same Gemini model instead.
-          CONFIG__FALLBACK_MODELS: '["gemini/gemini-1.5-pro"]'
+          # reach) — fall back to another current Gemini model.
+          CONFIG__FALLBACK_MODELS: '["gemini/gemini-2.0-flash"]'
           GOOGLE_AI_STUDIO__GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
