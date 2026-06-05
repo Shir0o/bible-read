@@ -1,21 +1,26 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
 import '../services/group_service.dart';
-import '../theme/app_theme.dart';
+import 'member_presence_stack.dart';
 
 class GroupCard extends StatelessWidget {
   final Group group;
   final GroupService groupService;
   final VoidCallback onTap;
 
+  /// Opens the group's reading schedule directly (issue #721). When provided,
+  /// a "View schedule" affordance is shown so the schedule is reachable without
+  /// going through the group's Edit flow.
+  final VoidCallback? onViewSchedule;
+
   const GroupCard({
     super.key,
     required this.group,
     required this.groupService,
     required this.onTap,
+    this.onViewSchedule,
   });
 
   @override
@@ -134,9 +139,39 @@ class GroupCard extends StatelessWidget {
                                 style: theme.textTheme.labelSmall,
                               ),
                               // Member Stack
-                              _buildMemberStack(context, members),
+                              MemberPresenceStack(members: members),
                             ],
                           ),
+                          if (onViewSchedule != null) ...[
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                onPressed: onViewSchedule,
+                                icon: Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 16,
+                                  color: colorScheme.primary,
+                                ),
+                                label: Text(
+                                  'View schedule',
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -147,132 +182,6 @@ class GroupCard extends StatelessWidget {
           },
         );
       },
-    );
-  }
-
-  Widget _buildMemberStack(
-    BuildContext context,
-    List<GroupMemberProgressData> members,
-  ) {
-    if (members.isEmpty) return const SizedBox.shrink();
-
-    // Take top 3 + remainder
-    final displayMembers = members.take(3).toList();
-    final remainder = members.length - 3;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return SizedBox(
-      height: 32,
-      child: Stack(
-        alignment: Alignment.centerRight,
-        children: [
-          // We need to render them in reverse order so the first one is on top
-          // But Stack paints bottom-up.
-          // If we want [1][2][3], and 1 overlaps 2...
-          // Actually, standard stacks usually have the last item on top.
-          // The design shows: Leftmost is on top? Or Rightmost?
-          // Design: [1] [2] [3] [+4]
-          // It looks like [1] is fully visible, [2] is behind [1]?
-          // No, usually subsequent items overlap previous ones in Stacks.
-          // In design: 1 overlaps 2? No, 2 overlaps 1.
-          // Actually, let's look at the image.
-          // User 1 is leftmost. User 2 is to the right of User 1, overlapping User 1?
-          // No, usually it's `Flex` with negative margin.
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (int i = 0; i < displayMembers.length; i++)
-                Align(
-                  widthFactor: 0.7, // Overlap
-                  alignment: Alignment.centerLeft,
-                  child: _buildAvatar(context, displayMembers[i]),
-                ),
-              if (remainder > 0)
-                Align(
-                  widthFactor: 1.0, // Last one doesn't need to overlap next
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: colorScheme.surfaceContainerHighest,
-                      border: Border.all(color: colorScheme.surface, width: 2),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '+$remainder',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAvatar(BuildContext context, GroupMemberProgressData member) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDone = member.completion >= 1.0;
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: colorScheme.surfaceContainerHighest,
-            border: Border.all(color: colorScheme.surface, width: 2),
-            image: member.photoUrl != null
-                ? DecorationImage(
-                    image: CachedNetworkImageProvider(member.photoUrl!),
-                    fit: BoxFit.cover,
-                  )
-                : null,
-          ),
-          child: member.photoUrl == null
-              ? Center(
-                  child: Text(
-                    member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                )
-              : null,
-        ),
-        if (isDone)
-          Positioned(
-            bottom: -2,
-            right: -2,
-            child: Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(
-                color: AppTheme.successColor(colorScheme),
-                shape: BoxShape.circle,
-                border: Border.all(color: colorScheme.surface, width: 1.5),
-              ),
-              child: Icon(
-                Icons.check,
-                size: 8,
-                color: AppTheme.onSuccessColor(colorScheme),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }

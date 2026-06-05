@@ -13,11 +13,14 @@ import '../models/group_schedule.dart';
 import '../services/error_logger.dart';
 import '../services/bible_progress_service.dart';
 import '../services/friend_service.dart';
+import '../services/catch_up_engine.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
+import '../widgets/catch_up_status_row.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/vibration_button.dart';
 import 'edit_group_page.dart';
+import 'full_schedule_page.dart';
 import 'group_join_requests_page.dart';
 import 'invite_member_page.dart';
 import 'group_catch_up_page.dart';
@@ -599,6 +602,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         auth: widget.auth,
                         vibrationService: widget.vibrationService,
                       ),
+                      if (isMember && schedule.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _buildCatchUpStatusRow(context, schedule),
+                      ],
                       const SizedBox(height: 24),
                       if (todaySchedule != null) ...[
                         TodaysReadingCard(
@@ -657,6 +664,51 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  /// Gentle behind/in-step status against the shared group schedule, tapping
+  /// through to the full schedule — group-plan parity with personal plans and
+  /// the Community card (issue #721).
+  Widget _buildCatchUpStatusRow(
+    BuildContext context,
+    List<GroupSchedule> schedule,
+  ) {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return const SizedBox.shrink();
+
+    return StreamBuilder<Map<String, int>>(
+      stream: widget.groupService.userProgressForGroup(widget.group.id, uid),
+      builder: (context, progressSnap) {
+        final completed = (progressSnap.data ?? {})
+            .entries
+            .where((e) => e.value > 0)
+            .map((e) => e.key)
+            .toSet();
+        return CatchUpStatusRow(
+          status: CatchUpEngine.forGroupSchedule(
+            schedule,
+            completed,
+            today: _now,
+          ),
+          onTrackLabel: 'In step with your group',
+          onTap: () {
+            unawaited(widget.vibrationService.lightImpact());
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => FullSchedulePage(
+                  group: widget.group,
+                  groupService: widget.groupService,
+                  auth: widget.auth,
+                  vibrationService: widget.vibrationService,
+                  initialSchedule: schedule,
+                  isMember: true,
+                ),
+              ),
+            );
+          },
         );
       },
     );

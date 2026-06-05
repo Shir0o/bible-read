@@ -15,6 +15,7 @@ import '../widgets/skeletons/group_list_skeleton.dart';
 import '../pages/group_detail_page.dart';
 import '../pages/all_groups_page.dart';
 import '../pages/create_group_page.dart';
+import '../pages/full_schedule_page.dart';
 
 class GroupsPage extends StatefulWidget {
   final GroupService groupService;
@@ -94,6 +95,21 @@ class _GroupsPageState extends State<GroupsPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Group deleted')));
+  }
+
+  void _openSchedule(Group group) {
+    unawaited(widget.vibrationService.lightImpact());
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => FullSchedulePage(
+          group: group,
+          groupService: widget.groupService,
+          auth: widget.auth,
+          vibrationService: widget.vibrationService,
+          isMember: true,
+        ),
+      ),
+    );
   }
 
   void _showJoinOrCreateOptions() {
@@ -232,6 +248,7 @@ class _GroupsPageState extends State<GroupsPage> {
                                   group: group,
                                   groupService: widget.groupService,
                                   onTap: () => _openGroup(group),
+                                  onViewSchedule: () => _openSchedule(group),
                                 ),
                               ),
                           ],
