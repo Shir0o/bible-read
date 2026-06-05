@@ -107,18 +107,18 @@ void main() {
     // Wait for initial data loading and skeleton loaders
     await tester.pumpAndSettle(const Duration(milliseconds: 1500));
 
-    // Verify "I have read" button exists
-    expect(find.text('I have read'), findsOneWidget);
-    expect(find.byKey(const ValueKey('unread_state')), findsOneWidget);
+    // Verify the habit hero "I read today" button exists
+    expect(find.text('I read today'), findsOneWidget);
+    expect(find.byKey(const ValueKey('habit_todo')), findsOneWidget);
 
-    // 3. Tap "I have read"
-    await tester.tap(find.text('I have read'));
+    // 3. Tap "I read today"
+    await tester.tap(find.text('I read today'));
 
     // 4. Verify Optimistic UI Update
     await tester.pump();
-    // Should immediately show the "read_state"
-    expect(find.byKey(const ValueKey('read_state')), findsOneWidget);
-    expect(find.text('Thank you for being here.'), findsOneWidget);
+    // Should immediately show the affirmation (read) state
+    expect(find.byKey(const ValueKey('habit_done')), findsOneWidget);
+    expect(find.text('Thank you for being here'), findsOneWidget);
 
     // 5. Verify Backend Confirmation
     await tester.pumpAndSettle();
