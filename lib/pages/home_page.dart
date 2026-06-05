@@ -13,14 +13,18 @@ import '../services/bible_progress_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/user_preferences_service.dart';
+import '../services/catch_up_engine.dart';
 import '../models/reading_plan.dart';
+import '../models/reading_plan_progress.dart';
 
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
+import '../widgets/catch_up_status_row.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
 import '../widgets/app_header.dart';
 import 'read_log_page.dart';
+import 'plan_detail_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
 /// Firestore when the app starts.
@@ -113,6 +117,11 @@ class _HomePageState extends State<HomePage>
   StreamSubscription<DocumentSnapshot>? _syncSub;
 
   ReadingPlanDay? _scheduledDay;
+
+  // Active personal plan + progress, retained to compute the catch-up status
+  // row surfaced under the reading card (issue #720).
+  ReadingPlan? _activePlan;
+  UserPlanProgress? _activeProgress;
 
   late final AnimationController _animationController;
 
@@ -235,6 +244,8 @@ class _HomePageState extends State<HomePage>
           if (!_disposed && mounted) {
             setState(() {
               _scheduledDay = null;
+              _activePlan = null;
+              _activeProgress = null;
             });
           }
           if (firstEvent) {
@@ -261,6 +272,8 @@ class _HomePageState extends State<HomePage>
           if (!_disposed && mounted) {
             setState(() {
               _scheduledDay = day;
+              _activePlan = plan;
+              _activeProgress = progress;
             });
           }
         }
@@ -731,6 +744,33 @@ class _HomePageState extends State<HomePage>
                               ),
                             ),
                           ),
+                          if (_activePlan != null &&
+                              _activeProgress != null) ...[
+                            const SizedBox(height: 20),
+                            CatchUpStatusRow(
+                              status: CatchUpEngine.forPersonalPlan(
+                                _activePlan!,
+                                _activeProgress!,
+                                today: widget.dateProvider(),
+                              ),
+                              onTap: () {
+                                unawaited(
+                                  widget.vibrationService.lightImpact(),
+                                );
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => PlanDetailPage(
+                                      plan: _activePlan!,
+                                      firestore: widget.firestore,
+                                      auth: widget.auth,
+                                      initialProgress: _activeProgress!,
+                                      vibrationService: widget.vibrationService,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ] else ...[
                           Text(
                             'Daily Reading',
