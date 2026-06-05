@@ -4,10 +4,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../models/reading_plan.dart';
+import '../models/reading_plan_progress.dart';
+import '../services/catch_up_engine.dart';
 import '../services/plan_generator.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reference_parser.dart';
 import '../services/vibration_service.dart';
+import '../widgets/schedule_preview.dart';
 import 'plan_detail_page.dart';
 
 enum _PlanGoalMethod { endDate, versesPerDay, chaptersPerDay }
@@ -204,25 +208,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     setState(() => _isCreating = true);
 
     try {
-      final plan = PlanGenerator.generatePlan(
-        id: '', // Will be set by Firestore
-        title: _capitalizeWords(_titleController.text.trim()),
-        description: _generateDescription(),
-        type: _selectedType,
-        years: _years > 0 ? _years : 1, // Default to 1 if not set
-        startDate: _startDate,
-        endDate: _goalMethod == _PlanGoalMethod.endDate ? _endDate : null,
-        readingDays: _readingDays.toList(),
-        selectedBooks: _selectedBooks.length == ReferenceParser.allBooks.length
-            ? null
-            : _selectedBooks.toList(),
-        customChaptersPerDay: _goalMethod == _PlanGoalMethod.chaptersPerDay
-            ? _customChaptersPerDay
-            : null,
-        customVersesPerDay: _goalMethod == _PlanGoalMethod.versesPerDay
-            ? _customVersesPerDay
-            : null,
-      );
+      final plan = _buildPlan(id: '');
 
       final planService = ReadingPlanService(firestore: widget.firestore);
       final planId = await planService.saveCustomPlan(user.uid, plan);
@@ -259,6 +245,141 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       if (mounted) {
         setState(() => _isCreating = false);
       }
+    }
+  }
+
+  /// Live preview card reflecting the current configuration.
+  Widget _buildPreviewSection(BuildContext context) {
+    final plan = _previewPlan();
+    if (plan == null) return const SizedBox.shrink();
+
+    final status = CatchUpEngine.forPersonalPlan(
+      plan,
+      UserPlanProgress(
+        planId: plan.id,
+        userId: '',
+        startDate: _startDate,
+        completedDays: const [],
+      ),
+      today: DateTime.now(),
+    );
+
+    return SchedulePreview(
+      status: status,
+      title: 'Preview',
+      onViewFull: () => _showFullSchedule(context, plan),
+    );
+  }
+
+  void _showFullSchedule(BuildContext context, ReadingPlan plan) {
+    final colorScheme = Theme.of(context).colorScheme;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.7,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Full Schedule',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    itemCount: plan.schedule.length,
+                    itemBuilder: (context, index) {
+                      final day = plan.schedule[index];
+                      final date = _startDate.add(Duration(days: day.day - 1));
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainer,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 64,
+                              child: Text(
+                                '${_months[date.month - 1]} ${date.day}',
+                                style:
+                                    Theme.of(context).textTheme.labelMedium?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                day.readings.join(', '),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Generates the plan from the current configuration. Shared by [_createPlan]
+  /// and the live preview so they never diverge.
+  ReadingPlan _buildPlan({required String id}) {
+    final title = _titleController.text.trim();
+    return PlanGenerator.generatePlan(
+      id: id,
+      title: title.isEmpty ? 'Preview' : _capitalizeWords(title),
+      description: _generateDescription(),
+      type: _selectedType,
+      years: _years > 0 ? _years : 1, // Default to 1 if not set
+      startDate: _startDate,
+      endDate: _goalMethod == _PlanGoalMethod.endDate ? _endDate : null,
+      readingDays: _readingDays.toList(),
+      selectedBooks: _selectedBooks.length == ReferenceParser.allBooks.length
+          ? null
+          : _selectedBooks.toList(),
+      customChaptersPerDay: _goalMethod == _PlanGoalMethod.chaptersPerDay
+          ? _customChaptersPerDay
+          : null,
+      customVersesPerDay: _goalMethod == _PlanGoalMethod.versesPerDay
+          ? _customVersesPerDay
+          : null,
+    );
+  }
+
+  /// Builds a live preview plan, returning null if the current configuration
+  /// can't yet produce a schedule (e.g. no books selected mid-edit).
+  ReadingPlan? _previewPlan() {
+    try {
+      final plan = _buildPlan(id: 'preview');
+      return plan.schedule.isEmpty ? null : plan;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -747,6 +868,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   ],
                 ),
               ),
+              const SizedBox(height: 24),
+              _buildPreviewSection(context),
             ],
           ),
 
