@@ -6,18 +6,14 @@ import 'package:flutter/material.dart';
 
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
-import '../models/user_preferences.dart';
 import '../services/catch_up_engine.dart';
-import '../services/error_logger.dart';
+import '../services/plan_completion_coordinator.dart';
 import '../services/reading_plan_service.dart';
-import '../services/user_preferences_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/schedule_preview.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/plan_detail_skeleton.dart';
-import '../widgets/sync_sheet.dart';
 import '../services/vibration_service.dart';
-import 'read_log_page.dart';
 
 class PlanDetailPage extends StatefulWidget {
   final ReadingPlan plan;
@@ -41,6 +37,7 @@ class PlanDetailPage extends StatefulWidget {
 
 class _PlanDetailPageState extends State<PlanDetailPage> {
   late final ReadingPlanService _planService;
+  late final PlanCompletionCoordinator _completionCoordinator;
   late Stream<UserPlanProgress?> _progressStream;
   Set<int>? _optimisticCompletedDays;
 
@@ -48,6 +45,10 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   void initState() {
     super.initState();
     _planService = ReadingPlanService(firestore: widget.firestore);
+    _completionCoordinator = PlanCompletionCoordinator(
+      firestore: widget.firestore,
+      planService: _planService,
+    );
     final user = widget.auth.currentUser;
     if (user != null) {
       _progressStream = _planService.getPlanProgress(user.uid, widget.plan.id);
@@ -268,53 +269,11 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
 
     // Coupling is one-directional and opt-in: finishing a plan reading may also
     // count as "showing up" for the day. Un-marking never touches the habit.
-    if (!wasCompleted) {
-      await _maybeCoupleHabit(user);
-    }
-  }
-
-  /// Honors the one-directional reading→habit coupling after a reading is
-  /// finished. Asks once via [SyncSheet], then respects the saved preference.
-  Future<void> _maybeCoupleHabit(User user) async {
-    final prefsService = UserPreferencesService(firestore: widget.firestore);
-    UserPreferences prefs;
-    try {
-      prefs = await prefsService.fetchPreferences(user.uid);
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      return;
-    }
-
-    if (!prefs.syncPromptAnswered) {
-      if (!mounted) return;
-      final choice = await SyncSheet.show(context);
-      final linked = choice == true;
-      try {
-        await prefsService.updatePreferences(
-          user.uid,
-          prefs.copyWith(autoMarkPlanRead: linked, syncPromptAnswered: true),
-        );
-      } catch (e, st) {
-        ErrorLogger.log(e, st);
-        // The choice didn't save, so the prompt may reappear — let the user
-        // know rather than failing silently.
-        _showSnack("Couldn't save your choice. We'll ask again next time.");
-      }
-      if (linked) await _recordHabitForToday(user);
-    } else if (prefs.autoMarkPlanRead) {
-      await _recordHabitForToday(user);
-    }
-  }
-
-  /// Records the daily habit ("showing up") for today, equivalent to tapping
-  /// "I read today" on Home. Idempotent; surfaces a gentle notice on failure.
-  Future<void> _recordHabitForToday(User user) async {
-    try {
-      await ReadLogPage.writeReadLogEntry(user, firestore: widget.firestore);
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      _showSnack(
-        "Saved your reading, but couldn't mark you as showing up today.",
+    if (!wasCompleted && mounted) {
+      await _completionCoordinator.maybeCoupleHabit(
+        context: context,
+        user: user,
+        onMessage: _showSnack,
       );
     }
   }

@@ -65,17 +65,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('How did your reading go today?'), findsOneWidget);
+      expect(find.text('Read whatever you’re drawn to.'), findsOneWidget);
       expect(
-        find.text('Yes, I read'),
+        find.text('I read today'),
         findsOneWidget,
-      ); // Can be FilledButton or FilledButton.tonal
+      );
       expect(find.byType(FilledButton), findsOneWidget);
-      expect(find.text('Thank you for being here.'), findsNothing);
+      expect(find.text('Thank you for being here'), findsNothing);
     },
   );
 
-  testWidgets('show "Thank you for being here." when read today', (
+  testWidgets('show "Thank you for being here" when read today', (
     tester,
   ) async {
     final firestore = FakeFirebaseFirestore();
@@ -113,12 +113,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Marked Today'), findsNothing);
-    expect(find.text('Thank you for being here.'), findsOneWidget);
+    expect(find.text('Thank you for being here'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
-    expect(find.text('Yes, I read'), findsNothing);
+    expect(find.text('I read today'), findsNothing);
   });
 
-  testWidgets('tapping "Yes, I read" updates UI to read state', (tester) async {
+  testWidgets('tapping "I read today" updates UI to read state', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
@@ -140,17 +140,17 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify initial state
-    expect(find.text('Yes, I read'), findsOneWidget);
+    expect(find.text('I read today'), findsOneWidget);
 
     // Tap button
-    await tester.tap(find.text('Yes, I read'));
+    await tester.tap(find.text('I read today'));
     await tester.pump(); // Start animation/process
 
     // Expect loading state or immediate update (optimistic)
     await tester.pumpAndSettle();
 
     // Verify final state
-    expect(find.text('Thank you for being here.'), findsOneWidget);
+    expect(find.text('Thank you for being here'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
 
     // Verify Firestore was updated
@@ -251,8 +251,8 @@ void main() {
     await tester.pump();
 
     // Check that regular content is NOT present yet
-    expect(find.text('How did your reading go today?'), findsNothing);
-    expect(find.text('Yes, I read'), findsNothing);
+    expect(find.text('Read whatever you’re drawn to.'), findsNothing);
+    expect(find.text('I read today'), findsNothing);
 
     // Check that Skeleton is present
     expect(find.byType(HomePageSkeleton), findsOneWidget);
@@ -264,7 +264,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1100));
     await tester.pumpAndSettle();
 
-    expect(find.text('How did your reading go today?'), findsOneWidget);
+    expect(find.text('Read whatever you’re drawn to.'), findsOneWidget);
     expect(find.byType(HomePageSkeleton), findsNothing);
   });
 
@@ -316,13 +316,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Tap "I have read"
-    await tester.tap(find.text('I have read'));
+    // Tap the habit hero "I read today" (distinct from the plan card's
+    // "Mark as read").
+    await tester.tap(find.text('I read today'));
     await tester.pumpAndSettle();
 
     // Verify UI updated, NO prompt shown
     expect(find.text('Update Reading Plan?'), findsNothing);
-    expect(find.text('Thank you for being here.'), findsOneWidget);
+    expect(find.text('Thank you for being here'), findsOneWidget);
 
     // Verify plan progress was NOT updated (since pref is false by default)
     var progressDoc = await firestore
@@ -369,8 +370,8 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
 
-    // Tap "I have read" again
-    await tester.tap(find.text('I have read'));
+    // Tap the habit hero "I read today" again
+    await tester.tap(find.text('I read today'));
     await tester.pumpAndSettle();
 
     // Verify UI updated, NO prompt

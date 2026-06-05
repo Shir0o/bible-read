@@ -10,16 +10,20 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../services/error_logger.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/bible_progress_service.dart';
+import '../services/catch_up_engine.dart';
+import '../services/plan_completion_coordinator.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/user_preferences_service.dart';
 import '../models/reading_plan.dart';
+import '../models/reading_plan_progress.dart';
 
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
 import '../widgets/app_header.dart';
+import 'plan_detail_page.dart';
 import 'read_log_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
@@ -109,16 +113,29 @@ class _HomePageState extends State<HomePage>
   int _currentStreak = 0;
   int _totalReadDays = 0;
 
-  // Plan state
+  // Plan state. The active personal plan, its progress, and today's scheduled
+  // reading are retained so Home can render the secondary "Today's reading"
+  // card with its own mark + catch-up affordance (epic #716, issues #722/#723).
   StreamSubscription<DocumentSnapshot>? _syncSub;
 
   ReadingPlanDay? _scheduledDay;
+  ReadingPlan? _activePlan;
+  UserPlanProgress? _activeProgress;
+
+  /// Whether the plan-reading card's mark is mid-write.
+  bool _planToggleLoading = false;
+
+  late final PlanCompletionCoordinator _completionCoordinator;
 
   late final AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
+    _completionCoordinator = PlanCompletionCoordinator(
+      firestore: widget.firestore,
+      planService: widget.readingPlanService,
+    );
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -235,6 +252,8 @@ class _HomePageState extends State<HomePage>
           if (!_disposed && mounted) {
             setState(() {
               _scheduledDay = null;
+              _activePlan = null;
+              _activeProgress = null;
             });
           }
           if (firstEvent) {
@@ -261,6 +280,8 @@ class _HomePageState extends State<HomePage>
           if (!_disposed && mounted) {
             setState(() {
               _scheduledDay = day;
+              _activePlan = plan;
+              _activeProgress = progress;
             });
           }
         }
@@ -402,6 +423,81 @@ class _HomePageState extends State<HomePage>
       if (!_disposed && mounted) {
         setState(() {
           _toggleLoading = false;
+        });
+      }
+    }
+  }
+
+  /// Marks (or un-marks) today's scheduled *plan* reading. Distinct from the
+  /// bare habit tap: this advances the personal plan, and — when the user has
+  /// opted in — may also record the daily habit via [PlanCompletionCoordinator]
+  /// (one-directional reading→habit coupling). Un-marking never touches the
+  /// habit.
+  Future<void> _togglePlanReading() async {
+    final user = widget.auth.currentUser;
+    final plan = _activePlan;
+    final progress = _activeProgress;
+    final day = _scheduledDay?.day;
+    if (user == null || plan == null || progress == null || day == null) return;
+    if (_planToggleLoading) return;
+
+    unawaited(widget.vibrationService.lightImpact());
+
+    final wasCompleted = progress.completedDays.contains(day);
+    final previousProgress = progress;
+
+    // Optimistically reflect the new completion set locally.
+    final newDays = List<int>.from(progress.completedDays);
+    if (wasCompleted) {
+      newDays.remove(day);
+    } else if (!newDays.contains(day)) {
+      newDays.add(day);
+    }
+    if (!_disposed && mounted) {
+      setState(() {
+        _planToggleLoading = true;
+        _activeProgress = progress.copyWith(completedDays: newDays);
+      });
+    }
+
+    try {
+      if (wasCompleted) {
+        await widget.readingPlanService.unmarkDayComplete(
+          user.uid,
+          plan.id,
+          day,
+        );
+      } else {
+        if (!mounted) return;
+        await _completionCoordinator.completePlanDay(
+          context: context,
+          user: user,
+          planId: plan.id,
+          day: day,
+        );
+        // The coupling may have recorded the habit; refresh habit state.
+        widget.readingStatusService.invalidateCache();
+        unawaited(_loadReadStatus(showLoading: false));
+      }
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to update plan reading: $e');
+      }
+      ErrorLogger.log(e, st);
+      if (!_disposed && mounted) {
+        setState(() {
+          _activeProgress = previousProgress;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update reading. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (!_disposed && mounted) {
+        setState(() {
+          _planToggleLoading = false;
         });
       }
     }
@@ -618,278 +714,453 @@ class _HomePageState extends State<HomePage>
       );
     }
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final hasPlan = _activePlan != null && _scheduledDay != null;
 
-    // Minimal UI: Core content centered, progress at bottom.
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32.0),
-      child: Stack(
-        children: [
-          // Centered main content: Reading info or "Thank you"
-          Center(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 500),
-              switchInCurve: Curves.easeOutBack,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: ScaleTransition(
-                    scale: Tween<double>(
-                      begin: 0.9,
-                      end: 1.0,
-                    ).animate(animation),
-                    child: child,
-                  ),
-                );
-              },
-              child: _readToday
-                  ? Column(
-                      key: const ValueKey('read_state'),
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.check_circle_outline_rounded,
-                          size: 80,
-                          color: colorScheme.primary.withValues(alpha: 0.8),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Thank you for being here.',
-                          style: AppTextStyles.subtitle(context).copyWith(
-                            fontSize: 24,
-                            color: colorScheme.onSurface.withValues(alpha: 0.9),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    )
-                  : Column(
-                      key: const ValueKey('unread_state'),
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_scheduledDay != null) ...[
-                          Text(
-                            'TODAY\'S READING',
-                            style: AppTextStyles.caption(context).copyWith(
-                              color: colorScheme.onSurfaceVariant.withValues(
-                                alpha: 0.7,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          Text(
-                            _formatReadings(_scheduledDay!.readings),
-                            style: AppTextStyles.title(context).copyWith(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w400,
-                              height: 1.3,
-                              color: colorScheme.onSurface.withValues(
-                                alpha: 0.9,
-                              ),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 56),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 64,
-                            child: Semantics(
-                              button: true,
-                              label: "Mark today's reading as complete",
-                              child: Tooltip(
-                                message: 'Mark as read',
-                                child: FilledButton(
-                                  onPressed:
-                                      _toggleLoading ? null : _toggleReadStatus,
-                                  child: _toggleLoading
-                                      ? SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.5,
-                                            color: colorScheme.onPrimary,
-                                          ),
-                                        )
-                                      : Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              'I have read',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleLarge
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.bold,
-                                                    color:
-                                                        colorScheme.onPrimary,
-                                                  ),
-                                            ),
-                                          ],
-                                        ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ] else ...[
-                          Text(
-                            'Daily Reading',
-                            style: AppTextStyles.caption(context).copyWith(
-                              color: colorScheme.onSurfaceVariant.withValues(
-                                alpha: 0.7,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'How did your reading go today?',
-                            style: AppTextStyles.title(context).copyWith(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w400,
-                              color: colorScheme.onSurface.withValues(
-                                alpha: 0.9,
-                              ),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 48),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 64,
-                            child: Semantics(
-                              button: true,
-                              label: 'Mark daily reading as complete',
-                              child: Tooltip(
-                                message: 'Mark as read',
-                                child: FilledButton.tonal(
-                                  onPressed:
-                                      _toggleLoading ? null : _toggleReadStatus,
-                                  style: FilledButton.styleFrom(
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(24),
-                                    ),
-                                    textStyle: const TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w500,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                  child: _toggleLoading
-                                      ? const SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.5,
-                                          ),
-                                        )
-                                      : const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [Text('Yes, I read')],
-                                        ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-            ),
+    // Home is "the act": the daily habit is the hero, with an optional, clearly
+    // secondary "Today's reading" plan card below it (epic #716, #722/#723).
+    // The long-arc plan progress (meter, Day x/y, schedule) lives on Journey.
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        // MainAxisSize.min keeps the column bounded under
+        // SliverFillRemaining(hasScrollBody: false), which hands down an
+        // unbounded max-height; content is top-aligned and scrolls if it
+        // exceeds the viewport.
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Clear the overlaid AppHeader.
+            const SizedBox(height: 76),
+            _buildHabitHero(context, hasPlan: hasPlan),
+            if (hasPlan) ...[
+              const SizedBox(height: 28),
+              _buildTodaysReadingSection(context),
+            ],
+            if (_readToday) ...[
+              const SizedBox(height: 40),
+              _buildHabitStats(context),
+            ],
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The daily habit — the heartbeat of Home. Visually dominant; one tap; never
+  /// gated by, and never advancing, any plan.
+  Widget _buildHabitHero(BuildContext context, {required bool hasPlan}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 500),
+      switchInCurve: Curves.easeOutBack,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation),
+            child: child,
           ),
-          // Bottom section: Progress (only if readToday)
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 800),
-            child: _readToday
-                ? Align(
-                    key: const ValueKey('bottom_progress'),
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 32.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Weekly Progress Section
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 240),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Reading this week',
-                                  style:
-                                      AppTextStyles.bodySmall(context).copyWith(
-                                    color: colorScheme.onSurfaceVariant
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Container(
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.surfaceContainerHighest
-                                        .withValues(alpha: 0.3),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: colorScheme.outline.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                    ),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: LinearProgressIndicator(
-                                      value: _pastWeek.isEmpty
-                                          ? 0.0
-                                          : _pastWeek.where((d) => d).length /
-                                              7.0,
-                                      minHeight: 10,
-                                      backgroundColor: Colors.transparent,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.primary.withValues(
-                                          alpha: 0.6,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          RichText(
-                            text: TextSpan(
-                              style: AppTextStyles.bodySmall(
-                                context,
-                              ).copyWith(color: colorScheme.outline),
-                              children: [
-                                TextSpan(
-                                  text: '$_currentStreak',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.primary,
-                                  ),
-                                ),
-                                const TextSpan(text: ' day streak'),
-                                const TextSpan(text: '  •  '),
-                                TextSpan(
-                                  text: '$_totalReadDays',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                                const TextSpan(text: ' days total'),
-                              ],
-                            ),
-                          ),
-                        ],
+        );
+      },
+      child: _readToday
+          ? Container(
+              key: const ValueKey('habit_done'),
+              padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: colorScheme.primary.withValues(alpha: 0.15),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.check_circle_outline_rounded,
+                    size: 72,
+                    color: colorScheme.primary.withValues(alpha: 0.85),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Thank you for being here',
+                    style: AppTextStyles.subtitle(context).copyWith(
+                      fontSize: 24,
+                      color: colorScheme.onSurface.withValues(alpha: 0.9),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          : Container(
+              key: const ValueKey('habit_todo'),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: colorScheme.primary.withValues(alpha: 0.15),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'THE PRACTICE',
+                    style: AppTextStyles.caption(context).copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    hasPlan
+                        ? 'Did you spend time in the Word?'
+                        : 'Read whatever you’re drawn to.',
+                    style: AppTextStyles.title(context).copyWith(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w400,
+                      height: 1.2,
+                      color: colorScheme.onSurface.withValues(alpha: 0.9),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'However much you read, showing up is the whole thing.',
+                    style: AppTextStyles.bodySmall(context).copyWith(
+                      color: colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.8,
                       ),
                     ),
-                  )
-                : const SizedBox.shrink(key: ValueKey('bottom_empty')),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: Semantics(
+                      button: true,
+                      label: 'Mark daily reading as complete',
+                      child: FilledButton(
+                        onPressed: _toggleLoading ? null : _toggleReadStatus,
+                        child: _toggleLoading
+                            ? SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: colorScheme.onPrimary,
+                                ),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.check_rounded, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'I read today',
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Center(
+                    child: Text(
+                      hasPlan
+                          ? 'Counts whether or not you followed your plan.'
+                          : 'Open your Bible — mark it here when you’re done.',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.caption(context).copyWith(
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.7,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  /// The secondary "Today's reading" card: the personal plan's scheduled
+  /// chapter with its own mark, plus a gentle catch-up row. Shown only when an
+  /// active plan exists (#723 — no plan ⇒ nothing prescriptive here).
+  Widget _buildTodaysReadingSection(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final day = _scheduledDay!;
+    final isRead = _activeProgress!.completedDays.contains(day.day);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Today’s reading',
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
           ),
-        ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.explore_outlined,
+                      size: 14, color: colorScheme.primary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _activePlan!.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                _formatReadings(day.readings),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: isRead
+                    ? OutlinedButton.icon(
+                        onPressed:
+                            _planToggleLoading ? null : _togglePlanReading,
+                        icon: Icon(Icons.check_circle,
+                            size: 20, color: colorScheme.primary),
+                        label: const Text('Read'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colorScheme.primary,
+                          side: BorderSide(
+                            color: colorScheme.primary.withValues(alpha: 0.4),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      )
+                    : FilledButton.tonalIcon(
+                        onPressed:
+                            _planToggleLoading ? null : _togglePlanReading,
+                        icon: _planToggleLoading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Icon(Icons.check_rounded, size: 20),
+                        label: const Text('Mark as read'),
+                        style: FilledButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        _buildCatchUpRow(context),
+      ],
+    );
+  }
+
+  /// Gentle catch-up row driven by [CatchUpEngine]: shows how many readings are
+  /// behind (no red, no "overdue") and links into the plan's full schedule.
+  Widget _buildCatchUpRow(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final status = CatchUpEngine.forPersonalPlan(
+      _activePlan!,
+      _activeProgress!,
+      today: widget.dateProvider(),
+    );
+    final behind = status.behindCount;
+    final isBehind = behind > 0;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: _openPlanSchedule,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isBehind
+              ? colorScheme.tertiaryContainer.withValues(alpha: 0.4)
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isBehind ? Icons.eco_outlined : Icons.calendar_today_outlined,
+              size: 20,
+              color: isBehind ? colorScheme.tertiary : colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isBehind
+                        ? '$behind reading${behind == 1 ? '' : 's'} to revisit'
+                        : 'You’re on track',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isBehind
+                          ? colorScheme.tertiary
+                          : colorScheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    isBehind
+                        ? 'Catch up any order — no rush'
+                        : 'View your reading schedule',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right,
+                size: 20, color: colorScheme.onSurfaceVariant),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _openPlanSchedule() {
+    final plan = _activePlan;
+    final progress = _activeProgress;
+    if (plan == null) return;
+    unawaited(widget.vibrationService.lightImpact());
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PlanDetailPage(
+          plan: plan,
+          firestore: widget.firestore,
+          auth: widget.auth,
+          initialProgress: progress,
+          vibrationService: widget.vibrationService,
+        ),
+      ),
+    );
+  }
+
+  /// Habit stats — the lightweight "showing up" record (weekly bar + streak).
+  /// These describe the *habit*, not plan progress, so they stay on Home.
+  Widget _buildHabitStats(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 240),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Reading this week',
+                style: AppTextStyles.bodySmall(context).copyWith(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 10,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: _pastWeek.isEmpty
+                        ? 0.0
+                        : _pastWeek.where((d) => d).length / 7.0,
+                    minHeight: 10,
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      colorScheme.primary.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        RichText(
+          text: TextSpan(
+            style: AppTextStyles.bodySmall(context)
+                .copyWith(color: colorScheme.outline),
+            children: [
+              TextSpan(
+                text: '$_currentStreak',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const TextSpan(text: ' day streak'),
+              const TextSpan(text: '  •  '),
+              TextSpan(
+                text: '$_totalReadDays',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const TextSpan(text: ' days total'),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
