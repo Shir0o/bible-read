@@ -21,6 +21,7 @@ class CommunityGroupProgressCard extends StatelessWidget {
   final VibrationService vibrationService;
   final List<GroupSchedule>? initialSchedule;
   final List<GroupMemberProgressData>? initialProgress;
+  final DateTime Function() dateProvider;
 
   const CommunityGroupProgressCard({
     super.key,
@@ -31,6 +32,7 @@ class CommunityGroupProgressCard extends StatelessWidget {
     required this.vibrationService,
     this.initialSchedule,
     this.initialProgress,
+    this.dateProvider = DateTime.now,
   });
 
   @override
@@ -258,7 +260,7 @@ class CommunityGroupProgressCard extends StatelessWidget {
                             status: CatchUpEngine.forGroupSchedule(
                               schedule,
                               completed,
-                              today: DateTime.now(),
+                              today: dateProvider(),
                             ),
                             onTrackLabel: 'In step with your group',
                             onTap: () {

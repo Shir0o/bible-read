@@ -370,6 +370,7 @@ class _CommunityPageState extends State<CommunityPage>
                                     vibrationService: widget.vibrationService,
                                     initialSchedule: _initialGroupSchedule,
                                     initialProgress: _initialGroupProgress,
+                                    dateProvider: widget.dateProvider,
                                   )
                                 : const EmptyGroupState(),
                           );

@@ -25,6 +25,7 @@ class JourneyProgressCard extends StatefulWidget {
   final List<UserPlanProgress>? initialProgress;
   final bool showTitle;
   final bool isLoading;
+  final DateTime Function() dateProvider;
 
   JourneyProgressCard({
     super.key,
@@ -36,6 +37,7 @@ class JourneyProgressCard extends StatefulWidget {
     this.initialProgress,
     this.showTitle = true,
     this.isLoading = false,
+    this.dateProvider = DateTime.now,
   }) : readingPlanService =
             readingPlanService ?? ReadingPlanService(firestore: firestore);
 
@@ -443,7 +445,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                     status: CatchUpEngine.forPersonalPlan(
                       plan,
                       progress,
-                      today: DateTime.now(),
+                      today: widget.dateProvider(),
                     ),
                     onTap: () {
                       unawaited(widget.vibrationService.lightImpact());
