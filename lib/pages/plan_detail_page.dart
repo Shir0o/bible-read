@@ -296,6 +296,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         );
       } catch (e, st) {
         ErrorLogger.log(e, st);
+        // The choice didn't save, so the prompt may reappear — let the user
+        // know rather than failing silently.
+        _showSnack("Couldn't save your choice. We'll ask again next time.");
       }
       if (linked) await _recordHabitForToday(user);
     } else if (prefs.autoMarkPlanRead) {
@@ -304,13 +307,23 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   }
 
   /// Records the daily habit ("showing up") for today, equivalent to tapping
-  /// "I read today" on Home. Idempotent and best-effort.
+  /// "I read today" on Home. Idempotent; surfaces a gentle notice on failure.
   Future<void> _recordHabitForToday(User user) async {
     try {
       await ReadLogPage.writeReadLogEntry(user, firestore: widget.firestore);
     } catch (e, st) {
       ErrorLogger.log(e, st);
+      _showSnack(
+        "Saved your reading, but couldn't mark you as showing up today.",
+      );
     }
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 }
 

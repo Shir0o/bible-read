@@ -71,6 +71,9 @@ void main() {
   Future<void> pumpPage(WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        // Avoid the Material 3 sparkle ink, whose shader asset fails to load
+        // in the test environment when the reading's InkWell is tapped.
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
         home: PlanDetailPage(
           plan: _plan,
           firestore: firestore,
