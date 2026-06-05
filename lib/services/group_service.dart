@@ -7,6 +7,7 @@ import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../models/group.dart';
 import '../models/group_invite.dart';
+import '../models/group_member_role.dart';
 import '../models/notification_preferences.dart';
 import 'error_logger.dart';
 import 'notification_service.dart';
@@ -1641,6 +1642,97 @@ class GroupService {
   }) async {
     // Re-use leaveGroup logic as it handles cleanup.
     return leaveGroup(groupId: groupId, uid: uid);
+  }
+
+  /// Stream of group members with their roles and profile basics, ordered
+  /// owner → admin → member then by name.
+  Stream<List<GroupMemberRole>> membersWithRoles(String groupId) {
+    return firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.members)
+        .snapshots()
+        .map((snap) {
+      final members = snap.docs.map(GroupMemberRole.fromFirestore).toList();
+      members.sort((a, b) {
+        final byRole = a.roleRank.compareTo(b.roleRank);
+        if (byRole != 0) return byRole;
+        return (a.name ?? '').toLowerCase().compareTo(
+              (b.name ?? '').toLowerCase(),
+            );
+      });
+      return members;
+    });
+  }
+
+  /// Stream of pending invitations for [groupId], most recent first.
+  Stream<List<GroupInvite>> pendingInvites(String groupId) {
+    return firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.invites)
+        .snapshots()
+        .map((snap) {
+      final invites = snap.docs.map(GroupInvite.fromFirestore).toList();
+      invites.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return invites;
+    });
+  }
+
+  /// Cancel a pending invitation. Only owners/admins may do this (enforced by
+  /// Firestore rules).
+  Future<void> cancelInvite({
+    required String groupId,
+    required String inviteeUid,
+  }) async {
+    try {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.invites)
+          .doc(inviteeUid)
+          .delete();
+    } catch (e, st) {
+      await _safeLog(e, st);
+      rethrow;
+    }
+  }
+
+  /// Transfer ownership of [groupId] from [currentOwnerUid] to [newOwnerUid].
+  ///
+  /// Atomically sets the group's `ownerUid`, promotes the new owner's member
+  /// record to `owner`, and demotes the previous owner to `admin`.
+  Future<void> transferOwnership({
+    required String groupId,
+    required String currentOwnerUid,
+    required String newOwnerUid,
+  }) async {
+    if (currentOwnerUid == newOwnerUid) return;
+    try {
+      final groupRef =
+          firestore.collection(GroupCollections.groups).doc(groupId);
+      final groupSnap = await groupRef.get();
+      final actualOwner = groupSnap.data()?['ownerUid'] as String?;
+      if (actualOwner != currentOwnerUid) {
+        throw StateError('Only the group owner can transfer ownership.');
+      }
+
+      final membersRef = groupRef.collection(GroupCollections.members);
+      final newOwnerRef = membersRef.doc(newOwnerUid);
+      final newOwnerSnap = await newOwnerRef.get();
+      if (!newOwnerSnap.exists) {
+        throw StateError('Cannot transfer ownership to a non-member.');
+      }
+
+      final batch = firestore.batch();
+      batch.update(groupRef, {'ownerUid': newOwnerUid});
+      batch.update(newOwnerRef, {'role': 'owner'});
+      batch.update(membersRef.doc(currentOwnerUid), {'role': 'admin'});
+      await batch.commit();
+    } catch (e, st) {
+      await _safeLog(e, st);
+      rethrow;
+    }
   }
 
   /// Permanently delete a group and its subcollections. Only the owner should

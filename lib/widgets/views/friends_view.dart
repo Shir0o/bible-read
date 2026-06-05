@@ -9,6 +9,7 @@ import '../skeleton_loader.dart';
 import '../skeletons/friends_skeleton.dart';
 import '../../services/error_logger.dart';
 import '../../pages/add_friend_page.dart';
+import '../nudge_sheet.dart';
 // Needed for direct navigation or extraction
 
 /// View that lists current friends, suitable for embedding in a TabBarView.
@@ -215,58 +216,36 @@ class _FriendsViewState extends State<FriendsView>
                   ),
                 );
               }
-            : () async {
-                unawaited(widget.vibrationService.lightImpact());
-                final messenger = ScaffoldMessenger.of(context);
-                setState(() {
-                  _nudgedToday.add(friend.uid);
-                });
-
-                messenger.clearSnackBars();
-                messenger.showSnackBar(
-                  const SnackBar(
-                    content: Text('Encouragement sent'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-
-                try {
-                  final result = await widget.friendService.nudgeFriend(
-                    currentUid: user.uid,
-                    friendUid: friend.uid,
-                    currentName: user.displayName ?? 'You',
-                  );
-                  if (!mounted) return;
-                  switch (result) {
-                    case NudgeResult.alreadyRead:
-                    case NudgeResult.sent:
-                      // optimistic update handled it
-                      break;
-                    case NudgeResult.alreadySent:
-                      messenger.clearSnackBars();
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Encouragement already sent today'),
-                        ),
-                      );
-                      break;
-                  }
-                } catch (e, st) {
-                  debugPrint('Failed to send encouragement: $e');
-                  ErrorLogger.log(e, st);
-                  if (!mounted) return;
-                  setState(() {
-                    _nudgedToday.remove(friend.uid);
-                  });
-                  messenger.clearSnackBars();
-                  messenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Failed to send encouragement'),
-                    ),
-                  );
-                }
-              },
+            : () => _openNudgeSheet(user, friend),
       ),
+    );
+  }
+
+  Future<void> _openNudgeSheet(User user, Friend friend) async {
+    unawaited(widget.vibrationService.lightImpact());
+    await showNudgeSheet(
+      context,
+      person: NudgePerson(name: friend.name.isEmpty ? 'Friend' : friend.name),
+      vibrationService: widget.vibrationService,
+      onSend: (message) async {
+        try {
+          final result = await widget.friendService.nudgeFriend(
+            currentUid: user.uid,
+            friendUid: friend.uid,
+            currentName: user.displayName ?? 'You',
+          );
+          if (mounted && result != NudgeResult.alreadySent) {
+            setState(() {
+              _nudgedToday.add(friend.uid);
+            });
+          }
+          return result;
+        } catch (e, st) {
+          debugPrint('Failed to send encouragement: $e');
+          ErrorLogger.log(e, st);
+          rethrow;
+        }
+      },
     );
   }
 }

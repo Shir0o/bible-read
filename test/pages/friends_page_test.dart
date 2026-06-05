@@ -170,6 +170,10 @@ void main() {
     await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
     await settle(tester);
 
+    // The friendly nudge sheet opens; sending happens from there.
+    await tester.tap(find.text('Send nudge'));
+    await settle(tester);
+
     expect(service.nudged, isTrue);
   });
 
@@ -194,7 +198,13 @@ void main() {
     await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
     await settle(tester);
 
-    // After tap: Disabled color
+    // Send from the nudge sheet, then close it.
+    await tester.tap(find.text('Send nudge'));
+    await settle(tester);
+    await tester.tap(find.text('Done'));
+    await settle(tester);
+
+    // After sending: Disabled color
     final nudgedIcon = tester.widget<Icon>(
       find.byIcon(Icons.auto_awesome_outlined),
     );
@@ -263,6 +273,14 @@ void main() {
     await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
     await settle(tester);
 
+    // Send from the nudge sheet; the service reports it was already sent.
+    await tester.tap(find.text('Send nudge'));
+    await settle(tester);
+
+    // The sheet stays open and surfaces gentle "already sent" copy in place.
+    expect(find.textContaining('already nudged Alice'), findsOneWidget);
+
+    // The underlying icon remains enabled.
     final button = tester.widget<IconButton>(
       find.ancestor(
         of: find.byIcon(Icons.auto_awesome_outlined),
@@ -270,9 +288,6 @@ void main() {
       ),
     );
     expect(button.onPressed, isNotNull);
-
-    // Verify snackbar "Encouragement already sent today"
-    expect(find.text('Encouragement already sent today'), findsOneWidget);
   });
 
   testWidgets('existing nudge log updates encouragement button appearance', (
