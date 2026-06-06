@@ -150,6 +150,15 @@ class _HomePageState extends State<HomePage>
   // whose calendar window has ended but isn't yet content-complete (#716).
   StreamSubscription<DocumentSnapshot>? _syncSub;
 
+  /// Subscription to the active-plans stream, cancelled on dispose.
+  StreamSubscription<List<UserPlanProgress>>? _activePlansSub;
+
+  /// Timers/subscriptions created by best-effort loads, tracked so they can be
+  /// cancelled on dispose (otherwise a slow stream's timeout Timer can outlive
+  /// the widget and trip the "Timer still pending" test invariant).
+  final Set<Timer> _loadTimers = {};
+  final Set<StreamSubscription<dynamic>> _loadSubs = {};
+
   List<_PersonalPlan> _personalPlans = [];
 
   /// Whether the primary plan card's mark is mid-write.
@@ -209,6 +218,44 @@ class _HomePageState extends State<HomePage>
     await Future.wait(futures);
   }
 
+  /// Resolves with the first value of [stream], falling back to [fallback] after
+  /// [timeout]. Unlike `stream.first.timeout(...)`, the timer and subscription
+  /// are owned and tracked so they are cancelled on dispose rather than leaking.
+  Future<T> _firstWithTimeout<T>(
+    Stream<T> stream, {
+    required Duration timeout,
+    required T fallback,
+  }) {
+    final completer = Completer<T>();
+    StreamSubscription<T>? sub;
+    Timer? timer;
+
+    void finish(T value) {
+      if (completer.isCompleted) return;
+      final t = timer;
+      if (t != null) {
+        t.cancel();
+        _loadTimers.remove(t);
+      }
+      final s = sub;
+      if (s != null) {
+        _loadSubs.remove(s);
+        s.cancel();
+      }
+      completer.complete(value);
+    }
+
+    timer = Timer(timeout, () => finish(fallback));
+    _loadTimers.add(timer);
+    sub = stream.listen(
+      finish,
+      onError: (_) => finish(fallback),
+      onDone: () => finish(fallback),
+    );
+    _loadSubs.add(sub);
+    return completer.future;
+  }
+
   /// Loads the user's first group, today's scheduled chapters, member presence
   /// and the catch-up set. Best-effort: any failure simply hides the section.
   Future<void> _loadGroup() async {
@@ -216,10 +263,11 @@ class _HomePageState extends State<HomePage>
     if (uid == null) return;
 
     try {
-      final groups = await widget.groupService
-          .groupsForUser(uid)
-          .first
-          .timeout(const Duration(seconds: 5), onTimeout: () => const []);
+      final groups = await _firstWithTimeout<List<Group>>(
+        widget.groupService.groupsForUser(uid),
+        timeout: const Duration(seconds: 5),
+        fallback: const <Group>[],
+      );
       if (groups.isEmpty) {
         if (!_disposed && mounted) {
           setState(() {
@@ -234,21 +282,21 @@ class _HomePageState extends State<HomePage>
       final today = _dateOnly(widget.dateProvider());
 
       final results = await Future.wait([
-        widget.groupService.schedule(group.id).first.timeout(
-              const Duration(seconds: 3),
-              onTimeout: () => const <GroupSchedule>[],
-            ),
-        widget.groupService
-            .memberDailyCompletion(group.id, includeUid: uid)
-            .first
-            .timeout(
-              const Duration(seconds: 3),
-              onTimeout: () => const <GroupMemberProgressData>[],
-            ),
-        widget.groupService.userProgressForGroup(group.id, uid).first.timeout(
-              const Duration(seconds: 3),
-              onTimeout: () => const <String, int>{},
-            ),
+        _firstWithTimeout<List<GroupSchedule>>(
+          widget.groupService.schedule(group.id),
+          timeout: const Duration(seconds: 3),
+          fallback: const <GroupSchedule>[],
+        ),
+        _firstWithTimeout<List<GroupMemberProgressData>>(
+          widget.groupService.memberDailyCompletion(group.id, includeUid: uid),
+          timeout: const Duration(seconds: 3),
+          fallback: const <GroupMemberProgressData>[],
+        ),
+        _firstWithTimeout<Map<String, int>>(
+          widget.groupService.userProgressForGroup(group.id, uid),
+          timeout: const Duration(seconds: 3),
+          fallback: const <String, int>{},
+        ),
       ]);
 
       final schedule = results[0] as List<GroupSchedule>;
@@ -287,10 +335,11 @@ class _HomePageState extends State<HomePage>
     if (user == null) return;
 
     try {
-      final friends = await widget.friendService
-          .friends(user.uid)
-          .first
-          .timeout(const Duration(seconds: 5), onTimeout: () => const []);
+      final friends = await _firstWithTimeout<List<Friend>>(
+        widget.friendService.friends(user.uid),
+        timeout: const Duration(seconds: 5),
+        fallback: const <Friend>[],
+      );
       final allUids = {user.uid, ...friends.map((f) => f.uid)};
 
       final today = widget.dateProvider();
@@ -301,8 +350,7 @@ class _HomePageState extends State<HomePage>
           .collection('read_logs')
           .doc(dateKey)
           .collection('entries')
-          .get()
-          .timeout(const Duration(seconds: 5));
+          .get();
 
       final readers = <_CommunityReader>[];
       for (final doc in entriesSnap.docs) {
@@ -416,7 +464,8 @@ class _HomePageState extends State<HomePage>
     final completer = Completer<void>();
     bool firstEvent = true;
 
-    widget.readingPlanService.getActivePlans(uid).listen(
+    _activePlansSub?.cancel();
+    _activePlansSub = widget.readingPlanService.getActivePlans(uid).listen(
       (progresses) async {
         if (progresses.isEmpty) {
           if (!_disposed && mounted) {
@@ -2096,6 +2145,15 @@ class _HomePageState extends State<HomePage>
     _disposed = true;
     _animationController.dispose();
     _syncSub?.cancel();
+    _activePlansSub?.cancel();
+    for (final timer in _loadTimers) {
+      timer.cancel();
+    }
+    _loadTimers.clear();
+    for (final sub in _loadSubs) {
+      sub.cancel();
+    }
+    _loadSubs.clear();
     super.dispose();
   }
 
