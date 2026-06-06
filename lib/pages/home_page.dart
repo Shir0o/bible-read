@@ -1352,8 +1352,10 @@ class _HomePageState extends State<HomePage>
     final plan = item.plan!;
     final progress = item.progress!;
     final status = item.status;
-    final entry = status.currentEntry ??
-        (status.entries.isNotEmpty ? status.entries.first : null);
+    // Only the actual current/missed reading is markable — never a future one.
+    // When nothing is due yet (currentEntry == null) the mark button is
+    // disabled rather than completing an upcoming reading.
+    final entry = status.currentEntry;
     final day = entry?.index;
     final isRead = day != null && progress.completedDays.contains(day);
 
