@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/group.dart';
 import '../models/group_schedule.dart';
 import '../services/group_service.dart';
+import '../services/plan_completion_coordinator.dart';
 import '../services/vibration_service.dart';
 
 class GroupCatchUpPage extends StatefulWidget {
@@ -30,6 +32,13 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
   late Stream<List<GroupSchedule>> _scheduleStream;
   late Stream<Map<String, int>> _progressStream;
   final Map<String, int> _optimisticProgress = {};
+
+  /// Built lazily on first read-mark so the page never touches Firebase just to
+  /// render (keeps it constructible in tests that only inject a GroupService).
+  PlanCompletionCoordinator? _coordinator;
+  PlanCompletionCoordinator get _completionCoordinator =>
+      _coordinator ??=
+          PlanCompletionCoordinator(firestore: FirebaseFirestore.instance);
 
   @override
   void initState() {
@@ -109,6 +118,23 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to update read status')),
       );
+      return;
+    }
+
+    // Logging a catch-up reading counts as showing up too — honor the
+    // one-directional reading→habit coupling (asks once via SyncSheet, then
+    // respects the saved setting). Un-marking never touches the habit (chat20).
+    if (!isRead) {
+      await _completionCoordinator.maybeCoupleHabit(
+        context: context,
+        user: user,
+        onMessage: (message) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+        },
+      );
     }
   }
 
@@ -156,8 +182,8 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
 
               if (progressSnapshot.hasData) {
                 final toRemove = <String>[];
-                _optimisticProgress.forEach((dateId, count) {
-                  if (remoteProgress[dateId] == count) {
+                _optimisticProgress.forEach((dateId, value) {
+                  if (remoteProgress[dateId] == value) {
                     toRemove.add(dateId);
                   }
                 });

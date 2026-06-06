@@ -1,14 +1,18 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
+import '../services/catch_up_engine.dart';
 import '../services/group_service.dart';
+import '../services/plan_completion_coordinator.dart';
 import '../services/vibration_service.dart';
 import '../widgets/member_presence_stack.dart';
+import '../widgets/schedule_screen_view.dart';
 
 class FullSchedulePage extends StatefulWidget {
   final Group group;
@@ -36,9 +40,13 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   late Stream<List<GroupSchedule>> _scheduleStream;
   late Stream<Map<String, int>> _progressStream;
   final Map<String, int> _optimisticProgress = {};
-  final ScrollController _scrollController = ScrollController();
-  final GlobalKey _todayKey = GlobalKey();
-  bool _hasScrolledToToday = false;
+
+  /// Built lazily on first read-mark so the page never touches Firebase just to
+  /// render (keeps it constructible in tests that only inject a GroupService).
+  PlanCompletionCoordinator? _coordinator;
+  PlanCompletionCoordinator get _completionCoordinator =>
+      _coordinator ??=
+          PlanCompletionCoordinator(firestore: FirebaseFirestore.instance);
 
   @override
   void initState() {
@@ -52,38 +60,6 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
       );
     } else {
       _progressStream = Stream.value({});
-    }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _scrollToToday() async {
-    if (_hasScrolledToToday) return;
-
-    final targetContext = _todayKey.currentContext;
-    if (targetContext != null && targetContext.mounted) {
-      _hasScrolledToToday = true;
-
-      // 1. Initial jump to a position slightly above the target
-      Scrollable.ensureVisible(targetContext, alignment: 0.3);
-
-      // 2. Short delay to let the jump settle
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      // 3. Smooth scroll to the final position (alignment: 0.1)
-      final currentContext = _todayKey.currentContext;
-      if (currentContext != null && currentContext.mounted) {
-        await Scrollable.ensureVisible(
-          currentContext,
-          alignment: 0.1,
-          duration: const Duration(milliseconds: 800),
-          curve: Curves.easeInOut,
-        );
-      }
     }
   }
 
@@ -153,7 +129,27 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to update read status')),
       );
+      return;
     }
+
+    // Marking any reading read here — today's or a catch-up day — counts as
+    // showing up, so honor the one-directional reading→habit coupling (asks
+    // once via SyncSheet, then respects the saved setting). Un-marking never
+    // touches the habit. Mirrors the design's `afterReadingMarked` (chat20).
+    if (!isRead) {
+      await _completionCoordinator.maybeCoupleHabit(
+        context: context,
+        user: user,
+        onMessage: _showSnack,
+      );
+    }
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -211,8 +207,8 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
               // Clear optimistic overrides if they match remote data
               if (progressSnapshot.hasData) {
                 final toRemove = <String>[];
-                _optimisticProgress.forEach((dateId, count) {
-                  if (remoteProgress[dateId] == count) {
+                _optimisticProgress.forEach((dateId, value) {
+                  if (remoteProgress[dateId] == value) {
                     toRemove.add(dateId);
                   }
                 });
@@ -223,205 +219,55 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
 
               final progress = {...remoteProgress, ..._optimisticProgress};
 
-              final now = DateTime.now();
-              final todayDate = DateTime(now.year, now.month, now.day);
-
-              final past = <GroupSchedule>[];
-              final todayList = <GroupSchedule>[];
-              final upcoming = <GroupSchedule>[];
-
+              // Date-ids the user has read (whole reading complete), feeding the
+              // shared catch-up engine. `fullSchedule` and the engine both sort
+              // ascending by date, so entry indices line up one-to-one.
+              final completedIds = <String>{};
               for (final s in fullSchedule) {
-                final sDate = DateTime(s.date.year, s.date.month, s.date.day);
-                if (sDate.isBefore(todayDate)) {
-                  past.add(s);
-                } else if (sDate.isAtSameMomentAs(todayDate)) {
-                  todayList.add(s);
-                } else {
-                  upcoming.add(s);
-                }
+                final dateId = _dateId(s.date);
+                final count = progress[dateId] ?? 0;
+                final isRead = s.chapters.isEmpty
+                    ? count > 0
+                    : count >= s.chapters.length;
+                if (isRead) completedIds.add(dateId);
               }
 
-              if (!_hasScrolledToToday &&
-                  (todayList.isNotEmpty || upcoming.isNotEmpty)) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    unawaited(_scrollToToday());
-                  }
-                });
-              }
+              final status = CatchUpEngine.forGroupSchedule(
+                fullSchedule,
+                completedIds,
+                today: DateTime.now(),
+              );
 
-              return SingleChildScrollView(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (past.isNotEmpty) ...[
-                      _buildSectionHeader(context, 'Past Readings'),
-                      ...past.map((s) {
-                        final dateId = _dateId(s.date);
-                        final count = progress[dateId] ?? 0;
-                        final isRead = s.chapters.isEmpty
-                            ? count > 0
-                            : count >= s.chapters.length;
-                        return _buildScheduleItem(
-                          context,
-                          s,
-                          isPast: true,
-                          isRead: isRead,
-                        );
-                      }),
-                      const SizedBox(height: 16),
-                    ],
-                    if (todayList.isNotEmpty) ...[
-                      _buildSectionHeader(context, 'Today', isHighlight: true),
-                      ...todayList.map((s) {
-                        final dateId = _dateId(s.date);
-                        final count = progress[dateId] ?? 0;
-                        final isRead = s.chapters.isEmpty
-                            ? count > 0
-                            : count >= s.chapters.length;
-                        final isFirstToday = s == todayList.first;
-                        return _TodayAnchorCard(
-                          key: isFirstToday ? _todayKey : null,
-                          group: widget.group,
-                          groupService: widget.groupService,
-                          schedule: s,
-                          isRead: isRead,
-                          isMember: widget.isMember,
-                          currentUid: widget.auth.currentUser?.uid,
-                          cadenceLabel: cadenceLabel,
-                          dateLabel:
-                              '${_formatDayOfWeek(s.date)} ${_formatDate(s.date)}',
-                          onToggle: () => _handleToggle(s, isRead),
-                        );
-                      }),
-                      const SizedBox(height: 16),
-                    ],
-                    if (upcoming.isNotEmpty) ...[
-                      _buildSectionHeader(context, 'Upcoming'),
-                      ...upcoming.map((s) {
-                        final isFirstUpcoming = s == upcoming.first;
-                        final dateId = _dateId(s.date);
-                        final count = progress[dateId] ?? 0;
-                        final isRead = s.chapters.isEmpty
-                            ? count > 0
-                            : count >= s.chapters.length;
-                        return _buildScheduleItem(
-                          context,
-                          s,
-                          isRead: isRead,
-                          key: (todayList.isEmpty && isFirstUpcoming)
-                              ? _todayKey
-                              : null,
-                        );
-                      }),
-                    ],
-                    const SizedBox(height: 80),
-                  ],
-                ),
+              return ScheduleScreenView(
+                status: status,
+                title: widget.group.name,
+                isGroup: true,
+                readOnly: !widget.isMember,
+                onToggle: (i) {
+                  final s = fullSchedule[i];
+                  final isRead = completedIds.contains(_dateId(s.date));
+                  unawaited(_handleToggle(s, isRead));
+                },
+                todayAnchorBuilder: (ctx) {
+                  final s = fullSchedule[status.currentIndex];
+                  final isRead = completedIds.contains(_dateId(s.date));
+                  return _TodayAnchorCard(
+                    group: widget.group,
+                    groupService: widget.groupService,
+                    schedule: s,
+                    isRead: isRead,
+                    isMember: widget.isMember,
+                    currentUid: widget.auth.currentUser?.uid,
+                    cadenceLabel: cadenceLabel,
+                    dateLabel:
+                        '${_formatDayOfWeek(s.date)} ${_formatDate(s.date)}',
+                    onToggle: () => unawaited(_handleToggle(s, isRead)),
+                  );
+                },
               );
             },
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(
-    BuildContext context,
-    String title, {
-    bool isHighlight = false,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8, top: 8),
-      child: Text(
-        title.toUpperCase(),
-        style: theme.textTheme.labelMedium?.copyWith(
-          color:
-              isHighlight ? colorScheme.primary : colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScheduleItem(
-    BuildContext context,
-    GroupSchedule schedule, {
-    bool isPast = false,
-    bool isRead = false,
-    Key? key,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final opacity = isPast ? 0.7 : 1.0;
-
-    return Opacity(
-      key: key,
-      opacity: opacity,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        child: InkWell(
-          onTap: widget.isMember ? () => _handleToggle(schedule, isRead) : null,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(16),
-              border: isRead
-                  ? Border.all(
-                      color: colorScheme.primary.withValues(alpha: 0.2),
-                      width: 1,
-                    )
-                  : null,
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 56, // min-w-[3.5rem] -> 56px
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _formatDate(schedule.date),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      Text(
-                        _formatDayOfWeek(schedule.date),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant.withValues(
-                            alpha: 0.6,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    schedule.chapters.join(', '),
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ),
-                if (isRead)
-                  Icon(
-                    Icons.check,
-                    color: colorScheme.primary.withValues(alpha: 0.5),
-                    size: 20,
-                  ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -456,7 +302,6 @@ class _TodayAnchorCard extends StatelessWidget {
   final VoidCallback onToggle;
 
   const _TodayAnchorCard({
-    super.key,
     required this.group,
     required this.groupService,
     required this.schedule,
