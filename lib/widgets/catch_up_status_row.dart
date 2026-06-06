@@ -21,8 +21,12 @@ class CatchUpStatusRow extends StatelessWidget {
   /// Leading label shown on the on-track variant. Defaults to "You're on track".
   final String onTrackLabel;
 
-  /// Trailing action text shown on the on-track variant.
+  /// Supporting subtitle shown on the on-track variant (second line).
   final String onTrackAction;
+
+  /// Supporting subtitle shown on the behind variant (second line). The gentle,
+  /// no-pressure catch-up invitation from the design — "any order, no rush".
+  final String behindSubtitle;
 
   const CatchUpStatusRow({
     super.key,
@@ -30,6 +34,8 @@ class CatchUpStatusRow extends StatelessWidget {
     required this.onTap,
     this.onTrackLabel = "You're on track",
     this.onTrackAction = 'View your schedule',
+    this.behindSubtitle =
+        'Jump to your schedule and catch up — any order, no rush',
   });
 
   @override
@@ -42,14 +48,35 @@ class CatchUpStatusRow extends StatelessWidget {
     final behind = status.behindCount;
     final isBehind = behind > 0;
 
+    // Gold "behind" accent vs. quiet muted "on track" — no red, no alarm.
     final Color accent =
-        isBehind ? colorScheme.tertiary : colorScheme.onSurfaceVariant;
-    final IconData icon =
-        isBehind ? Icons.refresh_rounded : Icons.calendar_today_outlined;
-    final String label = isBehind
+        isBehind ? colorScheme.tertiary : colorScheme.onSurface;
+    final String title = isBehind
         ? '$behind reading${behind == 1 ? '' : 's'} behind'
         : onTrackLabel;
-    final String action = isBehind ? 'Catch up' : onTrackAction;
+    final String subtitle = isBehind ? behindSubtitle : onTrackAction;
+
+    // Leading rounded tile — a small leaf for "behind" (growth, not failure),
+    // a calendar for "on track". Matches the design's PlanScheduleRow.
+    final Widget leadingTile = Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: isBehind ? colorScheme.tertiary : colorScheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: isBehind
+            ? null
+            : Border.all(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+      ),
+      alignment: Alignment.center,
+      child: Icon(
+        isBehind ? Icons.eco_outlined : Icons.calendar_today_outlined,
+        size: 17,
+        color: isBehind ? colorScheme.onTertiary : colorScheme.primary,
+      ),
+    );
 
     return Material(
       color: isBehind
@@ -60,39 +87,44 @@ class CatchUpStatusRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
             children: [
-              Icon(icon, size: 18, color: accent),
-              const SizedBox(width: 10),
+              leadingTile,
+              const SizedBox(width: 12),
               Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: label,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: accent,
-                          fontWeight: FontWeight.w600,
-                        ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: accent,
+                        fontWeight: FontWeight.w600,
                       ),
-                      TextSpan(
-                        text: '  ·  $action',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
-                    ],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                color: isBehind
+                    ? colorScheme.tertiary
+                    : colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
               ),
             ],
           ),

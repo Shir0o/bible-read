@@ -168,7 +168,7 @@ void main() {
     expect(doc.data()?['read'], isTrue);
   });
 
-  testWidgets('displays streak and weekly progress', (tester) async {
+  testWidgets('displays the consistency glimpse', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
@@ -212,16 +212,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Verify streak text (RichText)
-    // RichText content aggregates to "5 day streak  •  5 days total"
+    // The consistency glimpse summarises showing up across the season using
+    // the seeded totalReadDays (5), and links to Journey.
+    expect(find.text('Here 5 days this season'), findsOneWidget);
     expect(
-      find.text('5 day streak  •  5 days total', findRichText: true),
+      find.text("Whenever you return, it's enough."),
       findsOneWidget,
     );
-
-    // Verify progress bar elements
-    expect(find.text('Reading this week'), findsOneWidget);
-    expect(find.byType(LinearProgressIndicator), findsOneWidget);
   });
 
   testWidgets('displays skeleton while loading', (tester) async {

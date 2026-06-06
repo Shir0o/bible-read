@@ -21,6 +21,19 @@ enum ReadingStatus {
   upcoming,
 }
 
+/// Lifecycle state of a whole plan, ported from the design's `planSummary`
+/// (schedule.jsx). The single source of truth for how Home ranks readings and
+/// frames the hero.
+///
+///   • [complete] — every reading read. Truly finished → leaves Home.
+///   • [wrapup]   — the calendar window has closed but readings remain. Stays
+///                  on Home (quietly) until content-complete; a plan is never
+///                  auto-closed just because its dates ran out.
+///   • [behind]   — window still open, one or more readings overdue.
+///   • [due]      — today is a reading day and today's reading is unread.
+///   • [ontrack]  — caught up; nothing outstanding right now.
+enum PlanLifecycle { complete, wrapup, behind, due, ontrack }
+
 /// One reading occurrence, normalized across personal and group plans so the
 /// engine can compute status without caring which kind of plan produced it.
 class ScheduleEntry {
@@ -90,6 +103,42 @@ class CatchUpStatus {
   /// The current reading entry, or null when the plan is entirely upcoming.
   ScheduleEntry? get currentEntry =>
       currentIndex < 0 ? null : entries[currentIndex];
+
+  /// Total scheduled readings.
+  int get total => entries.length;
+
+  /// Readings still unread.
+  int get remaining => entries.length - doneCount;
+
+  /// Calendar date of the final scheduled reading, or null when empty.
+  DateTime? get lastDate => entries.isEmpty ? null : entries.last.date;
+
+  /// The reading a returning user should pick up — the current one if any is
+  /// due, otherwise the final reading (used to label "Read · <ref>").
+  List<String> get currentReadings {
+    if (currentIndex >= 0) return entries[currentIndex].readings;
+    if (entries.isEmpty) return const [];
+    return entries.last.readings;
+  }
+
+  /// Derives the [PlanLifecycle] at [today]. Order matters: a plan whose window
+  /// has ended but isn't content-complete is [PlanLifecycle.wrapup], never
+  /// [PlanLifecycle.behind] — it is never auto-closed by the calendar.
+  PlanLifecycle lifecycleAt(DateTime today) {
+    final count = entries.length;
+    if (count == 0) return PlanLifecycle.ontrack;
+    if (doneCount >= count) return PlanLifecycle.complete;
+    final last = entries.last.date;
+    final lastD = DateTime(last.year, last.month, last.day);
+    final todayD = DateTime(today.year, today.month, today.day);
+    if (lastD.isBefore(todayD)) return PlanLifecycle.wrapup;
+    if (missedCount > 0) return PlanLifecycle.behind;
+    if (currentIndex >= 0 &&
+        statuses[currentIndex] == ReadingStatus.current) {
+      return PlanLifecycle.due;
+    }
+    return PlanLifecycle.ontrack;
+  }
 }
 
 /// Pure, cadence-agnostic engine that turns a normalized schedule + completion

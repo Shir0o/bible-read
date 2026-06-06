@@ -209,4 +209,95 @@ void main() {
       expect(status.inStep, isTrue); // both due weeks read
     });
   });
+
+  group('CatchUpStatus.lifecycleAt', () {
+    PlanLifecycle lifecycle({
+      required int days,
+      required DateTime start,
+      required List<int> done,
+      required DateTime today,
+    }) {
+      final status = CatchUpEngine.forPersonalPlan(
+        _dailyPlan(days),
+        _progress(startDate: start, completedDays: done),
+        today: today,
+      );
+      return status.lifecycleAt(today);
+    }
+
+    test('complete when every reading is read', () {
+      expect(
+        lifecycle(
+          days: 5,
+          start: DateTime(2026, 1, 1),
+          done: [1, 2, 3, 4, 5],
+          today: DateTime(2026, 1, 3),
+        ),
+        PlanLifecycle.complete,
+      );
+    });
+
+    test('wrap-up when the window has ended but readings remain', () {
+      // Last scheduled day (Jan 5) is before today (Jan 10), not all read.
+      expect(
+        lifecycle(
+          days: 5,
+          start: DateTime(2026, 1, 1),
+          done: [1, 2],
+          today: DateTime(2026, 1, 10),
+        ),
+        PlanLifecycle.wrapup,
+      );
+    });
+
+    test('ended-but-behind is wrap-up, never behind', () {
+      // Many missed, but the calendar window is over → wrap-up wins.
+      expect(
+        lifecycle(
+          days: 5,
+          start: DateTime(2026, 1, 1),
+          done: const [],
+          today: DateTime(2026, 1, 10),
+        ),
+        PlanLifecycle.wrapup,
+      );
+    });
+
+    test('behind when the window is open and readings are overdue', () {
+      // 10-day plan, today is day 5 (window still open), nothing read.
+      expect(
+        lifecycle(
+          days: 10,
+          start: DateTime(2026, 1, 1),
+          done: const [],
+          today: DateTime(2026, 1, 5),
+        ),
+        PlanLifecycle.behind,
+      );
+    });
+
+    test("due when today's reading is unread and nothing earlier is missed", () {
+      expect(
+        lifecycle(
+          days: 5,
+          start: DateTime(2026, 1, 1),
+          done: [1, 2],
+          today: DateTime(2026, 1, 3),
+        ),
+        PlanLifecycle.due,
+      );
+    });
+
+    test('on track when caught up with nothing outstanding', () {
+      expect(
+        lifecycle(
+          days: 5,
+          start: DateTime(2026, 1, 1),
+          done: [1, 2, 3],
+          today: DateTime(2026, 1, 3),
+        ),
+        PlanLifecycle.ontrack,
+      );
+    });
+  });
 }

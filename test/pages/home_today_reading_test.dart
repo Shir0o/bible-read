@@ -164,10 +164,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Affirmation hero, plan reading card and habit stats all coexist…
+      // Affirmation hero, plan reading card and the consistency glimpse all
+      // coexist…
       expect(find.text('Thank you for being here'), findsOneWidget);
       expect(find.text('Today’s reading'), findsOneWidget);
-      expect(find.text('Reading this week'), findsOneWidget);
+      expect(find.text('Here 5 days this season'), findsOneWidget);
       // …without a layout overflow.
       expect(tester.takeException(), isNull);
     },
