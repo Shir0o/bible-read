@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,22 +9,30 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../services/error_logger.dart';
+import '../services/friend_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/bible_progress_service.dart';
 import '../services/catch_up_engine.dart';
+import '../services/group_service.dart';
 import '../services/plan_completion_coordinator.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/user_preferences_service.dart';
+import '../models/group.dart';
+import '../models/group_member_progress.dart';
+import '../models/group_schedule.dart';
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
 
 import '../services/vibration_service.dart';
 import '../widgets/catch_up_status_row.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
+import '../widgets/member_presence_stack.dart';
+import '../widgets/navigation_menu_scope.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
-import '../widgets/app_header.dart';
+import 'all_plans_page.dart';
+import 'full_schedule_page.dart';
 import 'plan_detail_page.dart';
 import 'read_log_page.dart';
 
@@ -50,12 +59,16 @@ class HomePage extends StatefulWidget {
     this.functions,
     this.markFirstReader,
     required this.dateProvider,
+    this.onOpenJourney,
+    this.onOpenCommunity,
     ReadingStatusService? readingStatusService,
     VibrationService? vibrationService,
     GoogleSignIn Function()? googleSignInProvider,
     BibleProgressService? bibleProgressService,
     ReadingPlanService? readingPlanService,
     UserPreferencesService? userPreferencesService,
+    GroupService? groupService,
+    FriendService? friendService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         readingStatusService = readingStatusService ??
@@ -74,7 +87,11 @@ class HomePage extends StatefulWidget {
         vibrationService = vibrationService ?? const VibrationService(),
         googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
         bibleProgressService =
-            bibleProgressService ?? BibleProgressService(firestore: firestore);
+            bibleProgressService ?? BibleProgressService(firestore: firestore),
+        groupService = groupService ??
+            GroupService(firestore: firestore ?? FirebaseFirestore.instance),
+        friendService = friendService ??
+            FriendService(firestore: firestore ?? FirebaseFirestore.instance);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -90,6 +107,19 @@ class HomePage extends StatefulWidget {
 
   /// Service for managing user preferences.
   final UserPreferencesService userPreferencesService;
+
+  /// Loads the user's group, its schedule and member presence for the
+  /// "together" reading card (design parity — Home group plan section).
+  final GroupService groupService;
+
+  /// Loads friends so Home can show the "Your community" presence glimpse.
+  final FriendService friendService;
+
+  /// Switches to the Journey tab when the consistency glimpse is tapped.
+  final VoidCallback? onOpenJourney;
+
+  /// Switches to the Community tab when the community glimpse is tapped.
+  final VoidCallback? onOpenCommunity;
 
   final DateTime Function() dateProvider;
 
@@ -114,17 +144,31 @@ class _HomePageState extends State<HomePage>
   int _currentStreak = 0;
   int _totalReadDays = 0;
 
-  // Plan state. The active personal plan, its progress, and today's scheduled
-  // reading are retained so Home can render the secondary "Today's reading"
-  // card with its own mark + catch-up affordance (epic #716, issues #722/#723).
+  // Plan state. *All* active personal plans (plan + progress) are retained so
+  // Home can rank every active reading, pick a single primary hero, and fold
+  // the rest into compact rows — plus surface a "wrap-up" hero for any plan
+  // whose calendar window has ended but isn't yet content-complete (#716).
   StreamSubscription<DocumentSnapshot>? _syncSub;
 
-  ReadingPlanDay? _scheduledDay;
-  ReadingPlan? _activePlan;
-  UserPlanProgress? _activeProgress;
+  List<_PersonalPlan> _personalPlans = [];
 
-  /// Whether the plan-reading card's mark is mid-write.
+  /// Whether the primary plan card's mark is mid-write.
   bool _planToggleLoading = false;
+
+  // Group state. Powers the "together" reading card under Today's reading: the
+  // user's first group, today's scheduled chapters, member presence and the
+  // catch-up set used by the shared CatchUpStatusRow.
+  Group? _group;
+  List<GroupSchedule> _groupSchedule = [];
+  GroupSchedule? _groupToday;
+  List<GroupMemberProgressData> _groupMembers = [];
+  Set<String> _groupCompletedDateIds = {};
+  bool _groupMarkLoading = false;
+
+  // Community presence. The bottom "Your community" glimpse — who among the
+  // user and their friends has read today.
+  List<_CommunityReader> _communityReaders = [];
+  int _communityTotal = 0;
 
   late final PlanCompletionCoordinator _completionCoordinator;
 
@@ -157,11 +201,134 @@ class _HomePageState extends State<HomePage>
           });
         }
       }),
-      _loadActivePlan(showLoading: false),
+      _loadActivePlans(),
+      _loadGroup(),
+      _loadCommunity(),
     ];
 
     await Future.wait(futures);
   }
+
+  /// Loads the user's first group, today's scheduled chapters, member presence
+  /// and the catch-up set. Best-effort: any failure simply hides the section.
+  Future<void> _loadGroup() async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+
+    try {
+      final groups = await widget.groupService
+          .groupsForUser(uid)
+          .first
+          .timeout(const Duration(seconds: 5), onTimeout: () => const []);
+      if (groups.isEmpty) {
+        if (!_disposed && mounted) {
+          setState(() {
+            _group = null;
+            _groupToday = null;
+          });
+        }
+        return;
+      }
+
+      final group = groups.first;
+      final today = _dateOnly(widget.dateProvider());
+
+      final results = await Future.wait([
+        widget.groupService.schedule(group.id).first.timeout(
+              const Duration(seconds: 3),
+              onTimeout: () => const <GroupSchedule>[],
+            ),
+        widget.groupService
+            .memberDailyCompletion(group.id, includeUid: uid)
+            .first
+            .timeout(
+              const Duration(seconds: 3),
+              onTimeout: () => const <GroupMemberProgressData>[],
+            ),
+        widget.groupService.userProgressForGroup(group.id, uid).first.timeout(
+              const Duration(seconds: 3),
+              onTimeout: () => const <String, int>{},
+            ),
+      ]);
+
+      final schedule = results[0] as List<GroupSchedule>;
+      final members = results[1] as List<GroupMemberProgressData>;
+      final progress = results[2] as Map<String, int>;
+
+      GroupSchedule? todayEntry;
+      for (final s in schedule) {
+        if (_dateOnly(s.date) == today) {
+          todayEntry = s;
+          break;
+        }
+      }
+
+      if (!_disposed && mounted) {
+        setState(() {
+          _group = group;
+          _groupSchedule = schedule;
+          _groupToday = todayEntry;
+          _groupMembers = members;
+          _groupCompletedDateIds = progress.entries
+              .where((e) => e.value > 0)
+              .map((e) => e.key)
+              .toSet();
+        });
+      }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
+  }
+
+  /// Loads today's community presence — the user plus friends who have read
+  /// today — for the bottom "Your community" glimpse. Best-effort.
+  Future<void> _loadCommunity() async {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final friends = await widget.friendService
+          .friends(user.uid)
+          .first
+          .timeout(const Duration(seconds: 5), onTimeout: () => const []);
+      final allUids = {user.uid, ...friends.map((f) => f.uid)};
+
+      final today = widget.dateProvider();
+      final dateKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+      final entriesSnap = await widget.firestore
+          .collection('read_logs')
+          .doc(dateKey)
+          .collection('entries')
+          .get()
+          .timeout(const Duration(seconds: 5));
+
+      final readers = <_CommunityReader>[];
+      for (final doc in entriesSnap.docs) {
+        if (!allUids.contains(doc.id)) continue;
+        final name = (doc.data()['name'] ?? '').toString();
+        readers.add(_CommunityReader(uid: doc.id, name: name));
+      }
+      // Show the current user last so friends lead the stack.
+      readers.sort((a, b) {
+        if (a.uid == user.uid) return 1;
+        if (b.uid == user.uid) return -1;
+        return a.name.compareTo(b.name);
+      });
+
+      if (!_disposed && mounted) {
+        setState(() {
+          _communityReaders = readers;
+          _communityTotal = allUids.length;
+        });
+      }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
+  }
+
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
   void _setupSyncListener() {
     _syncSub?.cancel();
@@ -239,23 +406,21 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  Future<void> _loadActivePlan({bool showLoading = true}) async {
+  /// Loads *every* active (non-archived) personal plan with its plan document,
+  /// so Home can rank them and choose a primary. Streams updates so marking a
+  /// reading re-ranks live.
+  Future<void> _loadActivePlans() async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
 
     final completer = Completer<void>();
     bool firstEvent = true;
 
-    // Listen to the stream for real-time updates
     widget.readingPlanService.getActivePlans(uid).listen(
-      (plans) async {
-        if (plans.isEmpty) {
+      (progresses) async {
+        if (progresses.isEmpty) {
           if (!_disposed && mounted) {
-            setState(() {
-              _scheduledDay = null;
-              _activePlan = null;
-              _activeProgress = null;
-            });
+            setState(() => _personalPlans = []);
           }
           if (firstEvent) {
             firstEvent = false;
@@ -264,27 +429,19 @@ class _HomePageState extends State<HomePage>
           return;
         }
 
-        // Just take the first one for now as we don't have multi-plan UI yet
-        final progress = plans.first;
-        final plan = await widget.readingPlanService.getPlanById(
-          progress.planId,
-          userId: uid,
-        );
-
-        if (plan != null) {
-          final day = widget.readingPlanService.getScheduledDay(
-            plan,
-            progress.startDate,
-            widget.dateProvider(),
+        final items = <_PersonalPlan>[];
+        for (final progress in progresses) {
+          final plan = await widget.readingPlanService.getPlanById(
+            progress.planId,
+            userId: uid,
           );
-
-          if (!_disposed && mounted) {
-            setState(() {
-              _scheduledDay = day;
-              _activePlan = plan;
-              _activeProgress = progress;
-            });
+          if (plan != null) {
+            items.add(_PersonalPlan(plan: plan, progress: progress));
           }
+        }
+
+        if (!_disposed && mounted) {
+          setState(() => _personalPlans = items);
         }
 
         if (firstEvent) {
@@ -301,6 +458,50 @@ class _HomePageState extends State<HomePage>
     );
 
     return completer.future;
+  }
+
+  /// Builds the ranked list of active readings (personal plans + my group),
+  /// dropping any that are content-complete. Ordered by how pressing each is —
+  /// due → behind → on-track → ended — so the first item is the primary hero.
+  List<_ReadingItem> _buildReadingItems() {
+    final today = widget.dateProvider();
+    final items = <_ReadingItem>[];
+
+    for (final pp in _personalPlans) {
+      final status = CatchUpEngine.forPersonalPlan(
+        pp.plan,
+        pp.progress,
+        today: today,
+      );
+      final state = status.lifecycleAt(today);
+      if (state == PlanLifecycle.complete) continue;
+      items.add(_ReadingItem.personal(pp.plan, pp.progress, status, state));
+    }
+
+    if (_group != null && _groupSchedule.isNotEmpty) {
+      final status = CatchUpEngine.forGroupSchedule(
+        _groupSchedule,
+        _groupCompletedDateIds,
+        today: today,
+      );
+      final state = status.lifecycleAt(today);
+      if (state != PlanLifecycle.complete) {
+        items.add(_ReadingItem.group(_group!, status, state));
+      }
+    }
+
+    const rank = {
+      PlanLifecycle.due: 0,
+      PlanLifecycle.behind: 1,
+      PlanLifecycle.ontrack: 2,
+      PlanLifecycle.wrapup: 3,
+    };
+    items.sort((a, b) {
+      final r = rank[a.state]! - rank[b.state]!;
+      if (r != 0) return r;
+      return b.status.missedCount - a.status.missedCount;
+    });
+    return items;
   }
 
   /// Marks the current day as read. Optimistically updates local state and
@@ -429,17 +630,27 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Marks (or un-marks) today's scheduled *plan* reading. Distinct from the
-  /// bare habit tap: this advances the personal plan, and — when the user has
-  /// opted in — may also record the daily habit via [PlanCompletionCoordinator]
+  /// Replaces the progress for [planId] in [_personalPlans] (used for optimistic
+  /// updates and rollback when marking a specific plan's reading).
+  void _setProgressFor(String planId, UserPlanProgress next) {
+    _personalPlans = _personalPlans
+        .map((pp) =>
+            pp.plan.id == planId ? _PersonalPlan(plan: pp.plan, progress: next) : pp)
+        .toList();
+  }
+
+  /// Marks (or un-marks) a specific plan's [day] reading. Distinct from the bare
+  /// habit tap: this advances the personal plan, and — when the user has opted
+  /// in — may also record the daily habit via [PlanCompletionCoordinator]
   /// (one-directional reading→habit coupling). Un-marking never touches the
   /// habit.
-  Future<void> _togglePlanReading() async {
+  Future<void> _togglePlanReadingFor(
+    ReadingPlan plan,
+    UserPlanProgress progress,
+    int day,
+  ) async {
     final user = widget.auth.currentUser;
-    final plan = _activePlan;
-    final progress = _activeProgress;
-    final day = _scheduledDay?.day;
-    if (user == null || plan == null || progress == null || day == null) return;
+    if (user == null) return;
     if (_planToggleLoading) return;
 
     unawaited(widget.vibrationService.lightImpact());
@@ -457,7 +668,7 @@ class _HomePageState extends State<HomePage>
     if (!_disposed && mounted) {
       setState(() {
         _planToggleLoading = true;
-        _activeProgress = progress.copyWith(completedDays: newDays);
+        _setProgressFor(plan.id, progress.copyWith(completedDays: newDays));
       });
     }
 
@@ -486,9 +697,7 @@ class _HomePageState extends State<HomePage>
       }
       ErrorLogger.log(e, st);
       if (!_disposed && mounted) {
-        setState(() {
-          _activeProgress = previousProgress;
-        });
+        setState(() => _setProgressFor(plan.id, previousProgress));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to update reading. Please try again.'),
@@ -500,6 +709,70 @@ class _HomePageState extends State<HomePage>
         setState(() {
           _planToggleLoading = false;
         });
+      }
+    }
+  }
+
+  /// Whether the current user has marked today's group reading complete.
+  bool get _groupReadToday {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return false;
+    for (final m in _groupMembers) {
+      if (m.uid == uid) return m.completion >= 1.0;
+    }
+    return false;
+  }
+
+  /// Marks (or unmarks) today's group reading for the current user via the
+  /// shared group progress API, then optimistically reflects it in the local
+  /// member-presence list so the card updates immediately.
+  Future<void> _toggleGroupReading() async {
+    final user = widget.auth.currentUser;
+    final group = _group;
+    final today = _groupToday;
+    if (user == null || group == null || today == null) return;
+    if (_groupMarkLoading) return;
+
+    unawaited(widget.vibrationService.lightImpact());
+    final wasRead = _groupReadToday;
+    final previousMembers = List<GroupMemberProgressData>.from(_groupMembers);
+
+    if (!_disposed && mounted) {
+      setState(() {
+        _groupMarkLoading = true;
+        _groupMembers = _groupMembers
+            .map((m) => m.uid == user.uid
+                ? GroupMemberProgressData(
+                    uid: m.uid,
+                    name: m.name,
+                    photoUrl: m.photoUrl,
+                    completion: wasRead ? 0.0 : 1.0,
+                  )
+                : m)
+            .toList();
+      });
+    }
+
+    try {
+      await widget.groupService.toggleReadStatus(
+        groupId: group.id,
+        uid: user.uid,
+        schedule: today,
+        read: !wasRead,
+      );
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (!_disposed && mounted) {
+        setState(() => _groupMembers = previousMembers);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update reading. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (!_disposed && mounted) {
+        setState(() => _groupMarkLoading = false);
       }
     }
   }
@@ -601,51 +874,132 @@ class _HomePageState extends State<HomePage>
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: Stack(
-        children: [
-          // Background/Main Content
-          Positioned.fill(
-            child: RefreshIndicator(
-              onRefresh: _loadInitialData,
-              child: SkeletonLoader(
-                loading: _initialLoading || _isSyncing,
-                minTime: const Duration(milliseconds: 1000),
-                skeleton: const HomePageSkeleton(),
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    // SliverToBoxAdapter (not SliverFillRemaining) so the
-                    // habit-first column takes its natural height and scrolls
-                    // when it exceeds the viewport, rather than overflowing.
-                    SliverToBoxAdapter(
-                      child: _buildMinimalContent(context),
-                    ),
-                  ],
-                ),
+      body: RefreshIndicator(
+        onRefresh: _loadInitialData,
+        child: SkeletonLoader(
+          loading: _initialLoading || _isSyncing,
+          minTime: const Duration(milliseconds: 1000),
+          skeleton: const HomePageSkeleton(),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              // SliverToBoxAdapter (not SliverFillRemaining) so the
+              // habit-first column takes its natural height and scrolls
+              // when it exceeds the viewport, rather than overflowing.
+              SliverToBoxAdapter(
+                child: _buildMinimalContent(context),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The design's Home top bar: an eyebrow date, a serif-style greeting (no
+  /// name) and a tappable avatar on the right that opens the navigation menu.
+  Widget _buildHomeHeader(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final user = widget.auth.currentUser;
+    final now = widget.dateProvider();
+
+    const weekdays = [
+      'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY',
+      'SUNDAY'
+    ];
+    const months = [
+      'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY',
+      'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+    ];
+    final eyebrow =
+        '${weekdays[now.weekday - 1]} · ${months[now.month - 1]} ${now.day}';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  eyebrow,
+                  style: AppTextStyles.caption(context).copyWith(
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _greeting(now),
+                  style: AppTextStyles.title(context).copyWith(
+                    fontSize: 27,
+                    fontWeight: FontWeight.w500,
+                    height: 1.05,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
           ),
-          // AppHeader overlaid at top
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              bottom: false,
-              child: AppHeader(
-                auth: widget.auth,
-                firestore: widget.firestore,
-                vibrationService: widget.vibrationService,
-                dateProvider: widget.dateProvider,
-                showProfileIcon: false,
-                showNotificationBell: false,
-                showGreeting: false,
+          const SizedBox(width: 12),
+          Semantics(
+            button: true,
+            label: 'Open menu',
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () {
+                widget.vibrationService.lightImpact();
+                NavigationMenuScope.maybeOf(context)?.showMenu(context);
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colorScheme.surfaceContainerHighest,
+                  image: user?.photoURL != null
+                      ? DecorationImage(
+                          image: CachedNetworkImageProvider(user!.photoURL!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: user?.photoURL == null
+                    ? Text(
+                        _userInitial(user),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      )
+                    : null,
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _greeting(DateTime now) {
+    final hour = now.hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  String _userInitial(User? user) {
+    final name = (user?.displayName ?? '').trim();
+    if (name.isNotEmpty) return name[0].toUpperCase();
+    final email = (user?.email ?? '').trim();
+    if (email.isNotEmpty) return email[0].toUpperCase();
+    return '?';
   }
 
   /// Groups sequential chapters (e.g., "Genesis 1", "Genesis 2" -> "Genesis 1–2").
@@ -717,10 +1071,13 @@ class _HomePageState extends State<HomePage>
       );
     }
 
-    final hasPlan = _activePlan != null && _scheduledDay != null;
+    // Rank every active reading (personal + group); the first is the primary
+    // hero, the rest fold into compact rows.
+    final readingItems = _buildReadingItems();
+    final hasPlan = readingItems.isNotEmpty;
 
     // Home is "the act": the daily habit is the hero, with an optional, clearly
-    // secondary "Today's reading" plan card below it (epic #716, #722/#723).
+    // secondary "Today's reading" section below it (epic #716, #722/#723).
     // The long-arc plan progress (meter, Day x/y, schedule) lives on Journey.
     return SafeArea(
       bottom: false,
@@ -732,16 +1089,20 @@ class _HomePageState extends State<HomePage>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Clear the overlaid AppHeader.
-            const SizedBox(height: 76),
+            _buildHomeHeader(context),
+            const SizedBox(height: 16),
             _buildHabitHero(context, hasPlan: hasPlan),
             if (hasPlan) ...[
               const SizedBox(height: 28),
-              _buildTodaysReadingSection(context),
+              _buildReadingSection(context, readingItems),
             ],
             if (_readToday) ...[
               const SizedBox(height: 40),
-              _buildHabitStats(context),
+              _buildConsistencyGlimpse(context),
+            ],
+            if (_communityReaders.isNotEmpty) ...[
+              const SizedBox(height: 32),
+              _buildCommunitySection(context),
             ],
             const SizedBox(height: 24),
           ],
@@ -897,75 +1258,300 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  /// The secondary "Today's reading" card: the personal plan's scheduled
-  /// chapter with its own mark, plus a gentle catch-up row. Shown only when an
-  /// active plan exists (#723 — no plan ⇒ nothing prescriptive here).
-  Widget _buildTodaysReadingSection(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  /// The "Today's reading" section: one auto-chosen primary reading as the hero
+  /// (a personal plan, a group, or a wrap-up card for a plan whose window has
+  /// ended), every other active plan/group folded into compact rows beneath,
+  /// and a "Manage all N plans" affordance.
+  Widget _buildReadingSection(BuildContext context, List<_ReadingItem> items) {
     final theme = Theme.of(context);
-    final day = _scheduledDay!;
-    final isRead = _activeProgress!.completedDays.contains(day.day);
+    final colorScheme = theme.colorScheme;
+    final primary = items.first;
+    final others = items.sublist(1);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Today’s reading',
-          style: theme.textTheme.titleSmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Today’s reading',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            TextButton(
+              onPressed: others.isNotEmpty
+                  ? _openReadingPlansHub
+                  : () => _openPrimarySchedule(primary),
+              style: TextButton.styleFrom(
+                foregroundColor: colorScheme.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: const Size(0, 0),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(others.isNotEmpty ? 'All plans' : 'Schedule'),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+
+        // Primary hero.
+        if (primary.state == PlanLifecycle.wrapup)
+          _buildWrapUpHero(context, primary)
+        else ...[
+          primary.isGroup
+              ? _buildGroupReadingCard(context, primary)
+              : _buildPersonalReadingCard(context, primary),
+          const SizedBox(height: 10),
+          CatchUpStatusRow(
+            status: primary.status,
+            onTrackLabel: primary.isGroup
+                ? 'In step with your community'
+                : "You're on track",
+            onTap: () => _openPrimarySchedule(primary),
+          ),
+        ],
+
+        // Other active plans/groups, folded into compact rows.
+        for (final it in others) ...[
+          const SizedBox(height: 10),
+          _buildPlanMiniRow(context, it),
+        ],
+
+        if (others.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: _openReadingPlansHub,
+              icon: const Icon(Icons.tune_rounded, size: 18),
+              label: Text('Manage all ${items.length} plans'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: colorScheme.onSurfaceVariant,
+                side: BorderSide(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ],
+    );
+  }
+
+  /// Hero card for a personal plan — the current reading with its own mark.
+  Widget _buildPersonalReadingCard(BuildContext context, _ReadingItem item) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final plan = item.plan!;
+    final progress = item.progress!;
+    final status = item.status;
+    final entry = status.currentEntry ??
+        (status.entries.isNotEmpty ? status.entries.first : null);
+    final day = entry?.index;
+    final isRead = day != null && progress.completedDays.contains(day);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Icon(Icons.explore_outlined,
-                      size: 14, color: colorScheme.primary),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      _activePlan!.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w600,
+              Icon(Icons.explore_outlined, size: 14, color: colorScheme.primary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  plan.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (status.total > 0)
+                Text(
+                  '${status.doneCount} of ${status.total} read',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _formatReadings(status.currentReadings),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: isRead
+                ? OutlinedButton.icon(
+                    onPressed: _planToggleLoading
+                        ? null
+                        : () => _togglePlanReadingFor(plan, progress, day),
+                    icon: Icon(Icons.check_circle,
+                        size: 20, color: colorScheme.primary),
+                    label: const Text('Read'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.primary,
+                      side: BorderSide(
+                        color: colorScheme.primary.withValues(alpha: 0.4),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  )
+                : FilledButton.tonalIcon(
+                    onPressed: (_planToggleLoading || day == null)
+                        ? null
+                        : () => _togglePlanReadingFor(plan, progress, day),
+                    icon: _planToggleLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child:
+                                CircularProgressIndicator(strokeWidth: 2.5),
+                          )
+                        : const Icon(Icons.check_rounded, size: 20),
+                    label: const Text('Mark as read'),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                _formatReadings(day.readings),
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Hero card for a group — today's chapters, member presence, "Read with your
+  /// community" mark. (The group catch-up row is rendered by the section.)
+  Widget _buildGroupReadingCard(BuildContext context, _ReadingItem item) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final group = item.group!;
+    final isRead = _groupReadToday;
+    final canMark = _groupToday != null;
+    final refText = _groupToday != null && _groupToday!.chapters.isNotEmpty
+        ? _formatReadings(_groupToday!.chapters)
+        : _formatReadings(item.status.currentReadings);
+
+    // Members who have read today lead the presence stack.
+    final readers = _groupMembers.where((m) => m.completion >= 1.0).toList();
+    final presenceMembers = [
+      ...readers,
+      ..._groupMembers.where((m) => m.completion < 1.0),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.group_outlined, size: 14, color: colorScheme.primary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${group.name} · together',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: isRead
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            refText.isEmpty ? 'Rest day' : refText,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          if (readers.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                MemberPresenceStack(members: presenceMembers, size: 24, max: 4),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _groupPresenceLabel(readers),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: !canMark
+                ? OutlinedButton.icon(
+                    onPressed: _openGroupSchedule,
+                    icon: Icon(Icons.calendar_today_outlined,
+                        size: 18, color: colorScheme.primary),
+                    label: const Text('View schedule'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.primary,
+                      side: BorderSide(
+                        color: colorScheme.primary.withValues(alpha: 0.4),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  )
+                : isRead
                     ? OutlinedButton.icon(
                         onPressed:
-                            _planToggleLoading ? null : _togglePlanReading,
+                            _groupMarkLoading ? null : _toggleGroupReading,
                         icon: Icon(Icons.check_circle,
                             size: 20, color: colorScheme.primary),
-                        label: const Text('Read'),
+                        label: const Text('Read with your community'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: colorScheme.primary,
                           side: BorderSide(
@@ -978,46 +1564,283 @@ class _HomePageState extends State<HomePage>
                       )
                     : FilledButton.tonalIcon(
                         onPressed:
-                            _planToggleLoading ? null : _togglePlanReading,
-                        icon: _planToggleLoading
+                            _groupMarkLoading ? null : _toggleGroupReading,
+                        icon: _groupMarkLoading
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
                                 child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                ),
+                                    strokeWidth: 2.5),
                               )
                             : const Icon(Icons.check_rounded, size: 20),
-                        label: const Text('Mark as read'),
+                        label: const Text('Read with your community'),
                         style: FilledButton.styleFrom(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                       ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Hero variant for a plan whose calendar window has ended but isn't finished.
+  /// Reframed away from "today / day X of Y" — it's now "finish at your pace."
+  /// No "mark done" shortcut: a plan only closes when every reading is read.
+  Widget _buildWrapUpHero(BuildContext context, _ReadingItem item) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final status = item.status;
+    final last = status.lastDate;
+    final endedLabel = last == null ? null : _shortDate(last);
+    final pct = status.total > 0 ? status.doneCount / status.total : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.eco_outlined, size: 14, color: colorScheme.tertiary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Plan ended · finish at your pace',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: colorScheme.tertiary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (endedLabel != null)
+                Text(
+                  'ended $endedLabel',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            item.title,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${status.remaining} reading${status.remaining == 1 ? '' : 's'} left '
+            'of ${status.total}. The window closed, but it stays here until you '
+            'finish — no rush.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: pct,
+                    minHeight: 7,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '${status.doneCount}/${status.total}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: FilledButton.icon(
+                    onPressed: () => _openPrimarySchedule(item),
+                    icon: const Icon(Icons.eco_outlined, size: 18),
+                    label: const Text('Keep reading'),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              if (!item.isGroup) ...[
+                const SizedBox(width: 9),
+                SizedBox(
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _openPrimarySchedule(item),
+                    icon: const Icon(Icons.calendar_today_outlined, size: 17),
+                    label: const Text('Reschedule'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.onSurfaceVariant,
+                      side: BorderSide(
+                        color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// A compact, non-primary plan/group row.
+  Widget _buildPlanMiniRow(BuildContext context, _ReadingItem item) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final accent =
+        item.state == PlanLifecycle.behind || item.state == PlanLifecycle.wrapup;
+    final tileColor = accent
+        ? colorScheme.tertiaryContainer.withValues(alpha: 0.5)
+        : colorScheme.primaryContainer.withValues(alpha: 0.4);
+    final iconColor = accent ? colorScheme.tertiary : colorScheme.primary;
+    final IconData icon = item.state == PlanLifecycle.wrapup
+        ? Icons.eco_outlined
+        : item.isGroup
+            ? Icons.group_outlined
+            : Icons.explore_outlined;
+
+    return Material(
+      color: colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _openPrimarySchedule(item),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: tileColor,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 18, color: iconColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      item.isGroup ? '${item.title} · together' : item.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      _miniStatusText(item),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: accent
+                            ? colorScheme.tertiary
+                            : colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 10),
-        // Reuse the shared catch-up row (#720) so Home, Journey and Community
-        // present the engine-computed behind/on-track state identically.
-        CatchUpStatusRow(
-          status: CatchUpEngine.forPersonalPlan(
-            _activePlan!,
-            _activeProgress!,
-            today: widget.dateProvider(),
-          ),
-          onTap: _openPlanSchedule,
-        ),
-      ],
+      ),
     );
   }
 
-  void _openPlanSchedule() {
-    final plan = _activePlan;
-    final progress = _activeProgress;
-    if (plan == null) return;
+  /// Status line for a [_buildPlanMiniRow].
+  String _miniStatusText(_ReadingItem item) {
+    final s = item.status;
+    final ref = _formatReadings(s.currentReadings);
+    switch (item.state) {
+      case PlanLifecycle.due:
+        return 'Today · $ref';
+      case PlanLifecycle.behind:
+        return '${s.missedCount} behind · $ref';
+      case PlanLifecycle.wrapup:
+        return 'Finish · ${s.remaining} reading${s.remaining == 1 ? '' : 's'} left';
+      case PlanLifecycle.ontrack:
+      case PlanLifecycle.complete:
+        return 'On track · $ref';
+    }
+  }
+
+  /// `Mon D` (no year) for the wrap-up "ended" label.
+  String _shortDate(DateTime d) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[d.month - 1]} ${d.day}';
+  }
+
+  /// Opens the schedule/detail for any reading item (personal plan or group).
+  void _openPrimarySchedule(_ReadingItem item) {
+    if (item.isGroup) {
+      _openGroupSchedule();
+      return;
+    }
+    _openPlanScheduleFor(item.plan!, item.progress!);
+  }
+
+  void _openPlanScheduleFor(ReadingPlan plan, UserPlanProgress progress) {
     unawaited(widget.vibrationService.lightImpact());
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -1032,76 +1855,234 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  /// Habit stats — the lightweight "showing up" record (weekly bar + streak).
-  /// These describe the *habit*, not plan progress, so they stay on Home.
-  Widget _buildHabitStats(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 240),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  void _openReadingPlansHub() {
+    unawaited(widget.vibrationService.lightImpact());
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AllPlansPage(
+          firestore: widget.firestore,
+          auth: widget.auth,
+          groupService: widget.groupService,
+          readingPlanService: widget.readingPlanService,
+          vibrationService: widget.vibrationService,
+          dateProvider: widget.dateProvider,
+        ),
+      ),
+    );
+  }
+
+  String _groupPresenceLabel(List<GroupMemberProgressData> readers) {
+    if (readers.isEmpty) return 'Be the first to read this';
+    final names =
+        readers.take(2).map((r) => r.name.split(' ').first).toList();
+    final more = readers.length - names.length;
+    final suffix =
+        more > 0 ? ' & $more other${more > 1 ? 's' : ''}' : '';
+    return '${names.join(', ')}$suffix read today';
+  }
+
+  void _openGroupSchedule() {
+    final group = _group;
+    if (group == null) return;
+    unawaited(widget.vibrationService.lightImpact());
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FullSchedulePage(
+          group: group,
+          groupService: widget.groupService,
+          auth: widget.auth,
+          vibrationService: widget.vibrationService,
+          initialSchedule: _groupSchedule,
+          isMember: true,
+        ),
+      ),
+    );
+  }
+
+  /// The design's "consistency glimpse" — a tappable record of showing up
+  /// (week-dots + season count) that opens the Journey tab. Describes the
+  /// *habit*, not plan progress.
+  Widget _buildConsistencyGlimpse(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+    return Material(
+      color: colorScheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: widget.onOpenJourney,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
             children: [
-              Text(
-                'Reading this week',
-                style: AppTextStyles.bodySmall(context).copyWith(
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < 7; i++) ...[
+                    if (i > 0) const SizedBox(width: 8),
+                    _weekDot(context, labels[i], _readOnWeekday(i + 1)),
+                  ],
+                ],
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Here $_totalReadDays day${_totalReadDays == 1 ? '' : 's'} this season',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Whenever you return, it's enough.",
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Container(
-                height: 10,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.1),
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: _pastWeek.isEmpty
-                        ? 0.0
-                        : _pastWeek.where((d) => d).length / 7.0,
-                    minHeight: 10,
-                    backgroundColor: Colors.transparent,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      colorScheme.primary.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
-        RichText(
-          text: TextSpan(
-            style: AppTextStyles.bodySmall(context)
-                .copyWith(color: colorScheme.outline),
-            children: [
-              TextSpan(
-                text: '$_currentStreak',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.primary,
-                ),
+      ),
+    );
+  }
+
+  /// Whether the user read on the given ISO weekday (Mon=1..Sun=7). [_pastWeek]
+  /// is indexed by `weekday % 7` (Sun=0), matching [_toggleReadStatus].
+  bool _readOnWeekday(int weekday) {
+    final idx = weekday % 7;
+    return idx < _pastWeek.length && _pastWeek[idx];
+  }
+
+  Widget _weekDot(BuildContext context, String label, bool read) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 9,
+          height: 9,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: read ? colorScheme.primary : Colors.transparent,
+            border: read
+                ? null
+                : Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.6),
+                    width: 1.5,
+                  ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9.5,
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The bottom "Your community" glimpse: who among the user and their friends
+  /// has read today. Tapping opens the Community tab.
+  Widget _buildCommunitySection(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final readers = _communityReaders;
+
+    final names = readers.take(2).map((r) {
+      final first = r.name.split(' ').first;
+      return first.isEmpty ? 'Someone' : first;
+    }).toList();
+    final subtitle = names.isEmpty
+        ? 'Tap to see who showed up'
+        : '${names.join(', ')} & others showed up';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            'Your community',
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Material(
+          color: colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: widget.onOpenCommunity,
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  MemberPresenceStack(
+                    members: readers
+                        .map((r) => GroupMemberProgressData(
+                              uid: r.uid,
+                              name: r.name,
+                              completion: 1.0,
+                            ))
+                        .toList(),
+                    size: 36,
+                    max: 5,
+                    showDoneBadge: false,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${readers.length} of $_communityTotal read today',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  ),
+                ],
               ),
-              const TextSpan(text: ' day streak'),
-              const TextSpan(text: '  •  '),
-              TextSpan(
-                text: '$_totalReadDays',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              const TextSpan(text: ' days total'),
-            ],
+            ),
           ),
         ),
       ],
@@ -1118,4 +2099,43 @@ class _HomePageState extends State<HomePage>
 
   @override
   bool get wantKeepAlive => true;
+}
+
+/// Lightweight record of a person who has read today, for the Home community
+/// glimpse. Only the fields the glimpse needs (uid + name) are loaded.
+class _CommunityReader {
+  final String uid;
+  final String name;
+
+  const _CommunityReader({required this.uid, required this.name});
+}
+
+/// An active personal plan paired with the user's progress on it.
+class _PersonalPlan {
+  final ReadingPlan plan;
+  final UserPlanProgress progress;
+
+  const _PersonalPlan({required this.plan, required this.progress});
+}
+
+/// A single rankable reading on Home — a personal plan or the user's group —
+/// together with its computed catch-up [status] and [PlanLifecycle] state.
+class _ReadingItem {
+  final bool isGroup;
+  final ReadingPlan? plan;
+  final UserPlanProgress? progress;
+  final Group? group;
+  final CatchUpStatus status;
+  final PlanLifecycle state;
+
+  _ReadingItem.personal(this.plan, this.progress, this.status, this.state)
+      : isGroup = false,
+        group = null;
+
+  _ReadingItem.group(this.group, this.status, this.state)
+      : isGroup = true,
+        plan = null,
+        progress = null;
+
+  String get title => isGroup ? group!.name : plan!.title;
 }

@@ -32,7 +32,8 @@ void main() {
     );
 
     expect(find.textContaining('2 readings behind'), findsOneWidget);
-    expect(find.textContaining('Catch up'), findsOneWidget);
+    // The restyled banner shows the design's gentle catch-up invitation.
+    expect(find.textContaining('catch up'), findsOneWidget);
   });
 
   testWidgets('shows on-track copy when in step', (tester) async {
