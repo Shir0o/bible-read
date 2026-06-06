@@ -11,6 +11,7 @@ import '../services/plan_completion_coordinator.dart';
 import '../services/reading_plan_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/schedule_preview.dart';
+import '../widgets/schedule_screen_view.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/plan_detail_skeleton.dart';
 import '../services/vibration_service.dart';
@@ -312,72 +313,10 @@ class _PlanDetailContent extends StatefulWidget {
 }
 
 class _PlanDetailContentState extends State<_PlanDetailContent> {
-  final ScrollController _scrollController = ScrollController();
   final Map<int, GlobalKey> _itemKeys = {};
-  bool _hasScrolledToUnchecked = false;
 
   /// In the not-started preview, whether the full schedule list is expanded.
   bool _showFullSchedule = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.isStarted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          unawaited(_scrollToFirstUnchecked());
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _scrollToFirstUnchecked() async {
-    if (_hasScrolledToUnchecked) return;
-
-    final completedDays = widget.optimisticCompletedDays ??
-        widget.progress?.completedDays.toSet() ??
-        {};
-
-    int? targetDay;
-    for (final day in widget.plan.schedule) {
-      if (!completedDays.contains(day.day)) {
-        targetDay = day.day;
-        break;
-      }
-    }
-
-    if (targetDay != null && _itemKeys.containsKey(targetDay)) {
-      final key = _itemKeys[targetDay];
-      final context = key?.currentContext;
-      if (context != null) {
-        _hasScrolledToUnchecked = true;
-
-        // 1. Initial jump to a position slightly above the target
-        // We use alignment: 0.3 to put it a bit lower than the top initially
-        Scrollable.ensureVisible(context, alignment: 0.3);
-
-        // 2. Short delay to let the jump settle
-        await Future.delayed(const Duration(milliseconds: 100));
-
-        // 3. Smooth scroll to the final position (alignment: 0.1)
-        final currentContext = key?.currentContext;
-        if (currentContext != null && currentContext.mounted) {
-          await Scrollable.ensureVisible(
-            currentContext,
-            alignment: 0.1,
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeInOut,
-          );
-        }
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -390,73 +329,39 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
     final completedDays = widget.optimisticCompletedDays ??
         widget.progress?.completedDays.toSet() ??
         {};
-
-    final now = DateTime.now();
-    final todayDate = DateTime(now.year, now.month, now.day);
     final startDate = widget.progress!.startDate;
 
-    final past = <ReadingPlanDay>[];
-    final today = <ReadingPlanDay>[];
-    final upcoming = <ReadingPlanDay>[];
-
-    for (final day in widget.plan.schedule) {
-      final date = startDate.add(Duration(days: day.day - 1));
-      final sDate = DateTime(date.year, date.month, date.day);
-
-      if (sDate.isBefore(todayDate)) {
-        past.add(day);
-      } else if (sDate.isAtSameMomentAs(todayDate)) {
-        today.add(day);
-      } else {
-        upcoming.add(day);
-      }
-    }
-
-    return SingleChildScrollView(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 24, left: 8, right: 8),
-            child: Text(
-              widget.plan.description,
-              style: AppTextStyles.body(
-                context,
-              ).copyWith(color: colorScheme.onSurfaceVariant),
-            ),
-          ),
-          if (past.isNotEmpty) ...[
-            _buildSectionHeader(context, 'Past Readings'),
-            ...past.map(
-              (day) => _buildScheduleItem(
-                context,
-                day,
-                startDate,
-                completedDays,
-                isPast: true,
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-          if (today.isNotEmpty) ...[
-            _buildSectionHeader(context, 'Today', isHighlight: true),
-            ...today.map(
-              (day) => _buildTodayItem(context, day, startDate, completedDays),
-            ),
-            const SizedBox(height: 16),
-          ],
-          if (upcoming.isNotEmpty) ...[
-            _buildSectionHeader(context, 'Upcoming'),
-            ...upcoming.map(
-              (day) =>
-                  _buildScheduleItem(context, day, startDate, completedDays),
-            ),
-          ],
-          const SizedBox(height: 80),
-        ],
+    // Drive the shared, design-matched schedule view from the same catch-up
+    // engine the group page uses. Apply optimistic completion so toggles feel
+    // instant; `ScheduleEntry.index` is the plan day number, so `onToggle`
+    // routes straight back to `onToggleDay` (which honors the habit coupling).
+    final status = CatchUpEngine.forPersonalPlan(
+      widget.plan,
+      UserPlanProgress(
+        planId: widget.plan.id,
+        userId: widget.progress!.userId,
+        startDate: startDate,
+        completedDays: completedDays.toList(),
       ),
+      today: DateTime.now(),
+    );
+
+    return ScheduleScreenView(
+      status: status,
+      title: widget.plan.title,
+      isGroup: false,
+      header: Padding(
+        padding: const EdgeInsets.only(bottom: 4, left: 4, right: 4),
+        child: Text(
+          widget.plan.description,
+          style: AppTextStyles.body(context)
+              .copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+      ),
+      onToggle: (i) {
+        final entry = status.entries[i];
+        widget.onToggleDay(entry.index, entry.completed, completedDays);
+      },
     );
   }
 
@@ -649,104 +554,6 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                   ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTodayItem(
-    BuildContext context,
-    ReadingPlanDay day,
-    DateTime startDate,
-    Set<int> completedDays,
-  ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isCompleted = completedDays.contains(day.day);
-    final date = startDate.add(Duration(days: day.day - 1));
-
-    final key = _itemKeys.putIfAbsent(day.day, () => GlobalKey());
-
-    return Container(
-      key: key,
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: isCompleted
-            ? colorScheme.surfaceContainerHigh
-            : colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: () => widget.onToggleDay(day.day, isCompleted, completedDays),
-        borderRadius: BorderRadius.circular(24),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 56,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.formatDate(date),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                    Text(
-                      widget.formatDayOfWeek(date),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: colorScheme.primary.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Day ${day.day}',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      day.readings.join(', '),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        decoration:
-                            isCompleted ? TextDecoration.lineThrough : null,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isCompleted)
-                Icon(Icons.check_circle, color: colorScheme.primary, size: 24)
-              else
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: colorScheme.primary, width: 2),
-                  ),
-                ),
-            ],
           ),
         ),
       ),

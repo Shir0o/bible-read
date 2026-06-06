@@ -82,12 +82,17 @@ void main() {
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();
 
-    expect(find.text('PAST READINGS'), findsOneWidget);
-    expect(find.text('TODAY'), findsOneWidget);
-    expect(find.text('UPCOMING'), findsOneWidget);
+    // Redesigned schedule (ScheduleScreenView): summary card eyebrow + full
+    // schedule list + gentle catch-up tray for the overdue reading.
+    expect(find.text('TEST GROUP'), findsOneWidget);
+    expect(find.text('Full schedule'), findsOneWidget);
+    expect(find.text('Catch up at your own pace'), findsOneWidget);
 
-    expect(find.text('Genesis 1'), findsOneWidget);
-    expect(find.text('Genesis 2'), findsOneWidget);
+    // Genesis 1 (overdue) appears in the catch-up tray and the list;
+    // Genesis 2 (current) appears in the "with your group" anchor and the list;
+    // Genesis 3 (upcoming) appears only in the list.
+    expect(find.text('Genesis 1'), findsWidgets);
+    expect(find.text('Genesis 2'), findsWidgets);
     expect(find.text('Genesis 3'), findsOneWidget);
   });
 
