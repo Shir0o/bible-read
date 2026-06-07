@@ -67,6 +67,21 @@ class ReadingPlanService {
     return docRef.id;
   }
 
+  /// Updates an existing custom reading plan in place, preserving its document
+  /// id (and, via merge, its `userId`/`createdAt`). Used by the edit flow so a
+  /// plan's progress — tracked separately under `plan_progress/{planId}` —
+  /// survives the edit.
+  Future<void> updateCustomPlan(String userId, ReadingPlan plan) async {
+    final data = plan.toJson();
+    data['userId'] = userId;
+    data['updatedAt'] = FieldValue.serverTimestamp();
+
+    await firestore
+        .collection('custom_plans')
+        .doc(plan.id)
+        .set(data, SetOptions(merge: true));
+  }
+
   /// Starts a reading plan for a user.
   Future<void> startPlan(
     String userId,

@@ -180,6 +180,11 @@ class _HomePageState extends State<HomePage>
   List<_CommunityReader> _communityReaders = [];
   int _communityTotal = 0;
 
+  /// The reading the user pinned as "Primary on Home" (typed key
+  /// `plan:<id>` / `group:<id>`), or `null` to let ranking auto-pick the hero.
+  /// Set from the All Plans hub; honored in [_buildReadingItems].
+  String? _pinnedReadingId;
+
   late final PlanCompletionCoordinator _completionCoordinator;
 
   late final AnimationController _animationController;
@@ -214,9 +219,25 @@ class _HomePageState extends State<HomePage>
       _loadActivePlans(),
       _loadGroup(),
       _loadCommunity(),
+      _loadPreferences(),
     ];
 
     await Future.wait(futures);
+  }
+
+  /// Loads the user's pinned-reading preference. Best-effort: any failure just
+  /// leaves Home's automatic ranking in charge.
+  Future<void> _loadPreferences() async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final prefs = await widget.userPreferencesService.fetchPreferences(uid);
+      if (!_disposed && mounted) {
+        setState(() => _pinnedReadingId = prefs.pinnedReadingId);
+      }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
   }
 
   /// Resolves with the first value of [stream], falling back to [fallback] after
@@ -551,6 +572,17 @@ class _HomePageState extends State<HomePage>
       if (r != 0) return r;
       return b.status.missedCount - a.status.missedCount;
     });
+
+    // A user-pinned reading overrides the automatic ranking and becomes the
+    // hero, matching the "Primary on Home" pin in the All Plans hub.
+    final pinned = _pinnedReadingId;
+    if (pinned != null) {
+      final idx = items.indexWhere((it) => it.pinKey == pinned);
+      if (idx > 0) {
+        final hero = items.removeAt(idx);
+        items.insert(0, hero);
+      }
+    }
     return items;
   }
 
@@ -1334,7 +1366,7 @@ class _HomePageState extends State<HomePage>
             ),
             TextButton(
               onPressed: others.isNotEmpty
-                  ? _openReadingPlansHub
+                  ? () => _openReadingPlansHub()
                   : () => _openPrimarySchedule(primary),
               style: TextButton.styleFrom(
                 foregroundColor: colorScheme.primary,
@@ -1377,7 +1409,7 @@ class _HomePageState extends State<HomePage>
             width: double.infinity,
             height: 48,
             child: OutlinedButton.icon(
-              onPressed: _openReadingPlansHub,
+              onPressed: () => _openReadingPlansHub(),
               icon: const Icon(Icons.tune_rounded, size: 18),
               label: Text('Manage all ${items.length} plans'),
               style: OutlinedButton.styleFrom(
@@ -1908,20 +1940,24 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  void _openReadingPlansHub() {
+  Future<void> _openReadingPlansHub() async {
     unawaited(widget.vibrationService.lightImpact());
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => AllPlansPage(
           firestore: widget.firestore,
           auth: widget.auth,
           groupService: widget.groupService,
           readingPlanService: widget.readingPlanService,
+          userPreferencesService: widget.userPreferencesService,
+          friendService: widget.friendService,
           vibrationService: widget.vibrationService,
           dateProvider: widget.dateProvider,
         ),
       ),
     );
+    // The hub can change the pinned reading; refresh so Home re-picks its hero.
+    if (mounted) await _loadPreferences();
   }
 
   String _groupPresenceLabel(List<GroupMemberProgressData> readers) {
@@ -2200,4 +2236,7 @@ class _ReadingItem {
         progress = null;
 
   String get title => isGroup ? group!.name : plan!.title;
+
+  /// Typed pin key matching `UserPreferences.pinnedReadingId`.
+  String get pinKey => isGroup ? 'group:${group!.id}' : 'plan:${plan!.id}';
 }
