@@ -1188,6 +1188,9 @@ class _HomePageState extends State<HomePage>
             if (hasPlan) ...[
               const SizedBox(height: 28),
               _buildReadingSection(context, readingItems),
+            ] else ...[
+              const SizedBox(height: 16),
+              _buildStartNewPlanButton(context),
             ],
             if (_readToday) ...[
               const SizedBox(height: 40),
@@ -1414,27 +1417,9 @@ class _HomePageState extends State<HomePage>
           _buildPlanMiniRow(context, it),
         ],
 
-        if (others.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton.icon(
-              onPressed: () => _startNewPlan(),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Start a new plan'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colorScheme.onSurfaceVariant,
-                side: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ),
-        ],
+        // Always offer to start another plan, no matter how many are active.
+        const SizedBox(height: 14),
+        _buildStartNewPlanButton(context),
       ],
     );
   }
@@ -1975,28 +1960,48 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  /// The "Start a new plan" affordance, shown wherever the reader might add a
+  /// plan — beneath the reading list and in the no-plan state alike.
+  Widget _buildStartNewPlanButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton.icon(
+        onPressed: () => _startNewPlan(),
+        icon: const Icon(Icons.add, size: 18),
+        label: const Text('Start a new plan'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: colorScheme.onSurfaceVariant,
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Asks whether to start a personal or group plan, then routes to the matching
-  /// creation flow. Reloads Home afterwards so a newly created plan/group can
-  /// surface as a reading.
+  /// creation flow. A new personal plan flows in through the active-plans stream
+  /// on its own; a new group isn't streamed, so the group branch reloads Home so
+  /// it can surface as the hero.
   Future<void> _startNewPlan() async {
     unawaited(widget.vibrationService.lightImpact());
     final kind = await showNewPlanPicker(context);
     if (kind == null || !mounted) return;
 
-    // Only reload when a plan/group was actually created. CreatePlanPage pops
-    // `true` on success and `null` on cancel; CreateGroupPage replaces itself
-    // with the group's detail page, so returning from it implies a new group.
-    bool created;
     switch (kind) {
       case NewPlanKind.personal:
-        created = await Navigator.of(context).push<bool>(MaterialPageRoute(
-              builder: (_) => CreatePlanPage(
-                firestore: widget.firestore,
-                auth: widget.auth,
-                vibrationService: widget.vibrationService,
-              ),
-            )) ??
-            false;
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => CreatePlanPage(
+            firestore: widget.firestore,
+            auth: widget.auth,
+            vibrationService: widget.vibrationService,
+          ),
+        ));
       case NewPlanKind.group:
         await Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => CreateGroupPage(
@@ -2005,12 +2010,10 @@ class _HomePageState extends State<HomePage>
             vibrationService: widget.vibrationService,
           ),
         ));
-        created = true;
-    }
-
-    if (created && mounted) {
-      await _loadPreferences();
-      if (mounted) await _loadGroup();
+        if (mounted) {
+          await _loadPreferences();
+          if (mounted) await _loadGroup();
+        }
     }
   }
 

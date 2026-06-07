@@ -47,49 +47,51 @@ class _NewPlanPickerSheet extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       child: SafeArea(
         top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 48,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(16),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 48,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              'Start a new plan',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w500,
+              const SizedBox(height: 18),
+              Text(
+                'Start a new plan',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Read on your own, or together with a circle',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+              const SizedBox(height: 4),
+              Text(
+                'Read on your own, or together with a circle',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-            const SizedBox(height: 18),
-            _ChoiceTile(
-              icon: Icons.explore_outlined,
-              title: 'Personal plan',
-              subtitle: 'Just for you, at your own pace',
-              onTap: () => Navigator.of(context).pop(NewPlanKind.personal),
-            ),
-            const SizedBox(height: 10),
-            _ChoiceTile(
-              icon: Icons.groups_outlined,
-              title: 'Group plan',
-              subtitle: 'Read through scripture with friends',
-              onTap: () => Navigator.of(context).pop(NewPlanKind.group),
-            ),
-          ],
+              const SizedBox(height: 18),
+              _ChoiceTile(
+                icon: Icons.explore_outlined,
+                title: 'Personal plan',
+                subtitle: 'Just for you, at your own pace',
+                onTap: () => Navigator.of(context).pop(NewPlanKind.personal),
+              ),
+              const SizedBox(height: 10),
+              _ChoiceTile(
+                icon: Icons.groups_outlined,
+                title: 'Group plan',
+                subtitle: 'Read through scripture with friends',
+                onTap: () => Navigator.of(context).pop(NewPlanKind.group),
+              ),
+            ],
+          ),
         ),
       ),
     );

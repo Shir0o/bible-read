@@ -298,16 +298,19 @@ class _AllPlansPageState extends State<AllPlansPage> {
     final kind = await showNewPlanPicker(context);
     if (kind == null || !mounted) return;
 
+    // Both create pages replace themselves with a detail page on success
+    // (pushReplacement), so the push future can't reliably report whether a
+    // plan was created. Reload on return so a newly created plan/group always
+    // shows in the hub; the occasional wasted reload on cancel is cheap.
     switch (kind) {
       case NewPlanKind.personal:
-        final created = await Navigator.of(context).push<bool>(MaterialPageRoute(
+        await Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => CreatePlanPage(
             firestore: widget.firestore,
             auth: widget.auth,
             vibrationService: widget.vibrationService,
           ),
         ));
-        if (created == true && mounted) await _load();
       case NewPlanKind.group:
         await Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => CreateGroupPage(
@@ -316,8 +319,8 @@ class _AllPlansPageState extends State<AllPlansPage> {
             vibrationService: widget.vibrationService,
           ),
         ));
-        if (mounted) await _load();
     }
+    if (mounted) await _load();
   }
 
   // ---- Build --------------------------------------------------------------
