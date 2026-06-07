@@ -266,21 +266,6 @@ class SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  /// Bordered, full-bleed card used to group rows on the settings screens.
-  Widget _settingsCard(ColorScheme colorScheme, {required Widget child}) {
-    return Card(
-      elevation: 0,
-      clipBehavior: Clip.antiAlias,
-      margin: EdgeInsets.zero,
-      color: colorScheme.surfaceContainerLowest,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
-      ),
-      child: child,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final googleUser = widget.user;
@@ -344,8 +329,8 @@ class SettingsPageState extends State<SettingsPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Profile / account card
-            _settingsCard(
-              colorScheme,
+            CommonStyles.buildBorderedCard(
+              context: context,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.hPadding,
@@ -419,8 +404,8 @@ class SettingsPageState extends State<SettingsPage> {
             // App settings
             _sectionTitle(context, 'App settings'),
             const SizedBox(height: AppSpacing.gap12),
-            _settingsCard(
-              colorScheme,
+            CommonStyles.buildBorderedCard(
+              context: context,
               child: Column(
                 children: [
                   if (_prefsLoading)
@@ -477,8 +462,8 @@ class SettingsPageState extends State<SettingsPage> {
             // Support
             _sectionTitle(context, 'Support'),
             const SizedBox(height: AppSpacing.gap12),
-            _settingsCard(
-              colorScheme,
+            CommonStyles.buildBorderedCard(
+              context: context,
               child: Column(
                 children: [
                   ListTile(

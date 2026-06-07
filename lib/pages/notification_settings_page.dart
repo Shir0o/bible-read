@@ -148,7 +148,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                       vertical: AppSpacing.gap16,
                     ),
                     children: [
-                      _groupedCard(colorScheme, _buildRows(context)),
+                      _groupedCard(context, _buildRows(context)),
                       const SizedBox(height: AppSpacing.gap16),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -169,7 +169,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   }
 
   /// Bordered card grouping all notification rows, separated by dividers.
-  Widget _groupedCard(ColorScheme colorScheme, List<Widget> rows) {
+  Widget _groupedCard(BuildContext context, List<Widget> rows) {
+    final colorScheme = Theme.of(context).colorScheme;
     final children = <Widget>[];
     for (var i = 0; i < rows.length; i++) {
       if (i > 0) {
@@ -182,15 +183,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       }
       children.add(rows[i]);
     }
-    return Card(
-      elevation: 0,
-      clipBehavior: Clip.antiAlias,
-      margin: EdgeInsets.zero,
-      color: colorScheme.surfaceContainerLowest,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
-      ),
+    return CommonStyles.buildBorderedCard(
+      context: context,
       child: Column(children: children),
     );
   }
@@ -201,7 +195,11 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       SwitchListTile(
         contentPadding: rowPadding,
         title: const Text('Daily Reminder'),
-        subtitle: Text('A gentle nudge at ${_reminderTime.format(context)}'),
+        subtitle: Text(
+          _reminderEnabled
+              ? 'A gentle nudge at ${_reminderTime.format(context)}'
+              : 'Get a gentle nudge to read each day',
+        ),
         value: _reminderEnabled,
         onChanged: _toggleReminder,
       ),

@@ -82,6 +82,30 @@ class CommonStyles {
     );
   }
 
+  /// Builds a bordered, full-bleed card (no internal padding).
+  ///
+  /// Unlike [buildCard], this does not add inner padding, so it suits grouping
+  /// list rows separated by dividers that span edge-to-edge — each row controls
+  /// its own padding. Used by the settings screens.
+  static Card buildBorderedCard({
+    required BuildContext context,
+    required Widget child,
+    EdgeInsetsGeometry margin = EdgeInsets.zero,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      margin: margin,
+      color: colorScheme.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
+        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+      ),
+      child: child,
+    );
+  }
+
   /// Creates an [AppBar] with the application's default styling.
   ///
   /// [title] is displayed as the app bar's title.
