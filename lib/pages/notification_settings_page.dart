@@ -5,6 +5,7 @@ import '../models/notification_preferences.dart';
 import '../services/error_logger.dart';
 import '../services/notification_preferences_service.dart';
 import '../services/reminder_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 
 /// Page to configure notification preferences.
@@ -132,77 +133,104 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: CommonStyles.buildAppBar(context, 'Notification Settings'),
+      appBar: CommonStyles.buildAppBar(context, 'Notifications'),
       body: Container(
-        decoration: CommonStyles.backgroundDecoration(
-          Theme.of(context).colorScheme,
-        ),
+        decoration: CommonStyles.backgroundDecoration(colorScheme),
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : (_prefs == null
                 ? const Center(child: Text('Please sign in'))
                 : ListView(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.hPadding,
+                      vertical: AppSpacing.gap16,
+                    ),
                     children: [
-                      CommonStyles.buildTappableCard(
-                        context: context,
-                        onTap: () => _toggleReminder(!_reminderEnabled),
-                        margin: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Column(
-                          children: [
-                            SwitchListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: const Text('Daily Reminder'),
-                              value: _reminderEnabled,
-                              onChanged: _toggleReminder,
-                            ),
-                            if (_reminderEnabled) ...[
-                              const Divider(height: 1),
-                              ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: const Text('Time'),
-                                trailing: Text(
-                                  _reminderTime.format(context),
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium,
-                                ),
-                                onTap: _pickTime,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      ...NotificationType.values.map((type) {
-                        final val = _prefs![type];
-                        return CommonStyles.buildTappableCard(
-                          context: context,
-                          onTap: () => _toggle(type, !val),
-                          margin: const EdgeInsets.symmetric(vertical: 4.0),
-                          child: SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(_label(type)),
-                            value: val,
-                            onChanged: (v) => _toggle(type, v),
-                          ),
-                        );
-                      }),
-                      CommonStyles.buildTappableCard(
-                        context: context,
-                        onTap: () => _toggleVibration(!_vibrationEnabled),
-                        margin: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Vibration'),
-                          value: _vibrationEnabled,
-                          onChanged: _toggleVibration,
+                      _groupedCard(context, _buildRows(context)),
+                      const SizedBox(height: AppSpacing.gap16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          'We keep notifications quiet and few — only what '
+                          'helps you keep showing up.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: colorScheme.outline),
                         ),
                       ),
                     ],
                   )),
       ),
     );
+  }
+
+  /// Bordered card grouping all notification rows, separated by dividers.
+  Widget _groupedCard(BuildContext context, List<Widget> rows) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final children = <Widget>[];
+    for (var i = 0; i < rows.length; i++) {
+      if (i > 0) {
+        children.add(Divider(
+          height: 1,
+          indent: AppSpacing.hPadding,
+          endIndent: AppSpacing.hPadding,
+          color: colorScheme.outlineVariant,
+        ));
+      }
+      children.add(rows[i]);
+    }
+    return CommonStyles.buildBorderedCard(
+      context: context,
+      child: Column(children: children),
+    );
+  }
+
+  List<Widget> _buildRows(BuildContext context) {
+    const rowPadding = EdgeInsets.symmetric(horizontal: AppSpacing.hPadding);
+    final rows = <Widget>[
+      SwitchListTile(
+        contentPadding: rowPadding,
+        title: const Text('Daily Reminder'),
+        subtitle: Text(
+          _reminderEnabled
+              ? 'A gentle nudge at ${_reminderTime.format(context)}'
+              : 'Get a gentle nudge to read each day',
+        ),
+        value: _reminderEnabled,
+        onChanged: _toggleReminder,
+      ),
+    ];
+    if (_reminderEnabled) {
+      rows.add(ListTile(
+        contentPadding: rowPadding,
+        title: const Text('Time'),
+        trailing: Text(
+          _reminderTime.format(context),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        onTap: _pickTime,
+      ));
+    }
+    for (final type in NotificationType.values) {
+      final val = _prefs![type];
+      rows.add(SwitchListTile(
+        contentPadding: rowPadding,
+        title: Text(_label(type)),
+        value: val,
+        onChanged: (v) => _toggle(type, v),
+      ));
+    }
+    rows.add(SwitchListTile(
+      contentPadding: rowPadding,
+      title: const Text('Vibration'),
+      value: _vibrationEnabled,
+      onChanged: _toggleVibration,
+    ));
+    return rows;
   }
 
   String _label(NotificationType type) {

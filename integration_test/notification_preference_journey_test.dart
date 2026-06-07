@@ -91,7 +91,7 @@ void main() {
     expect(generalDoc.data()?['autoMarkPlanRead'], isTrue);
 
     // 5. Navigate to Notification Settings and Toggle
-    await tester.tap(find.text('Notification Settings'));
+    await tester.tap(find.text('Notification settings'));
     await tester.pumpAndSettle();
     expect(find.byType(NotificationSettingsPage), findsOneWidget);
 
