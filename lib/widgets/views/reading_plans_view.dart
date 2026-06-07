@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 
 import '../../models/reading_plan.dart';
 import '../../models/reading_plan_progress.dart';
@@ -296,7 +297,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.2),
         ),

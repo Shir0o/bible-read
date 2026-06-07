@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 import '../services/catch_up_engine.dart';
 
@@ -90,7 +91,7 @@ class SchedulePreview extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

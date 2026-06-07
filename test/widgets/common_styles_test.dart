@@ -26,25 +26,31 @@ void main() {
     final card = tester.widget<Card>(find.byType(Card));
     expect(
       card.margin,
-      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      const EdgeInsets.symmetric(
+        horizontal: AppSpacing.hPadding,
+        vertical: AppSpacing.vPaddingSmall,
+      ),
     );
     expect(card.elevation, 0);
     expect(
       card.color,
       Theme.of(
         tester.element(find.byType(Card)),
-      ).colorScheme.surfaceContainerLow,
+      ).colorScheme.surfaceContainerLowest,
     );
 
     final shape = card.shape;
     expect(shape, isA<RoundedRectangleBorder>());
     final border = shape as RoundedRectangleBorder;
-    expect(border.borderRadius, BorderRadius.circular(16));
+    expect(border.borderRadius, BorderRadius.circular(AppSpacing.rCard));
 
     final paddings = tester.widgetList<Padding>(
       find.descendant(of: find.byType(Card), matching: find.byType(Padding)),
     );
-    expect(paddings.any((p) => p.padding == const EdgeInsets.all(16)), isTrue);
+    expect(
+      paddings.any((p) => p.padding == const EdgeInsets.all(AppSpacing.hPadding)),
+      isTrue,
+    );
   });
 
   testWidgets('buildAppBar uses configured colors', (tester) async {
@@ -95,14 +101,14 @@ void main() {
     final theme = Theme.of(tester.element(find.byType(Scaffold)));
     final cardTheme = theme.cardTheme;
     expect(cardTheme.elevation, 0);
-    expect(cardTheme.color, colorScheme.surfaceContainerLow);
+    expect(cardTheme.color, colorScheme.surfaceContainerLowest);
     expect(cardTheme.shape, isA<RoundedRectangleBorder>());
 
     final inputBorder = theme.inputDecorationTheme.border;
     expect(inputBorder, isA<OutlineInputBorder>());
     expect(
       (inputBorder as OutlineInputBorder).borderRadius,
-      BorderRadius.circular(12),
+      BorderRadius.circular(AppSpacing.rField),
     );
 
     final navTheme = theme.navigationBarTheme;

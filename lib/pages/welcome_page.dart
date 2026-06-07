@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 import '../widgets/auth/auth_background.dart';
 
@@ -78,7 +79,7 @@ class WelcomePage extends StatelessWidget {
                     elevation: 4,
                     shadowColor: colorScheme.shadow.withValues(alpha: 0.3),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28), // rounded-full
+                      borderRadius: BorderRadius.circular(AppSpacing.rCard), // rounded-full
                     ),
                   ),
                   child: Text(
@@ -105,7 +106,7 @@ class WelcomePage extends StatelessWidget {
                     backgroundColor: colorScheme.surface.withValues(alpha: 0),
                     foregroundColor: colorScheme.primary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(AppSpacing.rCard),
                     ),
                   ),
                   child: Text(

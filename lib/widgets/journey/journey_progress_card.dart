@@ -215,7 +215,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +251,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
       elevation: 0,
       color: colorScheme.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         side: BorderSide(
           color: colorScheme.outlineVariant.withValues(alpha: 0.2),
         ),
@@ -330,13 +330,13 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
         Container(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.2),
         ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         child: Stack(
           children: [
             Padding(
@@ -353,7 +353,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                         height: 100, // Slightly taller rectangle
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(AppSpacing.rCard),
                           border: Border.all(
                             color: colorScheme.onSurfaceVariant.withValues(
                               alpha: 0.1,

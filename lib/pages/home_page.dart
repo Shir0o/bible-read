@@ -27,6 +27,7 @@ import '../models/reading_plan_progress.dart';
 import '../services/vibration_service.dart';
 import '../widgets/catch_up_status_row.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
+import '../theme/app_theme.dart';
 import '../widgets/member_presence_stack.dart';
 import '../widgets/navigation_menu_scope.dart';
 import '../widgets/skeleton_loader.dart';
@@ -1185,7 +1186,7 @@ class _HomePageState extends State<HomePage>
               padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(AppSpacing.rCard),
                 border: Border.all(
                   color: colorScheme.primary.withValues(alpha: 0.15),
                 ),
@@ -1201,8 +1202,9 @@ class _HomePageState extends State<HomePage>
                   const SizedBox(height: 20),
                   Text(
                     'Thank you for being here',
-                    style: AppTextStyles.subtitle(context).copyWith(
+                    style: AppTextStyles.title(context).copyWith(
                       fontSize: 24,
+                      fontWeight: FontWeight.w400,
                       color: colorScheme.onSurface.withValues(alpha: 0.9),
                     ),
                     textAlign: TextAlign.center,
@@ -1215,7 +1217,7 @@ class _HomePageState extends State<HomePage>
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(AppSpacing.rCard),
                 border: Border.all(
                   color: colorScheme.primary.withValues(alpha: 0.15),
                 ),
@@ -1412,7 +1414,7 @@ class _HomePageState extends State<HomePage>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.2),
         ),
@@ -1523,7 +1525,7 @@ class _HomePageState extends State<HomePage>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.2),
         ),
@@ -1652,7 +1654,7 @@ class _HomePageState extends State<HomePage>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.2),
         ),

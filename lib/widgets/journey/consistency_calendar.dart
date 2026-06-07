@@ -154,7 +154,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
             child: Container(
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(AppSpacing.rCard),
                 border: Border.all(
                   color: colorScheme.outlineVariant.withValues(alpha: 0.2),
                 ),

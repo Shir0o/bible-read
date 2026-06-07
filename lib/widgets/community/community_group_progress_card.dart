@@ -44,7 +44,7 @@ class CommunityGroupProgressCard extends StatelessWidget {
       decoration: BoxDecoration(boxShadow: AppSpacing.cardShadow(context)),
       child: Material(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {

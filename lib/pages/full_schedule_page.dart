@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
@@ -323,7 +324,7 @@ class _TodayAnchorCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
           color: colorScheme.primary.withValues(alpha: 0.25),
         ),

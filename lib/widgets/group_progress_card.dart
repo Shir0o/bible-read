@@ -85,7 +85,7 @@ class GroupProgressCard extends StatelessWidget {
         return Container(
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainer,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppSpacing.rCard),
             boxShadow: AppSpacing.cardShadow(context),
           ),
           padding: const EdgeInsets.all(24),

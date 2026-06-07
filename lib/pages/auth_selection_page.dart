@@ -10,6 +10,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -145,7 +146,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                     elevation: 4,
                     shadowColor: colorScheme.shadow.withValues(alpha: 0.3),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
+                      borderRadius: BorderRadius.circular(AppSpacing.rCard),
                     ),
                   ),
                   child: _isSigningIn
@@ -198,7 +199,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                     elevation: 4,
                     shadowColor: colorScheme.shadow.withValues(alpha: 0.3),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
+                      borderRadius: BorderRadius.circular(AppSpacing.rCard),
                     ),
                   ),
                   child: Row(

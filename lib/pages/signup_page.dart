@@ -11,6 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -514,7 +515,7 @@ class _SignupPageState extends State<SignupPage> {
                           foregroundColor: colorScheme.onPrimary,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(AppSpacing.rCard),
                           ),
                         ),
                         child: _loading
@@ -653,7 +654,7 @@ class _SocialButton extends StatelessWidget {
         message: label,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppSpacing.rCard),
           child: Container(
             height: 48,
             width: 48,
