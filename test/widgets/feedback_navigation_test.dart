@@ -87,7 +87,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final bugFinder = find.text('Report a Bug');
+      final bugFinder = find.text('Report a bug');
       await tester.ensureVisible(bugFinder);
       await tester.tap(bugFinder);
       await tester.pumpAndSettle();
