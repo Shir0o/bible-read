@@ -1983,15 +1983,20 @@ class _HomePageState extends State<HomePage>
     final kind = await showNewPlanPicker(context);
     if (kind == null || !mounted) return;
 
+    // Only reload when a plan/group was actually created. CreatePlanPage pops
+    // `true` on success and `null` on cancel; CreateGroupPage replaces itself
+    // with the group's detail page, so returning from it implies a new group.
+    bool created;
     switch (kind) {
       case NewPlanKind.personal:
-        await Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => CreatePlanPage(
-            firestore: widget.firestore,
-            auth: widget.auth,
-            vibrationService: widget.vibrationService,
-          ),
-        ));
+        created = await Navigator.of(context).push<bool>(MaterialPageRoute(
+              builder: (_) => CreatePlanPage(
+                firestore: widget.firestore,
+                auth: widget.auth,
+                vibrationService: widget.vibrationService,
+              ),
+            )) ??
+            false;
       case NewPlanKind.group:
         await Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => CreateGroupPage(
@@ -2000,9 +2005,10 @@ class _HomePageState extends State<HomePage>
             vibrationService: widget.vibrationService,
           ),
         ));
+        created = true;
     }
 
-    if (mounted) {
+    if (created && mounted) {
       await _loadPreferences();
       if (mounted) await _loadGroup();
     }
