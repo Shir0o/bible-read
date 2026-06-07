@@ -254,7 +254,10 @@ class AppTheme {
       borderRadius: BorderRadius.circular(AppSpacing.rButton),
     );
     final buttonTextStyle = themedText.labelLarge;
-    const buttonSize = Size.fromHeight(AppSpacing.buttonHeight);
+    // Enforce the design's 52px height without forcing width: a 0 min-width
+    // keeps buttons intrinsically sized (and full-width only when their parent
+    // constrains them), avoiding infinite-width layout errors.
+    const buttonSize = Size(0, AppSpacing.buttonHeight);
 
     return ThemeData(
       brightness: colorScheme.brightness,
