@@ -27,6 +27,12 @@ class ReadingPlan {
   final List<String> tags;
   final List<ReadingPlanDay> schedule;
 
+  /// The original creation configuration (reading method, duration, active
+  /// days, selected books, custom pace) used to generate [schedule]. Stored so
+  /// the edit flow can faithfully pre-fill the form. `null` for legacy plans
+  /// created before this field existed — the edit form falls back to defaults.
+  final Map<String, dynamic>? config;
+
   const ReadingPlan({
     required this.id,
     required this.title,
@@ -34,6 +40,7 @@ class ReadingPlan {
     required this.durationDays,
     required this.tags,
     required this.schedule,
+    this.config,
   });
 
   factory ReadingPlan.fromJson(Map<String, dynamic> json) {
@@ -46,6 +53,7 @@ class ReadingPlan {
       schedule: (json['schedule'] as List)
           .map((e) => ReadingPlanDay.fromJson(e as Map<String, dynamic>))
           .toList(),
+      config: (json['config'] as Map?)?.cast<String, dynamic>(),
     );
   }
 
@@ -56,5 +64,27 @@ class ReadingPlan {
         'durationDays': durationDays,
         'tags': tags,
         'schedule': schedule.map((e) => e.toJson()).toList(),
+        if (config != null) 'config': config,
       };
+
+  /// Returns a copy with the given fields replaced.
+  ReadingPlan copyWith({
+    String? id,
+    String? title,
+    String? description,
+    int? durationDays,
+    List<String>? tags,
+    List<ReadingPlanDay>? schedule,
+    Map<String, dynamic>? config,
+  }) {
+    return ReadingPlan(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      durationDays: durationDays ?? this.durationDays,
+      tags: tags ?? this.tags,
+      schedule: schedule ?? this.schedule,
+      config: config ?? this.config,
+    );
+  }
 }

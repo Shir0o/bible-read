@@ -14,10 +14,18 @@ class UserPreferences {
   /// answered + off → separate.
   final bool syncPromptAnswered;
 
+  /// The reading the user has pinned as "Primary on Home", overriding Home's
+  /// automatic ranking of which plan becomes the hero. A typed key:
+  /// `"plan:<planId>"` for a personal plan or `"group:<groupId>"` for a group.
+  /// `null` means no pin — Home auto-picks the most pressing reading. At most
+  /// one reading can be pinned at a time.
+  final String? pinnedReadingId;
+
   /// Creates a [UserPreferences] instance.
   const UserPreferences({
     this.autoMarkPlanRead = false,
     this.syncPromptAnswered = false,
+    this.pinnedReadingId,
   });
 
   /// Reads preferences from Firestore data.
@@ -25,6 +33,7 @@ class UserPreferences {
     return UserPreferences(
       autoMarkPlanRead: data?['autoMarkPlanRead'] as bool? ?? false,
       syncPromptAnswered: data?['syncPromptAnswered'] as bool? ?? false,
+      pinnedReadingId: data?['pinnedReadingId'] as String?,
     );
   }
 
@@ -32,13 +41,25 @@ class UserPreferences {
   Map<String, dynamic> toFirestore() => {
         'autoMarkPlanRead': autoMarkPlanRead,
         'syncPromptAnswered': syncPromptAnswered,
+        'pinnedReadingId': pinnedReadingId,
       };
 
   /// Creates a copy of this preferences object with the given fields replaced.
-  UserPreferences copyWith({bool? autoMarkPlanRead, bool? syncPromptAnswered}) {
+  ///
+  /// Pass [clearPinnedReadingId] to reset the pin to `null` (since a `null`
+  /// [pinnedReadingId] argument is indistinguishable from "leave unchanged").
+  UserPreferences copyWith({
+    bool? autoMarkPlanRead,
+    bool? syncPromptAnswered,
+    String? pinnedReadingId,
+    bool clearPinnedReadingId = false,
+  }) {
     return UserPreferences(
       autoMarkPlanRead: autoMarkPlanRead ?? this.autoMarkPlanRead,
       syncPromptAnswered: syncPromptAnswered ?? this.syncPromptAnswered,
+      pinnedReadingId: clearPinnedReadingId
+          ? null
+          : (pinnedReadingId ?? this.pinnedReadingId),
     );
   }
 }

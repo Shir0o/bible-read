@@ -22,11 +22,22 @@ class CreatePlanPage extends StatefulWidget {
   final FirebaseAuth auth;
   final VibrationService vibrationService;
 
+  /// When set, the page edits this existing plan in place instead of creating a
+  /// new one: the form pre-fills from the plan's saved configuration and the
+  /// CTA becomes "Save changes". Requires [editingProgress] for the start date.
+  final ReadingPlan? editingPlan;
+
+  /// The progress record for [editingPlan], used to anchor the schedule to the
+  /// plan's original start date so editing doesn't shift existing days.
+  final UserPlanProgress? editingProgress;
+
   const CreatePlanPage({
     super.key,
     required this.firestore,
     required this.auth,
     this.vibrationService = const VibrationService(),
+    this.editingPlan,
+    this.editingProgress,
   });
 
   @override
@@ -136,11 +147,81 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
   final Set<String> _expandedCategories = {};
 
+  bool get _isEditing => widget.editingPlan != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final plan = widget.editingPlan;
+    if (plan == null) return;
+
+    // Pre-fill from the plan being edited so the form mirrors its current
+    // configuration. Anchor the start date to the existing progress so the
+    // regenerated schedule lines up with what the user has already read.
+    _titleController.text = plan.title;
+    _startDate = widget.editingProgress?.startDate ?? _startDate;
+
+    final config = plan.config;
+    if (config != null) {
+      _selectedType = PlanType.values.firstWhere(
+        (t) => t.name == config['type'],
+        orElse: () => _selectedType,
+      );
+      _years = (config['years'] as num?)?.toInt() ?? _years;
+      final end = config['endDate'] as String?;
+      _endDate = end != null ? DateTime.tryParse(end) : null;
+      _goalMethod = _PlanGoalMethod.values.firstWhere(
+        (m) => m.name == config['goalMethod'],
+        orElse: () => _goalMethod,
+      );
+      _customChaptersPerDay = (config['customChaptersPerDay'] as num?)?.toInt();
+      _customVersesPerDay = (config['customVersesPerDay'] as num?)?.toInt();
+      final days = (config['readingDays'] as List?)?.cast<num>();
+      if (days != null && days.isNotEmpty) {
+        _readingDays
+          ..clear()
+          ..addAll(days.map((d) => d.toInt()));
+      }
+      final books = (config['selectedBooks'] as List?)?.cast<String>();
+      if (books != null) {
+        _selectedBooks
+          ..clear()
+          ..addAll(books);
+      }
+      // Surface the custom panel when the plan used a non-default goal/books.
+      _isCustomPlanExpanded = _goalMethod != _PlanGoalMethod.endDate ||
+          _endDate != null ||
+          _selectedBooks.length != ReferenceParser.allBooks.length;
+    }
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
     super.dispose();
   }
+
+  /// Snapshot of the current form configuration, persisted on the plan so the
+  /// edit flow can faithfully re-populate this screen later.
+  Map<String, dynamic> _buildConfig() => {
+        'type': _selectedType.name,
+        'years': _years > 0 ? _years : 1,
+        'endDate': _goalMethod == _PlanGoalMethod.endDate
+            ? _endDate?.toIso8601String()
+            : null,
+        'goalMethod': _goalMethod.name,
+        'customChaptersPerDay': _goalMethod == _PlanGoalMethod.chaptersPerDay
+            ? _customChaptersPerDay
+            : null,
+        'customVersesPerDay': _goalMethod == _PlanGoalMethod.versesPerDay
+            ? _customVersesPerDay
+            : null,
+        'readingDays': _readingDays.toList()..sort(),
+        'selectedBooks':
+            _selectedBooks.length == ReferenceParser.allBooks.length
+                ? null
+                : _selectedBooks.toList(),
+      };
 
   void _toggleDay(int day) {
     setState(() {
@@ -209,9 +290,18 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     setState(() => _isCreating = true);
 
     try {
-      final plan = _buildPlan(id: '');
-
       final planService = ReadingPlanService(firestore: widget.firestore);
+
+      // Edit: rewrite the existing plan in place, preserving its progress.
+      if (_isEditing) {
+        final updated = _buildPlan(id: widget.editingPlan!.id);
+        await planService.updateCustomPlan(user.uid, updated);
+        if (!mounted) return;
+        Navigator.pop(context, true);
+        return;
+      }
+
+      final plan = _buildPlan(id: '');
       final planId = await planService.saveCustomPlan(user.uid, plan);
 
       // Auto-start the plan
@@ -238,9 +328,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error creating plan: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Error ${_isEditing ? 'saving' : 'creating'} '
+                'plan: $e')));
       }
     } finally {
       if (mounted) {
@@ -352,7 +442,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   /// and the live preview so they never diverge.
   ReadingPlan _buildPlan({required String id}) {
     final title = _titleController.text.trim();
-    return PlanGenerator.generatePlan(
+    final plan = PlanGenerator.generatePlan(
       id: id,
       title: title.isEmpty ? 'Preview' : _capitalizeWords(title),
       description: _generateDescription(),
@@ -371,6 +461,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           ? _customVersesPerDay
           : null,
     );
+    return plan.copyWith(config: _buildConfig());
   }
 
   /// Builds a live preview plan, returning null if the current configuration
@@ -428,9 +519,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Enroll in New Plan',
-          style: TextStyle(fontWeight: FontWeight.w600),
+        title: Text(
+          _isEditing ? 'Edit Plan' : 'Enroll in New Plan',
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         backgroundColor: colorScheme.surface,
         scrolledUnderElevation: 0,
@@ -627,7 +718,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
                       // Start Date
                       InkWell(
-                        onTap: () => _selectDate(context, true),
+                        // When editing, the start date is fixed: the schedule
+                        // is anchored to the plan's existing progress, so it
+                        // must not drift out from under recorded readings.
+                        onTap: _isEditing ? null : () => _selectDate(context, true),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -685,7 +779,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       const Divider(height: 1),
                       const SizedBox(height: 16),
                       InkWell(
-                        onTap: () => _selectDate(context, true),
+                        // When editing, the start date is fixed: the schedule
+                        // is anchored to the plan's existing progress, so it
+                        // must not drift out from under recorded readings.
+                        onTap: _isEditing ? null : () => _selectDate(context, true),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -908,9 +1005,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Start My Plan',
-                        style: TextStyle(
+                    : Text(
+                        _isEditing ? 'Save Changes' : 'Start My Plan',
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
