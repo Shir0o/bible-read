@@ -137,7 +137,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppSpacing.rCard),
                     border: Border.all(
                       color: colorScheme.outlineVariant.withValues(alpha: 0.2),
                     ),

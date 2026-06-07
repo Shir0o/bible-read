@@ -75,7 +75,7 @@ class TodaysReadingCard extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainer,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppSpacing.rCard),
             border: Border.all(
               color: colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
             ),

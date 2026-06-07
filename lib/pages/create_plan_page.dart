@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
@@ -509,7 +510,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppSpacing.rCard),
                   ),
                   child: Column(
                     children: [
@@ -525,7 +526,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               color: colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(AppSpacing.rCard),
                               border: Border.all(
                                 color: colorScheme.outlineVariant.withValues(
                                   alpha: 0.5,
@@ -660,7 +661,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppSpacing.rCard),
                   ),
                   child: Column(
                     children: [
@@ -726,12 +727,12 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                     color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                     style: BorderStyle.solid,
                   ),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(AppSpacing.rCard),
                 ),
                 child: Column(
                   children: [
                     InkWell(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(AppSpacing.rCard),
                       onTap: () {
                         setState(() {
                           _isCustomPlanExpanded = !_isCustomPlanExpanded;

@@ -11,8 +11,11 @@ class CommonStyles {
       BoxDecoration(color: colorScheme.surface);
 
   static TextStyle appBarTitleText(ColorScheme colorScheme) =>
-      AppTheme.textTheme.titleLarge!
-          .copyWith(fontWeight: FontWeight.w700, color: colorScheme.onSurface);
+      AppTheme.textTheme.titleLarge!.copyWith(
+        fontFamily: AppTheme.fontSerif,
+        fontWeight: FontWeight.w600,
+        color: colorScheme.onSurface,
+      );
 
   /// Builds a card with the app's standard padding and rounded corners.
   ///
@@ -30,7 +33,7 @@ class CommonStyles {
       elevation: 0,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
       ),
       margin: margin ??
@@ -38,7 +41,7 @@ class CommonStyles {
             horizontal: AppSpacing.hPadding,
             vertical: AppSpacing.vPaddingSmall,
           ),
-      color: colorScheme.surfaceContainerLow,
+      color: colorScheme.surfaceContainerLowest,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.hPadding),
         child: child,
@@ -54,7 +57,7 @@ class CommonStyles {
     VoidCallback? onTap,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(16);
+    final radius = BorderRadius.circular(AppSpacing.rCard);
     return Card(
       elevation: 0,
       clipBehavior: Clip.antiAlias,
@@ -67,7 +70,7 @@ class CommonStyles {
             horizontal: AppSpacing.hPadding,
             vertical: AppSpacing.vPaddingSmall,
           ),
-      color: colorScheme.surfaceContainerLow,
+      color: colorScheme.surfaceContainerLowest,
       child: InkWell(
         onTap: onTap,
         borderRadius: radius,
@@ -123,5 +126,26 @@ class AppTextStyles {
       Theme.of(context).textTheme.bodyMedium!;
 
   static TextStyle caption(BuildContext context) =>
+      Theme.of(context).textTheme.labelSmall!;
+
+  /// Serif section title (Spectral 19 / 500). Matches the design's
+  /// `.section-title` rule; equivalent to the themed [titleLarge].
+  static TextStyle sectionTitle(BuildContext context) =>
+      Theme.of(context).textTheme.titleLarge!;
+
+  /// Serif scripture body (Spectral, line-height 1.82). Pass [scale] to honour
+  /// the reader's font-size setting (the design's `--read-size`).
+  static TextStyle scripture(BuildContext context, {double scale = 1}) =>
+      TextStyle(
+        fontFamily: AppTheme.fontSerif,
+        fontSize: 19 * scale,
+        fontWeight: FontWeight.w400,
+        height: 1.82,
+        color: Theme.of(context).colorScheme.onSurface,
+      );
+
+  /// Uppercase eyebrow label (Hanken 11 / 700 / wide tracking). Apply the
+  /// returned style to text you have already upper-cased.
+  static TextStyle eyebrow(BuildContext context) =>
       Theme.of(context).textTheme.labelSmall!;
 }

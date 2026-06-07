@@ -405,7 +405,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final textTheme = AppTheme.googleSansTextTheme(theme.textTheme);
+    final textTheme = AppTheme.uiTextTheme(theme.textTheme);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -590,19 +590,19 @@ class _EditGroupPageState extends State<EditGroupPage> {
                   color: colorScheme.onSurfaceVariant,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(AppSpacing.rCard),
                   borderSide: BorderSide(
                     color: colorScheme.outline.withValues(alpha: 0.3),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(AppSpacing.rCard),
                   borderSide: BorderSide(
                     color: colorScheme.outline.withValues(alpha: 0.3),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(AppSpacing.rCard),
                   borderSide: BorderSide(
                     color: colorScheme.primary,
                     width: 2,
@@ -725,7 +725,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
               border: Border.all(
                 color: colorScheme.outlineVariant.withValues(alpha: 0.3),
               ),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(AppSpacing.rCard),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,

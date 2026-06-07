@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
@@ -43,7 +44,7 @@ class _FindGroupCardState extends State<FindGroupCard> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.1),
         ),

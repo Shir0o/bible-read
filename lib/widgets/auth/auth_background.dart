@@ -10,7 +10,7 @@ class AuthBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = AppTheme.seededColorScheme(Brightness.dark);
+    const colorScheme = AppTheme.designDarkScheme;
 
     return Theme(
       data: AppTheme.appTheme(colorScheme),

@@ -307,9 +307,10 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    // Force specific seed color (Purple/Expressive) regardless of system/wallpaper
-    final lightScheme = AppTheme.seededColorScheme(Brightness.light);
-    final darkScheme = AppTheme.seededColorScheme(Brightness.dark);
+    // Use the Bible Read design palette (warm paper / deep aubergine), ignoring
+    // system/wallpaper dynamic color.
+    const lightScheme = AppTheme.designLightScheme;
+    const darkScheme = AppTheme.designDarkScheme;
 
     return MaterialApp(
       title: 'Bible Reading Challenge',

@@ -206,7 +206,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final authColorScheme = AppTheme.seededColorScheme(Brightness.dark);
+    const authColorScheme = AppTheme.designDarkScheme;
 
     return Theme(
       data: AppTheme.appTheme(authColorScheme),
@@ -480,7 +480,7 @@ class _LoginPageState extends State<LoginPage> {
                                       shadowColor: colorScheme.shadow
                                           .withValues(alpha: 0.3),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(28),
+                                        borderRadius: BorderRadius.circular(AppSpacing.rCard),
                                       ),
                                     ),
                                     child: _loading
@@ -557,7 +557,7 @@ class _LoginPageState extends State<LoginPage> {
                                       shadowColor: colorScheme.shadow
                                           .withValues(alpha: 0.1),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(28),
+                                        borderRadius: BorderRadius.circular(AppSpacing.rCard),
                                         side: BorderSide(
                                           color: colorScheme.outlineVariant,
                                         ),

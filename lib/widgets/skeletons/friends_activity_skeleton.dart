@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import '../skeleton.dart';
 
 class FriendsActivitySkeleton extends StatelessWidget {
@@ -28,7 +29,7 @@ class _ActivityItemSkeleton extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.1),
         ),

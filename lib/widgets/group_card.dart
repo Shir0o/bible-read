@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
@@ -59,7 +60,7 @@ class GroupCard extends StatelessWidget {
                     alpha: 0.3,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppSpacing.rCard),
                     side: BorderSide(
                       color: colorScheme.outlineVariant.withValues(alpha: 0.1),
                     ),

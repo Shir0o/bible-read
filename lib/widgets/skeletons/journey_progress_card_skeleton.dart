@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import '../skeleton.dart';
 
 class JourneyProgressCardSkeleton extends StatelessWidget {
@@ -17,7 +18,7 @@ class JourneyProgressCardSkeleton extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppSpacing.rCard),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
