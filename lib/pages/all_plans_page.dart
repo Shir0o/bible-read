@@ -222,10 +222,12 @@ class _AllPlansPageState extends State<AllPlansPage> {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
-    setState(() => _confirmingLeaveId = null);
     try {
       await widget.readingPlanService.setPlanArchived(uid, row.plan.id, true);
       if (!mounted) return;
+      // Clear the inline confirmation only once the archive has succeeded, so a
+      // failed write leaves the card in its "tap to confirm" state.
+      setState(() => _confirmingLeaveId = null);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Left "${row.plan.title}"')),
       );
