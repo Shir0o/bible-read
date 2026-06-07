@@ -30,9 +30,12 @@ import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or ve
 import '../theme/app_theme.dart';
 import '../widgets/member_presence_stack.dart';
 import '../widgets/navigation_menu_scope.dart';
+import '../widgets/new_plan_picker_sheet.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
 import 'all_plans_page.dart';
+import 'create_group_page.dart';
+import 'create_plan_page.dart';
 import 'full_schedule_page.dart';
 import 'plan_detail_page.dart';
 import 'read_log_page.dart';
@@ -1185,6 +1188,9 @@ class _HomePageState extends State<HomePage>
             if (hasPlan) ...[
               const SizedBox(height: 28),
               _buildReadingSection(context, readingItems),
+            ] else ...[
+              const SizedBox(height: 16),
+              _buildStartNewPlanButton(context),
             ],
             if (_readToday) ...[
               const SizedBox(height: 40),
@@ -1411,27 +1417,9 @@ class _HomePageState extends State<HomePage>
           _buildPlanMiniRow(context, it),
         ],
 
-        if (others.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton.icon(
-              onPressed: () => _openReadingPlansHub(),
-              icon: const Icon(Icons.tune_rounded, size: 18),
-              label: Text('Manage all ${items.length} plans'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colorScheme.onSurfaceVariant,
-                side: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ),
-        ],
+        // Always offer to start another plan, no matter how many are active.
+        const SizedBox(height: 14),
+        _buildStartNewPlanButton(context),
       ],
     );
   }
@@ -1969,6 +1957,63 @@ class _HomePageState extends State<HomePage>
     if (mounted) {
       await _loadPreferences();
       if (mounted) await _loadGroup();
+    }
+  }
+
+  /// The "Start a new plan" affordance, shown wherever the reader might add a
+  /// plan — beneath the reading list and in the no-plan state alike.
+  Widget _buildStartNewPlanButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton.icon(
+        onPressed: () => _startNewPlan(),
+        icon: const Icon(Icons.add, size: 18),
+        label: const Text('Start a new plan'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: colorScheme.onSurfaceVariant,
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Asks whether to start a personal or group plan, then routes to the matching
+  /// creation flow. A new personal plan flows in through the active-plans stream
+  /// on its own; a new group isn't streamed, so the group branch reloads Home so
+  /// it can surface as the hero.
+  Future<void> _startNewPlan() async {
+    unawaited(widget.vibrationService.lightImpact());
+    final kind = await showNewPlanPicker(context);
+    if (kind == null || !mounted) return;
+
+    switch (kind) {
+      case NewPlanKind.personal:
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => CreatePlanPage(
+            firestore: widget.firestore,
+            auth: widget.auth,
+            vibrationService: widget.vibrationService,
+          ),
+        ));
+      case NewPlanKind.group:
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => CreateGroupPage(
+            groupService: widget.groupService,
+            auth: widget.auth,
+            vibrationService: widget.vibrationService,
+          ),
+        ));
+        if (mounted) {
+          await _loadPreferences();
+          if (mounted) await _loadGroup();
+        }
     }
   }
 

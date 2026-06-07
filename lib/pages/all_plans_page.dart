@@ -18,6 +18,8 @@ import '../services/user_preferences_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/catch_up_status_row.dart';
 import '../widgets/member_presence_stack.dart';
+import '../widgets/new_plan_picker_sheet.dart';
+import 'create_group_page.dart';
 import 'create_plan_page.dart';
 import 'full_schedule_page.dart';
 import 'group_detail_page.dart';
@@ -293,14 +295,32 @@ class _AllPlansPageState extends State<AllPlansPage> {
 
   Future<void> _enroll() async {
     widget.vibrationService.lightImpact();
-    final created = await Navigator.of(context).push<bool>(MaterialPageRoute(
-      builder: (_) => CreatePlanPage(
-        firestore: widget.firestore,
-        auth: widget.auth,
-        vibrationService: widget.vibrationService,
-      ),
-    ));
-    if (created == true && mounted) await _load();
+    final kind = await showNewPlanPicker(context);
+    if (kind == null || !mounted) return;
+
+    // Both create pages replace themselves with a detail page on success
+    // (pushReplacement), so the push future can't reliably report whether a
+    // plan was created. Reload on return so a newly created plan/group always
+    // shows in the hub; the occasional wasted reload on cancel is cheap.
+    switch (kind) {
+      case NewPlanKind.personal:
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => CreatePlanPage(
+            firestore: widget.firestore,
+            auth: widget.auth,
+            vibrationService: widget.vibrationService,
+          ),
+        ));
+      case NewPlanKind.group:
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => CreateGroupPage(
+            groupService: widget.groupService,
+            auth: widget.auth,
+            vibrationService: widget.vibrationService,
+          ),
+        ));
+    }
+    if (mounted) await _load();
   }
 
   // ---- Build --------------------------------------------------------------
