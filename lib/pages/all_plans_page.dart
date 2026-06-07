@@ -183,6 +183,7 @@ class _AllPlansPageState extends State<AllPlansPage> {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
+    final previous = _pinnedReadingId;
     final next = _pinnedReadingId == pinKey ? null : pinKey;
     // Optimistic.
     setState(() => _pinnedReadingId = next);
@@ -196,7 +197,9 @@ class _AllPlansPageState extends State<AllPlansPage> {
       );
     } catch (e, st) {
       ErrorLogger.log(e, st);
+      // Roll back so the card doesn't show a pin that wasn't persisted.
       if (mounted) {
+        setState(() => _pinnedReadingId = previous);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Couldn't update your pin")),
         );

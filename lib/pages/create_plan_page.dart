@@ -718,7 +718,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
                       // Start Date
                       InkWell(
-                        onTap: () => _selectDate(context, true),
+                        // When editing, the start date is fixed: the schedule
+                        // is anchored to the plan's existing progress, so it
+                        // must not drift out from under recorded readings.
+                        onTap: _isEditing ? null : () => _selectDate(context, true),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -776,7 +779,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       const Divider(height: 1),
                       const SizedBox(height: 16),
                       InkWell(
-                        onTap: () => _selectDate(context, true),
+                        // When editing, the start date is fixed: the schedule
+                        // is anchored to the plan's existing progress, so it
+                        // must not drift out from under recorded readings.
+                        onTap: _isEditing ? null : () => _selectDate(context, true),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [

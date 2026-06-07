@@ -206,7 +206,11 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _loadInitialData() async {
-    // Start all loads in parallel.
+    // Resolve the pinned-reading preference first so _loadGroup can prefer the
+    // pinned group (Home only surfaces one group, so it must load the right one).
+    await _loadPreferences();
+
+    // Start the remaining loads in parallel.
     // _initialLoading will be set to false when the primary reading status is ready.
     final futures = [
       _loadReadStatus(showLoading: false).then((_) {
@@ -219,7 +223,6 @@ class _HomePageState extends State<HomePage>
       _loadActivePlans(),
       _loadGroup(),
       _loadCommunity(),
-      _loadPreferences(),
     ];
 
     await Future.wait(futures);
@@ -300,7 +303,12 @@ class _HomePageState extends State<HomePage>
         return;
       }
 
-      final group = groups.first;
+      // Surface the pinned group if the user pinned one, otherwise the first.
+      final pinned = _pinnedReadingId;
+      final group = (pinned != null && pinned.startsWith('group:'))
+          ? groups.firstWhere((g) => 'group:${g.id}' == pinned,
+              orElse: () => groups.first)
+          : groups.first;
       final today = _dateOnly(widget.dateProvider());
 
       final results = await Future.wait([
@@ -1956,8 +1964,12 @@ class _HomePageState extends State<HomePage>
         ),
       ),
     );
-    // The hub can change the pinned reading; refresh so Home re-picks its hero.
-    if (mounted) await _loadPreferences();
+    // The hub can change the pinned reading; refresh the preference and reload
+    // the group so Home re-picks its hero (incl. surfacing a newly pinned group).
+    if (mounted) {
+      await _loadPreferences();
+      if (mounted) await _loadGroup();
+    }
   }
 
   String _groupPresenceLabel(List<GroupMemberProgressData> readers) {
