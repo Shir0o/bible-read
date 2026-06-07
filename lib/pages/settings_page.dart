@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 
 import '../models/user_preferences.dart';
+import '../theme/app_theme.dart';
 import '../services/error_logger.dart';
 import '../services/feedback_service.dart';
 import '../services/friend_service.dart';
@@ -254,6 +255,32 @@ class SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  /// Serif section title matching the redesigned design system.
+  Widget _sectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.2,
+          ),
+    );
+  }
+
+  /// Bordered, full-bleed card used to group rows on the settings screens.
+  Widget _settingsCard(ColorScheme colorScheme, {required Widget child}) {
+    return Card(
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      margin: EdgeInsets.zero,
+      color: colorScheme.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
+        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+      ),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final googleUser = widget.user;
@@ -309,19 +336,21 @@ class SettingsPageState extends State<SettingsPage> {
       final photoUrl = googleUser?.photoUrl;
 
       body = Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.hPadding,
+          vertical: AppSpacing.gap24,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Profile/Account Card
-            Card(
-              elevation: 0,
-              color: colorScheme.surfaceContainerLow,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+            // Profile / account card
+            _settingsCard(
+              colorScheme,
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.hPadding,
+                  vertical: 26,
+                ),
                 child: Column(
                   children: [
                     if (photoUrl != null && photoUrl.isNotEmpty)
@@ -350,16 +379,17 @@ class SettingsPageState extends State<SettingsPage> {
                         radius: 40,
                         child: Icon(Icons.person, size: 40),
                       ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     Text(
                       displayName,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: -0.2,
+                          ),
                     ),
                     if (email.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         email,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -367,102 +397,97 @@ class SettingsPageState extends State<SettingsPage> {
                             ),
                       ),
                     ],
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 18),
                     AnimatedActionButton(
                       onPressed: _handleSignOut,
                       isLoading: _isSigningOut,
-                      child: const Text('Sign Out'),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.logout, size: 18),
+                          SizedBox(width: 8),
+                          Text('Sign Out'),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.gap24),
 
-            // App Settings Section
-            Text(
-              'App Settings'.toUpperCase(),
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              elevation: 0,
-              color: colorScheme.surfaceContainerLow,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    if (_prefsLoading)
-                      const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    else
-                      SwitchListTile(
-                        title: const Text('Reading counts as showing up'),
-                        subtitle: const Text(
-                          'When you finish a reading from a plan, it also counts as showing up for the day. Marking "I read today" on its own never moves a plan.',
-                        ),
-                        value: _prefs.autoMarkPlanRead,
-                        onChanged: _updatePreference,
-                        activeThumbColor: colorScheme.primary,
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16.0),
+            // App settings
+            _sectionTitle(context, 'App settings'),
+            const SizedBox(height: AppSpacing.gap12),
+            _settingsCard(
+              colorScheme,
+              child: Column(
+                children: [
+                  if (_prefsLoading)
+                    const Padding(
+                      padding: EdgeInsets.all(AppSpacing.hPadding),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else
+                    SwitchListTile(
+                      title: const Text('Reading counts as showing up'),
+                      subtitle: const Text(
+                        'When you finish a reading from a plan, it also counts as showing up for the day. Marking "I read today" on its own never moves a plan.',
                       ),
-                    const Divider(height: 1, indent: 16, endIndent: 16),
-                    ListTile(
-                      leading: const Icon(Icons.notifications_outlined),
-                      title: const Text('Notification Settings'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        unawaited(widget.vibrationService.lightImpact());
-                        Navigator.of(context).push(
-                          animatedPageRoute(
-                            NotificationSettingsPage(
-                              auth: widget.auth,
-                              service: NotificationPreferencesService(
-                                firestore: widget.firestore,
-                              ),
+                      value: _prefs.autoMarkPlanRead,
+                      onChanged: _updatePreference,
+                      activeThumbColor: colorScheme.primary,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.hPadding,
+                        vertical: 4,
+                      ),
+                    ),
+                  Divider(
+                    height: 1,
+                    indent: AppSpacing.hPadding,
+                    endIndent: AppSpacing.hPadding,
+                    color: colorScheme.outlineVariant,
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.notifications_outlined),
+                    title: const Text('Notification settings'),
+                    trailing: const Icon(Icons.chevron_right),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.hPadding,
+                    ),
+                    onTap: () {
+                      unawaited(widget.vibrationService.lightImpact());
+                      Navigator.of(context).push(
+                        animatedPageRoute(
+                          NotificationSettingsPage(
+                            auth: widget.auth,
+                            service: NotificationPreferencesService(
+                              firestore: widget.firestore,
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Support Section
-            Text(
-              'Support'.toUpperCase(),
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
+                        ),
+                      );
+                    },
                   ),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              elevation: 0,
-              color: colorScheme.surfaceContainerLow,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                ],
               ),
+            ),
+            const SizedBox(height: AppSpacing.gap24),
+
+            // Support
+            _sectionTitle(context, 'Support'),
+            const SizedBox(height: AppSpacing.gap12),
+            _settingsCard(
+              colorScheme,
               child: Column(
                 children: [
                   ListTile(
                     leading: const Icon(Icons.bug_report_outlined),
-                    title: const Text('Report a Bug'),
+                    title: const Text('Report a bug'),
                     trailing: const Icon(Icons.chevron_right),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.hPadding,
+                    ),
                     onTap: () {
                       unawaited(widget.vibrationService.lightImpact());
                       final messenger = ScaffoldMessenger.of(context);
@@ -478,11 +503,19 @@ class SettingsPageState extends State<SettingsPage> {
                       );
                     },
                   ),
-                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  Divider(
+                    height: 1,
+                    indent: AppSpacing.hPadding,
+                    endIndent: AppSpacing.hPadding,
+                    color: colorScheme.outlineVariant,
+                  ),
                   ListTile(
                     leading: const Icon(Icons.lightbulb_outline),
-                    title: const Text('Request a Feature'),
+                    title: const Text('Request a feature'),
                     trailing: const Icon(Icons.chevron_right),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.hPadding,
+                    ),
                     onTap: () {
                       unawaited(widget.vibrationService.lightImpact());
                       final messenger = ScaffoldMessenger.of(context);
@@ -501,18 +534,22 @@ class SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: AppSpacing.gap20),
+            Text(
+              'Bible Read · v1.0',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.outline,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.gap24),
           ],
         ),
       );
     }
 
     return Scaffold(
-      appBar: CommonStyles.buildAppBar(
-        context,
-        'Settings',
-        automaticallyImplyLeading: false,
-      ),
+      appBar: CommonStyles.buildAppBar(context, 'Settings'),
       body: Container(
         decoration: CommonStyles.backgroundDecoration(colorScheme),
         child: Center(

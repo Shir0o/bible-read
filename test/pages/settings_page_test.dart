@@ -284,7 +284,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Notification Settings'));
+      await tester.tap(find.text('Notification settings'));
       await tester.pumpAndSettle();
 
       expect(vibration.lightCount, 1);
