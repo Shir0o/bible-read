@@ -70,7 +70,8 @@ void main() {
     'no active plan: habit hero shown, no "Today’s reading" card (#723)',
     (tester) async {
       final firestore = FakeFirebaseFirestore();
-      final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final auth =
+          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 
       await tester.pumpWidget(
         _host(HomePage(
@@ -98,7 +99,8 @@ void main() {
     'active plan: habit hero AND a separate "Today’s reading" card (#722)',
     (tester) async {
       final firestore = FakeFirebaseFirestore();
-      final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final auth =
+          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
       final planService = ReadingPlanService(firestore: firestore);
       await _seedPlan(firestore, planService, now: DateTime.now());
 
@@ -131,7 +133,8 @@ void main() {
       // Default 800x600 test surface — the size at which CI caught a 20px
       // overflow before the SliverToBoxAdapter fix.
       final firestore = FakeFirebaseFirestore();
-      final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final auth =
+          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
       final planService = ReadingPlanService(firestore: firestore);
       await _seedPlan(firestore, planService, now: DateTime.now());
 
@@ -178,7 +181,8 @@ void main() {
     'plan card mark advances the plan and asks the coupling question once',
     (tester) async {
       final firestore = FakeFirebaseFirestore();
-      final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final auth =
+          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
       final planService = ReadingPlanService(firestore: firestore);
       await _seedPlan(firestore, planService, now: DateTime.now());
 

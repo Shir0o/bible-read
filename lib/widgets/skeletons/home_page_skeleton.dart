@@ -24,60 +24,60 @@ class HomePageSkeleton extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            const SizedBox(height: 8),
-            // Header: eyebrow date + greeting on the left, avatar on the right.
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: const [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Skeleton(width: 130, height: 11, radius: 6),
-                      SizedBox(height: 8),
-                      Skeleton(width: 180, height: 26, radius: 8),
-                    ],
+              const SizedBox(height: 8),
+              // Header: eyebrow date + greeting on the left, avatar on the right.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: const [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Skeleton(width: 130, height: 11, radius: 6),
+                        SizedBox(height: 8),
+                        Skeleton(width: 180, height: 26, radius: 8),
+                      ],
+                    ),
                   ),
-                ),
-                SizedBox(width: 12),
-                Skeleton(
-                  width: 40,
-                  height: 40,
-                  shape: CircleBorder(),
-                ),
-              ],
-            ),
+                  SizedBox(width: 12),
+                  Skeleton(
+                    width: 40,
+                    height: 40,
+                    shape: CircleBorder(),
+                  ),
+                ],
+              ),
 
-            const SizedBox(height: 24),
-            // Habit hero card.
-            const Skeleton(width: double.infinity, height: 210, radius: 28),
+              const SizedBox(height: 24),
+              // Habit hero card.
+              const Skeleton(width: double.infinity, height: 210, radius: 28),
 
-            const SizedBox(height: 28),
-            // "Today's reading" section label + card.
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Skeleton(width: 120, height: 14, radius: 6),
-            ),
-            const SizedBox(height: 12),
-            const Skeleton(width: double.infinity, height: 150, radius: 24),
+              const SizedBox(height: 28),
+              // "Today's reading" section label + card.
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Skeleton(width: 120, height: 14, radius: 6),
+              ),
+              const SizedBox(height: 12),
+              const Skeleton(width: double.infinity, height: 150, radius: 24),
 
-            const SizedBox(height: 10),
-            // Catch-up banner.
-            const Skeleton(width: double.infinity, height: 62, radius: 14),
+              const SizedBox(height: 10),
+              // Catch-up banner.
+              const Skeleton(width: double.infinity, height: 62, radius: 14),
 
-            const SizedBox(height: 40),
-            // Consistency glimpse.
-            const Skeleton(width: double.infinity, height: 76, radius: 20),
+              const SizedBox(height: 40),
+              // Consistency glimpse.
+              const Skeleton(width: double.infinity, height: 76, radius: 20),
 
-            const SizedBox(height: 32),
-            // "Your community" label + card.
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Skeleton(width: 120, height: 14, radius: 6),
-            ),
-            const SizedBox(height: 12),
-            const Skeleton(width: double.infinity, height: 76, radius: 20),
-          ],
+              const SizedBox(height: 32),
+              // "Your community" label + card.
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Skeleton(width: 120, height: 14, radius: 6),
+              ),
+              const SizedBox(height: 12),
+              const Skeleton(width: double.infinity, height: 76, radius: 20),
+            ],
           ),
         ),
       ),

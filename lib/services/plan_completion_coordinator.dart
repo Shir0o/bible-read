@@ -2,9 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../models/user_preferences.dart';
 import '../pages/read_log_page.dart';
-import '../widgets/sync_sheet.dart';
 import 'error_logger.dart';
 import 'reading_plan_service.dart';
 import 'user_preferences_service.dart';
@@ -29,8 +27,7 @@ class PlanCompletionCoordinator {
     required this.firestore,
     ReadingPlanService? planService,
     UserPreferencesService? preferencesService,
-  })  : planService =
-            planService ?? ReadingPlanService(firestore: firestore),
+  })  : planService = planService ?? ReadingPlanService(firestore: firestore),
         preferencesService =
             preferencesService ?? UserPreferencesService(firestore: firestore);
 
@@ -60,33 +57,7 @@ class PlanCompletionCoordinator {
     required User user,
     void Function(String message)? onMessage,
   }) async {
-    UserPreferences prefs;
-    try {
-      prefs = await preferencesService.fetchPreferences(user.uid);
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      return;
-    }
-
-    if (!prefs.syncPromptAnswered) {
-      if (!context.mounted) return;
-      final choice = await SyncSheet.show(context);
-      final linked = choice == true;
-      try {
-        await preferencesService.updatePreferences(
-          user.uid,
-          prefs.copyWith(autoMarkPlanRead: linked, syncPromptAnswered: true),
-        );
-      } catch (e, st) {
-        ErrorLogger.log(e, st);
-        // The choice didn't save, so the prompt may reappear — let the user
-        // know rather than failing silently.
-        onMessage?.call("Couldn't save your choice. We'll ask again next time.");
-      }
-      if (linked) await _recordHabitForToday(user, onMessage);
-    } else if (prefs.autoMarkPlanRead) {
-      await _recordHabitForToday(user, onMessage);
-    }
+    await _recordHabitForToday(user, onMessage);
   }
 
   /// Records the daily habit ("showing up") for today, equivalent to tapping

@@ -32,8 +32,7 @@ Widget _host(CatchUpStatus status, {bool isGroup = true}) {
         title: 'Test Plan',
         isGroup: isGroup,
         onToggle: (_) {},
-        todayAnchorBuilder:
-            isGroup ? (_) => const Text('GROUP ANCHOR') : null,
+        todayAnchorBuilder: isGroup ? (_) => const Text('GROUP ANCHOR') : null,
       ),
     ),
   );

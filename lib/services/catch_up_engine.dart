@@ -133,8 +133,7 @@ class CatchUpStatus {
     final todayD = DateTime(today.year, today.month, today.day);
     if (lastD.isBefore(todayD)) return PlanLifecycle.wrapup;
     if (missedCount > 0) return PlanLifecycle.behind;
-    if (currentIndex >= 0 &&
-        statuses[currentIndex] == ReadingStatus.current) {
+    if (currentIndex >= 0 && statuses[currentIndex] == ReadingStatus.current) {
       return PlanLifecycle.due;
     }
     return PlanLifecycle.ontrack;

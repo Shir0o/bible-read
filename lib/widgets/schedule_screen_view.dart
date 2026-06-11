@@ -288,7 +288,8 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                     '${_fmtDate(entries.first.date)} – '
                     '${_fmtDate(entries.last.date)}',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                     ),
                   ),
                 ),
@@ -360,8 +361,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
           const SizedBox(height: 12),
           const Divider(height: 1),
           const SizedBox(height: 4),
-          for (final i in missedItems)
-            _buildCatchUpRow(context, i),
+          for (final i in missedItems) _buildCatchUpRow(context, i),
         ],
       ),
     );

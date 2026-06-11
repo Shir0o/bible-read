@@ -45,9 +45,8 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   /// Built lazily on first read-mark so the page never touches Firebase just to
   /// render (keeps it constructible in tests that only inject a GroupService).
   PlanCompletionCoordinator? _coordinator;
-  PlanCompletionCoordinator get _completionCoordinator =>
-      _coordinator ??=
-          PlanCompletionCoordinator(firestore: FirebaseFirestore.instance);
+  PlanCompletionCoordinator get _completionCoordinator => _coordinator ??=
+      PlanCompletionCoordinator(firestore: FirebaseFirestore.instance);
 
   @override
   void initState() {
@@ -227,9 +226,8 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
               for (final s in fullSchedule) {
                 final dateId = _dateId(s.date);
                 final count = progress[dateId] ?? 0;
-                final isRead = s.chapters.isEmpty
-                    ? count > 0
-                    : count >= s.chapters.length;
+                final isRead =
+                    s.chapters.isEmpty ? count > 0 : count >= s.chapters.length;
                 if (isRead) completedIds.add(dateId);
               }
 
@@ -384,9 +382,7 @@ class _TodayAnchorCard extends StatelessWidget {
         if (readers.isEmpty) {
           label = 'Be the first to read this';
         } else {
-          final more1 = more > 0
-              ? ' & $more other${more > 1 ? 's' : ''}'
-              : '';
+          final more1 = more > 0 ? ' & $more other${more > 1 ? 's' : ''}' : '';
           label = '${names.join(', ')}$more1 have read';
         }
 

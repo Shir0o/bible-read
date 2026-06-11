@@ -480,7 +480,8 @@ class _LoginPageState extends State<LoginPage> {
                                       shadowColor: colorScheme.shadow
                                           .withValues(alpha: 0.3),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(AppSpacing.rCard),
+                                        borderRadius: BorderRadius.circular(
+                                            AppSpacing.rCard),
                                       ),
                                     ),
                                     child: _loading
@@ -557,7 +558,8 @@ class _LoginPageState extends State<LoginPage> {
                                       shadowColor: colorScheme.shadow
                                           .withValues(alpha: 0.1),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(AppSpacing.rCard),
+                                        borderRadius: BorderRadius.circular(
+                                            AppSpacing.rCard),
                                         side: BorderSide(
                                           color: colorScheme.outlineVariant,
                                         ),
