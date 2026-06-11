@@ -131,10 +131,9 @@ class _AllPlansPageState extends State<AllPlansPage> {
       }
 
       // Group readings (the user's groups).
-      final groups = await widget.groupService
-          .groupsForUser(uid)
-          .first
-          .timeout(const Duration(seconds: 5), onTimeout: () => const <Group>[]);
+      final groups = await widget.groupService.groupsForUser(uid).first.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => const <Group>[]);
       final groupRows = <_GroupRow>[];
       for (final group in groups) {
         final results = await Future.wait([
@@ -157,8 +156,8 @@ class _AllPlansPageState extends State<AllPlansPage> {
             .where((e) => e.value > 0)
             .map((e) => e.key)
             .toSet();
-        final status = CatchUpEngine.forGroupSchedule(schedule, completed,
-            today: today);
+        final status =
+            CatchUpEngine.forGroupSchedule(schedule, completed, today: today);
         final readers =
             members.where((m) => m.completion >= 1.0).toList(growable: false);
         groupRows.add(_GroupRow(
@@ -369,8 +368,7 @@ class _AllPlansPageState extends State<AllPlansPage> {
                             _personalCard(context, row),
                         ],
                         if (groupActive.isNotEmpty) ...[
-                          SizedBox(
-                              height: personalActive.isNotEmpty ? 22 : 0),
+                          SizedBox(height: personalActive.isNotEmpty ? 22 : 0),
                           _sectionHeading(context,
                               icon: Icons.group_outlined,
                               title: 'Together',
@@ -411,8 +409,8 @@ class _AllPlansPageState extends State<AllPlansPage> {
             decoration: BoxDecoration(
               color: colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(99),
-              border: Border.all(
-                  color: colorScheme.primary.withValues(alpha: 0.3)),
+              border:
+                  Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
             ),
             child: Text(
               '$totalActive ongoing',
@@ -459,8 +457,8 @@ class _AllPlansPageState extends State<AllPlansPage> {
             decoration: BoxDecoration(
               color: colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(99),
-              border: Border.all(
-                  color: colorScheme.primary.withValues(alpha: 0.3)),
+              border:
+                  Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
             ),
             child: Text(
               '$count $countLabel',

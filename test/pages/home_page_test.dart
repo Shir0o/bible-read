@@ -118,7 +118,8 @@ void main() {
     expect(find.text('I read today'), findsNothing);
   });
 
-  testWidgets('tapping "I read today" updates UI to read state', (tester) async {
+  testWidgets('tapping "I read today" updates UI to read state',
+      (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),

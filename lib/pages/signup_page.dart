@@ -515,7 +515,8 @@ class _SignupPageState extends State<SignupPage> {
                           foregroundColor: colorScheme.onPrimary,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppSpacing.rCard),
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.rCard),
                           ),
                         ),
                         child: _loading

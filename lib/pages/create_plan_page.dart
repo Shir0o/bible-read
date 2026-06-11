@@ -408,10 +408,12 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                               width: 64,
                               child: Text(
                                 '${_months[date.month - 1]} ${date.day}',
-                                style:
-                                    Theme.of(context).textTheme.labelMedium?.copyWith(
-                                          color: colorScheme.onSurfaceVariant,
-                                        ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -617,7 +619,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               color: colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(AppSpacing.rCard),
+                              borderRadius:
+                                  BorderRadius.circular(AppSpacing.rCard),
                               border: Border.all(
                                 color: colorScheme.outlineVariant.withValues(
                                   alpha: 0.5,
@@ -721,7 +724,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                         // When editing, the start date is fixed: the schedule
                         // is anchored to the plan's existing progress, so it
                         // must not drift out from under recorded readings.
-                        onTap: _isEditing ? null : () => _selectDate(context, true),
+                        onTap: _isEditing
+                            ? null
+                            : () => _selectDate(context, true),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -782,7 +787,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                         // When editing, the start date is fixed: the schedule
                         // is anchored to the plan's existing progress, so it
                         // must not drift out from under recorded readings.
-                        onTap: _isEditing ? null : () => _selectDate(context, true),
+                        onTap: _isEditing
+                            ? null
+                            : () => _selectDate(context, true),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [

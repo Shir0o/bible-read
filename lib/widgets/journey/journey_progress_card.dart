@@ -328,204 +328,211 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(AppSpacing.rCard),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppSpacing.rCard),
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Icon Box
-                      Container(
-                        width: 80,
-                        height: 100, // Slightly taller rectangle
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(AppSpacing.rCard),
-                          border: Border.all(
-                            color: colorScheme.onSurfaceVariant.withValues(
-                              alpha: 0.1,
-                            ),
-                          ),
-                          boxShadow: AppSpacing.cardShadow(context),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.auto_stories,
-                            size: 36,
-                            color: colorScheme.primary.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Text Details
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              plan.title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    height: 1.2,
-                                  ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    isCompleted ? 'Done' : 'Day $currentDay',
-                                    style: TextStyle(
-                                      color: colorScheme.onPrimaryContainer,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Icon Box
+                          Container(
+                            width: 80,
+                            height: 100, // Slightly taller rectangle
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainer,
+                              borderRadius:
+                                  BorderRadius.circular(AppSpacing.rCard),
+                              border: Border.all(
+                                color: colorScheme.onSurfaceVariant.withValues(
+                                  alpha: 0.1,
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'of $totalCount • Personal Plan',
-                                    style: TextStyle(
-                                      color: colorScheme.onSurfaceVariant,
-                                      fontSize: 11,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
+                              ),
+                              boxShadow: AppSpacing.cardShadow(context),
                             ),
-                            const SizedBox(height: 12),
-                            // Progress Bar Section
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '$percentString Completed',
-                                  style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: LinearProgressIndicator(
-                                value: percent,
-                                minHeight: 8,
-                                backgroundColor:
-                                    colorScheme.surfaceContainerHighest,
-                                color: colorScheme.primary,
+                            child: Center(
+                              child: Icon(
+                                Icons.auto_stories,
+                                size: 36,
+                                color:
+                                    colorScheme.primary.withValues(alpha: 0.8),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Catch-up banner (no bounce-to-Today button — Journey owns
-                  // the long arc). Tapping opens the plan's schedule.
-                  CatchUpStatusRow(
-                    status: CatchUpEngine.forPersonalPlan(
-                      plan,
-                      progress,
-                      today: widget.dateProvider(),
-                    ),
-                    onTap: () {
-                      unawaited(widget.vibrationService.lightImpact());
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => PlanDetailPage(
-                            plan: plan,
-                            firestore: widget.firestore,
-                            auth: widget.auth,
-                            initialProgress: progress,
-                            vibrationService: widget.vibrationService,
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  // Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: FilledButton.tonal(
-                      onPressed: () {
-                        unawaited(widget.vibrationService.lightImpact());
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => PlanDetailPage(
-                              plan: plan,
-                              firestore: widget.firestore,
-                              auth: widget.auth,
-                              initialProgress: progress,
-                              vibrationService: widget.vibrationService,
-                            ),
-                          ),
-                        );
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: colorScheme.secondaryContainer,
-                        foregroundColor: colorScheme.onSecondaryContainer,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.play_arrow_rounded, size: 24),
-                          const SizedBox(width: 8),
-                          Text(
-                            isCompleted ? 'Review Plan' : 'Continue Reading',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                          const SizedBox(width: 16),
+                          // Text Details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  plan.title,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                        height: 1.2,
+                                      ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.primaryContainer,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        isCompleted
+                                            ? 'Done'
+                                            : 'Day $currentDay',
+                                        style: TextStyle(
+                                          color: colorScheme.onPrimaryContainer,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'of $totalCount • Personal Plan',
+                                        style: TextStyle(
+                                          color: colorScheme.onSurfaceVariant,
+                                          fontSize: 11,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                // Progress Bar Section
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '$percentString Completed',
+                                      style: TextStyle(
+                                        color: colorScheme.onSurfaceVariant,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: LinearProgressIndicator(
+                                    value: percent,
+                                    minHeight: 8,
+                                    backgroundColor:
+                                        colorScheme.surfaceContainerHighest,
+                                    color: colorScheme.primary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      // Catch-up banner (no bounce-to-Today button — Journey owns
+                      // the long arc). Tapping opens the plan's schedule.
+                      CatchUpStatusRow(
+                        status: CatchUpEngine.forPersonalPlan(
+                          plan,
+                          progress,
+                          today: widget.dateProvider(),
+                        ),
+                        onTap: () {
+                          unawaited(widget.vibrationService.lightImpact());
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => PlanDetailPage(
+                                plan: plan,
+                                firestore: widget.firestore,
+                                auth: widget.auth,
+                                initialProgress: progress,
+                                vibrationService: widget.vibrationService,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: FilledButton.tonal(
+                          onPressed: () {
+                            unawaited(widget.vibrationService.lightImpact());
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => PlanDetailPage(
+                                  plan: plan,
+                                  firestore: widget.firestore,
+                                  auth: widget.auth,
+                                  initialProgress: progress,
+                                  vibrationService: widget.vibrationService,
+                                ),
+                              ),
+                            );
+                          },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: colorScheme.secondaryContainer,
+                            foregroundColor: colorScheme.onSecondaryContainer,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.play_arrow_rounded, size: 24),
+                              const SizedBox(width: 8),
+                              Text(
+                                isCompleted
+                                    ? 'Review Plan'
+                                    : 'Continue Reading',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
-    ),
         const SizedBox(height: 12),
         SchedulePreview(
           status: catchUp,

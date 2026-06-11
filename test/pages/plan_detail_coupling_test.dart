@@ -1,9 +1,7 @@
 import 'package:bible_read/models/reading_plan.dart';
 import 'package:bible_read/models/reading_plan_progress.dart';
-import 'package:bible_read/models/user_preferences.dart';
 import 'package:bible_read/pages/plan_detail_page.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
-import 'package:bible_read/services/user_preferences_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -35,7 +33,6 @@ void main() {
   late FakeFirebaseFirestore firestore;
   late MockFirebaseAuth auth;
   late ReadingPlanService planService;
-  late UserPreferencesService prefsService;
   late UserPlanProgress startedProgress;
 
   String todayKey() {
@@ -57,15 +54,13 @@ void main() {
     firestore = FakeFirebaseFirestore();
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     planService = ReadingPlanService(firestore: firestore);
-    prefsService = UserPreferencesService(firestore: firestore);
 
     await firestore.collection('custom_plans').doc('p1').set({
       ..._plan.toJson(),
       'userId': 'u1',
     });
     await planService.startPlan('u1', 'p1', startDate: DateTime.now());
-    startedProgress =
-        (await planService.getPlanProgress('u1', 'p1').first)!;
+    startedProgress = (await planService.getPlanProgress('u1', 'p1').first)!;
   });
 
   Future<void> pumpPage(WidgetTester tester) async {
@@ -97,57 +92,14 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('first finish under "ask" shows the SyncSheet only once',
+  testWidgets(
+      'finishing today\'s reading unconditionally records the habit without prompt',
       (tester) async {
     await pumpPage(tester);
 
-    // Finish today's reading -> the one-time prompt appears.
+    // Finish today's reading -> no prompt appears, but habit is recorded today.
     await tapReading(tester);
-    expect(find.text("You finished today's reading"), findsOneWidget);
-
-    // Choose to link them.
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Yes, count it as showing up'));
-      await Future.delayed(const Duration(milliseconds: 50));
-    });
-    await tester.pumpAndSettle();
-
-    final prefs = await prefsService.fetchPreferences('u1');
-    expect(prefs.syncPromptAnswered, isTrue);
-    expect(prefs.autoMarkPlanRead, isTrue);
-    expect(await habitRecordedToday(), isTrue);
-
-    // Un-mark then re-finish: the prompt must not reappear.
-    await tapReading(tester);
-    await tapReading(tester);
-    expect(find.text("You finished today's reading"), findsNothing);
-  });
-
-  testWidgets('linked: finishing a reading records the habit, no prompt',
-      (tester) async {
-    await prefsService.updatePreferences(
-      'u1',
-      const UserPreferences(autoMarkPlanRead: true, syncPromptAnswered: true),
-    );
-
-    await pumpPage(tester);
-    await tapReading(tester);
-
     expect(find.text("You finished today's reading"), findsNothing);
     expect(await habitRecordedToday(), isTrue);
-  });
-
-  testWidgets('separate: finishing a reading does not record the habit',
-      (tester) async {
-    await prefsService.updatePreferences(
-      'u1',
-      const UserPreferences(autoMarkPlanRead: false, syncPromptAnswered: true),
-    );
-
-    await pumpPage(tester);
-    await tapReading(tester);
-
-    expect(find.text("You finished today's reading"), findsNothing);
-    expect(await habitRecordedToday(), isFalse);
   });
 }

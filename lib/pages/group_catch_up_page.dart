@@ -36,9 +36,8 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
   /// Built lazily on first read-mark so the page never touches Firebase just to
   /// render (keeps it constructible in tests that only inject a GroupService).
   PlanCompletionCoordinator? _coordinator;
-  PlanCompletionCoordinator get _completionCoordinator =>
-      _coordinator ??=
-          PlanCompletionCoordinator(firestore: FirebaseFirestore.instance);
+  PlanCompletionCoordinator get _completionCoordinator => _coordinator ??=
+      PlanCompletionCoordinator(firestore: FirebaseFirestore.instance);
 
   @override
   void initState() {

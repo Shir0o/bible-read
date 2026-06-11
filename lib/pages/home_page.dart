@@ -727,8 +727,9 @@ class _HomePageState extends State<HomePage>
   /// updates and rollback when marking a specific plan's reading).
   void _setProgressFor(String planId, UserPlanProgress next) {
     _personalPlans = _personalPlans
-        .map((pp) =>
-            pp.plan.id == planId ? _PersonalPlan(plan: pp.plan, progress: next) : pp)
+        .map((pp) => pp.plan.id == planId
+            ? _PersonalPlan(plan: pp.plan, progress: next)
+            : pp)
         .toList();
   }
 
@@ -997,12 +998,27 @@ class _HomePageState extends State<HomePage>
     final now = widget.dateProvider();
 
     const weekdays = [
-      'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY',
+      'MONDAY',
+      'TUESDAY',
+      'WEDNESDAY',
+      'THURSDAY',
+      'FRIDAY',
+      'SATURDAY',
       'SUNDAY'
     ];
     const months = [
-      'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY',
-      'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+      'JANUARY',
+      'FEBRUARY',
+      'MARCH',
+      'APRIL',
+      'MAY',
+      'JUNE',
+      'JULY',
+      'AUGUST',
+      'SEPTEMBER',
+      'OCTOBER',
+      'NOVEMBER',
+      'DECEMBER'
     ];
     final eyebrow =
         '${weekdays[now.weekday - 1]} · ${months[now.month - 1]} ${now.day}';
@@ -1325,7 +1341,8 @@ class _HomePageState extends State<HomePage>
                                   const SizedBox(width: 8),
                                   Text(
                                     'I read today',
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: colorScheme.onPrimary,
                                     ),
@@ -1452,7 +1469,8 @@ class _HomePageState extends State<HomePage>
         children: [
           Row(
             children: [
-              Icon(Icons.explore_outlined, size: 14, color: colorScheme.primary),
+              Icon(Icons.explore_outlined,
+                  size: 14, color: colorScheme.primary),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -1513,8 +1531,7 @@ class _HomePageState extends State<HomePage>
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child:
-                                CircularProgressIndicator(strokeWidth: 2.5),
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
                           )
                         : const Icon(Icons.check_rounded, size: 20),
                     label: const Text('Mark as read'),
@@ -1650,8 +1667,8 @@ class _HomePageState extends State<HomePage>
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2.5),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2.5),
                               )
                             : const Icon(Icons.check_rounded, size: 20),
                         label: const Text('Read with your community'),
@@ -1787,7 +1804,8 @@ class _HomePageState extends State<HomePage>
                     style: OutlinedButton.styleFrom(
                       foregroundColor: colorScheme.onSurfaceVariant,
                       side: BorderSide(
-                        color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                        color:
+                            colorScheme.outlineVariant.withValues(alpha: 0.4),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -1807,8 +1825,8 @@ class _HomePageState extends State<HomePage>
   Widget _buildPlanMiniRow(BuildContext context, _ReadingItem item) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final accent =
-        item.state == PlanLifecycle.behind || item.state == PlanLifecycle.wrapup;
+    final accent = item.state == PlanLifecycle.behind ||
+        item.state == PlanLifecycle.wrapup;
     final tileColor = accent
         ? colorScheme.tertiaryContainer.withValues(alpha: 0.5)
         : colorScheme.primaryContainer.withValues(alpha: 0.4);
@@ -1906,8 +1924,18 @@ class _HomePageState extends State<HomePage>
   /// `Mon D` (no year) for the wrap-up "ended" label.
   String _shortDate(DateTime d) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return '${months[d.month - 1]} ${d.day}';
   }
@@ -2019,11 +2047,9 @@ class _HomePageState extends State<HomePage>
 
   String _groupPresenceLabel(List<GroupMemberProgressData> readers) {
     if (readers.isEmpty) return 'Be the first to read this';
-    final names =
-        readers.take(2).map((r) => r.name.split(' ').first).toList();
+    final names = readers.take(2).map((r) => r.name.split(' ').first).toList();
     final more = readers.length - names.length;
-    final suffix =
-        more > 0 ? ' & $more other${more > 1 ? 's' : ''}' : '';
+    final suffix = more > 0 ? ' & $more other${more > 1 ? 's' : ''}' : '';
     return '${names.join(', ')}$suffix read today';
   }
 

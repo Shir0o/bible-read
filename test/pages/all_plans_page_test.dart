@@ -84,8 +84,7 @@ void main() {
     expect(find.text('Enroll in a new plan'), findsOneWidget);
   });
 
-  testWidgets('pinning a plan persists it as the Home primary',
-      (tester) async {
+  testWidgets('pinning a plan persists it as the Home primary', (tester) async {
     await pumpPage(tester);
 
     await tester.runAsync(() async {

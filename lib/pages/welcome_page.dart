@@ -79,7 +79,8 @@ class WelcomePage extends StatelessWidget {
                     elevation: 4,
                     shadowColor: colorScheme.shadow.withValues(alpha: 0.3),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.rCard), // rounded-full
+                      borderRadius: BorderRadius.circular(
+                          AppSpacing.rCard), // rounded-full
                     ),
                   ),
                   child: Text(

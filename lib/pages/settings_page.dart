@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 
-import '../models/user_preferences.dart';
 import '../theme/app_theme.dart';
 import '../services/error_logger.dart';
 import '../services/feedback_service.dart';
@@ -86,83 +85,9 @@ class SettingsPageState extends State<SettingsPage> {
   bool _isSigningIn = false;
   bool _isSigningOut = false;
 
-  late final UserPreferencesService _prefsService;
-  UserPreferences _prefs = const UserPreferences();
-  bool _prefsLoading = true;
-  StreamSubscription<UserPreferences>? _prefSub;
-
   @override
   void initState() {
     super.initState();
-    _prefsService = widget.userPreferencesService ??
-        UserPreferencesService(firestore: widget.firestore);
-    _loadPreferences();
-  }
-
-  Future<void> _loadPreferences() async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) {
-      if (mounted) {
-        setState(() {
-          _prefsLoading = false;
-        });
-      }
-      return;
-    }
-
-    _prefSub?.cancel();
-    _prefSub = _prefsService.streamPreferences(uid).listen(
-      (prefs) {
-        if (mounted) {
-          setState(() {
-            _prefs = prefs;
-            _prefsLoading = false;
-          });
-        }
-      },
-      onError: (error, stackTrace) {
-        ErrorLogger.log(error, stackTrace);
-        if (mounted) {
-          setState(() {
-            _prefsLoading = false;
-          });
-        }
-      },
-    );
-  }
-
-  Future<void> _updatePreference(bool value) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-
-    final oldPrefs = _prefs;
-    // Setting the toggle manually also resolves the one-time prompt, so it
-    // won't pop later when finishing a plan reading.
-    final newPrefs =
-        _prefs.copyWith(autoMarkPlanRead: value, syncPromptAnswered: true);
-    setState(() {
-      _prefs = newPrefs;
-    });
-
-    try {
-      await _prefsService.updatePreferences(uid, newPrefs);
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        setState(() {
-          _prefs = oldPrefs;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update preference')),
-        );
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _prefSub?.cancel();
-    super.dispose();
   }
 
   Future<void> _handleSignIn() async {
@@ -408,31 +333,6 @@ class SettingsPageState extends State<SettingsPage> {
               context: context,
               child: Column(
                 children: [
-                  if (_prefsLoading)
-                    const Padding(
-                      padding: EdgeInsets.all(AppSpacing.hPadding),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else
-                    SwitchListTile(
-                      title: const Text('Reading counts as showing up'),
-                      subtitle: const Text(
-                        'When you finish a reading from a plan, it also counts as showing up for the day. Marking "I read today" on its own never moves a plan.',
-                      ),
-                      value: _prefs.autoMarkPlanRead,
-                      onChanged: _updatePreference,
-                      activeThumbColor: colorScheme.primary,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.hPadding,
-                        vertical: 4,
-                      ),
-                    ),
-                  Divider(
-                    height: 1,
-                    indent: AppSpacing.hPadding,
-                    endIndent: AppSpacing.hPadding,
-                    color: colorScheme.outlineVariant,
-                  ),
                   ListTile(
                     leading: const Icon(Icons.notifications_outlined),
                     title: const Text('Notification settings'),

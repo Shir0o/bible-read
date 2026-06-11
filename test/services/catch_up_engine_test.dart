@@ -46,7 +46,8 @@ void main() {
     final today = DateTime(2026, 1, 5);
     final plan = _dailyPlan(7);
 
-    test('seeded completion yields correct status breakdown + behind count', () {
+    test('seeded completion yields correct status breakdown + behind count',
+        () {
       // Read days 1-2; missed 3-4; today is day 5; 6-7 upcoming.
       final status = CatchUpEngine.forPersonalPlan(
         plan,
@@ -160,7 +161,8 @@ void main() {
       GroupSchedule(date: DateTime(2026, 1, 27), chapters: const ['John 4']),
     ];
 
-    test('current is the latest passage due on/before today, gaps respected', () {
+    test('current is the latest passage due on/before today, gaps respected',
+        () {
       final status = CatchUpEngine.forGroupSchedule(
         schedule,
         {'2026-01-06'}, // read week 1 only
@@ -276,7 +278,8 @@ void main() {
       );
     });
 
-    test("due when today's reading is unread and nothing earlier is missed", () {
+    test("due when today's reading is unread and nothing earlier is missed",
+        () {
       expect(
         lifecycle(
           days: 5,
