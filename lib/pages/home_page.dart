@@ -946,6 +946,19 @@ class _HomePageState extends State<HomePage>
             ),
           );
         }
+        if (!mounted) return;
+        await _completionCoordinator.maybeCoupleHabit(
+          context: context,
+          user: user,
+          onMessage: (message) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(message)),
+            );
+          },
+        );
+        widget.readingStatusService.invalidateCache();
+        unawaited(_loadReadStatus(showLoading: false));
       }
     } catch (e, st) {
       ErrorLogger.log(e, st);

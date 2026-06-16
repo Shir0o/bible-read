@@ -15,6 +15,7 @@ import '../services/bible_progress_service.dart';
 import '../services/friend_service.dart';
 import '../services/catch_up_engine.dart';
 import '../services/group_service.dart';
+import '../services/plan_completion_coordinator.dart';
 import '../services/vibration_service.dart';
 import '../widgets/catch_up_status_row.dart';
 import '../widgets/common_styles.dart';
@@ -135,6 +136,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   final Map<String, bool> _latestBaseDoneSnapshots = <String, bool>{};
   final Map<String, int> _latestChapterCountSnapshots = <String, int>{};
   int _nextPendingOpId = 0;
+  PlanCompletionCoordinator? _coordinator;
+  PlanCompletionCoordinator get _completionCoordinator => _coordinator ??=
+      PlanCompletionCoordinator(firestore: widget.groupService.firestore);
 
   DateTime get _now => widget.currentDate ?? DateTime.now();
 
@@ -397,23 +401,35 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             _scheduleChapterOverrideCleanup(dateKey);
           }
         }
-        if (read && mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Group reading marked as complete.'),
-              action: SnackBarAction(
-                label: 'Undo',
-                onPressed: () {
-                  _handleScheduleReadToggle(
-                    schedule: schedule,
-                    read: false,
-                    currentlyChecked: currentlyChecked,
-                    hasChapters: hasChapters,
-                  );
-                },
+        if (read) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Group reading marked as complete.'),
+                action: SnackBarAction(
+                  label: 'Undo',
+                  onPressed: () {
+                    _handleScheduleReadToggle(
+                      schedule: schedule,
+                      read: false,
+                      currentlyChecked: currentlyChecked,
+                      hasChapters: hasChapters,
+                    );
+                  },
+                ),
               ),
-            ),
+            );
+          }
+          await _completionCoordinator.maybeCoupleHabit(
+            context: context,
+            user: user,
+            onMessage: (message) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(message)),
+              );
+            },
           );
         }
         return;
