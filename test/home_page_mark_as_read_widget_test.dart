@@ -11,6 +11,7 @@ import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
 import 'package:bible_read/models/reading_plan.dart';
 import 'helpers/fake_google_sign_in_platform.dart';
+import 'helpers/mock_lottie_http_client.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,11 @@ void main() {
 
   setUpAll(() async {
     await Firebase.initializeApp();
+    setupLottieHttpOverrides();
+  });
+
+  tearDownAll(() async {
+    resetHttpOverrides();
   });
 
   testWidgets('mark today as read on home page (widget test)', (tester) async {
@@ -121,7 +127,9 @@ void main() {
     expect(find.text('Thank you for being here'), findsOneWidget);
 
     // 5. Verify Backend Confirmation
-    await tester.pumpAndSettle();
+    for (int i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
 
     // Check Firestore directly
     final readDoc = await firestore
