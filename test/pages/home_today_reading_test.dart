@@ -178,7 +178,7 @@ void main() {
   );
 
   testWidgets(
-    'plan card mark advances the plan and unconditionally marks today as read without prompt',
+    'plan card mark advances the plan and asks the coupling question once',
     (tester) async {
       final firestore = FakeFirebaseFirestore();
       final auth =
@@ -202,8 +202,10 @@ void main() {
       await tester.tap(find.text('Mark as read'));
       await tester.pumpAndSettle();
 
-      // No coupling prompt is shown.
-      expect(find.text('Keep them separate'), findsNothing);
+      // First completion shows the one-time coupling prompt (SyncSheet).
+      expect(find.text('Keep them separate'), findsOneWidget);
+      await tester.tap(find.text('Keep them separate'));
+      await tester.pumpAndSettle();
 
       // The plan day was recorded.
       final progressDoc = await firestore
@@ -225,8 +227,7 @@ void main() {
           .collection('reading')
           .doc(dateKey)
           .get();
-      expect(habitDoc.exists, isTrue);
-      expect(habitDoc.data()?['read'], isTrue);
+      expect(habitDoc.exists, isFalse);
 
       // The card now reflects the read state.
       expect(find.text('Read'), findsOneWidget);
