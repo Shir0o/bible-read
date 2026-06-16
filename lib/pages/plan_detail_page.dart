@@ -234,13 +234,14 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                 .toSet() ??
             {};
 
+    final newCompletedDays = Set<int>.from(completedDays);
+    if (wasCompleted) {
+      newCompletedDays.remove(dayNumber);
+    } else {
+      newCompletedDays.add(dayNumber);
+    }
+
     setState(() {
-      final newCompletedDays = Set<int>.from(completedDays);
-      if (wasCompleted) {
-        newCompletedDays.remove(dayNumber);
-      } else {
-        newCompletedDays.add(dayNumber);
-      }
       _optimisticCompletedDays = newCompletedDays;
     });
 
@@ -253,6 +254,20 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         );
       } else {
         await _planService.markDayComplete(user.uid, widget.plan.id, dayNumber);
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Day $dayNumber marked as read.'),
+              action: SnackBarAction(
+                label: 'Undo',
+                onPressed: () {
+                  _toggleDay(dayNumber, true, newCompletedDays);
+                },
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

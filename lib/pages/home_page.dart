@@ -597,11 +597,12 @@ class _HomePageState extends State<HomePage>
     return items;
   }
 
-  /// Marks the current day as read. Optimistically updates local state and
-  /// writes the change to Firestore, rolling back on failure.
+  /// Marks (or unmarks) the current day as read. Optimistically updates local
+  /// state and writes the change to Firestore, rolling back on failure.
   Future<void> _toggleReadStatus() async {
+    if (_toggleLoading) return;
     unawaited(widget.vibrationService.mediumImpact());
-    if (_readToday) return;
+    final wasRead = _readToday;
 
     final user = widget.auth.currentUser;
     if (user == null) return;
@@ -621,33 +622,63 @@ class _HomePageState extends State<HomePage>
     if (!_disposed && mounted) {
       setState(() {
         _toggleLoading = true;
-        // Optimistically mark today as read in local state.
-        _readToday = true;
-        _currentStreak += 1; // Increment streak optimistically.
-        _totalReadDays += 1; // Increment total days optimistically.
+        if (wasRead) {
+          // Optimistically mark today as unread in local state.
+          _readToday = false;
+          _currentStreak = (prevStreak - 1).clamp(0, double.infinity).toInt();
+          _totalReadDays =
+              (prevTotalReadDays - 1).clamp(0, double.infinity).toInt();
 
-        if (_pastWeek.length < 7) {
-          _pastWeek = List<bool>.generate(
-            7,
-            (i) => i < _pastWeek.length ? _pastWeek[i] : false,
-          );
-        } else {
-          // Create a new list to ensure the UI updates correctly.
-          _pastWeek = List<bool>.from(_pastWeek);
-        }
-        _pastWeek[weekIndex] = true;
+          if (_pastWeek.length < 7) {
+            _pastWeek = List<bool>.generate(
+              7,
+              (i) => i < _pastWeek.length ? _pastWeek[i] : false,
+            );
+          } else {
+            _pastWeek = List<bool>.from(_pastWeek);
+          }
+          _pastWeek[weekIndex] = false;
 
-        if (_pastMonth.length < daysInMonth) {
-          _pastMonth = List<bool>.generate(
-            daysInMonth,
-            (i) => i < _pastMonth.length ? _pastMonth[i] : false,
-          );
+          if (_pastMonth.length < daysInMonth) {
+            _pastMonth = List<bool>.generate(
+              daysInMonth,
+              (i) => i < _pastMonth.length ? _pastMonth[i] : false,
+            );
+          } else {
+            _pastMonth = List<bool>.from(_pastMonth);
+          }
+          _pastMonth[monthIndex] = false;
+          _readDates.removeWhere((d) =>
+              d.year == today.year &&
+              d.month == today.month &&
+              d.day == today.day);
         } else {
-          // Create a new list to ensure the UI updates correctly.
-          _pastMonth = List<bool>.from(_pastMonth);
+          // Optimistically mark today as read in local state.
+          _readToday = true;
+          _currentStreak += 1; // Increment streak optimistically.
+          _totalReadDays += 1; // Increment total days optimistically.
+
+          if (_pastWeek.length < 7) {
+            _pastWeek = List<bool>.generate(
+              7,
+              (i) => i < _pastWeek.length ? _pastWeek[i] : false,
+            );
+          } else {
+            _pastWeek = List<bool>.from(_pastWeek);
+          }
+          _pastWeek[weekIndex] = true;
+
+          if (_pastMonth.length < daysInMonth) {
+            _pastMonth = List<bool>.generate(
+              daysInMonth,
+              (i) => i < _pastMonth.length ? _pastMonth[i] : false,
+            );
+          } else {
+            _pastMonth = List<bool>.from(_pastMonth);
+          }
+          _pastMonth[monthIndex] = true;
+          _readDates.add(DateTime(today.year, today.month, today.day));
         }
-        _pastMonth[monthIndex] = true;
-        _readDates.add(DateTime(today.year, today.month, today.day));
       });
     }
 
@@ -661,37 +692,66 @@ class _HomePageState extends State<HomePage>
       final dateKey =
           '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
-      // The daily habit is a pure presence mark — it never advances any plan.
-      // Coupling is one-directional: finishing a plan reading may optionally
-      // record the habit (see PlanDetailPage), but the bare habit tap does not
-      // touch plan progress.
-      final List<Future<void>> backendWrites = [
-        ReadLogPage.writeReadLogEntry(
-          refreshedUser ?? user,
-          firestore: widget.firestore,
-          functions: widget.functions,
-          markFirstReader: widget.markFirstReader,
-          dateProvider: () => today,
-        ),
-        widget.firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('reading')
-            .doc(dateKey)
-            .set({'read': true}, SetOptions(merge: true)),
-      ];
-
-      // Execute all backend writes in parallel
-      await Future.wait(backendWrites);
+      if (wasRead) {
+        final List<Future<void>> backendWrites = [
+          widget.firestore
+              .collection('read_logs')
+              .doc(dateKey)
+              .collection('entries')
+              .doc(user.uid)
+              .delete(),
+          widget.firestore
+              .collection('users')
+              .doc(user.uid)
+              .collection('reading')
+              .doc(dateKey)
+              .set({'read': false}, SetOptions(merge: true)),
+        ];
+        await Future.wait(backendWrites);
+      } else {
+        // The daily habit is a pure presence mark — it never advances any plan.
+        // Coupling is one-directional: finishing a plan reading may optionally
+        // record the habit (see PlanDetailPage), but the bare habit tap does not
+        // touch plan progress.
+        final List<Future<void>> backendWrites = [
+          ReadLogPage.writeReadLogEntry(
+            refreshedUser ?? user,
+            firestore: widget.firestore,
+            functions: widget.functions,
+            markFirstReader: widget.markFirstReader,
+            dateProvider: () => today,
+          ),
+          widget.firestore
+              .collection('users')
+              .doc(user.uid)
+              .collection('reading')
+              .doc(dateKey)
+              .set({'read': true}, SetOptions(merge: true)),
+        ];
+        await Future.wait(backendWrites);
+      }
 
       // Update summary collection (lightweight update)
       await _updateSummaryWithToday();
 
-      // Removed success animation after backend success to reduce noise.
-
       // Invalidate cache so the next tab visit fetches fresh data.
       widget.readingStatusService.invalidateCache();
       unawaited(_loadReadStatus(showLoading: false));
+
+      if (!wasRead) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Daily reading marked as complete.'),
+              action: SnackBarAction(
+                label: 'Undo',
+                onPressed: () => _toggleReadStatus(),
+              ),
+            ),
+          );
+        }
+      }
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to mark reading: $e');
@@ -701,7 +761,7 @@ class _HomePageState extends State<HomePage>
       if (!_disposed && mounted) {
         // Revert to previous state and notify the user.
         setState(() {
-          _readToday = false;
+          _readToday = wasRead;
           _pastWeek = prevWeek;
           _pastMonth = prevMonth;
           _readDates = prevReadDates;
@@ -709,8 +769,10 @@ class _HomePageState extends State<HomePage>
           _totalReadDays = prevTotalReadDays;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to mark reading. Please try again.'),
+          SnackBar(
+            content: Text(wasRead
+                ? 'Failed to undo daily reading. Please try again.'
+                : 'Failed to mark reading. Please try again.'),
           ),
         );
       }
@@ -784,6 +846,23 @@ class _HomePageState extends State<HomePage>
         // The coupling may have recorded the habit; refresh habit state.
         widget.readingStatusService.invalidateCache();
         unawaited(_loadReadStatus(showLoading: false));
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Day $day of "${plan.title}" marked as read.'),
+              action: SnackBarAction(
+                label: 'Undo',
+                onPressed: () {
+                  final p =
+                      _personalPlans.firstWhere((pp) => pp.plan.id == plan.id);
+                  _togglePlanReadingFor(p.plan, p.progress, day);
+                },
+              ),
+            ),
+          );
+        }
       }
     } catch (e, st) {
       if (kDebugMode) {
@@ -855,6 +934,18 @@ class _HomePageState extends State<HomePage>
         read: !wasRead,
       );
       if (!wasRead) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Group reading marked as complete.'),
+              action: SnackBarAction(
+                label: 'Undo',
+                onPressed: () => _toggleGroupReading(),
+              ),
+            ),
+          );
+        }
         if (!mounted) return;
         await _completionCoordinator.maybeCoupleHabit(
           context: context,
@@ -1285,6 +1376,28 @@ class _HomePageState extends State<HomePage>
                       color: colorScheme.onSurface.withValues(alpha: 0.9),
                     ),
                     textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: _toggleLoading ? null : _toggleReadStatus,
+                    icon: _toggleLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          )
+                        : Icon(Icons.undo_rounded,
+                            size: 20, color: colorScheme.primary),
+                    label: const Text('Undo'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.primary,
+                      side: BorderSide(
+                        color: colorScheme.primary.withValues(alpha: 0.4),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
                   ),
                 ],
               ),

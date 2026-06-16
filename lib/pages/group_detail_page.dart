@@ -402,7 +402,25 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           }
         }
         if (read) {
-          if (!mounted) return;
+          if (mounted) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Group reading marked as complete.'),
+                action: SnackBarAction(
+                  label: 'Undo',
+                  onPressed: () {
+                    _handleScheduleReadToggle(
+                      schedule: schedule,
+                      read: false,
+                      currentlyChecked: currentlyChecked,
+                      hasChapters: hasChapters,
+                    );
+                  },
+                ),
+              ),
+            );
+          }
           await _completionCoordinator.maybeCoupleHabit(
             context: context,
             user: user,
