@@ -169,6 +169,61 @@ void main() {
     expect(doc.data()?['read'], isTrue);
   });
 
+  testWidgets(
+      'tapping "I read today" and then "Undo" updates UI back to unchecked and updates Firestore',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+    final vibrationService = _StubVibrationService();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: vibrationService,
+          bibleProgressService: _StubBibleProgressService(),
+          dateProvider: () => DateTime.now(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 1. Mark as read
+    await tester.tap(find.text('I read today'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Thank you for being here'), findsOneWidget);
+    expect(find.text('Undo'), findsNWidgets(2));
+
+    // 2. Tap Undo on the card
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Undo'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    // Verify it reverts back
+    expect(find.text('I read today'), findsOneWidget);
+    expect(find.text('Thank you for being here'), findsNothing);
+
+    // Verify Firestore was updated to read: false
+    final today = DateTime.now();
+    final dateKey =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final doc = await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('reading')
+        .doc(dateKey)
+        .get();
+
+    expect(doc.exists, isTrue);
+    expect(doc.data()?['read'], isFalse);
+  });
+
   testWidgets('displays the consistency glimpse', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(

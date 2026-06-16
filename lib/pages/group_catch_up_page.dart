@@ -134,6 +134,18 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
           );
         },
       );
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Group reading marked as complete.'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () => _handleToggle(schedule, true),
+            ),
+          ),
+        );
+      }
     }
   }
 

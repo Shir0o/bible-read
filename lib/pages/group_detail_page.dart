@@ -397,6 +397,25 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             _scheduleChapterOverrideCleanup(dateKey);
           }
         }
+        if (read && mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Group reading marked as complete.'),
+              action: SnackBarAction(
+                label: 'Undo',
+                onPressed: () {
+                  _handleScheduleReadToggle(
+                    schedule: schedule,
+                    read: false,
+                    currentlyChecked: currentlyChecked,
+                    hasChapters: hasChapters,
+                  );
+                },
+              ),
+            ),
+          );
+        }
         return;
       }
       setState(() {

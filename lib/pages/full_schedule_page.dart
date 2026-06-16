@@ -142,6 +142,18 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
         user: user,
         onMessage: _showSnack,
       );
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Group reading marked as complete.'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () => _handleToggle(schedule, true),
+            ),
+          ),
+        );
+      }
     }
   }
 

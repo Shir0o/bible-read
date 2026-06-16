@@ -458,13 +458,16 @@ class ReadingStatusService {
         }
       } else {
         final todayKey = formatDate(today);
-        if (readDateSet.contains(todayKey)) {
-          final pastMonth = List<String>.from(
-            summaryData['pastMonthReadDates'] ?? [],
-          );
-          if (!pastMonth.contains(todayKey)) {
-            oldTotalReadDays += 1;
-          }
+        final pastMonth = List<String>.from(
+          summaryData['pastMonthReadDates'] ?? [],
+        );
+        final wasReadInSummary = pastMonth.contains(todayKey);
+        final isReadNow = readDateSet.contains(todayKey);
+        if (isReadNow && !wasReadInSummary) {
+          oldTotalReadDays += 1;
+        } else if (!isReadNow && wasReadInSummary) {
+          oldTotalReadDays =
+              (oldTotalReadDays - 1).clamp(0, double.infinity).toInt();
         }
       }
 

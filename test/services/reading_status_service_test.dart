@@ -199,6 +199,32 @@ void main() {
     });
 
     test(
+        'updateSummary decrements totalReadDays when a date is unmarked as read',
+        () async {
+      final userDoc = firestore.collection('users').doc(user.uid);
+      await userDoc.set({'email': user.email});
+
+      String formatDate(DateTime d) =>
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+      final today = fixedNow;
+
+      await userDoc.collection('reading').doc(formatDate(today)).set({
+        'read': true,
+      });
+
+      var stats = await service.updateSummary();
+      expect(stats.totalReadDays, 1);
+
+      await userDoc.collection('reading').doc(formatDate(today)).set({
+        'read': false,
+      });
+
+      stats = await service.updateSummary();
+      expect(stats.totalReadDays, 0);
+    });
+
+    test(
       'updateSummary backfills data from read_logs when reading docs missing',
       () async {
         final date = fixedNow;
