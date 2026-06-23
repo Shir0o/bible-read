@@ -122,8 +122,8 @@ void main() {
       await tester.tap(find.text('Community'));
       await tester.pumpAndSettle();
 
-      // Tap View All to go to GroupsPage (first one is for groups)
-      await tester.tap(find.text('View All').first);
+      // Open the groups page via "Manage" in the "Your reading groups" section.
+      await tester.tap(find.text('Manage'));
       await tester.pumpAndSettle();
 
       // Verify group is listed

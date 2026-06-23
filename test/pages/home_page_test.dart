@@ -114,7 +114,7 @@ void main() {
 
     expect(find.text('Marked Today'), findsNothing);
     expect(find.text('Thank you for being here'), findsOneWidget);
-    expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
     expect(find.text('I read today'), findsNothing);
   });
 
@@ -152,7 +152,7 @@ void main() {
 
     // Verify final state
     expect(find.text('Thank you for being here'), findsOneWidget);
-    expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
 
     // Verify Firestore was updated
     final today = DateTime.now();
@@ -198,10 +198,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Thank you for being here'), findsOneWidget);
-    expect(find.text('Undo'), findsNWidgets(2));
+    expect(find.text('Tap to undo'), findsOneWidget);
 
-    // 2. Tap Undo on the card
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Undo'));
+    // 2. Tap the "Tap to undo" pill on the card
+    await tester.tap(find.text('Tap to undo'));
     await tester.pump();
     await tester.pumpAndSettle();
 

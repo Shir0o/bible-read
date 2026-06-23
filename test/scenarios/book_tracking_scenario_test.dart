@@ -1,4 +1,4 @@
-import 'package:bible_read/pages/journey_page.dart';
+import 'package:bible_read/pages/bible_progress_page.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -53,39 +53,23 @@ void main() {
         'dateId': '2024-05-01',
       });
 
-      // 3. Pump Journey Page
+      // 3. Open the Bible Library (Path redesign moved it off the Journey tab;
+      // it now lives on its own page, reachable from the app menu).
       await tester.pumpWidget(
         MaterialApp(
-          home: JourneyPage(
+          home: BibleProgressPage(
             auth: auth,
             firestore: firestore,
             vibrationService: const VibrationService(),
-            dateProvider: () => DateTime(2024, 5, 1),
           ),
         ),
       );
 
-      // Allow for initial data loading (1000ms delay in JourneyPage)
+      // Allow for initial data loading.
       await tester.pump(const Duration(seconds: 2));
       await tester.pumpAndSettle();
 
-      // 4. Verify Bible Library shows 1 book completed
-      // We use a more specific finder to avoid matching dates in calendar
-      final oneText = find.byWidgetPredicate((widget) {
-        if (widget is Text && widget.data == '1') {
-          return widget.style?.fontSize == 20;
-        }
-        return false;
-      });
-      expect(oneText, findsOneWidget);
-      expect(find.text('of 66 Books'), findsOneWidget);
-
-      // 5. Navigate to Detailed Progress
-      await tester.tap(find.text('See All'));
-      await tester.pumpAndSettle();
-
-      // 6. Verify Ruth is marked as completed in Detailed Progress
-      // Ruth is in 'History' category
+      // 4. Verify Ruth is marked completed in the library (History category).
       expect(find.text('HISTORY'), findsOneWidget);
       expect(find.bySemanticsLabel('Ruth, Completed'), findsOneWidget);
     },

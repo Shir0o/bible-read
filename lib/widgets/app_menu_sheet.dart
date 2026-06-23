@@ -17,6 +17,7 @@ import '../pages/notification_center_page.dart';
 import '../services/notification_service.dart';
 
 import '../pages/settings_page.dart';
+import '../pages/bible_progress_page.dart';
 import '../services/google_sign_in_factory.dart';
 
 class AppMenuSheet extends StatefulWidget {
@@ -155,6 +156,21 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
       ),
       _MenuItem(icon: Icons.emoji_events, label: 'Challenges', index: 5),
       _MenuItem(icon: Icons.people, label: 'Friends', index: 4),
+      _MenuItem(
+        icon: Icons.menu_book,
+        label: 'Bible Library',
+        onTap: (context) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => BibleProgressPage(
+                auth: auth,
+                firestore: firestore,
+                vibrationService: widget.vibrationService,
+              ),
+            ),
+          );
+        },
+      ),
       _MenuItem(icon: Icons.logout, label: 'Sign Out', index: 10),
       _MenuItem(
         icon: Icons.feedback,

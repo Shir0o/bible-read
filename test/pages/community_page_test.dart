@@ -86,14 +86,12 @@ void main() {
   testWidgets('renders empty group state when no groups', (tester) async {
     await pumpPage(tester);
 
-    expect(find.text('Group Progress'), findsOneWidget);
-    expect(find.text('View All'), findsOneWidget);
     expect(find.text('No active groups'), findsOneWidget);
     expect(find.text('Join a group to see progress here.'), findsOneWidget);
   });
 
-  testWidgets('renders group progress card when group exists', (tester) async {
-    // Setup group
+  testWidgets('renders the community reading hero and group list',
+      (tester) async {
     await firestore.collection('groups').doc('g1').set({
       'name': 'My Group',
       'ownerUid': 'u1',
@@ -110,7 +108,6 @@ void main() {
       'joinedAt': Timestamp.now(),
       'name': 'Test User',
     });
-    // Setup schedule
     await firestore
         .collection('groups')
         .doc('g1')
@@ -123,72 +120,14 @@ void main() {
 
     await pumpPage(tester);
 
-    expect(find.text('My Group'), findsOneWidget);
-    expect(find.text('Schedule'), findsOneWidget);
-    expect(find.text('Day 1'), findsOneWidget);
-  });
+    // Hero leads with the shared reading + "read with the community" CTA.
+    expect(find.text("THE COMMUNITY'S READING"), findsOneWidget);
+    expect(find.text('Gen 1'), findsOneWidget);
+    expect(find.text('Read with the community'), findsOneWidget);
 
-  testWidgets('renders friends activity including self', (tester) async {
-    // Setup friend
-    await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('friends')
-        .doc('f1')
-        .set({'uid': 'f1', 'status': 'accepted'});
-
-    // Setup logs
-    final dateKey = '2024-01-01';
-    await firestore
-        .collection('read_logs')
-        .doc(dateKey)
-        .collection('entries')
-        .doc('u1')
-        .set({'name': 'Test', 'timestamp': Timestamp.now()});
-    await firestore
-        .collection('read_logs')
-        .doc(dateKey)
-        .collection('entries')
-        .doc('f1')
-        .set({'name': 'Friend', 'timestamp': Timestamp.now()});
-
-    await pumpPage(tester);
-
-    expect(find.text('Friends Activity'), findsOneWidget);
-    // Use findRichText: true for RichText content
-    expect(find.text('Test', findRichText: true), findsWidgets);
-    expect(find.textContaining('completed', findRichText: true), findsWidgets);
-    expect(find.textContaining('Friend', findRichText: true), findsWidgets);
-  });
-
-  testWidgets('renders commented activity', (tester) async {
-    final dateKey = '2024-01-01';
-    await firestore
-        .collection('read_logs')
-        .doc(dateKey)
-        .collection('entries')
-        .doc('u1')
-        .set({'name': 'Test', 'timestamp': Timestamp.now()});
-    await firestore
-        .collection('read_logs')
-        .doc(dateKey)
-        .collection('entries')
-        .doc('u1')
-        .collection('comments')
-        .add({
-      'uid': 'u1',
-      'name': 'Test',
-      'message': 'Great chapter',
-      'timestamp': Timestamp.now(),
-    });
-
-    await pumpPage(tester);
-
-    expect(
-      find.textContaining('commented on', findRichText: true),
-      findsOneWidget,
-    );
-    expect(find.text('"Great chapter"'), findsOneWidget);
-    expect(find.byIcon(Icons.chat_bubble), findsOneWidget);
+    // "Your reading groups" list shows the group below the hero.
+    expect(find.text('Your reading groups'), findsOneWidget);
+    expect(find.text('Manage'), findsOneWidget);
+    expect(find.text('My Group'), findsWidgets);
   });
 }

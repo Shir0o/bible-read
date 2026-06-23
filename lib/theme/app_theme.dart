@@ -447,8 +447,11 @@ class AppColors extends ThemeExtension<AppColors> {
     primaryLine: Color.fromRGBO(198, 180, 236, 0.30),
     primaryPress: Color(0xFFB6A1E6),
     accentSoft: Color.fromRGBO(225, 180, 136, 0.16),
-    border: Color.fromRGBO(255, 255, 255, 0.075),
-    borderStrong: Color.fromRGBO(255, 255, 255, 0.14),
+    // Slightly stronger than the raw design tokens (0.075 / 0.14): hairline
+    // borders read as near-invisible on real OLED panels, so cards need a touch
+    // more edge to separate from the dark background (per dark-mode feedback).
+    border: Color.fromRGBO(255, 255, 255, 0.11),
+    borderStrong: Color.fromRGBO(255, 255, 255, 0.2),
     highlight: Color.fromRGBO(225, 180, 136, 0.22),
     bg2: Color(0xFF110E17),
     scrim: _scrim,

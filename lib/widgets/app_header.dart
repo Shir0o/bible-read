@@ -50,6 +50,7 @@ class AppHeader extends StatelessWidget {
     final user = auth.currentUser;
     final colorScheme = Theme.of(context).colorScheme;
     final firstName = (user?.displayName ?? 'Friend').split(' ').first;
+    final initial = firstName.isNotEmpty ? firstName[0].toUpperCase() : '?';
 
     return Container(
       constraints: const BoxConstraints(minHeight: 80),
@@ -64,7 +65,7 @@ class AppHeader extends StatelessWidget {
               child: Tooltip(
                 message: 'Open menu',
                 child: Material(
-                  color: colorScheme.surfaceContainerHighest,
+                  color: colorScheme.primaryContainer,
                   shape: const CircleBorder(),
                   clipBehavior: Clip.antiAlias,
                   child: user?.photoURL != null
@@ -101,9 +102,15 @@ class AppHeader extends StatelessWidget {
                             child: SizedBox(
                               width: 40,
                               height: 40,
-                              child: Icon(
-                                Icons.person,
-                                color: colorScheme.onSurfaceVariant,
+                              child: Center(
+                                child: Text(
+                                  initial,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.primary,
+                                  ),
+                                ),
                               ),
                             ),
                           ),

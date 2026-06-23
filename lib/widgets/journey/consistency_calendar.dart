@@ -139,7 +139,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
         children: [
           if (widget.showTitle) ...[
             Text(
-              'Consistency',
+              'Showing up',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 20,

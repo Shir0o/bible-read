@@ -48,8 +48,8 @@ void main() {
     await tester.tap(find.byIcon(Icons.people_outlined));
     await tester.pumpAndSettle();
 
-    // 3. Tap "View All" in Group Progress section
-    await tester.tap(find.text('View All').first);
+    // 3. Open the groups page from the empty Community state.
+    await tester.tap(find.text('Find or create a group'));
     await tester.pumpAndSettle();
 
     // 4. Tap "Join or Create Group" bottom button
