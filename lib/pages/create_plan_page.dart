@@ -366,6 +366,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet<void>(
       context: context,
+      barrierColor: AppColors.of(context).scrim,
       backgroundColor: colorScheme.surface,
       showDragHandle: true,
       isScrollControlled: true,
@@ -828,7 +829,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                     alpha: 0.5,
                   ),
                   border: Border.all(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    color: AppColors.of(context).border,
                     style: BorderStyle.solid,
                   ),
                   borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -1108,7 +1109,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withValues(alpha: 0.2),
+                    color: AppColors.of(context).primarySoft,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(

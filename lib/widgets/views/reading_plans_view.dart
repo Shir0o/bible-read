@@ -55,6 +55,7 @@ class _ReadingPlansViewState extends State<ReadingPlansView>
 
     showDialog(
       context: context,
+      barrierColor: AppColors.of(context).scrim,
       builder: (context) => AlertDialog(
         title: Text('Leave "${plan.title}"?'),
         content: const Text(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 /// What kind of plan the reader chose to start from the new-plan chooser.
 enum NewPlanKind {
   /// A personal plan — just for the reader, at their own pace.
@@ -18,6 +20,7 @@ enum NewPlanKind {
 Future<NewPlanKind?> showNewPlanPicker(BuildContext context) {
   return showModalBottomSheet<NewPlanKind>(
     context: context,
+    barrierColor: AppColors.of(context).scrim,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (sheetContext) => const _NewPlanPickerSheet(),
@@ -123,7 +126,7 @@ class _ChoiceTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colorScheme.outlineVariant),
+          border: Border.all(color: AppColors.of(context).border),
         ),
         child: Row(
           children: [

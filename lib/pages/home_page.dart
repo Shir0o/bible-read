@@ -1353,10 +1353,10 @@ class _HomePageState extends State<HomePage>
               key: const ValueKey('habit_done'),
               padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+                color: AppColors.of(context).primarySoft,
                 borderRadius: BorderRadius.circular(AppSpacing.rCard),
                 border: Border.all(
-                  color: colorScheme.primary.withValues(alpha: 0.15),
+                  color: AppColors.of(context).primaryLine,
                 ),
               ),
               child: Column(
@@ -1406,10 +1406,10 @@ class _HomePageState extends State<HomePage>
               key: const ValueKey('habit_todo'),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+                color: AppColors.of(context).primarySoft,
                 borderRadius: BorderRadius.circular(AppSpacing.rCard),
                 border: Border.all(
-                  color: colorScheme.primary.withValues(alpha: 0.15),
+                  color: AppColors.of(context).primaryLine,
                 ),
               ),
               child: Column(
@@ -1956,8 +1956,8 @@ class _HomePageState extends State<HomePage>
     final accent = item.state == PlanLifecycle.behind ||
         item.state == PlanLifecycle.wrapup;
     final tileColor = accent
-        ? colorScheme.tertiaryContainer.withValues(alpha: 0.5)
-        : colorScheme.primaryContainer.withValues(alpha: 0.4);
+        ? AppColors.of(context).accentSoft
+        : AppColors.of(context).primarySoft;
     final iconColor = accent ? colorScheme.tertiary : colorScheme.primary;
     final IconData icon = item.state == PlanLifecycle.wrapup
         ? Icons.eco_outlined

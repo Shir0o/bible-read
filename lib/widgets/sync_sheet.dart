@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import 'common_styles.dart';
 
 /// The one-time choice that lets finishing a plan reading also count as
@@ -19,6 +21,7 @@ class SyncSheet extends StatelessWidget {
   static Future<bool?> show(BuildContext context) {
     return showModalBottomSheet<bool>(
       context: context,
+      barrierColor: AppColors.of(context).scrim,
       backgroundColor: Theme.of(context).colorScheme.surface,
       showDragHandle: true,
       isScrollControlled: true,

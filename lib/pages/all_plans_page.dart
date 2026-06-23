@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
@@ -407,10 +409,10 @@ class _AllPlansPageState extends State<AllPlansPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
+              color: AppColors.of(context).primarySoft,
               borderRadius: BorderRadius.circular(99),
               border:
-                  Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
+                  Border.all(color: AppColors.of(context).primaryLine),
             ),
             child: Text(
               '$totalActive ongoing',
@@ -455,10 +457,10 @@ class _AllPlansPageState extends State<AllPlansPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
+              color: AppColors.of(context).primarySoft,
               borderRadius: BorderRadius.circular(99),
               border:
-                  Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
+                  Border.all(color: AppColors.of(context).primaryLine),
             ),
             child: Text(
               '$count $countLabel',
@@ -788,7 +790,7 @@ class _AllPlansPageState extends State<AllPlansPage> {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
+              color: AppColors.of(context).primarySoft,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, size: 20, color: colorScheme.primary),
@@ -908,11 +910,11 @@ class _AllPlansPageState extends State<AllPlansPage> {
       onTap: onTap,
       tooltip: pinned ? 'Unpin from Home' : 'Pin as Home primary',
       background: pinned
-          ? colorScheme.primary.withValues(alpha: 0.1)
+          ? AppColors.of(context).primarySoft
           : colorScheme.surfaceContainerHighest,
       borderColor: pinned
-          ? colorScheme.primary.withValues(alpha: 0.3)
-          : colorScheme.outlineVariant.withValues(alpha: 0.4),
+          ? AppColors.of(context).primaryLine
+          : AppColors.of(context).border,
       child: Icon(
         pinned ? Icons.push_pin : Icons.push_pin_outlined,
         size: 18,
@@ -927,7 +929,7 @@ class _AllPlansPageState extends State<AllPlansPage> {
     return _squareButton(
       onTap: onTap,
       background: colorScheme.surfaceContainerHighest,
-      borderColor: colorScheme.outlineVariant.withValues(alpha: 0.4),
+      borderColor: AppColors.of(context).border,
       child: Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
     );
   }
@@ -939,11 +941,11 @@ class _AllPlansPageState extends State<AllPlansPage> {
       onTap: onTap,
       tooltip: 'Leave plan',
       background: confirming
-          ? colorScheme.tertiary.withValues(alpha: 0.12)
+          ? AppColors.of(context).accentSoft
           : colorScheme.surfaceContainerHighest,
       borderColor: confirming
           ? colorScheme.tertiary.withValues(alpha: 0.5)
-          : colorScheme.outlineVariant.withValues(alpha: 0.4),
+          : AppColors.of(context).border,
       child: Icon(
         confirming ? Icons.check : Icons.close,
         size: 18,
@@ -1046,8 +1048,8 @@ class _PlanCardShell extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: pinned
-              ? colorScheme.primary.withValues(alpha: 0.4)
-              : colorScheme.outlineVariant.withValues(alpha: 0.2),
+              ? AppColors.of(context).primaryLine
+              : AppColors.of(context).border,
         ),
       ),
       child: child,
