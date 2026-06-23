@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/group.dart';
 import '../models/group_invite.dart';
 
@@ -116,6 +118,7 @@ class _GroupsPageState extends State<GroupsPage> {
     unawaited(widget.vibrationService.lightImpact());
     showModalBottomSheet(
       context: context,
+      barrierColor: AppColors.of(context).scrim,
       showDragHandle: true,
       builder: (context) {
         return SafeArea(
@@ -308,11 +311,11 @@ class _GroupsPageState extends State<GroupsPage> {
           (invite) => Card(
             margin: const EdgeInsets.only(bottom: 8),
             elevation: 0,
-            color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+            color: AppColors.of(context).primarySoft,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
-                color: colorScheme.primary.withValues(alpha: 0.1),
+                color: AppColors.of(context).primaryLine,
               ),
             ),
             child: Padding(

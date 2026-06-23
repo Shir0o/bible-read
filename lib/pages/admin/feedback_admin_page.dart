@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/admin_role_service.dart';
+import '../../theme/app_theme.dart';
 import '../../services/error_logger.dart';
 import '../../services/feedback_service.dart';
 
@@ -378,6 +379,7 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
     final controller = TextEditingController(text: initialValue ?? '');
     final result = await showDialog<String>(
       context: context,
+      barrierColor: AppColors.of(context).scrim,
       builder: (context) {
         return AlertDialog(
           title: Text(title),

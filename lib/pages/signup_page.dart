@@ -278,7 +278,7 @@ class _SignupPageState extends State<SignupPage> {
           enabledBorder: UnderlineInputBorder(
             borderRadius: inputRadius,
             borderSide: BorderSide(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+              color: AppColors.of(context).border,
             ),
           ),
           focusedBorder: UnderlineInputBorder(

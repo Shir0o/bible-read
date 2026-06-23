@@ -4,6 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/group.dart';
 import '../models/group_invite.dart';
 import '../models/group_member_progress.dart';
@@ -176,7 +178,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                 if (i > 0)
                   Divider(
                     height: 1,
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    color: AppColors.of(context).border,
                   ),
                 _buildMemberRow(
                   sorted[i],
@@ -280,8 +282,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                     if (i > 0)
                       Divider(
                         height: 1,
-                        color:
-                            colorScheme.outlineVariant.withValues(alpha: 0.5),
+                        color: AppColors.of(context).border,
                       ),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 11),
@@ -362,6 +363,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   void _openActionSheet(GroupMemberRole member, String myRole) {
     showModalBottomSheet<void>(
       context: context,
+      barrierColor: AppColors.of(context).scrim,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
@@ -524,6 +526,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   }) {
     return showDialog<bool>(
       context: context,
+      barrierColor: AppColors.of(context).scrim,
       builder: (dialogContext) => AlertDialog(
         title: Text(title),
         content: Text(body),

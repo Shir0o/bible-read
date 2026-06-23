@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../services/bible_progress_service.dart';
 import '../services/reference_parser.dart';
 import '../services/error_logger.dart';
@@ -197,6 +199,7 @@ class BibleProgressPageState extends State<BibleProgressPage> {
     if (isCurrentlyCompleted) {
       final confirmed = await showDialog<bool>(
         context: context,
+        barrierColor: AppColors.of(context).scrim,
         builder: (context) => AlertDialog.adaptive(
           title: Text('Mark $book as unread?'),
           content: Text('This will remove the manual completion for $book.'),
@@ -216,6 +219,7 @@ class BibleProgressPageState extends State<BibleProgressPage> {
     } else {
       final confirmed = await showDialog<bool>(
         context: context,
+        barrierColor: AppColors.of(context).scrim,
         builder: (context) => AlertDialog.adaptive(
           title: Text('Complete $book?'),
           content: Text('Mark $book as read?'),

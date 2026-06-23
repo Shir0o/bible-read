@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
 
@@ -43,6 +45,7 @@ Future<void> showNudgeSheet(
 }) {
   return showModalBottomSheet<void>(
     context: context,
+    barrierColor: AppColors.of(context).scrim,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (sheetContext) => _NudgeSheet(
@@ -386,11 +389,13 @@ class _PresetTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
           color: selected
-              ? colorScheme.primaryContainer
+              ? AppColors.of(context).primarySoft
               : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+            color: selected
+                ? AppColors.of(context).primaryLine
+                : AppColors.of(context).border,
           ),
         ),
         child: Row(

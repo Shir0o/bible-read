@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
 import '../services/catch_up_engine.dart';
@@ -68,6 +70,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
 
     final DateTime? pickedDate = await showModalBottomSheet<DateTime>(
       context: context,
+      barrierColor: AppColors.of(context).scrim,
       backgroundColor: Theme.of(context).colorScheme.surface,
       showDragHandle: true,
       builder: (context) {

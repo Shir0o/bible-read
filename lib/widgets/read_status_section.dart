@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'read_switch_tile.dart';
+import '../theme/app_theme.dart';
 import '../services/vibration_service.dart';
 
 class ReadStatusSection extends StatelessWidget {
@@ -50,6 +51,7 @@ class ReadStatusSection extends StatelessWidget {
                   unawaited(vibrationService?.lightImpact());
                   showDialog(
                     context: context,
+                    barrierColor: AppColors.of(context).scrim,
                     builder: (context) => AlertDialog(
                       content: const Text(
                         'Each month includes two automatic grace credits to freeze a missed day. '

@@ -70,15 +70,15 @@ class AppTheme {
     brightness: Brightness.light,
     primary: Color(0xFF6A53AD), // --primary
     onPrimary: Color(0xFFFFFFFF), // --on-primary
-    primaryContainer: Color(0xFFEDE9F5), // --primary-soft (solid tint)
+    primaryContainer: Color(0xFFF0ECF2), // --primary-soft flattened over --surface
     onPrimaryContainer: Color(0xFF5B449E), // --primary-press
     secondary: Color(0xFF6A53AD),
     onSecondary: Color(0xFFFFFFFF),
-    secondaryContainer: Color(0xFFEDE9F5),
+    secondaryContainer: Color(0xFFF0ECF2), // --primary-soft flattened
     onSecondaryContainer: Color(0xFF5B449E),
-    tertiary: Color(0xFFBE8A52), // --accent (warm gold)
+    tertiary: Color(0xFFA0702F), // --accent (warm gold, solid)
     onTertiary: Color(0xFFFFFFFF),
-    tertiaryContainer: Color(0xFFF3E8D9),
+    tertiaryContainer: Color(0xFFF6EDE3), // --accent-soft flattened
     onTertiaryContainer: Color(0xFF6E4D20),
     error: Color(0xFFB3261E),
     onError: Color(0xFFFFFFFF),
@@ -94,8 +94,8 @@ class AppTheme {
     surfaceContainerHighest: Color(0xFFE3DBCC),
     surfaceDim: Color(0xFFDDD6C9),
     surfaceBright: Color(0xFFFBF8F2),
-    outline: Color(0xFFA8A0AC), // --text-faint
-    outlineVariant: Color(0xFFDCD6DF), // --border (light)
+    outline: Color(0xFF8C8694), // --text-faint
+    outlineVariant: Color(0xFFEDEAEA), // --border flattened over --surface
     inverseSurface: Color(0xFF322C3B),
     onInverseSurface: Color(0xFFF4EFF6),
     inversePrimary: Color(0xFFC6B4EC),
@@ -109,15 +109,15 @@ class AppTheme {
     brightness: Brightness.dark,
     primary: Color(0xFFC6B4EC), // --primary (dark)
     onPrimary: Color(0xFF22153D), // --on-primary (dark)
-    primaryContainer: Color(0xFF3A2D55),
+    primaryContainer: Color(0xFF342D40), // --primary-soft flattened over --surface
     onPrimaryContainer: Color(0xFFE5DCF7),
     secondary: Color(0xFFC6B4EC),
     onSecondary: Color(0xFF22153D),
-    secondaryContainer: Color(0xFF2E2640),
+    secondaryContainer: Color(0xFF342D40), // --primary-soft flattened
     onSecondaryContainer: Color(0xFFE5DCF7),
     tertiary: Color(0xFFE1B488), // --accent (dark)
     onTertiary: Color(0xFF3A2410),
-    tertiaryContainer: Color(0xFF4D3620),
+    tertiaryContainer: Color(0xFF3D3236), // --accent-soft flattened
     onTertiaryContainer: Color(0xFFF5E0CC),
     error: Color(0xFFF2B8B5),
     onError: Color(0xFF601410),
@@ -134,7 +134,7 @@ class AppTheme {
     surfaceDim: Color(0xFF16121D),
     surfaceBright: Color(0xFF3C3447),
     outline: Color(0xFF6E6781), // --text-faint (dark)
-    outlineVariant: Color(0xFF353040), // --border (dark)
+    outlineVariant: Color(0xFF2F2A36), // --border flattened over --surface (dark)
     inverseSurface: Color(0xFFECE7F3),
     onInverseSurface: Color(0xFF322C3B),
     inversePrimary: Color(0xFF6A53AD),
@@ -158,6 +158,7 @@ class AppTheme {
     final baseTextTheme = isLight ? textTheme : primaryTextTheme;
     final onSurface = colorScheme.onSurface;
     final onVariant = colorScheme.onSurfaceVariant;
+    final appColors = isLight ? AppColors.light : AppColors.dark;
 
     // Apply the design type scale on top of the sans (Hanken) base. Display /
     // headline / title-large slots switch to the Spectral serif; the remaining
@@ -262,6 +263,9 @@ class AppTheme {
     return ThemeData(
       brightness: colorScheme.brightness,
       colorScheme: colorScheme,
+      extensions: <ThemeExtension<dynamic>>[
+        isLight ? AppColors.light : AppColors.dark,
+      ],
       useMaterial3: true,
       fontFamily: fontUi,
       textTheme: themedText,
@@ -287,7 +291,7 @@ class AppTheme {
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.rCard),
-          side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+          side: BorderSide(color: appColors.border, width: 1),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -370,6 +374,133 @@ class AppTheme {
           fontWeight: FontWeight.w600,
         ),
       ),
+    );
+  }
+}
+
+/// Design tokens that don't map cleanly onto Material's [ColorScheme] — the
+/// translucent overlay/border colors and a few solids from `app/theme.jsx`.
+///
+/// These keep their alpha so they blend correctly over whatever surface they
+/// land on (a card, the page background, a sheet), which is why they live here
+/// rather than being flattened into [ColorScheme]. Access via
+/// `AppColors.of(context)`.
+@immutable
+class AppColors extends ThemeExtension<AppColors> {
+  const AppColors({
+    required this.primarySoft,
+    required this.primaryLine,
+    required this.primaryPress,
+    required this.accentSoft,
+    required this.border,
+    required this.borderStrong,
+    required this.highlight,
+    required this.bg2,
+    required this.scrim,
+  });
+
+  /// Soft primary fill — `--primary-soft`. Selected/active chip & pill grounds.
+  final Color primarySoft;
+
+  /// Translucent primary hairline — `--primary-line`. Selected/outlined borders.
+  final Color primaryLine;
+
+  /// Solid pressed-primary — `--primary-press`.
+  final Color primaryPress;
+
+  /// Soft warm-accent fill — `--accent-soft`.
+  final Color accentSoft;
+
+  /// Generic translucent border — `--border`. Card hairlines, dividers.
+  final Color border;
+
+  /// Emphasized translucent border — `--border-strong`.
+  final Color borderStrong;
+
+  /// Scripture/text highlight — `--hl`. (No consumer yet; defined for parity.)
+  final Color highlight;
+
+  /// Recessed background — `--bg-2`.
+  final Color bg2;
+
+  /// Modal barrier scrim — design `rgba(10,8,14,0.42)`, same in both modes.
+  final Color scrim;
+
+  static const Color _scrim = Color.fromRGBO(10, 8, 14, 0.42);
+
+  /// Warm-paper light mode tokens.
+  static const AppColors light = AppColors(
+    primarySoft: Color.fromRGBO(106, 83, 173, 0.10),
+    primaryLine: Color.fromRGBO(106, 83, 173, 0.26),
+    primaryPress: Color(0xFF5B449E),
+    accentSoft: Color.fromRGBO(190, 138, 82, 0.14),
+    border: Color.fromRGBO(43, 33, 58, 0.085),
+    borderStrong: Color.fromRGBO(43, 33, 58, 0.15),
+    highlight: Color.fromRGBO(190, 138, 82, 0.20),
+    bg2: Color(0xFFEDE7DC),
+    scrim: _scrim,
+  );
+
+  /// Deep-aubergine night mode tokens.
+  static const AppColors dark = AppColors(
+    primarySoft: Color.fromRGBO(198, 180, 236, 0.13),
+    primaryLine: Color.fromRGBO(198, 180, 236, 0.30),
+    primaryPress: Color(0xFFB6A1E6),
+    accentSoft: Color.fromRGBO(225, 180, 136, 0.16),
+    border: Color.fromRGBO(255, 255, 255, 0.075),
+    borderStrong: Color.fromRGBO(255, 255, 255, 0.14),
+    highlight: Color.fromRGBO(225, 180, 136, 0.22),
+    bg2: Color(0xFF110E17),
+    scrim: _scrim,
+  );
+
+  /// The [AppColors] for the current theme. Falls back to the brightness-
+  /// appropriate token set if the extension isn't registered (e.g. a widget
+  /// rendered under a bare [MaterialApp] in a test or preview).
+  static AppColors of(BuildContext context) {
+    final theme = Theme.of(context);
+    return theme.extension<AppColors>() ??
+        (theme.brightness == Brightness.dark ? dark : light);
+  }
+
+  @override
+  AppColors copyWith({
+    Color? primarySoft,
+    Color? primaryLine,
+    Color? primaryPress,
+    Color? accentSoft,
+    Color? border,
+    Color? borderStrong,
+    Color? highlight,
+    Color? bg2,
+    Color? scrim,
+  }) {
+    return AppColors(
+      primarySoft: primarySoft ?? this.primarySoft,
+      primaryLine: primaryLine ?? this.primaryLine,
+      primaryPress: primaryPress ?? this.primaryPress,
+      accentSoft: accentSoft ?? this.accentSoft,
+      border: border ?? this.border,
+      borderStrong: borderStrong ?? this.borderStrong,
+      highlight: highlight ?? this.highlight,
+      bg2: bg2 ?? this.bg2,
+      scrim: scrim ?? this.scrim,
+    );
+  }
+
+  @override
+  AppColors lerp(ThemeExtension<AppColors>? other, double t) {
+    if (other is! AppColors) return this;
+    return AppColors(
+      primarySoft: Color.lerp(primarySoft, other.primarySoft, t)!,
+      primaryLine: Color.lerp(primaryLine, other.primaryLine, t)!,
+      primaryPress: Color.lerp(primaryPress, other.primaryPress, t)!,
+      accentSoft: Color.lerp(accentSoft, other.accentSoft, t)!,
+      border: Color.lerp(border, other.border, t)!,
+      borderStrong: Color.lerp(borderStrong, other.borderStrong, t)!,
+      highlight: Color.lerp(highlight, other.highlight, t)!,
+      bg2: Color.lerp(bg2, other.bg2, t)!,
+      scrim: Color.lerp(scrim, other.scrim, t)!,
     );
   }
 }

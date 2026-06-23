@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import '../theme/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -52,6 +54,7 @@ class AppMenuSheet extends StatefulWidget {
 
     return showModalBottomSheet(
       context: context,
+      barrierColor: AppColors.of(context).scrim,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {

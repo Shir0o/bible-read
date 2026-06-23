@@ -34,7 +34,7 @@ class CommonStyles {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+        side: BorderSide(color: AppColors.of(context).border, width: 1),
       ),
       margin: margin ??
           const EdgeInsets.symmetric(
@@ -63,7 +63,7 @@ class CommonStyles {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: radius,
-        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+        side: BorderSide(color: AppColors.of(context).border, width: 1),
       ),
       margin: margin ??
           const EdgeInsets.symmetric(
@@ -100,7 +100,7 @@ class CommonStyles {
       color: colorScheme.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+        side: BorderSide(color: AppColors.of(context).border, width: 1),
       ),
       child: child,
     );

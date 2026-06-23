@@ -333,10 +333,10 @@ class _TodayAnchorCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+        color: AppColors.of(context).primarySoft,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.25),
+          color: AppColors.of(context).primaryLine,
         ),
       ),
       child: Column(

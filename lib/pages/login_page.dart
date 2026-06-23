@@ -194,6 +194,7 @@ class _LoginPageState extends State<LoginPage> {
 
     await showDialog(
       context: context,
+      barrierColor: AppColors.of(context).scrim,
       builder: (context) {
         return _ForgotPasswordDialog(
           auth: widget.auth,

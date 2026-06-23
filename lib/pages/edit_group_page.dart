@@ -307,6 +307,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
   Future<void> _archiveGroup() async {
     final confirm = await showDialog<bool>(
       context: context,
+      barrierColor: AppColors.of(context).scrim,
       builder: (context) => AlertDialog(
         title: const Text('Archive Group'),
         content: const Text(
@@ -351,6 +352,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
   Future<void> _kickMember(String uid, String name) async {
     final confirm = await showDialog<bool>(
       context: context,
+      barrierColor: AppColors.of(context).scrim,
       builder: (context) => AlertDialog(
         title: const Text('Remove Member'),
         content: Text('Remove $name from the group?'),
