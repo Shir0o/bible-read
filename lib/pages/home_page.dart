@@ -738,20 +738,8 @@ class _HomePageState extends State<HomePage>
       widget.readingStatusService.invalidateCache();
       unawaited(_loadReadStatus(showLoading: false));
 
-      if (!wasRead) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Daily reading marked as complete.'),
-              action: SnackBarAction(
-                label: 'Undo',
-                onPressed: () => _toggleReadStatus(),
-              ),
-            ),
-          );
-        }
-      }
+      // No success snackbar: the affirmation card (with its "Tap to undo" pill)
+      // is the confirmation, matching the design's read state.
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to mark reading: $e');
@@ -1175,7 +1163,7 @@ class _HomePageState extends State<HomePage>
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: colorScheme.surfaceContainerHighest,
+                  color: colorScheme.primaryContainer,
                   image: user?.photoURL != null
                       ? DecorationImage(
                           image: CachedNetworkImageProvider(user!.photoURL!),
@@ -1190,7 +1178,7 @@ class _HomePageState extends State<HomePage>
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurfaceVariant,
+                          color: colorScheme.primary,
                         ),
                       )
                     : null,
@@ -1329,6 +1317,102 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  /// Filled lavender medallion with concentric rings + glow — the "small reward"
+  /// shown when the daily habit is marked (the design's affirm state).
+  Widget _buildAffirmMedallion(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final line = AppColors.of(context).primaryLine;
+    return SizedBox(
+      width: 104,
+      height: 104,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Outer concentric ring (faint).
+          Container(
+            width: 104,
+            height: 104,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: line.withValues(alpha: 0.18)),
+            ),
+          ),
+          // Inner concentric ring.
+          Container(
+            width: 84,
+            height: 84,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: line.withValues(alpha: 0.32)),
+            ),
+          ),
+          // The medallion itself — solid primary with a soft glow.
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: colorScheme.primary,
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primary.withValues(alpha: 0.45),
+                  blurRadius: 28,
+                  spreadRadius: -10,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.check_rounded,
+              size: 31,
+              color: colorScheme.onPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Compact "Tap to undo" pill beneath the affirmation (replaces the old
+  /// outlined button + redundant snackbar).
+  Widget _buildUndoPill(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Material(
+      color: colorScheme.surfaceContainerLowest,
+      shape: StadiumBorder(
+        side: BorderSide(color: AppColors.of(context).primaryLine),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: _toggleLoading ? null : _toggleReadStatus,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_toggleLoading)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                Icon(Icons.close_rounded, size: 14, color: colorScheme.primary),
+              const SizedBox(width: 6),
+              Text(
+                'Tap to undo',
+                style: AppTextStyles.bodySmall(context).copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// The daily habit — the heartbeat of Home. Visually dominant; one tap; never
   /// gated by, and never advancing, any plan.
   Widget _buildHabitHero(BuildContext context, {required bool hasPlan}) {
@@ -1351,9 +1435,17 @@ class _HomePageState extends State<HomePage>
       child: _readToday
           ? Container(
               key: const ValueKey('habit_done'),
-              padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
               decoration: BoxDecoration(
-                color: AppColors.of(context).primarySoft,
+                gradient: RadialGradient(
+                  center: const Alignment(0, -0.75),
+                  radius: 1.15,
+                  colors: [
+                    colorScheme.surfaceContainerLowest,
+                    colorScheme.primaryContainer,
+                  ],
+                  stops: const [0.0, 0.85],
+                ),
                 borderRadius: BorderRadius.circular(AppSpacing.rCard),
                 border: Border.all(
                   color: AppColors.of(context).primaryLine,
@@ -1362,43 +1454,20 @@ class _HomePageState extends State<HomePage>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.check_circle_outline_rounded,
-                    size: 72,
-                    color: colorScheme.primary.withValues(alpha: 0.85),
-                  ),
-                  const SizedBox(height: 20),
+                  _buildAffirmMedallion(context),
+                  const SizedBox(height: 16),
                   Text(
                     'Thank you for being here',
                     style: AppTextStyles.title(context).copyWith(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w400,
-                      color: colorScheme.onSurface.withValues(alpha: 0.9),
+                      fontSize: 26,
+                      fontWeight: FontWeight.w500,
+                      height: 1.12,
+                      color: colorScheme.onSurface,
                     ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: _toggleLoading ? null : _toggleReadStatus,
-                    icon: _toggleLoading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2.5),
-                          )
-                        : Icon(Icons.undo_rounded,
-                            size: 20, color: colorScheme.primary),
-                    label: const Text('Undo'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.primary,
-                      side: BorderSide(
-                        color: colorScheme.primary.withValues(alpha: 0.4),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
+                  _buildUndoPill(context),
                 ],
               ),
             )

@@ -1,5 +1,4 @@
 import 'package:bible_read/pages/journey_page.dart';
-import 'package:bible_read/widgets/journey/bible_library_grid.dart';
 import 'package:bible_read/widgets/journey/consistency_calendar.dart';
 import 'package:bible_read/widgets/app_header.dart';
 import 'package:bible_read/widgets/journey/journey_progress_card.dart';
@@ -53,7 +52,9 @@ void main() {
 
     expect(find.byType(AppHeader), findsOneWidget);
     expect(find.byType(JourneyProgressCard), findsOneWidget);
-    expect(find.byType(BibleLibraryGrid), findsOneWidget);
     expect(find.byType(ConsistencyCalendar), findsOneWidget);
+    // Path redesign: Bible Library was removed; stat tiles + "Showing up" added.
+    expect(find.text('Shown up'), findsOneWidget);
+    expect(find.text('Showing up'), findsOneWidget);
   });
 }

@@ -319,7 +319,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.people_outlined));
     await tester.pumpAndSettle();
     // CommunityPage is shown directly
-    expect(find.text('Friends Activity'), findsOneWidget);
+    expect(find.text('No active groups'), findsOneWidget);
     responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
@@ -761,7 +761,9 @@ void main() {
     expect(wasCalled, isTrue);
     expect(calledUid, 'owner456');
     expect(calledName, 'Test');
-  });
+    // Skipped: the Friends Activity feed (and its like button) was removed from
+    // Community in the "Circle" redesign.
+  }, skip: true);
 
   testWidgets('calls sendCommentNotification when a comment is submitted', (
     tester,
@@ -922,7 +924,7 @@ void main() {
     // Navigate to a different page first
     await tester.tap(find.byIcon(Icons.people_outlined));
     await tester.pumpAndSettle();
-    expect(find.text('Friends Activity'), findsOneWidget);
+    expect(find.text('No active groups'), findsOneWidget);
 
     // Go to profile through the menu and sign out
     state.navigateFromMenu(10);

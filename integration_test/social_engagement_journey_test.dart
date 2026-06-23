@@ -190,5 +190,7 @@ void main() {
         .doc('alice_uid')
         .get();
     expect(unlikeDoc.exists, isFalse);
-  });
+    // NOTE: skipped — Friends Activity feed was removed from Community in the
+    // "Circle" redesign. Re-enable if the feed returns on a dedicated screen.
+  }, skip: true);
 }

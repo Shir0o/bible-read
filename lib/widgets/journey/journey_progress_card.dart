@@ -9,7 +9,6 @@ import '../../services/reading_plan_service.dart';
 import '../../pages/plan_detail_page.dart';
 import '../../pages/reading_plans_page.dart';
 import '../../pages/create_plan_page.dart';
-import '../schedule_preview.dart';
 import '../skeleton.dart';
 import '../skeleton_loader.dart';
 import '../catch_up_status_row.dart';
@@ -147,7 +146,7 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                     }
                   },
                   child: Text(
-                    'Details',
+                    'Manage',
                     style: TextStyle(
                       color: colorScheme.primary,
                       fontWeight: FontWeight.bold,
@@ -315,15 +314,9 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
     final currentDay = completedCount + 1;
     final isCompleted = completedCount >= totalCount;
 
-    // The plan's long arc lives on Journey: progress meter (above) plus the
-    // schedule/catch-up preview (below). Driven by CatchUpEngine so it stays
-    // cadence-agnostic and matches the catch-up surfaced on Home (#722).
-    final catchUp = CatchUpEngine.forPersonalPlan(
-      plan,
-      progress,
-      today: DateTime.now(),
-    );
-
+    // The hero shows the plan's long arc — progress meter + an inline catch-up
+    // row. The full schedule lives behind the plan detail / "View full
+    // schedule", not embedded here (Path redesign).
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -532,25 +525,6 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
               ],
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        SchedulePreview(
-          status: catchUp,
-          title: 'Schedule',
-          onViewFull: () {
-            unawaited(widget.vibrationService.lightImpact());
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => PlanDetailPage(
-                  plan: plan,
-                  firestore: widget.firestore,
-                  auth: widget.auth,
-                  initialProgress: progress,
-                  vibrationService: widget.vibrationService,
-                ),
-              ),
-            );
-          },
         ),
       ],
     );

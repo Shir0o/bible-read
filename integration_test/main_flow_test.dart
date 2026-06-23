@@ -45,7 +45,7 @@ void main() {
     // Tap Community tab
     await tester.tap(find.text('Community'));
     await tester.pumpAndSettle();
-    expect(find.text('Friends Activity'), findsOneWidget);
+    expect(find.text('Community'), findsWidgets);
     await takeScreenshot(tester, '02_community_tab');
 
     // Tap Journey tab
