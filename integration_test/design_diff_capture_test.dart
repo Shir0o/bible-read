@@ -197,11 +197,16 @@ void main() {
     // ===================== LIGHT, not-yet-read =====================
     await pumpApp(AppTheme.designLightScheme);
 
-    // Convert the surface to an image exactly once for this session.
+    // Convert the surface to an image exactly once for this session. This is a
+    // critical setup step for capture, so surface any failure (which would
+    // otherwise produce blank/garbage screenshots) instead of swallowing it.
     try {
       await screenshotBinding.convertFlutterSurfaceToImage();
       await tester.pump();
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('convertFlutterSurfaceToImage failed: $e\n$st');
+      rethrow;
+    }
 
     // Tab switches first, from a clean top state (dragging before a tab tap was
     // making the bottom-nav hit-test miss).
