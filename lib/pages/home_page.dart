@@ -168,15 +168,11 @@ class _HomePageState extends State<HomePage>
   /// Whether the primary plan card's mark is mid-write.
   bool _planToggleLoading = false;
 
-  // Group state. Powers the "together" reading card under Today's reading: the
-  // user's first group, today's scheduled chapters, member presence and the
-  // catch-up set used by the shared CatchUpStatusRow.
-  Group? _group;
-  List<GroupSchedule> _groupSchedule = [];
-  GroupSchedule? _groupToday;
-  List<GroupMemberProgressData> _groupMembers = [];
-  Set<String> _groupCompletedDateIds = {};
-  bool _groupMarkLoading = false;
+  // Group state. Powers the "together" reading cards under Today's reading: every
+  // group the user belongs to, each with today's scheduled chapters, member
+  // presence and the catch-up set used by the shared CatchUpStatusRow. Keyed by
+  // group id; insertion order is preserved so ranking stays stable.
+  final Map<String, _GroupData> _groups = {};
 
   // Community presence. The bottom "Your community" glimpse — who among the
   // user and their friends has read today.
@@ -298,62 +294,65 @@ class _HomePageState extends State<HomePage>
       );
       if (groups.isEmpty) {
         if (!_disposed && mounted) {
-          setState(() {
-            _group = null;
-            _groupToday = null;
-          });
+          setState(() => _groups.clear());
         }
         return;
       }
 
-      // Surface the pinned group if the user pinned one, otherwise the first.
-      final pinned = _pinnedReadingId;
-      final group = (pinned != null && pinned.startsWith('group:'))
-          ? groups.firstWhere((g) => 'group:${g.id}' == pinned,
-              orElse: () => groups.first)
-          : groups.first;
       final today = _dateOnly(widget.dateProvider());
 
-      final results = await Future.wait([
-        _firstWithTimeout<List<GroupSchedule>>(
-          widget.groupService.schedule(group.id),
-          timeout: const Duration(seconds: 3),
-          fallback: const <GroupSchedule>[],
-        ),
-        _firstWithTimeout<List<GroupMemberProgressData>>(
-          widget.groupService.memberDailyCompletion(group.id, includeUid: uid),
-          timeout: const Duration(seconds: 3),
-          fallback: const <GroupMemberProgressData>[],
-        ),
-        _firstWithTimeout<Map<String, int>>(
-          widget.groupService.userProgressForGroup(group.id, uid),
-          timeout: const Duration(seconds: 3),
-          fallback: const <String, int>{},
-        ),
-      ]);
+      // Load every group the user belongs to in parallel — each group's
+      // schedule, today's member presence, and the user's per-chapter progress —
+      // so they can all participate in the Today's-reading hero/list ranking.
+      final loaded = await Future.wait(groups.map((group) async {
+        final results = await Future.wait([
+          _firstWithTimeout<List<GroupSchedule>>(
+            widget.groupService.schedule(group.id),
+            timeout: const Duration(seconds: 3),
+            fallback: const <GroupSchedule>[],
+          ),
+          _firstWithTimeout<List<GroupMemberProgressData>>(
+            widget.groupService
+                .memberDailyCompletion(group.id, includeUid: uid),
+            timeout: const Duration(seconds: 3),
+            fallback: const <GroupMemberProgressData>[],
+          ),
+          _firstWithTimeout<Map<String, int>>(
+            widget.groupService.userProgressForGroup(group.id, uid),
+            timeout: const Duration(seconds: 3),
+            fallback: const <String, int>{},
+          ),
+        ]);
 
-      final schedule = results[0] as List<GroupSchedule>;
-      final members = results[1] as List<GroupMemberProgressData>;
-      final progress = results[2] as Map<String, int>;
+        final schedule = results[0] as List<GroupSchedule>;
+        final members = results[1] as List<GroupMemberProgressData>;
+        final progress = results[2] as Map<String, int>;
 
-      GroupSchedule? todayEntry;
-      for (final s in schedule) {
-        if (_dateOnly(s.date) == today) {
-          todayEntry = s;
-          break;
+        GroupSchedule? todayEntry;
+        for (final s in schedule) {
+          if (_dateOnly(s.date) == today) {
+            todayEntry = s;
+            break;
+          }
         }
-      }
+
+        return _GroupData(
+          group: group,
+          schedule: schedule,
+          today: todayEntry,
+          members: members,
+          completedDateIds: progress.entries
+              .where((e) => e.value > 0)
+              .map((e) => e.key)
+              .toSet(),
+        );
+      }));
 
       if (!_disposed && mounted) {
         setState(() {
-          _group = group;
-          _groupSchedule = schedule;
-          _groupToday = todayEntry;
-          _groupMembers = members;
-          _groupCompletedDateIds = progress.entries
-              .where((e) => e.value > 0)
-              .map((e) => e.key)
-              .toSet();
+          _groups
+            ..clear()
+            ..addEntries(loaded.map((g) => MapEntry(g.group.id, g)));
         });
       }
     } catch (e, st) {
@@ -560,15 +559,16 @@ class _HomePageState extends State<HomePage>
       items.add(_ReadingItem.personal(pp.plan, pp.progress, status, state));
     }
 
-    if (_group != null && _groupSchedule.isNotEmpty) {
+    for (final g in _groups.values) {
+      if (g.schedule.isEmpty) continue;
       final status = CatchUpEngine.forGroupSchedule(
-        _groupSchedule,
-        _groupCompletedDateIds,
+        g.schedule,
+        g.completedDateIds,
         today: today,
       );
       final state = status.lifecycleAt(today);
       if (state != PlanLifecycle.complete) {
-        items.add(_ReadingItem.group(_group!, status, state));
+        items.add(_ReadingItem.group(g.group, status, state));
       }
     }
 
@@ -874,34 +874,33 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Whether the current user has marked today's group reading complete.
-  bool get _groupReadToday {
+  /// Whether the current user has marked today's reading complete for [g].
+  bool _groupReadToday(_GroupData g) {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return false;
-    for (final m in _groupMembers) {
+    for (final m in g.members) {
       if (m.uid == uid) return m.completion >= 1.0;
     }
     return false;
   }
 
-  /// Marks (or unmarks) today's group reading for the current user via the
-  /// shared group progress API, then optimistically reflects it in the local
-  /// member-presence list so the card updates immediately.
-  Future<void> _toggleGroupReading() async {
+  /// Marks (or unmarks) today's reading for group [g] for the current user via
+  /// the shared group progress API, then optimistically reflects it in that
+  /// group's member-presence list so the card updates immediately.
+  Future<void> _toggleGroupReading(_GroupData g) async {
     final user = widget.auth.currentUser;
-    final group = _group;
-    final today = _groupToday;
-    if (user == null || group == null || today == null) return;
-    if (_groupMarkLoading) return;
+    final today = g.today;
+    if (user == null || today == null) return;
+    if (g.markLoading) return;
 
     unawaited(widget.vibrationService.lightImpact());
-    final wasRead = _groupReadToday;
-    final previousMembers = List<GroupMemberProgressData>.from(_groupMembers);
+    final wasRead = _groupReadToday(g);
+    final previousMembers = List<GroupMemberProgressData>.from(g.members);
 
     if (!_disposed && mounted) {
       setState(() {
-        _groupMarkLoading = true;
-        _groupMembers = _groupMembers
+        g.markLoading = true;
+        g.members = g.members
             .map((m) => m.uid == user.uid
                 ? GroupMemberProgressData(
                     uid: m.uid,
@@ -916,7 +915,7 @@ class _HomePageState extends State<HomePage>
 
     try {
       await widget.groupService.toggleReadStatus(
-        groupId: group.id,
+        groupId: g.group.id,
         uid: user.uid,
         schedule: today,
         read: !wasRead,
@@ -929,7 +928,7 @@ class _HomePageState extends State<HomePage>
               content: const Text('Group reading marked as complete.'),
               action: SnackBarAction(
                 label: 'Undo',
-                onPressed: () => _toggleGroupReading(),
+                onPressed: () => _toggleGroupReading(g),
               ),
             ),
           );
@@ -951,7 +950,7 @@ class _HomePageState extends State<HomePage>
     } catch (e, st) {
       ErrorLogger.log(e, st);
       if (!_disposed && mounted) {
-        setState(() => _groupMembers = previousMembers);
+        setState(() => g.members = previousMembers);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to update reading. Please try again.'),
@@ -960,7 +959,7 @@ class _HomePageState extends State<HomePage>
       }
     } finally {
       if (!_disposed && mounted) {
-        setState(() => _groupMarkLoading = false);
+        setState(() => g.markLoading = false);
       }
     }
   }
@@ -1306,7 +1305,11 @@ class _HomePageState extends State<HomePage>
               const SizedBox(height: 40),
               _buildConsistencyGlimpse(context),
             ],
-            if (_communityReaders.isNotEmpty) ...[
+            // The community glimpse is always present once the user's circle has
+            // loaded (matching the prototype), with an empty state when nobody
+            // has read yet. `_communityTotal` counts the user, so it is >0 once
+            // `_loadCommunity` completes.
+            if (_communityTotal > 0) ...[
               const SizedBox(height: 32),
               _buildCommunitySection(context),
             ],
@@ -1638,6 +1641,22 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  /// Ghost-style "Mark as read" button — a clear step above the reading card
+  /// surface (prototype `.btn-ghost`: `--surface-2` fill + `--border-strong`),
+  /// so it reads as a distinct control even in dark mode where the card and a
+  /// tonal fill would otherwise share the same luminance.
+  ButtonStyle _ghostMarkButtonStyle(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return FilledButton.styleFrom(
+      backgroundColor: colorScheme.surfaceContainerLow,
+      foregroundColor: colorScheme.onSurface,
+      side: BorderSide(color: AppColors.of(context).borderStrong),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+    );
+  }
+
   /// Hero card for a personal plan — the current reading with its own mark.
   Widget _buildPersonalReadingCard(BuildContext context, _ReadingItem item) {
     final theme = Theme.of(context);
@@ -1655,10 +1674,10 @@ class _HomePageState extends State<HomePage>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+          color: AppColors.of(context).border,
         ),
       ),
       child: Column(
@@ -1732,11 +1751,7 @@ class _HomePageState extends State<HomePage>
                           )
                         : const Icon(Icons.check_rounded, size: 20),
                     label: const Text('Mark as read'),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
+                    style: _ghostMarkButtonStyle(context),
                   ),
           ),
         ],
@@ -1750,26 +1765,28 @@ class _HomePageState extends State<HomePage>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final group = item.group!;
-    final isRead = _groupReadToday;
-    final canMark = _groupToday != null;
-    final refText = _groupToday != null && _groupToday!.chapters.isNotEmpty
-        ? _formatReadings(_groupToday!.chapters)
+    final g = _groups[group.id];
+    if (g == null) return const SizedBox.shrink();
+    final isRead = _groupReadToday(g);
+    final canMark = g.today != null;
+    final refText = g.today != null && g.today!.chapters.isNotEmpty
+        ? _formatReadings(g.today!.chapters)
         : _formatReadings(item.status.currentReadings);
 
     // Members who have read today lead the presence stack.
-    final readers = _groupMembers.where((m) => m.completion >= 1.0).toList();
+    final readers = g.members.where((m) => m.completion >= 1.0).toList();
     final presenceMembers = [
       ...readers,
-      ..._groupMembers.where((m) => m.completion < 1.0),
+      ...g.members.where((m) => m.completion < 1.0),
     ];
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+          color: AppColors.of(context).border,
         ),
       ),
       child: Column(
@@ -1826,7 +1843,7 @@ class _HomePageState extends State<HomePage>
             height: 48,
             child: !canMark
                 ? OutlinedButton.icon(
-                    onPressed: _openGroupSchedule,
+                    onPressed: () => _openGroupSchedule(g),
                     icon: Icon(Icons.calendar_today_outlined,
                         size: 18, color: colorScheme.primary),
                     label: const Text('View schedule'),
@@ -1843,7 +1860,7 @@ class _HomePageState extends State<HomePage>
                 : isRead
                     ? OutlinedButton.icon(
                         onPressed:
-                            _groupMarkLoading ? null : _toggleGroupReading,
+                            g.markLoading ? null : () => _toggleGroupReading(g),
                         icon: Icon(Icons.check_circle,
                             size: 20, color: colorScheme.primary),
                         label: const Text('Read with your community'),
@@ -1859,8 +1876,8 @@ class _HomePageState extends State<HomePage>
                       )
                     : FilledButton.tonalIcon(
                         onPressed:
-                            _groupMarkLoading ? null : _toggleGroupReading,
-                        icon: _groupMarkLoading
+                            g.markLoading ? null : () => _toggleGroupReading(g),
+                        icon: g.markLoading
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
@@ -1869,11 +1886,7 @@ class _HomePageState extends State<HomePage>
                               )
                             : const Icon(Icons.check_rounded, size: 20),
                         label: const Text('Read with your community'),
-                        style: FilledButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
+                        style: _ghostMarkButtonStyle(context),
                       ),
           ),
         ],
@@ -1895,10 +1908,10 @@ class _HomePageState extends State<HomePage>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+          color: AppColors.of(context).border,
         ),
       ),
       child: Column(
@@ -2140,7 +2153,8 @@ class _HomePageState extends State<HomePage>
   /// Opens the schedule/detail for any reading item (personal plan or group).
   void _openPrimarySchedule(_ReadingItem item) {
     if (item.isGroup) {
-      _openGroupSchedule();
+      final g = _groups[item.group!.id];
+      if (g != null) _openGroupSchedule(g);
       return;
     }
     _openPlanScheduleFor(item.plan!, item.progress!);
@@ -2250,18 +2264,16 @@ class _HomePageState extends State<HomePage>
     return '${names.join(', ')}$suffix read today';
   }
 
-  void _openGroupSchedule() {
-    final group = _group;
-    if (group == null) return;
+  void _openGroupSchedule(_GroupData g) {
     unawaited(widget.vibrationService.lightImpact());
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => FullSchedulePage(
-          group: group,
+          group: g.group,
           groupService: widget.groupService,
           auth: widget.auth,
           vibrationService: widget.vibrationService,
-          initialSchedule: _groupSchedule,
+          initialSchedule: g.schedule,
           isMember: true,
         ),
       ),
@@ -2277,8 +2289,11 @@ class _HomePageState extends State<HomePage>
     const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     return Material(
-      color: colorScheme.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(20),
+      color: colorScheme.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: AppColors.of(context).border),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: widget.onOpenJourney,
@@ -2376,30 +2391,55 @@ class _HomePageState extends State<HomePage>
     final colorScheme = theme.colorScheme;
     final readers = _communityReaders;
 
-    final names = readers.take(2).map((r) {
+    String firstName(_CommunityReader r) {
       final first = r.name.split(' ').first;
       return first.isEmpty ? 'Someone' : first;
-    }).toList();
-    final subtitle = names.isEmpty
-        ? 'Tap to see who showed up'
-        : '${names.join(', ')} & others showed up';
+    }
+
+    final String subtitle;
+    if (readers.isEmpty) {
+      subtitle = 'Be the first to show up today';
+    } else if (readers.length == 1) {
+      subtitle = '${firstName(readers.first)} showed up — join them';
+    } else {
+      subtitle = '${firstName(readers[0])}, ${firstName(readers[1])} '
+          '& others showed up';
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            'Your community',
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Your community',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              TextButton(
+                onPressed: widget.onOpenCommunity,
+                style: TextButton.styleFrom(
+                  foregroundColor: colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Open'),
+              ),
+            ],
           ),
         ),
         Material(
-          color: colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(20),
+          color: colorScheme.surfaceContainerLowest,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: AppColors.of(context).border),
+          ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: widget.onOpenCommunity,
@@ -2519,4 +2559,25 @@ class _ReadingItem {
 
   /// Typed pin key matching `UserPreferences.pinnedReadingId`.
   String get pinKey => isGroup ? 'group:${group!.id}' : 'plan:${plan!.id}';
+}
+
+/// Per-group state backing the "together" reading cards on Home — one entry per
+/// group the user belongs to, holding that group's schedule, today's entry,
+/// member presence, the completed-date set used by the catch-up engine, and a
+/// per-group mark-loading flag (so marking one group doesn't spin the others).
+class _GroupData {
+  _GroupData({
+    required this.group,
+    this.schedule = const [],
+    this.today,
+    this.members = const [],
+    this.completedDateIds = const {},
+  });
+
+  final Group group;
+  List<GroupSchedule> schedule;
+  GroupSchedule? today;
+  List<GroupMemberProgressData> members;
+  Set<String> completedDateIds;
+  bool markLoading = false;
 }

@@ -82,6 +82,9 @@ dev_dependencies:
   mocktail: ^1.0.0
   firebase_crashlytics_platform_interface: ^3.8.9
   network_image_mock: ^2.1.1
+  # Backs sqflite's global databaseFactory in headless tests so
+  # cached_network_image's cache lookup works (golden tests render avatars).
+  sqflite_common_ffi: ^2.3.3
   flutter_launcher_icons: ^0.14.4
 
   vibration_platform_interface: any
