@@ -601,6 +601,9 @@ class _HomePageState extends State<HomePage>
   /// state and writes the change to Firestore, rolling back on failure.
   Future<void> _toggleReadStatus() async {
     if (_toggleLoading) return;
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    }
     unawaited(widget.vibrationService.mediumImpact());
     final wasRead = _readToday;
 
@@ -738,8 +741,22 @@ class _HomePageState extends State<HomePage>
       widget.readingStatusService.invalidateCache();
       unawaited(_loadReadStatus(showLoading: false));
 
-      // No success snackbar: the affirmation card (with its "Tap to undo" pill)
-      // is the confirmation, matching the design's read state.
+      // Show non-auto-dismissing SnackBar with Undo option when marked as read.
+      if (!wasRead && !_disposed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Daily reading marked as complete'),
+            duration: const Duration(days: 365),
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () {
+                _toggleReadStatus();
+              },
+            ),
+          ),
+        );
+      }
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to mark reading: $e');
@@ -1376,39 +1393,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  /// Compact "Tap to undo" pill beneath the affirmation (replaces the old
-  /// outlined button + redundant snackbar).
-  Widget _buildUndoPill(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Material(
-      color: colorScheme.surfaceContainerLowest,
-      shape: StadiumBorder(
-        side: BorderSide(color: AppColors.of(context).primaryLine),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: _toggleLoading ? null : _toggleReadStatus,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.close_rounded, size: 14, color: colorScheme.primary),
-              const SizedBox(width: 6),
-              Text(
-                'Tap to undo',
-                style: AppTextStyles.bodySmall(context).copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   /// The daily habit — the heartbeat of Home. Visually dominant; one tap; never
   /// gated by, and never advancing, any plan.
   Widget _buildHabitHero(BuildContext context, {required bool hasPlan}) {
@@ -1462,8 +1446,6 @@ class _HomePageState extends State<HomePage>
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 16),
-                  _buildUndoPill(context),
                 ],
               ),
             )

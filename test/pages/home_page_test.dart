@@ -198,10 +198,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Thank you for being here'), findsOneWidget);
-    expect(find.text('Tap to undo'), findsOneWidget);
+    expect(find.text('Daily reading marked as complete'), findsOneWidget);
+    expect(find.text('Undo'), findsOneWidget);
 
-    // 2. Tap the "Tap to undo" pill on the card
-    await tester.tap(find.text('Tap to undo'));
+    // 2. Tap the "Undo" action on the snackbar
+    await tester.tap(find.text('Undo'));
     await tester.pump();
     await tester.pumpAndSettle();
 
