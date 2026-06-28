@@ -1393,14 +1393,7 @@ class _HomePageState extends State<HomePage>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (_toggleLoading)
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                Icon(Icons.close_rounded, size: 14, color: colorScheme.primary),
+              Icon(Icons.close_rounded, size: 14, color: colorScheme.primary),
               const SizedBox(width: 6),
               Text(
                 'Tap to undo',
@@ -2286,7 +2279,7 @@ class _HomePageState extends State<HomePage>
   Widget _buildConsistencyGlimpse(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
     return Material(
       color: colorScheme.surfaceContainerLowest,
@@ -2306,7 +2299,8 @@ class _HomePageState extends State<HomePage>
                 children: [
                   for (var i = 0; i < 7; i++) ...[
                     if (i > 0) const SizedBox(width: 8),
-                    _weekDot(context, labels[i], _readOnWeekday(i + 1)),
+                    _weekDot(
+                        context, labels[i], _readOnWeekday(i == 0 ? 7 : i)),
                   ],
                 ],
               ),

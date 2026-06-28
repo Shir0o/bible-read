@@ -92,8 +92,7 @@ class _CommunityReadingHeroState extends State<CommunityReadingHero> {
           builder: (context, progSnap) {
             final members = progSnap.data ?? const <GroupMemberProgressData>[];
             final total = members.length;
-            final readers =
-                members.where((m) => m.completion >= 1.0).toList();
+            final readers = members.where((m) => m.completion >= 1.0).toList();
             double myCompletion = 0;
             for (final m in members) {
               if (m.uid == widget.user.uid) {
@@ -104,9 +103,9 @@ class _CommunityReadingHeroState extends State<CommunityReadingHero> {
             final serverRead = myCompletion >= 1.0;
             final meRead = _pendingRead ?? serverRead;
             // Count "me" optimistically so the meter and CTA agree.
-            final readCount = (readers.where((m) => m.uid != widget.user.uid))
-                    .length +
-                (meRead ? 1 : 0);
+            final readCount =
+                (readers.where((m) => m.uid != widget.user.uid)).length +
+                    (meRead ? 1 : 0);
 
             return Container(
               padding: const EdgeInsets.all(22),

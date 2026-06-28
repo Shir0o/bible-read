@@ -411,8 +411,7 @@ class _AllPlansPageState extends State<AllPlansPage> {
             decoration: BoxDecoration(
               color: AppColors.of(context).primarySoft,
               borderRadius: BorderRadius.circular(99),
-              border:
-                  Border.all(color: AppColors.of(context).primaryLine),
+              border: Border.all(color: AppColors.of(context).primaryLine),
             ),
             child: Text(
               '$totalActive ongoing',
@@ -459,8 +458,7 @@ class _AllPlansPageState extends State<AllPlansPage> {
             decoration: BoxDecoration(
               color: AppColors.of(context).primarySoft,
               borderRadius: BorderRadius.circular(99),
-              border:
-                  Border.all(color: AppColors.of(context).primaryLine),
+              border: Border.all(color: AppColors.of(context).primaryLine),
             ),
             child: Text(
               '$count $countLabel',

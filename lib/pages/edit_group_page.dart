@@ -1012,6 +1012,13 @@ class _EditGroupPageState extends State<EditGroupPage> {
           spacing: 4,
           children: [
             _DayChip(
+              label: 'S',
+              dayValue: 7,
+              isSelected: _selectedWeekdays.contains(7),
+              onToggle: (selected) => _toggleDay(7, selected),
+              vibrationService: widget.vibrationService,
+            ),
+            _DayChip(
               label: 'M',
               dayValue: 1,
               isSelected: _selectedWeekdays.contains(1),
@@ -1051,13 +1058,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
               dayValue: 6,
               isSelected: _selectedWeekdays.contains(6),
               onToggle: (selected) => _toggleDay(6, selected),
-              vibrationService: widget.vibrationService,
-            ),
-            _DayChip(
-              label: 'S',
-              dayValue: 7,
-              isSelected: _selectedWeekdays.contains(7),
-              onToggle: (selected) => _toggleDay(7, selected),
               vibrationService: widget.vibrationService,
             ),
           ],
