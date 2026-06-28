@@ -1415,7 +1415,8 @@ class _HomePageState extends State<HomePage>
       child: _readToday
           ? Container(
               key: const ValueKey('habit_done'),
-              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 56, horizontal: 24),
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   center: const Alignment(0, -0.75),
