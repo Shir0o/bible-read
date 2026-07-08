@@ -70,7 +70,8 @@ class AppTheme {
     brightness: Brightness.light,
     primary: Color(0xFF6A53AD), // --primary
     onPrimary: Color(0xFFFFFFFF), // --on-primary
-    primaryContainer: Color(0xFFF0ECF2), // --primary-soft flattened over --surface
+    primaryContainer:
+        Color(0xFFF0ECF2), // --primary-soft flattened over --surface
     onPrimaryContainer: Color(0xFF5B449E), // --primary-press
     secondary: Color(0xFF6A53AD),
     onSecondary: Color(0xFFFFFFFF),
@@ -109,7 +110,8 @@ class AppTheme {
     brightness: Brightness.dark,
     primary: Color(0xFFC6B4EC), // --primary (dark)
     onPrimary: Color(0xFF22153D), // --on-primary (dark)
-    primaryContainer: Color(0xFF342D40), // --primary-soft flattened over --surface
+    primaryContainer:
+        Color(0xFF342D40), // --primary-soft flattened over --surface
     onPrimaryContainer: Color(0xFFE5DCF7),
     secondary: Color(0xFFC6B4EC),
     onSecondary: Color(0xFF22153D),
@@ -134,7 +136,8 @@ class AppTheme {
     surfaceDim: Color(0xFF16121D),
     surfaceBright: Color(0xFF3C3447),
     outline: Color(0xFF6E6781), // --text-faint (dark)
-    outlineVariant: Color(0xFF2F2A36), // --border flattened over --surface (dark)
+    outlineVariant:
+        Color(0xFF2F2A36), // --border flattened over --surface (dark)
     inverseSurface: Color(0xFFECE7F3),
     onInverseSurface: Color(0xFF322C3B),
     inversePrimary: Color(0xFF6A53AD),

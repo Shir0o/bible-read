@@ -289,9 +289,8 @@ class _CommunityPageState extends State<CommunityPage>
                       groupService: widget.groupService,
                       auth: widget.auth,
                       vibrationService: widget.vibrationService,
-                      initialSchedule: group.id == primary.id
-                          ? _initialGroupSchedule
-                          : null,
+                      initialSchedule:
+                          group.id == primary.id ? _initialGroupSchedule : null,
                       isMember: true,
                     ),
                   ),
