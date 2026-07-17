@@ -17,6 +17,7 @@ import '../services/group_service.dart';
 import '../services/plan_completion_coordinator.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
+import '../services/reflection_service.dart';
 import '../services/user_preferences_service.dart';
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
@@ -31,6 +32,7 @@ import '../theme/app_theme.dart';
 import '../widgets/member_presence_stack.dart';
 import '../widgets/navigation_menu_scope.dart';
 import '../widgets/new_plan_picker_sheet.dart';
+import '../widgets/reflect_sheet.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
 import 'all_plans_page.dart';
@@ -71,6 +73,7 @@ class HomePage extends StatefulWidget {
     BibleProgressService? bibleProgressService,
     ReadingPlanService? readingPlanService,
     UserPreferencesService? userPreferencesService,
+    ReflectionService? reflectionService,
     GroupService? groupService,
     FriendService? friendService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
@@ -86,6 +89,10 @@ class HomePage extends StatefulWidget {
             ),
         userPreferencesService = userPreferencesService ??
             UserPreferencesService(
+              firestore: firestore ?? FirebaseFirestore.instance,
+            ),
+        reflectionService = reflectionService ??
+            ReflectionService(
               firestore: firestore ?? FirebaseFirestore.instance,
             ),
         vibrationService = vibrationService ?? const VibrationService(),
@@ -112,6 +119,9 @@ class HomePage extends StatefulWidget {
   /// Service for managing user preferences.
   final UserPreferencesService userPreferencesService;
 
+  /// Service for loading and saving the day's private reflection.
+  final ReflectionService reflectionService;
+
   /// Loads the user's group, its schedule and member presence for the
   /// "together" reading card (design parity — Home group plan section).
   final GroupService groupService;
@@ -135,6 +145,9 @@ class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   bool _disposed = false;
   bool _readToday = false;
+
+  /// Today's saved reflection text, or `null` if none has been saved yet.
+  String? _reflection;
 
   /// Whether the page is currently fetching or toggling the read status.
   bool _toggleLoading = false;
@@ -228,6 +241,7 @@ class _HomePageState extends State<HomePage>
       _loadActivePlans(),
       _loadGroup(),
       _loadCommunity(),
+      _loadReflection(),
     ];
 
     await Future.wait(futures);
@@ -245,6 +259,25 @@ class _HomePageState extends State<HomePage>
           _pinnedReadingId = prefs.pinnedReadingId;
           _autoMarkPlanRead = prefs.autoMarkPlanRead;
         });
+      }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
+  }
+
+  /// Loads today's saved reflection, if any. Private and independent of the
+  /// habit/reading writes — best-effort, any failure just leaves the prompt
+  /// card showing.
+  Future<void> _loadReflection() async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final reflection = await widget.reflectionService.fetchReflection(
+        uid,
+        _dateKeyFor(widget.dateProvider()),
+      );
+      if (!_disposed && mounted) {
+        setState(() => _reflection = reflection?.text);
       }
     } catch (e, st) {
       ErrorLogger.log(e, st);
@@ -418,6 +451,9 @@ class _HomePageState extends State<HomePage>
   }
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  String _dateKeyFor(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   void _setupSyncListener() {
     _syncSub?.cancel();
@@ -1325,6 +1361,10 @@ class _HomePageState extends State<HomePage>
             ] else ...[
               const SizedBox(height: 16),
               _buildStartPlanInvitationCard(context),
+            ],
+            if (_readToday) ...[
+              const SizedBox(height: 24),
+              _buildReflectionSection(context),
             ],
             if (_readToday) ...[
               const SizedBox(height: 40),
@@ -2362,6 +2402,169 @@ class _HomePageState extends State<HomePage>
           isMember: true,
         ),
       ),
+    );
+  }
+
+  /// The optional daily reflection — a saved-entry card with an Edit action,
+  /// or a prompt card that opens the editor. Only shown once the habit is
+  /// marked read (#747); saving/skipping never touches the habit mark itself.
+  Widget _buildReflectionSection(BuildContext context) {
+    final reflection = _reflection;
+    if (reflection != null && reflection.isNotEmpty) {
+      return _buildSavedReflectionCard(context, reflection);
+    }
+    return _buildReflectionPromptCard(context);
+  }
+
+  Widget _buildSavedReflectionCard(BuildContext context, String text) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
+        border: Border.all(color: AppColors.of(context).border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'YOUR REFLECTION',
+                style: AppTextStyles.caption(context).copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              TextButton(
+                onPressed: () => _openReflectSheet(context, initialText: text),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Edit'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.format_quote_rounded,
+                size: 20,
+                color: colorScheme.primary.withValues(alpha: 0.5),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontSerif,
+                    fontSize: 16.5,
+                    height: 1.5,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReflectionPromptCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final prompt = reflectionPromptFor(widget.dateProvider());
+    return Material(
+      color: colorScheme.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
+        side: BorderSide(color: AppColors.of(context).border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _openReflectSheet(context, initialText: null),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.of(context).accentSoft,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.edit_note_rounded,
+                  size: 22,
+                  color: theme.colorScheme.tertiary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Take a moment',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      prompt,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Opens the reflection editor. Saving/skipping is entirely independent of
+  /// the daily habit mark — this is only ever reachable once that's already
+  /// happened.
+  Future<void> _openReflectSheet(
+    BuildContext context, {
+    required String? initialText,
+  }) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    final dateKey = _dateKeyFor(widget.dateProvider());
+    await showReflectSheet(
+      context,
+      initialText: initialText,
+      prompt: reflectionPromptFor(widget.dateProvider()),
+      onSave: (text) async {
+        await widget.reflectionService.saveReflection(uid, dateKey, text);
+        if (!_disposed && mounted) {
+          setState(() => _reflection = text);
+        }
+      },
     );
   }
 

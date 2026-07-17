@@ -36,6 +36,19 @@ void main() {
       );
     });
 
+    test('contains user reflections collection rules', () {
+      final usersBlock = _findMatchBlock(rulesText, '/users/{userId}');
+      final reflectionsBlock = _findMatchBlock(
+        usersBlock,
+        '/reflections/{dateKey}',
+      );
+
+      expect(
+        _normalizeWhitespace(_extractAllowExpression(reflectionsBlock, 'read, write')),
+        equals('request.auth != null && request.auth.uid == userId'),
+      );
+    });
+
     test('contains user season progress rules', () {
       final usersBlock = _findMatchBlock(rulesText, '/users/{userId}');
       final progressBlock = _findMatchBlock(
@@ -159,6 +172,29 @@ void main() {
 
     test('other user cannot write cache', () {
       expect(_canWriteUserCache(authUid: 'bob', userId: 'alice'), isFalse);
+    });
+  });
+
+  group('User reflection behaviour', () {
+    test('owner can read their reflection', () {
+      expect(_canReadUserReflection(authUid: 'alice', userId: 'alice'), isTrue);
+    });
+
+    test('owner can write their reflection', () {
+      expect(_canWriteUserReflection(authUid: 'alice', userId: 'alice'), isTrue);
+    });
+
+    test('other user cannot read a reflection', () {
+      expect(_canReadUserReflection(authUid: 'bob', userId: 'alice'), isFalse);
+    });
+
+    test('other user cannot write a reflection', () {
+      expect(_canWriteUserReflection(authUid: 'bob', userId: 'alice'), isFalse);
+    });
+
+    test('unauthenticated access denied', () {
+      expect(_canReadUserReflection(authUid: null, userId: 'alice'), isFalse);
+      expect(_canWriteUserReflection(authUid: null, userId: 'alice'), isFalse);
     });
   });
 
@@ -313,6 +349,20 @@ bool _canReadUserCache({required String? authUid, required String userId}) {
 }
 
 bool _canWriteUserCache({required String? authUid, required String userId}) {
+  return authUid != null && authUid == userId;
+}
+
+bool _canReadUserReflection({
+  required String? authUid,
+  required String userId,
+}) {
+  return authUid != null && authUid == userId;
+}
+
+bool _canWriteUserReflection({
+  required String? authUid,
+  required String userId,
+}) {
   return authUid != null && authUid == userId;
 }
 
