@@ -28,7 +28,11 @@ Widget _host(Widget home) => MaterialApp(
       home: home,
     );
 
-final _today = DateTime(2026, 7, 16);
+// Real "now" — HomePage's default ReadingStatusService always uses the real
+// system clock for the `reading` doc lookup (it isn't threaded through
+// widget.dateProvider), so the reflection date basis must match it exactly
+// rather than a fixed date.
+final _today = DateTime.now();
 final _todayKey = '${_today.year}-${_today.month.toString().padLeft(2, '0')}-'
     '${_today.day.toString().padLeft(2, '0')}';
 final _todayPrompt = reflectionPromptFor(_today);
