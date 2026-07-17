@@ -192,10 +192,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // 1. Mark as read
+    // 1. Mark as read. The SnackBar auto-dismisses after its default duration,
+    // so use a bounded pump here (not pumpAndSettle) to observe it while it's
+    // still showing.
     await tester.tap(find.text('I read today'));
     await tester.pump();
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Thank you for being here'), findsOneWidget);
     expect(find.text('Daily reading marked as complete'), findsOneWidget);
