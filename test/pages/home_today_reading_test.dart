@@ -15,10 +15,13 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/services/bible_progress_service.dart';
+import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
 import 'package:bible_read/services/user_preferences_service.dart';
+import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/models/reading_plan.dart';
 import 'package:bible_read/models/reading_plan_progress.dart';
+import 'package:bible_read/models/user_preferences.dart';
 import '../helpers/mock_lottie_http_client.dart';
 
 class _StubBibleProgressService extends BibleProgressService {
@@ -229,8 +232,113 @@ void main() {
           .get();
       expect(habitDoc.exists, isFalse);
 
-      // The card now reflects the read state.
-      expect(find.text('Read'), findsOneWidget);
+      // The card now reflects the read state, non-interactively (design
+      // parity: no standing undo-by-retap — only the just-shown snackbar's
+      // Undo can reverse this).
+      expect(find.text('Read · Genesis 1'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'plan card mark with coupling already linked marks the daily habit too',
+    (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final auth =
+          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final planService = ReadingPlanService(firestore: firestore);
+      await _seedPlan(firestore, planService, now: DateTime.now());
+
+      final prefsService = UserPreferencesService(firestore: firestore);
+      await prefsService.updatePreferences(
+        'u1',
+        const UserPreferences(
+          autoMarkPlanRead: true,
+          syncPromptAnswered: true,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _host(HomePage(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: const VibrationService(),
+          bibleProgressService: _StubBibleProgressService(),
+          readingPlanService: planService,
+          userPreferencesService: prefsService,
+          dateProvider: DateTime.now,
+        )),
+      );
+      await tester.pumpAndSettle();
+
+      // Coupling is already linked, so no SyncSheet should appear.
+      await tester.tap(find.text('Mark as read'));
+      await tester.pumpAndSettle();
+      expect(find.text('Keep them separate'), findsNothing);
+
+      // The habit was recorded in Firestore...
+      final today = DateTime.now();
+      final dateKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      final habitDoc = await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('reading')
+          .doc(dateKey)
+          .get();
+      expect(habitDoc.data()?['read'], isTrue);
+
+      // ...and the habit hero reflects it without a separate "I read today" tap.
+      expect(find.text('Thank you for being here'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'group card mark, first-time "Yes" choice, marks the daily habit too',
+    (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final auth =
+          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final groupService = GroupService(firestore: firestore);
+
+      final groupId =
+          await groupService.createGroup(ownerUid: 'u1', name: 'Test Group');
+      final today = DateTime.now();
+      await groupService.updateSchedule(
+        groupId: groupId,
+        schedule: GroupSchedule(date: today, chapters: const ['John 1']),
+      );
+
+      await tester.pumpWidget(
+        _host(HomePage(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: const VibrationService(),
+          bibleProgressService: _StubBibleProgressService(),
+          groupService: groupService,
+          userPreferencesService: UserPreferencesService(firestore: firestore),
+          dateProvider: DateTime.now,
+        )),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Read with your community'));
+      await tester.pumpAndSettle();
+
+      // First completion shows the one-time coupling prompt; choose "Yes".
+      expect(find.text('Yes, count it as showing up'), findsOneWidget);
+      await tester.tap(find.text('Yes, count it as showing up'));
+      await tester.pumpAndSettle();
+
+      final dateKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      final habitDoc = await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('reading')
+          .doc(dateKey)
+          .get();
+      expect(habitDoc.data()?['read'], isTrue);
+      expect(find.text('Thank you for being here'), findsOneWidget);
     },
   );
 }

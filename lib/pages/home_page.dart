@@ -184,6 +184,12 @@ class _HomePageState extends State<HomePage>
   /// Set from the All Plans hub; honored in [_buildReadingItems].
   String? _pinnedReadingId;
 
+  /// Whether finishing a plan reading also records the daily habit (Settings'
+  /// "Reading counts as showing up" toggle). Drives the "Also counts as
+  /// showing up today" hint on not-yet-read mark buttons; the actual coupling
+  /// write is owned by [PlanCompletionCoordinator], untouched here.
+  bool _autoMarkPlanRead = false;
+
   late final PlanCompletionCoordinator _completionCoordinator;
 
   late final AnimationController _animationController;
@@ -235,7 +241,10 @@ class _HomePageState extends State<HomePage>
     try {
       final prefs = await widget.userPreferencesService.fetchPreferences(uid);
       if (!_disposed && mounted) {
-        setState(() => _pinnedReadingId = prefs.pinnedReadingId);
+        setState(() {
+          _pinnedReadingId = prefs.pinnedReadingId;
+          _autoMarkPlanRead = prefs.autoMarkPlanRead;
+        });
       }
     } catch (e, st) {
       ErrorLogger.log(e, st);
@@ -741,12 +750,11 @@ class _HomePageState extends State<HomePage>
       widget.readingStatusService.invalidateCache();
       unawaited(_loadReadStatus(showLoading: false));
 
-      // Show non-auto-dismissing SnackBar with Undo option when marked as read.
+      // Show a transient SnackBar with an Undo option when marked as read.
       if (!wasRead && !_disposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Daily reading marked as complete'),
-            duration: const Duration(days: 365),
             behavior: SnackBarBehavior.floating,
             action: SnackBarAction(
               label: 'Undo',
@@ -1316,7 +1324,7 @@ class _HomePageState extends State<HomePage>
               _buildReadingSection(context, readingItems),
             ] else ...[
               const SizedBox(height: 16),
-              _buildStartNewPlanButton(context),
+              _buildStartPlanInvitationCard(context),
             ],
             if (_readToday) ...[
               const SizedBox(height: 40),
@@ -1633,6 +1641,62 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  /// Caption shown beneath a not-yet-read mark button when the "Reading
+  /// counts as showing up" preference is on, so marking this reading is known
+  /// to also record the daily habit.
+  Widget _buildCountsHint(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.wb_sunny_outlined,
+          size: 13,
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          'Also counts as showing up today',
+          style: AppTextStyles.caption(context).copyWith(
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Non-interactive "already marked" confirmation row — a small primary
+  /// check badge + label. Design parity: marking a plan/group reading is
+  /// forward-only here; the only way back is the snackbar's "Undo" shown
+  /// right after marking (see [_togglePlanReadingFor]/[_toggleGroupReading]) —
+  /// there is no standing undo-by-retap.
+  Widget _buildReadConfirmationRow(BuildContext context, String label) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Row(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: colorScheme.primary,
+          ),
+          alignment: Alignment.center,
+          child: Icon(Icons.check, size: 14, color: colorScheme.onPrimary),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
   /// Hero card for a personal plan — the current reading with its own mark.
   Widget _buildPersonalReadingCard(BuildContext context, _ReadingItem item) {
     final theme = Theme.of(context);
@@ -1646,6 +1710,7 @@ class _HomePageState extends State<HomePage>
     final entry = status.currentEntry;
     final day = entry?.index;
     final isRead = day != null && progress.completedDays.contains(day);
+    final currentRef = _formatReadings(status.currentReadings);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1687,7 +1752,7 @@ class _HomePageState extends State<HomePage>
           ),
           const SizedBox(height: 10),
           Text(
-            _formatReadings(status.currentReadings),
+            currentRef,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface,
@@ -1698,23 +1763,7 @@ class _HomePageState extends State<HomePage>
             width: double.infinity,
             height: 48,
             child: isRead
-                ? OutlinedButton.icon(
-                    onPressed: _planToggleLoading
-                        ? null
-                        : () => _togglePlanReadingFor(plan, progress, day),
-                    icon: Icon(Icons.check_circle,
-                        size: 20, color: colorScheme.primary),
-                    label: const Text('Read'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.primary,
-                      side: BorderSide(
-                        color: colorScheme.primary.withValues(alpha: 0.4),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  )
+                ? _buildReadConfirmationRow(context, 'Read · $currentRef')
                 : FilledButton.tonalIcon(
                     onPressed: (_planToggleLoading || day == null)
                         ? null
@@ -1730,6 +1779,10 @@ class _HomePageState extends State<HomePage>
                     style: _ghostMarkButtonStyle(context),
                   ),
           ),
+          if (!isRead && _autoMarkPlanRead) ...[
+            const SizedBox(height: 8),
+            _buildCountsHint(context),
+          ],
         ],
       ),
     );
@@ -1834,22 +1887,8 @@ class _HomePageState extends State<HomePage>
                     ),
                   )
                 : isRead
-                    ? OutlinedButton.icon(
-                        onPressed:
-                            g.markLoading ? null : () => _toggleGroupReading(g),
-                        icon: Icon(Icons.check_circle,
-                            size: 20, color: colorScheme.primary),
-                        label: const Text('Read with your community'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: colorScheme.primary,
-                          side: BorderSide(
-                            color: colorScheme.primary.withValues(alpha: 0.4),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      )
+                    ? _buildReadConfirmationRow(
+                        context, 'Read with your community')
                     : FilledButton.tonalIcon(
                         onPressed:
                             g.markLoading ? null : () => _toggleGroupReading(g),
@@ -1865,6 +1904,10 @@ class _HomePageState extends State<HomePage>
                         style: _ghostMarkButtonStyle(context),
                       ),
           ),
+          if (canMark && !isRead && _autoMarkPlanRead) ...[
+            const SizedBox(height: 8),
+            _buildCountsHint(context),
+          ],
         ],
       ),
     );
@@ -2175,8 +2218,8 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// The "Start a new plan" affordance, shown wherever the reader might add a
-  /// plan — beneath the reading list and in the no-plan state alike.
+  /// The compact "Start a new plan" affordance, shown beneath an existing
+  /// reading list so a reader with an active plan/group can still add another.
   Widget _buildStartNewPlanButton(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
@@ -2193,6 +2236,72 @@ class _HomePageState extends State<HomePage>
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The richer "no active reading at all" invitation card — used only when
+  /// there's no plan or group to show at all. Distinct from the compact
+  /// [_buildStartNewPlanButton] used beneath an existing reading list.
+  Widget _buildStartPlanInvitationCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Material(
+      color: colorScheme.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
+        side: BorderSide(color: AppColors.of(context).border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _startNewPlan(),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.of(context).primarySoft,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: Icon(Icons.explore_outlined,
+                    size: 20, color: colorScheme.primary),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Start a reading plan',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Optional — a gentle rhythm to read by, on your own '
+                      'or with friends.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+              ),
+            ],
           ),
         ),
       ),
