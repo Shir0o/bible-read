@@ -132,6 +132,11 @@ service cloud.firestore {
         }
       }
 
+      // Private daily journal entry — never readable by anyone but the owner.
+      match /reflections/{dateKey} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
       match /friends/{friendId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
