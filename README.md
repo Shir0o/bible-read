@@ -136,12 +136,11 @@ This project is a starting point for a Flutter application.
     cd bible-read
     ```
 
-2.  Install the Flutter SDK and fetch dependencies:
+2.  Set up Flutter SDK and fetch dependencies:
 
     ```bash
-    git clone --depth 1 https://github.com/flutter/flutter.git -b stable flutter
     export PUB_CACHE="$PWD/.pub-cache"
-    export PATH="$PWD/flutter/bin:$PATH"
+    export PATH="$HOME/flutter/bin:$PATH"
     flutter config --no-analytics
     flutter pub get
     ```
@@ -158,15 +157,13 @@ After launching the app open the profile tab and choose **Email Sign Up** to
 create a new account using your email address. Use **Email Sign In** on later
 launches to log in with those credentials.
 
-## Installing Flutter
+## Flutter Environment
 
-The integration tests bundled with this project require a local Flutter SDK.
-Clone the SDK into the repository and add it to your path:
+The integration tests and application build process require the Flutter SDK. Ensure Flutter is installed (e.g. in `~/flutter`) and added to your path:
 
 ```bash
-git clone --depth 1 https://github.com/flutter/flutter.git -b stable flutter
 export PUB_CACHE="$PWD/.pub-cache"
-export PATH="$PWD/flutter/bin:$PATH"
+export PATH="$HOME/flutter/bin:$PATH"
 flutter config --no-analytics
 flutter pub get
 ```

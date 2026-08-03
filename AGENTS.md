@@ -12,18 +12,17 @@ This repository hosts a Flutter application. The code you will usually modify li
   - `lib/firebase_options.dart` configures Firebase and is generated
 - `test/` – unit and widget tests
 
-Some parts of the UI are currently being migrated to a more modular widget structure. Focus on the Dart files above rather than the platform specific directories (`android/`, `ios/`, etc.). The `flutter/` directory holds the SDK and **must not be committed**.
+Some parts of the UI are currently being migrated to a more modular widget structure. Focus on the Dart files above rather than the platform specific directories (`android/`, `ios/`, etc.).
 
 ## Environment setup
 
 ### Quick start
 
-Clone the Flutter SDK and add it to the path before running checks:
+Ensure the Flutter SDK is installed (e.g. in `~/flutter`) and available in your `PATH` before running checks:
 
 ```bash
-git clone --depth 1 https://github.com/flutter/flutter.git -b stable flutter
 export PUB_CACHE="$PWD/.pub-cache"
-export PATH="$PWD/flutter/bin:$PATH"
+export PATH="$HOME/flutter/bin:$PATH"
 flutter --version
 flutter config --no-analytics
 yes | flutter doctor --android-licenses || true
@@ -32,9 +31,6 @@ flutter pub get
 
 ### Optional caching tips
 
-The `flutter` directory holds the SDK and **must not be committed**. To speed up repeated runs, copy back cached artifacts after cloning:
-
-- Set `FLUTTER_BIN_CACHE` to a cached `flutter/bin/cache` directory before cloning, then restore it into place.
 - Preserve your Dart packages by keeping `.pub-cache` (or setting `PUB_CACHE_SRC`) and syncing it back once the quick start steps finish.
 
 For documentation-only updates (e.g., changes limited to `.md` files), you do not need to clone this repository, install Flutter, or run any of the setup commands in this section.
@@ -132,7 +128,7 @@ For a one-minute command performing basic checks, see [docs/quick_fix.md](docs/q
 
 ## Common pitfalls
 
-- Never commit the local Flutter SDK (`flutter/`), platform build outputs, or `functions/node_modules/` – keep the repo clean.
+- Never commit local platform build outputs or `functions/node_modules/` – keep the repo clean.
 - Check for a dirty worktree before editing and avoid reverting changes you didn't make.
 - Keep real credentials (e.g., `functions/serviceAccount.json`) out of version control; request them and add them locally when needed.
 - When enabling Crashlytics or other temporary debugging changes, undo them before opening a PR.

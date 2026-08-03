@@ -33,11 +33,10 @@ The application leverages Firebase heavily for its backend services, including:
     cd bible-read
     ```
 
-2.  **Install Flutter SDK (if not already installed) and dependencies:**
+2.  **Set up Flutter SDK and dependencies:**
     ```bash
-    git clone --depth 1 https://github.com/flutter/flutter.git -b stable flutter
     export PUB_CACHE="$PWD/.pub-cache"
-    export PATH="$PWD/flutter/bin:$PATH"
+    export PATH="$HOME/flutter/bin:$PATH"
     flutter config --no-analytics
     flutter pub get
     ```
