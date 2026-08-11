@@ -8,7 +8,6 @@ import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/theme/app_theme.dart';
 import 'package:bible_read/widgets/animated_page_route.dart';
 import 'package:bible_read/widgets/auth/auth_background.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -294,16 +293,14 @@ class _LoginPageState extends State<LoginPage> {
                                 controller: _emailController,
                                 label: 'Email or Username',
                                 key: const Key('loginEmailField'),
-                                keyboardType:
-                                    TextInputType.emailAddress,
+                                keyboardType: TextInputType.emailAddress,
                                 autofillHints: const [
                                   AutofillHints.email,
                                 ],
                                 textInputAction: TextInputAction.next,
                                 autofocus: true,
                                 validator: (val) {
-                                  if (val == null ||
-                                      val.trim().isEmpty) {
+                                  if (val == null || val.trim().isEmpty) {
                                     return 'Please fill in all fields';
                                   }
                                   if (!_isValidEmail(val.trim())) {
@@ -311,8 +308,8 @@ class _LoginPageState extends State<LoginPage> {
                                   }
                                   return null;
                                 },
-                                suffixIcon: ValueListenableBuilder<
-                                    TextEditingValue>(
+                                suffixIcon:
+                                    ValueListenableBuilder<TextEditingValue>(
                                   valueListenable: _emailController,
                                   builder: (context, value, child) {
                                     return value.text.isNotEmpty
@@ -322,8 +319,7 @@ class _LoginPageState extends State<LoginPage> {
                                             ),
                                             tooltip: 'Clear',
                                             onPressed: () {
-                                              _emailController
-                                                  .clear();
+                                              _emailController.clear();
                                             },
                                           )
                                         : const SizedBox.shrink();
@@ -344,8 +340,7 @@ class _LoginPageState extends State<LoginPage> {
                                 textInputAction: TextInputAction.done,
                                 onSubmitted: (_) => _submit(),
                                 validator: (value) {
-                                  if (value == null ||
-                                      value.isEmpty) {
+                                  if (value == null || value.isEmpty) {
                                     return 'Please fill in all fields';
                                   }
                                   return null;
@@ -358,14 +353,12 @@ class _LoginPageState extends State<LoginPage> {
                                     _isPasswordVisible
                                         ? Icons.visibility_off
                                         : Icons.visibility,
-                                    color:
-                                        colorScheme.onSurfaceVariant,
+                                    color: colorScheme.onSurfaceVariant,
                                     size: 20, // text-xl
                                   ),
                                   onPressed: () {
                                     setState(() {
-                                      _isPasswordVisible =
-                                          !_isPasswordVisible;
+                                      _isPasswordVisible = !_isPasswordVisible;
                                     });
                                   },
                                 ),
@@ -397,8 +390,7 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   onTap: () {
                                     unawaited(
-                                      widget.vibrationService
-                                          .lightImpact(),
+                                      widget.vibrationService.lightImpact(),
                                     );
                                     _handleForgotPassword();
                                   },
@@ -408,10 +400,9 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                     child: Text(
                                       'Forgot Password?',
-                                      style: textTheme.bodyMedium
-                                          ?.copyWith(
-                                        fontWeight: FontWeight
-                                            .w600, // font-semibold
+                                      style: textTheme.bodyMedium?.copyWith(
+                                        fontWeight:
+                                            FontWeight.w600, // font-semibold
                                         color: colorScheme.primary,
                                       ),
                                     ),
@@ -434,11 +425,11 @@ class _LoginPageState extends State<LoginPage> {
                             backgroundColor: colorScheme.primary,
                             foregroundColor: colorScheme.onPrimary,
                             elevation: 10, // shadow-lg
-                            shadowColor: colorScheme.shadow
-                                .withValues(alpha: 0.3),
+                            shadowColor:
+                                colorScheme.shadow.withValues(alpha: 0.3),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                  AppSpacing.rCard),
+                              borderRadius:
+                                  BorderRadius.circular(AppSpacing.rCard),
                             ),
                           ),
                           child: _loading
@@ -452,12 +443,9 @@ class _LoginPageState extends State<LoginPage> {
                                 )
                               : Text(
                                   'Login',
-                                  style:
-                                      textTheme.labelLarge?.copyWith(
-                                    fontWeight:
-                                        FontWeight.bold, // font-bold
-                                    letterSpacing:
-                                        0.5, // tracking-wide
+                                  style: textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.bold, // font-bold
+                                    letterSpacing: 0.5, // tracking-wide
                                   ),
                                 ),
                         ),
@@ -483,11 +471,9 @@ class _LoginPageState extends State<LoginPage> {
                               child: Text(
                                 'OR',
                                 style: textTheme.labelSmall?.copyWith(
-                                  fontWeight:
-                                      FontWeight.bold, // font-bold
+                                  fontWeight: FontWeight.bold, // font-bold
                                   color: colorScheme.onSurfaceVariant,
-                                  letterSpacing:
-                                      1.5, // tracking-widest
+                                  letterSpacing: 1.5, // tracking-widest
                                 ),
                               ),
                             ),
@@ -508,15 +494,14 @@ class _LoginPageState extends State<LoginPage> {
                         child: ElevatedButton(
                           onPressed: _handleGoogleSignIn,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                colorScheme.surfaceBright,
+                            backgroundColor: colorScheme.surfaceBright,
                             foregroundColor: colorScheme.onSurface,
                             elevation: 4, // shadow-md
-                            shadowColor: colorScheme.shadow
-                                .withValues(alpha: 0.1),
+                            shadowColor:
+                                colorScheme.shadow.withValues(alpha: 0.1),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                  AppSpacing.rCard),
+                              borderRadius:
+                                  BorderRadius.circular(AppSpacing.rCard),
                               side: BorderSide(
                                 color: colorScheme.outlineVariant,
                               ),
@@ -532,8 +517,7 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 )
                               : Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     // Google Icon
                                     FaIcon(
@@ -544,10 +528,9 @@ class _LoginPageState extends State<LoginPage> {
                                     const SizedBox(width: 12),
                                     Text(
                                       'Continue with Google',
-                                      style: textTheme.labelLarge
-                                          ?.copyWith(
-                                        fontWeight: FontWeight
-                                            .w600, // font-semibold
+                                      style: textTheme.labelLarge?.copyWith(
+                                        fontWeight:
+                                            FontWeight.w600, // font-semibold
                                         color: colorScheme.onSurface,
                                       ),
                                     ),
@@ -570,8 +553,7 @@ class _LoginPageState extends State<LoginPage> {
                             Text(
                               "Don't have an account? ",
                               style: textTheme.bodyMedium?.copyWith(
-                                fontWeight:
-                                    FontWeight.w500, // font-medium
+                                fontWeight: FontWeight.w500, // font-medium
                                 color: colorScheme.onSurfaceVariant,
                               ),
                             ),
@@ -585,25 +567,22 @@ class _LoginPageState extends State<LoginPage> {
                                 child: Material(
                                   type: MaterialType.transparency,
                                   child: InkWell(
-                                    borderRadius:
-                                        BorderRadius.circular(4),
+                                    borderRadius: BorderRadius.circular(4),
                                     onTap: () {
                                       unawaited(
-                                        widget.vibrationService
-                                            .lightImpact(),
+                                        widget.vibrationService.lightImpact(),
                                       );
                                       Navigator.of(context).push(
                                         animatedPageRoute(
                                           SignupPage(
                                             auth: widget.auth,
-                                            firestore:
-                                                widget.firestore,
-                                            vibrationService: widget
-                                                .vibrationService,
-                                            googleSignInProvider: widget
-                                                .googleSignInProvider,
-                                            mainPageBuilder: widget
-                                                .mainPageBuilder,
+                                            firestore: widget.firestore,
+                                            vibrationService:
+                                                widget.vibrationService,
+                                            googleSignInProvider:
+                                                widget.googleSignInProvider,
+                                            mainPageBuilder:
+                                                widget.mainPageBuilder,
                                           ),
                                         ),
                                       );
@@ -614,10 +593,9 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                       child: Text(
                                         'Sign up',
-                                        style: textTheme.bodyMedium
-                                            ?.copyWith(
-                                          fontWeight: FontWeight
-                                              .bold, // font-bold
+                                        style: textTheme.bodyMedium?.copyWith(
+                                          fontWeight:
+                                              FontWeight.bold, // font-bold
                                           color: colorScheme.primary,
                                         ),
                                       ),

@@ -44,7 +44,8 @@ void main() {
       );
 
       expect(
-        _normalizeWhitespace(_extractAllowExpression(reflectionsBlock, 'read, write')),
+        _normalizeWhitespace(
+            _extractAllowExpression(reflectionsBlock, 'read, write')),
         equals('request.auth != null && request.auth.uid == userId'),
       );
     });
@@ -181,7 +182,8 @@ void main() {
     });
 
     test('owner can write their reflection', () {
-      expect(_canWriteUserReflection(authUid: 'alice', userId: 'alice'), isTrue);
+      expect(
+          _canWriteUserReflection(authUid: 'alice', userId: 'alice'), isTrue);
     });
 
     test('other user cannot read a reflection', () {

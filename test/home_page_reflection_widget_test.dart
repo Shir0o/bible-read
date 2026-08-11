@@ -57,7 +57,8 @@ void main() {
   testWidgets('no reflection card before the habit is marked read',
       (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
 
     await tester.pumpWidget(
       _host(HomePage(
@@ -77,7 +78,8 @@ void main() {
   testWidgets('prompt card appears once the habit is marked read',
       (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     await _markReadToday(firestore);
 
     await tester.pumpWidget(
@@ -99,7 +101,8 @@ void main() {
       'saving a reflection writes it and swaps the card to the saved view',
       (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     await _markReadToday(firestore);
 
     await tester.pumpWidget(
@@ -140,7 +143,8 @@ void main() {
         .collection('reflections')
         .doc(_todayKey)
         .get();
-    expect(doc.data()?['text'], 'Rest isn’t earned here. He makes me lie down.');
+    expect(
+        doc.data()?['text'], 'Rest isn’t earned here. He makes me lie down.');
 
     // The habit mark itself is untouched by the reflection write.
     final readDoc = await firestore
@@ -155,7 +159,8 @@ void main() {
   testWidgets('skip closes the sheet without writing a reflection',
       (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     await _markReadToday(firestore);
 
     await tester.pumpWidget(
@@ -186,10 +191,12 @@ void main() {
     expect(doc.exists, isFalse);
   });
 
-  testWidgets('editing a saved reflection pre-fills the sheet and overwrites it',
+  testWidgets(
+      'editing a saved reflection pre-fills the sheet and overwrites it',
       (tester) async {
     final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth =
+        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     await _markReadToday(firestore);
     await firestore
         .collection('users')

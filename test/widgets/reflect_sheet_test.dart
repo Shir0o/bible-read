@@ -91,7 +91,8 @@ void main() {
     expect(find.byType(TextField), findsNothing);
   });
 
-  testWidgets('editing an existing reflection pre-fills the field and shows Cancel',
+  testWidgets(
+      'editing an existing reflection pre-fills the field and shows Cancel',
       (tester) async {
     await tester.pumpWidget(_host(
       initialText: 'Wrote it on a sticky note for my monitor.',

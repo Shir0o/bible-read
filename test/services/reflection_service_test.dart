@@ -49,8 +49,7 @@ void main() {
     expect(await service.fetchReflection(uid, dateKey), isNull);
   });
 
-  test('saveReflection overwrites a previous entry for the same day',
-      () async {
+  test('saveReflection overwrites a previous entry for the same day', () async {
     await service.saveReflection(uid, dateKey, 'First draft');
     await service.saveReflection(uid, dateKey, 'Revised thought');
 
@@ -62,9 +61,8 @@ void main() {
     await service.saveReflection(uid, '2026-07-15', 'Yesterday');
     await service.saveReflection(uid, '2026-07-16', 'Today');
 
-    expect((await service.fetchReflection(uid, '2026-07-15'))?.text,
-        'Yesterday');
     expect(
-        (await service.fetchReflection(uid, '2026-07-16'))?.text, 'Today');
+        (await service.fetchReflection(uid, '2026-07-15'))?.text, 'Yesterday');
+    expect((await service.fetchReflection(uid, '2026-07-16'))?.text, 'Today');
   });
 }
