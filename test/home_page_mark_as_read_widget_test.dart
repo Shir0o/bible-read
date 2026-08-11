@@ -113,17 +113,16 @@ void main() {
     // Wait for initial data loading and skeleton loaders
     await tester.pumpAndSettle(const Duration(milliseconds: 1500));
 
-    // Verify the habit hero "I read today" button exists
-    expect(find.text('I read today'), findsOneWidget);
-    expect(find.byKey(const ValueKey('habit_todo')), findsOneWidget);
+    // Verify the CheckInPage auto-opened and "I READ" button exists
+    expect(find.text('I READ'), findsOneWidget);
 
-    // 3. Tap "I read today"
-    await tester.tap(find.text('I read today'));
+    // 3. Tap "I READ"
+    await tester.tap(find.text('I READ'));
 
     // 4. Verify Optimistic UI Update
     await tester.pump();
-    // Should immediately show the affirmation (read) state
-    expect(find.byKey(const ValueKey('habit_done')), findsOneWidget);
+    await tester.pumpAndSettle();
+    // Should show the affirmation (read) state
     expect(find.text('Thank you for being here'), findsOneWidget);
 
     // 5. Verify Backend Confirmation

@@ -51,7 +51,7 @@ void main() {
         signedIn: true,
       );
 
-      // Initial state: not read today
+      // Initial state: not read today, auto-opens CheckInPage
       await tester.pumpWidget(
         MaterialApp(
           home: HomePage(
@@ -60,22 +60,27 @@ void main() {
             vibrationService: _StubVibrationService(),
             bibleProgressService: _StubBibleProgressService(),
             dateProvider: () => DateTime.now(),
+            enableDriftAnimation: false,
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Read whatever you’re drawn to.'), findsOneWidget);
-      expect(
-        find.text('I read today'),
-        findsOneWidget,
-      );
-      expect(find.byType(FilledButton), findsOneWidget);
-      expect(find.text('Thank you for being here'), findsNothing);
+      // CheckInPage is presented automatically
+      expect(find.text('Did you read today?'), findsOneWidget);
+      expect(find.text('I READ'), findsOneWidget);
+
+      // Dismiss CheckInPage back to Home
+      final dismissBtn = find.bySemanticsLabel('Dismiss check-in');
+      await tester.tap(dismissBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Did you read today?'), findsNothing);
     },
   );
 
-  testWidgets('show "Thank you for being here" when read today', (
+  testWidgets('show "Thank you for being here" on CheckInPage when read today',
+      (
     tester,
   ) async {
     final firestore = FakeFirebaseFirestore();
@@ -104,6 +109,7 @@ void main() {
           vibrationService: _StubVibrationService(),
           bibleProgressService: _StubBibleProgressService(),
           dateProvider: () => DateTime.now(),
+          enableDriftAnimation: false,
         ),
       ),
     );
@@ -112,14 +118,19 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
 
-    expect(find.text('Marked Today'), findsNothing);
+    // Today is read so CheckInPage does not auto-open.
+    // Tap the SunMark icon in the header to open CheckInPage.
+    final sunMark = find.bySemanticsLabel('You read today — open check-in');
+    expect(sunMark, findsOneWidget);
+    await tester.tap(sunMark);
+    await tester.pumpAndSettle();
+
     expect(find.text('Thank you for being here'), findsOneWidget);
-    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
-    expect(find.text('I read today'), findsNothing);
   });
 
-  testWidgets('tapping "I read today" updates UI to read state',
-      (tester) async {
+  testWidgets('tapping "I READ" on CheckInPage updates UI to read state', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
@@ -135,24 +146,22 @@ void main() {
           vibrationService: vibrationService,
           bibleProgressService: _StubBibleProgressService(),
           dateProvider: () => DateTime.now(),
+          enableDriftAnimation: false,
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    // Verify initial state
-    expect(find.text('I read today'), findsOneWidget);
+    // Verify initial state on auto-opened CheckInPage
+    expect(find.text('I READ'), findsOneWidget);
 
-    // Tap button
-    await tester.tap(find.text('I read today'));
-    await tester.pump(); // Start animation/process
-
-    // Expect loading state or immediate update (optimistic)
+    // Tap I READ
+    await tester.tap(find.text('I READ'));
+    await tester.pump(); // Start animation
     await tester.pumpAndSettle();
 
-    // Verify final state
+    // Verify payoff screen state
     expect(find.text('Thank you for being here'), findsOneWidget);
-    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
 
     // Verify Firestore was updated
     final today = DateTime.now();
@@ -167,64 +176,6 @@ void main() {
 
     expect(doc.exists, isTrue);
     expect(doc.data()?['read'], isTrue);
-  });
-
-  testWidgets(
-      'tapping "I read today" and then "Undo" updates UI back to unchecked and updates Firestore',
-      (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(
-      mockUser: MockUser(uid: 'u1'),
-      signedIn: true,
-    );
-    final vibrationService = _StubVibrationService();
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: HomePage(
-          firestore: firestore,
-          auth: auth,
-          vibrationService: vibrationService,
-          bibleProgressService: _StubBibleProgressService(),
-          dateProvider: () => DateTime.now(),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // 1. Mark as read. The SnackBar auto-dismisses after its default duration,
-    // so use a bounded pump here (not pumpAndSettle) to observe it while it's
-    // still showing.
-    await tester.tap(find.text('I read today'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(find.text('Thank you for being here'), findsOneWidget);
-    expect(find.text('Daily reading marked as complete'), findsOneWidget);
-    expect(find.text('Undo'), findsOneWidget);
-
-    // 2. Tap the "Undo" action on the snackbar
-    await tester.tap(find.text('Undo'));
-    await tester.pump();
-    await tester.pumpAndSettle();
-
-    // Verify it reverts back
-    expect(find.text('I read today'), findsOneWidget);
-    expect(find.text('Thank you for being here'), findsNothing);
-
-    // Verify Firestore was updated to read: false
-    final today = DateTime.now();
-    final dateKey =
-        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-    final doc = await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('reading')
-        .doc(dateKey)
-        .get();
-
-    expect(doc.exists, isTrue);
-    expect(doc.data()?['read'], isFalse);
   });
 
   testWidgets('displays the consistency glimpse', (tester) async {
@@ -266,6 +217,7 @@ void main() {
           vibrationService: _StubVibrationService(),
           bibleProgressService: _StubBibleProgressService(),
           dateProvider: () => DateTime.now(),
+          enableDriftAnimation: false,
         ),
       ),
     );
@@ -274,10 +226,7 @@ void main() {
     // The consistency glimpse summarises showing up across the season using
     // the seeded totalReadDays (5), and links to Journey.
     expect(find.text('Here 5 days this season'), findsOneWidget);
-    expect(
-      find.text("Whenever you return, it's enough."),
-      findsOneWidget,
-    );
+    expect(find.text("Whenever you return, it's enough."), findsOneWidget);
   });
 
   testWidgets('displays skeleton while loading', (tester) async {
@@ -299,6 +248,7 @@ void main() {
           bibleProgressService: _StubBibleProgressService(),
           readingStatusService: slowReadingService,
           dateProvider: () => DateTime.now(),
+          enableDriftAnimation: false,
         ),
       ),
     );
@@ -307,8 +257,8 @@ void main() {
     await tester.pump();
 
     // Check that regular content is NOT present yet
-    expect(find.text('Read whatever you’re drawn to.'), findsNothing);
-    expect(find.text('I read today'), findsNothing);
+    expect(find.text('Did you read today?'), findsNothing);
+    expect(find.text('I READ'), findsNothing);
 
     // Check that Skeleton is present
     expect(find.byType(HomePageSkeleton), findsOneWidget);
@@ -320,7 +270,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1100));
     await tester.pumpAndSettle();
 
-    expect(find.text('Read whatever you’re drawn to.'), findsOneWidget);
+    expect(find.text('Did you read today?'), findsOneWidget);
     expect(find.byType(HomePageSkeleton), findsNothing);
   });
 
@@ -367,14 +317,14 @@ void main() {
           readingPlanService: planService,
           userPreferencesService: prefsService,
           dateProvider: () => DateTime.now(),
+          enableDriftAnimation: false,
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    // Tap the habit hero "I read today" (distinct from the plan card's
-    // "Mark as read").
-    await tester.tap(find.text('I read today'));
+    // Tap the CheckInPage "I READ" sun button
+    await tester.tap(find.text('I READ'));
     await tester.pumpAndSettle();
 
     // Verify UI updated, NO prompt shown
@@ -419,6 +369,7 @@ void main() {
           readingPlanService: planService,
           userPreferencesService: prefsService,
           dateProvider: () => DateTime.now(),
+          enableDriftAnimation: false,
         ),
       ),
     );
@@ -426,8 +377,8 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
 
-    // Tap the habit hero "I read today" again
-    await tester.tap(find.text('I read today'));
+    // Tap the CheckInPage "I READ" sun button again
+    await tester.tap(find.text('I READ'));
     await tester.pumpAndSettle();
 
     // Verify UI updated, NO prompt

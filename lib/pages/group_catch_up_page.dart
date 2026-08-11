@@ -129,9 +129,9 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
         user: user,
         onMessage: (message) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
         },
       );
       if (mounted) {

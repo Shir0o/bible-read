@@ -48,8 +48,9 @@ void main() {
       find.descendant(of: find.byType(Card), matching: find.byType(Padding)),
     );
     expect(
-      paddings
-          .any((p) => p.padding == const EdgeInsets.all(AppSpacing.hPadding)),
+      paddings.any(
+        (p) => p.padding == const EdgeInsets.all(AppSpacing.hPadding),
+      ),
       isTrue,
     );
   });

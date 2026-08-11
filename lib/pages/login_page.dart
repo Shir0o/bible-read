@@ -73,16 +73,12 @@ class _LoginPageState extends State<LoginPage> {
       if (email.isEmpty || password.isEmpty) {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please fill in all fields'),
-          ),
+          const SnackBar(content: Text('Please fill in all fields')),
         );
       } else if (!_isValidEmail(email)) {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter a valid email address'),
-          ),
+          const SnackBar(content: Text('Please enter a valid email address')),
         );
       }
       return;
@@ -103,12 +99,22 @@ class _LoginPageState extends State<LoginPage> {
         password: password,
       );
       if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: widget.mainPageBuilder ?? (_) => MainPage(),
-          ),
-          (route) => false,
-        );
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: widget.mainPageBuilder ??
+                  (_) => MainPage(
+                        auth: widget.auth,
+                        firestore: widget.firestore,
+                        googleSignInProvider: widget.googleSignInProvider,
+                        vibrationService: widget.vibrationService,
+                      ),
+            ),
+            (route) => false,
+          );
+        }
       }
     } catch (e, st) {
       if (kDebugMode) {
@@ -151,12 +157,22 @@ class _LoginPageState extends State<LoginPage> {
       await widget.auth.signInWithCredential(credential);
 
       if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: widget.mainPageBuilder ?? (_) => MainPage(),
-          ),
-          (route) => false,
-        );
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: widget.mainPageBuilder ??
+                  (_) => MainPage(
+                        auth: widget.auth,
+                        firestore: widget.firestore,
+                        googleSignInProvider: widget.googleSignInProvider,
+                        vibrationService: widget.vibrationService,
+                      ),
+            ),
+            (route) => false,
+          );
+        }
       }
     } catch (error, st) {
       if (error is GoogleSignInException &&
@@ -216,13 +232,9 @@ class _LoginPageState extends State<LoginPage> {
           builder: (context, constraints) {
             return SingleChildScrollView(
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32.0,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -269,9 +281,7 @@ class _LoginPageState extends State<LoginPage> {
 
                       // Subtitle
                       Container(
-                        constraints: const BoxConstraints(
-                          maxWidth: 280,
-                        ),
+                        constraints: const BoxConstraints(maxWidth: 280),
                         child: Text(
                           'Join your community in daily Scripture reading',
                           textAlign: TextAlign.center,
@@ -294,9 +304,7 @@ class _LoginPageState extends State<LoginPage> {
                                 label: 'Email or Username',
                                 key: const Key('loginEmailField'),
                                 keyboardType: TextInputType.emailAddress,
-                                autofillHints: const [
-                                  AutofillHints.email,
-                                ],
+                                autofillHints: const [AutofillHints.email],
                                 textInputAction: TextInputAction.next,
                                 autofocus: true,
                                 validator: (val) {
@@ -314,9 +322,7 @@ class _LoginPageState extends State<LoginPage> {
                                   builder: (context, value, child) {
                                     return value.text.isNotEmpty
                                         ? IconButton(
-                                            icon: const Icon(
-                                              Icons.clear,
-                                            ),
+                                            icon: const Icon(Icons.clear),
                                             tooltip: 'Clear',
                                             onPressed: () {
                                               _emailController.clear();
@@ -334,9 +340,7 @@ class _LoginPageState extends State<LoginPage> {
                                 label: 'Password',
                                 key: const Key('loginPasswordField'),
                                 obscureText: !_isPasswordVisible,
-                                autofillHints: [
-                                  AutofillHints.password,
-                                ],
+                                autofillHints: [AutofillHints.password],
                                 textInputAction: TextInputAction.done,
                                 onSubmitted: (_) => _submit(),
                                 validator: (value) {
@@ -385,9 +389,7 @@ class _LoginPageState extends State<LoginPage> {
                               child: Material(
                                 type: MaterialType.transparency,
                                 child: InkWell(
-                                  borderRadius: BorderRadius.circular(
-                                    4,
-                                  ),
+                                  borderRadius: BorderRadius.circular(4),
                                   onTap: () {
                                     unawaited(
                                       widget.vibrationService.lightImpact(),
@@ -395,9 +397,7 @@ class _LoginPageState extends State<LoginPage> {
                                     _handleForgotPassword();
                                   },
                                   child: Padding(
-                                    padding: const EdgeInsets.all(
-                                      8.0,
-                                    ),
+                                    padding: const EdgeInsets.all(8.0),
                                     child: Text(
                                       'Forgot Password?',
                                       style: textTheme.bodyMedium?.copyWith(
@@ -425,11 +425,13 @@ class _LoginPageState extends State<LoginPage> {
                             backgroundColor: colorScheme.primary,
                             foregroundColor: colorScheme.onPrimary,
                             elevation: 10, // shadow-lg
-                            shadowColor:
-                                colorScheme.shadow.withValues(alpha: 0.3),
+                            shadowColor: colorScheme.shadow.withValues(
+                              alpha: 0.3,
+                            ),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(AppSpacing.rCard),
+                              borderRadius: BorderRadius.circular(
+                                AppSpacing.rCard,
+                              ),
                             ),
                           ),
                           child: _loading
@@ -453,15 +455,14 @@ class _LoginPageState extends State<LoginPage> {
 
                       // OR Divider
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 24.0,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 24.0),
                         child: Row(
                           children: [
                             Expanded(
                               child: Divider(
-                                color: colorScheme.outlineVariant
-                                    .withValues(alpha: 0.1),
+                                color: colorScheme.outlineVariant.withValues(
+                                  alpha: 0.1,
+                                ),
                               ),
                             ),
                             Padding(
@@ -479,8 +480,9 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             Expanded(
                               child: Divider(
-                                color: colorScheme.outlineVariant
-                                    .withValues(alpha: 0.1),
+                                color: colorScheme.outlineVariant.withValues(
+                                  alpha: 0.1,
+                                ),
                               ),
                             ),
                           ],
@@ -497,11 +499,13 @@ class _LoginPageState extends State<LoginPage> {
                             backgroundColor: colorScheme.surfaceBright,
                             foregroundColor: colorScheme.onSurface,
                             elevation: 4, // shadow-md
-                            shadowColor:
-                                colorScheme.shadow.withValues(alpha: 0.1),
+                            shadowColor: colorScheme.shadow.withValues(
+                              alpha: 0.1,
+                            ),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(AppSpacing.rCard),
+                              borderRadius: BorderRadius.circular(
+                                AppSpacing.rCard,
+                              ),
                               side: BorderSide(
                                 color: colorScheme.outlineVariant,
                               ),
@@ -543,10 +547,7 @@ class _LoginPageState extends State<LoginPage> {
 
                       // Sign up link
                       Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: 40.0,
-                          top: 20,
-                        ),
+                        padding: const EdgeInsets.only(bottom: 40.0, top: 20),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -588,9 +589,7 @@ class _LoginPageState extends State<LoginPage> {
                                       );
                                     },
                                     child: Padding(
-                                      padding: const EdgeInsets.all(
-                                        4.0,
-                                      ),
+                                      padding: const EdgeInsets.all(4.0),
                                       child: Text(
                                         'Sign up',
                                         style: textTheme.bodyMedium?.copyWith(

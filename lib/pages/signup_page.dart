@@ -136,17 +136,17 @@ class _SignupPageState extends State<SignupPage> {
       final passwordError = _validatePassword(password);
 
       if (nameError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(nameError)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(nameError)));
       } else if (emailError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(emailError)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(emailError)));
       } else if (passwordError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(passwordError)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(passwordError)));
       }
       return;
     }
@@ -277,9 +277,7 @@ class _SignupPageState extends State<SignupPage> {
           contentPadding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
           enabledBorder: UnderlineInputBorder(
             borderRadius: inputRadius,
-            borderSide: BorderSide(
-              color: AppColors.of(context).border,
-            ),
+            borderSide: BorderSide(color: AppColors.of(context).border),
           ),
           focusedBorder: UnderlineInputBorder(
             borderRadius: inputRadius,
@@ -515,8 +513,9 @@ class _SignupPageState extends State<SignupPage> {
                           foregroundColor: colorScheme.onPrimary,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppSpacing.rCard),
+                            borderRadius: BorderRadius.circular(
+                              AppSpacing.rCard,
+                            ),
                           ),
                         ),
                         child: _loading

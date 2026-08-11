@@ -41,8 +41,9 @@ Widget _host(CatchUpStatus status, {bool isGroup = true}) {
 void main() {
   final today = DateTime(2026, 6, 2);
 
-  testWidgets('behind: shows catch-up tray and hides "Jump to current"',
-      (tester) async {
+  testWidgets('behind: shows catch-up tray and hides "Jump to current"', (
+    tester,
+  ) async {
     final status = _status(
       today: today,
       days: const [
@@ -67,8 +68,9 @@ void main() {
     expect(find.text('0 of 3 read'), findsOneWidget);
   });
 
-  testWidgets('caught up: shows "Jump to current" chip and "in step" card',
-      (tester) async {
+  testWidgets('caught up: shows "Jump to current" chip and "in step" card', (
+    tester,
+  ) async {
     final status = _status(
       today: today,
       days: const [
@@ -87,8 +89,9 @@ void main() {
     expect(find.text('2 of 3 read'), findsOneWidget);
   });
 
-  testWidgets('personal: behind shows a quiet inline note, no group chrome',
-      (tester) async {
+  testWidgets('personal: behind shows a quiet inline note, no group chrome', (
+    tester,
+  ) async {
     final status = _status(
       today: today,
       days: const [

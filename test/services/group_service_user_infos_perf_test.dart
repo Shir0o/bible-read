@@ -10,10 +10,11 @@ void main() {
 
     var batch = firestore.batch();
     for (var i = 0; i < uids.length; i++) {
-      batch.set(
-        firestore.collection('users').doc(uids[i]),
-        {'uid': uids[i], 'name': 'User $i', 'photoURL': 'url_$i'},
-      );
+      batch.set(firestore.collection('users').doc(uids[i]), {
+        'uid': uids[i],
+        'name': 'User $i',
+        'photoURL': 'url_$i',
+      });
     }
     await batch.commit();
 
@@ -33,7 +34,8 @@ void main() {
     await Future.wait(futures1);
     stopwatch1.stop();
     print(
-        'Baseline (whereIn with Future.wait): ${stopwatch1.elapsedMicroseconds} us');
+      'Baseline (whereIn with Future.wait): ${stopwatch1.elapsedMicroseconds} us',
+    );
 
     // Opt 1: using chunked maps with individual `get()` and `Future.wait`
     final stopwatch2 = Stopwatch()..start();
@@ -43,12 +45,14 @@ void main() {
       final chunk = uids.sublist(i, end);
       futures2.add(
         Future.wait(
-            chunk.map((uid) => firestore.collection('users').doc(uid).get())),
+          chunk.map((uid) => firestore.collection('users').doc(uid).get()),
+        ),
       );
     }
     await Future.wait(futures2);
     stopwatch2.stop();
     print(
-        'Optimized (chunked mapped gets): ${stopwatch2.elapsedMicroseconds} us');
+      'Optimized (chunked mapped gets): ${stopwatch2.elapsedMicroseconds} us',
+    );
   });
 }

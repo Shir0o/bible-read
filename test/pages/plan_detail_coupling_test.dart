@@ -96,8 +96,9 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('first finish under "ask" shows the SyncSheet only once',
-      (tester) async {
+  testWidgets('first finish under "ask" shows the SyncSheet only once', (
+    tester,
+  ) async {
     await pumpPage(tester);
 
     // Finish today's reading -> the one-time prompt appears.
@@ -122,8 +123,9 @@ void main() {
     expect(find.text("You finished today's reading"), findsNothing);
   });
 
-  testWidgets('linked: finishing a reading records the habit, no prompt',
-      (tester) async {
+  testWidgets('linked: finishing a reading records the habit, no prompt', (
+    tester,
+  ) async {
     await prefsService.updatePreferences(
       'u1',
       const UserPreferences(autoMarkPlanRead: true, syncPromptAnswered: true),
@@ -136,8 +138,9 @@ void main() {
     expect(await habitRecordedToday(), isTrue);
   });
 
-  testWidgets('separate: finishing a reading does not record the habit',
-      (tester) async {
+  testWidgets('separate: finishing a reading does not record the habit', (
+    tester,
+  ) async {
     await prefsService.updatePreferences(
       'u1',
       const UserPreferences(autoMarkPlanRead: false, syncPromptAnswered: true),

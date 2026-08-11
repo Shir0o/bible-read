@@ -31,19 +31,20 @@ Widget _host({
 void main() {
   testWidgets('saves the entered text and closes the sheet', (tester) async {
     String? captured;
-    await tester.pumpWidget(_host(onSave: (text) async {
-      captured = text;
-    }));
+    await tester.pumpWidget(
+      _host(
+        onSave: (text) async {
+          captured = text;
+        },
+      ),
+    );
 
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
     expect(find.text('What stayed with you?'), findsOneWidget);
 
-    await tester.enterText(
-      find.byType(TextField),
-      'Rest isn’t earned here.',
-    );
+    await tester.enterText(find.byType(TextField), 'Rest isn’t earned here.');
     await tester.pump();
 
     await tester.tap(find.text('Save'));
@@ -55,9 +56,13 @@ void main() {
 
   testWidgets('Save is disabled until text is entered', (tester) async {
     var saveCalled = false;
-    await tester.pumpWidget(_host(onSave: (text) async {
-      saveCalled = true;
-    }));
+    await tester.pumpWidget(
+      _host(
+        onSave: (text) async {
+          saveCalled = true;
+        },
+      ),
+    );
 
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
@@ -72,12 +77,14 @@ void main() {
   testWidgets('skip closes the sheet without saving', (tester) async {
     var saveCalled = false;
     var skipCalled = false;
-    await tester.pumpWidget(_host(
-      onSave: (text) async {
-        saveCalled = true;
-      },
-      onSkip: () => skipCalled = true,
-    ));
+    await tester.pumpWidget(
+      _host(
+        onSave: (text) async {
+          saveCalled = true;
+        },
+        onSkip: () => skipCalled = true,
+      ),
+    );
 
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
@@ -92,21 +99,24 @@ void main() {
   });
 
   testWidgets(
-      'editing an existing reflection pre-fills the field and shows Cancel',
-      (tester) async {
-    await tester.pumpWidget(_host(
-      initialText: 'Wrote it on a sticky note for my monitor.',
-      onSave: (text) async {},
-    ));
+    'editing an existing reflection pre-fills the field and shows Cancel',
+    (tester) async {
+      await tester.pumpWidget(
+        _host(
+          initialText: 'Wrote it on a sticky note for my monitor.',
+          onSave: (text) async {},
+        ),
+      );
 
-    await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
 
-    expect(
-      find.text('Wrote it on a sticky note for my monitor.'),
-      findsOneWidget,
-    );
-    expect(find.text('Cancel'), findsOneWidget);
-    expect(find.text('Skip for today'), findsNothing);
-  });
+      expect(
+        find.text('Wrote it on a sticky note for my monitor.'),
+        findsOneWidget,
+      );
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('Skip for today'), findsNothing);
+    },
+  );
 }

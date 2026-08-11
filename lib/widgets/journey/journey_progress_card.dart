@@ -346,8 +346,9 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                             height: 100, // Slightly taller rectangle
                             decoration: BoxDecoration(
                               color: colorScheme.surfaceContainer,
-                              borderRadius:
-                                  BorderRadius.circular(AppSpacing.rCard),
+                              borderRadius: BorderRadius.circular(
+                                AppSpacing.rCard,
+                              ),
                               border: Border.all(
                                 color: colorScheme.onSurfaceVariant.withValues(
                                   alpha: 0.1,
@@ -359,8 +360,9 @@ class _JourneyProgressCardState extends State<JourneyProgressCard> {
                               child: Icon(
                                 Icons.auto_stories,
                                 size: 36,
-                                color:
-                                    colorScheme.primary.withValues(alpha: 0.8),
+                                color: colorScheme.primary.withValues(
+                                  alpha: 0.8,
+                                ),
                               ),
                             ),
                           ),

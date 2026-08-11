@@ -130,11 +130,7 @@ class _CommunityReadingHeroState extends State<CommunityReadingHero> {
                         ),
                       ),
                       if (readers.isNotEmpty)
-                        MemberPresenceStack(
-                          members: readers,
-                          size: 28,
-                          max: 4,
-                        ),
+                        MemberPresenceStack(members: readers, size: 28, max: 4),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -151,8 +147,11 @@ class _CommunityReadingHeroState extends State<CommunityReadingHero> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.groups_outlined,
-                          size: 15, color: colorScheme.primary),
+                      Icon(
+                        Icons.groups_outlined,
+                        size: 15,
+                        color: colorScheme.primary,
+                      ),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
@@ -208,8 +207,11 @@ class _CommunityReadingHeroState extends State<CommunityReadingHero> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.explore_outlined,
-                            size: 14, color: colorScheme.outline),
+                        Icon(
+                          Icons.explore_outlined,
+                          size: 14,
+                          color: colorScheme.outline,
+                        ),
                         const SizedBox(width: 7),
                         Expanded(
                           child: Text(
@@ -280,8 +282,11 @@ class _CommunityReadingHeroState extends State<CommunityReadingHero> {
                 shape: BoxShape.circle,
                 color: colorScheme.primary,
               ),
-              child: Icon(Icons.check_rounded,
-                  size: 18, color: colorScheme.onPrimary),
+              child: Icon(
+                Icons.check_rounded,
+                size: 18,
+                color: colorScheme.onPrimary,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(

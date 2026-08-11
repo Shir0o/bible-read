@@ -314,9 +314,7 @@ class _GroupsPageState extends State<GroupsPage> {
             color: AppColors.of(context).primarySoft,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: AppColors.of(context).primaryLine,
-              ),
+              side: BorderSide(color: AppColors.of(context).primaryLine),
             ),
             child: Padding(
               padding: const EdgeInsets.all(12),

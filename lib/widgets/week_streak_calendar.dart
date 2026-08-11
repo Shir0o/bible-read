@@ -100,8 +100,10 @@ class WeekStreakCalendar extends StatelessWidget {
                   label: '${fullDays[i]}, ${filled ? "Read" : "Not read"}',
                   excludeSemantics: true,
                   child: Container(
-                    constraints:
-                        const BoxConstraints(minHeight: 48, minWidth: 48),
+                    constraints: const BoxConstraints(
+                      minHeight: 48,
+                      minWidth: 48,
+                    ),
                     alignment: Alignment.center,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,

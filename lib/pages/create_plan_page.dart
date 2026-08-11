@@ -328,9 +328,14 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Error ${_isEditing ? 'saving' : 'creating'} '
-                'plan: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error ${_isEditing ? 'saving' : 'creating'} '
+              'plan: $e',
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -620,8 +625,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               color: colorScheme.surfaceContainerHighest,
-                              borderRadius:
-                                  BorderRadius.circular(AppSpacing.rCard),
+                              borderRadius: BorderRadius.circular(
+                                AppSpacing.rCard,
+                              ),
                               border: Border.all(
                                 color: colorScheme.outlineVariant.withValues(
                                   alpha: 0.5,

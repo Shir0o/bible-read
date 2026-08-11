@@ -30,7 +30,9 @@ void main() {
   }
 
   testWidgets('windows around the resume index, hiding earlier/later readings',
-      (tester) async {
+      (
+    tester,
+  ) async {
     // 20-day plan, started 10 days ago, nothing completed → resume is day 1
     // (first missed). Window of 5 should show days 1..5 and a "more" ellipsis.
     final start = DateTime(2024, 1, 1);
@@ -54,8 +56,9 @@ void main() {
     expect(find.textContaining('more'), findsOneWidget);
   });
 
-  testWidgets('shows behind count gently as "to revisit", never red',
-      (tester) async {
+  testWidgets('shows behind count gently as "to revisit", never red', (
+    tester,
+  ) async {
     final start = DateTime(2024, 1, 1);
     final status = _dailyStatus(
       days: 20,
@@ -69,8 +72,9 @@ void main() {
     expect(find.textContaining('to revisit'), findsOneWidget);
   });
 
-  testWidgets('weekly cadence yields a sensible per-week pace string',
-      (tester) async {
+  testWidgets('weekly cadence yields a sensible per-week pace string', (
+    tester,
+  ) async {
     // 6 readings, one per week → "~1 reading/week".
     final entries = List.generate(
       6,
@@ -88,8 +92,9 @@ void main() {
     expect(find.textContaining('reading/week'), findsOneWidget);
   });
 
-  testWidgets('View full schedule action shown only when callback provided',
-      (tester) async {
+  testWidgets('View full schedule action shown only when callback provided', (
+    tester,
+  ) async {
     final status = _dailyStatus(
       days: 5,
       start: DateTime(2024, 1, 1),
@@ -102,11 +107,7 @@ void main() {
 
     await pump(
       tester,
-      SchedulePreview(
-        status: status,
-        title: 'Plan',
-        onViewFull: () {},
-      ),
+      SchedulePreview(status: status, title: 'Plan', onViewFull: () {}),
     );
     expect(find.text('View full schedule'), findsOneWidget);
   });

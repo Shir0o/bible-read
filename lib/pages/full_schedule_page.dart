@@ -159,9 +159,9 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -335,9 +335,7 @@ class _TodayAnchorCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.of(context).primarySoft,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        border: Border.all(
-          color: AppColors.of(context).primaryLine,
-        ),
+        border: Border.all(color: AppColors.of(context).primaryLine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -469,11 +467,7 @@ class _TodayAnchorCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: colorScheme.primary,
               ),
-              child: Icon(
-                Icons.check,
-                size: 17,
-                color: colorScheme.onPrimary,
-              ),
+              child: Icon(Icons.check, size: 17, color: colorScheme.onPrimary),
             ),
             const SizedBox(width: 12),
             Expanded(

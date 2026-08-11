@@ -268,8 +268,11 @@ class SchedulePreview extends StatelessWidget {
       case ReadingStatus.done:
         return Icon(Icons.check_circle, color: colorScheme.primary, size: 20);
       case ReadingStatus.current:
-        return Icon(Icons.add_circle_outline,
-            color: colorScheme.primary, size: 20);
+        return Icon(
+          Icons.add_circle_outline,
+          color: colorScheme.primary,
+          size: 20,
+        );
       case ReadingStatus.missed:
         // Dashed gold ring — "to revisit", gentle.
         return Container(

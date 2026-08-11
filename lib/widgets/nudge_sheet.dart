@@ -250,8 +250,11 @@ class _NudgeSheetState extends State<_NudgeSheet> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.favorite_outline,
-                  size: 16, color: colorScheme.primary),
+              Icon(
+                Icons.favorite_outline,
+                size: 16,
+                color: colorScheme.primary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -271,8 +274,9 @@ class _NudgeSheetState extends State<_NudgeSheet> {
           const SizedBox(height: 12),
           Text(
             _error!,
-            style:
-                theme.textTheme.bodySmall?.copyWith(color: colorScheme.error),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.error,
+            ),
           ),
         ],
         const SizedBox(height: 18),
@@ -442,9 +446,7 @@ class _Avatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: colorScheme.surfaceContainerHighest,
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: ClipOval(
         child: person.photoUrl != null

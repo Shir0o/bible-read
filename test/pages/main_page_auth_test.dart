@@ -211,6 +211,12 @@ void main() {
     // Wait for StreamBuilder if necessary. MockFirebaseAuth usually emits immediately.
     await tester.pump(const Duration(milliseconds: 100));
 
+    // Dismiss auto-opened CheckInPage so the scaffold underneath is onstage.
+    if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+      await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+      await tester.pumpAndSettle();
+    }
+
     expect(find.byType(ResponsiveScaffold), findsOneWidget);
     expect(find.byType(SettingsPage), findsNothing);
     expect(

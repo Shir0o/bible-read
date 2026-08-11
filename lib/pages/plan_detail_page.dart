@@ -299,9 +299,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -372,8 +372,9 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
         padding: const EdgeInsets.only(bottom: 4, left: 4, right: 4),
         child: Text(
           widget.plan.description,
-          style: AppTextStyles.body(context)
-              .copyWith(color: colorScheme.onSurfaceVariant),
+          style: AppTextStyles.body(
+            context,
+          ).copyWith(color: colorScheme.onSurfaceVariant),
         ),
       ),
       onToggle: (i) {

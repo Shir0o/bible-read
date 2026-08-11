@@ -1,4 +1,5 @@
 import 'package:bible_read/main.dart';
+import 'package:bible_read/pages/check_in_page.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/signup_page.dart';
@@ -101,7 +102,11 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
-    // 6. Verify we are logged in and on HomePage
+    // 6. Dismiss auto-opened CheckInPage & verify we are logged in and on HomePage
+    if (find.byType(CheckInPage).evaluate().isNotEmpty) {
+      tester.widget<CheckInPage>(find.byType(CheckInPage)).onClose();
+      await tester.pumpAndSettle();
+    }
     expect(find.byType(HomePage), findsOneWidget);
     expect(auth.currentUser, isNotNull);
     expect(auth.currentUser!.displayName, 'Test User');
@@ -156,6 +161,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // 13. Verify we are logged in again
+    if (find.byType(CheckInPage).evaluate().isNotEmpty) {
+      tester.widget<CheckInPage>(find.byType(CheckInPage)).onClose();
+      await tester.pumpAndSettle();
+    }
     expect(find.byType(HomePage), findsOneWidget);
     expect(auth.currentUser, isNotNull);
     expect(auth.currentUser!.email, 'test@example.com');

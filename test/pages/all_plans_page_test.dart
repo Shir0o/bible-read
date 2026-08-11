@@ -73,8 +73,9 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
   }
 
-  testWidgets('renders the personal plan with the design sections',
-      (tester) async {
+  testWidgets('renders the personal plan with the design sections', (
+    tester,
+  ) async {
     await pumpPage(tester);
 
     expect(find.text('My Reading Plans'), findsOneWidget);

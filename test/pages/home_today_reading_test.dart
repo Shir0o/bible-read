@@ -29,10 +29,8 @@ class _StubBibleProgressService extends BibleProgressService {
 }
 
 Widget _host(Widget home) => MaterialApp(
-      theme: ThemeData(
-        useMaterial3: true,
-        splashFactory: NoSplash.splashFactory,
-      ),
+      theme:
+          ThemeData(useMaterial3: true, splashFactory: NoSplash.splashFactory),
       home: home,
     );
 
@@ -73,24 +71,32 @@ void main() {
     'no active plan: habit hero shown, no "Today’s reading" card (#723)',
     (tester) async {
       final firestore = FakeFirebaseFirestore();
-      final auth =
-          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1'),
+        signedIn: true,
+      );
 
       await tester.pumpWidget(
-        _host(HomePage(
-          firestore: firestore,
-          auth: auth,
-          vibrationService: const VibrationService(),
-          bibleProgressService: _StubBibleProgressService(),
-          dateProvider: DateTime.now,
-        )),
+        _host(
+          HomePage(
+            firestore: firestore,
+            auth: auth,
+            vibrationService: const VibrationService(),
+            bibleProgressService: _StubBibleProgressService(),
+            dateProvider: DateTime.now,
+            enableDriftAnimation: false,
+          ),
+        ),
       );
       await tester.pumpAndSettle();
 
-      // Habit hero present and dominant.
-      expect(find.byKey(const ValueKey('habit_todo')), findsOneWidget);
-      expect(find.text('Read whatever you’re drawn to.'), findsOneWidget);
-      expect(find.text('I read today'), findsOneWidget);
+      // Auto-opens CheckInPage.
+      expect(find.text('Did you read today?'), findsOneWidget);
+      expect(find.text('I READ'), findsOneWidget);
+
+      // Dismiss CheckInPage back to Home
+      await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+      await tester.pumpAndSettle();
 
       // Nothing prescriptive: no plan reading card.
       expect(find.text('Today’s reading'), findsNothing);
@@ -99,29 +105,35 @@ void main() {
   );
 
   testWidgets(
-    'active plan: habit hero AND a separate "Today’s reading" card (#722)',
+    'active plan: habit check-in AND a separate "Today’s reading" card (#722)',
     (tester) async {
       final firestore = FakeFirebaseFirestore();
-      final auth =
-          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1'),
+        signedIn: true,
+      );
       final planService = ReadingPlanService(firestore: firestore);
       await _seedPlan(firestore, planService, now: DateTime.now());
 
       await tester.pumpWidget(
-        _host(HomePage(
-          firestore: firestore,
-          auth: auth,
-          vibrationService: const VibrationService(),
-          bibleProgressService: _StubBibleProgressService(),
-          readingPlanService: planService,
-          dateProvider: DateTime.now,
-        )),
+        _host(
+          HomePage(
+            firestore: firestore,
+            auth: auth,
+            vibrationService: const VibrationService(),
+            bibleProgressService: _StubBibleProgressService(),
+            readingPlanService: planService,
+            dateProvider: DateTime.now,
+            enableDriftAnimation: false,
+          ),
+        ),
       );
       await tester.pumpAndSettle();
 
-      // Habit hero remains the hero, now with the plan-aware prompt.
-      expect(find.text('Did you spend time in the Word?'), findsOneWidget);
-      expect(find.text('I read today'), findsOneWidget);
+      // Auto-opens CheckInPage. Dismiss to view Home page.
+      expect(find.text('Did you read today?'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+      await tester.pumpAndSettle();
 
       // Plus a distinct plan reading card.
       expect(find.text('Today’s reading'), findsOneWidget);
@@ -130,77 +142,100 @@ void main() {
     },
   );
 
-  testWidgets(
-    'read state + active plan fits a phone viewport (no overflow)',
-    (tester) async {
-      // Default 800x600 test surface — the size at which CI caught a 20px
-      // overflow before the SliverToBoxAdapter fix.
-      final firestore = FakeFirebaseFirestore();
-      final auth =
-          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-      final planService = ReadingPlanService(firestore: firestore);
-      await _seedPlan(firestore, planService, now: DateTime.now());
+  testWidgets('read state + active plan fits a phone viewport (no overflow)', (
+    tester,
+  ) async {
+    // Default 800x600 test surface — the size at which CI caught a 20px
+    // overflow before the SliverToBoxAdapter fix.
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+    final planService = ReadingPlanService(firestore: firestore);
+    await _seedPlan(firestore, planService, now: DateTime.now());
 
-      // Already showed up today.
-      final today = DateTime.now();
-      final dateKey =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-      await firestore
-          .collection('users')
-          .doc('u1')
-          .collection('reading')
-          .doc(dateKey)
-          .set({'read': true});
-      await firestore
-          .collection('users')
-          .doc('u1')
-          .collection('summary')
-          .doc('data')
-          .set({'streak': 5, 'totalReadDays': 5, 'pastWeekReadDates': []});
+    // Already showed up today.
+    final today = DateTime.now();
+    final dateKey =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('reading')
+        .doc(dateKey)
+        .set({'read': true});
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('summary')
+        .doc('data')
+        .set({
+      'streak': 5,
+      'totalReadDays': 5,
+      'pastWeekReadDates': [dateKey],
+    });
 
-      await tester.pumpWidget(
-        _host(HomePage(
+    await tester.pumpWidget(
+      _host(
+        HomePage(
           firestore: firestore,
           auth: auth,
           vibrationService: const VibrationService(),
           bibleProgressService: _StubBibleProgressService(),
           readingPlanService: planService,
           dateProvider: DateTime.now,
-        )),
-      );
-      await tester.pumpAndSettle();
+          enableDriftAnimation: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      // Affirmation hero, plan reading card and the consistency glimpse all
-      // coexist…
-      expect(find.text('Thank you for being here'), findsOneWidget);
-      expect(find.text('Today’s reading'), findsOneWidget);
-      expect(find.text('Here 5 days this season'), findsOneWidget);
-      // …without a layout overflow.
-      expect(tester.takeException(), isNull);
-    },
-  );
+    // Marked SunMark header button, plan reading card and the consistency glimpse all
+    // coexist…
+    expect(
+      find.bySemanticsLabel('You read today — open check-in'),
+      findsOneWidget,
+    );
+    expect(find.text('Today’s reading'), findsOneWidget);
+    expect(find.text('Here 5 days this season'), findsOneWidget);
+    // …without a layout overflow.
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'plan card mark advances the plan and asks the coupling question once',
     (tester) async {
       final firestore = FakeFirebaseFirestore();
-      final auth =
-          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1'),
+        signedIn: true,
+      );
       final planService = ReadingPlanService(firestore: firestore);
       await _seedPlan(firestore, planService, now: DateTime.now());
 
       await tester.pumpWidget(
-        _host(HomePage(
-          firestore: firestore,
-          auth: auth,
-          vibrationService: const VibrationService(),
-          bibleProgressService: _StubBibleProgressService(),
-          readingPlanService: planService,
-          userPreferencesService: UserPreferencesService(firestore: firestore),
-          dateProvider: DateTime.now,
-        )),
+        _host(
+          HomePage(
+            firestore: firestore,
+            auth: auth,
+            vibrationService: const VibrationService(),
+            bibleProgressService: _StubBibleProgressService(),
+            readingPlanService: planService,
+            userPreferencesService: UserPreferencesService(
+              firestore: firestore,
+            ),
+            dateProvider: DateTime.now,
+            enableDriftAnimation: false,
+          ),
+        ),
       );
       await tester.pumpAndSettle();
+
+      if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+        await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+        await tester.pumpAndSettle();
+      }
 
       await tester.tap(find.text('Mark as read'));
       await tester.pumpAndSettle();
@@ -243,32 +278,39 @@ void main() {
     'plan card mark with coupling already linked marks the daily habit too',
     (tester) async {
       final firestore = FakeFirebaseFirestore();
-      final auth =
-          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1'),
+        signedIn: true,
+      );
       final planService = ReadingPlanService(firestore: firestore);
       await _seedPlan(firestore, planService, now: DateTime.now());
 
       final prefsService = UserPreferencesService(firestore: firestore);
       await prefsService.updatePreferences(
         'u1',
-        const UserPreferences(
-          autoMarkPlanRead: true,
-          syncPromptAnswered: true,
-        ),
+        const UserPreferences(autoMarkPlanRead: true, syncPromptAnswered: true),
       );
 
       await tester.pumpWidget(
-        _host(HomePage(
-          firestore: firestore,
-          auth: auth,
-          vibrationService: const VibrationService(),
-          bibleProgressService: _StubBibleProgressService(),
-          readingPlanService: planService,
-          userPreferencesService: prefsService,
-          dateProvider: DateTime.now,
-        )),
+        _host(
+          HomePage(
+            firestore: firestore,
+            auth: auth,
+            vibrationService: const VibrationService(),
+            bibleProgressService: _StubBibleProgressService(),
+            readingPlanService: planService,
+            userPreferencesService: prefsService,
+            dateProvider: DateTime.now,
+            enableDriftAnimation: false,
+          ),
+        ),
       );
       await tester.pumpAndSettle();
+
+      if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+        await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+        await tester.pumpAndSettle();
+      }
 
       // Coupling is already linked, so no SyncSheet should appear.
       await tester.tap(find.text('Mark as read'));
@@ -287,8 +329,11 @@ void main() {
           .get();
       expect(habitDoc.data()?['read'], isTrue);
 
-      // ...and the habit hero reflects it without a separate "I read today" tap.
-      expect(find.text('Thank you for being here'), findsOneWidget);
+      // ...and the SunMark in header reflects it with marked state.
+      expect(
+        find.bySemanticsLabel('You read today — open check-in'),
+        findsOneWidget,
+      );
     },
   );
 
@@ -296,12 +341,16 @@ void main() {
     'group card mark, first-time "Yes" choice, marks the daily habit too',
     (tester) async {
       final firestore = FakeFirebaseFirestore();
-      final auth =
-          MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1'),
+        signedIn: true,
+      );
       final groupService = GroupService(firestore: firestore);
 
-      final groupId =
-          await groupService.createGroup(ownerUid: 'u1', name: 'Test Group');
+      final groupId = await groupService.createGroup(
+        ownerUid: 'u1',
+        name: 'Test Group',
+      );
       final today = DateTime.now();
       await groupService.updateSchedule(
         groupId: groupId,
@@ -309,17 +358,27 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _host(HomePage(
-          firestore: firestore,
-          auth: auth,
-          vibrationService: const VibrationService(),
-          bibleProgressService: _StubBibleProgressService(),
-          groupService: groupService,
-          userPreferencesService: UserPreferencesService(firestore: firestore),
-          dateProvider: DateTime.now,
-        )),
+        _host(
+          HomePage(
+            firestore: firestore,
+            auth: auth,
+            vibrationService: const VibrationService(),
+            bibleProgressService: _StubBibleProgressService(),
+            groupService: groupService,
+            userPreferencesService: UserPreferencesService(
+              firestore: firestore,
+            ),
+            dateProvider: DateTime.now,
+            enableDriftAnimation: false,
+          ),
+        ),
       );
       await tester.pumpAndSettle();
+
+      if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+        await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+        await tester.pumpAndSettle();
+      }
 
       await tester.tap(find.text('Read with your community'));
       await tester.pumpAndSettle();
@@ -338,7 +397,10 @@ void main() {
           .doc(dateKey)
           .get();
       expect(habitDoc.data()?['read'], isTrue);
-      expect(find.text('Thank you for being here'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('You read today — open check-in'),
+        findsOneWidget,
+      );
     },
   );
 }

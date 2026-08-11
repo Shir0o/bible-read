@@ -25,8 +25,10 @@ void main() {
   test(
     'updatePreferences creates document and fetchPreferences returns it',
     () async {
-      const newPrefs =
-          UserPreferences(autoMarkPlanRead: true, syncPromptAnswered: true);
+      const newPrefs = UserPreferences(
+        autoMarkPlanRead: true,
+        syncPromptAnswered: true,
+      );
 
       await service.updatePreferences(uid, newPrefs);
 
@@ -36,17 +38,22 @@ void main() {
     },
   );
 
-  test('syncPromptAnswered round-trips independently of autoMarkPlanRead',
-      () async {
-    // Answered but kept separate: prompt should not reappear, plan reading
-    // does not count as showing up.
-    await service.updatePreferences(
-      uid,
-      const UserPreferences(autoMarkPlanRead: false, syncPromptAnswered: true),
-    );
+  test(
+    'syncPromptAnswered round-trips independently of autoMarkPlanRead',
+    () async {
+      // Answered but kept separate: prompt should not reappear, plan reading
+      // does not count as showing up.
+      await service.updatePreferences(
+        uid,
+        const UserPreferences(
+          autoMarkPlanRead: false,
+          syncPromptAnswered: true,
+        ),
+      );
 
-    final fetched = await service.fetchPreferences(uid);
-    expect(fetched.autoMarkPlanRead, isFalse);
-    expect(fetched.syncPromptAnswered, isTrue);
-  });
+      final fetched = await service.fetchPreferences(uid);
+      expect(fetched.autoMarkPlanRead, isFalse);
+      expect(fetched.syncPromptAnswered, isTrue);
+    },
+  );
 }

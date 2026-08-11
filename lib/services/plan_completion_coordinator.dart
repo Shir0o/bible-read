@@ -78,8 +78,9 @@ class PlanCompletionCoordinator {
         );
       } catch (e, st) {
         ErrorLogger.log(e, st);
-        onMessage
-            ?.call("Couldn't save your choice. We'll ask again next time.");
+        onMessage?.call(
+          "Couldn't save your choice. We'll ask again next time.",
+        );
       }
       if (linked) await _recordHabitForToday(user, onMessage);
     } else if (prefs.autoMarkPlanRead) {
