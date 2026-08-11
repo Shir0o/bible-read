@@ -42,7 +42,14 @@ class AuthBackground extends StatelessWidget {
                     ),
                   ),
                 ),
-                Positioned.fill(
+                // Veil confined to the hero band (design: auth.jsx AuthHero).
+                // It fades the photograph into the page background so there is
+                // no hard edge where the image band ends.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: MediaQuery.sizeOf(context).height * 0.57,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -55,7 +62,7 @@ class AuthBackground extends StatelessWidget {
                           colors.surface.withValues(alpha: 0.55),
                           colors.surface,
                         ],
-                        stops: const [0.0, 0.22, 0.57, 0.86, 1.0],
+                        stops: const [0.0, 0.22, 0.62, 0.86, 1.0],
                       ),
                     ),
                   ),
