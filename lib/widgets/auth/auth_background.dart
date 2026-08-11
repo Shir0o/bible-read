@@ -8,6 +8,10 @@ class AuthBackground extends StatelessWidget {
 
   const AuthBackground({super.key, required this.builder});
 
+  /// Height of the hero photograph band as a fraction of the screen height
+  /// (design: auth.jsx AuthHero — `height: "57%"`).
+  static const double heroBandHeightFraction = 0.57;
+
   @override
   Widget build(BuildContext context) {
     const colorScheme = AppTheme.designDarkScheme;
@@ -26,7 +30,8 @@ class AuthBackground extends StatelessWidget {
                   left: 0,
                   right: 0,
                   top: 0,
-                  height: MediaQuery.sizeOf(context).height * 0.57,
+                  height: MediaQuery.sizeOf(context).height *
+                      AuthBackground.heroBandHeightFraction,
                   child: Image.asset(
                     AppTheme.authHeroAssetPath,
                     fit: BoxFit.cover,
@@ -49,7 +54,8 @@ class AuthBackground extends StatelessWidget {
                   left: 0,
                   right: 0,
                   top: 0,
-                  height: MediaQuery.sizeOf(context).height * 0.57,
+                  height: MediaQuery.sizeOf(context).height *
+                      AuthBackground.heroBandHeightFraction,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
