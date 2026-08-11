@@ -134,6 +134,7 @@ flutter:
   assets:
     - assets/plans/
     - assets/icons/
+    - assets/images/
 
   # Design fonts (bundled, OFL). Spectral = serif (headings, scripture,
   # section titles); Hanken Grotesk = sans (body, UI, buttons, labels).

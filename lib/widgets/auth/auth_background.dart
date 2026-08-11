@@ -22,29 +22,23 @@ class AuthBackground extends StatelessWidget {
             backgroundColor: colors.surface,
             body: Stack(
               children: [
-                Positioned.fill(
-                  child: CachedNetworkImage(
-                    imageUrl: AppTheme.authHeroImageUrl,
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: MediaQuery.sizeOf(context).height * 0.57,
+                  child: Image.asset(
+                    AppTheme.authHeroAssetPath,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) =>
-                        ColoredBox(color: colors.surface),
-                    errorWidget: (context, url, error) =>
-                        ColoredBox(color: colors.surface),
-                  ),
-                ),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          colors.surface,
-                          colors.surface.withValues(alpha: 0.88),
-                          colors.surface.withValues(alpha: 0),
-                        ],
-                        stops: const [0, 0.45, 1],
-                      ),
+                    alignment: const Alignment(0, 0.24),
+                    errorBuilder: (context, error, stackTrace) =>
+                        CachedNetworkImage(
+                      imageUrl: AppTheme.authHeroImageUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) =>
+                          ColoredBox(color: colors.surface),
+                      errorWidget: (context, url, error) =>
+                          ColoredBox(color: colors.surface),
                     ),
                   ),
                 ),
@@ -52,14 +46,16 @@ class AuthBackground extends StatelessWidget {
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                         colors: [
-                          colors.scrim.withValues(alpha: 0.72),
-                          colors.scrim.withValues(alpha: 0.36),
-                          colors.scrim.withValues(alpha: 0),
+                          colors.surface.withValues(alpha: 0.22),
+                          colors.surface.withValues(alpha: 0.04),
+                          colors.surface.withValues(alpha: 0),
+                          colors.surface.withValues(alpha: 0.55),
+                          colors.surface,
                         ],
-                        stops: const [0, 0.35, 1],
+                        stops: const [0.0, 0.22, 0.57, 0.86, 1.0],
                       ),
                     ),
                   ),
