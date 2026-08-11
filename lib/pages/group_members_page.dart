@@ -152,12 +152,17 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Members · ${roster.length}',
-                style: theme.textTheme.titleMedium),
+            Text(
+              'Members · ${roster.length}',
+              style: theme.textTheme.titleMedium,
+            ),
             Row(
               children: [
-                Icon(Icons.menu_book_outlined,
-                    size: 15, color: colorScheme.primary),
+                Icon(
+                  Icons.menu_book_outlined,
+                  size: 15,
+                  color: colorScheme.primary,
+                ),
                 const SizedBox(width: 5),
                 Text(
                   '$readCount read today',
@@ -176,10 +181,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
             children: [
               for (var i = 0; i < sorted.length; i++) ...[
                 if (i > 0)
-                  Divider(
-                    height: 1,
-                    color: AppColors.of(context).border,
-                  ),
+                  Divider(height: 1, color: AppColors.of(context).border),
                 _buildMemberRow(
                   sorted[i],
                   (readByUid[sorted[i].uid] ?? 0) >= 1.0,
@@ -270,20 +272,19 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Pending · ${invites.length}',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                )),
+            Text(
+              'Pending · ${invites.length}',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 10),
             _card(
               child: Column(
                 children: [
                   for (var i = 0; i < invites.length; i++) ...[
                     if (i > 0)
-                      Divider(
-                        height: 1,
-                        color: AppColors.of(context).border,
-                      ),
+                      Divider(height: 1, color: AppColors.of(context).border),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 11),
                       child: Row(
@@ -326,8 +327,10 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
     unawaited(widget.vibrationService.lightImpact());
     await showNudgeSheet(
       context,
-      person:
-          NudgePerson(name: member.name ?? 'Friend', photoUrl: member.photoUrl),
+      person: NudgePerson(
+        name: member.name ?? 'Friend',
+        photoUrl: member.photoUrl,
+      ),
       vibrationService: widget.vibrationService,
       onSend: (message) async {
         try {
@@ -405,8 +408,10 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(member.name ?? 'Member',
-                              style: theme.textTheme.titleMedium),
+                          Text(
+                            member.name ?? 'Member',
+                            style: theme.textTheme.titleMedium,
+                          ),
                           Text(
                             _roleLabel(member.role),
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -472,19 +477,23 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   }
 
   Future<void> _promote(GroupMemberRole member) async {
-    await _run(() => widget.groupService.promoteToAdmin(
-          groupId: widget.group.id,
-          ownerUid: widget.group.ownerUid,
-          uid: member.uid,
-        ));
+    await _run(
+      () => widget.groupService.promoteToAdmin(
+        groupId: widget.group.id,
+        ownerUid: widget.group.ownerUid,
+        uid: member.uid,
+      ),
+    );
   }
 
   Future<void> _demote(GroupMemberRole member) async {
-    await _run(() => widget.groupService.demoteAdmin(
-          groupId: widget.group.id,
-          ownerUid: widget.group.ownerUid,
-          uid: member.uid,
-        ));
+    await _run(
+      () => widget.groupService.demoteAdmin(
+        groupId: widget.group.id,
+        ownerUid: widget.group.ownerUid,
+        uid: member.uid,
+      ),
+    );
   }
 
   Future<void> _confirmTransfer(GroupMemberRole member) async {
@@ -497,11 +506,13 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
       confirmLabel: 'Transfer',
     );
     if (ok != true) return;
-    await _run(() => widget.groupService.transferOwnership(
-          groupId: widget.group.id,
-          currentOwnerUid: me,
-          newOwnerUid: member.uid,
-        ));
+    await _run(
+      () => widget.groupService.transferOwnership(
+        groupId: widget.group.id,
+        currentOwnerUid: me,
+        newOwnerUid: member.uid,
+      ),
+    );
   }
 
   Future<void> _confirmRemove(GroupMemberRole member) async {
@@ -512,10 +523,12 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
       danger: true,
     );
     if (ok != true) return;
-    await _run(() => widget.groupService.kickMember(
-          groupId: widget.group.id,
-          uid: member.uid,
-        ));
+    await _run(
+      () => widget.groupService.kickMember(
+        groupId: widget.group.id,
+        uid: member.uid,
+      ),
+    );
   }
 
   Future<bool?> _confirm({
@@ -558,7 +571,8 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
       if (!mounted) return;
       messenger.showSnackBar(
         const SnackBar(
-            content: Text('Something went wrong. Please try again.')),
+          content: Text('Something went wrong. Please try again.'),
+        ),
       );
     }
   }
@@ -626,8 +640,11 @@ class _NudgeChip extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return ActionChip(
       onPressed: onTap,
-      avatar: Icon(Icons.waving_hand_outlined,
-          size: 15, color: colorScheme.primary),
+      avatar: Icon(
+        Icons.waving_hand_outlined,
+        size: 15,
+        color: colorScheme.primary,
+      ),
       label: const Text('Nudge'),
       labelStyle: TextStyle(
         fontSize: 12.5,
@@ -670,9 +687,11 @@ class _ActionRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                Icon(icon,
-                    size: 19,
-                    color: danger ? colorScheme.error : colorScheme.primary),
+                Icon(
+                  icon,
+                  size: 19,
+                  color: danger ? colorScheme.error : colorScheme.primary,
+                ),
                 const SizedBox(width: 13),
                 Text(
                   label,

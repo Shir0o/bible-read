@@ -59,6 +59,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+      await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+      await tester.pumpAndSettle();
+    }
+
     // Navigate to Community (where the menu is accessible)
     await tester.tap(find.text('Community'));
     await tester.pumpAndSettle();

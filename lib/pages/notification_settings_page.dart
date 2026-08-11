@@ -174,12 +174,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     final children = <Widget>[];
     for (var i = 0; i < rows.length; i++) {
       if (i > 0) {
-        children.add(Divider(
-          height: 1,
-          indent: AppSpacing.hPadding,
-          endIndent: AppSpacing.hPadding,
-          color: colorScheme.outlineVariant,
-        ));
+        children.add(
+          Divider(
+            height: 1,
+            indent: AppSpacing.hPadding,
+            endIndent: AppSpacing.hPadding,
+            color: colorScheme.outlineVariant,
+          ),
+        );
       }
       children.add(rows[i]);
     }
@@ -205,31 +207,37 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       ),
     ];
     if (_reminderEnabled) {
-      rows.add(ListTile(
-        contentPadding: rowPadding,
-        title: const Text('Time'),
-        trailing: Text(
-          _reminderTime.format(context),
-          style: Theme.of(context).textTheme.bodyMedium,
+      rows.add(
+        ListTile(
+          contentPadding: rowPadding,
+          title: const Text('Time'),
+          trailing: Text(
+            _reminderTime.format(context),
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          onTap: _pickTime,
         ),
-        onTap: _pickTime,
-      ));
+      );
     }
     for (final type in NotificationType.values) {
       final val = _prefs![type];
-      rows.add(SwitchListTile(
-        contentPadding: rowPadding,
-        title: Text(_label(type)),
-        value: val,
-        onChanged: (v) => _toggle(type, v),
-      ));
+      rows.add(
+        SwitchListTile(
+          contentPadding: rowPadding,
+          title: Text(_label(type)),
+          value: val,
+          onChanged: (v) => _toggle(type, v),
+        ),
+      );
     }
-    rows.add(SwitchListTile(
-      contentPadding: rowPadding,
-      title: const Text('Vibration'),
-      value: _vibrationEnabled,
-      onChanged: _toggleVibration,
-    ));
+    rows.add(
+      SwitchListTile(
+        contentPadding: rowPadding,
+        title: const Text('Vibration'),
+        value: _vibrationEnabled,
+        onChanged: _toggleVibration,
+      ),
+    );
     return rows;
   }
 

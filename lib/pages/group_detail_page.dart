@@ -426,9 +426,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             user: user,
             onMessage: (message) {
               if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(message)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(message)));
             },
           );
         }

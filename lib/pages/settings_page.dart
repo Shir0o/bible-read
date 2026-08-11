@@ -138,8 +138,10 @@ class SettingsPageState extends State<SettingsPage> {
     final oldPrefs = _prefs;
     // Setting the toggle manually also resolves the one-time prompt, so it
     // won't pop later when finishing a plan reading.
-    final newPrefs =
-        _prefs.copyWith(autoMarkPlanRead: value, syncPromptAnswered: true);
+    final newPrefs = _prefs.copyWith(
+      autoMarkPlanRead: value,
+      syncPromptAnswered: true,
+    );
     setState(() {
       _prefs = newPrefs;
     });
@@ -178,9 +180,7 @@ class SettingsPageState extends State<SettingsPage> {
       final GoogleSignInAccount account = await googleSignIn.authenticate();
 
       final GoogleSignInAuthentication auth = account.authentication;
-      final credential = GoogleAuthProvider.credential(
-        idToken: auth.idToken,
-      );
+      final credential = GoogleAuthProvider.credential(idToken: auth.idToken);
 
       await widget.auth.signInWithCredential(credential);
 
@@ -192,9 +192,9 @@ class SettingsPageState extends State<SettingsPage> {
       if (error is GoogleSignInException &&
           error.code == GoogleSignInExceptionCode.canceled) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Sign in cancelled')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Sign in cancelled')));
         }
       } else {
         if (kDebugMode) {
@@ -202,9 +202,9 @@ class SettingsPageState extends State<SettingsPage> {
         }
         ErrorLogger.log(error, st);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Something went wrong')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
         }
       }
     } finally {
@@ -288,11 +288,9 @@ class SettingsPageState extends State<SettingsPage> {
             VibrationButton(
               vibrationService: widget.vibrationService,
               onPressed: () {
-                Navigator.of(context).push(
-                  animatedPageRoute(
-                    LoginPage(auth: widget.auth),
-                  ),
-                );
+                Navigator.of(
+                  context,
+                ).push(animatedPageRoute(LoginPage(auth: widget.auth)));
               },
               child: const Text('Email Sign In'),
             ),
@@ -302,10 +300,7 @@ class SettingsPageState extends State<SettingsPage> {
               onPressed: () {
                 Navigator.of(context).push(
                   animatedPageRoute(
-                    SignupPage(
-                      auth: widget.auth,
-                      firestore: widget.firestore,
-                    ),
+                    SignupPage(auth: widget.auth, firestore: widget.firestore),
                   ),
                 );
               },
@@ -523,9 +518,9 @@ class SettingsPageState extends State<SettingsPage> {
             Text(
               'Bible Read · v1.0',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.outline,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: colorScheme.outline),
             ),
             const SizedBox(height: AppSpacing.gap24),
           ],
@@ -537,11 +532,7 @@ class SettingsPageState extends State<SettingsPage> {
       appBar: CommonStyles.buildAppBar(context, 'Settings'),
       body: Container(
         decoration: CommonStyles.backgroundDecoration(colorScheme),
-        child: Center(
-          child: SingleChildScrollView(
-            child: body,
-          ),
-        ),
+        child: Center(child: SingleChildScrollView(child: body)),
       ),
     );
   }

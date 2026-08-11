@@ -32,15 +32,17 @@ void main() {
     expect(reflection?.text, 'A single line.');
   });
 
-  test('saveReflection with blank text deletes any existing reflection',
-      () async {
-    await service.saveReflection(uid, dateKey, 'First draft');
-    expect((await service.fetchReflection(uid, dateKey))?.text, isNotNull);
+  test(
+    'saveReflection with blank text deletes any existing reflection',
+    () async {
+      await service.saveReflection(uid, dateKey, 'First draft');
+      expect((await service.fetchReflection(uid, dateKey))?.text, isNotNull);
 
-    await service.saveReflection(uid, dateKey, '   ');
+      await service.saveReflection(uid, dateKey, '   ');
 
-    expect(await service.fetchReflection(uid, dateKey), isNull);
-  });
+      expect(await service.fetchReflection(uid, dateKey), isNull);
+    },
+  );
 
   test('deleteReflection removes a saved reflection', () async {
     await service.saveReflection(uid, dateKey, 'Something worth keeping');
@@ -62,7 +64,9 @@ void main() {
     await service.saveReflection(uid, '2026-07-16', 'Today');
 
     expect(
-        (await service.fetchReflection(uid, '2026-07-15'))?.text, 'Yesterday');
+      (await service.fetchReflection(uid, '2026-07-15'))?.text,
+      'Yesterday',
+    );
     expect((await service.fetchReflection(uid, '2026-07-16'))?.text, 'Today');
   });
 }

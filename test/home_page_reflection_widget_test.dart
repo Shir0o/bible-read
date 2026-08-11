@@ -21,10 +21,8 @@ class _StubBibleProgressService extends BibleProgressService {
 }
 
 Widget _host(Widget home) => MaterialApp(
-      theme: ThemeData(
-        useMaterial3: true,
-        splashFactory: NoSplash.splashFactory,
-      ),
+      theme:
+          ThemeData(useMaterial3: true, splashFactory: NoSplash.splashFactory),
       home: home,
     );
 
@@ -54,20 +52,25 @@ void main() {
   });
   tearDownAll(resetHttpOverrides);
 
-  testWidgets('no reflection card before the habit is marked read',
-      (tester) async {
+  testWidgets('no reflection card before the habit is marked read', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
 
     await tester.pumpWidget(
-      _host(HomePage(
-        firestore: firestore,
-        auth: auth,
-        vibrationService: const VibrationService(),
-        bibleProgressService: _StubBibleProgressService(),
-        dateProvider: () => _today,
-      )),
+      _host(
+        HomePage(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: const VibrationService(),
+          bibleProgressService: _StubBibleProgressService(),
+          dateProvider: () => _today,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -75,21 +78,26 @@ void main() {
     expect(find.text(_todayPrompt), findsNothing);
   });
 
-  testWidgets('prompt card appears once the habit is marked read',
-      (tester) async {
+  testWidgets('prompt card appears once the habit is marked read', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
     await _markReadToday(firestore);
 
     await tester.pumpWidget(
-      _host(HomePage(
-        firestore: firestore,
-        auth: auth,
-        vibrationService: const VibrationService(),
-        bibleProgressService: _StubBibleProgressService(),
-        dateProvider: () => _today,
-      )),
+      _host(
+        HomePage(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: const VibrationService(),
+          bibleProgressService: _StubBibleProgressService(),
+          dateProvider: () => _today,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -98,79 +106,91 @@ void main() {
   });
 
   testWidgets(
-      'saving a reflection writes it and swaps the card to the saved view',
-      (tester) async {
+    'saving a reflection writes it and swaps the card to the saved view',
+    (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1'),
+        signedIn: true,
+      );
+      await _markReadToday(firestore);
+
+      await tester.pumpWidget(
+        _host(
+          HomePage(
+            firestore: firestore,
+            auth: auth,
+            vibrationService: const VibrationService(),
+            bibleProgressService: _StubBibleProgressService(),
+            dateProvider: () => _today,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Take a moment'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byType(TextField),
+        'Rest isn’t earned here. He makes me lie down.',
+      );
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      // Card swaps to the saved view.
+      expect(find.text('YOUR REFLECTION'), findsOneWidget);
+      expect(
+        find.text('Rest isn’t earned here. He makes me lie down.'),
+        findsOneWidget,
+      );
+      expect(find.text('Edit'), findsOneWidget);
+      expect(find.text('Take a moment'), findsNothing);
+
+      // Persisted under its own subcollection, independent of `reading`.
+      final doc = await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('reflections')
+          .doc(_todayKey)
+          .get();
+      expect(
+        doc.data()?['text'],
+        'Rest isn’t earned here. He makes me lie down.',
+      );
+
+      // The habit mark itself is untouched by the reflection write.
+      final readDoc = await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('reading')
+          .doc(_todayKey)
+          .get();
+      expect(readDoc.data()?['read'], isTrue);
+    },
+  );
+
+  testWidgets('skip closes the sheet without writing a reflection', (
+    tester,
+  ) async {
     final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
     await _markReadToday(firestore);
 
     await tester.pumpWidget(
-      _host(HomePage(
-        firestore: firestore,
-        auth: auth,
-        vibrationService: const VibrationService(),
-        bibleProgressService: _StubBibleProgressService(),
-        dateProvider: () => _today,
-      )),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Take a moment'));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(
-      find.byType(TextField),
-      'Rest isn’t earned here. He makes me lie down.',
-    );
-    await tester.pump();
-    await tester.tap(find.text('Save'));
-    await tester.pumpAndSettle();
-
-    // Card swaps to the saved view.
-    expect(find.text('YOUR REFLECTION'), findsOneWidget);
-    expect(
-      find.text('Rest isn’t earned here. He makes me lie down.'),
-      findsOneWidget,
-    );
-    expect(find.text('Edit'), findsOneWidget);
-    expect(find.text('Take a moment'), findsNothing);
-
-    // Persisted under its own subcollection, independent of `reading`.
-    final doc = await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('reflections')
-        .doc(_todayKey)
-        .get();
-    expect(
-        doc.data()?['text'], 'Rest isn’t earned here. He makes me lie down.');
-
-    // The habit mark itself is untouched by the reflection write.
-    final readDoc = await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('reading')
-        .doc(_todayKey)
-        .get();
-    expect(readDoc.data()?['read'], isTrue);
-  });
-
-  testWidgets('skip closes the sheet without writing a reflection',
-      (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-    await _markReadToday(firestore);
-
-    await tester.pumpWidget(
-      _host(HomePage(
-        firestore: firestore,
-        auth: auth,
-        vibrationService: const VibrationService(),
-        bibleProgressService: _StubBibleProgressService(),
-        dateProvider: () => _today,
-      )),
+      _host(
+        HomePage(
+          firestore: firestore,
+          auth: auth,
+          vibrationService: const VibrationService(),
+          bibleProgressService: _StubBibleProgressService(),
+          dateProvider: () => _today,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -192,52 +212,57 @@ void main() {
   });
 
   testWidgets(
-      'editing a saved reflection pre-fills the sheet and overwrites it',
-      (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-    await _markReadToday(firestore);
-    await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('reflections')
-        .doc(_todayKey)
-        .set({'text': 'First draft'});
+    'editing a saved reflection pre-fills the sheet and overwrites it',
+    (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1'),
+        signedIn: true,
+      );
+      await _markReadToday(firestore);
+      await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('reflections')
+          .doc(_todayKey)
+          .set({'text': 'First draft'});
 
-    await tester.pumpWidget(
-      _host(HomePage(
-        firestore: firestore,
-        auth: auth,
-        vibrationService: const VibrationService(),
-        bibleProgressService: _StubBibleProgressService(),
-        dateProvider: () => _today,
-      )),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        _host(
+          HomePage(
+            firestore: firestore,
+            auth: auth,
+            vibrationService: const VibrationService(),
+            bibleProgressService: _StubBibleProgressService(),
+            dateProvider: () => _today,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('First draft'), findsOneWidget);
+      expect(find.text('First draft'), findsOneWidget);
 
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('First draft'), findsWidgets);
-    expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('First draft'), findsWidgets);
+      expect(find.text('Cancel'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField), 'Revised thought');
-    await tester.pump();
-    await tester.tap(find.text('Save'));
-    await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Revised thought');
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Revised thought'), findsOneWidget);
-    expect(find.text('First draft'), findsNothing);
+      expect(find.text('Revised thought'), findsOneWidget);
+      expect(find.text('First draft'), findsNothing);
 
-    final doc = await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('reflections')
-        .doc(_todayKey)
-        .get();
-    expect(doc.data()?['text'], 'Revised thought');
-  });
+      final doc = await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('reflections')
+          .doc(_todayKey)
+          .get();
+      expect(doc.data()?['text'], 'Revised thought');
+    },
+  );
 }

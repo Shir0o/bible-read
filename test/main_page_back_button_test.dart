@@ -9,6 +9,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:bible_read/pages/check_in_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'helpers/fake_google_sign_in_platform.dart';
 
@@ -77,6 +78,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle(const Duration(seconds: 1));
+    if (find.byType(CheckInPage).evaluate().isNotEmpty) {
+      tester.widget<CheckInPage>(find.byType(CheckInPage)).onClose();
+      await tester.pumpAndSettle();
+    }
 
     final dynamic state = tester.state(find.byType(MainPage));
     state.onItemTapped(1);

@@ -82,6 +82,11 @@ void main() {
 
     await _settleHome(tester);
 
+    if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+      await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+      await tester.pumpAndSettle();
+    }
+
     // The consistency glimpse ("Here N days this season") only surfaces once the
     // user has shown up today, so it is absent here.
     expect(find.textContaining('this season'), findsNothing);

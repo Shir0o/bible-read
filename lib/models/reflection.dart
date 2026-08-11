@@ -13,9 +13,7 @@ class Reflection {
 
   /// Reads a [Reflection] from a Firestore document, or `null` if the
   /// document doesn't exist or has no text.
-  static Reflection? fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
+  static Reflection? fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data();
     if (data == null) return null;
     final text = data['text'] as String?;

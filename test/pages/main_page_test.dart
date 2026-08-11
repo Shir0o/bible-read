@@ -270,7 +270,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     // Attempt to navigate to a protected page via the menu API.
-    final state = tester.state(find.byType(MainPage)) as dynamic;
+    final state =
+        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
     state.navigateFromMenu(4); // Friends index.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
@@ -306,6 +307,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+      await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+      await tester.pumpAndSettle();
+    }
     expect(find.byType(ResponsiveScaffold), findsOneWidget);
     var responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
@@ -341,7 +346,8 @@ void main() {
       int expectedIndex, {
       String? expectedTitle,
     }) async {
-      final state = tester.state(find.byType(MainPage)) as dynamic;
+      final state =
+          tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
       state.navigateFromMenu(expectedIndex);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
@@ -385,12 +391,17 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+      await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+      await tester.pumpAndSettle();
+    }
 
     final hasNav = find.byType(NavigationBar).evaluate().isNotEmpty ||
         find.byType(NavigationRail).evaluate().isNotEmpty;
     expect(hasNav, isTrue);
 
-    final state = tester.state(find.byType(MainPage)) as dynamic;
+    final state =
+        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
     state.navigateFromMenu(4);
     await tester.pump();
 
@@ -428,7 +439,8 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 500));
 
-    final state = tester.state(find.byType(MainPage)) as dynamic;
+    final state =
+        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
     vibration.getIndex = () => state.selectedIndex;
 
     state.navigateFromMenu(4);
@@ -458,7 +470,8 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 500));
 
-    final state = tester.state(find.byType(MainPage)) as dynamic;
+    final state =
+        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
     state.navigateFromMenu(4);
     await tester.pump();
 
@@ -485,7 +498,8 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 500));
 
-    final state = tester.state(find.byType(MainPage)) as dynamic;
+    final state =
+        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
     vibration.getIndex = () => state.selectedIndex;
 
     state.onItemTapped(1);
@@ -532,7 +546,8 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 500));
 
-    final state = tester.state(find.byType(MainPage)) as dynamic;
+    final state =
+        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
     state.onItemTapped(1);
     await tester.pumpAndSettle();
 
@@ -627,7 +642,8 @@ void main() {
     expect(find.byType(ResponsiveScaffold), findsNothing);
 
     // Attempt navigation via MainPage method directly if exposed, or rely on UI not having nav
-    final state = tester.state(find.byType(MainPage)) as dynamic;
+    final state =
+        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
     state.onItemTapped(1);
     await tester.pump();
 
@@ -877,7 +893,8 @@ void main() {
     expect(find.textContaining('App verification failed'), findsOneWidget);
 
     // Record the state and attempt to select the Feed destination.
-    final state = tester.state(find.byType(MainPage)) as dynamic;
+    final state =
+        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
     expect(state.selectedIndex, equals(0));
     state.onItemTapped(1);
     await tester.pump();
@@ -917,9 +934,14 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+      await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+      await tester.pumpAndSettle();
+    }
 
-    final state = tester.state(find.byType(MainPage)) as dynamic;
+    final state =
+        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
 
     // Navigate to a different page first
     await tester.tap(find.byIcon(Icons.people_outlined));
@@ -975,7 +997,8 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 500));
 
-    final state = tester.state(find.byType(MainPage)) as dynamic;
+    final state =
+        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
     state.navigateFromMenu(5);
     await tester.pump();
 

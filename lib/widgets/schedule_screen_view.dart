@@ -261,8 +261,9 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                     value: pct.clamp(0.0, 1.0),
                     minHeight: 7,
                     backgroundColor: colorScheme.surfaceContainerHighest,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      colorScheme.primary,
+                    ),
                   ),
                 ),
               ),
@@ -288,8 +289,9 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                     '${_fmtDate(entries.first.date)} – '
                     '${_fmtDate(entries.last.date)}',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color:
-                          colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                      color: colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.8,
+                      ),
                     ),
                   ),
                 ),
@@ -749,8 +751,9 @@ class _StatusToggle extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: colorScheme.primaryContainer,
-            border:
-                Border.all(color: colorScheme.primary.withValues(alpha: 0.5)),
+            border: Border.all(
+              color: colorScheme.primary.withValues(alpha: 0.5),
+            ),
           ),
           child: Icon(Icons.add, size: 16, color: colorScheme.primary),
         );

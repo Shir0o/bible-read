@@ -4,6 +4,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
+import 'package:bible_read/pages/check_in_page.dart';
 import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:google_sign_in_mocks/google_sign_in_mocks.dart';
@@ -106,13 +107,17 @@ void main() {
         // Wait for auth
         await tester.pumpAndSettle();
 
-        // Set display name in Auth after login (since MockUser from login won't have it)
         await auth.currentUser!.updateDisplayName('Test User');
-        await tester.pump();
-
-        // Verify Home Page
-        expect(find.byType(HomePage), findsOneWidget);
         await tester.pumpAndSettle();
+
+        // Verify CheckInPage auto-opened on home launch
+        expect(find.text('Did you read today?'), findsOneWidget);
+
+        tester.widget<CheckInPage>(find.byType(CheckInPage)).onClose();
+        await tester.pumpAndSettle();
+
+        // Verify Home Page is revealed
+        expect(find.byType(HomePage), findsOneWidget);
 
         // Navigate to Community where user name is displayed
         await tester.tap(find.text('Community'));

@@ -66,9 +66,9 @@ class SyncSheet extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         'One question, just this once',
-                        style: AppTextStyles.caption(context).copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                        style: AppTextStyles.caption(
+                          context,
+                        ).copyWith(color: colorScheme.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -81,10 +81,9 @@ class SyncSheet extends StatelessWidget {
               'showing up for the day? Your daily habit can stand on its own — '
               'this just saves you the second tap. (Marking “I read today” '
               'on its own never moves a plan.)',
-              style: AppTextStyles.body(context).copyWith(
-                color: colorScheme.onSurfaceVariant,
-                height: 1.5,
-              ),
+              style: AppTextStyles.body(
+                context,
+              ).copyWith(color: colorScheme.onSurfaceVariant, height: 1.5),
             ),
             const SizedBox(height: 14),
             Container(
@@ -108,8 +107,9 @@ class SyncSheet extends StatelessWidget {
                       'You can change this anytime in Settings › Reading '
                       'counts as showing up.',
                       style: AppTextStyles.caption(context).copyWith(
-                        color:
-                            colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.7,
+                        ),
                         height: 1.5,
                       ),
                     ),

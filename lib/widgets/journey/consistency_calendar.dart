@@ -366,7 +366,8 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                 color: isRead ? colorScheme.primary : Colors.transparent,
                 border: isToday && !isRead
                     ? Border.all(
-                        color: colorScheme.primary.withValues(alpha: 0.5))
+                        color: colorScheme.primary.withValues(alpha: 0.5),
+                      )
                     : null,
               ),
               child: Center(

@@ -61,8 +61,9 @@ class _ReflectSheet extends StatefulWidget {
 }
 
 class _ReflectSheetState extends State<_ReflectSheet> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initialText ?? '');
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialText ?? '',
+  );
   bool _saving = false;
 
   bool get _isEditing => (widget.initialText ?? '').isNotEmpty;
@@ -138,9 +139,9 @@ class _ReflectSheetState extends State<_ReflectSheet> {
               const SizedBox(height: 8),
               Text(
                 widget.prompt,
-                style: AppTextStyles.title(context).copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppTextStyles.title(
+                  context,
+                ).copyWith(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 16),
               TextField(

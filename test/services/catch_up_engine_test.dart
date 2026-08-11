@@ -33,10 +33,7 @@ UserPlanProgress _progress({
 void main() {
   group('CatchUpEngine.dateId', () {
     test('formats as zero-padded YYYY-MM-DD, date-only', () {
-      expect(
-        CatchUpEngine.dateId(DateTime(2026, 1, 9, 23, 59)),
-        '2026-01-09',
-      );
+      expect(CatchUpEngine.dateId(DateTime(2026, 1, 9, 23, 59)), '2026-01-09');
     });
   });
 
@@ -46,50 +43,54 @@ void main() {
     final today = DateTime(2026, 1, 5);
     final plan = _dailyPlan(7);
 
-    test('seeded completion yields correct status breakdown + behind count',
-        () {
-      // Read days 1-2; missed 3-4; today is day 5; 6-7 upcoming.
-      final status = CatchUpEngine.forPersonalPlan(
-        plan,
-        _progress(startDate: start, completedDays: [1, 2]),
-        today: today,
-      );
+    test(
+      'seeded completion yields correct status breakdown + behind count',
+      () {
+        // Read days 1-2; missed 3-4; today is day 5; 6-7 upcoming.
+        final status = CatchUpEngine.forPersonalPlan(
+          plan,
+          _progress(startDate: start, completedDays: [1, 2]),
+          today: today,
+        );
 
-      expect(status.statuses, [
-        ReadingStatus.done, // day 1
-        ReadingStatus.done, // day 2
-        ReadingStatus.missed, // day 3
-        ReadingStatus.missed, // day 4
-        ReadingStatus.current, // day 5 (today)
-        ReadingStatus.upcoming, // day 6
-        ReadingStatus.upcoming, // day 7
-      ]);
-      expect(status.doneCount, 2);
-      expect(status.missedCount, 2);
-      expect(status.behindCount, 2);
-      expect(status.upcomingCount, 2);
-      expect(status.currentIndex, 4);
-      expect(status.currentEntry!.index, 5);
-      expect(status.resumeIndex, 2); // first missed = day 3 at position 2
-      expect(status.inStep, isFalse);
-    });
+        expect(status.statuses, [
+          ReadingStatus.done, // day 1
+          ReadingStatus.done, // day 2
+          ReadingStatus.missed, // day 3
+          ReadingStatus.missed, // day 4
+          ReadingStatus.current, // day 5 (today)
+          ReadingStatus.upcoming, // day 6
+          ReadingStatus.upcoming, // day 7
+        ]);
+        expect(status.doneCount, 2);
+        expect(status.missedCount, 2);
+        expect(status.behindCount, 2);
+        expect(status.upcomingCount, 2);
+        expect(status.currentIndex, 4);
+        expect(status.currentEntry!.index, 5);
+        expect(status.resumeIndex, 2); // first missed = day 3 at position 2
+        expect(status.inStep, isFalse);
+      },
+    );
 
-    test('order-independent: completing a later day still flags earlier misses',
-        () {
-      // Read day 5 (current) but not 3/4 → still behind by 2, resume at first miss.
-      final status = CatchUpEngine.forPersonalPlan(
-        plan,
-        _progress(startDate: start, completedDays: [1, 2, 5]),
-        today: today,
-      );
-      expect(status.statuses[4], ReadingStatus.done); // day 5 read
-      expect(status.statuses[2], ReadingStatus.missed); // day 3 still missed
-      expect(status.statuses[3], ReadingStatus.missed); // day 4 still missed
-      expect(status.behindCount, 2);
-      expect(status.currentIndex, 4);
-      expect(status.resumeIndex, 2);
-      expect(status.inStep, isFalse); // current done but misses remain
-    });
+    test(
+      'order-independent: completing a later day still flags earlier misses',
+      () {
+        // Read day 5 (current) but not 3/4 → still behind by 2, resume at first miss.
+        final status = CatchUpEngine.forPersonalPlan(
+          plan,
+          _progress(startDate: start, completedDays: [1, 2, 5]),
+          today: today,
+        );
+        expect(status.statuses[4], ReadingStatus.done); // day 5 read
+        expect(status.statuses[2], ReadingStatus.missed); // day 3 still missed
+        expect(status.statuses[3], ReadingStatus.missed); // day 4 still missed
+        expect(status.behindCount, 2);
+        expect(status.currentIndex, 4);
+        expect(status.resumeIndex, 2);
+        expect(status.inStep, isFalse); // current done but misses remain
+      },
+    );
 
     test('in step when current read and nothing missed', () {
       final status = CatchUpEngine.forPersonalPlan(
@@ -161,24 +162,26 @@ void main() {
       GroupSchedule(date: DateTime(2026, 1, 27), chapters: const ['John 4']),
     ];
 
-    test('current is the latest passage due on/before today, gaps respected',
-        () {
-      final status = CatchUpEngine.forGroupSchedule(
-        schedule,
-        {'2026-01-06'}, // read week 1 only
-        today: DateTime(2026, 1, 16),
-      );
-      expect(status.currentIndex, 1); // Jan 13 passage
-      expect(status.currentEntry!.readings, ['John 2']);
-      expect(status.statuses, [
-        ReadingStatus.done, // Jan 6 read
-        ReadingStatus.current, // Jan 13 this week
-        ReadingStatus.upcoming, // Jan 20
-        ReadingStatus.upcoming, // Jan 27
-      ]);
-      expect(status.behindCount, 0); // nothing missed, current just unread
-      expect(status.inStep, isFalse); // current week unread
-    });
+    test(
+      'current is the latest passage due on/before today, gaps respected',
+      () {
+        final status = CatchUpEngine.forGroupSchedule(
+          schedule,
+          {'2026-01-06'}, // read week 1 only
+          today: DateTime(2026, 1, 16),
+        );
+        expect(status.currentIndex, 1); // Jan 13 passage
+        expect(status.currentEntry!.readings, ['John 2']);
+        expect(status.statuses, [
+          ReadingStatus.done, // Jan 6 read
+          ReadingStatus.current, // Jan 13 this week
+          ReadingStatus.upcoming, // Jan 20
+          ReadingStatus.upcoming, // Jan 27
+        ]);
+        expect(status.behindCount, 0); // nothing missed, current just unread
+        expect(status.inStep, isFalse); // current week unread
+      },
+    );
 
     test('missed earlier week reports behind', () {
       final status = CatchUpEngine.forGroupSchedule(
@@ -195,19 +198,18 @@ void main() {
     test('unsorted input is sorted by date before computing', () {
       final shuffled = [schedule[2], schedule[0], schedule[3], schedule[1]];
       final status = CatchUpEngine.forGroupSchedule(
-        shuffled,
-        {'2026-01-06', '2026-01-13'},
-        today: DateTime(2026, 1, 16),
-      );
-      expect(
-        status.entries.map((e) => e.date).toList(),
-        [
-          DateTime(2026, 1, 6),
-          DateTime(2026, 1, 13),
-          DateTime(2026, 1, 20),
-          DateTime(2026, 1, 27),
-        ],
-      );
+          shuffled,
+          {
+            '2026-01-06',
+            '2026-01-13',
+          },
+          today: DateTime(2026, 1, 16));
+      expect(status.entries.map((e) => e.date).toList(), [
+        DateTime(2026, 1, 6),
+        DateTime(2026, 1, 13),
+        DateTime(2026, 1, 20),
+        DateTime(2026, 1, 27),
+      ]);
       expect(status.inStep, isTrue); // both due weeks read
     });
   });
@@ -278,18 +280,20 @@ void main() {
       );
     });
 
-    test("due when today's reading is unread and nothing earlier is missed",
-        () {
-      expect(
-        lifecycle(
-          days: 5,
-          start: DateTime(2026, 1, 1),
-          done: [1, 2],
-          today: DateTime(2026, 1, 3),
-        ),
-        PlanLifecycle.due,
-      );
-    });
+    test(
+      "due when today's reading is unread and nothing earlier is missed",
+      () {
+        expect(
+          lifecycle(
+            days: 5,
+            start: DateTime(2026, 1, 1),
+            done: [1, 2],
+            today: DateTime(2026, 1, 3),
+          ),
+          PlanLifecycle.due,
+        );
+      },
+    );
 
     test('on track when caught up with nothing outstanding', () {
       expect(

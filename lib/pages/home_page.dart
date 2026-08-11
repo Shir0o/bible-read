@@ -34,8 +34,10 @@ import '../widgets/navigation_menu_scope.dart';
 import '../widgets/new_plan_picker_sheet.dart';
 import '../widgets/reflect_sheet.dart';
 import '../widgets/skeleton_loader.dart';
+import '../widgets/sun_mark.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
 import 'all_plans_page.dart';
+import 'check_in_page.dart';
 import 'create_group_page.dart';
 import 'create_plan_page.dart';
 import 'full_schedule_page.dart';
@@ -76,6 +78,7 @@ class HomePage extends StatefulWidget {
     ReflectionService? reflectionService,
     GroupService? groupService,
     FriendService? friendService,
+    this.enableDriftAnimation = true,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         readingStatusService = readingStatusService ??
@@ -137,6 +140,8 @@ class HomePage extends StatefulWidget {
 
   final DateTime Function() dateProvider;
 
+  final bool enableDriftAnimation;
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -177,6 +182,9 @@ class _HomePageState extends State<HomePage>
   final Set<StreamSubscription<dynamic>> _loadSubs = {};
 
   List<_PersonalPlan> _personalPlans = [];
+
+  /// Tracks whether the CheckInPage was auto-opened on app launch.
+  bool _hasAutoOpenedCheckIn = false;
 
   /// Whether the primary plan card's mark is mid-write.
   bool _planToggleLoading = false;
@@ -224,6 +232,9 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _loadInitialData() async {
+    final shouldAutoOpenCheckIn = !_hasAutoOpenedCheckIn;
+    _hasAutoOpenedCheckIn = true;
+
     // Resolve the pinned-reading preference first so _loadGroup can prefer the
     // pinned group (Home only surfaces one group, so it must load the right one).
     await _loadPreferences();
@@ -236,6 +247,13 @@ class _HomePageState extends State<HomePage>
           setState(() {
             _initialLoading = false;
           });
+          if (!_readToday && shouldAutoOpenCheckIn) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!_disposed && mounted) {
+                _openCheckInPage();
+              }
+            });
+          }
         }
       }),
       _loadActivePlans(),
@@ -346,49 +364,53 @@ class _HomePageState extends State<HomePage>
       // Load every group the user belongs to in parallel — each group's
       // schedule, today's member presence, and the user's per-chapter progress —
       // so they can all participate in the Today's-reading hero/list ranking.
-      final loaded = await Future.wait(groups.map((group) async {
-        final results = await Future.wait([
-          _firstWithTimeout<List<GroupSchedule>>(
-            widget.groupService.schedule(group.id),
-            timeout: const Duration(seconds: 3),
-            fallback: const <GroupSchedule>[],
-          ),
-          _firstWithTimeout<List<GroupMemberProgressData>>(
-            widget.groupService
-                .memberDailyCompletion(group.id, includeUid: uid),
-            timeout: const Duration(seconds: 3),
-            fallback: const <GroupMemberProgressData>[],
-          ),
-          _firstWithTimeout<Map<String, int>>(
-            widget.groupService.userProgressForGroup(group.id, uid),
-            timeout: const Duration(seconds: 3),
-            fallback: const <String, int>{},
-          ),
-        ]);
+      final loaded = await Future.wait(
+        groups.map((group) async {
+          final results = await Future.wait([
+            _firstWithTimeout<List<GroupSchedule>>(
+              widget.groupService.schedule(group.id),
+              timeout: const Duration(seconds: 3),
+              fallback: const <GroupSchedule>[],
+            ),
+            _firstWithTimeout<List<GroupMemberProgressData>>(
+              widget.groupService.memberDailyCompletion(
+                group.id,
+                includeUid: uid,
+              ),
+              timeout: const Duration(seconds: 3),
+              fallback: const <GroupMemberProgressData>[],
+            ),
+            _firstWithTimeout<Map<String, int>>(
+              widget.groupService.userProgressForGroup(group.id, uid),
+              timeout: const Duration(seconds: 3),
+              fallback: const <String, int>{},
+            ),
+          ]);
 
-        final schedule = results[0] as List<GroupSchedule>;
-        final members = results[1] as List<GroupMemberProgressData>;
-        final progress = results[2] as Map<String, int>;
+          final schedule = results[0] as List<GroupSchedule>;
+          final members = results[1] as List<GroupMemberProgressData>;
+          final progress = results[2] as Map<String, int>;
 
-        GroupSchedule? todayEntry;
-        for (final s in schedule) {
-          if (_dateOnly(s.date) == today) {
-            todayEntry = s;
-            break;
+          GroupSchedule? todayEntry;
+          for (final s in schedule) {
+            if (_dateOnly(s.date) == today) {
+              todayEntry = s;
+              break;
+            }
           }
-        }
 
-        return _GroupData(
-          group: group,
-          schedule: schedule,
-          today: todayEntry,
-          members: members,
-          completedDateIds: progress.entries
-              .where((e) => e.value > 0)
-              .map((e) => e.key)
-              .toSet(),
-        );
-      }));
+          return _GroupData(
+            group: group,
+            schedule: schedule,
+            today: todayEntry,
+            members: members,
+            completedDateIds: progress.entries
+                .where((e) => e.value > 0)
+                .map((e) => e.key)
+                .toSet(),
+          );
+        }),
+      );
 
       if (!_disposed && mounted) {
         setState(() {
@@ -696,10 +718,12 @@ class _HomePageState extends State<HomePage>
             _pastMonth = List<bool>.from(_pastMonth);
           }
           _pastMonth[monthIndex] = false;
-          _readDates.removeWhere((d) =>
-              d.year == today.year &&
-              d.month == today.month &&
-              d.day == today.day);
+          _readDates.removeWhere(
+            (d) =>
+                d.year == today.year &&
+                d.month == today.month &&
+                d.day == today.day,
+          );
         } else {
           // Optimistically mark today as read in local state.
           _readToday = true;
@@ -819,9 +843,11 @@ class _HomePageState extends State<HomePage>
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(wasRead
-                ? 'Failed to undo daily reading. Please try again.'
-                : 'Failed to mark reading. Please try again.'),
+            content: Text(
+              wasRead
+                  ? 'Failed to undo daily reading. Please try again.'
+                  : 'Failed to mark reading. Please try again.',
+            ),
           ),
         );
       }
@@ -838,9 +864,11 @@ class _HomePageState extends State<HomePage>
   /// updates and rollback when marking a specific plan's reading).
   void _setProgressFor(String planId, UserPlanProgress next) {
     _personalPlans = _personalPlans
-        .map((pp) => pp.plan.id == planId
-            ? _PersonalPlan(plan: pp.plan, progress: next)
-            : pp)
+        .map(
+          (pp) => pp.plan.id == planId
+              ? _PersonalPlan(plan: pp.plan, progress: next)
+              : pp,
+        )
         .toList();
   }
 
@@ -904,8 +932,9 @@ class _HomePageState extends State<HomePage>
               action: SnackBarAction(
                 label: 'Undo',
                 onPressed: () {
-                  final p =
-                      _personalPlans.firstWhere((pp) => pp.plan.id == plan.id);
+                  final p = _personalPlans.firstWhere(
+                    (pp) => pp.plan.id == plan.id,
+                  );
                   _togglePlanReadingFor(p.plan, p.progress, day);
                 },
               ),
@@ -962,14 +991,16 @@ class _HomePageState extends State<HomePage>
       setState(() {
         g.markLoading = true;
         g.members = g.members
-            .map((m) => m.uid == user.uid
-                ? GroupMemberProgressData(
-                    uid: m.uid,
-                    name: m.name,
-                    photoUrl: m.photoUrl,
-                    completion: wasRead ? 0.0 : 1.0,
-                  )
-                : m)
+            .map(
+              (m) => m.uid == user.uid
+                  ? GroupMemberProgressData(
+                      uid: m.uid,
+                      name: m.name,
+                      photoUrl: m.photoUrl,
+                      completion: wasRead ? 0.0 : 1.0,
+                    )
+                  : m,
+            )
             .toList();
       });
     }
@@ -1000,9 +1031,9 @@ class _HomePageState extends State<HomePage>
           user: user,
           onMessage: (message) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(message)));
           },
         );
         widget.readingStatusService.invalidateCache();
@@ -1134,12 +1165,45 @@ class _HomePageState extends State<HomePage>
               // SliverToBoxAdapter (not SliverFillRemaining) so the
               // habit-first column takes its natural height and scrolls
               // when it exceeds the viewport, rather than overflowing.
-              SliverToBoxAdapter(
-                child: _buildMinimalContent(context),
-              ),
+              SliverToBoxAdapter(child: _buildMinimalContent(context)),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _openCheckInPage() {
+    final isTestEnv = WidgetsBinding.instance.runtimeType
+        .toString()
+        .toLowerCase()
+        .contains('test');
+
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        transitionDuration:
+            isTestEnv ? Duration.zero : const Duration(milliseconds: 300),
+        reverseTransitionDuration:
+            isTestEnv ? Duration.zero : const Duration(milliseconds: 300),
+        pageBuilder: (context, animation, secondaryAnimation) => CheckInPage(
+          readToday: _readToday,
+          seasonDays: _totalReadDays,
+          reflection: _reflection,
+          dateProvider: widget.dateProvider,
+          onConfirmRead: _toggleReadStatus,
+          onReflect: () {
+            Navigator.of(context).pop();
+            _openReflectSheet(context, initialText: _reflection);
+          },
+          onClose: () {
+            Navigator.of(context).pop();
+          },
+          vibrationService: widget.vibrationService,
+          enableDriftAnimation: widget.enableDriftAnimation,
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
       ),
     );
   }
@@ -1158,7 +1222,7 @@ class _HomePageState extends State<HomePage>
       'THURSDAY',
       'FRIDAY',
       'SATURDAY',
-      'SUNDAY'
+      'SUNDAY',
     ];
     const months = [
       'JANUARY',
@@ -1172,7 +1236,7 @@ class _HomePageState extends State<HomePage>
       'SEPTEMBER',
       'OCTOBER',
       'NOVEMBER',
-      'DECEMBER'
+      'DECEMBER',
     ];
     final eyebrow =
         '${weekdays[now.weekday - 1]} · ${months[now.month - 1]} ${now.day}';
@@ -1208,42 +1272,50 @@ class _HomePageState extends State<HomePage>
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          Semantics(
-            button: true,
-            label: 'Open menu',
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () {
-                widget.vibrationService.lightImpact();
-                NavigationMenuScope.maybeOf(context)?.showMenu(context);
-              },
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colorScheme.primaryContainer,
-                  image: user?.photoURL != null
-                      ? DecorationImage(
-                          image: CachedNetworkImageProvider(user!.photoURL!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SunMark(size: 34, done: _readToday, onTap: _openCheckInPage),
+              const SizedBox(width: 10),
+              Semantics(
+                button: true,
+                label: 'Open menu',
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () {
+                    widget.vibrationService.lightImpact();
+                    NavigationMenuScope.maybeOf(context)?.showMenu(context);
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: colorScheme.primaryContainer,
+                      image: user?.photoURL != null
+                          ? DecorationImage(
+                              image: CachedNetworkImageProvider(
+                                user!.photoURL!,
+                              ),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    alignment: Alignment.center,
+                    child: user?.photoURL == null
+                        ? Text(
+                            _userInitial(user),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.primary,
+                            ),
+                          )
+                        : null,
+                  ),
                 ),
-                alignment: Alignment.center,
-                child: user?.photoURL == null
-                    ? Text(
-                        _userInitial(user),
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.primary,
-                        ),
-                      )
-                    : null,
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -1354,12 +1426,9 @@ class _HomePageState extends State<HomePage>
           children: [
             _buildHomeHeader(context),
             const SizedBox(height: 16),
-            _buildHabitHero(context, hasPlan: hasPlan),
             if (hasPlan) ...[
-              const SizedBox(height: 28),
               _buildReadingSection(context, readingItems),
             ] else ...[
-              const SizedBox(height: 16),
               _buildStartPlanInvitationCard(context),
             ],
             if (_readToday) ...[
@@ -1382,217 +1451,6 @@ class _HomePageState extends State<HomePage>
           ],
         ),
       ),
-    );
-  }
-
-  /// Filled lavender medallion with concentric rings + glow — the "small reward"
-  /// shown when the daily habit is marked (the design's affirm state).
-  Widget _buildAffirmMedallion(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final line = AppColors.of(context).primaryLine;
-    return SizedBox(
-      width: 104,
-      height: 104,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Outer concentric ring (faint).
-          Container(
-            width: 104,
-            height: 104,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: line.withValues(alpha: 0.18)),
-            ),
-          ),
-          // Inner concentric ring.
-          Container(
-            width: 84,
-            height: 84,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: line.withValues(alpha: 0.32)),
-            ),
-          ),
-          // The medallion itself — solid primary with a soft glow.
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: colorScheme.primary,
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.45),
-                  blurRadius: 28,
-                  spreadRadius: -10,
-                  offset: const Offset(0, 12),
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.check_rounded,
-              size: 31,
-              color: colorScheme.onPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// The daily habit — the heartbeat of Home. Visually dominant; one tap; never
-  /// gated by, and never advancing, any plan.
-  Widget _buildHabitHero(BuildContext context, {required bool hasPlan}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = Theme.of(context);
-
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 500),
-      switchInCurve: Curves.easeOutBack,
-      switchOutCurve: Curves.easeIn,
-      transitionBuilder: (Widget child, Animation<double> animation) {
-        return FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation),
-            child: child,
-          ),
-        );
-      },
-      child: _readToday
-          ? Container(
-              key: const ValueKey('habit_done'),
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 56, horizontal: 24),
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(0, -0.75),
-                  radius: 1.15,
-                  colors: [
-                    colorScheme.surfaceContainerLowest,
-                    colorScheme.primaryContainer,
-                  ],
-                  stops: const [0.0, 0.85],
-                ),
-                borderRadius: BorderRadius.circular(AppSpacing.rCard),
-                border: Border.all(
-                  color: AppColors.of(context).primaryLine,
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildAffirmMedallion(context),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Thank you for being here',
-                    style: AppTextStyles.title(context).copyWith(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w500,
-                      height: 1.12,
-                      color: colorScheme.onSurface,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            )
-          : Container(
-              key: const ValueKey('habit_todo'),
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.of(context).primarySoft,
-                borderRadius: BorderRadius.circular(AppSpacing.rCard),
-                border: Border.all(
-                  color: AppColors.of(context).primaryLine,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'THE PRACTICE',
-                    style: AppTextStyles.caption(context).copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    hasPlan
-                        ? 'Did you spend time in the Word?'
-                        : 'Read whatever you’re drawn to.',
-                    style: AppTextStyles.title(context).copyWith(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w400,
-                      height: 1.2,
-                      color: colorScheme.onSurface.withValues(alpha: 0.9),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'However much you read, showing up is the whole thing.',
-                    style: AppTextStyles.bodySmall(context).copyWith(
-                      color: colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.8,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: Semantics(
-                      button: true,
-                      label: 'Mark daily reading as complete',
-                      child: FilledButton(
-                        onPressed: _toggleLoading ? null : _toggleReadStatus,
-                        child: _toggleLoading
-                            ? SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: colorScheme.onPrimary,
-                                ),
-                              )
-                            : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.check_rounded, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'I read today',
-                                    style:
-                                        theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Center(
-                    child: Text(
-                      hasPlan
-                          ? 'Counts whether or not you followed your plan.'
-                          : 'Open your Bible — mark it here when you’re done.',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.caption(context).copyWith(
-                        color: colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.7,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
     );
   }
 
@@ -1675,9 +1533,7 @@ class _HomePageState extends State<HomePage>
       backgroundColor: colorScheme.surfaceContainerLow,
       foregroundColor: colorScheme.onSurface,
       side: BorderSide(color: AppColors.of(context).borderStrong),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     );
   }
 
@@ -1757,17 +1613,18 @@ class _HomePageState extends State<HomePage>
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        border: Border.all(
-          color: AppColors.of(context).border,
-        ),
+        border: Border.all(color: AppColors.of(context).border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.explore_outlined,
-                  size: 14, color: colorScheme.primary),
+              Icon(
+                Icons.explore_outlined,
+                size: 14,
+                color: colorScheme.primary,
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -1854,9 +1711,7 @@ class _HomePageState extends State<HomePage>
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        border: Border.all(
-          color: AppColors.of(context).border,
-        ),
+        border: Border.all(color: AppColors.of(context).border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1913,8 +1768,11 @@ class _HomePageState extends State<HomePage>
             child: !canMark
                 ? OutlinedButton.icon(
                     onPressed: () => _openGroupSchedule(g),
-                    icon: Icon(Icons.calendar_today_outlined,
-                        size: 18, color: colorScheme.primary),
+                    icon: Icon(
+                      Icons.calendar_today_outlined,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
                     label: const Text('View schedule'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: colorScheme.primary,
@@ -1969,9 +1827,7 @@ class _HomePageState extends State<HomePage>
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        border: Border.all(
-          color: AppColors.of(context).border,
-        ),
+        border: Border.all(color: AppColors.of(context).border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2029,8 +1885,9 @@ class _HomePageState extends State<HomePage>
                     value: pct,
                     minHeight: 7,
                     backgroundColor: colorScheme.surfaceContainerHighest,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      colorScheme.primary,
+                    ),
                   ),
                 ),
               ),
@@ -2073,8 +1930,9 @@ class _HomePageState extends State<HomePage>
                     style: OutlinedButton.styleFrom(
                       foregroundColor: colorScheme.onSurfaceVariant,
                       side: BorderSide(
-                        color:
-                            colorScheme.outlineVariant.withValues(alpha: 0.4),
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -2204,7 +2062,7 @@ class _HomePageState extends State<HomePage>
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
     return '${months[d.month - 1]} ${d.day}';
   }
@@ -2309,8 +2167,11 @@ class _HomePageState extends State<HomePage>
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,
-                child: Icon(Icons.explore_outlined,
-                    size: 20, color: colorScheme.primary),
+                child: Icon(
+                  Icons.explore_outlined,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -2359,21 +2220,25 @@ class _HomePageState extends State<HomePage>
 
     switch (kind) {
       case NewPlanKind.personal:
-        await Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => CreatePlanPage(
-            firestore: widget.firestore,
-            auth: widget.auth,
-            vibrationService: widget.vibrationService,
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => CreatePlanPage(
+              firestore: widget.firestore,
+              auth: widget.auth,
+              vibrationService: widget.vibrationService,
+            ),
           ),
-        ));
+        );
       case NewPlanKind.group:
-        await Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => CreateGroupPage(
-            groupService: widget.groupService,
-            auth: widget.auth,
-            vibrationService: widget.vibrationService,
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => CreateGroupPage(
+              groupService: widget.groupService,
+              auth: widget.auth,
+              vibrationService: widget.vibrationService,
+            ),
           ),
-        ));
+        );
         if (mounted) {
           await _loadPreferences();
           if (mounted) await _loadGroup();
@@ -2595,7 +2460,10 @@ class _HomePageState extends State<HomePage>
                   for (var i = 0; i < 7; i++) ...[
                     if (i > 0) const SizedBox(width: 8),
                     _weekDot(
-                        context, labels[i], _readOnWeekday(i == 0 ? 7 : i)),
+                      context,
+                      labels[i],
+                      _readOnWeekday(i == 0 ? 7 : i),
+                    ),
                   ],
                 ],
               ),
@@ -2738,11 +2606,13 @@ class _HomePageState extends State<HomePage>
                 children: [
                   MemberPresenceStack(
                     members: readers
-                        .map((r) => GroupMemberProgressData(
-                              uid: r.uid,
-                              name: r.name,
-                              completion: 1.0,
-                            ))
+                        .map(
+                          (r) => GroupMemberProgressData(
+                            uid: r.uid,
+                            name: r.name,
+                            completion: 1.0,
+                          ),
+                        )
                         .toList(),
                     size: 36,
                     max: 5,

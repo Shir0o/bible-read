@@ -90,8 +90,9 @@ void main() {
     expect(find.text('Join a group to see progress here.'), findsOneWidget);
   });
 
-  testWidgets('renders the community reading hero and group list',
-      (tester) async {
+  testWidgets('renders the community reading hero and group list', (
+    tester,
+  ) async {
     await firestore.collection('groups').doc('g1').set({
       'name': 'My Group',
       'ownerUid': 'u1',

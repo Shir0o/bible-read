@@ -180,8 +180,10 @@ class CatchUpEngine {
   }
 
   /// Core computation over a normalized, date-sorted entry list.
-  static CatchUpStatus compute(List<ScheduleEntry> entries,
-      {required DateTime today}) {
+  static CatchUpStatus compute(
+    List<ScheduleEntry> entries, {
+    required DateTime today,
+  }) {
     final sorted = List<ScheduleEntry>.from(entries)
       ..sort((a, b) => _dateOnly(a.date).compareTo(_dateOnly(b.date)));
 
@@ -237,12 +239,14 @@ class CatchUpEngine {
     final start = _dateOnly(progress.startDate);
     final completed = progress.completedDays.toSet();
     final entries = plan.schedule
-        .map((d) => ScheduleEntry(
-              index: d.day,
-              date: DateTime(start.year, start.month, start.day + (d.day - 1)),
-              readings: d.readings,
-              completed: completed.contains(d.day),
-            ))
+        .map(
+          (d) => ScheduleEntry(
+            index: d.day,
+            date: DateTime(start.year, start.month, start.day + (d.day - 1)),
+            readings: d.readings,
+            completed: completed.contains(d.day),
+          ),
+        )
         .toList();
     return compute(entries, today: today);
   }
@@ -261,12 +265,14 @@ class CatchUpEngine {
     final entries = <ScheduleEntry>[];
     for (var i = 0; i < sorted.length; i++) {
       final s = sorted[i];
-      entries.add(ScheduleEntry(
-        index: i,
-        date: s.date,
-        readings: s.chapters,
-        completed: completedDateIds.contains(dateId(s.date)),
-      ));
+      entries.add(
+        ScheduleEntry(
+          index: i,
+          date: s.date,
+          readings: s.chapters,
+          completed: completedDateIds.contains(dateId(s.date)),
+        ),
+      );
     }
     return compute(entries, today: today);
   }

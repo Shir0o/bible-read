@@ -135,7 +135,7 @@ void main() {
 
       expect(googlePlatform.signInCalled, isTrue);
       expect(auth.signInCalled, isTrue);
-      expect(find.byType(MainPage), findsOneWidget);
+      expect(find.byType(MainPage, skipOffstage: false), findsOneWidget);
     });
   });
 
@@ -211,12 +211,11 @@ void main() {
         signedIn: true,
       );
 
-      await tester.pumpWidget(MaterialApp(
-        home: SettingsPage(
-          auth: auth,
-          firestore: FakeFirebaseFirestore(),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SettingsPage(auth: auth, firestore: FakeFirebaseFirestore()),
         ),
-      ));
+      );
 
       await tester.pumpAndSettle();
 

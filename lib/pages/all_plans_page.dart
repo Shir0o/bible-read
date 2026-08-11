@@ -77,7 +77,12 @@ class _GroupRow {
   final CatchUpStatus status;
   final PlanLifecycle state;
   const _GroupRow(
-      this.group, this.schedule, this.readers, this.status, this.state);
+    this.group,
+    this.schedule,
+    this.readers,
+    this.status,
+    this.state,
+  );
 
   String get pinKey => 'group:${group.id}';
 }
@@ -116,40 +121,51 @@ class _AllPlansPageState extends State<AllPlansPage> {
       }
 
       // Personal plans.
-      final progresses = await widget.readingPlanService
-          .getActivePlans(uid)
-          .first
-          .timeout(const Duration(seconds: 5),
-              onTimeout: () => const <UserPlanProgress>[]);
+      final progresses =
+          await widget.readingPlanService.getActivePlans(uid).first.timeout(
+                const Duration(seconds: 5),
+                onTimeout: () => const <UserPlanProgress>[],
+              );
       final personal = <_PersonalRow>[];
       for (final progress in progresses) {
-        final plan = await widget.readingPlanService
-            .getPlanById(progress.planId, userId: uid);
+        final plan = await widget.readingPlanService.getPlanById(
+          progress.planId,
+          userId: uid,
+        );
         if (plan == null) continue;
-        final status =
-            CatchUpEngine.forPersonalPlan(plan, progress, today: today);
+        final status = CatchUpEngine.forPersonalPlan(
+          plan,
+          progress,
+          today: today,
+        );
         personal.add(
-            _PersonalRow(plan, progress, status, status.lifecycleAt(today)));
+          _PersonalRow(plan, progress, status, status.lifecycleAt(today)),
+        );
       }
 
       // Group readings (the user's groups).
       final groups = await widget.groupService.groupsForUser(uid).first.timeout(
-          const Duration(seconds: 5),
-          onTimeout: () => const <Group>[]);
+            const Duration(seconds: 5),
+            onTimeout: () => const <Group>[],
+          );
       final groupRows = <_GroupRow>[];
       for (final group in groups) {
         final results = await Future.wait([
           widget.groupService.schedule(group.id).first.timeout(
-              const Duration(seconds: 3),
-              onTimeout: () => const <GroupSchedule>[]),
+                const Duration(seconds: 3),
+                onTimeout: () => const <GroupSchedule>[],
+              ),
           widget.groupService.userProgressForGroup(group.id, uid).first.timeout(
-              const Duration(seconds: 3),
-              onTimeout: () => const <String, int>{}),
+                const Duration(seconds: 3),
+                onTimeout: () => const <String, int>{},
+              ),
           widget.groupService
               .memberDailyCompletion(group.id, date: today)
               .first
-              .timeout(const Duration(seconds: 3),
-                  onTimeout: () => const <GroupMemberProgressData>[]),
+              .timeout(
+                const Duration(seconds: 3),
+                onTimeout: () => const <GroupMemberProgressData>[],
+              ),
         ]);
         final schedule = results[0] as List<GroupSchedule>;
         final progressMap = results[1] as Map<String, int>;
@@ -158,12 +174,22 @@ class _AllPlansPageState extends State<AllPlansPage> {
             .where((e) => e.value > 0)
             .map((e) => e.key)
             .toSet();
-        final status =
-            CatchUpEngine.forGroupSchedule(schedule, completed, today: today);
+        final status = CatchUpEngine.forGroupSchedule(
+          schedule,
+          completed,
+          today: today,
+        );
         final readers =
             members.where((m) => m.completion >= 1.0).toList(growable: false);
-        groupRows.add(_GroupRow(
-            group, schedule, readers, status, status.lifecycleAt(today)));
+        groupRows.add(
+          _GroupRow(
+            group,
+            schedule,
+            readers,
+            status,
+            status.lifecycleAt(today),
+          ),
+        );
       }
 
       if (mounted) {
@@ -212,15 +238,17 @@ class _AllPlansPageState extends State<AllPlansPage> {
 
   Future<void> _editPlan(_PersonalRow row) async {
     widget.vibrationService.lightImpact();
-    final changed = await Navigator.of(context).push<bool>(MaterialPageRoute(
-      builder: (_) => CreatePlanPage(
-        firestore: widget.firestore,
-        auth: widget.auth,
-        vibrationService: widget.vibrationService,
-        editingPlan: row.plan,
-        editingProgress: row.progress,
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => CreatePlanPage(
+          firestore: widget.firestore,
+          auth: widget.auth,
+          vibrationService: widget.vibrationService,
+          editingPlan: row.plan,
+          editingProgress: row.progress,
+        ),
       ),
-    ));
+    );
     if (changed == true && mounted) await _load();
   }
 
@@ -234,9 +262,9 @@ class _AllPlansPageState extends State<AllPlansPage> {
       // Clear the inline confirmation only once the archive has succeeded, so a
       // failed write leaves the card in its "tap to confirm" state.
       setState(() => _confirmingLeaveId = null);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Left "${row.plan.title}"')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Left "${row.plan.title}"')));
       await _load();
     } catch (e, st) {
       ErrorLogger.log(e, st);
@@ -245,53 +273,61 @@ class _AllPlansPageState extends State<AllPlansPage> {
 
   void _continuePlan(_PersonalRow row) {
     widget.vibrationService.lightImpact();
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => PlanDetailPage(
-        plan: row.plan,
-        firestore: widget.firestore,
-        auth: widget.auth,
-        initialProgress: row.progress,
-        vibrationService: widget.vibrationService,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PlanDetailPage(
+          plan: row.plan,
+          firestore: widget.firestore,
+          auth: widget.auth,
+          initialProgress: row.progress,
+          vibrationService: widget.vibrationService,
+        ),
       ),
-    ));
+    );
   }
 
   void _openGroup(_GroupRow row) {
     widget.vibrationService.lightImpact();
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => GroupDetailPage(
-        group: row.group,
-        groupService: widget.groupService,
-        auth: widget.auth,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => GroupDetailPage(
+          group: row.group,
+          groupService: widget.groupService,
+          auth: widget.auth,
+        ),
       ),
-    ));
+    );
   }
 
   void _manageGroup(_GroupRow row) {
     widget.vibrationService.lightImpact();
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => GroupMembersPage(
-        group: row.group,
-        groupService: widget.groupService,
-        friendService: widget.friendService,
-        auth: widget.auth,
-        vibrationService: widget.vibrationService,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => GroupMembersPage(
+          group: row.group,
+          groupService: widget.groupService,
+          friendService: widget.friendService,
+          auth: widget.auth,
+          vibrationService: widget.vibrationService,
+        ),
       ),
-    ));
+    );
   }
 
   void _reviewGroup(_GroupRow row) {
     widget.vibrationService.lightImpact();
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => FullSchedulePage(
-        group: row.group,
-        groupService: widget.groupService,
-        auth: widget.auth,
-        vibrationService: widget.vibrationService,
-        initialSchedule: row.schedule,
-        isMember: true,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FullSchedulePage(
+          group: row.group,
+          groupService: widget.groupService,
+          auth: widget.auth,
+          vibrationService: widget.vibrationService,
+          initialSchedule: row.schedule,
+          isMember: true,
+        ),
       ),
-    ));
+    );
   }
 
   Future<void> _enroll() async {
@@ -305,21 +341,25 @@ class _AllPlansPageState extends State<AllPlansPage> {
     // shows in the hub; the occasional wasted reload on cancel is cheap.
     switch (kind) {
       case NewPlanKind.personal:
-        await Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => CreatePlanPage(
-            firestore: widget.firestore,
-            auth: widget.auth,
-            vibrationService: widget.vibrationService,
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => CreatePlanPage(
+              firestore: widget.firestore,
+              auth: widget.auth,
+              vibrationService: widget.vibrationService,
+            ),
           ),
-        ));
+        );
       case NewPlanKind.group:
-        await Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => CreateGroupPage(
-            groupService: widget.groupService,
-            auth: widget.auth,
-            vibrationService: widget.vibrationService,
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => CreateGroupPage(
+              groupService: widget.groupService,
+              auth: widget.auth,
+              vibrationService: widget.vibrationService,
+            ),
           ),
-        ));
+        );
     }
     if (mounted) await _load();
   }
@@ -361,21 +401,25 @@ class _AllPlansPageState extends State<AllPlansPage> {
                       children: [
                         _headerStrip(context, totalActive),
                         if (personalActive.isNotEmpty) ...[
-                          _sectionHeading(context,
-                              icon: Icons.explore_outlined,
-                              title: 'On your own',
-                              count: personalActive.length,
-                              countLabel: 'personal'),
+                          _sectionHeading(
+                            context,
+                            icon: Icons.explore_outlined,
+                            title: 'On your own',
+                            count: personalActive.length,
+                            countLabel: 'personal',
+                          ),
                           for (final row in personalActive)
                             _personalCard(context, row),
                         ],
                         if (groupActive.isNotEmpty) ...[
                           SizedBox(height: personalActive.isNotEmpty ? 22 : 0),
-                          _sectionHeading(context,
-                              icon: Icons.group_outlined,
-                              title: 'Together',
-                              count: groupActive.length,
-                              countLabel: 'group'),
+                          _sectionHeading(
+                            context,
+                            icon: Icons.group_outlined,
+                            title: 'Together',
+                            count: groupActive.length,
+                            countLabel: 'group',
+                          ),
                           for (final row in groupActive)
                             _groupCard(context, row),
                         ],
@@ -481,11 +525,13 @@ class _AllPlansPageState extends State<AllPlansPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _cardTitleRow(context,
-              title: row.plan.title,
-              subtitle: row.plan.description,
-              state: row.state,
-              missed: row.status.missedCount),
+          _cardTitleRow(
+            context,
+            title: row.plan.title,
+            subtitle: row.plan.description,
+            state: row.state,
+            missed: row.status.missedCount,
+          ),
           if (pinned) _primaryOnHomeTag(context),
           _progressBlock(context, row.status),
           const SizedBox(height: 12),
@@ -498,26 +544,39 @@ class _AllPlansPageState extends State<AllPlansPage> {
           Row(
             children: [
               Expanded(
-                child: _primaryAction(context,
-                    icon: Icons.chevron_right,
-                    label: 'Continue',
-                    onTap: () => _continuePlan(row)),
+                child: _primaryAction(
+                  context,
+                  icon: Icons.chevron_right,
+                  label: 'Continue',
+                  onTap: () => _continuePlan(row),
+                ),
               ),
               const SizedBox(width: 9),
-              _pinButton(context, pinned: pinned, onTap: () {
-                _togglePin(row.pinKey);
-              }),
+              _pinButton(
+                context,
+                pinned: pinned,
+                onTap: () {
+                  _togglePin(row.pinKey);
+                },
+              ),
               const SizedBox(width: 9),
-              _iconAction(context,
-                  icon: Icons.edit_outlined, onTap: () => _editPlan(row)),
+              _iconAction(
+                context,
+                icon: Icons.edit_outlined,
+                onTap: () => _editPlan(row),
+              ),
               const SizedBox(width: 9),
-              _leaveButton(context, confirming: confirming, onTap: () {
-                if (confirming) {
-                  _leavePlan(row);
-                } else {
-                  setState(() => _confirmingLeaveId = row.plan.id);
-                }
-              }),
+              _leaveButton(
+                context,
+                confirming: confirming,
+                onTap: () {
+                  if (confirming) {
+                    _leavePlan(row);
+                  } else {
+                    setState(() => _confirmingLeaveId = row.plan.id);
+                  }
+                },
+              ),
             ],
           ),
           if (confirming)
@@ -548,12 +607,14 @@ class _AllPlansPageState extends State<AllPlansPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _cardTitleRow(context,
-              title: row.group.name,
-              subtitle:
-                  'Reading together · $members member${members == 1 ? '' : 's'}',
-              state: row.state,
-              missed: row.status.missedCount),
+          _cardTitleRow(
+            context,
+            title: row.group.name,
+            subtitle:
+                'Reading together · $members member${members == 1 ? '' : 's'}',
+            state: row.state,
+            missed: row.status.missedCount,
+          ),
           if (pinned) _primaryOnHomeTag(context),
           if (row.readers.isNotEmpty) ...[
             const SizedBox(height: 14),
@@ -586,19 +647,27 @@ class _AllPlansPageState extends State<AllPlansPage> {
           Row(
             children: [
               Expanded(
-                child: _primaryAction(context,
-                    icon: Icons.chevron_right,
-                    label: 'Read together',
-                    onTap: () => _openGroup(row)),
+                child: _primaryAction(
+                  context,
+                  icon: Icons.chevron_right,
+                  label: 'Read together',
+                  onTap: () => _openGroup(row),
+                ),
               ),
               const SizedBox(width: 9),
-              _pinButton(context, pinned: pinned, onTap: () {
-                _togglePin(row.pinKey);
-              }),
+              _pinButton(
+                context,
+                pinned: pinned,
+                onTap: () {
+                  _togglePin(row.pinKey);
+                },
+              ),
               const SizedBox(width: 9),
-              _iconAction(context,
-                  icon: Icons.settings_outlined,
-                  onTap: () => _manageGroup(row)),
+              _iconAction(
+                context,
+                icon: Icons.settings_outlined,
+                onTap: () => _manageGroup(row),
+              ),
             ],
           ),
         ],
@@ -747,18 +816,22 @@ class _AllPlansPageState extends State<AllPlansPage> {
           ),
         ),
         for (final row in personalDone)
-          _finishedRow(context,
-              icon: Icons.check_circle,
-              title: row.plan.title,
-              subtitle: 'All ${row.status.total} readings complete',
-              onReview: () => _continuePlan(row)),
+          _finishedRow(
+            context,
+            icon: Icons.check_circle,
+            title: row.plan.title,
+            subtitle: 'All ${row.status.total} readings complete',
+            onReview: () => _continuePlan(row),
+          ),
         for (final row in groupDone)
-          _finishedRow(context,
-              icon: Icons.group,
-              title: row.group.name,
-              subtitle:
-                  'Finished together · All ${row.status.total} readings complete',
-              onReview: () => _reviewGroup(row)),
+          _finishedRow(
+            context,
+            icon: Icons.group,
+            title: row.group.name,
+            subtitle:
+                'Finished together · All ${row.status.total} readings complete',
+            onReview: () => _reviewGroup(row),
+          ),
       ],
     );
   }
@@ -802,8 +875,9 @@ class _AllPlansPageState extends State<AllPlansPage> {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 1),
                 Text(
@@ -851,15 +925,18 @@ class _AllPlansPageState extends State<AllPlansPage> {
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       children: [
         const SizedBox(height: 100),
-        Icon(Icons.menu_book_outlined,
-            size: 56,
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+        Icon(
+          Icons.menu_book_outlined,
+          size: 56,
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+        ),
         const SizedBox(height: 16),
         Text(
           'No active plans yet',
           textAlign: TextAlign.center,
-          style: theme.textTheme.titleMedium
-              ?.copyWith(fontWeight: FontWeight.w500),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(height: 6),
         Text(
@@ -894,15 +971,19 @@ class _AllPlansPageState extends State<AllPlansPage> {
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       ),
     );
   }
 
-  Widget _pinButton(BuildContext context,
-      {required bool pinned, required VoidCallback onTap}) {
+  Widget _pinButton(
+    BuildContext context, {
+    required bool pinned,
+    required VoidCallback onTap,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     return _squareButton(
       onTap: onTap,
@@ -921,8 +1002,11 @@ class _AllPlansPageState extends State<AllPlansPage> {
     );
   }
 
-  Widget _iconAction(BuildContext context,
-      {required IconData icon, required VoidCallback onTap}) {
+  Widget _iconAction(
+    BuildContext context, {
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     return _squareButton(
       onTap: onTap,
@@ -932,8 +1016,11 @@ class _AllPlansPageState extends State<AllPlansPage> {
     );
   }
 
-  Widget _leaveButton(BuildContext context,
-      {required bool confirming, required VoidCallback onTap}) {
+  Widget _leaveButton(
+    BuildContext context, {
+    required bool confirming,
+    required VoidCallback onTap,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     return _squareButton(
       onTap: onTap,
@@ -969,7 +1056,10 @@ class _AllPlansPageState extends State<AllPlansPage> {
           side: BorderSide(color: borderColor),
         ),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(onTap: onTap, child: Center(child: child)),
+        child: InkWell(
+          onTap: onTap,
+          child: Center(child: child),
+        ),
       ),
     );
     return tooltip == null ? button : Tooltip(message: tooltip, child: button);

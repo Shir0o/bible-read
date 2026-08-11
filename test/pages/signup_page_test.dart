@@ -178,7 +178,7 @@ void main() {
     // Check if display name was updated
     expect(auth.currentUser!.displayName, 'Test User');
 
-    expect(find.byType(MainPage), findsOneWidget);
+    expect(find.byType(MainPage, skipOffstage: false), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
   });
@@ -272,7 +272,9 @@ void main() {
     await tester.pump();
 
     expect(
-        find.text('Password must be at least 6 characters'), findsAtLeast(1));
+      find.text('Password must be at least 6 characters'),
+      findsAtLeast(1),
+    );
     expect(
       find.widgetWithText(SnackBar, 'Password must be at least 6 characters'),
       findsOneWidget,

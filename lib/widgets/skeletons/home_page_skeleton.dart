@@ -40,11 +40,7 @@ class HomePageSkeleton extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 12),
-                  Skeleton(
-                    width: 40,
-                    height: 40,
-                    shape: CircleBorder(),
-                  ),
+                  Skeleton(width: 40, height: 40, shape: CircleBorder()),
                 ],
               ),
 

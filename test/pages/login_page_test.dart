@@ -275,7 +275,9 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(
-            find.text('Please enter a valid email address'), findsAtLeast(1));
+          find.text('Please enter a valid email address'),
+          findsAtLeast(1),
+        );
         expect(
           find.widgetWithText(SnackBar, 'Please enter a valid email address'),
           findsOneWidget,
@@ -284,8 +286,9 @@ void main() {
       });
     });
 
-    testWidgets('dynamic email clear button appears and clears input',
-        (tester) async {
+    testWidgets('dynamic email clear button appears and clears input', (
+      tester,
+    ) async {
       await mockNetworkImagesFor(() async {
         final auth = RecordingAuth();
         await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
@@ -294,11 +297,12 @@ void main() {
 
         // Initially no clear button
         expect(
-            find.descendant(
-              of: emailFieldFinder,
-              matching: find.byIcon(Icons.clear),
-            ),
-            findsNothing);
+          find.descendant(
+            of: emailFieldFinder,
+            matching: find.byIcon(Icons.clear),
+          ),
+          findsNothing,
+        );
 
         // Enter some text
         await tester.enterText(emailFieldFinder, 'some-text');
@@ -322,11 +326,12 @@ void main() {
         );
         expect(tester.widget<TextField>(textField).controller?.text, isEmpty);
         expect(
-            find.descendant(
-              of: emailFieldFinder,
-              matching: find.byIcon(Icons.clear),
-            ),
-            findsNothing);
+          find.descendant(
+            of: emailFieldFinder,
+            matching: find.byIcon(Icons.clear),
+          ),
+          findsNothing,
+        );
       });
     });
 
@@ -499,8 +504,9 @@ void main() {
           await tester.tap(forgotPasswordFinder);
           await tester.pumpAndSettle();
 
-          final emailFieldFinder =
-              find.byKey(const Key('forgotPasswordEmailField'));
+          final emailFieldFinder = find.byKey(
+            const Key('forgotPasswordEmailField'),
+          );
 
           // Initially no clear button inside the text field
           expect(
@@ -527,8 +533,10 @@ void main() {
           await tester.pump();
 
           // Email field should be empty, and clear button should be gone
-          expect(tester.widget<TextField>(emailFieldFinder).controller?.text,
-              isEmpty);
+          expect(
+            tester.widget<TextField>(emailFieldFinder).controller?.text,
+            isEmpty,
+          );
           expect(
             find.descendant(
               of: emailFieldFinder,

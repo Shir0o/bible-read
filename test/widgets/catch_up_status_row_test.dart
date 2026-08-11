@@ -18,8 +18,9 @@ ScheduleEntry _entry(int index, DateTime date, {bool completed = false}) =>
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
 void main() {
-  testWidgets('shows behind count and catch-up action when behind',
-      (tester) async {
+  testWidgets('shows behind count and catch-up action when behind', (
+    tester,
+  ) async {
     // Two past readings, both unread → 2 behind.
     final status = _statusFor([
       _entry(1, DateTime(2024, 1, 3)),

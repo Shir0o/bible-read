@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/group_detail_page.dart';
 import 'package:bible_read/pages/home_page.dart';
+import 'package:bible_read/pages/check_in_page.dart';
 import 'package:bible_read/models/group_schedule.dart';
 import 'package:google_sign_in_mocks/google_sign_in_mocks.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
@@ -111,9 +112,11 @@ void main() {
       await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
       await tester.pumpAndSettle();
 
-      // Set display name in Auth after login (since MockUser from login won't have it)
-      await auth.currentUser!.updateDisplayName('Reader');
-      await tester.pump();
+      // Verify CheckInPage auto-opened on home launch
+      expect(find.text('Did you read today?'), findsOneWidget);
+
+      tester.widget<CheckInPage>(find.byType(CheckInPage)).onClose();
+      await tester.pumpAndSettle();
 
       // Verify HomePage is shown
       expect(find.byType(HomePage), findsOneWidget);

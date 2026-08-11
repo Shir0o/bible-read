@@ -164,11 +164,7 @@ class _ChoiceTile extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: colorScheme.outline,
-            ),
+            Icon(Icons.chevron_right, size: 20, color: colorScheme.outline),
           ],
         ),
       ),
