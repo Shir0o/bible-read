@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 /// Pass a [ColorScheme] to [appTheme] to change primary colors and adjust
 /// [fontFamily] or [textTheme] to modify typography.
 class AppTheme {
+  static const String authHeroAssetPath = 'assets/images/auth_hero.png';
   static const String authHeroImageUrl =
       'https://lh3.googleusercontent.com/aida-public/AB6AXuCfzrtAkMN22RwB2ZiqvZ7-a-u3c-1Q3SYe1V6xrgX8oGAGl0fcdKTFGezJhbpHXu8o1n3ePffi_ZF79ajNqZfUsXddI-13tqUsvWaaiNgLKefDYXK0KgRmpDPKA_meuN2OR1SNZqMAEjz6CXvzG7W7A6V3Do9bc_HOxoFH-5RLqbVZek6jTgqM-ERrpHdie1ASqWaBbJxXCKiQDVcL0TkaFmAp07o9oaHvgLprritLLT8kmwNubpE4Xl6s2ETlB0C7b6HWAgBESSe6';
 
