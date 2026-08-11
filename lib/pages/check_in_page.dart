@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
 import '../services/vibration_service.dart';
 
 enum CheckInTimeOfDay { dawn, day, dusk, night }
@@ -50,7 +54,7 @@ class CheckInPage extends StatefulWidget {
 class _CheckInPageState extends State<CheckInPage>
     with TickerProviderStateMixin {
   late bool _done;
-  late CheckInTimeOfDay _tod;
+  CheckInTimeOfDay _tod = CheckInTimeOfDay.day;
   late AnimationController _driftController;
   late AnimationController _floodController;
   late AnimationController _sunRiseController;
@@ -58,14 +62,22 @@ class _CheckInPageState extends State<CheckInPage>
   late Animation<double> _payoffOpacity;
   late Animation<Offset> _payoffSlide;
 
+  /// Re-checks the time of day so an open screen shifts its sky at the hour
+  /// boundary instead of freezing the gradient from when it opened.
+  Timer? _timeOfDayTimer;
+
   bool _isSaving = false;
+
+  bool get _inTestEnvironment => WidgetsBinding.instance.runtimeType
+      .toString()
+      .toLowerCase()
+      .contains('test');
 
   @override
   void initState() {
     super.initState();
     _done = widget.readToday;
-    final now = widget.dateProvider?.call() ?? DateTime.now();
-    _tod = getTimeOfDay(now);
+    _tod = getTimeOfDay(widget.dateProvider?.call() ?? DateTime.now());
 
     // Ambient sky drift motion.
     _driftController = AnimationController(
@@ -73,10 +85,11 @@ class _CheckInPageState extends State<CheckInPage>
       duration: const Duration(seconds: 20),
     );
 
-    // Sun rise motion.
+    // Sun rise motion — springy, matching the design's `bottom .8s
+    // cubic-bezier(.2,1.15,.3,1)` (a modest overshoot, not a rubber-band fling).
     _sunRiseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 800),
       value: _done ? 1.0 : 0.0,
     );
 
@@ -87,25 +100,25 @@ class _CheckInPageState extends State<CheckInPage>
       value: _done ? 1.0 : 0.0,
     );
 
-    _floodScale = Tween<double>(begin: 0.0, end: 12.0).animate(
+    _floodScale = Tween<double>(begin: 0.0, end: 11.0).animate(
       CurvedAnimation(
         parent: _floodController,
-        curve: const Interval(0.0, 0.7, curve: Curves.easeOutCubic),
+        curve: const Interval(0.0, 0.75, curve: Curves.easeOutCubic),
       ),
     );
 
     _payoffOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _floodController,
-        curve: const Interval(0.4, 1.0, curve: Curves.easeIn),
+        curve: const Interval(0.28, 1.0, curve: Curves.easeOutCubic),
       ),
     );
 
     _payoffSlide =
-        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
+        Tween<Offset>(begin: const Offset(0, 0.025), end: Offset.zero).animate(
       CurvedAnimation(
         parent: _floodController,
-        curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic),
+        curve: const Interval(0.28, 1.0, curve: Curves.easeOutCubic),
       ),
     );
   }
@@ -113,10 +126,7 @@ class _CheckInPageState extends State<CheckInPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final isTestEnv = WidgetsBinding.instance.runtimeType
-        .toString()
-        .toLowerCase()
-        .contains('test');
+    final isTestEnv = _inTestEnvironment;
 
     if (!isTestEnv &&
         widget.enableDriftAnimation &&
@@ -127,10 +137,22 @@ class _CheckInPageState extends State<CheckInPage>
     } else {
       _driftController.stop();
     }
+
+    // Keep the time-of-day gradient live while the screen is open.
+    if (!isTestEnv) {
+      _timeOfDayTimer ??= Timer.periodic(const Duration(minutes: 1), (_) {
+        final next =
+            getTimeOfDay(widget.dateProvider?.call() ?? DateTime.now());
+        if (next != _tod && mounted) {
+          setState(() => _tod = next);
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
+    _timeOfDayTimer?.cancel();
     _driftController.dispose();
     _sunRiseController.dispose();
     _floodController.dispose();
@@ -220,6 +242,10 @@ class _CheckInPageState extends State<CheckInPage>
 
   @override
   Widget build(BuildContext context) {
+    // Re-evaluate the time of day on every build so the sky always matches the
+    // current hour (see also [_timeOfDayTimer] for boundary crossings while the
+    // screen stays open).
+    _tod = getTimeOfDay(widget.dateProvider?.call() ?? DateTime.now());
     final skyColors = _getSkyGradientColors();
 
     return Scaffold(
@@ -231,6 +257,7 @@ class _CheckInPageState extends State<CheckInPage>
             builder: (context, child) {
               final alignY = -0.5 + (_driftController.value * 0.3);
               return Container(
+                key: const ValueKey('checkin_sky'),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment(0, alignY),
@@ -301,9 +328,18 @@ class _CheckInPageState extends State<CheckInPage>
             builder: (context, child) {
               final progress = CurvedAnimation(
                 parent: _sunRiseController,
-                curve: Curves.elasticOut,
+                curve: Curves.easeOutBack,
               ).value;
-              final bottomOffset = 180.0 + (progress * 280.0);
+              // Design: the sun rests on the horizon (bottom 190) and rises to
+              // bottom 500. Clamp the risen height so the sun never leaves the
+              // top of the screen on short viewports.
+              final screenHeight = MediaQuery.sizeOf(context).height;
+              const sunSize = 168.0;
+              final risenBottom = math.min(
+                500.0,
+                screenHeight - sunSize - 60,
+              );
+              final bottomOffset = 190.0 + (progress * (risenBottom - 190.0));
 
               return Positioned(
                 bottom: bottomOffset,
@@ -313,6 +349,7 @@ class _CheckInPageState extends State<CheckInPage>
                   child: GestureDetector(
                     onTap: _done ? null : _handleConfirm,
                     child: Container(
+                      key: const ValueKey('checkin_sun'),
                       width: 168,
                       height: 168,
                       decoration: BoxDecoration(
@@ -368,109 +405,140 @@ class _CheckInPageState extends State<CheckInPage>
                   child: FadeTransition(
                     opacity: _payoffOpacity,
                     child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                        child: Column(
-                          children: [
-                            const Spacer(flex: 2),
-                            Text(
-                              '${widget.seasonDays}',
-                              style: const TextStyle(
-                                fontSize: 68,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF2A2438),
-                                height: 1.0,
-                                letterSpacing: -1.5,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              'days this season',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF2A2438),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Thank you for being here',
-                              style: TextStyle(
-                                fontFamily: 'Spectral',
-                                fontSize: 21,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(
-                                  0xFF2A2438,
-                                ).withValues(alpha: 0.75),
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                            const Spacer(flex: 3),
-                            // Action buttons
-                            if (widget.onReflect != null)
-                              SizedBox(
-                                width: double.infinity,
-                                height: 54,
-                                child: OutlinedButton(
-                                  onPressed: widget.onReflect,
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor: const Color(
-                                      0xFFFFFDF8,
-                                    ).withValues(alpha: 0.75),
-                                    foregroundColor: const Color(0xFF2A2438),
-                                    side: const BorderSide(
-                                      color: Color(0xFF2A2438),
-                                      width: 3,
+                      child: Stack(
+                        children: [
+                          // The affirmation/count block is centered in the sky,
+                          // below the risen sun (design `.ci-payoff`).
+                          Positioned.fill(
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 26),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '${widget.seasonDays}',
+                                      style: const TextStyle(
+                                        fontSize: 68,
+                                        fontWeight: FontWeight.w900,
+                                        color: Color(0xFF2A2438),
+                                        height: 1.0,
+                                        letterSpacing: -1.5,
+                                      ),
                                     ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
+                                    const SizedBox(height: 6),
+                                    const Text(
+                                      'days this season',
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF2A2438),
+                                      ),
                                     ),
-                                    elevation: 0,
-                                  ),
-                                  child: Text(
-                                    widget.reflection != null &&
-                                            widget.reflection!.isNotEmpty
-                                        ? 'Edit your reflection'
-                                        : 'Add a reflection',
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 0.2,
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Thank you for being here',
+                                      style: TextStyle(
+                                        fontFamily: 'Spectral',
+                                        fontSize: 21,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(
+                                          0xFF2A2438,
+                                        ).withValues(alpha: 0.75),
+                                        fontStyle: FontStyle.italic,
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 54,
-                              child: ElevatedButton(
-                                onPressed: widget.onClose,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF2A2438),
-                                  foregroundColor: const Color(0xFFFFF3DE),
-                                  side: const BorderSide(
-                                    color: Color(0xFF2A2438),
-                                    width: 3,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: const Text(
-                                  'Done',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.2,
-                                  ),
+                                  ],
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 24),
-                          ],
-                        ),
+                          ),
+                          // The two ways out stay pinned to the bottom
+                          // (design `.ci-outs`), clear of the payoff text.
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                32,
+                                0,
+                                32,
+                                24,
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (widget.onReflect != null)
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 54,
+                                      child: OutlinedButton(
+                                        onPressed: widget.onReflect,
+                                        style: OutlinedButton.styleFrom(
+                                          backgroundColor: const Color(
+                                            0xFFFFFDF8,
+                                          ).withValues(alpha: 0.75),
+                                          foregroundColor:
+                                              const Color(0xFF2A2438),
+                                          side: const BorderSide(
+                                            color: Color(0xFF2A2438),
+                                            width: 3,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                          ),
+                                          elevation: 0,
+                                        ),
+                                        child: Text(
+                                          widget.reflection != null &&
+                                                  widget.reflection!.isNotEmpty
+                                              ? 'Edit your reflection'
+                                              : 'Add a reflection',
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 0.2,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  if (widget.onReflect != null)
+                                    const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 54,
+                                    child: ElevatedButton(
+                                      onPressed: widget.onClose,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            const Color(0xFF2A2438),
+                                        foregroundColor:
+                                            const Color(0xFFFFF3DE),
+                                        side: const BorderSide(
+                                          color: Color(0xFF2A2438),
+                                          width: 3,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                      child: const Text(
+                                        'Done',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 0.2,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
