@@ -95,100 +95,110 @@ class _ReflectSheetState extends State<_ReflectSheet> {
     final colorScheme = Theme.of(context).colorScheme;
     final canSave = _controller.text.trim().isNotEmpty && !_saving;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.rSheet),
-        ),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 20,
-            color: colorScheme.shadow.withValues(alpha: 0.16),
-            offset: const Offset(0, -4),
-          ),
-        ],
+    return AnimatedPadding(
+      // Lift the sheet above the keyboard when it opens (the reflection field
+      // autofocuses), so the Save action is never hidden behind it.
+      key: const ValueKey('reflect_sheet_view_insets'),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 48,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppSpacing.rSheet),
+          ),
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 20,
+              color: colorScheme.shadow.withValues(alpha: 0.16),
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 48,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'REFLECTION',
-                style: AppTextStyles.caption(context).copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.prompt,
-                style: AppTextStyles.title(
-                  context,
-                ).copyWith(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _controller,
-                autofocus: !_isEditing,
-                minLines: 4,
-                maxLines: 6,
-                textCapitalization: TextCapitalization.sentences,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  hintText: 'A sentence is plenty…',
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.rField),
-                    borderSide: BorderSide(color: colorScheme.outlineVariant),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.rField),
-                    borderSide: BorderSide(color: colorScheme.outlineVariant),
+                const SizedBox(height: 16),
+                Text(
+                  'REFLECTION',
+                  style: AppTextStyles.caption(context).copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
                   ),
                 ),
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                height: 50,
-                child: FilledButton.icon(
-                  onPressed: canSave ? _save : null,
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check_rounded, size: 18),
-                  label: Text(_saving ? 'Saving…' : 'Save'),
+                const SizedBox(height: 8),
+                Text(
+                  widget.prompt,
+                  style: AppTextStyles.title(
+                    context,
+                  ).copyWith(fontWeight: FontWeight.w500),
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: _saving ? null : _skip,
-                style: TextButton.styleFrom(
-                  minimumSize: const Size.fromHeight(44),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _controller,
+                  autofocus: !_isEditing,
+                  minLines: 4,
+                  maxLines: 6,
+                  textCapitalization: TextCapitalization.sentences,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: 'A sentence is plenty…',
+                    filled: true,
+                    fillColor: colorScheme.surfaceContainerHighest,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppSpacing.rField),
+                      borderSide: BorderSide(color: colorScheme.outlineVariant),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppSpacing.rField),
+                      borderSide: BorderSide(color: colorScheme.outlineVariant),
+                    ),
+                  ),
                 ),
-                child: Text(_isEditing ? 'Cancel' : 'Skip for today'),
-              ),
-            ],
+                const SizedBox(height: 18),
+                SizedBox(
+                  height: 50,
+                  child: FilledButton.icon(
+                    onPressed: canSave ? _save : null,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.check_rounded, size: 18),
+                    label: Text(_saving ? 'Saving…' : 'Save'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: _saving ? null : _skip,
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size.fromHeight(44),
+                  ),
+                  child: Text(_isEditing ? 'Cancel' : 'Skip for today'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

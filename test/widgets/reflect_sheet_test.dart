@@ -119,4 +119,34 @@ void main() {
       expect(find.text('Skip for today'), findsNothing);
     },
   );
+
+  testWidgets('sheet lifts above the keyboard so Save stays reachable', (
+    tester,
+  ) async {
+    // Simulate an open keyboard (~300 logical px; view insets are physical and
+    // divided by the test DPR of 3.0).
+    tester.view.viewInsets = const FakeViewPadding(bottom: 900);
+    addTearDown(tester.view.resetViewInsets);
+
+    await tester.pumpWidget(
+      _host(
+        onSave: (text) async {},
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    // The sheet reserves the keyboard inset at its bottom edge.
+    final sheetPad = tester.widget<AnimatedPadding>(
+      find.byKey(const ValueKey('reflect_sheet_view_insets')),
+    );
+    expect((sheetPad.padding as EdgeInsets).bottom, 300);
+
+    // The Save button sits above the keyboard, so a tap reaches it.
+    await tester.enterText(find.byType(TextField), 'Worth saying.');
+    await tester.pump();
+    final saveRect = tester.getRect(find.text('Save'));
+    expect(saveRect.bottom, lessThanOrEqualTo(600 - 300 + 1));
+  });
 }
