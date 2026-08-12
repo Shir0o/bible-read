@@ -666,7 +666,10 @@ class _HomePageState extends State<HomePage>
 
   /// Marks (or unmarks) the current day as read. Optimistically updates local
   /// state and writes the change to Firestore, rolling back on failure.
-  Future<void> _toggleReadStatus() async {
+  /// [showSnackBar] is disabled when confirming from the check-in page, whose
+  /// sun-rise/flood is the confirmation — a floating SnackBar would otherwise
+  /// sit on top of the payoff buttons.
+  Future<void> _toggleReadStatus({bool showSnackBar = true}) async {
     if (_toggleLoading) return;
     if (mounted) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -811,7 +814,9 @@ class _HomePageState extends State<HomePage>
       unawaited(_loadReadStatus(showLoading: false));
 
       // Show a transient SnackBar with an Undo option when marked as read.
-      if (!wasRead && !_disposed && mounted) {
+      // Skipped when confirming from the check-in page, where the sun-rise and
+      // gold flood are the confirmation and the payoff buttons must stay clear.
+      if (!wasRead && !_disposed && mounted && showSnackBar) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Daily reading marked as complete'),
@@ -1190,9 +1195,11 @@ class _HomePageState extends State<HomePage>
           seasonDays: _totalReadDays,
           reflection: _reflection,
           dateProvider: widget.dateProvider,
-          onConfirmRead: _toggleReadStatus,
+          onConfirmRead: () => _toggleReadStatus(showSnackBar: false),
           onReflect: () {
-            Navigator.of(context).pop();
+            // The reflection sheet draws up ON TOP of the check-in screen; the
+            // check-in page stays on stage so "Done" (not the reflection) is
+            // what returns to Home.
             _openReflectSheet(context, initialText: _reflection);
           },
           onClose: () {
