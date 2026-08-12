@@ -202,5 +202,40 @@ void main() {
         );
       },
     );
+
+    testWidgets('I READ button is gone once the payoff screen shows', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CheckInPage(
+            readToday: false,
+            seasonDays: 42,
+            onConfirmRead: () async {},
+            onClose: () {},
+          ),
+        ),
+      );
+
+      // Ask screen: the button is fully visible.
+      FadeTransition sunFade() => tester.widget<FadeTransition>(
+            find.byKey(const ValueKey('checkin_sun_fade')),
+          );
+      expect(sunFade().opacity.value, 1.0);
+
+      await tester.tap(find.text('I READ'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 900));
+
+      // Payoff screen is a clean second screen: the "I READ" button has
+      // dissolved completely.
+      expect(find.text('Thank you for being here'), findsOneWidget);
+      expect(sunFade().opacity.value, 0.0);
+    });
   });
 }

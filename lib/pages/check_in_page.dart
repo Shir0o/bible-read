@@ -61,6 +61,7 @@ class _CheckInPageState extends State<CheckInPage>
   late Animation<double> _floodScale;
   late Animation<double> _payoffOpacity;
   late Animation<Offset> _payoffSlide;
+  late Animation<double> _sunFade;
 
   /// Re-checks the time of day so an open screen shifts its sky at the hour
   /// boundary instead of freezing the gradient from when it opened.
@@ -119,6 +120,15 @@ class _CheckInPageState extends State<CheckInPage>
       CurvedAnimation(
         parent: _floodController,
         curve: const Interval(0.28, 1.0, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    // The sun button dissolves as it rises, so the "Thank you for being here"
+    // payoff is a clean second screen — the "I READ" button is gone by then.
+    _sunFade = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _sunRiseController,
+        curve: const Interval(0.0, 0.25, curve: Curves.easeInCubic),
       ),
     );
   }
@@ -270,12 +280,14 @@ class _CheckInPageState extends State<CheckInPage>
             },
           ),
 
-          // 2. Radial gold flood animation when confirmed
+          // 2. Radial gold flood animation when confirmed — anchored at the
+          // button's horizon position (design `.ci-flood` at top: 60%).
           AnimatedBuilder(
             animation: _floodController,
             builder: (context, child) {
               if (_floodScale.value <= 0.001) return const SizedBox.shrink();
-              return Center(
+              return Align(
+                alignment: const Alignment(0, 0.2),
                 child: Transform.scale(
                   scale: _floodScale.value,
                   child: Container(
@@ -345,48 +357,53 @@ class _CheckInPageState extends State<CheckInPage>
                 bottom: bottomOffset,
                 left: 0,
                 right: 0,
-                child: Center(
-                  child: GestureDetector(
-                    onTap: _done ? null : _handleConfirm,
-                    child: Container(
-                      key: const ValueKey('checkin_sun'),
-                      width: 168,
-                      height: 168,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: _sunBorderColor, width: 3.5),
-                        gradient: const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0xFFFFE9A8), Color(0xFFFFC24D)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _sunBorderColor,
-                            offset: const Offset(0, 8),
-                            blurRadius: 0,
+                child: FadeTransition(
+                  key: const ValueKey('checkin_sun_fade'),
+                  opacity: _sunFade,
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: _done ? null : _handleConfirm,
+                      child: Container(
+                        key: const ValueKey('checkin_sun'),
+                        width: 168,
+                        height: 168,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border:
+                              Border.all(color: _sunBorderColor, width: 3.5),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xFFFFE9A8), Color(0xFFFFC24D)],
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.check_rounded,
-                            size: 42,
-                            color: const Color(0xFF2A2438),
-                          ),
-                          const SizedBox(height: 2),
-                          const Text(
-                            'I READ',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.2,
-                              color: Color(0xFF2A2438),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _sunBorderColor,
+                              offset: const Offset(0, 8),
+                              blurRadius: 0,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.check_rounded,
+                              size: 42,
+                              color: const Color(0xFF2A2438),
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'I READ',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.2,
+                                color: Color(0xFF2A2438),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
