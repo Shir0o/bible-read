@@ -357,6 +357,24 @@ class FriendService {
         .map((s) => s.docs.map((d) => d.id).toSet());
   }
 
+  /// Stream of the UIDs (among [uid] and [friendUids]) who marked their daily
+  /// reading on [date], so the Friends list can show who has shown up today.
+  Stream<Set<String>> readTodayUids({
+    required String uid,
+    required List<String> friendUids,
+    required DateTime date,
+  }) {
+    final dateKey =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final uids = {uid, ...friendUids};
+    return firestore
+        .collection('read_logs')
+        .doc(dateKey)
+        .collection('entries')
+        .snapshots()
+        .map((s) => s.docs.map((d) => d.id).toSet().intersection(uids));
+  }
+
   /// Stream of pending friend requests for [uid].
   Stream<List<FriendRequest>> pendingRequests(String uid) {
     return firestore

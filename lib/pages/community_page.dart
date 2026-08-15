@@ -164,6 +164,8 @@ class _CommunityPageState extends State<CommunityPage>
                   firestore: widget.firestore,
                   vibrationService: widget.vibrationService,
                   dateProvider: widget.dateProvider,
+                  eyebrow: 'Together',
+                  title: 'Community',
                 ),
               ),
               SliverToBoxAdapter(

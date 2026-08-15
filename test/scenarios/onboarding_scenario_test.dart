@@ -119,12 +119,12 @@ void main() {
         // Verify Home Page is revealed
         expect(find.byType(HomePage), findsOneWidget);
 
-        // Navigate to Community where user name is displayed
+        // Navigate to Community and verify the design header renders
         await tester.tap(find.text('Community'));
         await tester.pumpAndSettle();
 
-        // Verify user is displayed
-        expect(find.textContaining('Test'), findsOneWidget);
+        expect(find.text('Community'), findsWidgets);
+        expect(find.text('Together'), findsOneWidget);
       });
     },
   );

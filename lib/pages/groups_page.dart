@@ -13,6 +13,7 @@ import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/group_card.dart';
 import '../widgets/skeletons/group_list_skeleton.dart';
+import '../widgets/sub_header.dart';
 
 import '../pages/group_detail_page.dart';
 import '../pages/all_groups_page.dart';
@@ -177,32 +178,30 @@ class _GroupsPageState extends State<GroupsPage> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: CommonStyles.buildAppBar(
-        context,
-        'My Groups',
-        actions: [
-          _isSyncing
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                )
-              : IconButton(
-                  tooltip: 'Sync groups',
-                  icon: const Icon(Icons.sync),
-                  onPressed: _syncGroups,
-                ),
-        ],
-      ),
       body: SafeArea(
         child: Column(
           children: [
+            SubHeader(
+              title: 'My Groups',
+              onBack: () => Navigator.of(context).maybePop(),
+              right: _isSyncing
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    )
+                  : IconButton(
+                      tooltip: 'Sync groups',
+                      icon: const Icon(Icons.sync),
+                      onPressed: _syncGroups,
+                    ),
+            ),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _refresh,

@@ -7,12 +7,14 @@ import 'package:flutter/material.dart';
 
 import '../models/app_notification.dart';
 import '../models/notification_preferences.dart';
+import '../theme/app_theme.dart';
 import '../services/error_logger.dart';
 import '../services/notification_service.dart';
 import '../services/seasonal_challenge_service.dart';
 import '../services/vibration_service.dart';
 import '../services/group_service.dart';
 import '../services/friend_service.dart';
+import '../widgets/sub_header.dart';
 import 'friend_requests_page.dart';
 import 'seasonal_challenges_page.dart';
 import 'group_join_requests_page.dart';
@@ -71,148 +73,94 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: colorScheme.surface,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        title: Text(
-          'Notifications',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: TextButton(
-              onPressed: _markingAllRead ? null : _markAllAsRead,
-              style: TextButton.styleFrom(
-                foregroundColor: colorScheme.primary,
-                textStyle: const TextStyle(fontWeight: FontWeight.w600),
-                backgroundColor: colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.3,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+      body: SafeArea(
+        child: Column(
+          children: [
+            SubHeader(
+              title: 'Notifications',
+              onBack: () => Navigator.of(context).pop(),
+              right: Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: TextButton(
+                  onPressed: _markingAllRead ? null : _markAllAsRead,
+                  style: TextButton.styleFrom(
+                    foregroundColor: colorScheme.primary,
+                    textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  child: _markingAllRead
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: colorScheme.primary,
+                          ),
+                        )
+                      : const Text('Mark all read'),
                 ),
               ),
-              child: _markingAllRead
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: colorScheme.primary,
-                      ),
-                    )
-                  : const Text('Mark all as read'),
             ),
-          ),
-        ],
-      ),
-      body: user == null
-          ? const Center(child: Text('Please sign in'))
-          : StreamBuilder<List<AppNotification>>(
-              stream: widget.service.notifications(user.uid),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return const Center(
-                    child: Text('Error loading notifications'),
-                  );
-                }
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+            Expanded(
+              child: user == null
+                  ? const Center(child: Text('Please sign in'))
+                  : StreamBuilder<List<AppNotification>>(
+                      stream: widget.service.notifications(user.uid),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return const Center(
+                            child: Text('Error loading notifications'),
+                          );
+                        }
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
 
-                final notifications = snapshot.data!;
-                if (notifications.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.notifications_none_outlined,
-                          size: 64,
-                          color: colorScheme.onSurfaceVariant.withValues(
-                            alpha: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No notifications yet',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
+                        final notifications = snapshot.data!;
+                        if (notifications.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.notifications_none_outlined,
+                                  size: 64,
+                                  color: colorScheme.onSurfaceVariant
+                                      .withValues(alpha: 0.5),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No notifications yet',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return ListView(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                          children: [
+                            for (final n in notifications) ...[
+                              _NotificationItem(
+                                key: ValueKey(n.id),
+                                notification: n,
+                                service: widget.service,
+                                auth: widget.auth,
+                                vibrationService: widget.vibrationService,
+                              ),
+                              const SizedBox(height: 9),
+                            ],
+                          ],
+                        );
+                      },
                     ),
-                  );
-                }
-
-                // Group notifications
-                final newNotifications = <AppNotification>[];
-                final earlierNotifications = <AppNotification>[];
-
-                final now = DateTime.now();
-                final oneWeekAgo = now.subtract(const Duration(days: 7));
-
-                for (final n in notifications) {
-                  if (!n.read) {
-                    newNotifications.add(n);
-                  } else if (n.timestamp.isAfter(oneWeekAgo)) {
-                    earlierNotifications.add(n);
-                  }
-                }
-
-                return ListView(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  children: [
-                    if (newNotifications.isNotEmpty) ...[
-                      _buildSectionHeader(context, 'New'),
-                      ...newNotifications.map(
-                        (n) => _NotificationItem(
-                          key: ValueKey(n.id),
-                          notification: n,
-                          service: widget.service,
-                          auth: widget.auth,
-                          vibrationService: widget.vibrationService,
-                        ),
-                      ),
-                    ],
-                    if (earlierNotifications.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      _buildSectionHeader(context, 'Earlier this week'),
-                      ...earlierNotifications.map(
-                        (n) => _NotificationItem(
-                          key: ValueKey(n.id),
-                          notification: n,
-                          service: widget.service,
-                          auth: widget.auth,
-                          vibrationService: widget.vibrationService,
-                        ),
-                      ),
-                    ],
-                  ],
-                );
-              },
             ),
-    );
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              letterSpacing: 0.5,
-            ),
+          ],
+        ),
       ),
     );
   }
@@ -337,28 +285,37 @@ class _NotificationItemState extends State<_NotificationItem> {
     final isUnread = !widget.notification.read;
 
     return Material(
-      color: isUnread
-          ? colorScheme.surfaceContainerHigh.withValues(alpha: 0.5)
-          : Colors.transparent,
+      color: isUnread ? AppColors.of(context).primarySoft : colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isUnread
+              ? AppColors.of(context).primaryLine
+              : AppColors.of(context).border,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => _handleTap(context),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(15),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _buildAvatar(context),
-              const SizedBox(width: 16),
+              const SizedBox(width: 13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildMessage(context),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       _timeAgo(widget.notification.timestamp),
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.7,
+                        ),
                       ),
                     ),
                   ],
@@ -366,11 +323,11 @@ class _NotificationItemState extends State<_NotificationItem> {
               ),
               if (isUnread)
                 Container(
-                  margin: const EdgeInsets.only(top: 8, left: 8),
+                  margin: const EdgeInsets.only(left: 8),
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: colorScheme.primary,
+                    color: colorScheme.tertiary,
                     shape: BoxShape.circle,
                   ),
                 ),

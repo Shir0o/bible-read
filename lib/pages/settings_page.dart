@@ -18,6 +18,7 @@ import '../services/vibration_service.dart';
 import '../widgets/animated_action_button.dart';
 import '../widgets/animated_page_route.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/sub_header.dart';
 import '../widgets/vibration_button.dart';
 import 'feedback_page.dart';
 import 'login_page.dart';
@@ -529,10 +530,21 @@ class SettingsPageState extends State<SettingsPage> {
     }
 
     return Scaffold(
-      appBar: CommonStyles.buildAppBar(context, 'Settings'),
       body: Container(
         decoration: CommonStyles.backgroundDecoration(colorScheme),
-        child: Center(child: SingleChildScrollView(child: body)),
+        child: SafeArea(
+          child: Column(
+            children: [
+              SubHeader(
+                title: 'Settings',
+                onBack: () => Navigator.of(context).maybePop(),
+              ),
+              Expanded(
+                child: Center(child: SingleChildScrollView(child: body)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

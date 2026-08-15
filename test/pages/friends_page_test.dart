@@ -133,11 +133,11 @@ void main() {
     expect(find.text('Find Friends'), findsOneWidget);
   });
 
-  testWidgets('fab navigates to AddFriendPage', (tester) async {
+  testWidgets('header add button navigates to AddFriendPage', (tester) async {
     await pumpPage(tester);
 
-    expect(find.byType(FloatingActionButton), findsOneWidget);
-    await tester.tap(find.byType(FloatingActionButton));
+    expect(find.byTooltip('Add friend'), findsOneWidget);
+    await tester.tap(find.byTooltip('Add friend'));
     await settle(tester);
 
     expect(find.byType(AddFriendPage), findsOneWidget);
@@ -154,9 +154,10 @@ void main() {
     await pumpPage(tester);
 
     expect(find.text('Alice'), findsOneWidget);
+    expect(find.text('Your circle'), findsOneWidget);
   });
 
-  testWidgets('tapping encouragement icon calls service', (tester) async {
+  testWidgets('tapping nudge chip calls service', (tester) async {
     await firestore
         .collection('users')
         .doc('u1')
@@ -166,8 +167,8 @@ void main() {
 
     await pumpPage(tester);
 
-    expect(find.byIcon(Icons.auto_awesome_outlined), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
+    expect(find.byIcon(Icons.waving_hand_outlined), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.waving_hand_outlined));
     await settle(tester);
 
     // The friendly nudge sheet opens; sending happens from there.
@@ -177,9 +178,7 @@ void main() {
     expect(service.nudged, isTrue);
   });
 
-  testWidgets('encouragement button changes appearance after send', (
-    tester,
-  ) async {
+  testWidgets('nudge chip becomes Sent after send', (tester) async {
     await firestore
         .collection('users')
         .doc('u1')
@@ -189,13 +188,9 @@ void main() {
 
     await pumpPage(tester);
 
-    // Initial state: Enabled color (null in code means default icon color)
-    final initialIcon = tester.widget<Icon>(
-      find.byIcon(Icons.auto_awesome_outlined),
-    );
-    expect(initialIcon.color, isNull);
+    expect(find.text('Nudge'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
+    await tester.tap(find.byIcon(Icons.waving_hand_outlined));
     await settle(tester);
 
     // Send from the nudge sheet, then close it.
@@ -204,20 +199,8 @@ void main() {
     await tester.tap(find.text('Done'));
     await settle(tester);
 
-    // After sending: Disabled color
-    final nudgedIcon = tester.widget<Icon>(
-      find.byIcon(Icons.auto_awesome_outlined),
-    );
-    expect(nudgedIcon.color, isNotNull);
-
-    // Also verify onPressed is NOT null
-    final button = tester.widget<IconButton>(
-      find.ancestor(
-        of: find.byIcon(Icons.auto_awesome_outlined),
-        matching: find.byType(IconButton),
-      ),
-    );
-    expect(button.onPressed, isNotNull);
+    // After sending: the chip reads "Sent".
+    expect(find.text('Sent'), findsOneWidget);
   });
 
   testWidgets('failed request leaves send button enabled', (tester) async {
@@ -233,7 +216,7 @@ void main() {
     );
     await settle(tester);
 
-    await tester.tap(find.byType(FloatingActionButton));
+    await tester.tap(find.byTooltip('Add friend'));
     await settle(tester);
     await tester.enterText(
       find.byKey(const Key('addFriendEmailField')),
@@ -248,9 +231,7 @@ void main() {
     expect(button.onPressed, isNotNull);
   });
 
-  testWidgets('already sent nudge updates appearance/interaction', (
-    tester,
-  ) async {
+  testWidgets('already sent nudge surfaces gentle copy', (tester) async {
     final already = AlreadySentFriendService(firestore: firestore);
     await firestore
         .collection('users')
@@ -270,7 +251,7 @@ void main() {
     );
     await settle(tester);
 
-    await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
+    await tester.tap(find.byIcon(Icons.waving_hand_outlined));
     await settle(tester);
 
     // Send from the nudge sheet; the service reports it was already sent.
@@ -279,20 +260,9 @@ void main() {
 
     // The sheet stays open and surfaces gentle "already sent" copy in place.
     expect(find.textContaining('already nudged Alice'), findsOneWidget);
-
-    // The underlying icon remains enabled.
-    final button = tester.widget<IconButton>(
-      find.ancestor(
-        of: find.byIcon(Icons.auto_awesome_outlined),
-        matching: find.byType(IconButton),
-      ),
-    );
-    expect(button.onPressed, isNotNull);
   });
 
-  testWidgets('existing nudge log updates encouragement button appearance', (
-    tester,
-  ) async {
+  testWidgets('existing nudge log shows Sent chip', (tester) async {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
     await firestore
@@ -313,15 +283,6 @@ void main() {
 
     await pumpPage(tester);
 
-    final icon = tester.widget<Icon>(find.byIcon(Icons.auto_awesome_outlined));
-    expect(icon.color, isNotNull);
-
-    final button = tester.widget<IconButton>(
-      find.ancestor(
-        of: find.byIcon(Icons.auto_awesome_outlined),
-        matching: find.byType(IconButton),
-      ),
-    );
-    expect(button.onPressed, isNotNull);
+    expect(find.text('Sent'), findsOneWidget);
   });
 }
