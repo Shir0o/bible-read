@@ -117,7 +117,7 @@ void main() {
     await select('Sign Out', 10);
   });
 
-  testWidgets('shows Feedback Inbox entry for admin users', (tester) async {
+  testWidgets('shows Inbox entry for admin users', (tester) async {
     final fakeFirestore = FakeFirebaseFirestore();
     final mockAuth = MockFirebaseAuth();
     await tester.pumpWidget(
@@ -149,18 +149,18 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Feedback Inbox'), findsOneWidget);
+    expect(find.text('Inbox'), findsOneWidget);
 
     final scrollable = find.descendant(
       of: find.byType(AppMenuSheet),
       matching: find.byType(Scrollable),
     );
     await tester.scrollUntilVisible(
-      find.text('Feedback Inbox'),
+      find.text('Inbox'),
       200.0,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('Feedback Inbox'));
+    await tester.tap(find.text('Inbox'));
     await tester.pumpAndSettle();
 
     expect(find.byType(FeedbackAdminPage), findsOneWidget);
@@ -197,8 +197,66 @@ void main() {
     await tester.pump();
 
     expect(find.byType(AppMenuSheet), findsOneWidget);
-    expect(find.text('Feedback Inbox'), findsOneWidget);
+    expect(find.text('Inbox'), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 20));
+  });
+
+  testWidgets('shows profile header and design menu destinations', (
+    tester,
+  ) async {
+    final mockAuth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1', displayName: 'Test User'),
+      signedIn: true,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              return ElevatedButton(
+                onPressed: () {
+                  AppMenuSheet.show(
+                    context: context,
+                    onNavigate: (_) {},
+                    vibrationService: const VibrationService(),
+                    feedbackService: FeedbackService(
+                      firestore: FakeFirebaseFirestore(),
+                      auth: mockAuth,
+                    ),
+                    adminRoleService: _NeverAdminService(),
+                    auth: mockAuth,
+                    firestore: FakeFirebaseFirestore(),
+                  );
+                },
+                child: const Text('Open menu'),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open menu'));
+    await tester.pumpAndSettle();
+
+    // Profile header matches the design: avatar, name, gentle tagline.
+    expect(find.text('Test User'), findsOneWidget);
+    expect(find.text('Keep showing up.'), findsOneWidget);
+
+    // The design's destination grid — every tile is present.
+    for (final label in [
+      'Settings',
+      'Notifications',
+      'Friends',
+      'Challenges',
+      'Groups',
+      'Library',
+      'Feedback',
+      'Sign Out',
+    ]) {
+      expect(find.text(label), findsOneWidget, reason: 'missing "$label"');
+    }
   });
 }

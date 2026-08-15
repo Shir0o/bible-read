@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../pages/admin/feedback_admin_page.dart';
 import '../pages/feedback_page.dart';
+import '../models/app_notification.dart';
 import '../services/admin_role_service.dart';
 import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
@@ -18,8 +19,13 @@ import '../services/notification_service.dart';
 
 import '../pages/settings_page.dart';
 import '../pages/bible_progress_page.dart';
+import '../pages/groups_page.dart';
 import '../services/google_sign_in_factory.dart';
+import '../services/group_service.dart';
 
+/// The hub sheet opened from the avatar — matches the design's `MenuSheet`:
+/// a profile header, a two-column grid of destinations, and a quiet full-width
+/// Sign Out row at the bottom.
 class AppMenuSheet extends StatefulWidget {
   const AppMenuSheet({
     super.key,
@@ -123,7 +129,7 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
   ) {
     final items = [
       _MenuItem(
-        icon: Icons.settings,
+        icon: Icons.settings_outlined,
         label: 'Settings',
         onTap: (context) {
           Navigator.of(context).push(
@@ -140,8 +146,9 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
         },
       ),
       _MenuItem(
-        icon: Icons.notifications,
+        icon: Icons.notifications_outlined,
         label: 'Notifications',
+        badge: true,
         onTap: (context) {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -154,11 +161,30 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
           );
         },
       ),
-      _MenuItem(icon: Icons.emoji_events, label: 'Challenges', index: 5),
-      _MenuItem(icon: Icons.people, label: 'Friends', index: 4),
+      _MenuItem(icon: Icons.people_outline, label: 'Friends', index: 4),
       _MenuItem(
-        icon: Icons.menu_book,
-        label: 'Bible Library',
+        icon: Icons.emoji_events_outlined,
+        label: 'Challenges',
+        index: 5,
+      ),
+      _MenuItem(
+        icon: Icons.explore_outlined,
+        label: 'Groups',
+        onTap: (context) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => GroupsPage(
+                groupService: GroupService(firestore: firestore),
+                auth: auth,
+                vibrationService: widget.vibrationService,
+              ),
+            ),
+          );
+        },
+      ),
+      _MenuItem(
+        icon: Icons.menu_book_outlined,
+        label: 'Library',
         onTap: (context) {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -171,9 +197,8 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
           );
         },
       ),
-      _MenuItem(icon: Icons.logout, label: 'Sign Out', index: 10),
       _MenuItem(
-        icon: Icons.feedback,
+        icon: Icons.bug_report_outlined,
         label: 'Feedback',
         onTap: (context) {
           final feedback = widget.feedbackService ?? FeedbackService();
@@ -194,8 +219,8 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
     if (_isAdmin) {
       items.add(
         _MenuItem(
-          icon: Icons.inventory_2,
-          label: 'Feedback Inbox',
+          icon: Icons.inbox_outlined,
+          label: 'Inbox',
           onTap: (context) {
             Navigator.of(context).push(
               animatedPageRoute(
@@ -215,10 +240,9 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
 
   List<_MenuItem> _buildFallbackMenuList() {
     return [
-      _MenuItem(icon: Icons.people, label: 'Friends', index: 4),
-      _MenuItem(icon: Icons.logout, label: 'Sign Out', index: 10),
+      _MenuItem(icon: Icons.people_outline, label: 'Friends', index: 4),
       _MenuItem(
-        icon: Icons.feedback,
+        icon: Icons.bug_report_outlined,
         label: 'Feedback',
         onTap: (context) {
           final feedback = widget.feedbackService ?? FeedbackService();
@@ -244,6 +268,8 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
       vibrationService: widget.vibrationService,
       onNavigate: widget.onNavigate,
       parentContext: widget.parentContext,
+      auth: widget.auth,
+      firestore: widget.firestore,
     );
   }
 }
@@ -254,12 +280,16 @@ class _MenuContents extends StatelessWidget {
     required this.vibrationService,
     required this.onNavigate,
     required this.parentContext,
+    this.auth,
+    this.firestore,
   });
 
   final List<_MenuItem> items;
   final VibrationService vibrationService;
   final ValueChanged<int> onNavigate;
   final BuildContext parentContext;
+  final FirebaseAuth? auth;
+  final FirebaseFirestore? firestore;
 
   @override
   Widget build(BuildContext context) {
@@ -281,7 +311,7 @@ class _MenuContents extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 34),
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
@@ -299,14 +329,8 @@ class _MenuContents extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                'Menu',
-                style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ) ??
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 20),
+              _ProfileHeader(auth: auth),
+              const SizedBox(height: 16),
               Builder(
                 builder: (context) {
                   final double availableWidth = MediaQuery.of(
@@ -318,14 +342,14 @@ class _MenuContents extends StatelessWidget {
                       availableWidth - horizontalPadding;
 
                   final double baseWidth =
-                      compact ? contentWidth : (contentWidth - 16) / 2;
+                      compact ? contentWidth : (contentWidth - 9) / 2;
                   final double buttonWidth = compact
                       ? baseWidth
                       : baseWidth.clamp(140.0, 240.0).toDouble();
 
                   return Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
+                    spacing: 9,
+                    runSpacing: 9,
                     alignment: compact
                         ? WrapAlignment.center
                         : WrapAlignment.spaceBetween,
@@ -339,6 +363,8 @@ class _MenuContents extends StatelessWidget {
                               vibrationService: vibrationService,
                               textStyle: textStyle,
                               parentContext: parentContext,
+                              auth: auth,
+                              firestore: firestore,
                             ),
                           ),
                         )
@@ -346,10 +372,119 @@ class _MenuContents extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 9),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    alignment: Alignment.center,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    backgroundColor: colorScheme.secondaryContainer,
+                    foregroundColor: colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: () {
+                    unawaited(vibrationService.lightImpact());
+                    Navigator.of(context).pop();
+                    onNavigate(10);
+                  },
+                  icon: const Icon(Icons.logout, size: 19),
+                  label: Text(
+                    'Sign Out',
+                    style: textStyle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({this.auth});
+
+  final FirebaseAuth? auth;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final user = auth?.currentUser;
+    final name = user?.displayName ?? 'Friend';
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 2, 2, 14),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: colorScheme.primaryContainer,
+            ),
+            clipBehavior: Clip.antiAlias,
+            alignment: Alignment.center,
+            child: user?.photoURL != null
+                ? Image.network(
+                    user!.photoURL!,
+                    fit: BoxFit.cover,
+                    width: 44,
+                    height: 44,
+                    errorBuilder: (context, error, stackTrace) => Center(
+                      child: Text(
+                        initial,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  )
+                : Text(
+                    initial,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  'Keep showing up.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -362,6 +497,8 @@ class _MenuActionButton extends StatelessWidget {
     required this.vibrationService,
     required this.textStyle,
     required this.parentContext,
+    this.auth,
+    this.firestore,
   });
 
   final _MenuItem item;
@@ -369,17 +506,44 @@ class _MenuActionButton extends StatelessWidget {
   final VibrationService vibrationService;
   final TextStyle textStyle;
   final BuildContext parentContext;
+  final FirebaseAuth? auth;
+  final FirebaseFirestore? firestore;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+    Widget badge = const SizedBox.shrink();
+    if (item.badge && auth != null && firestore != null) {
+      badge = StreamBuilder<List<AppNotification>>(
+        stream: NotificationService(firestore: firestore!)
+            .notifications(auth!.currentUser?.uid ?? ''),
+        builder: (context, snapshot) {
+          final unread = snapshot.data?.where((n) => !n.read).length ?? 0;
+          if (unread == 0) return const SizedBox.shrink();
+          return Positioned(
+            top: 11,
+            right: 11,
+            child: Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: colorScheme.tertiary,
+                shape: BoxShape.circle,
+              ),
+            ),
+          );
+        },
+      );
+    }
+
     return FilledButton.tonalIcon(
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         alignment: Alignment.centerLeft,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         backgroundColor: colorScheme.secondaryContainer,
-        foregroundColor: colorScheme.onSecondaryContainer,
+        foregroundColor: colorScheme.primary,
       ),
       onPressed: () {
         unawaited(vibrationService.lightImpact());
@@ -390,7 +554,15 @@ class _MenuActionButton extends StatelessWidget {
           onNavigate(item.index!);
         }
       },
-      icon: Icon(item.icon),
+      icon: SizedBox(
+        width: 28,
+        child: Stack(
+          children: [
+            Icon(item.icon, size: 20),
+            badge,
+          ],
+        ),
+      ),
       label: Text(
         item.label,
         style: textStyle,
@@ -408,6 +580,7 @@ class _MenuItem {
     required this.icon,
     required this.label,
     this.onTap,
+    this.badge = false,
   }) : assert(
           index != null || onTap != null,
           'Either index or onTap must be provided.',
@@ -416,5 +589,6 @@ class _MenuItem {
   final int? index;
   final IconData icon;
   final String label;
+  final bool badge;
   final void Function(BuildContext context)? onTap;
 }

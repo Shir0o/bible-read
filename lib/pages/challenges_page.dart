@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 
 import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
-import '../widgets/common_styles.dart';
+import '../widgets/sub_header.dart';
 import '../services/seasonal_challenge_service.dart';
 
 import 'seasonal_challenges_page.dart';
 
-class ChallengesPage extends StatefulWidget {
+class ChallengesPage extends StatelessWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final FriendService friendService;
@@ -24,52 +24,25 @@ class ChallengesPage extends StatefulWidget {
   });
 
   @override
-  State<ChallengesPage> createState() => _ChallengesPageState();
-}
-
-class _ChallengesPageState extends State<ChallengesPage>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 1, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Challenges'),
-        backgroundColor: colorScheme.surface,
-        scrolledUnderElevation: 0,
-        titleTextStyle: AppTextStyles.title(context).copyWith(fontSize: 22),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: colorScheme.primary,
-          unselectedLabelColor: colorScheme.onSurfaceVariant,
-          indicatorColor: colorScheme.primary,
-          dividerColor: Colors.transparent,
-          isScrollable: true,
-          tabs: const [Tab(text: 'Seasonal')],
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            SubHeader(
+              title: 'Challenges',
+              onBack: () => Navigator.of(context).pop(),
+            ),
+            Expanded(
+              child: SeasonalChallengesView(
+                auth: auth,
+                service: SeasonalChallengeService(firestore: firestore),
+              ),
+            ),
+          ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          SeasonalChallengesView(
-            auth: widget.auth,
-            service: SeasonalChallengeService(firestore: widget.firestore),
-          ),
-        ],
       ),
     );
   }

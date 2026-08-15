@@ -54,10 +54,10 @@ void main() {
 
       expect(find.text('Notifications'), findsOneWidget);
       expect(find.text('No notifications yet'), findsOneWidget);
-      expect(find.text('Mark all as read'), findsOneWidget);
+      expect(find.text('Mark all read'), findsOneWidget);
     });
 
-    testWidgets('Renders notifications grouped by sections', (tester) async {
+    testWidgets('Renders notifications as a flat card list', (tester) async {
       final uid = auth.currentUser!.uid;
 
       // Seed user2
@@ -103,9 +103,6 @@ void main() {
       );
       await tester.pumpAndSettle(); // Wait for stream
 
-      expect(find.text('New'), findsOneWidget);
-      expect(find.text('Earlier this week'), findsOneWidget);
-
       // Use findRichText: true (default) but verifying separately to be safe with RichText splitting
       expect(
         find.text('User 2 liked your reading', findRichText: true),
@@ -141,7 +138,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Mark all as read'));
+      await tester.tap(find.text('Mark all read'));
       await tester.pumpAndSettle();
 
       // Verify in firestore

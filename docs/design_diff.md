@@ -11,6 +11,17 @@ the Claude Design handoff bundle (`~/Downloads/Bible Read-handoff.zip`)._
 > feature, so the prototype's "Reflections" tile/thread were substituted with a Day-streak tile and
 > omitted), #7 (avatar → initial-on-lavender), #8 (dark-mode card borders strengthened), and the
 > "Details"→"Manage" / "Consistency"→"Showing up" copy have been implemented. Verify visually on device.
+>
+> **Header + menu parity pass (updated 2026-08-15):** The `TopBar` header row (eyebrow + serif title +
+> avatar/bell) now replaces the old greeting header on Community and Journey
+> ([app_header.dart](../lib/widgets/app_header.dart)); the draw-up menu sheet matches `menu.jsx`
+> (profile header with "Keep showing up.", two-column grid with Settings / Notifications / Friends /
+> Challenges / Groups / Library / Feedback / Inbox, and a quiet full-width Sign Out row —
+> [app_menu_sheet.dart](../lib/widgets/app_menu_sheet.dart)); and the menu-reached pages use the
+> prototype's `SubHeader` (back chevron + serif title) with redesigned Notifications (flat unread-tinted
+> cards + accent dot), Friends (requests entry card + "Your circle" rows with Amen/Nudge chips),
+> Challenges (gentle intro card), and Bible Library (3-column book tiles + "X of 66 books" footer).
+> See [sub_header.dart](../lib/widgets/sub_header.dart).
 
 ## TL;DR
 

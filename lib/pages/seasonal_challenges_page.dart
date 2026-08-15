@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/season.dart';
 import '../models/seasonal_challenge.dart';
 import '../services/seasonal_challenge_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 import '../models/seasonal_challenge_progress.dart';
 import '../widgets/seasonal_challenge_card.dart';
@@ -31,7 +32,14 @@ class SeasonalChallengesView extends StatelessWidget {
         }
         final season = seasonSnapshot.data;
         if (season == null) {
-          return const Center(child: Text('No active season currently.'));
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const _GentleIntroCard(),
+              const SizedBox(height: 120),
+              const Center(child: Text('No active season currently.')),
+            ],
+          );
         }
 
         return StreamBuilder<List<SeasonalChallenge>>(
@@ -44,8 +52,15 @@ class SeasonalChallengesView extends StatelessWidget {
             }
             final challenges = snapshot.data ?? [];
             if (challenges.isEmpty) {
-              return const Center(
-                child: Text('No active challenges at the moment.'),
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  const _GentleIntroCard(),
+                  const SizedBox(height: 120),
+                  const Center(
+                    child: Text('No active challenges at the moment.'),
+                  ),
+                ],
               );
             }
 
@@ -55,10 +70,17 @@ class SeasonalChallengesView extends StatelessWidget {
               itemBuilder: (context, index) {
                 if (index == 0) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      season.title,
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _GentleIntroCard(),
+                        const SizedBox(height: 24),
+                        Text(
+                          season.title,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ],
                     ),
                   );
                 }
@@ -74,6 +96,65 @@ class SeasonalChallengesView extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _GentleIntroCard extends StatelessWidget {
+  const _GentleIntroCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final appColors = AppColors.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: appColors.primarySoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: appColors.primaryLine),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              Icons.emoji_events_outlined,
+              size: 23,
+              color: colorScheme.onPrimary,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Read at your own pace',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Challenges are gentle nudges — join only what helps.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

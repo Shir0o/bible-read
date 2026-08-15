@@ -27,14 +27,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Gen'), findsOneWidget); // Abbreviation
+    expect(find.text('Genesis'), findsOneWidget); // Book name
     expect(find.text('PENTATEUCH'), findsOneWidget); // Category header
 
     // Scroll down to find Revelation
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -5000));
     await tester.pumpAndSettle();
 
-    expect(find.text('Rev'), findsOneWidget);
+    expect(find.text('Revelation'), findsOneWidget);
   });
 
   testWidgets(
@@ -55,7 +55,7 @@ void main() {
       expect(find.bySemanticsLabel('Genesis, Not completed'), findsOneWidget);
 
       // 2. Tap to complete
-      await tester.tap(find.text('Gen'));
+      await tester.tap(find.text('Genesis'));
       await tester.pumpAndSettle();
 
       expect(find.text('Complete Genesis?'), findsOneWidget);
@@ -98,7 +98,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Revelation should be visible
-    expect(find.text('Rev'), findsOneWidget);
+    expect(find.text('Revelation'), findsOneWidget);
   });
 
   testWidgets(
@@ -123,7 +123,7 @@ void main() {
       );
       await tester.pumpAndSettle(const Duration(seconds: 1));
 
-      expect(find.text('Rev'), findsOneWidget);
+      expect(find.text('Revelation'), findsOneWidget);
     },
   );
 }

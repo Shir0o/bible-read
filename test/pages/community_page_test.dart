@@ -67,20 +67,10 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('renders header with morning greeting', (tester) async {
+  testWidgets('renders header with eyebrow and title', (tester) async {
     await pumpPage(tester, date: DateTime(2024, 1, 1, 9)); // 9 AM
-    expect(find.text('Good Morning,'), findsOneWidget);
-    expect(find.text('Test'), findsOneWidget);
-  });
-
-  testWidgets('renders header with afternoon greeting', (tester) async {
-    await pumpPage(tester, date: DateTime(2024, 1, 1, 14)); // 2 PM
-    expect(find.text('Good Afternoon,'), findsOneWidget);
-  });
-
-  testWidgets('renders header with evening greeting', (tester) async {
-    await pumpPage(tester, date: DateTime(2024, 1, 1, 19)); // 7 PM
-    expect(find.text('Good Evening,'), findsOneWidget);
+    expect(find.text('Together'), findsOneWidget);
+    expect(find.text('Community'), findsOneWidget);
   });
 
   testWidgets('renders empty group state when no groups', (tester) async {

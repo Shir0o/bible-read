@@ -4,9 +4,9 @@ import 'dart:async';
 
 import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
-import '../widgets/common_styles.dart';
+import '../widgets/sub_header.dart';
 import '../widgets/views/friends_view.dart';
-import 'friend_requests_page.dart';
+import 'add_friend_page.dart';
 
 /// Page that lists current friends and allows sending friend requests by email.
 class FriendsPage extends StatelessWidget {
@@ -33,33 +33,40 @@ class FriendsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = auth.currentUser;
     return Scaffold(
-      appBar: CommonStyles.buildAppBar(
-        context,
-        'Friends',
-        automaticallyImplyLeading: false,
-        actions: [
-          if (user != null)
-            IconButton(
-              icon: const Icon(Icons.person_add),
-              tooltip: 'Add friend',
-              onPressed: () {
-                unawaited(vibrationService.lightImpact());
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => FriendRequestsPage(
-                      friendService: friendService,
-                      auth: auth,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            SubHeader(
+              title: 'Friends',
+              onBack: () => Navigator.of(context).pop(),
+              right: IconButton(
+                icon: const Icon(Icons.person_add_alt_1_outlined),
+                tooltip: 'Add friend',
+                onPressed: () {
+                  if (user == null) return;
+                  unawaited(vibrationService.lightImpact());
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AddFriendPage(
+                        friendService: friendService,
+                        auth: auth,
+                        vibrationService: vibrationService,
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-        ],
-      ),
-      body: FriendsView(
-        friendService: friendService,
-        auth: auth,
-        vibrationService: vibrationService,
+            Expanded(
+              child: FriendsView(
+                friendService: friendService,
+                auth: auth,
+                vibrationService: vibrationService,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

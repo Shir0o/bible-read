@@ -24,7 +24,9 @@ void main() {
     vibrationService = MockVibrationService();
   });
 
-  testWidgets('ChallengesPage renders correctly with tabs', (tester) async {
+  testWidgets('ChallengesPage renders header, intro card and challenge view', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: ChallengesPage(
@@ -36,10 +38,14 @@ void main() {
       ),
     );
 
+    await tester.pumpAndSettle();
+
     expect(find.text('Challenges'), findsOneWidget);
-    expect(find.byType(TabBar), findsOneWidget);
-    expect(find.text('Seasonal'), findsOneWidget);
-    expect(find.byType(TabBarView), findsOneWidget);
+    expect(find.text('Read at your own pace'), findsOneWidget);
+    expect(
+      find.text('Challenges are gentle nudges — join only what helps.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('ChallengesPage shows Seasonal Challenges by default', (

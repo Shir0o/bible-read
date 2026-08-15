@@ -23,6 +23,16 @@ void main() {
     when(
       () => friendService.nudgedToday(any()),
     ).thenAnswer((_) => Stream.value({}));
+    when(
+      () => friendService.pendingRequests(any()),
+    ).thenAnswer((_) => Stream.value(const []));
+    when(
+      () => friendService.readTodayUids(
+        uid: any(named: 'uid'),
+        friendUids: any(named: 'friendUids'),
+        date: any(named: 'date'),
+      ),
+    ).thenAnswer((_) => Stream.value({}));
   });
 
   testWidgets('FriendsView UX: List items should not be tappable (no ripple)', (
@@ -35,21 +45,28 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: FriendsView(
-          friendService: friendService,
-          auth: auth,
-          vibrationService: vibrationService,
+        home: Scaffold(
+          body: FriendsView(
+            friendService: friendService,
+            auth: auth,
+            vibrationService: vibrationService,
+          ),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    // Find the Card
-    final cardFinder = find.byType(Card).first;
+    // Find the friend-row Card (the requests entry card is also a Card, so
+    // target the one that renders the friend's name).
+    final cardFinder = find.ancestor(
+      of: find.text('Alice'),
+      matching: find.byType(Card),
+    );
     expect(cardFinder, findsOneWidget);
 
-    // Verify Card does NOT contain an InkWell as a direct child (or close descendant)
-    final card = tester.widget<Card>(cardFinder);
+    // Verify Card does NOT contain an InkWell as a direct child (or close
+    // descendant).
+    final card = tester.widget<Card>(cardFinder.first);
     final child = card.child;
 
     // CommonStyles.buildTappableCard puts InkWell directly inside Card.
@@ -67,27 +84,28 @@ void main() {
     );
   });
 
-  testWidgets('FriendsView UX: FAB has tooltip', (tester) async {
-    final friends = <Friend>[];
+  testWidgets(
+      'FriendsView UX: shows a Nudge chip for friends who have not '
+      'read today', (tester) async {
+    final friends = [const Friend(uid: 'f1', name: 'Alice')];
     when(
       () => friendService.friends(any()),
     ).thenAnswer((_) => Stream.value(friends));
 
     await tester.pumpWidget(
       MaterialApp(
-        home: FriendsView(
-          friendService: friendService,
-          auth: auth,
-          vibrationService: vibrationService,
+        home: Scaffold(
+          body: FriendsView(
+            friendService: friendService,
+            auth: auth,
+            vibrationService: vibrationService,
+          ),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    final fabFinder = find.byType(FloatingActionButton);
-    expect(fabFinder, findsOneWidget);
-
-    final fab = tester.widget<FloatingActionButton>(fabFinder);
-    expect(fab.tooltip, 'Add friend');
+    expect(find.text('Nudge'), findsOneWidget);
+    expect(find.text('Not yet today'), findsOneWidget);
   });
 }

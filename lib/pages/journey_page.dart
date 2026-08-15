@@ -237,7 +237,11 @@ class _JourneyPageState extends State<JourneyPage>
               firestore: widget.firestore,
               vibrationService: widget.vibrationService,
               dateProvider: widget.dateProvider,
-              customGreeting: 'Keep going,',
+              eyebrow: 'Keep going',
+              title: (widget.auth.currentUser?.displayName ?? 'Friend')
+                  .split(' ')
+                  .first,
+              showNotificationBell: false,
             ),
             Expanded(
               child: RefreshIndicator(

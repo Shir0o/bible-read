@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
-import '../widgets/common_styles.dart';
 import '../widgets/feedback_form.dart';
+import '../widgets/sub_header.dart';
 
 export '../widgets/feedback_form.dart' show FeedbackTab;
 
@@ -39,46 +39,52 @@ class FeedbackPage extends StatelessWidget {
       length: 2,
       initialIndex: initialTab.index,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Feedback',
-            style: CommonStyles.appBarTitleText(colorScheme),
-          ),
-          backgroundColor: colorScheme.surface,
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Report a Bug'),
-              Tab(text: 'Request a Feature'),
+        backgroundColor: colorScheme.surface,
+        body: SafeArea(
+          child: Column(
+            children: [
+              SubHeader(
+                title: 'Feedback',
+                onBack: () => Navigator.of(context).maybePop(),
+              ),
+              const TabBar(
+                tabs: [
+                  Tab(text: 'Report a Bug'),
+                  Tab(text: 'Request a Feature'),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    FeedbackForm(
+                      tab: FeedbackTab.bug,
+                      parentMessenger: parentMessenger,
+                      vibrationService: vibrationService,
+                      onSubmit: (title, description, steps) {
+                        return feedbackService.submitBugReport(
+                          title: title,
+                          description: description,
+                          reproductionSteps: steps,
+                        );
+                      },
+                    ),
+                    FeedbackForm(
+                      tab: FeedbackTab.feature,
+                      parentMessenger: parentMessenger,
+                      vibrationService: vibrationService,
+                      onSubmit: (title, description, steps) {
+                        return feedbackService.submitFeatureRequest(
+                          title: title,
+                          description: description,
+                          reproductionSteps: steps,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
-        body: TabBarView(
-          children: [
-            FeedbackForm(
-              tab: FeedbackTab.bug,
-              parentMessenger: parentMessenger,
-              vibrationService: vibrationService,
-              onSubmit: (title, description, steps) {
-                return feedbackService.submitBugReport(
-                  title: title,
-                  description: description,
-                  reproductionSteps: steps,
-                );
-              },
-            ),
-            FeedbackForm(
-              tab: FeedbackTab.feature,
-              parentMessenger: parentMessenger,
-              vibrationService: vibrationService,
-              onSubmit: (title, description, steps) {
-                return feedbackService.submitFeatureRequest(
-                  title: title,
-                  description: description,
-                  reproductionSteps: steps,
-                );
-              },
-            ),
-          ],
         ),
       ),
     );
