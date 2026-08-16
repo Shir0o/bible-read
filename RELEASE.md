@@ -1,3 +1,47 @@
+# Release 1.25.0
+
+This release delivers a design-parity pass across the app, a new animated daily reading check-in flow, private daily reflections, and significant iOS tooling upgrades including Swift Package Manager migration.
+
+## Highlights
+
+*   **Check-in Flow:** A new animated, full-screen daily reading check-in experience with live sky gradients and payoff animations.
+*   **Private Reflections:** Private daily reflections and journaling are now available on the Today page.
+*   **Design Parity:** Home, Community, Journey, top bars, menu pages, and the sign-in screen were aligned with the reference design prototype.
+*   **Undo Support:** You can now undo today's read habit, personal plans, and group schedule entries.
+*   **iOS Tooling:** Firebase and plugins migrated to Swift Package Manager with a bumped iOS deployment target of 15.0.
+
+## Design & UI
+
+*   **Sign-In:** Redesigned sign-in screen with a blended hero image and reference layout.
+*   **Navigation:** Aligned top bars, feedback, friends, and inbox screens with the design prototype; matched the reference header row, draw-up menu, and menu pages.
+*   **Typography & Color:** Aligned typography, spacing, and color with design tokens, including dark-mode overlay and contrast fixes.
+*   **Plans Hub:** Redesigned the All Plans hub and Settings/Notification Settings screens; added a personal/group chooser to new-plan entry points and an embedded schedule preview for plan editors.
+*   **Today Page:** Finalized with undo-as-snackbar, read-only confirmations, an auto-mark hint, and an empty-state card; Sunday is now the first day of the week.
+
+## Reading & Progress
+
+*   **Reflections:** Added private daily reflections/journaling to the Today page.
+*   **Undo:** Added undo for today's read habit, personal plans, and group schedules.
+*   **Coupling:** Unconditionally couple plan reading completion to the daily reading habit, with a one-time coupling prompt restored under a Settings toggle.
+*   **Catch-Up:** Surfaced behind/catch-up status on Home, Journey, and Community, and added a behind/catch-up engine for reading plans with a dedicated Group Catch Up page.
+*   **Home:** Split Home vs. Journey with a no-plan Home state, surface all groups, and show an always-on community glimpse.
+*   **Reading Feed:** Simplified reader feed cards.
+
+## Groups & Community
+
+*   **Member Management:** Added group member management and a friendly nudge sheet.
+*   **Schedule Redesign:** Redesigned the group schedule with catch-up triggers for "showing up" coupling; the full schedule is now read-only with a Catch Up button.
+*   **Invites:** Implemented group invitations and direct join for public groups with invited-status display and hardened invite validation.
+*   **Parity:** Group-plan parity for schedule, catch-up, and member presence.
+
+## Stability & Performance
+
+*   **Firestore:** Fixed N+1 query issues in GroupService and ReadingStatusService, replaced sequential group reads with batched `whereIn` queries, and added missing collectionGroup indexes.
+*   **Offline & Caching:** Enhanced Offline UX for Community and implemented a centralized caching strategy.
+*   **Android:** Upgraded Gradle, AGP, and Kotlin tooling and migrated to built-in Kotlin.
+*   **Google Sign-In:** Updated to the latest API, skipped silent sign-in on fresh install, and fixed a fatal Android crash from concurrent sign-in attempts.
+*   **Cleanup:** Removed the leaderboard and achievement systems, consolidated Profile into Settings, and added app icons via `flutter_launcher_icons`.
+
 # Release 1.24.0
 
 This release introduces a major visual refresh with Plus Jakarta Sans typography, refined Reading Plans UI with custom styling, and critical stability fixes for App Check and Firestore queries.
