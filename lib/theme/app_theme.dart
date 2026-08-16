@@ -283,7 +283,13 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
-        titleTextStyle: themedText.titleLarge,
+        titleTextStyle: themedText.titleLarge?.copyWith(
+          fontFamily: fontSerif,
+          fontSize: 24,
+          fontWeight: FontWeight.w500,
+          letterSpacing: -0.2,
+          color: onSurface,
+        ),
         elevation: 0,
         centerTitle: false,
       ),

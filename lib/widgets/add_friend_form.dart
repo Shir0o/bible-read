@@ -6,6 +6,7 @@ import '../services/error_logger.dart';
 
 import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 import 'animated_action_button.dart';
 import 'success_animation.dart';
 
@@ -103,6 +104,14 @@ class _AddFriendFormState extends State<AddFriendForm> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(
+        color: AppColors.of(context).borderStrong,
+        width: 1,
+      ),
+    );
     return AutofillGroup(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -114,9 +123,18 @@ class _AddFriendFormState extends State<AddFriendForm> {
             autofillHints: const [AutofillHints.email],
             textInputAction: TextInputAction.send,
             onSubmitted: (_) => _sendRequest(),
+            style: TextStyle(
+              fontFamily: AppTheme.fontUi,
+              fontSize: 16,
+              color: colorScheme.onSurface,
+            ),
             decoration: InputDecoration(
-              labelText: "Friend's Email",
-              prefixIcon: const Icon(Icons.email_outlined),
+              hintText: "Friend's email",
+              prefixIcon: const Icon(Icons.email_outlined, size: 19),
+              prefixIconConstraints: const BoxConstraints(
+                minWidth: 48,
+                minHeight: 48,
+              ),
               suffixIcon: _controller.text.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear),
@@ -124,14 +142,30 @@ class _AddFriendFormState extends State<AddFriendForm> {
                       onPressed: _controller.clear,
                     )
                   : null,
+              filled: true,
+              fillColor: colorScheme.surface,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              hintStyle: TextStyle(
+                fontFamily: AppTheme.fontUi,
+                fontSize: 16,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+              ),
+              border: border,
+              enabledBorder: border,
+              focusedBorder: border.copyWith(
+                borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           AnimatedActionButton(
             onPressed: _sendRequest,
             isLoading: _isLoading,
             vibrationService: widget.vibrationService,
-            child: const Text('Send'),
+            child: const Text('Send invitation'),
           ),
         ],
       ),

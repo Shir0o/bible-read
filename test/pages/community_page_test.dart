@@ -69,7 +69,7 @@ void main() {
 
   testWidgets('renders header with eyebrow and title', (tester) async {
     await pumpPage(tester, date: DateTime(2024, 1, 1, 9)); // 9 AM
-    expect(find.text('Together'), findsOneWidget);
+    expect(find.text('TOGETHER'), findsOneWidget);
     expect(find.text('Community'), findsOneWidget);
   });
 
@@ -120,5 +120,8 @@ void main() {
     expect(find.text('Your reading groups'), findsOneWidget);
     expect(find.text('Manage'), findsOneWidget);
     expect(find.text('My Group'), findsWidgets);
+
+    // The header eyebrow is the primary group's name (uppercased).
+    expect(find.text('MY GROUP'), findsOneWidget);
   });
 }

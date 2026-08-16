@@ -1269,10 +1269,7 @@ class _HomePageState extends State<HomePage>
                 const SizedBox(height: 4),
                 Text(
                   _greeting(now),
-                  style: AppTextStyles.title(context).copyWith(
-                    fontSize: 27,
-                    fontWeight: FontWeight.w500,
-                    height: 1.05,
+                  style: AppTextStyles.topBarTitle(context).copyWith(
                     color: colorScheme.onSurface,
                   ),
                 ),

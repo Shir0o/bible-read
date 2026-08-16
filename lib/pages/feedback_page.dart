@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/feedback_form.dart';
 import '../widgets/sub_header.dart';
 
@@ -52,6 +53,19 @@ class FeedbackPage extends StatelessWidget {
                   Tab(text: 'Report a Bug'),
                   Tab(text: 'Request a Feature'),
                 ],
+                labelStyle: TextStyle(
+                  fontFamily: AppTheme.fontUi,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: TextStyle(
+                  fontFamily: AppTheme.fontUi,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                indicatorSize: TabBarIndicatorSize.label,
+                indicatorWeight: 2.5,
+                labelPadding: EdgeInsets.symmetric(vertical: 10),
               ),
               Expanded(
                 child: TabBarView(

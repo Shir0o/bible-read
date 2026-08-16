@@ -222,11 +222,11 @@ void main() {
       find.byKey(const Key('addFriendEmailField')),
       'x@example.com',
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Send'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Send invitation'));
     await settle(tester);
 
     final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Send'),
+      find.widgetWithText(FilledButton, 'Send invitation'),
     );
     expect(button.onPressed, isNotNull);
   });

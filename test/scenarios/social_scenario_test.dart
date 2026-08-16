@@ -64,11 +64,8 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    // Navigate to Community (where the menu is accessible)
-    await tester.tap(find.text('Community'));
-    await tester.pumpAndSettle();
-
-    // Tap Profile Avatar to open menu
+    // Open the menu from the Home header avatar (the reference design only
+    // shows the notification bell on Community, so the menu opens from Home).
     await tester.tap(find.bySemanticsLabel('Open menu'));
     await tester.pumpAndSettle();
 
@@ -100,9 +97,9 @@ void main() {
     await tester.enterText(find.byType(TextField), 'bob@example.com');
     await tester.pump();
 
-    // Tap Send (Button text might be "Send", "Send Request" or "Add")
+    // Tap Send (Button text might be "Send invitation", "Send Request" or "Add")
     // Use generic search if unsure
-    final sendBtn = find.text('Send');
+    final sendBtn = find.text('Send invitation');
     if (sendBtn.evaluate().isNotEmpty) {
       await tester.tap(sendBtn);
     } else {
