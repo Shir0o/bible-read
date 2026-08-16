@@ -79,6 +79,8 @@ class CommunityPage extends StatefulWidget {
 class _CommunityPageState extends State<CommunityPage>
     with AutomaticKeepAliveClientMixin {
   late Stream<List<Group>> _groupsStream;
+  List<Group> _groups = const [];
+  StreamSubscription<List<Group>>? _groupsSubscription;
   List<GroupSchedule>? _initialGroupSchedule;
   bool _isLoading = true;
 
@@ -90,6 +92,12 @@ class _CommunityPageState extends State<CommunityPage>
     super.initState();
     _groupsStream = const Stream.empty();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _groupsSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -104,6 +112,10 @@ class _CommunityPageState extends State<CommunityPage>
     }
 
     _groupsStream = widget.groupService.groupsForUser(user.uid);
+    _groupsSubscription?.cancel();
+    _groupsSubscription = _groupsStream.listen((groups) {
+      if (mounted) setState(() => _groups = groups);
+    });
 
     try {
       final groups = await _groupsStream.first.timeout(
@@ -164,8 +176,9 @@ class _CommunityPageState extends State<CommunityPage>
                   firestore: widget.firestore,
                   vibrationService: widget.vibrationService,
                   dateProvider: widget.dateProvider,
-                  eyebrow: 'Together',
+                  eyebrow: _groups.isNotEmpty ? _groups.first.name : 'Together',
                   title: 'Community',
+                  showProfileIcon: false,
                 ),
               ),
               SliverToBoxAdapter(

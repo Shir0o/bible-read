@@ -6,6 +6,7 @@ import '../../services/admin_role_service.dart';
 import '../../theme/app_theme.dart';
 import '../../services/error_logger.dart';
 import '../../services/feedback_service.dart';
+import '../../widgets/sub_header.dart';
 
 enum _FeedbackStatusFilter {
   all,
@@ -99,44 +100,72 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
         final waiting = snapshot.connectionState == ConnectionState.waiting;
         final hasAccess = snapshot.data ?? false;
 
-        if (waiting) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Feedback Inbox')),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (!hasAccess) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Feedback Inbox')),
-            body: const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'You do not have permission to view this page.',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          );
-        }
-
-        return DefaultTabController(
-          length: 2,
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Feedback Inbox'),
-              bottom: const TabBar(
-                tabs: [
-                  Tab(text: 'Bug Reports'),
-                  Tab(text: 'Feature Requests'),
-                ],
-              ),
-            ),
-            body: TabBarView(
+        return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: SafeArea(
+            child: Column(
               children: [
-                _buildCollectionTab(FeedbackCollections.bugReports),
-                _buildCollectionTab(FeedbackCollections.featureRequests),
+                SubHeader(
+                  title: 'Feedback Inbox',
+                  onBack: () => Navigator.of(context).maybePop(),
+                ),
+                if (waiting)
+                  const Expanded(
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (!hasAccess)
+                  const Expanded(
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'You do not have permission to view this page.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: DefaultTabController(
+                      length: 2,
+                      child: Column(
+                        children: [
+                          const TabBar(
+                            tabs: [
+                              Tab(text: 'Bug Reports'),
+                              Tab(text: 'Feature Requests'),
+                            ],
+                            labelStyle: TextStyle(
+                              fontFamily: AppTheme.fontUi,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            unselectedLabelStyle: TextStyle(
+                              fontFamily: AppTheme.fontUi,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            indicatorSize: TabBarIndicatorSize.label,
+                            indicatorWeight: 2.5,
+                            labelPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          Expanded(
+                            child: TabBarView(
+                              children: [
+                                _buildCollectionTab(
+                                  FeedbackCollections.bugReports,
+                                ),
+                                _buildCollectionTab(
+                                  FeedbackCollections.featureRequests,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -151,34 +180,18 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(
-            children: [
-              Text(
-                'Status filter:',
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const SizedBox(width: 16),
-              DropdownButton<_FeedbackStatusFilter>(
-                key: ValueKey('statusFilter_$collection'),
-                value: filter,
-                onChanged: (value) {
-                  if (value == null) {
-                    return;
-                  }
-                  setState(() {
-                    _statusFilters[collection] = value;
-                  });
-                },
-                items: _FeedbackStatusFilter.values
-                    .map(
-                      (status) => DropdownMenuItem<_FeedbackStatusFilter>(
-                        value: status,
-                        child: Text(status.label),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ],
+          child: _StatusSelect(
+            selectKey: ValueKey('statusFilter_$collection'),
+            options: _FeedbackStatusFilter.values
+                .map((status) => status.label)
+                .toList(),
+            value: filter.label,
+            onChanged: (label) {
+              setState(() {
+                _statusFilters[collection] = _FeedbackStatusFilter.values
+                    .firstWhere((status) => status.label == label);
+              });
+            },
           ),
         ),
         Expanded(
@@ -408,6 +421,147 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
       },
     );
     return result;
+  }
+}
+
+/// Status filter matching the design's `FeedbackInboxScreen` filter: a dim
+/// "Status" label beside a bordered select button that expands a dropdown card
+/// (selected option tinted with the primary colour).
+class _StatusSelect extends StatefulWidget {
+  const _StatusSelect({
+    required this.options,
+    required this.value,
+    required this.onChanged,
+    this.selectKey,
+  });
+
+  final List<String> options;
+  final String value;
+  final ValueChanged<String> onChanged;
+  final Key? selectKey;
+
+  @override
+  State<_StatusSelect> createState() => _StatusSelectState();
+}
+
+class _StatusSelectState extends State<_StatusSelect> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final appColors = AppColors.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Status',
+              style: TextStyle(
+                fontFamily: AppTheme.fontUi,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Material(
+                color: colorScheme.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: appColors.borderStrong, width: 1),
+                ),
+                child: InkWell(
+                  key: widget.selectKey,
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    setState(() => _open = !_open);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          widget.value,
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontUi,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        Icon(
+                          Icons.keyboard_arrow_down,
+                          size: 17,
+                          color: colorScheme.outline,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (_open) ...[
+          const SizedBox(height: 6),
+          Material(
+            color: colorScheme.surfaceContainerLowest,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: appColors.border, width: 1),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final option in widget.options)
+                    InkWell(
+                      onTap: () {
+                        setState(() => _open = false);
+                        widget.onChanged(option);
+                      },
+                      borderRadius: BorderRadius.circular(9),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 11,
+                        ),
+                        decoration: BoxDecoration(
+                          color: option == widget.value
+                              ? appColors.primarySoft
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                        child: Text(
+                          option,
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontUi,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: option == widget.value
+                                ? colorScheme.primary
+                                : colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
 

@@ -53,11 +53,10 @@ class AppHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  eyebrow,
+                  eyebrow.toUpperCase(),
                   style: AppTextStyles.caption(context).copyWith(
                     color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.4,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -65,10 +64,7 @@ class AppHeader extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.title(context).copyWith(
-                    fontSize: 27,
-                    fontWeight: FontWeight.w500,
-                    height: 1.05,
+                  style: AppTextStyles.topBarTitle(context).copyWith(
                     color: colorScheme.onSurface,
                   ),
                 ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../services/error_logger.dart';
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 import 'animated_action_button.dart';
 import 'common_styles.dart';
 import 'vibration_button.dart';
@@ -143,14 +144,14 @@ class _FeedbackFormState extends State<FeedbackForm> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      decoration: CommonStyles.backgroundDecoration(
-        Theme.of(context).colorScheme,
-      ),
+      decoration: CommonStyles.backgroundDecoration(colorScheme),
       width: double.infinity,
-      child: Center(
+      child: Align(
+        alignment: Alignment.topCenter,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: Form(
@@ -163,7 +164,11 @@ class _FeedbackFormState extends State<FeedbackForm> {
                     controller: _titleController,
                     textCapitalization: TextCapitalization.sentences,
                     keyboardType: TextInputType.text,
-                    decoration: InputDecoration(labelText: _titleLabel),
+                    decoration: _decoration(
+                      context,
+                      label: _titleLabel,
+                    ),
+                    style: _fieldStyle(context),
                     textInputAction: TextInputAction.next,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -172,14 +177,15 @@ class _FeedbackFormState extends State<FeedbackForm> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   TextFormField(
                     key: ValueKey('${_formPrefix}DescriptionField'),
                     controller: _descriptionController,
                     textCapitalization: TextCapitalization.sentences,
                     keyboardType: TextInputType.multiline,
-                    decoration: InputDecoration(
-                      labelText: _descriptionLabel,
+                    decoration: _decoration(
+                      context,
+                      label: _descriptionLabel,
                       suffixIcon: _descriptionController.text.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear),
@@ -188,7 +194,8 @@ class _FeedbackFormState extends State<FeedbackForm> {
                             )
                           : null,
                     ),
-                    minLines: 3,
+                    style: _fieldStyle(context),
+                    minLines: 4,
                     maxLines: 6,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -197,14 +204,15 @@ class _FeedbackFormState extends State<FeedbackForm> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   TextFormField(
                     key: ValueKey('${_formPrefix}StepsField'),
                     controller: _stepsController,
                     textCapitalization: TextCapitalization.sentences,
                     keyboardType: TextInputType.multiline,
-                    decoration: InputDecoration(
-                      labelText: _stepsLabel,
+                    decoration: _decoration(
+                      context,
+                      label: _stepsLabel,
                       suffixIcon: _stepsController.text.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear),
@@ -213,10 +221,11 @@ class _FeedbackFormState extends State<FeedbackForm> {
                             )
                           : null,
                     ),
-                    minLines: 2,
+                    style: _fieldStyle(context),
+                    minLines: 3,
                     maxLines: 5,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 22),
                   AnimatedActionButton(
                     key: ValueKey('${_formPrefix}SubmitButton'),
                     onPressed: _handleSubmit,
@@ -233,6 +242,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
                     },
                     child: const Text('Cancel'),
                   ),
+                  const SizedBox(height: 26),
                 ],
               ),
             ),
@@ -241,4 +251,46 @@ class _FeedbackFormState extends State<FeedbackForm> {
       ),
     );
   }
+
+  /// Field decoration matching the design's `FBField`: a surface fill inside a
+  /// strong hairline border, 16px radius, and a placeholder-style label.
+  InputDecoration _decoration(
+    BuildContext context, {
+    required String label,
+    Widget? suffixIcon,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final appColors = AppColors.of(context);
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(
+        color: appColors.borderStrong,
+        width: 1,
+      ),
+    );
+    return InputDecoration(
+      hintText: label,
+      labelStyle: TextStyle(
+        fontFamily: AppTheme.fontUi,
+        fontSize: 15.5,
+        color: colorScheme.onSurfaceVariant,
+      ),
+      filled: true,
+      fillColor: colorScheme.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      suffixIcon: suffixIcon,
+      border: border,
+      enabledBorder: border,
+      focusedBorder: border.copyWith(
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+      ),
+    );
+  }
+
+  TextStyle _fieldStyle(BuildContext context) => TextStyle(
+        fontFamily: AppTheme.fontUi,
+        fontSize: 15.5,
+        height: 1.5,
+        color: Theme.of(context).colorScheme.onSurface,
+      );
 }

@@ -109,7 +109,7 @@ void main() {
       find.byKey(const Key('addFriendEmailField')),
       'Friend@Example.COM',
     );
-    await tester.tap(find.text('Send'));
+    await tester.tap(find.text('Send invitation'));
     await tester.pump();
 
     expect(find.byKey(const ValueKey('spinner')), findsOneWidget);

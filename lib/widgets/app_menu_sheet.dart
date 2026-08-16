@@ -380,9 +380,10 @@ class _MenuContents extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     alignment: Alignment.center,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: AppColors.of(context).border),
                     ),
-                    backgroundColor: colorScheme.secondaryContainer,
+                    backgroundColor: colorScheme.surfaceContainerLow,
                     foregroundColor: colorScheme.onSurfaceVariant,
                   ),
                   onPressed: () {
@@ -541,7 +542,7 @@ class _MenuActionButton extends StatelessWidget {
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         alignment: Alignment.centerLeft,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         backgroundColor: colorScheme.secondaryContainer,
         foregroundColor: colorScheme.primary,
       ),

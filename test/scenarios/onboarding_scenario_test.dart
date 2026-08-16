@@ -124,7 +124,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Community'), findsWidgets);
-        expect(find.text('Together'), findsOneWidget);
+        expect(find.text('TOGETHER'), findsOneWidget);
       });
     },
   );

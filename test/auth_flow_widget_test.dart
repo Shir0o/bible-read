@@ -119,10 +119,8 @@ void main() {
     expect(userDoc.data()?['email'], 'test@example.com');
 
     // 7. Sign Out
-    // Navigate to Community page where the profile icon (menu) is visible
-    await tester.tap(find.byIcon(Icons.people_outlined));
-    await tester.pumpAndSettle();
-
+    // Open the menu from the Home header avatar (the reference design only
+    // shows the notification bell on Community, so the menu opens from Home).
     final menuButton = find.bySemanticsLabel('Open menu');
     await tester.tap(menuButton);
     await tester.pumpAndSettle();
