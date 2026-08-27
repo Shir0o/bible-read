@@ -1,0 +1,28 @@
+{
+  "plan": [
+    {
+      "step": 1,
+      "description": "Benchmark existing baseCollections deletion in `deleteGroup` prior to change."
+    },
+    {
+      "step": 2,
+      "description": "Refactor sequential loop over `baseCollections` in `lib/services/group_service.dart` to execute concurrently with `Future.wait`."
+    },
+    {
+      "step": 3,
+      "description": "Verify performance improvement and test correctness via `flutter test`."
+    },
+    {
+      "step": 4,
+      "description": "Update `.jules/bolt.md` with performance optimization learnings."
+    },
+    {
+      "step": 5,
+      "description": "Complete pre commit steps to ensure proper testing, verification, review, and reflection are done."
+    },
+    {
+      "step": 6,
+      "description": "Submit the change."
+    }
+  ]
+}

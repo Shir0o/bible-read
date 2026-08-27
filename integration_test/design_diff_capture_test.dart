@@ -164,7 +164,8 @@ void main() {
           .collection('members')
           .doc(m)
           .set({
-        'uid': m, // groupsForUser() queries collectionGroup('members').where('uid', ...)
+        'uid':
+            m, // groupsForUser() queries collectionGroup('members').where('uid', ...)
         'joinedAt': FieldValue.serverTimestamp(),
         'role': m == 'owner1' ? 'owner' : 'member',
         'displayName': m == 'u1' ? 'Tony' : 'Member ${m.toUpperCase()}',

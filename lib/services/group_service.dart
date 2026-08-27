@@ -1759,17 +1759,20 @@ class GroupService {
         GroupCollections.joinRequests,
       ];
 
-      for (final coll in baseCollections) {
-        try {
-          final snap = await groupRef.collection(coll).get();
-          if (snap.docs.isNotEmpty) {
-            await _deleteInBatches(snap.docs.map((d) => d.reference).toList());
+      await Future.wait(
+        baseCollections.map((coll) async {
+          try {
+            final snap = await groupRef.collection(coll).get();
+            if (snap.docs.isNotEmpty) {
+              await _deleteInBatches(
+                  snap.docs.map((d) => d.reference).toList());
+            }
+          } catch (e, st) {
+            failures.add(coll);
+            await _safeLog(e, st);
           }
-        } catch (e, st) {
-          failures.add(coll);
-          await _safeLog(e, st);
-        }
-      }
+        }),
+      );
 
       // 2. Progress entries (progress/{dateId}/entries/* and date docs)
       try {
