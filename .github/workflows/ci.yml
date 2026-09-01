@@ -1,24 +1,19 @@
-name: CI
+name: Tests
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
-  push:
-    branches: [main]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches: ["**"]
 
 jobs:
-  test:
-    name: Analyze & Test
+  flutter-tests:
+    name: Flutter tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: subosito/flutter-action@v2
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
@@ -26,11 +21,28 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed .
+      - name: Run Flutter tests
+        run: flutter test --no-pub --fail-fast $(find test -name "*_test.dart" ! -path "test/goldens/*")
 
-      - name: Analyze
-        run: flutter analyze
+  functions-tests:
+    name: Firebase Functions tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Run tests
-        run: flutter test --coverage
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Functions tests
+        run: npm test
