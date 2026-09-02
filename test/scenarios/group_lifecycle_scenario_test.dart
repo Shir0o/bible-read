@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:bible_read/pages/create_group_page.dart';
 import 'package:bible_read/pages/groups_page.dart';
+import 'package:bible_read/widgets/group_plan_keys.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/notification_service.dart';
 import 'package:network_image_mock/network_image_mock.dart';
@@ -65,33 +67,36 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify CreateGroupPage loaded
-      expect(find.text('New Group Plan'), findsOneWidget);
+      expect(find.byType(CreateGroupPage), findsOneWidget);
 
-      // 1. Enter Book Name "Genesis"
-      final textField = find.byType(TextField).first;
-      expect(textField, findsOneWidget);
-      await tester.enterText(textField, 'Genesis');
-      await tester.pumpAndSettle();
-
-      // 2. Select "Genesis" from Autocomplete options
-      // Note: Autocomplete options are in a separate overlay.
-      final genesisOption = find.text('Genesis').last;
-      await tester.tap(genesisOption);
-      await tester.pumpAndSettle();
-
-      // 3. Switch to "By Chapters / Day" mode to avoid the date picker UI.
-      await tester.tap(find.text('By Chapters / Day'));
-      await tester.pumpAndSettle();
-
-      // Enter chapters per day
+      // 1. Search for "Genesis"
       await tester.enterText(
-        find.widgetWithText(TextField, 'Chapters / Day'),
-        '5',
+        find.byKey(GroupPlanKeys.bookSearchField),
+        'Genesis',
       );
       await tester.pumpAndSettle();
 
-      // 4. Tap "Create Schedule"
-      final createBtn = find.text('Create Schedule');
+      // 2. Select "Genesis" from the Autocomplete overlay.
+      await tester.tap(find.text('Genesis').last);
+      await tester.pumpAndSettle();
+
+      // 3. The plan defaults to a chapters-a-day pace, so no date picker is
+      //    needed. Raise it a little to check the stepper drives generation.
+      await tester.scrollUntilVisible(
+        find.byKey(GroupPlanKeys.chaptersPerDayStepper),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(GroupPlanKeys.chaptersPerDayStepper),
+          matching: find.byIcon(Icons.add),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 4. Create the plan.
+      final createBtn = find.byKey(GroupPlanKeys.submitButton);
       await tester.ensureVisible(createBtn);
       await tester.tap(createBtn);
       await tester.pumpAndSettle();
@@ -106,6 +111,19 @@ void main() {
       final groupData = groups.docs.first.data();
       expect(groupData['name'], contains('Genesis'));
       expect(groupData['ownerUid'], uid);
+
+      // The plan is materialised, starts where it should, and its
+      // configuration is stored so editing it later is lossless.
+      final schedule = await firestore
+          .collection('groups')
+          .doc(groups.docs.first.id)
+          .collection('schedule')
+          .orderBy('date')
+          .get();
+      expect(schedule.docs, isNotEmpty);
+      expect(schedule.docs.first.data()['chapters'].first, 'Genesis 1');
+      expect(groupData['planConfig']['startRef'], 'Genesis 1');
+      expect(groupData['planConfig']['books'], ['Genesis']);
     });
   });
 }

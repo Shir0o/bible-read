@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/app_notification.dart';
 import '../models/group_member_progress.dart';
+import '../models/group_plan_config.dart';
 import '../models/group_schedule.dart';
 import '../models/group.dart';
 import '../models/group_invite.dart';
@@ -34,6 +35,10 @@ class GroupCollections {
 
 /// Provides helper methods for managing reading groups.
 class GroupService {
+  /// Writes per batched commit. Firestore's hard cap is 500; the headroom
+  /// leaves room for a batch to carry an extra write alongside its documents.
+  static const int _writeBatchSize = 450;
+
   /// Firestore instance used for database operations.
   final FirebaseFirestore firestore;
 
@@ -696,7 +701,7 @@ class GroupService {
   }) async {
     // First, write the schedule document. If this fails, bubble up the error.
     try {
-      final docId = _dateId(schedule.date);
+      final docId = dateId(schedule.date);
       final utcDate = DateTime.utc(
         schedule.date.year,
         schedule.date.month,
@@ -756,34 +761,72 @@ class GroupService {
     }
   }
 
-  /// Update multiple schedule entries for [groupId] using a batch.
+  /// Update multiple schedule entries for [groupId] using batched writes.
+  ///
+  /// Split across several commits so a long plan stays under Firestore's
+  /// 500-writes-per-batch cap — reading the whole Bible at one chapter a day is
+  /// 1,189 days, which a single batch cannot carry.
   Future<void> updateScheduleBatch({
     required String groupId,
     required List<GroupSchedule> schedules,
   }) async {
+    if (schedules.isEmpty) return;
     try {
-      final batch = firestore.batch();
-      for (final schedule in schedules) {
-        final docId = _dateId(schedule.date);
-        final utcDate = DateTime.utc(
-          schedule.date.year,
-          schedule.date.month,
-          schedule.date.day,
-        );
-        final docRef = firestore
-            .collection(GroupCollections.groups)
-            .doc(groupId)
-            .collection(GroupCollections.schedule)
-            .doc(docId);
-        batch.set(docRef, {
-          'date': Timestamp.fromDate(utcDate),
-          'chapters': schedule.chapters,
-        });
+      final scheduleRef = firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.schedule);
+
+      for (var i = 0; i < schedules.length; i += _writeBatchSize) {
+        final batch = firestore.batch();
+        final end = (i + _writeBatchSize < schedules.length)
+            ? i + _writeBatchSize
+            : schedules.length;
+        for (var j = i; j < end; j++) {
+          final schedule = schedules[j];
+          batch.set(
+            scheduleRef.doc(dateId(schedule.date)),
+            schedule.toFirestore(),
+          );
+        }
+        await batch.commit();
       }
-      await batch.commit();
     } catch (e, st) {
       await _safeLog(e, st);
       rethrow;
+    }
+  }
+
+  /// Persist the configuration a group's schedule was generated from.
+  ///
+  /// Kept alongside the materialised schedule so the plan can be reopened for
+  /// editing exactly as it was set — the schedule alone does not record where
+  /// the plan started or which days were set by hand.
+  Future<void> updatePlanConfig({
+    required String groupId,
+    required GroupPlanDraft config,
+  }) async {
+    try {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .set({'planConfig': config.toFirestore()}, SetOptions(merge: true));
+    } catch (e, st) {
+      await _safeLog(e, st);
+      rethrow;
+    }
+  }
+
+  /// Delete the schedule entries on [dates] for [groupId], along with the
+  /// progress recorded against them.
+  ///
+  /// Used when regenerating a plan leaves days that no longer belong to it.
+  Future<void> deleteScheduleDays({
+    required String groupId,
+    required Iterable<DateTime> dates,
+  }) async {
+    for (final date in dates) {
+      await deleteSchedule(groupId: groupId, date: date);
     }
   }
 
@@ -793,7 +836,7 @@ class GroupService {
     required DateTime date,
   }) async {
     try {
-      final docId = _dateId(date);
+      final docId = dateId(date);
       final groupRef =
           firestore.collection(GroupCollections.groups).doc(groupId);
       // Delete schedule doc
@@ -850,7 +893,7 @@ class GroupService {
   /// Fetch the chapters scheduled for today for [groupId].
   Future<List<String>> fetchTodaysChapters(String groupId) async {
     try {
-      final docId = _dateId(DateTime.now());
+      final docId = dateId(DateTime.now());
       final doc = await firestore
           .collection(GroupCollections.groups)
           .doc(groupId)
@@ -865,7 +908,11 @@ class GroupService {
     }
   }
 
-  static String _dateId(DateTime date) {
+  /// Firestore document id for a schedule or progress date: `YYYY-MM-DD`.
+  ///
+  /// Zero-padded, so ids sort lexicographically in date order. Callers building
+  /// date keys must use this rather than interpolating the parts themselves.
+  static String dateId(DateTime date) {
     final y = date.year.toString().padLeft(4, '0');
     final m = date.month.toString().padLeft(2, '0');
     final d = date.day.toString().padLeft(2, '0');
@@ -1082,7 +1129,7 @@ class GroupService {
     String? includeUid,
   }) {
     final targetDate = date ?? DateTime.now();
-    final dateId = _dateId(targetDate);
+    final dateId = GroupService.dateId(targetDate);
 
     final membersSnaps = firestore
         .collection(GroupCollections.groups)
@@ -1499,7 +1546,7 @@ class GroupService {
     final resolvedInfos = await _fetchUserInfos(missingUids);
 
     // Determine total schedule items (chapters) for the date.
-    final dateId = _dateId(date);
+    final dateId = GroupService.dateId(date);
     final schedDoc = await firestore
         .collection(GroupCollections.groups)
         .doc(groupId)
@@ -2065,7 +2112,7 @@ class GroupService {
     Set<int>? currentlyChecked,
   }) async {
     try {
-      final dateKey = _dateId(schedule.date);
+      final dateKey = dateId(schedule.date);
       final db = firestore;
       final entryRef = db
           .collection(GroupCollections.groups)

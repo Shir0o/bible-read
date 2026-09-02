@@ -1,0 +1,64 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "New group plan",
+      "is_interactive": true
+    },
+    {
+      "file": "StartPicker.dc.html",
+      "x": 510,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Start at — picker",
+      "is_interactive": true
+    },
+    {
+      "file": "Schedule.dc.html",
+      "x": 1020,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Adjust days",
+      "is_interactive": true
+    }
+  ],
+  "annotations": [
+    {
+      "id": "start-point",
+      "x": 0,
+      "y": -330,
+      "w": 390,
+      "text": "Setting the start point\n\nScheduleGenerator flattens every selected book from chapter 1 into one list and chunks it blindly, so there is no way to begin partway in. The lavender Starts at card is the new control — it names the first chapter in the app's own serif voice and says plainly what falls outside the plan.\n\nLive, and the whole answer is on this one screen: tap Change to move the start, work the chapters-a-day stepper, flip the book switch at the bottom, and step any of the three day rows to hold it to a different length. Everything recomputes together."
+    },
+    {
+      "id": "picker",
+      "x": 510,
+      "y": -330,
+      "w": 390,
+      "text": "The picker, on its own\n\nThis is the same sheet the Change button opens on the first screen, drawn at full size so the grid is easier to read. Chapters that would fall before your choice dim as you move it, so what you are leaving out stays visible while you decide rather than turning up afterwards.\n\nLive: tap any book, then any chapter."
+    },
+    {
+      "id": "adjust",
+      "x": 1020,
+      "y": -330,
+      "w": 390,
+      "text": "Hand-adjusting a day\n\nThe same steppers as the first screen, over the full plan rather than the first three days. It opens on your case: day 1 held to Jeremiah 1, day 2 to Jeremiah 2-3.\n\nStepping any one day reflows every day after it, so the reading stays in order and nothing is dropped. Hand-set days carry a SET tag; Even it out clears them all.\n\nLive: try the steppers."
+    },
+    {
+      "id": "ux-fixes",
+      "x": 0,
+      "y": 990,
+      "w": 900,
+      "text": "UI/UX fixed along the way — all of these are live in lib/pages/create_group_page.dart today\n\n1. No group name. The plan was auto-named \"Genesis, Exodus Plan\" from the book list with no field to change it. Now the first thing you fill in.\n\n2. Three dead controls in the Members section. \"Copy Link\" showed a snackbar reading \"Link copied to clipboard (simulation)\"; the \"Find people...\" field was enabled: false; \"Invite from Contacts\" had an empty onPressed. All three cut — inviting belongs after the group exists, not in the create form.\n\n3. Section titles used headlineMedium tinted colorScheme.primary. The design system puts section titles in Spectral 19/500 at onSurface; purple headings were shouting over the controls they label.\n\n4. Hardcoded radii (16 everywhere, 30 on one field) and surfaceContainerHighest fills. Now the tokens: rCard 22, rField 16, card surface #FFFDFA on the #F4F0E8 ground.\n\n5. Weekday chips ran S M T W T F S — Sunday first — while _selectedWeekdays is Monday-first (1 = Mon). Now Monday-first, matching the data underneath.\n\n6. No preview of the outcome. You could not see what day one held until after the plan was created — which is how Isaiah 66 + Jeremiah 1 got past you. The preview is now on the create screen, and its rows are adjustable in place.\n\n7. Validation was snackbar-after-the-fact against an always-enabled Create button. Errors now sit with the control that caused them.\n\n8. Dates rendered as raw ${d.month}/${d.day}/${d.year}; the rest of the app formats \"Tue, Sep 1\".\n\n9. \"Failed to create group: $e\" put raw exception text in front of the reader.\n\nOne thing I did not design, because it is a data question rather than a screen: whether changing the start point on an existing group rewrites the schedule for everyone or only from today forward. Members may already have progress against the old dates."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

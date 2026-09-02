@@ -258,23 +258,22 @@ class _EditGroupPageState extends State<EditGroupPage> {
 
       final currentSchedule =
           await widget.groupService.schedule(widget.group.id).first;
-      final newDateKeys = newSchedule
-          .map((s) => '${s.date.year}-${s.date.month}-${s.date.day}')
-          .toSet();
+      final newDateKeys =
+          newSchedule.map((s) => GroupService.dateId(s.date)).toSet();
 
-      for (final s in currentSchedule) {
-        final key = '${s.date.year}-${s.date.month}-${s.date.day}';
-        if (!newDateKeys.contains(key)) {
-          await widget.groupService.deleteSchedule(
-            groupId: widget.group.id,
-            date: s.date,
-          );
-        }
-      }
-
+      // Write the new plan before removing the days it replaces. If the write
+      // fails, the group keeps its old schedule; the other order would leave it
+      // with days deleted and nothing put back.
       await widget.groupService.updateScheduleBatch(
         groupId: widget.group.id,
         schedules: newSchedule,
+      );
+
+      await widget.groupService.deleteScheduleDays(
+        groupId: widget.group.id,
+        dates: currentSchedule
+            .where((s) => !newDateKeys.contains(GroupService.dateId(s.date)))
+            .map((s) => s.date),
       );
 
       if (_isPublic != widget.group.isPublic) {
