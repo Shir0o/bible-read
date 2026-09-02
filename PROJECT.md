@@ -2,7 +2,6 @@
 
 <!-- Repo-specific agent instructions. The rollout script never touches this file. -->
 
-
 <!-- ── Migrated from GEMINI.md ── -->
 
 # Bible Reading Challenge App
@@ -29,55 +28,45 @@ The application leverages Firebase heavily for its backend services, including:
     ```bash
     git clone https://github.com/<your-org>/bible-read.git
     cd bible-read
-    ```
 2.  **Set up Flutter SDK and dependencies:**
     ```bash
     export PUB_CACHE="$PWD/.pub-cache"
     export PATH="$HOME/flutter/bin:$PATH"
     flutter config --no-analytics
     flutter pub get
-    ```
 3.  **Firebase Functions Setup:**
     Navigate to the `functions` directory and install Node.js dependencies:
     ```bash
     cd functions
     npm install
     cd ..
-    ```
     Set `ADMIN_UID` for signup notifications:
     ```bash
     firebase functions:config:set admin_uid="<your-admin-uid>"
-    ```
 ### Running the Application
 To run the Flutter application:
 ```bash
 flutter run
-```
 To serve Firebase Functions locally:
 ```bash
 cd functions
 npm run serve
 cd ..
-```
 ### Building for Release
 *   **Android:**
     ```bash
     flutter build appbundle --release --build-name=<version> --build-number=<build>
-    ```
 *   **iOS:**
     ```bash
     flutter build ipa --release --build-name=<version> --build-number=<build>
-    ```
 ## Testing
 ### Flutter Tests
 To run Flutter unit and widget tests:
 ```bash
 flutter test --no-pub
-```
 To run integration tests:
 ```bash
 flutter test integration_test/
-```
 (Specific integration test files: `integration_test/first_reader_test.dart`, `integration_test/main_flow_test.dart`)
 ### Firebase Functions Tests
 To run tests for Firebase Cloud Functions:
@@ -85,7 +74,6 @@ To run tests for Firebase Cloud Functions:
 cd functions
 npm test
 cd ..
-```
 ### CI/CD
 The project uses GitHub Actions for continuous integration.
 *   **Flutter tests** are run on `ubuntu-latest` using `flutter test --no-pub --fail-fast`.
@@ -97,13 +85,11 @@ To format and analyze Dart code:
 ```bash
 dart format lib test
 flutter analyze
-```
 Firebase Cloud Functions follow ESLint rules defined in `eslint.config.cjs`. To lint functions code:
 ```bash
 cd functions
 npm run lint
 cd ..
-```
 ### Optimistic UI Updates
 The application prioritizes a zero-latency user experience by employing Optimistic UI updates for high-frequency interactions (e.g., marking readings as complete, toggling likes, manual Bible book tracking). 
 **Key Requirements:**
