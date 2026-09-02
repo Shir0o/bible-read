@@ -1,0 +1,472 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Spectral:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #6A53AD; text-decoration: none; }
+    a:hover { color: #5B449E; }
+    button { font-family: inherit; border: 0; background: none; padding: 0; cursor: pointer; color: inherit; }
+    input { font-family: inherit; }
+    .sc { scrollbar-width: none; }
+    .sc::-webkit-scrollbar { width: 0; height: 0; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; height: 844px; background: #F4F0E8; color: #231E2C; display: flex; flex-direction: column; overflow: hidden">
+
+  <!-- SubHeader -->
+  <div style="display: flex; align-items: center; gap: 2px; padding: 10px 14px 8px 14px; flex-shrink: 0">
+    <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 16px">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#231E2C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+    </div>
+    <div style="font-family: Spectral, Georgia, serif; font-size: 24px; font-weight: 500; letter-spacing: -0.2px; color: #231E2C">New group plan</div>
+  </div>
+
+  <!-- Scrolling body -->
+  <div class="sc" style="flex: 1; overflow-y: auto; padding: 6px 20px 28px 20px; display: flex; flex-direction: column; gap: 26px">
+
+    <!-- Group name -->
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="font-family: Spectral, Georgia, serif; font-size: 19px; font-weight: 500; letter-spacing: -0.2px">Name</div>
+      <input value="Thursday morning group" style="height: 52px; background: #FFFDFA; border: 1px solid #EDEAEA; border-radius: 16px; padding: 0 16px; font-size: 15px; color: #231E2C; outline: none; width: 100%">
+    </div>
+
+    <!-- Books -->
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div style="font-family: Spectral, Georgia, serif; font-size: 19px; font-weight: 500; letter-spacing: -0.2px">What you&#39;ll read</div>
+      <div style="font-size: 13px; color: #6C6577; line-height: 1.45">Books are read in the order you add them.</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <sc-for list="{{books}}" as="b" hint-placeholder-count="3">
+          <div style="{{b.chipStyle}}">
+            <span style="font-size: 12.5px; font-weight: 600; letter-spacing: 0.2px">{{b.name}}</span>
+            <span style="font-size: 12px; font-weight: 600; opacity: 0.7">{{b.n}}</span>
+            <button aria-label="Remove book" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; margin-right: -6px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+            </button>
+          </div>
+        </sc-for>
+        <button style="height: 44px; padding: 0 16px; border-radius: 12px; border: 1px dashed rgba(43,33,58,0.15); color: #6A53AD; font-size: 12.5px; font-weight: 600; letter-spacing: 0.2px; display: flex; align-items: center; gap: 6px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+          Add a book
+        </button>
+      </div>
+    </div>
+
+    <!-- STARTS AT -->
+    <div style="background: rgba(106,83,173,0.10); border: 1px solid rgba(106,83,173,0.26); border-radius: 22px; padding: 16px 18px 15px 18px; display: flex; flex-direction: column; gap: 11px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 1.6px; color: #6C6577">STARTS AT</div>
+          <div style="font-family: Spectral, Georgia, serif; font-size: 26px; font-weight: 500; letter-spacing: -0.4px; line-height: 1.1; color: #231E2C">{{startRef}}</div>
+        </div>
+        <button onClick="{{openPicker}}" style="height: 44px; padding: 0 15px; border-radius: 16px; background: #FFFDFA; border: 1px solid rgba(106,83,173,0.26); color: #5B449E; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px">
+          Change
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+        </button>
+      </div>
+      <div style="height: 1px; background: rgba(106,83,173,0.26)"></div>
+      <div style="display: flex; align-items: flex-start; gap: 8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6C6577" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg>
+        <div style="font-size: 13px; color: #6C6577; line-height: 1.45">{{skipNote}}</div>
+      </div>
+    </div>
+
+    <!-- Pace -->
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="font-family: Spectral, Georgia, serif; font-size: 19px; font-weight: 500; letter-spacing: -0.2px">Pace</div>
+
+      <div style="display: flex; background: #EFEAE0; border-radius: 16px; padding: 4px; gap: 4px">
+        <button onClick="{{setPerDay}}" style="{{tabPerDayStyle}}">Chapters a day</button>
+        <button onClick="{{setEndDate}}" style="{{tabEndDateStyle}}">By end date</button>
+      </div>
+
+      <div style="background: #FFFDFA; border: 1px solid rgba(43,33,58,0.085); border-radius: 22px; padding: 14px 16px; display: flex; align-items: center; gap: 14px">
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px">
+          <div style="font-size: 14px; font-weight: 600">{{paceLabel}}</div>
+          <div style="font-size: 13px; color: #6C6577">{{paceNote}}</div>
+        </div>
+        <div style="display: flex; align-items: center; background: #F5F1E9; border: 1px solid rgba(43,33,58,0.085); border-radius: 16px; padding: 2px">
+          <button onClick="{{dec}}" aria-label="Fewer chapters a day" style="{{decStyle}}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg>
+          </button>
+          <div style="min-width: 26px; text-align: center; font-family: Spectral, Georgia, serif; font-size: 20px; font-weight: 500">{{perDay}}</div>
+          <button onClick="{{inc}}" aria-label="More chapters a day" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: #5B449E">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reading days -->
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div style="font-family: Spectral, Georgia, serif; font-size: 19px; font-weight: 500; letter-spacing: -0.2px">Reading days</div>
+      <div style="display: flex; gap: 7px">
+        <sc-for list="{{weekdays}}" as="d" hint-placeholder-count="7">
+          <button onClick="{{d.toggle}}" style="{{d.style}}">{{d.letter}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- The first few days — adjustable in place -->
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div style="font-family: Spectral, Georgia, serif; font-size: 19px; font-weight: 500; letter-spacing: -0.2px">The first few days</div>
+      <div style="font-size: 13px; color: #6C6577; line-height: 1.45">Hold a day to a different length and the days after it shift to match.</div>
+
+      <div style="background: #FFFDFA; border: 1px solid rgba(43,33,58,0.085); border-radius: 22px; overflow: hidden">
+        <sc-for list="{{preview}}" as="d" hint-placeholder-count="3">
+          <div style="{{d.rowStyle}}">
+            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0">
+              <div style="display: flex; align-items: center; gap: 7px; flex-wrap: wrap">
+                <span style="font-size: 11px; font-weight: 700; letter-spacing: 1.6px; color: #8C8694">DAY {{d.n}}</span>
+                <span style="font-size: 12.5px; color: #6C6577">{{d.date}}</span>
+                <sc-if value="{{d.edited}}" hint-placeholder-val="{{false}}">
+                  <span style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px; color: #6E4D20; background: rgba(190,138,82,0.14); border-radius: 12px; padding: 2px 7px">SET</span>
+                </sc-if>
+              </div>
+              <div style="font-family: Spectral, Georgia, serif; font-size: 17px; font-weight: 500; letter-spacing: -0.2px; line-height: 1.3; color: #231E2C">{{d.ref}}</div>
+            </div>
+            <div style="display: flex; align-items: center; background: #F5F1E9; border: 1px solid rgba(43,33,58,0.085); border-radius: 16px; padding: 2px; flex-shrink: 0">
+              <button onClick="{{d.dec}}" aria-label="One chapter fewer" style="{{d.decStyle}}">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg>
+              </button>
+              <div style="min-width: 22px; text-align: center; font-family: Spectral, Georgia, serif; font-size: 17px; font-weight: 500; color: #231E2C">{{d.count}}</div>
+              <button onClick="{{d.inc}}" aria-label="One chapter more" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: #5B449E">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+              </button>
+            </div>
+          </div>
+        </sc-for>
+
+        <div style="padding: 4px 8px 8px 8px; background: #F5F1E9; border-top: 1px solid rgba(43,33,58,0.085); display: flex; align-items: center; gap: 8px">
+          <div style="flex-grow: 1; font-size: 13px; color: #6C6577; padding-left: 8px">{{tailNote}}</div>
+          <button style="height: 44px; padding: 0 12px; border-radius: 12px; color: #5B449E; font-size: 13px; font-weight: 600; flex-shrink: 0">See all</button>
+        </div>
+      </div>
+
+      <!-- Book-boundary switch -->
+      <div style="background: #FFFDFA; border: 1px solid rgba(43,33,58,0.085); border-radius: 22px; padding: 14px 16px; display: flex; align-items: center; gap: 14px">
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+          <div style="font-size: 14px; font-weight: 600">Start each book on its own day</div>
+          <div style="font-size: 13px; color: #6C6577; line-height: 1.4">{{separateNote}}</div>
+        </div>
+        <button onClick="{{toggleSeparate}}" role="switch" aria-checked="{{separate}}" style="{{switchTrackStyle}}">
+          <div style="{{switchKnobStyle}}"></div>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Sticky footer -->
+  <div style="flex-shrink: 0; padding: 12px 20px 20px 20px; background: #F4F0E8; border-top: 1px solid rgba(43,33,58,0.085)">
+    <button style="width: 100%; height: 52px; border-radius: 16px; background: #6A53AD; color: #FFFFFF; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">Create plan</button>
+    <div style="text-align: center; font-size: 12.5px; color: #6C6577; margin-top: 9px">{{summary}}</div>
+  </div>
+
+  <!-- Start-point picker, over this screen -->
+  <sc-if value="{{picking}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; left: 0; top: 0; width: 390px; height: 844px; display: flex; flex-direction: column">
+      <button onClick="{{closePicker}}" aria-label="Dismiss" style="height: 96px; background: rgba(10,8,14,0.42); flex-shrink: 0; width: 100%"></button>
+      <div style="flex-grow: 1; background: #F4F0E8; border-radius: 26px 26px 0 0; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 -4px 20px rgba(10,8,14,0.16)">
+
+        <div style="flex-shrink: 0; padding: 12px 20px 14px 20px; display: flex; flex-direction: column; gap: 16px">
+          <div style="width: 48px; height: 4px; border-radius: 12px; background: #E3DBCC; align-self: center"></div>
+          <div style="display: flex; align-items: flex-start; gap: 12px">
+            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+              <div style="font-family: Spectral, Georgia, serif; font-size: 24px; font-weight: 500; letter-spacing: -0.2px">Start at</div>
+              <div style="font-size: 14px; color: #6C6577; line-height: 1.45">Pick the chapter day one begins with.</div>
+            </div>
+            <button onClick="{{closePicker}}" aria-label="Close" style="width: 44px; height: 44px; border-radius: 16px; background: #EFEAE0; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6C6577" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          <div class="sc" style="display: flex; gap: 8px; overflow-x: auto">
+            <sc-for list="{{pickerBooks}}" as="b" hint-placeholder-count="3">
+              <button onClick="{{b.open}}" style="{{b.style}}">{{b.name}}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div class="sc" style="flex-grow: 1; overflow-y: auto; padding: 14px 20px 20px 20px; border-top: 1px solid rgba(43,33,58,0.085); display: flex; flex-direction: column; gap: 12px">
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 1.6px; color: #8C8694">{{gridLabel}}</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <sc-for list="{{pickerChapters}}" as="c" hint-placeholder-count="24">
+              <button onClick="{{c.pick}}" style="{{c.style}}">{{c.n}}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="flex-shrink: 0; padding: 14px 20px 22px 20px; background: #FFFDFA; border-top: 1px solid rgba(43,33,58,0.085); display: flex; flex-direction: column; gap: 12px">
+          <div style="font-size: 13px; color: #6C6577; line-height: 1.45">{{pickerNote}}</div>
+          <button onClick="{{commitPick}}" style="width: 100%; height: 52px; border-radius: 16px; background: #6A53AD; color: #FFFFFF; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">{{pickerCta}}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+const BOOKS = [
+  { name: 'Isaiah', n: 66 },
+  { name: 'Jeremiah', n: 52 },
+  { name: 'Lamentations', n: 5 },
+];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const LETTERS = [
+  { letter: 'M', d: 1 }, { letter: 'T', d: 2 }, { letter: 'W', d: 3 },
+  { letter: 'T', d: 4 }, { letter: 'F', d: 5 }, { letter: 'S', d: 6 }, { letter: 'S', d: 0 },
+];
+const DASH = '–';
+const DOT = '·';
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      startBook: 'Jeremiah',
+      startCh: 1,
+      perDay: 2,
+      separate: true,
+      mode: 'perDay',
+      days: [1, 2, 3, 4, 5, 6, 0],
+      edits: { 0: 1, 1: 2 },
+      picking: false,
+      openBook: 'Jeremiah',
+      draftBook: 'Jeremiah',
+      draftCh: 1,
+    };
+  }
+
+  /** Absolute chapter index across the whole plan, 0-based. */
+  indexOf(bookName, ch) {
+    let total = 0;
+    for (const b of BOOKS) {
+      if (b.name === bookName) return total + (ch - 1);
+      total += b.n;
+    }
+    return total;
+  }
+
+  chapterList() {
+    const from = this.indexOf(this.state.startBook, this.state.startCh);
+    const out = [];
+    let i = 0;
+    for (const b of BOOKS) {
+      for (let c = 1; c <= b.n; c++) {
+        if (i >= from) out.push({ book: b.name, ch: c });
+        i++;
+      }
+    }
+    return out;
+  }
+
+  /** Days in order, honouring hand-set counts and the book-boundary rule. */
+  build(list) {
+    const edits = this.state.edits;
+    const separate = this.state.separate;
+    const out = [];
+    let i = 0;
+    let day = 0;
+    while (i < list.length && day < 2000) {
+      const left = list.length - i;
+      const wanted = edits[day] != null ? edits[day] : this.state.perDay;
+      let take = Math.min(wanted, left);
+      if (separate) {
+        const book = list[i].book;
+        let k = 0;
+        while (k < take && list[i + k].book === book) k++;
+        take = Math.max(1, k);
+      }
+      out.push({ items: list.slice(i, i + take), edited: edits[day] != null });
+      i += take;
+      day++;
+    }
+    return out;
+  }
+
+  label(group) {
+    const runs = [];
+    for (const c of group) {
+      const last = runs[runs.length - 1];
+      if (last && last.book === c.book) last.end = c.ch;
+      else runs.push({ book: c.book, start: c.ch, end: c.ch });
+    }
+    return runs
+      .map((r) => (r.start === r.end ? r.book + ' ' + r.start : r.book + ' ' + r.start + DASH + r.end))
+      .join(' ' + DOT + ' ');
+  }
+
+  readingDates(count) {
+    const days = this.state.days;
+    const out = [];
+    const d = new Date(2026, 8, 1);
+    let guard = 0;
+    while (out.length < count && guard < 20000) {
+      guard++;
+      if (days.indexOf(d.getDay()) !== -1) out.push(new Date(d));
+      d.setDate(d.getDate() + 1);
+    }
+    return out;
+  }
+
+  step(index, delta, current) {
+    const edits = Object.assign({}, this.state.edits);
+    edits[index] = Math.max(1, Math.min(20, current + delta));
+    this.setState({ edits });
+  }
+
+  renderVals() {
+    const st = this.state;
+    const list = this.chapterList();
+    const groups = this.build(list);
+    const dates = this.readingDates(groups.length);
+    const last = dates.length > 0 ? dates[dates.length - 1] : new Date(2026, 8, 1);
+    const endLong = MONTHS[last.getMonth()] + ' ' + last.getDate() + ', ' + last.getFullYear();
+    const endShort = MONTHS[last.getMonth()] + ' ' + last.getDate();
+
+    const stepBtn = 'width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px;';
+
+    const preview = groups.slice(0, 3).map((g, i) => {
+      const count = g.items.length;
+      return {
+        n: i + 1,
+        date: dates[i] ? DOW[dates[i].getDay()] + ', ' + MONTHS[dates[i].getMonth()] + ' ' + dates[i].getDate() : '',
+        ref: this.label(g.items),
+        count,
+        edited: g.edited,
+        rowStyle:
+          'display: flex; align-items: center; gap: 12px; padding: 13px 14px 13px 16px;' +
+          (i > 0 ? ' border-top: 1px solid rgba(43,33,58,0.085);' : ''),
+        decStyle: stepBtn + (count <= 1 ? ' color: #8C8694; opacity: 0.45;' : ' color: #5B449E;'),
+        dec: count <= 1 ? () => {} : () => this.step(i, -1, count),
+        inc: () => this.step(i, 1, count),
+      };
+    });
+
+    const rest = Math.max(0, groups.length - 3);
+    const startIndex = this.indexOf(st.startBook, st.startCh);
+
+    // Book chips: a book entirely before the start point is not scheduled.
+    const chipOn = 'height: 44px; padding: 0 12px 0 14px; border-radius: 12px; display: flex; align-items: center; gap: 8px; background: rgba(106,83,173,0.10); border: 1px solid rgba(106,83,173,0.26); color: #5B449E;';
+    const chipOff = 'height: 44px; padding: 0 12px 0 14px; border-radius: 12px; display: flex; align-items: center; gap: 8px; background: #EFEAE0; border: 1px solid rgba(43,33,58,0.085); color: #8C8694;';
+    const books = BOOKS.map((b) => {
+      const scheduled = list.filter((c) => c.book === b.name).length;
+      return {
+        name: b.name,
+        n: scheduled === 0 ? 'skipped' : scheduled + ' ch',
+        chipStyle: scheduled === 0 ? chipOff : chipOn,
+      };
+    });
+
+    const tabOn = 'flex-grow: 1; height: 44px; border-radius: 12px; background: #FFFDFA; color: #231E2C; font-size: 13px; font-weight: 600; box-shadow: 0 1px 3px rgba(43,33,58,0.10);';
+    const tabOff = 'flex-grow: 1; height: 44px; border-radius: 12px; background: transparent; color: #6C6577; font-size: 13px; font-weight: 600;';
+    const isPerDay = st.mode === 'perDay';
+
+    const weekdays = LETTERS.map((l) => {
+      const on = st.days.indexOf(l.d) !== -1;
+      return {
+        letter: l.letter,
+        style:
+          'width: 44px; height: 44px; border-radius: 22px; font-size: 14px; font-weight: 600;' +
+          (on ? ' background: #6A53AD; color: #FFFFFF;' : ' background: #FFFDFA; color: #6C6577; border: 1px solid rgba(43,33,58,0.085);'),
+        toggle: () => {
+          const days = st.days.slice();
+          const at = days.indexOf(l.d);
+          if (at === -1) days.push(l.d);
+          else if (days.length > 1) days.splice(at, 1);
+          this.setState({ days });
+        },
+      };
+    });
+
+    // ---- picker ----
+    const openBook = BOOKS.filter((b) => b.name === st.openBook)[0];
+    const pillOn = 'height: 44px; padding: 0 16px; border-radius: 12px; flex-shrink: 0; font-size: 12.5px; font-weight: 600; letter-spacing: 0.2px; background: #6A53AD; color: #FFFFFF;';
+    const pillOff = 'height: 44px; padding: 0 16px; border-radius: 12px; flex-shrink: 0; font-size: 12.5px; font-weight: 600; letter-spacing: 0.2px; background: #FFFDFA; color: #6C6577; border: 1px solid rgba(43,33,58,0.085);';
+    const pickerBooks = BOOKS.map((b) => ({
+      name: b.name,
+      style: b.name === st.openBook ? pillOn : pillOff,
+      open: () => this.setState({ openBook: b.name }),
+    }));
+
+    const cellBase = 'width: 53px; height: 44px; border-radius: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center;';
+    const draftIndex = this.indexOf(st.draftBook, st.draftCh);
+    const pickerChapters = [];
+    for (let i = 1; i <= openBook.n; i++) {
+      const idx = this.indexOf(st.openBook, i);
+      let style;
+      if (idx === draftIndex) {
+        style = cellBase + ' background: #6A53AD; color: #FFFFFF; box-shadow: 0 2px 8px rgba(106,83,173,0.35);';
+      } else if (idx < draftIndex) {
+        style = cellBase + ' background: #EFEAE0; color: #8C8694; border: 1px solid rgba(43,33,58,0.085);';
+      } else {
+        style = cellBase + ' background: #FFFDFA; color: #231E2C; border: 1px solid rgba(43,33,58,0.085);';
+      }
+      pickerChapters.push({ n: i, style, pick: () => this.setState({ draftBook: st.openBook, draftCh: i }) });
+    }
+
+    const draftSkipped = draftIndex;
+    const gridSkipped = openBook.n - Math.max(0, Math.min(openBook.n, draftIndex - this.indexOf(st.openBook, 1)));
+
+    return {
+      books,
+      perDay: st.perDay,
+      separate: st.separate,
+      startRef: st.startBook + ' ' + st.startCh,
+      skipNote: startIndex === 0
+        ? 'Nothing is left out ' + DASH + ' the plan begins at the beginning.'
+        : startIndex + ' chapters before ' + st.startBook + ' ' + st.startCh + ' will not be scheduled.',
+      paceLabel: isPerDay ? 'Chapters a day' : 'Roughly, to finish by ' + endShort,
+      paceNote: isPerDay
+        ? list.length + ' chapters ' + DOT + ' ' + groups.length + ' reading days'
+        : 'Finishes ' + endLong,
+      tabPerDayStyle: isPerDay ? tabOn : tabOff,
+      tabEndDateStyle: isPerDay ? tabOff : tabOn,
+      decStyle: 'width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px;' + (st.perDay <= 1 ? ' color: #8C8694; opacity: 0.45;' : ' color: #5B449E;'),
+      weekdays,
+      preview,
+      tailNote: rest > 0 ? rest + ' more days ' + DOT + ' finishes ' + endShort : 'That is the whole plan.',
+      separateNote: st.separate
+        ? 'A day never ends one book and begins the next.'
+        : 'A day may end one book and begin the next.',
+      switchTrackStyle:
+        'width: 52px; height: 32px; border-radius: 16px; flex-shrink: 0; display: flex; align-items: center; padding: 3px;' +
+        (st.separate ? ' background: #6A53AD; justify-content: flex-end;' : ' background: #E3DBCC; justify-content: flex-start;'),
+      switchKnobStyle: 'width: 26px; height: 26px; border-radius: 13px; background: #FFFDFA; box-shadow: 0 1px 3px rgba(43,33,58,0.25);',
+      summary: list.length + ' chapters ' + DOT + ' ' + groups.length + ' days ' + DOT + ' ends ' + endShort,
+
+      picking: st.picking,
+      pickerBooks,
+      pickerChapters,
+      gridLabel: st.openBook.toUpperCase() + ' ' + DOT + ' ' + openBook.n + ' CHAPTERS' + (gridSkipped < openBook.n ? '' : ''),
+      pickerNote: draftSkipped === 0
+        ? 'Nothing is left out ' + DASH + ' this is the very beginning.'
+        : draftSkipped + ' chapters before ' + st.draftBook + ' ' + st.draftCh + ' will not be scheduled.',
+      pickerCta: 'Start at ' + st.draftBook + ' ' + st.draftCh,
+
+      openPicker: () => this.setState({ picking: true, openBook: st.startBook, draftBook: st.startBook, draftCh: st.startCh }),
+      closePicker: () => this.setState({ picking: false }),
+      commitPick: () => this.setState({ picking: false, startBook: st.draftBook, startCh: st.draftCh, edits: {} }),
+
+      setPerDay: () => this.setState({ mode: 'perDay' }),
+      setEndDate: () => this.setState({ mode: 'endDate' }),
+      dec: st.perDay <= 1 ? () => {} : () => this.setState({ perDay: st.perDay - 1 }),
+      inc: () => this.setState({ perDay: Math.min(12, st.perDay + 1) }),
+      toggleSeparate: () => this.setState({ separate: !st.separate }),
+    };
+  }
+}
+</script>
+</body>
+</html>

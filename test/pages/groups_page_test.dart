@@ -150,7 +150,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CreateGroupPage), findsOneWidget);
-    expect(find.text('New Group Plan'), findsOneWidget);
   });
 
   testWidgets('shows empty state with create button when no groups exist', (

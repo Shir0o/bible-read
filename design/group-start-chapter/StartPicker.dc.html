@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Spectral:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #6A53AD; text-decoration: none; }
+    a:hover { color: #5B449E; }
+    button { font-family: inherit; border: 0; background: none; padding: 0; cursor: pointer; color: inherit; }
+    .sc { scrollbar-width: none; }
+    .sc::-webkit-scrollbar { width: 0; height: 0; }
+  </style>
+</helmet>
+
+<div style="width: 390px; height: 844px; background: #F4F0E8; display: flex; flex-direction: column; overflow: hidden">
+
+  <!-- Scrim over the screen behind -->
+  <div style="height: 96px; background: rgba(10,8,14,0.42); flex-shrink: 0"></div>
+
+  <!-- Sheet -->
+  <div style="flex-grow: 1; background: #F4F0E8; border-radius: 26px 26px 0 0; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 -4px 20px rgba(10,8,14,0.16)">
+
+    <div style="flex-shrink: 0; padding: 12px 20px 0 20px; display: flex; flex-direction: column; gap: 16px">
+      <div style="width: 48px; height: 4px; border-radius: 2px; background: #E3DBCC; align-self: center"></div>
+
+      <div style="display: flex; align-items: flex-start; gap: 12px">
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+          <div style="font-family: Spectral, Georgia, serif; font-size: 24px; font-weight: 500; letter-spacing: -0.2px; color: #231E2C">Start at</div>
+          <div style="font-size: 14px; color: #6C6577; line-height: 1.45">Pick the chapter day one begins with. Anything before it is left out of the plan.</div>
+        </div>
+        <button aria-label="Close" style="width: 44px; height: 44px; border-radius: 16px; background: #EFEAE0; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6C6577" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Book pills -->
+      <div class="sc" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 14px; margin: 0 -20px; padding-left: 20px; padding-right: 20px">
+        <sc-for list="{{books}}" as="b" hint-placeholder-count="3">
+          <button onClick="{{b.pick}}" style="{{b.style}}">{{b.name}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="height: 1px; background: rgba(43,33,58,0.085); flex-shrink: 0"></div>
+
+    <!-- Chapter grid -->
+    <div class="sc" style="flex-grow: 1; overflow-y: auto; padding: 16px 20px 20px 20px">
+      <div style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 1.6px; color: #8C8694">{{gridLabel}}</div>
+        <sc-if value="{{showBanner}}" hint-placeholder-val="{{false}}">
+          <div style="background: rgba(190,138,82,0.14); border-radius: 16px; padding: 11px 13px; font-size: 13px; color: #6E4D20; line-height: 1.4">{{bannerText}}</div>
+        </sc-if>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px">
+        <sc-for list="{{chapters}}" as="c" hint-placeholder-count="24">
+          <button onClick="{{c.pick}}" style="{{c.style}}">{{c.n}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="flex-shrink: 0; padding: 14px 20px 22px 20px; background: #FFFDFA; border-top: 1px solid rgba(43,33,58,0.085); display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: flex-start; gap: 9px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8C8694" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg>
+        <div style="font-size: 13px; color: #6C6577; line-height: 1.45">{{skipNote}}</div>
+      </div>
+      <button style="width: 100%; height: 52px; border-radius: 16px; background: #6A53AD; color: #FFFFFF; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">{{cta}}</button>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+const BOOKS = [
+  { name: 'Isaiah', n: 66 },
+  { name: 'Jeremiah', n: 52 },
+  { name: 'Lamentations', n: 5 },
+];
+const DASH = '–';
+const DOT = '·';
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { open: 'Jeremiah', book: 'Jeremiah', ch: 1 };
+  }
+
+  skippedBefore(bookName, ch) {
+    let total = 0;
+    for (const b of BOOKS) {
+      if (b.name === bookName) return total + (ch - 1);
+      total += b.n;
+    }
+    return total;
+  }
+
+  renderVals() {
+    const open = this.state.open;
+    const book = this.state.book;
+    const ch = this.state.ch;
+    const openBook = BOOKS.filter((b) => b.name === open)[0];
+
+    const pillOn = 'height: 44px; padding: 0 16px; border-radius: 12px; flex-shrink: 0; font-size: 12.5px; font-weight: 600; letter-spacing: 0.2px; background: #6A53AD; color: #FFFFFF;';
+    const pillOff = 'height: 44px; padding: 0 16px; border-radius: 12px; flex-shrink: 0; font-size: 12.5px; font-weight: 600; letter-spacing: 0.2px; background: #FFFDFA; color: #6C6577; border: 1px solid rgba(43,33,58,0.085);';
+
+    const books = BOOKS.map((b) => ({
+      name: b.name,
+      style: b.name === open ? pillOn : pillOff,
+      pick: () => this.setState({ open: b.name }),
+    }));
+
+    const base = 'width: 53px; height: 44px; border-radius: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center;';
+    const chapters = [];
+    for (let i = 1; i <= openBook.n; i++) {
+      const selected = open === book && i === ch;
+      const before = this.skippedBefore(open, i) < this.skippedBefore(book, ch);
+      let style;
+      if (selected) {
+        style = base + ' background: #6A53AD; color: #FFFFFF; box-shadow: 0 2px 8px rgba(106,83,173,0.35);';
+      } else if (before) {
+        style = base + ' background: #EFEAE0; color: #8C8694;';
+      } else {
+        style = base + ' background: #FFFDFA; color: #231E2C; border: 1px solid rgba(43,33,58,0.085);';
+      }
+      chapters.push({
+        n: i,
+        style,
+        pick: () => this.setState({ book: open, ch: i }),
+      });
+    }
+
+    const skipped = this.skippedBefore(book, ch);
+    const allBefore = this.skippedBefore(open, openBook.n) < this.skippedBefore(book, ch);
+    const skipNote = skipped === 0
+      ? 'Nothing is left out ' + DASH + ' this is the very beginning of the plan.'
+      : skipped + ' chapters before ' + book + ' ' + ch + ' will not be scheduled.';
+
+    return {
+      books,
+      chapters,
+      gridLabel: open.toUpperCase() + ' ' + DOT + ' ' + openBook.n + ' CHAPTERS',
+      showBanner: allBefore,
+      bannerText: 'Every chapter of ' + open + ' falls before ' + book + ' ' + ch + '. Tap one to move the start here.',
+      skipNote,
+      cta: 'Start at ' + book + ' ' + ch,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -73,3 +73,7 @@ gha-creds-*.json
 
 # Android build
 /android/build/
+
+# Seeded design-canvas payload (2.5MB generated artifact; re-seed from the
+# .dc.html sources beside it rather than committing it).
+design/**/group-starting-chapter.html
