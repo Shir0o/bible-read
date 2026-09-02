@@ -715,6 +715,20 @@ exports.remapGroupProgress = onCall({ region: 'us-central1' }, async (req) => {
   if (!Array.isArray(days)) {
     throw new functions.https.HttpsError('invalid-argument', 'days must be an array');
   }
+  for (const day of days) {
+    if (
+      !day ||
+      typeof day.dateId !== 'string' ||
+      day.dateId.trim().length === 0 ||
+      !Array.isArray(day.chapters) ||
+      !day.chapters.every((c) => typeof c === 'string')
+    ) {
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        'Each day must have a non-empty dateId string and an array of chapter strings.',
+      );
+    }
+  }
 
   const db = admin.firestore();
   const groupRef = db.collection('groups').doc(groupId);

@@ -158,28 +158,12 @@ function navigate(db, path) {
   return ref;
 }
 
-function leafRef(db, path) {
-  const parts = path.split('/');
-  let ref = db;
-  for (let i = 0; i < parts.length; i++) {
-    if (i % 2 === 0) {
-      ref = ref.collection(parts[i]);
-    } else {
-      ref = ref.doc(parts[i]);
-    }
-  }
-  if (typeof ref.set !== 'function') {
-    ref = ref.doc('_');
-  }
-  return ref;
-}
-
 async function setDoc(db, path, data) {
-  await leafRef(db, path).set(data);
+  await navigate(db, path).set(data);
 }
 
 async function getDoc(db, path) {
-  return leafRef(db, path).get();
+  return navigate(db, path).get();
 }
 
 function withFirestore(db, fn) {
@@ -368,6 +352,33 @@ describe('remapGroupProgress', () => {
     assert.equal(dropped2.exists, false);
     const kept = await getDoc(db, 'groups/g1/schedule/2026-09-03');
     assert.equal(kept.exists, true);
+  });
+
+  it('rejects a day whose dateId is missing or whose chapters are not strings', async () => {
+    const db = new FakeFirestore();
+    await setDoc(db, 'groups/g1', { ownerUid: 'owner' });
+
+    const malformed = [
+      { dateId: '', chapters: ['Jeremiah 1'] },          // empty dateId
+      { dateId: '2026-09-01', chapters: 'not-an-array' }, // chapters not array
+      { dateId: '2026-09-01', chapters: [1, 2, 3] },      // non-string chapters
+      null,                                                // null entry
+      'a string',                                          // wrong type
+    ];
+
+    await withFirestore(db, async () => {
+      const wrapped = functionsTest.wrap(myFunctions.remapGroupProgress);
+      for (const bad of malformed) {
+        await assert.rejects(
+          wrapped({
+            data: { groupId: 'g1', days: [bad] },
+            auth: { uid: 'owner' },
+          }),
+          (err) => err.code === 'invalid-argument',
+          'should reject malformed day: ' + JSON.stringify(bad),
+        );
+      }
+    });
   });
 });
 
