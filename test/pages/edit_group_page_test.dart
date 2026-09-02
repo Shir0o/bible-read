@@ -10,6 +10,7 @@ import 'package:bible_read/pages/edit_group_page.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/services/error_logger.dart';
+import 'package:bible_read/widgets/group_plan_keys.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -63,17 +64,11 @@ void main() {
 
     await pumpPage(tester);
 
-    expect(find.text('Reading Plan'), findsOneWidget);
+    // The shared form is in place — books search, pace, days, save button.
+    expect(find.byKey(GroupPlanKeys.bookSearchField), findsOneWidget);
+    expect(find.byKey(GroupPlanKeys.paceModeSegment), findsOneWidget);
 
     final scrollableFinder = find.byType(Scrollable).first;
-
-    final timelineFinder = find.text('Timeline');
-    await tester.scrollUntilVisible(
-      timelineFinder,
-      500,
-      scrollable: scrollableFinder,
-    );
-    expect(timelineFinder, findsOneWidget);
 
     final membersFinder = find.text('Members');
     await tester.scrollUntilVisible(
@@ -91,6 +86,6 @@ void main() {
     );
     expect(settingsFinder, findsOneWidget);
 
-    expect(find.text('Save Changes'), findsOneWidget);
+    expect(find.byKey(GroupPlanKeys.submitButton), findsOneWidget);
   });
 }

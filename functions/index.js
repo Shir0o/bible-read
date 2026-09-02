@@ -697,22 +697,37 @@ function localWeekdayCode(parts, timeZone) {
   }
 }
 
-exports.generateScheduleDays = onCall({ region: 'us-central1' }, async (req) => {
+
+// Rewrites every member's ticked chapters so each lands on the new day that
+// holds the same reference. Eager and cross-member: the admin SDK bypasses
+// the per-member progress rules so we can repair everyone's data in one
+// shot, where the client-side path (Phase 5a) only repairs the caller's
+// own ticks.
+exports.remapGroupProgress = onCall({ region: 'us-central1' }, async (req) => {
   if (!req.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
   }
 
   const { groupId, days } = req.data || {};
-  if (!groupId || typeof groupId !== 'string' || groupId.trim().length === 0) {
+  if (!groupId || typeof groupId !== 'string') {
     throw new functions.https.HttpsError('invalid-argument', 'groupId required');
   }
-
-  const requestedDays = Number(days ?? 1);
-  if (!Number.isInteger(requestedDays) || requestedDays <= 0) {
-    throw new functions.https.HttpsError('invalid-argument', 'days must be a positive integer');
+  if (!Array.isArray(days)) {
+    throw new functions.https.HttpsError('invalid-argument', 'days must be an array');
   }
-  if (requestedDays > 31) {
-    throw new functions.https.HttpsError('invalid-argument', 'days must be 31 or fewer');
+  for (const day of days) {
+    if (
+      !day ||
+      typeof day.dateId !== 'string' ||
+      day.dateId.trim().length === 0 ||
+      !Array.isArray(day.chapters) ||
+      !day.chapters.every((c) => typeof c === 'string')
+    ) {
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        'Each day must have a non-empty dateId string and an array of chapter strings.',
+      );
+    }
   }
 
   const db = admin.firestore();
@@ -723,152 +738,302 @@ exports.generateScheduleDays = onCall({ region: 'us-central1' }, async (req) => 
   }
 
   const uid = req.auth.uid;
-  const isOwner = groupSnap.data()?.ownerUid === uid;
+  const isOwner = groupSnap.data().ownerUid === uid;
   const memberSnap = await groupRef.collection('members').doc(uid).get();
-  const role = memberSnap.exists ? memberSnap.data()?.role : undefined;
+  const role = memberSnap.exists ? memberSnap.data().role : undefined;
   const isAdmin = role === 'admin' || role === 'owner';
   if (!isOwner && !isAdmin) {
     throw new functions.https.HttpsError('permission-denied', 'Owner/admin only');
   }
 
-  const templatesSnap = await groupRef
-    .collection('scheduleTemplates')
-    .where('active', '==', true)
-    .get();
-
-  if (templatesSnap.empty) {
-    return { success: true, dates: [] };
+  // Cap the synchronous path so a giant plan does not time out halfway. The
+  // client falls back to per-member self-repair (Phase 5a) when this throws.
+  const memberCountSnap = await groupRef.collection('members').get();
+  const memberCount = memberCountSnap.size;
+  if (days.length * memberCount > 500 * 25) {
+    throw new functions.https.HttpsError(
+      'resource-exhausted',
+      'This plan is too large to rebuild automatically.',
+    );
   }
 
-  const scheduleUpdates = new Map();
-  const generatedDates = new Set();
-  const templateUpdates = [];
+  // Read the existing schedule so we know what to delete.
+  const oldScheduleSnap = await groupRef.collection('schedule').get();
+  const oldDays = oldScheduleSnap.docs.map((d) => ({
+    dateId: d.id,
+    chapters: Array.isArray(d.data().chapters) ? d.data().chapters : [],
+  }));
 
-  templatesSnap.forEach((doc) => {
-    const data = doc.data() || {};
-    const timeZone = (data.timezone || 'UTC').toString();
-    const rawWeekdays = Array.isArray(data.weekdays)
-      ? data.weekdays
-        .map((value) => (typeof value === 'string' ? value.toUpperCase() : ''))
-        .filter((value) => value && WEEKDAY_MAP[value])
-      : null;
-    const allowedDays = rawWeekdays && rawWeekdays.length > 0 ? rawWeekdays : null;
-
-    const plan = (data.plan || '').toString();
-    const canon = canonForPlan(plan);
-    const chaptersPerDay = Number(data.chaptersPerDay || 0);
-
-    const lastDate =
-      parseDateValue(data.lastMaterializedDate)
-      || parseDateValue(data.lastMaterializedAt)
-      || parseDateValue(data.lastGeneratedAt)
-      || parseDateValue(data.lastGenerated);
-
-    const baseline = lastDate
-      || decrementDateParts(currentLocalDateParts(timeZone));
-
-    let cursorRef = null;
-    if (chaptersPerDay > 0 && canon) {
-      const defaultRef = `${canon[0][0]} 1`;
-      cursorRef = (data.cursorRef || data.startRef || defaultRef).toString();
-    }
-
-    const scheduledDates = [];
-    let working = baseline;
-    const maxIterations = requestedDays * 14 + 14;
-    let attempts = 0;
-    while (scheduledDates.length < requestedDays && attempts < maxIterations) {
-      working = incrementDateParts(working);
-      attempts += 1;
-      if (allowedDays) {
-        const weekday = localWeekdayCode(working, timeZone);
-        if (!allowedDays.includes(weekday)) {
-          continue;
-        }
+  // Read every member's ticked indices across every progress date.
+  const progressSnap = await groupRef.collection('progress').get();
+  const completedByUid = {};
+  const progressDays = []; // [{ dateId, entries: [{ uid, indices, count }] }]
+  for (const dayDoc of progressSnap.docs) {
+    const dateId = dayDoc.id;
+    const entriesSnap = await dayDoc.ref.collection('entries').get();
+    const entries = [];
+    for (const entryDoc of entriesSnap.docs) {
+      const entryUid = entryDoc.id;
+      const data = entryDoc.data();
+      const count = (data.count | 0) || 0;
+      let indices = [];
+      if (count > 0) {
+        const itemsSnap = await entryDoc.ref.collection('items').get();
+        indices = itemsSnap.docs.map((it) => parseInt(it.id, 10));
+      } else if (data.done === true) {
+        // Legacy "whole day done" — empty set means every chapter.
+        indices = [];
+        indices.__legacyAll = true;
       }
-      scheduledDates.push(working);
-    }
-
-    if (scheduledDates.length < requestedDays) {
-      functions.logger.warn('Unable to satisfy requested days due to constraints', {
-        template: doc.ref.path,
-        requestedDays,
-        generated: scheduledDates.length,
-      });
-    }
-
-    scheduledDates.forEach((parts) => {
-      const dateKey = formatDateKey(parts);
-      generatedDates.add(dateKey);
-      let entry = scheduleUpdates.get(dateKey);
-      if (!entry) {
-        entry = {
-          date: new Date(Date.UTC(parts.y, parts.m - 1, parts.d)),
-          chapters: new Set(),
-        };
-        scheduleUpdates.set(dateKey, entry);
+      if (count > 0 || data.done === true) {
+        entries.push({ uid: entryUid, indices, count });
+        if (!completedByUid[entryUid]) completedByUid[entryUid] = {};
+        completedByUid[entryUid][dateId] = indices;
       }
-
-      if (chaptersPerDay > 0 && canon && cursorRef) {
-        const { chapters, nextCursor } = advanceCursor(cursorRef, chaptersPerDay, canon);
-        chapters.forEach((chapter) => entry.chapters.add(chapter));
-        cursorRef = nextCursor;
-      }
-    });
-
-    const updateData = {};
-    if (chaptersPerDay > 0 && canon && cursorRef) {
-      updateData.cursorRef = cursorRef;
     }
-    const finalDate = scheduledDates[scheduledDates.length - 1];
-    if (finalDate) {
-      updateData.lastMaterializedDate = timestampFromParts(finalDate);
-    }
+    progressDays.push({ dateId, entries });
+  }
 
-    if (Object.keys(updateData).length > 0) {
-      templateUpdates.push({ ref: doc.ref, data: updateData });
-    }
+  const remap = remapProgress({
+    oldDays,
+    newDays: days,
+    completedByDate: completedByUid,
   });
 
-  const sortedDates = Array.from(generatedDates).sort();
-  if (sortedDates.length > 0) {
-    const refs = sortedDates.map((dk) => groupRef.collection('schedule').doc(dk));
-    const snaps = await db.getAll(...refs);
+  // 1. Write the new schedule first so a mid-flight failure leaves a
+  //    *superset* schedule, never a hole.
+  const WRITE_BATCH = 450;
+  for (let i = 0; i < days.length; i += WRITE_BATCH) {
     const batch = db.batch();
-
-    for (let i = 0; i < sortedDates.length; i += 1) {
-      const dateKey = sortedDates[i];
-      const snap = snaps[i];
-      const entry = scheduleUpdates.get(dateKey);
-      const chapterArray = Array.from(entry?.chapters ?? []);
-
-      if (!snap.exists) {
-        batch.set(refs[i], {
-          date: entry
-            ? admin.firestore.Timestamp.fromDate(entry.date)
-            : admin.firestore.Timestamp.fromDate(new Date(dateKey)),
-          chapters: chapterArray,
-          _source: 'auto',
-        });
-      } else {
-        const existing = Array.isArray(snap.data()?.chapters) ? snap.data().chapters : [];
-        const merged = Array.from(new Set(existing.concat(chapterArray)));
-        const update = { chapters: merged };
-        if (!snap.data()?._source) {
-          update._source = 'auto';
-        }
-        batch.set(refs[i], update, { merge: true });
-      }
+    const end = Math.min(i + WRITE_BATCH, days.length);
+    for (let j = i; j < end; j++) {
+      const day = days[j];
+      const [y, m, d] = day.dateId.split('-').map((v) => parseInt(v, 10));
+      batch.set(groupRef.collection('schedule').doc(day.dateId), {
+        date: admin.firestore.Timestamp.fromDate(new Date(Date.UTC(y, m - 1, d))),
+        chapters: day.chapters,
+      });
     }
     await batch.commit();
   }
 
-  for (const update of templateUpdates) {
-    await update.ref.set(update.data, { merge: true });
+  // 2. Delete days that no longer belong to the plan.
+  const keepIds = new Set(days.map((d) => d.dateId));
+  const toDelete = oldScheduleSnap.docs
+    .map((d) => d.id)
+    .filter((id) => !keepIds.has(id));
+  for (let i = 0; i < toDelete.length; i += WRITE_BATCH) {
+    const batch = db.batch();
+    const end = Math.min(i + WRITE_BATCH, toDelete.length);
+    for (let j = i; j < end; j++) {
+      batch.delete(groupRef.collection('schedule').doc(toDelete[j]));
+    }
+    await batch.commit();
   }
 
-  return { success: true, dates: sortedDates };
+  // 3. Rewrite every member's items under the new dates.
+  for (const [moveUid, byDate] of Object.entries(remap.byDate)) {
+    let ops = [];
+    for (const [dateId, indices] of Object.entries(byDate)) {
+      if (!indices || indices.length === 0) continue;
+      const entryRef = groupRef
+        .collection('progress')
+        .doc(dateId)
+        .collection('entries')
+        .doc(moveUid);
+      for (const idx of indices) {
+        ops.push({
+          type: 'set',
+          ref: entryRef.collection('items').doc(String(idx)),
+          data: { done: true, ts: admin.firestore.FieldValue.serverTimestamp() },
+        });
+      }
+      ops.push({
+        type: 'set',
+        ref: entryRef,
+        data: {
+          done: true,
+          uid: moveUid,
+          groupId: groupId,
+          dateId: dateId,
+          count: indices.length,
+          ts: admin.firestore.FieldValue.serverTimestamp(),
+        },
+      });
+    }
+    for (let i = 0; i < ops.length; i += WRITE_BATCH) {
+      const batch = db.batch();
+      const end = Math.min(i + WRITE_BATCH, ops.length);
+      for (let j = i; j < end; j++) {
+        const op = ops[j];
+        if (op.type === 'set') batch.set(op.ref, op.data);
+      }
+      await batch.commit();
+    }
+  }
+
+  // 4. Delete the old progress entries that the remap emptied out.
+  const oldEntryRefs = [];
+  for (const day of progressDays) {
+    for (const entry of day.entries) {
+      const stillHas = remap.byDate[entry.uid]
+        && remap.byDate[entry.uid][day.dateId]
+        && remap.byDate[entry.uid][day.dateId].length > 0;
+      if (!stillHas) {
+        oldEntryRefs.push(
+          groupRef
+            .collection('progress')
+            .doc(day.dateId)
+            .collection('entries')
+            .doc(entry.uid),
+        );
+      }
+    }
+  }
+  for (let i = 0; i < oldEntryRefs.length; i += WRITE_BATCH) {
+    const batch = db.batch();
+    const end = Math.min(i + WRITE_BATCH, oldEntryRefs.length);
+    for (let j = i; j < end; j++) {
+      batch.delete(oldEntryRefs[j]);
+    }
+    await batch.commit();
+  }
+
+  // 5. Set every member's progressSummary absolutely (not increment) — also
+  //    repairs the pre-existing drift between count and summary.
+  const summaryOps = [];
+  for (const [moveUid, byDate] of Object.entries(remap.byDate)) {
+    const total = Object.values(byDate).reduce(
+      (sum, indices) => sum + (indices ? indices.length : 0),
+      0,
+    );
+    summaryOps.push({
+      ref: groupRef
+        .collection('progressSummary')
+        .doc('data')
+        .collection('entries')
+        .doc(moveUid),
+      data: { uid: moveUid, completed: total },
+    });
+  }
+  // Members that had progress but no surviving ticks should be set to 0
+  // rather than left stale.
+  for (const oldUid of Object.keys(completedByUid)) {
+    if (!(oldUid in remap.byDate)) {
+      summaryOps.push({
+        ref: groupRef
+          .collection('progressSummary')
+          .doc('data')
+          .collection('entries')
+          .doc(oldUid),
+        data: { uid: oldUid, completed: 0 },
+      });
+    }
+  }
+  for (let i = 0; i < summaryOps.length; i += WRITE_BATCH) {
+    const batch = db.batch();
+    const end = Math.min(i + WRITE_BATCH, summaryOps.length);
+    for (let j = i; j < end; j++) {
+      batch.set(summaryOps[j].ref, summaryOps[j].data);
+    }
+    await batch.commit();
+  }
+
+  // 6. Bump revision and stamp every member's remappedRevision.
+  const planConfigSnap = await groupRef.get();
+  const currentRevision = (planConfigSnap.data().planConfig?.revision | 0) || 0;
+  const nextRevision = currentRevision + 1;
+  await groupRef.set(
+    {
+      planConfig: {
+        ...(planConfigSnap.data().planConfig || {}),
+        revision: nextRevision,
+      },
+    },
+    { merge: true },
+  );
+
+  const memberSnapAll = await groupRef.collection('members').get();
+  for (let i = 0; i < memberSnapAll.docs.length; i += WRITE_BATCH) {
+    const batch = db.batch();
+    const end = Math.min(i + WRITE_BATCH, memberSnapAll.docs.length);
+    for (let j = i; j < end; j++) {
+      batch.set(
+        memberSnapAll.docs[j].ref,
+        { remappedRevision: nextRevision },
+        { merge: true },
+      );
+    }
+    await batch.commit();
+  }
+
+  return {
+    success: true,
+    revision: nextRevision,
+    moved: Object.keys(remap.byDate).length,
+  };
 });
+
+// Pure JS port of lib/services/progress_remap.dart. Inputs/outputs match.
+function remapProgress({ oldDays, newDays, completedByDate }) {
+  const oldByDateId = {};
+  for (const day of oldDays) {
+    oldByDateId[day.dateId] = day.chapters;
+  }
+  const newByRef = {};
+  for (const day of newDays) {
+    for (let i = 0; i < day.chapters.length; i++) {
+      newByRef[day.chapters[i]] = { dateId: day.dateId, index: i };
+    }
+  }
+
+  const byDate = {};
+  const droppedRefs = {};
+  const droppedByBook = {};
+
+  for (const [uid, perDate] of Object.entries(completedByDate)) {
+    const moved = {};
+    const dropped = new Set();
+    for (const [dateId, indices] of Object.entries(perDate)) {
+      const chapters = oldByDateId[dateId];
+      if (!chapters) continue;
+      // An empty set / a set with __legacyAll means "every chapter on that day".
+      const effective = (Array.isArray(indices) && indices.length === 0)
+        ? chapters.map((_, i) => i)
+        : indices;
+      for (const index of effective) {
+        if (index < 0 || index >= chapters.length) continue;
+        const ref = chapters[index];
+        const pos = newByRef[ref];
+        if (pos) {
+          if (!moved[pos.dateId]) moved[pos.dateId] = new Set();
+          moved[pos.dateId].add(pos.index);
+        } else {
+          dropped.add(ref);
+        }
+      }
+    }
+    if (Object.keys(moved).length > 0) {
+      byDate[uid] = {};
+      for (const [dateId, idxs] of Object.entries(moved)) {
+        byDate[uid][dateId] = Array.from(idxs);
+      }
+    }
+    if (dropped.size > 0) {
+      droppedRefs[uid] = Array.from(dropped);
+      const byBook = {};
+      for (const ref of dropped) {
+        const space = ref.indexOf(' ');
+        const book = space > 0 ? ref.substring(0, space) : ref;
+        byBook[book] = (byBook[book] || 0) + 1;
+      }
+      droppedByBook[uid] = byBook;
+    }
+  }
+
+  return { byDate, droppedRefs, droppedByBook };
+}
+
 
 exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
   if (!req.auth) {
