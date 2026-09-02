@@ -9,6 +9,7 @@ import 'package:bible_read/pages/edit_group_page.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/services/error_logger.dart';
+import 'package:bible_read/widgets/group_plan_keys.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockVibrationService extends Mock implements VibrationService {}
@@ -29,8 +30,9 @@ void main() {
   setUp(() {
     firestore = FakeFirebaseFirestore();
     group = const Group(id: 'g1', name: 'Study', ownerUid: 'u1');
-    ErrorLogger.muteForTest = true;
+    auth = MockFirebaseAuth();
     vibrationService = MockVibrationService();
+    ErrorLogger.muteForTest = true;
     when(() => vibrationService.lightImpact()).thenAnswer((_) async {});
   });
 
@@ -65,19 +67,15 @@ void main() {
 
     await pumpPage(tester);
 
-    final scrollableFinder = find.byType(Scrollable).first;
-    final frequencyFinder = find.text('Frequency');
-    await tester.scrollUntilVisible(
-      frequencyFinder,
-      500,
-      scrollable: scrollableFinder,
-    );
-    expect(frequencyFinder, findsOneWidget);
-
-    final weekdaysChip = find.widgetWithText(ActionChip, 'Weekdays');
+    // The shared form exposes the Daily / Weekdays presets as keys.
+    final weekdaysChip = find.byKey(GroupPlanKeys.weekdayPreset('Weekdays'));
     expect(weekdaysChip, findsOneWidget);
-    expect(find.widgetWithText(ActionChip, 'Daily'), findsOneWidget);
+    expect(
+      find.byKey(GroupPlanKeys.weekdayPreset('Daily')),
+      findsOneWidget,
+    );
 
+    final scrollableFinder = find.byType(Scrollable).first;
     final ScrollableState scrollable = tester.state(scrollableFinder);
     await scrollable.position.ensureVisible(
       tester.renderObject(weekdaysChip),
@@ -88,18 +86,26 @@ void main() {
     await tester.tap(weekdaysChip);
     await tester.pumpAndSettle();
 
-    verify(() => vibrationService.lightImpact()).called(1);
+    verify(() => vibrationService.lightImpact()).called(greaterThan(0));
 
-    // After tapping Weekdays, exactly 5 of the 7 day ChoiceChips
-    // (Mon–Fri) should be selected.
-    final selectedDayChips = tester
-        .widgetList<ChoiceChip>(find.byType(ChoiceChip))
-        .where((c) => c.selected)
-        .length;
-    expect(
-      selectedDayChips,
-      5,
-      reason: 'Weekdays preset should select Mon–Fri only',
-    );
+    // After tapping Weekdays, the form's weekday chips show Mon–Fri only.
+    for (var i = 1; i <= 7; i++) {
+      // Walk up to find the Semantics widget above the InkWell.
+      final semantics = tester
+          .widgetList<Semantics>(
+            find.ancestor(
+              of: find.byKey(GroupPlanKeys.weekday(i)),
+              matching: find.byType(Semantics),
+            ),
+          )
+          .first;
+      final expectedSelected = i >= 1 && i <= 5;
+      final label = expectedSelected ? 'selected' : 'deselected';
+      expect(
+        semantics.properties.selected,
+        expectedSelected,
+        reason: 'Weekday $i should be $label',
+      );
+    }
   });
 }

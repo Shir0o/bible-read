@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import '../models/app_notification.dart';
 import '../models/group_member_progress.dart';
@@ -12,6 +13,7 @@ import '../models/group_member_role.dart';
 import '../models/notification_preferences.dart';
 import 'error_logger.dart';
 import 'notification_service.dart';
+import 'progress_remap.dart';
 
 /// Names of Firestore collections used for group features.
 class GroupCollections {
@@ -2243,6 +2245,214 @@ class GroupService {
       }
       return progress;
     });
+  }
+
+  /// Rewrites [uid]'s own progress in-place so each tick lands on the new
+  /// day that holds the same chapter, using the pure [remapProgress].
+  ///
+  /// Rules allow `progress/{dateId}/entries/{uid}` writes only from the same
+  /// uid, so this method repairs only the caller's own progress. Cross-member
+  /// repair is the Cloud Function's job (Phase 5b).
+  Future<void> applyOwnRemap({
+    required String groupId,
+    required String uid,
+    required List<GroupSchedule> oldDays,
+    required List<GroupSchedule> newDays,
+  }) async {
+    try {
+      final entriesSnap = await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection('progress')
+          .get();
+
+      final completedByDate = <String, Set<int>>{};
+      for (final dayDoc in entriesSnap.docs) {
+        final dateId = dayDoc.id;
+        final entryRef = dayDoc.reference.collection('entries').doc(uid);
+        final entrySnap = await entryRef.get();
+        if (!entrySnap.exists) continue;
+        final data = entrySnap.data() ?? <String, dynamic>{};
+        final count = (data['count'] as num?)?.toInt() ?? 0;
+        if (count > 0) {
+          final itemsSnap = await entryRef.collection('items').get();
+          completedByDate[dateId] = {
+            for (final item in itemsSnap.docs) int.parse(item.id),
+          };
+        } else if (data['done'] == true) {
+          // Legacy "whole day done" — empty set means every chapter.
+          completedByDate[dateId] = <int>{};
+        }
+      }
+
+      final remap = remapProgress(
+        oldDays: oldDays,
+        newDays: newDays,
+        completedByDate: {uid: completedByDate},
+      );
+
+      final moved = remap.byDate[uid] ?? const <String, Set<int>>{};
+
+      final groupRef =
+          firestore.collection(GroupCollections.groups).doc(groupId);
+
+      // Collect delete and set ops; commit in chunks so a long plan stays
+      // under Firestore's 500-write batch cap.
+      final ops = <_Op>[];
+      for (final dayDoc in entriesSnap.docs) {
+        final entryRef = dayDoc.reference.collection('entries').doc(uid);
+        final items = await entryRef.collection('items').get();
+        for (final item in items.docs) {
+          ops.add(_Op.delete(item.reference));
+        }
+        ops.add(_Op.delete(entryRef));
+      }
+
+      moved.forEach((dateId, indices) {
+        if (indices.isEmpty) return;
+        final entryRef = groupRef
+            .collection('progress')
+            .doc(dateId)
+            .collection('entries')
+            .doc(uid);
+        for (final idx in indices) {
+          ops.add(_Op.set(
+            entryRef.collection('items').doc(idx.toString()),
+            <String, dynamic>{'done': true},
+          ));
+        }
+        ops.add(_Op.set(entryRef, <String, dynamic>{
+          'done': true,
+          'uid': uid,
+          'groupId': groupId,
+          'dateId': dateId,
+          'count': indices.length,
+        }));
+      });
+
+      // Repair the cached total absolutely — fixes the pre-existing drift.
+      final summaryRef = groupRef
+          .collection('progressSummary')
+          .doc('data')
+          .collection('entries')
+          .doc(uid);
+      final newTotalCount =
+          moved.values.fold<int>(0, (total, s) => total + s.length);
+      ops.add(_Op.set(summaryRef, <String, dynamic>{
+        'completed': newTotalCount,
+        'uid': uid,
+      }));
+
+      for (var i = 0; i < ops.length; i += _writeBatchSize) {
+        // ignore: avoid_print
+        for (var k = i;
+            k <
+                (i + _writeBatchSize < ops.length
+                    ? i + _writeBatchSize
+                    : ops.length);
+            k++) {
+          // ignore: avoid_print
+        }
+        final batch = firestore.batch();
+        final end = (i + _writeBatchSize < ops.length)
+            ? i + _writeBatchSize
+            : ops.length;
+        for (var j = i; j < end; j++) {
+          ops[j].apply(batch);
+        }
+        await batch.commit();
+      }
+    } catch (e, st) {
+      await _safeLog(e, st);
+    }
+  }
+
+  /// Stamps `members/{uid}.remappedRevision` so the next open can skip the
+  /// repair when the plan has not changed since this uid last ran it.
+  Future<void> markMemberRemapped({
+    required String groupId,
+    required String uid,
+    required int revision,
+  }) async {
+    try {
+      await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.members)
+          .doc(uid)
+          .set({'remappedRevision': revision}, SetOptions(merge: true));
+    } catch (e, st) {
+      await _safeLog(e, st);
+    }
+  }
+
+  /// Whether [uid] still owes a self-repair for [groupId]. True when the
+  /// member's `remappedRevision` is behind the group's `planConfig.revision`,
+  /// or the member has never run a remap.
+  Future<bool> needsRemap({
+    required String groupId,
+    required String uid,
+  }) async {
+    final groupSnap =
+        await firestore.collection(GroupCollections.groups).doc(groupId).get();
+    if (!groupSnap.exists) return false;
+    final planConfig = groupSnap.data()?['planConfig'];
+    final revision = (planConfig is Map)
+        ? ((planConfig['revision'] as num?)?.toInt() ?? 0)
+        : 0;
+    final memberSnap = await firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.members)
+        .doc(uid)
+        .get();
+    if (!memberSnap.exists) return false;
+    final memberRevision =
+        (memberSnap.data()?['remappedRevision'] as num?)?.toInt() ?? 0;
+    return memberRevision < revision;
+  }
+
+  /// Calls `remapGroupProgress` so the Cloud Function can repair everyone's
+  /// progress cross-member. Returns true on success, false on any failure —
+  /// the caller falls back to [applyOwnRemap] for the local user's ticks.
+  Future<bool> remapGroupProgressCallable({
+    required String groupId,
+    required List<GroupSchedule> newDays,
+  }) async {
+    try {
+      final callable = FirebaseFunctions.instanceFor(region: 'us-central1')
+          .httpsCallable('remapGroupProgress');
+      await callable.call({
+        'groupId': groupId,
+        'days': [
+          for (final day in newDays)
+            {
+              'dateId': dateId(day.date),
+              'chapters': day.chapters,
+            },
+        ],
+      });
+      return true;
+    } catch (e, st) {
+      await _safeLog(e, st);
+      return false;
+    }
+  }
+}
+
+class _Op {
+  final DocumentReference ref;
+  final Map<String, dynamic>? payload; // null => delete
+  const _Op._(this.ref, this.payload);
+  factory _Op.delete(DocumentReference r) => _Op._(r, null);
+  factory _Op.set(DocumentReference r, Map<String, dynamic> data) =>
+      _Op._(r, data);
+  void apply(WriteBatch batch) {
+    if (payload == null) {
+      batch.delete(ref);
+    } else {
+      batch.set(ref, payload);
+    }
   }
 }
 
