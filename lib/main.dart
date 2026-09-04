@@ -32,7 +32,16 @@ void main() async {
   // Log whether the app is running in debug mode.
   debugPrint('kDebugMode: $kDebugMode');
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Android's FirebaseInitProvider initializes [DEFAULT] natively before Dart
+  // runs. firebase_core then throws [core/duplicate-app]; catch it
+  // and fall back to the existing native app.
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } on FirebaseException catch (e) {
+    if (e.code != 'duplicate-app') rethrow;
+  }
   bool appCheckFailed = false;
   try {
     if (kDebugMode) {
