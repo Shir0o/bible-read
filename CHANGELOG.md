@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.25.3](https://github.com/Shir0o/bible-read/compare/v1.25.2...v1.25.3) (2026-09-04)
+
+
+### Bug Fixes
+
+* do not block runApp on messaging setup and permissions ([#774](https://github.com/Shir0o/bible-read/issues/774)) ([630169f](https://github.com/Shir0o/bible-read/commit/630169f62fd16a4f02c926bdcb19365d4111b28a))
+
 ## [1.25.2](https://github.com/Shir0o/bible-read/compare/v1.25.1...v1.25.2) (2026-09-04)
 
 
