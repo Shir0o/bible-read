@@ -51,8 +51,22 @@ else
 fi
 
 if [ -z "${FLUTTER_BIN}" ]; then
-  echo "error: flutter not found. Export FLUTTER_ROOT (or add flutter to PATH) in the Xcode Cloud workflow environment." >&2
-  exit 1
+  # Last resort for environments without a preinstalled Flutter SDK (e.g.
+  # Xcode Cloud with no FLUTTER_ROOT workflow variable): install the stable
+  # channel to $HOME/flutter. The later `flutter pub get` writes FLUTTER_ROOT
+  # into ios/Flutter/Generated.xcconfig, which the Podfile and
+  # xcode_backend.sh read, so xcodebuild phases find it without PATH changes.
+  # Matches the Flutter channel used by .github/workflows/ci.yml.
+  echo "[CI] Flutter bootstrap: flutter not found; installing stable channel to \${HOME}/flutter"
+  if ! command -v git >/dev/null 2>&1; then
+    echo "error: git not found; cannot install Flutter. Export FLUTTER_ROOT in the Xcode Cloud workflow environment instead." >&2
+    exit 1
+  fi
+  FLUTTER_INSTALL_DIR="${HOME}/flutter"
+  if [ ! -d "${FLUTTER_INSTALL_DIR}/.git" ]; then
+    git clone --depth 1 -b stable https://github.com/flutter/flutter.git "${FLUTTER_INSTALL_DIR}"
+  fi
+  FLUTTER_BIN="${FLUTTER_INSTALL_DIR}/bin/flutter"
 fi
 
 cd "${REPO_ROOT}"
