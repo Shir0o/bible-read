@@ -60,10 +60,12 @@ void main() async {
         );
       }
     } else {
-      await FirebaseAppCheck.instance.activate(
-        providerAndroid: AndroidPlayIntegrityProvider(),
-        providerApple: AppleAppAttestProvider(),
-      );
+      await FirebaseAppCheck.instance
+          .activate(
+            providerAndroid: AndroidPlayIntegrityProvider(),
+            providerApple: AppleAppAttestProvider(),
+          )
+          .timeout(const Duration(seconds: 4));
     }
   } catch (e, st) {
     if (kDebugMode) {
@@ -108,7 +110,14 @@ void main() async {
   };
 
   if (!skipMessagingSetup) {
-    await _setupMessaging();
+    unawaited(
+      _setupMessaging().catchError((Object error, StackTrace st) {
+        if (kDebugMode) {
+          debugPrint('Messaging setup failed: $error');
+        }
+        ErrorLogger.log(error, st);
+      }),
+    );
   }
   runApp(MyApp(appCheckFailed: appCheckFailed));
 }
@@ -209,30 +218,27 @@ NotificationNavigator notificationNavigator = NotificationNavigator();
 
 Future<void> _setupMessaging() async {
   final messaging = FirebaseMessaging.instance;
-  if (kDebugMode) {
-    // Don't block on permission in debug/tests to avoid hanging on system dialogs
-    unawaited(
-      messaging.requestPermission().catchError((e) {
+  unawaited(
+    messaging.requestPermission().catchError((e) {
+      if (kDebugMode) {
         debugPrint('Permission request failed: $e');
-        return const NotificationSettings(
-          alert: AppleNotificationSetting.disabled,
-          announcement: AppleNotificationSetting.disabled,
-          authorizationStatus: AuthorizationStatus.notDetermined,
-          badge: AppleNotificationSetting.disabled,
-          carPlay: AppleNotificationSetting.disabled,
-          lockScreen: AppleNotificationSetting.disabled,
-          notificationCenter: AppleNotificationSetting.disabled,
-          showPreviews: AppleShowPreviewSetting.never,
-          sound: AppleNotificationSetting.disabled,
-          timeSensitive: AppleNotificationSetting.disabled,
-          criticalAlert: AppleNotificationSetting.disabled,
-          providesAppNotificationSettings: AppleNotificationSetting.disabled,
-        );
-      }),
-    );
-  } else {
-    await messaging.requestPermission();
-  }
+      }
+      return const NotificationSettings(
+        alert: AppleNotificationSetting.disabled,
+        announcement: AppleNotificationSetting.disabled,
+        authorizationStatus: AuthorizationStatus.notDetermined,
+        badge: AppleNotificationSetting.disabled,
+        carPlay: AppleNotificationSetting.disabled,
+        lockScreen: AppleNotificationSetting.disabled,
+        notificationCenter: AppleNotificationSetting.disabled,
+        showPreviews: AppleShowPreviewSetting.never,
+        sound: AppleNotificationSetting.disabled,
+        timeSensitive: AppleNotificationSetting.disabled,
+        criticalAlert: AppleNotificationSetting.disabled,
+        providesAppNotificationSettings: AppleNotificationSetting.disabled,
+      );
+    }),
+  );
 
   await ReminderService().init(
     onDidReceiveNotificationResponse: (response) async {
