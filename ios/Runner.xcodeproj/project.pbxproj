@@ -212,6 +212,7 @@
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				CB129515C1BF0D8CAFC9E4AC /* [CP] Embed Pods Frameworks */,
 				D107DBF1BBF4C1126676ED9D /* [CP] Copy Pods Resources */,
+				CC733B2E3BA3631ED1A0701E /* Upload Debug Symbols to Crashlytics */,
 			);
 			buildRules = (
 			);
@@ -413,6 +414,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [ -n \"${SKIP_CI_BOOTSTRAP:-}\" ]; then\n  echo \"[CI] Bootstrap Flutter: skipping because SKIP_CI_BOOTSTRAP is set.\"\n  exit 0\nfi\nBOOTSTRAP=\"${PROJECT_DIR}/../ci_scripts/ci_post_clone.sh\"\nif [ ! -x \"${BOOTSTRAP}\" ]; then\n  echo \"warning: Flutter bootstrap script ${BOOTSTRAP} is missing or not executable.\" >&2\n  exit 0\nfi\nif [ -f \"${PROJECT_DIR}/Flutter/Generated.xcconfig\" ] && [ -f \"${PROJECT_DIR}/Pods/Target Support Files/Pods-Runner/Pods-Runner-frameworks-Debug-input-files.xcfilelist\" ]; then\n  echo \"Skipping Flutter bootstrap: dependencies already prepared.\"\n  exit 0\nfi\necho \"[CI] Bootstrap Flutter: running ${BOOTSTRAP}\"\nset -x\n( cd \"${PROJECT_DIR}/..\" && bash \"${BOOTSTRAP}\" )\n";
+		};
+		CC733B2E3BA3631ED1A0701E /* Upload Debug Symbols to Crashlytics */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Upload Debug Symbols to Crashlytics";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CONFIGURATION}\" = \"Debug\" ]; then\n  exit 0\nfi\nRUN_SCRIPT=\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\nif [ -f \"${RUN_SCRIPT}\" ]; then\n  echo \"Uploading dSYMs to Crashlytics\"\n  \"${RUN_SCRIPT}\"\nelse\n  echo \"warning: Crashlytics upload script not found at ${RUN_SCRIPT}; skipping dSYM upload\"\nfi\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
