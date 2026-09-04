@@ -77,3 +77,8 @@ gha-creds-*.json
 # Seeded design-canvas payload (2.5MB generated artifact; re-seed from the
 # .dc.html sources beside it rather than committing it).
 design/**/group-starting-chapter.html
+
+# fastlane Play Store service-account JSON is mounted by the release
+# workflow at CI runtime and deleted afterwards; never commit it.
+fastlane/play-supply-credentials.json
+fastlane/report.xml
