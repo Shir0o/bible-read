@@ -58,26 +58,22 @@ nav bar would show a UI the app never renders at that size. Both 7" and 10"
 land on the same side of that single breakpoint, so one tablet capture serves
 both slots.
 
-### The tablet captures are from an iPad simulator
+### Tablet captures
 
-`captures/tablet/` was captured on an **iPad Pro 11"**, not an Android tablet,
-because the Android emulator could not start — it wants a 7.37 GB userdata
-partition and the machine had 4.99 GB free. Flutter draws its own Material
-widgets, so the rendered UI and the `ResponsiveScaffold` rail are identical on
-both platforms, and the frames crop into a drawn bezel so no platform chrome
-appears. It is still an iOS render sitting in a Play tablet slot.
-
-To redo it natively once there is disk space, a `Play_Tablet` AVD (medium_tablet,
-android-36) already exists:
+`captures/tablet/` comes from the `Play_Tablet` AVD (medium_tablet, android-36)
+in portrait at 1600x2560. The AVD's natural orientation is landscape and the app
+locks no orientation, so rotation is forced before capturing:
 
 ```sh
 ~/Library/Android/sdk/emulator/emulator -avd Play_Tablet -no-snapshot-load &
+adb -s emulator-5554 shell settings put system accelerometer_rotation 0
+adb -s emulator-5554 shell settings put system user_rotation 1
 flutter drive -d emulator-5554 --no-enable-impeller \
   --driver=test_driver/screenshot_driver.dart \
   --target=integration_test/store_capture_test.dart
 ```
 
-Then replace `captures/tablet/` and re-render.
+The AVD needs roughly 7.4 GB free to boot — it refuses outright below that.
 
 ## Re-capturing
 
@@ -98,6 +94,11 @@ Two capture traps, both real and both already handled in the harness:
 2. **`HomePage` auto-opens `CheckInPage`** on launch when today is unmarked, and
    it covers every screen you are trying to capture. The harness dismisses it
    through its `onClose` before the Home/Journey/Community frames.
+
+`flutter drive` exits non-zero on the tablet run even when every capture is
+good: `firebase_auth_mocks` gives its mock user a photo URL on i.stack.imgur.com
+that 403s, and the resulting image exceptions are reported at teardown. The
+avatar falls back to a plain circle. Check the PNGs before assuming a failure.
 
 The seed also makes the user the **owner** of the group. That is a workaround for
 [#779](https://github.com/Shir0o/bible-read/issues/779) — `groupsForUser()` emits
