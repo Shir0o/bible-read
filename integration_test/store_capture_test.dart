@@ -124,19 +124,32 @@ void main() {
   Future<void> scrollBy(WidgetTester tester, double dy) async {
     try {
       final s = find.byType(Scrollable);
-      if (s.evaluate().isEmpty) return;
+      if (s.evaluate().isEmpty) {
+        debugPrint('scrollBy: no scrollable found');
+        return;
+      }
       await tester.drag(s.first, Offset(0, dy));
       await settle(tester, frames: 6);
-    } catch (_) {}
+    } catch (e) {
+      // Best-effort: a capture that cannot scroll is still worth taking, but
+      // say why rather than failing silently.
+      debugPrint('scrollBy($dy) failed: $e');
+    }
   }
 
   Future<bool> tapIf(WidgetTester tester, Finder finder) async {
     try {
-      if (finder.evaluate().isEmpty) return false;
+      if (finder.evaluate().isEmpty) {
+        debugPrint('tapIf: no match for $finder');
+        return false;
+      }
       await tester.tap(finder.first);
       await settle(tester);
       return true;
-    } catch (_) {
+    } catch (e) {
+      // A missed tap means the next capture silently shows the previous
+      // screen, which is how the duplicate-frame bugs hid — so log it.
+      debugPrint('tapIf($finder) failed: $e');
       return false;
     }
   }
