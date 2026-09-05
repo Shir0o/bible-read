@@ -82,3 +82,22 @@ design/**/group-starting-chapter.html
 # workflow at CI runtime and deleted afterwards; never commit it.
 fastlane/play-supply-credentials.json
 fastlane/report.xml
+
+# Store assets: rendered output and canvas intermediates are generated from
+# design/store-assets/captures/ plus the scripts beside them. The captures
+# themselves ARE committed — they are date-stamped and cannot be reproduced.
+screenshots/*.png
+design/store-assets/out/
+design/store-assets/*.jpg
+design/store-assets/*.zip
+design/store-assets/bible-read-store-screenshots.html
+design/store-assets/Main.dc.html
+design/store-assets/Home.dc.html
+design/store-assets/Streak.dc.html
+design/store-assets/Community.dc.html
+design/store-assets/PlanDetail.dc.html
+design/store-assets/Reflection.dc.html
+design/store-assets/Payoff.dc.html
+design/store-assets/PlayPhone.dc.html
+design/store-assets/FeatureGraphic.dc.html
+design/store-assets/canvas.json
