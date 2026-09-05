@@ -20,7 +20,8 @@ the committed captures.
 ## Layout
 
 ```
-captures/            full-resolution device captures (COMMITTED — see below)
+captures/            full-resolution phone captures (COMMITTED — see below)
+captures/tablet/     full-resolution tablet captures (COMMITTED)
 build_artboards.py   captions + canvas geometry; writes the .dc.html artboards
 composite.py         diagonal / vertical splits, and canvas-sized shrinks
 render_store_assets.py   final PNGs at store resolution + the zip
@@ -56,6 +57,27 @@ Tablet slots need their own captures: `ResponsiveScaffold` switches to a side
 nav bar would show a UI the app never renders at that size. Both 7" and 10"
 land on the same side of that single breakpoint, so one tablet capture serves
 both slots.
+
+### The tablet captures are from an iPad simulator
+
+`captures/tablet/` was captured on an **iPad Pro 11"**, not an Android tablet,
+because the Android emulator could not start — it wants a 7.37 GB userdata
+partition and the machine had 4.99 GB free. Flutter draws its own Material
+widgets, so the rendered UI and the `ResponsiveScaffold` rail are identical on
+both platforms, and the frames crop into a drawn bezel so no platform chrome
+appears. It is still an iOS render sitting in a Play tablet slot.
+
+To redo it natively once there is disk space, a `Play_Tablet` AVD (medium_tablet,
+android-36) already exists:
+
+```sh
+~/Library/Android/sdk/emulator/emulator -avd Play_Tablet -no-snapshot-load &
+flutter drive -d emulator-5554 --no-enable-impeller \
+  --driver=test_driver/screenshot_driver.dart \
+  --target=integration_test/store_capture_test.dart
+```
+
+Then replace `captures/tablet/` and re-render.
 
 ## Re-capturing
 

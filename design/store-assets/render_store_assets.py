@@ -11,6 +11,10 @@ Outputs, per Apple's and Google's specs:
   out/play/*.png       1080 x 2160   Play phone (Play rejects taller than 2:1)
   out/play/feature_graphic.png
                        1024 x 500    Play feature graphic
+  out/play_tablet_7/*.png
+                       1080 x 1920   Play 7" tablet (exactly 9:16)
+  out/play_tablet_10/*.png
+                       1440 x 2560   Play 10" tablet (exactly 9:16, sides >= 1080)
 
   python3 render_store_assets.py
 """
@@ -20,6 +24,7 @@ import zipfile
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
+from composite import diagonal, vertical
 from build_artboards import (
     ARTBOARDS,
     BEZEL,
@@ -55,6 +60,19 @@ SERIF = FONTS / "Spectral-Medium.ttf"
 SERIF_REG = FONTS / "Spectral-Regular.ttf"
 SERIF_ITALIC = FONTS / "Spectral-Italic.ttf"
 SANS = FONTS / "HankenGrotesk-VariableFont_wght.ttf"
+
+
+def ensure_splits(capture_dir):
+    """Rebuild the derived split images if absent — they are regenerable, so
+    they are not committed, and the renderer should not need them prepared."""
+    pairs = (
+        ("_checkin_split.png", "10_checkin_dawn.png", "11_checkin_night.png", diagonal),
+        ("_plan_detail_split.png", "50_plan_detail_light.png", "52_plan_detail_dark.png", vertical),
+    )
+    for out, a, b, fn in pairs:
+        target = capture_dir / out
+        if not target.exists():
+            fn(capture_dir / a, capture_dir / b, target)
 
 
 def font(path, size, weight=None):
@@ -185,6 +203,82 @@ def render_frame(out_path, target_w, target_h, art_w, art_h, pad_top, image, hea
     print(f"{out_path.relative_to(HERE)}  {target_w}x{target_h}")
 
 
+# Tablet captures live apart from the phone ones: ResponsiveScaffold switches to
+# a side NavigationRail above 600dp, so a tablet frame must not show the phone's
+# bottom nav bar. Both the 7" and 10" slots sit on the same side of that single
+# breakpoint, so one tablet capture serves both.
+TABLET_CAPTURES = HERE / "captures" / "tablet"
+
+# Play tablet slots demand EXACTLY 16:9 or 9:16 — stricter than the phone slot,
+# which merely caps the long edge at 2x the short one.
+TABLET_SIZES = {
+    "play_tablet_7": (1080, 1920),   # sides 320-3840
+    "play_tablet_10": (1440, 2560),  # sides must be >= 1080
+}
+
+
+def render_tablet_frame(out_path, target_w, target_h, image, headline, sub):
+    """A 9:16 frame around a tablet capture, which is far wider than a phone."""
+    k = target_w / 1080
+    canvas = Image.new("RGBA", (target_w, target_h), PAPER)
+    draw = ImageDraw.Draw(canvas)
+
+    eyebrow_f = font(SANS, round(21 * k), weight=700)
+    head_f = font(SERIF, round(84 * k))
+    sub_f = font(SANS, round(30 * k), weight=400)
+
+    y = round(110 * k)
+
+    tracking = 3.2 * k
+    label = "BIBLE READ"
+    draw_tracked(
+        draw,
+        ((target_w - text_width(draw, label, eyebrow_f, tracking)) / 2, y),
+        label,
+        eyebrow_f,
+        GOLD,
+        tracking,
+    )
+    y += round(21 * k * 1.4) + round(30 * k)
+
+    line_h = round(84 * k * 1.06)
+    for line in headline.split("<br>"):
+        draw.text(
+            ((target_w - draw.textlength(line, font=head_f)) / 2, y),
+            line,
+            font=head_f,
+            fill=INK,
+        )
+        y += line_h
+    y += round(38 * k)
+
+    sub_line_h = round(30 * k * 1.45)
+    for line in wrap(draw, sub, sub_f, 780 * k):
+        draw.text(
+            ((target_w - draw.textlength(line, font=sub_f)) / 2, y),
+            line,
+            font=sub_f,
+            fill=DIM,
+        )
+        y += sub_line_h
+
+    # Sized to crop at the frame edge: the tablet layout leaves its lower half
+    # empty, and a fully-visible device would frame that emptiness.
+    y += round(64 * k)
+    phone = device(
+        TABLET_CAPTURES / FULL_RES[image],
+        round(target_w * 0.93),
+        round(16 * k),
+        round(54 * k),
+    )
+    x = (target_w - phone.size[0]) // 2
+    drop_shadow(canvas, phone, (x, y), blur=round(30 * k), offset_y=round(30 * k), opacity=70)
+    canvas.alpha_composite(phone, (x, y))
+
+    canvas.convert("RGB").save(out_path, optimize=True)
+    print(f"{out_path.relative_to(HERE)}  {target_w}x{target_h}")
+
+
 def render_feature_graphic(out_path):
     canvas = Image.new("RGBA", (FEATURE_W, FEATURE_H), PAPER)
     draw = ImageDraw.Draw(canvas)
@@ -231,6 +325,10 @@ def render_feature_graphic(out_path):
 
 
 def main():
+    ensure_splits(HERE / "captures")
+    if TABLET_CAPTURES.is_dir():
+        ensure_splits(TABLET_CAPTURES)
+
     if OUT.exists():
         shutil.rmtree(OUT)
     (OUT / "appstore").mkdir(parents=True)
@@ -246,6 +344,21 @@ def main():
         )
 
     render_feature_graphic(OUT / "play" / "feature_graphic.png")
+
+    if TABLET_CAPTURES.is_dir():
+        for slot, (tw, th) in TABLET_SIZES.items():
+            (OUT / slot).mkdir(parents=True, exist_ok=True)
+            for i, (name, _t, image, headline, sub) in enumerate(ARTBOARDS, start=1):
+                render_tablet_frame(
+                    OUT / slot / f"{i:02d}_{name.lower()}.png",
+                    tw,
+                    th,
+                    image,
+                    headline,
+                    sub,
+                )
+    else:
+        print(f"\nno tablet captures at {TABLET_CAPTURES} — skipping tablet slots")
 
     zip_path = HERE / "bible-read-store-assets.zip"
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:

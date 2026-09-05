@@ -101,3 +101,7 @@ design/store-assets/Payoff.dc.html
 design/store-assets/PlayPhone.dc.html
 design/store-assets/FeatureGraphic.dc.html
 design/store-assets/canvas.json
+
+# Derived splits: render_store_assets.py rebuilds these from the captures.
+design/store-assets/captures/**/_*.png
+design/store-assets/captures/_*.png
