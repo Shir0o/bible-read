@@ -12,6 +12,7 @@ import '../models/group_invite.dart';
 import '../models/group_member_role.dart';
 import '../models/notification_preferences.dart';
 import 'error_logger.dart';
+import 'read_through_coordinator.dart';
 import 'notification_service.dart';
 import 'progress_remap.dart';
 
@@ -47,13 +48,21 @@ class GroupService {
   /// Service for writing notification documents.
   final NotificationService notificationService;
 
+  /// Credits marked chapters to the reader's testament laps.
+  final ReadThroughCoordinator readThroughCoordinator;
+
   /// Creates a [GroupService] using [FirebaseFirestore.instance] by default.
   GroupService({
     FirebaseFirestore? firestore,
     NotificationService? notificationService,
+    ReadThroughCoordinator? readThroughCoordinator,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         notificationService = notificationService ??
             NotificationService(
+              firestore: firestore ?? FirebaseFirestore.instance,
+            ),
+        readThroughCoordinator = readThroughCoordinator ??
+            ReadThroughCoordinator(
               firestore: firestore ?? FirebaseFirestore.instance,
             );
 
@@ -2216,6 +2225,17 @@ class GroupService {
               SetOptions(merge: true));
         }
       });
+
+      if (read) {
+        // Marking read credits the whole day; un-marking never takes a lap
+        // back, matching how the reading-to-habit coupling only ever flows one
+        // way. Best-effort: the reading itself is already recorded.
+        await readThroughCoordinator.creditGroupReading(
+          uid: uid,
+          schedule: schedule,
+          checkedIndices: List<int>.generate(schedule.chapters.length, (i) => i),
+        );
+      }
       return true;
     } catch (e, st) {
       await _safeLog(e, st);

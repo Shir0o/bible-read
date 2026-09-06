@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; }
+    a { color: #6A53AD; } a:hover { color: #5B449E; }
+    .rt-label { font-size: 11px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #6C6577; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #F4F0E8; color: #231E2C; box-sizing: border-box; display: flex; flex-direction: column">
+
+  <div style="display: flex; align-items: center; gap: 4px; padding: 10px 14px 8px">
+    <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#231E2C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+    </div>
+    <div style="flex-grow: 1; font-family: 'Spectral', Georgia, serif; font-size: 24px; font-weight: 500; letter-spacing: -0.2px">A past read-through</div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 26px; padding: 14px 20px 0">
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div class="rt-label">What did you finish?</div>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <sc-for list="{{ scopes }}" as="s" hint-placeholder-count="3">
+          <div onClick="{{ s.pick }}" style="cursor: pointer; height: 52px; border-radius: 16px; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: {{ s.bg }}; border: 1px solid {{ s.line }}">
+            <div style="width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%; border: 2px solid {{ s.dot }}; display: flex; align-items: center; justify-content: center">
+              <div style="width: 10px; height: 10px; border-radius: 50%; background: {{ s.fill }}"></div>
+            </div>
+            <div style="font-size: 15px; font-weight: 600; color: {{ s.text }}">{{ s.name }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div class="rt-label">When did you finish?</div>
+      <div style="display: flex; gap: 6px; padding: 4px; border-radius: 16px; background: #EDE7DC">
+        <sc-for list="{{ precisions }}" as="p" hint-placeholder-count="3">
+          <div onClick="{{ p.pick }}" style="cursor: pointer; flex-grow: 1; flex-basis: 0; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: {{ p.bg }}; color: {{ p.text }}; font-size: 12.5px; font-weight: 600; letter-spacing: 0.2px">{{ p.name }}</div>
+        </sc-for>
+      </div>
+      <div style="height: 52px; border-radius: 16px; background: #FFFDFA; border: 1px solid rgba(43,33,58,0.085); display: flex; align-items: center; gap: 11px; padding: 0 16px">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#6C6577" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+        <div style="flex-grow: 1; font-size: 15px; color: #231E2C">{{ dateValue }}</div>
+      </div>
+      <div style="font-size: 13px; color: #6C6577; line-height: 1.45">{{ dateHint }}</div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div class="rt-label">Where were you? <span style="letter-spacing: 0.4px; text-transform: none; font-weight: 600">&mdash; optional</span></div>
+      <div style="height: 52px; border-radius: 16px; background: #FFFDFA; border: 1px solid rgba(43,33,58,0.085); display: flex; align-items: center; gap: 11px; padding: 0 16px">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#6C6577" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        <div style="flex-grow: 1; font-size: 15px; color: #8C8694">Fuller, Pasadena</div>
+      </div>
+      <div style="font-size: 13px; color: #6C6577; line-height: 1.45">A city, a church, a season of life &mdash; whatever you&#39;ll recognise later.</div>
+    </div>
+
+    <div style="display: flex; gap: 11px; padding: 15px 16px; border-radius: 22px; background: #F5F1E9; border: 1px solid rgba(43,33,58,0.085)">
+      <svg width="19" height="19" style="flex-shrink: 0; margin-top: 1px" viewBox="0 0 24 24" fill="none" stroke="#6C6577" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.5"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+      <div style="font-size: 13px; color: #6C6577; line-height: 1.45">Past read-throughs stay yours. They&#39;re added to your history, but never posted to the feed.</div>
+    </div>
+
+  </div>
+
+  <div style="padding: 0 20px 34px">
+    <div style="height: 52px; border-radius: 16px; background: #6A53AD; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600">Add to my history</div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{}'>
+const SCOPES = ['Old Testament', 'New Testament', 'Whole Bible'];
+const PRECISIONS = ['Just the year', 'Month & year', 'Exact date'];
+const DATES = ['2011', 'March 2011', '12 March 2011'];
+const HINTS = [
+  'Only remember the year? That is enough.',
+  'Narrow it down if you remember the season.',
+  'Pick the day you read the last chapter.'
+];
+
+class Component extends DCLogic {
+  renderVals() {
+    const scope = (this.state && this.state.scope) || 'Whole Bible';
+    const precision = (this.state && this.state.precision) || 'Just the year';
+    const pIndex = PRECISIONS.indexOf(precision);
+
+    return {
+      scopes: SCOPES.map((name) => {
+        const on = name === scope;
+        return {
+          name: name,
+          bg: on ? 'rgba(106,83,173,0.10)' : '#FFFDFA',
+          line: on ? 'rgba(106,83,173,0.26)' : 'rgba(43,33,58,0.085)',
+          dot: on ? '#6A53AD' : 'rgba(43,33,58,0.15)',
+          fill: on ? '#6A53AD' : 'transparent',
+          text: on ? '#5B449E' : '#231E2C',
+          pick: () => this.setState({ scope: name }),
+        };
+      }),
+      precisions: PRECISIONS.map((name) => {
+        const on = name === precision;
+        return {
+          name: name,
+          bg: on ? '#FFFDFA' : 'transparent',
+          text: on ? '#231E2C' : '#6C6577',
+          pick: () => this.setState({ precision: name }),
+        };
+      }),
+      dateValue: DATES[pIndex < 0 ? 0 : pIndex],
+      dateHint: HINTS[pIndex < 0 ? 0 : pIndex],
+    };
+  }
+}
+</script>
+</body>
+</html>
