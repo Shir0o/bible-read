@@ -90,6 +90,21 @@ void main() {
         equals('request.auth != null && request.auth.uid == userId'),
       );
     });
+
+    test('contains user achievements collection rules', () {
+      final usersBlock = _findMatchBlock(rulesText, '/users/{userId}');
+      final achievementsBlock = _findMatchBlock(
+        usersBlock,
+        '/achievements/{achievementId}',
+      );
+
+      expect(
+        _normalizeWhitespace(
+          _extractAllowExpression(achievementsBlock, 'read, write'),
+        ),
+        equals('request.auth != null && request.auth.uid == userId'),
+      );
+    });
   });
 
   group('Season collections behaviour', () {
@@ -174,6 +189,41 @@ void main() {
 
     test('other user cannot write cache', () {
       expect(_canWriteUserCache(authUid: 'bob', userId: 'alice'), isFalse);
+    });
+  });
+
+  group('User achievement behaviour', () {
+    test('owner can write their achievement', () {
+      expect(
+        _canWriteUserAchievement(authUid: 'alice', userId: 'alice'),
+        isTrue,
+      );
+    });
+
+    test('owner can read their achievement', () {
+      expect(
+        _canReadUserAchievement(authUid: 'alice', userId: 'alice'),
+        isTrue,
+      );
+    });
+
+    test('other user cannot write an achievement', () {
+      expect(
+        _canWriteUserAchievement(authUid: 'bob', userId: 'alice'),
+        isFalse,
+      );
+    });
+
+    test('other user cannot read an achievement', () {
+      expect(
+        _canReadUserAchievement(authUid: 'bob', userId: 'alice'),
+        isFalse,
+      );
+    });
+
+    test('unauthenticated access denied', () {
+      expect(_canReadUserAchievement(authUid: null, userId: 'alice'), isFalse);
+      expect(_canWriteUserAchievement(authUid: null, userId: 'alice'), isFalse);
     });
   });
 
@@ -354,6 +404,20 @@ bool _canReadUserCache({required String? authUid, required String userId}) {
 }
 
 bool _canWriteUserCache({required String? authUid, required String userId}) {
+  return authUid != null && authUid == userId;
+}
+
+bool _canReadUserAchievement({
+  required String? authUid,
+  required String userId,
+}) {
+  return authUid != null && authUid == userId;
+}
+
+bool _canWriteUserAchievement({
+  required String? authUid,
+  required String userId,
+}) {
   return authUid != null && authUid == userId;
 }
 
