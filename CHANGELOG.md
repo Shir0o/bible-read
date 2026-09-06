@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.26.0](https://github.com/Shir0o/bible-read/compare/v1.25.3...v1.26.0) (2026-09-06)
+
+
+### Features
+
+* track how many times a reader finishes the Bible ([#784](https://github.com/Shir0o/bible-read/issues/784)) ([94793c3](https://github.com/Shir0o/bible-read/commit/94793c3075c8fea93ca8d0711611fbab7a7c6a17))
+
+
+### Bug Fixes
+
+* add missing Firestore rule for user achievements subcollection ([#782](https://github.com/Shir0o/bible-read/issues/782)) ([14fab1e](https://github.com/Shir0o/bible-read/commit/14fab1eaed822d68bc4fbc2ab4879436a3cdae67))
+
 ## [1.25.3](https://github.com/Shir0o/bible-read/compare/v1.25.2...v1.25.3) (2026-09-04)
 
 
