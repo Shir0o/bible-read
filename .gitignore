@@ -82,3 +82,7 @@ design/**/group-starting-chapter.html
 # workflow at CI runtime and deleted afterwards; never commit it.
 fastlane/play-supply-credentials.json
 fastlane/report.xml
+
+# Seeded design-canvas payload (~2.5MB, editor baked in).
+# Regenerate from design/canvas/*.dc.html; the published artifact is the shared copy.
+circle-and-path.html
