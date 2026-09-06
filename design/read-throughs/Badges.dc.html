@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; }
+    a { color: #6A53AD; } a:hover { color: #5B449E; }
+    .rt-badge { width: 96px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 9px; }
+    .rt-disc { width: 62px; height: 62px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .rt-cap { font-size: 12.5px; font-weight: 600; letter-spacing: 0.2px; text-align: center; line-height: 1.3; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 340px; background: #F4F0E8; color: #231E2C; box-sizing: border-box; padding: 20px 0 0">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 20px 14px">
+    <div style="font-family: 'Spectral', Georgia, serif; font-size: 19px; font-weight: 500; letter-spacing: -0.2px">Badges</div>
+    <div style="font-size: 15px; font-weight: 600; color: #6A53AD">See all</div>
+  </div>
+
+  <div style="display: flex; gap: 6px; padding: 4px 20px 0; overflow: hidden">
+
+    <div class="rt-badge">
+      <div class="rt-disc" style="border: 2px solid #2A2438; background: linear-gradient(180deg, #FFE9A8 0%, #FFC24D 100%); box-shadow: 0 4px 14px rgba(255,194,77,0.35)">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2A2438" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"></path><path d="M9 8h6"></path></svg>
+      </div>
+      <div class="rt-cap">First whole<br>Bible</div>
+    </div>
+
+    <div class="rt-badge">
+      <div class="rt-disc" style="background: rgba(106,83,173,0.10); border: 1px solid rgba(106,83,173,0.26)">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6A53AD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20.5V8.5a3.5 3.5 0 0 1 7 0v12z"></path><path d="M13 20.5V8.5a3.5 3.5 0 0 1 7 0v12z"></path></svg>
+      </div>
+      <div class="rt-cap">First Old<br>Testament</div>
+    </div>
+
+    <div class="rt-badge">
+      <div class="rt-disc" style="background: rgba(106,83,173,0.10); border: 1px solid rgba(106,83,173,0.26)">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6A53AD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12c-4.5-4-9-6-13-6 2 2.5 3 4.5 3 6s-1 3.5-3 6c4 0 8.5-2 13-6z"></path></svg>
+      </div>
+      <div class="rt-cap">First New<br>Testament</div>
+    </div>
+
+    <div class="rt-badge">
+      <div class="rt-disc" style="background: #EFEAE0; border: 1px dashed rgba(43,33,58,0.15)">
+        <div style="font-family: 'Spectral', Georgia, serif; font-size: 22px; font-weight: 500; color: #8C8694">&times;5</div>
+      </div>
+      <div class="rt-cap" style="color: #8C8694">Five whole<br>Bibles</div>
+    </div>
+
+  </div>
+
+  <div style="padding: 20px 20px 0">
+    <div style="padding: 15px 16px; border-radius: 22px; background: #FFFDFA; border: 1px solid rgba(43,33,58,0.085); display: flex; align-items: center; gap: 13px">
+      <div style="width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%; background: #EFEAE0; border: 1px dashed rgba(43,33,58,0.15); display: flex; align-items: center; justify-content: center">
+        <div style="font-family: 'Spectral', Georgia, serif; font-size: 15px; font-weight: 500; color: #8C8694">&times;5</div>
+      </div>
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+        <div style="font-size: 14px; font-weight: 600">Three more to go</div>
+        <div style="font-size: 13px; color: #6C6577">Five whole Bibles unlocks at your 5th time through.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

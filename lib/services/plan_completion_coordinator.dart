@@ -6,6 +6,7 @@ import '../models/user_preferences.dart';
 import '../pages/read_log_page.dart';
 import '../widgets/sync_sheet.dart';
 import 'error_logger.dart';
+import 'read_through_coordinator.dart';
 import 'reading_plan_service.dart';
 import 'user_preferences_service.dart';
 
@@ -24,14 +25,18 @@ class PlanCompletionCoordinator {
   final FirebaseFirestore firestore;
   final ReadingPlanService planService;
   final UserPreferencesService preferencesService;
+  final ReadThroughCoordinator readThroughCoordinator;
 
   PlanCompletionCoordinator({
     required this.firestore,
     ReadingPlanService? planService,
     UserPreferencesService? preferencesService,
+    ReadThroughCoordinator? readThroughCoordinator,
   })  : planService = planService ?? ReadingPlanService(firestore: firestore),
         preferencesService =
-            preferencesService ?? UserPreferencesService(firestore: firestore);
+            preferencesService ?? UserPreferencesService(firestore: firestore),
+        readThroughCoordinator = readThroughCoordinator ??
+            ReadThroughCoordinator(firestore: firestore);
 
   /// Marks [day] of [planId] complete, then honors the reading → habit coupling.
   ///
@@ -45,6 +50,16 @@ class PlanCompletionCoordinator {
     required int day,
   }) async {
     await planService.markDayComplete(user.uid, planId, day);
+
+    // Credit the day's chapters to the reader's testament laps. Best-effort,
+    // and deliberately before the habit coupling so a lap that completes is
+    // already recorded by the time anything else runs.
+    await readThroughCoordinator.creditPlanDay(
+      uid: user.uid,
+      planId: planId,
+      day: day,
+    );
+
     if (!context.mounted) return;
     await maybeCoupleHabit(context: context, user: user);
   }

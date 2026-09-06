@@ -246,6 +246,23 @@ class ReferenceParser {
   /// Returns the canonical list of books in Genesis-to-Revelation order.
   static List<String> get allBooks => _allBooks;
 
+  /// Splits a single-chapter reference into its book and chapter number
+  /// (e.g. "jn 3" -> `("John", 3)`).
+  ///
+  /// Returns `null` when the book cannot be resolved, the chapter is missing,
+  /// or the chapter is beyond the end of that book.
+  static ({String book, int chapter})? parseChapterRef(String reference) {
+    final normalized = normalizeOne(reference);
+    final match = RegExp(r'^(.*\S)\s+(\d+)$').firstMatch(normalized);
+    if (match == null) return null;
+    final book = match.group(1)!.trim();
+    final chapter = int.tryParse(match.group(2)!) ?? 0;
+    if (book.isEmpty || chapter <= 0) return null;
+    final total = chapterCount(book);
+    if (total == null || chapter > total) return null;
+    return (book: book, chapter: chapter);
+  }
+
   /// Parses the book name from a reference (e.g. "Genesis 1" -> "Genesis").
   static String? parseBook(String reference) {
     final ref = _parseEndpoint(reference);
@@ -285,15 +302,29 @@ class ReferenceParser {
     if (chapter <= 0) return raw;
 
     final ordinal = _parseOrdinal(ordStr);
-    final bookKey = _canonKey(bookRaw);
-    var base = _bookMap[bookKey] ?? _titleCase(bookRaw.trim());
+    var resolved = _lookupBook(bookRaw);
+    var effectiveOrdinal = ordinal;
+
+    // A book whose name begins with "I" ("Isaiah") looks like a roman-numeral
+    // ordinal to the pattern above, which leaves "saiah" behind. When the
+    // remainder does not resolve, glue the ordinal back on and try the whole
+    // name before falling back to title case.
+    if (resolved == null && ordStr != null) {
+      final rejoined = _lookupBook('$ordStr$bookRaw');
+      if (rejoined != null) {
+        resolved = rejoined;
+        effectiveOrdinal = null;
+      }
+    }
+
+    var base = resolved ?? _titleCase(bookRaw.trim());
 
     // Psalm singularize
     if (base == 'Psalms') base = 'Psalm';
 
     // Apply ordinal if applicable
     String display;
-    if (ordinal != null && _ordinalBooks.contains(base)) {
+    if (effectiveOrdinal != null && _ordinalBooks.contains(base)) {
       final ordinalValue = ordinal;
       display = '$ordinalValue $base';
     } else {
@@ -480,12 +511,24 @@ class ReferenceParser {
     final rawBook = (m.group(2) ?? '').trim();
     final chapStr = (m.group(3) ?? '').trim();
     final ordinal = _parseOrdinal(ordStr);
-    final bookKey = _canonKey(rawBook);
-    var base = _resolveBookName(bookKey) ?? _titleCase(rawBook);
+    var resolved = _lookupBook(rawBook) ?? _resolveBookName(_canonKey(rawBook));
+    var effectiveOrdinal = ordinal;
+
+    // "Isaiah" reads as ordinal "I" + "saiah" to the pattern above; put it
+    // back together when the remainder does not resolve on its own.
+    if (resolved == null && ordStr != null) {
+      final rejoined = _lookupBook('$ordStr$rawBook');
+      if (rejoined != null) {
+        resolved = rejoined;
+        effectiveOrdinal = null;
+      }
+    }
+
+    var base = resolved ?? _titleCase(rawBook);
     if (base == 'Psalms') base = 'Psalm';
     String displayBook;
-    if (ordinal != null && _ordinalBooks.contains(base)) {
-      final ordinalValue = ordinal;
+    if (effectiveOrdinal != null && _ordinalBooks.contains(base)) {
+      final ordinalValue = effectiveOrdinal;
       displayBook = '$ordinalValue $base';
     } else {
       displayBook = base;
@@ -540,6 +583,16 @@ class ReferenceParser {
       default:
         return null;
     }
+  }
+
+  /// Resolves a raw book name to its canonical display name, or `null`.
+  ///
+  /// Tries the canonical key first, then a plain alphanumeric key. The two
+  /// differ because [_canonKey] strips "of" and "the", which makes keys like
+  /// `songofsongs` in [_bookMap] unreachable through it alone.
+  static String? _lookupBook(String raw) {
+    final plain = raw.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    return _bookMap[_canonKey(raw)] ?? _bookMap[plain];
   }
 
   static String _canonKey(String book) {

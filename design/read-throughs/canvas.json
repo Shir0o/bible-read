@@ -1,0 +1,17 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "title": "Celebration", "is_interactive": true },
+    { "file": "History.dc.html", "x": 470, "y": 0, "w": 390, "h": 940, "title": "Read-Through history" },
+    { "file": "AddPast.dc.html", "x": 940, "y": 0, "w": 390, "h": 844, "title": "Add a past read-through", "is_interactive": true },
+    { "file": "Library.dc.html", "x": 1410, "y": 0, "w": 390, "h": 1420, "title": "Bible Library, lap-scoped", "is_interactive": true },
+    { "file": "Badges.dc.html", "x": 0, "y": 1540, "w": 390, "h": 340, "title": "Badge strip" },
+    { "file": "FeedCard.dc.html", "x": 470, "y": 1540, "w": 390, "h": 420, "title": "Milestone in the feed" },
+    { "file": "StatTiles.dc.html", "x": 940, "y": 1540, "w": 390, "h": 300, "title": "Journey stat tile" }
+  ],
+  "annotations": [
+    { "id": "celebration-note", "x": 0, "y": -150, "w": 390, "text": "Tap the screen (or use the variant chip) to switch between the New-Testament-only finish and the combined one.\n\nThe combined copy is the piece that has to work: it explains why the whole-Bible count moved when what you actually finished was the New Testament." },
+    { "id": "library-note", "x": 1410, "y": -150, "w": 390, "text": "Tap to switch between the moment lap 2 finishes and three days into lap 3.\n\nThe reset problem is solved with dashed tiles: books read in earlier laps stay visible but clearly spent, so a fresh lap never reads as lost progress." },
+    { "id": "privacy-note", "x": 940, "y": -150, "w": 390, "text": "Three date precisions, because people remember \"2011\" and not a day.\n\nThe lock note is load-bearing: it is where the user learns that backfilled read-throughs never reach the feed." }
+  ],
+  "launch": { "view": "canvas" }
+}

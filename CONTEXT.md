@@ -61,6 +61,75 @@ _Avoid_: Group plan (the group's plan and its schedule are distinct)
 A named set of readers reading a shared schedule together, with an owner and members.
 _Avoid_: Team, circle, cohort
 
+### Read-throughs
+
+**Coverage**:
+The set of Bible chapters a reader has marked in the current Lap, unioned across
+group schedules and personal reading plans. Coverage is the signal a
+Read-Through is detected from. Each reader's coverage only ever changes through
+their own marking — a Group schedule is a shared assignment, never shared
+marking.
+_Avoid_: Progress (already overloaded with plan-day and group-member progress)
+
+**Scope**:
+The extent a Read-Through covers: Old Testament, New Testament, or whole Bible.
+_Avoid_: Testament (excludes the whole-Bible case), section, portion
+
+**Read-Through**:
+A record that a reader finished a Scope end to end, carrying when it happened
+and optionally where. Read-Throughs accumulate indefinitely; the count per Scope
+answers "how many times have I read this?"
+_Avoid_: Completion, finish, cycle
+
+**Lap**:
+One pass through a Scope. Only the Old and New Testaments have Laps of their
+own, and each resets independently on finishing. The whole Bible has no Lap of
+its own — it is derived.
+_Avoid_: Cycle, round, iteration
+
+**Derived Read-Through**:
+A whole-Bible Read-Through, which is never recorded directly. A reader has read
+the whole Bible as many times as they have read the lesser of the two
+testaments — three New Testaments and two Old Testaments is two whole Bibles,
+with a New Testament left over waiting for its pair.
+
+**Detected Read-Through**:
+A Read-Through inferred from Coverage covering the whole of a Scope at the
+moment the reader marked the last chapter. The only kind announced socially.
+
+**Backfilled Read-Through**:
+A Read-Through the reader entered by hand for a pass finished before or outside
+the app. Never announced socially, because it is a claim about the past rather
+than an event that just happened. Distinct from Catch-up, which is about
+marking a *reading* late and never uses this word.
+_Avoid_: Using "backfill" for Catch-up
+
+**Migrated Read-Through**:
+A Read-Through granted to an existing reader when Read-Throughs shipped, for
+reading they had already finished. Silent, like a Backfilled one.
+
+**Location**:
+Free text a reader optionally attaches to a Read-Through saying where it
+happened. Deliberately unstructured — "Taipei", "my grandmother's house" and
+"the Navy" are all valid.
+_Avoid_: Place, venue, geo
+
+**Milestone**:
+The public announcement of a Detected Read-Through in the feed. Distinct from
+the Read-Through itself, which is private to the reader — one is an event
+everyone sees, the other a permanent private record.
+
+**Celebration**:
+The full-screen moment shown when a Read-Through is detected. One per marking,
+however many Read-Throughs that marking completed.
+
+**Badge**:
+A durable award for reaching a Read-Through landmark. Earned once and never
+lost, unlike a Lap, which resets.
+_Avoid_: Achievement (the Firestore collection keeps that name; the reader-facing
+word is Badge), trophy, reward (reserved for Seasonal Challenges)
+
+
 ## Known conflict
 
 The check-in payoff renders `seasonDays` under the label "days this season", but `home_page.dart` passes `_totalReadDays` — an all-time figure. Either the label or the value is wrong. Until that is settled, do not describe that number as a streak or as season-scoped.

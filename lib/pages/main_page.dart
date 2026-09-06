@@ -33,6 +33,7 @@ import '../services/user_preferences_service.dart';
 import '../services/vibration_service.dart';
 import '../services/connectivity_service.dart';
 import '../widgets/offline_banner.dart';
+import '../widgets/read_through_host.dart';
 import 'app_check_error_page.dart';
 import 'read_log_page.dart';
 
@@ -430,31 +431,36 @@ class MainPageState extends State<MainPage> {
           ),
         ];
 
-        return PopScope(
-          canPop: _navigationHistory.length <= 1,
-          onPopInvokedWithResult: (didPop, result) {
-            if (didPop) return;
-            setState(() {
-              _navigationHistory.removeLast();
-              _selectedIndex = _navigationHistory.last;
-            });
-          },
-          child: NavigationMenuScope(
-            onNavigate: _navigateFromMenu,
-            friendsIndex: 0,
-            vibrationService: widget.vibrationService,
-            adminRoleService: _adminRoleService,
-            auth: widget.auth,
-            firestore: widget.firestore,
-            child: ResponsiveScaffold(
-              selectedIndex:
-                  _selectedIndex >= _pages.length ? 0 : _selectedIndex,
-              contentIndex: _selectedIndex,
-              onDestinationSelected: _onItemTapped,
-              pages: _pages,
-              destinations: destinations,
-              offlineBanner: OfflineBanner(
-                connectivityService: _connectivityService,
+        return ReadThroughHost(
+          auth: widget.auth,
+          firestore: widget.firestore,
+          vibrationService: widget.vibrationService,
+          child: PopScope(
+            canPop: _navigationHistory.length <= 1,
+            onPopInvokedWithResult: (didPop, result) {
+              if (didPop) return;
+              setState(() {
+                _navigationHistory.removeLast();
+                _selectedIndex = _navigationHistory.last;
+              });
+            },
+            child: NavigationMenuScope(
+              onNavigate: _navigateFromMenu,
+              friendsIndex: 0,
+              vibrationService: widget.vibrationService,
+              adminRoleService: _adminRoleService,
+              auth: widget.auth,
+              firestore: widget.firestore,
+              child: ResponsiveScaffold(
+                selectedIndex:
+                    _selectedIndex >= _pages.length ? 0 : _selectedIndex,
+                contentIndex: _selectedIndex,
+                onDestinationSelected: _onItemTapped,
+                pages: _pages,
+                destinations: destinations,
+                offlineBanner: OfflineBanner(
+                  connectivityService: _connectivityService,
+                ),
               ),
             ),
           ),

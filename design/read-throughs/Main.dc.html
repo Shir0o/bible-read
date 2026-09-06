@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; }
+    a { color: #C6B4EC; } a:hover { color: #E5DCF7; }
+    @keyframes rt-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes rt-bloom { from { opacity: 0; transform: scale(0.82); } to { opacity: 1; transform: none; } }
+    @keyframes rt-halo { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+    .rt-step { animation: rt-rise 620ms cubic-bezier(.2,.7,.3,1) both; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #16121D; color: #ECE7F3; position: relative; overflow: hidden; cursor: pointer" onClick="{{ cycle }}">
+
+  <div style="position: absolute; top: -150px; left: 50%; width: 620px; height: 620px; margin-left: -310px; border-radius: 50%; background: radial-gradient(circle, rgba(255,194,77,0.20) 0%, rgba(198,180,236,0.10) 42%, rgba(22,18,29,0) 70%); animation: rt-halo 900ms ease-out both"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; padding: 0 28px 34px">
+
+    <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; text-align: center">
+
+      <div style="width: 104px; height: 104px; border-radius: 50%; border: 2px solid #2A2438; background: linear-gradient(180deg, #FFE9A8 0%, #FFC24D 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 40px rgba(255,194,77,0.30); animation: rt-bloom 700ms cubic-bezier(.2,.9,.3,1.1) both">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#2A2438" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 6 9 17l-5-5"></path>
+        </svg>
+      </div>
+
+      <sc-if value="{{ paired }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 22px">
+          <div class="rt-step" style="display: flex; flex-direction: column; align-items: center; gap: 10px; animation-delay: 120ms">
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #E1B488">New Testament &middot; Lap 3</div>
+            <div style="font-family: 'Spectral', Georgia, serif; font-size: 32px; font-weight: 500; letter-spacing: -0.5px; line-height: 1.15; color: #ECE7F3; text-wrap: pretty">The New Testament,<br>a third time.</div>
+          </div>
+
+          <div class="rt-step" style="width: 100%; box-sizing: border-box; padding: 18px 20px 20px; border-radius: 22px; background: rgba(225,180,136,0.16); border: 1px solid rgba(225,180,136,0.34); display: flex; flex-direction: column; gap: 8px; animation-delay: 420ms">
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #E1B488">And your 2nd whole Bible</div>
+            <div style="font-family: 'Spectral', Georgia, serif; font-size: 19px; font-weight: 500; letter-spacing: -0.2px; line-height: 1.35; color: #F5E0CC; text-wrap: pretty">It pairs with the Old Testament you finished in March.</div>
+            <div style="font-size: 14px; line-height: 1.45; color: #A39CB3; text-wrap: pretty">Three New Testaments, two Old &mdash; two complete times through.</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ solo }}" hint-placeholder-val="{{ false }}">
+        <div class="rt-step" style="display: flex; flex-direction: column; align-items: center; gap: 10px; animation-delay: 120ms">
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #E1B488">New Testament &middot; Lap 3</div>
+          <div style="font-family: 'Spectral', Georgia, serif; font-size: 32px; font-weight: 500; letter-spacing: -0.5px; line-height: 1.15; color: #ECE7F3; text-wrap: pretty">The New Testament,<br>a third time.</div>
+          <div style="font-size: 15px; line-height: 1.5; color: #A39CB3; max-width: 270px; text-wrap: pretty">You began this lap on 2 January. One more Old Testament and it makes a whole Bible.</div>
+        </div>
+      </sc-if>
+
+      <div class="rt-step" style="display: flex; align-items: center; gap: 8px; color: #A39CB3; font-size: 13px; animation-delay: 640ms">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z"></path><circle cx="12" cy="10" r="3"></circle>
+        </svg>
+        <span>5 September 2026 &middot; Taipei</span>
+      </div>
+    </div>
+
+    <div class="rt-step" style="display: flex; flex-direction: column; gap: 10px; animation-delay: 780ms">
+      <div style="height: 52px; border-radius: 16px; background: #C6B4EC; color: #22153D; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600">Keep it</div>
+      <div style="height: 52px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.2); color: #ECE7F3; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600">Add where you were</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"variant":{"editor":"enum","options":["New Testament + whole Bible","New Testament only"],"default":"New Testament + whole Bible","section":"State"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const fromProp = this.props.variant !== 'New Testament only';
+    const paired = this.state && this.state.paired !== undefined ? this.state.paired : fromProp;
+    return {
+      paired: paired,
+      solo: !paired,
+      cycle: () => this.setState({ paired: !paired }),
+    };
+  }
+}
+</script>
+</body>
+</html>

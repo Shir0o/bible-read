@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 
 import '../services/data_cache_service.dart';
 
+import '../widgets/journey/badge_strip.dart';
 import '../widgets/journey/consistency_calendar.dart';
 import '../widgets/journey/journey_progress_card.dart';
+import '../widgets/journey/read_through_card.dart';
 import '../services/vibration_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/bible_progress_service.dart';
@@ -287,6 +289,16 @@ class _JourneyPageState extends State<JourneyPage>
                             ],
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 32),
+                      ReadThroughCard(
+                        firestore: widget.firestore,
+                        auth: widget.auth,
+                      ),
+                      const SizedBox(height: 32),
+                      BadgeStrip(
+                        firestore: widget.firestore,
+                        auth: widget.auth,
                       ),
                       const SizedBox(height: 32),
                       ConsistencyCalendar(
