@@ -3,25 +3,37 @@ import 'package:bible_read/widgets/schedule_screen_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Builds schedule entries with readable 'Genesis N' readings; entries whose
+/// index is in [completed] count as marked.
+List<ScheduleEntry> _entries(
+  List<({int dayOffset, bool completed})> days,
+  DateTime today, {
+  Set<int> completed = const {},
+}) =>
+    [
+      for (var i = 0; i < days.length; i++)
+        ScheduleEntry(
+          index: i,
+          date: today.add(Duration(days: days[i].dayOffset)),
+          readings: ['Genesis ${i + 1}'],
+          completed: completed.contains(i),
+        ),
+    ];
+
 /// Builds a [CatchUpStatus] from explicit day offsets relative to [today],
 /// so each test controls exactly which rows are done/current/missed/upcoming.
 CatchUpStatus _status({
   required List<({int dayOffset, bool completed})> days,
   required DateTime today,
 }) {
-  final entries = <ScheduleEntry>[];
-  for (var i = 0; i < days.length; i++) {
-    final d = days[i];
-    entries.add(
-      ScheduleEntry(
-        index: i,
-        date: today.add(Duration(days: d.dayOffset)),
-        readings: ['Genesis ${i + 1}'],
-        completed: d.completed,
-      ),
-    );
-  }
-  return CatchUpEngine.compute(entries, today: today);
+  final completed = {
+    for (var i = 0; i < days.length; i++)
+      if (days[i].completed) i,
+  };
+  return CatchUpEngine.compute(
+    _entries(days, today, completed: completed),
+    today: today,
+  );
 }
 
 Widget _host(CatchUpStatus status, {bool isGroup = true}) {
@@ -36,6 +48,74 @@ Widget _host(CatchUpStatus status, {bool isGroup = true}) {
       ),
     ),
   );
+}
+
+/// Host that applies an optimistic completion when a row is toggled, mirroring
+/// how the plan detail and full schedule pages feed the view.
+class _OptimisticHost extends StatefulWidget {
+  const _OptimisticHost({
+    required this.days,
+    required this.today,
+    this.isGroup = true,
+  });
+
+  final List<({int dayOffset, bool completed})> days;
+  final DateTime today;
+  final bool isGroup;
+
+  @override
+  State<_OptimisticHost> createState() => _OptimisticHostState();
+}
+
+class _OptimisticHostState extends State<_OptimisticHost> {
+  late final Set<int> _completed = {
+    for (var i = 0; i < widget.days.length; i++)
+      if (widget.days[i].completed) i,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: ScheduleScreenView(
+          status: CatchUpEngine.compute(
+            _entries(widget.days, widget.today, completed: _completed),
+            today: widget.today,
+          ),
+          title: 'Test Plan',
+          isGroup: widget.isGroup,
+          onToggle: (i) => setState(() => _completed.add(i)),
+          todayAnchorBuilder:
+              widget.isGroup ? (_) => const Text('GROUP ANCHOR') : null,
+        ),
+      ),
+    );
+  }
+}
+
+/// Element of the tappable row wrapping [text].
+Element _rowElement(WidgetTester tester, Finder text) => tester.element(
+      find.ancestor(of: text, matching: find.byType(InkWell)).first,
+    );
+
+/// Background color of the schedule row containing [text].
+Color? _rowBackground(WidgetTester tester, Finder text) {
+  final row = find.ancestor(
+    of: text,
+    matching: find.byWidgetPredicate(
+      (w) =>
+          (w is Container && w.decoration is BoxDecoration) ||
+          (w is AnimatedContainer && w.decoration is BoxDecoration),
+    ),
+  );
+  expect(row, findsAtLeastNWidgets(1));
+  // The innermost match is the container the row actually renders with
+  // (AnimatedContainer builds a plain Container inside itself).
+  final widget = tester.widget(row.last);
+  final Decoration? decoration = widget is Container
+      ? widget.decoration
+      : (widget as AnimatedContainer).decoration;
+  return (decoration as BoxDecoration).color;
 }
 
 void main() {
@@ -107,5 +187,151 @@ void main() {
     // No group-only chrome on a personal plan.
     expect(find.text('Catch up at your own pace'), findsNothing);
     expect(find.text('GROUP ANCHOR'), findsNothing);
+  });
+
+  testWidgets('marking a behind reading keeps press feedback on the marked row',
+      (tester) async {
+    await tester.pumpWidget(
+      _OptimisticHost(
+        today: today,
+        isGroup: false,
+        days: const [
+          (dayOffset: -2, completed: false), // behind
+          (dayOffset: -1, completed: false), // behind
+          (dayOffset: 0, completed: false), // current
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final markedRow = find.text('Genesis 1');
+    final nextRow = find.text('Genesis 2');
+    final markedElement = _rowElement(tester, markedRow);
+
+    await tester.tap(
+      find.ancestor(of: markedRow, matching: find.byType(InkWell)),
+    );
+    await tester.pumpAndSettle();
+
+    // The tapped row keeps its own element — and with it the press state —
+    // across the optimistic rebuild that clears the catch-up note.
+    expect(identical(_rowElement(tester, markedRow), markedElement), isTrue);
+    // The next row never inherits it.
+    expect(identical(_rowElement(tester, nextRow), markedElement), isFalse);
+  });
+
+  testWidgets(
+      'catching up from the tray does not move press state to the next tray row',
+      (tester) async {
+    await tester.pumpWidget(
+      _OptimisticHost(
+        today: today,
+        days: const [
+          (dayOffset: -2, completed: false), // behind
+          (dayOffset: -1, completed: false), // behind
+          (dayOffset: 0, completed: false), // current
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The tray dots are the only InkResponses in the view.
+    final trayDots = find.byType(InkResponse);
+    expect(trayDots, findsNWidgets(2));
+    final tappedDot = tester.element(trayDots.first);
+
+    await tester.tap(trayDots.first);
+    await tester.pumpAndSettle();
+
+    // One behind reading remains; its dot must not have inherited the
+    // tapped dot's element.
+    expect(trayDots, findsOneWidget);
+    expect(identical(tester.element(trayDots), tappedDot), isFalse);
+  });
+
+  testWidgets(
+      'a marked behind row briefly holds the active highlight, then settles',
+      (tester) async {
+    await tester.pumpWidget(
+      _OptimisticHost(
+        today: today,
+        isGroup: false,
+        days: const [
+          (dayOffset: -2, completed: false), // behind
+          (dayOffset: -1, completed: false), // behind
+          (dayOffset: 0, completed: false), // current
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final marked = find.text('Genesis 1');
+    final next = find.text('Genesis 2');
+    final currentRow = find.text('Genesis 3');
+    final activeBackground = _rowBackground(tester, currentRow);
+    await tester.tap(find.ancestor(of: marked, matching: find.byType(InkWell)));
+    // Pump past the 250ms highlight animation but stay inside the 600ms
+    // transient window (pumpAndSettle would run the ink splash past it).
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // The marked row takes on the current row's active treatment...
+    expect(_rowBackground(tester, marked), activeBackground);
+    // ...while the still-behind row below stays quiet.
+    expect(_rowBackground(tester, next), isNot(activeBackground));
+
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pumpAndSettle();
+
+    // The transient highlight settles back into the completed look.
+    expect(_rowBackground(tester, marked), isNot(activeBackground));
+  });
+
+  testWidgets('"Jump to current" lands on the current row after catching up',
+      (tester) async {
+    await tester.pumpWidget(
+      _OptimisticHost(
+        today: today,
+        isGroup: false,
+        days: [
+          for (var i = 6; i >= 1; i--) (dayOffset: -i, completed: false),
+          (dayOffset: 0, completed: false), // current
+          (dayOffset: 1, completed: false),
+          (dayOffset: 2, completed: false),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final controller = tester
+        .widget<SingleChildScrollView>(find.byType(SingleChildScrollView))
+        .controller!;
+
+    // Catch up on every behind reading; marking the last one clears the
+    // catch-up note and frees the "Jump to current" chip.
+    for (var i = 1; i <= 6; i++) {
+      await tester.tap(
+        find.ancestor(
+          of: find.text('Genesis $i'),
+          matching: find.byType(InkWell),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Jump to current'), findsOneWidget);
+
+    // Back at the top, the reading that is current now sits below the fold.
+    controller.jumpTo(0);
+    await tester.pump();
+    expect(tester.getRect(find.text('Genesis 7')).top, greaterThan(600));
+
+    await tester.tap(find.text('Jump to current'));
+    await tester.pumpAndSettle();
+
+    // The jump reveals the current reading.
+    expect(
+      tester.getRect(find.text('Genesis 7')).top,
+      inInclusiveRange(0, 599),
+    );
+    expect(controller.offset, greaterThan(0));
   });
 }

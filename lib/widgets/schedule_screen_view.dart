@@ -65,8 +65,20 @@ class ScheduleScreenView extends StatefulWidget {
 
 class _ScheduleScreenViewState extends State<ScheduleScreenView> {
   final ScrollController _controller = ScrollController();
-  final GlobalKey _resumeKey = GlobalKey();
+
+  /// Per-row resume scroll keys, cached by row position so a row's key never
+  /// moves to a different row — a moving GlobalKey would drag its element,
+  /// and any active press state, onto another row.
+  final Map<int, GlobalKey> _resumeKeys = {};
+  GlobalKey _resumeKeyFor(int index) =>
+      _resumeKeys.putIfAbsent(index, GlobalKey.new);
+
   bool _hasScrolled = false;
+
+  /// Entry most recently toggled, kept highlighted briefly so the reader sees
+  /// completion land on the row they tapped (issue #777).
+  int? _recentlyToggled;
+  Timer? _feedbackTimer;
 
   static const _months = [
     'January',
@@ -94,8 +106,25 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
 
   @override
   void dispose() {
+    _feedbackTimer?.cancel();
     _controller.dispose();
     super.dispose();
+  }
+
+  /// How long a freshly marked reading keeps the active highlight before
+  /// settling into its completed look.
+  static const _transientFeedbackDuration = Duration(milliseconds: 600);
+
+  /// Handles a tap on entry [index]: flags the row for the transient
+  /// highlight, forwards to the host's optimistic toggle, and schedules the
+  /// highlight to settle without blocking on the backend.
+  void _handleToggle(int index) {
+    setState(() => _recentlyToggled = index);
+    widget.onToggle(index);
+    _feedbackTimer?.cancel();
+    _feedbackTimer = Timer(_transientFeedbackDuration, () {
+      if (mounted) setState(() => _recentlyToggled = null);
+    });
   }
 
   // ---- formatting helpers (ported from schedule.jsx) ----
@@ -146,12 +175,12 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
 
   Future<void> _scrollToResume({bool initial = false}) async {
     if (initial && _hasScrolled) return;
-    final ctx = _resumeKey.currentContext;
+    final ctx = _resumeKeys[widget.status.resumeIndex]?.currentContext;
     if (ctx == null || !ctx.mounted) return;
     _hasScrolled = true;
     Scrollable.ensureVisible(ctx, alignment: 0.3);
     await Future.delayed(const Duration(milliseconds: 100));
-    final after = _resumeKey.currentContext;
+    final after = _resumeKeys[widget.status.resumeIndex]?.currentContext;
     if (after != null && after.mounted) {
       await Scrollable.ensureVisible(
         after,
@@ -375,6 +404,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
     final entry = widget.status.entries[i];
 
     return Padding(
+      key: ValueKey('catch-up-row-${entry.index}'),
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
@@ -420,7 +450,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
           ),
           _StatusToggle(
             status: ReadingStatus.missed,
-            onTap: widget.readOnly ? null : () => widget.onToggle(i),
+            onTap: widget.readOnly ? null : () => _handleToggle(i),
           ),
         ],
       ),
@@ -597,6 +627,10 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
     final isMissed = st == ReadingStatus.missed;
     final isDone = st == ReadingStatus.done;
 
+    // The tapped row briefly holds the active treatment while the optimistic
+    // completion lands, so feedback stays anchored to what was tapped.
+    final bool isHighlighted = isCurrent || i == _recentlyToggled;
+
     final Color dateColor = isCurrent
         ? colorScheme.primary
         : isMissed
@@ -685,24 +719,28 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
       ),
     );
 
-    return Container(
-      key: isResume ? _resumeKey : null,
+    return AnimatedContainer(
+      key: ValueKey('schedule-row-${entry.index}'),
+      duration: const Duration(milliseconds: 250),
       margin: const EdgeInsets.only(bottom: 4),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: isCurrent
+        color: isHighlighted
             ? colorScheme.primaryContainer.withValues(alpha: 0.35)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isCurrent
+          color: isHighlighted
               ? colorScheme.primary.withValues(alpha: 0.25)
               : Colors.transparent,
         ),
       ),
       child: InkWell(
-        onTap: interactive ? () => widget.onToggle(i) : null,
-        child: inner,
+        onTap: interactive ? () => _handleToggle(i) : null,
+        child: KeyedSubtree(
+          key: isResume ? _resumeKeyFor(i) : null,
+          child: inner,
+        ),
       ),
     );
   }
