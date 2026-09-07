@@ -196,7 +196,7 @@ class _HomePageState extends State<HomePage>
   final Map<String, _GroupData> _groups = {};
 
   // Community presence. The bottom "Your community" glimpse — who among the
-  // user and their friends has read today.
+  // reader's Circle (the co-members of their Groups) has read today.
   List<_CommunityReader> _communityReaders = [];
   int _communityTotal = 0;
 
@@ -424,19 +424,20 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Loads today's community presence — the user plus friends who have read
-  /// today — for the bottom "Your community" glimpse. Best-effort.
+  /// Loads today's community presence — the reader plus the co-members of
+  /// their Groups (their Circle, derived per ADR-0003) who have read today —
+  /// for the bottom "Your community" glimpse. Best-effort.
   Future<void> _loadCommunity() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
     try {
-      final friends = await _firstWithTimeout<List<Friend>>(
-        widget.friendService.friends(user.uid),
-        timeout: const Duration(seconds: 5),
-        fallback: const <Friend>[],
-      );
-      final allUids = {user.uid, ...friends.map((f) => f.uid)};
+      final coMemberIds =
+          await widget.groupService.circleMemberIds(user.uid).timeout(
+                const Duration(seconds: 5),
+                onTimeout: () => const <String>{},
+              );
+      final allUids = {user.uid, ...coMemberIds};
 
       final today = widget.dateProvider();
       final dateKey =
@@ -2545,8 +2546,9 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  /// The bottom "Your community" glimpse: who among the user and their friends
-  /// has read today. Tapping opens the Community tab.
+  /// The bottom "Your community" glimpse: who among the reader's Circle —
+  /// the co-members of their Groups — has read today. Tapping opens the
+  /// Community tab.
   Widget _buildCommunitySection(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;

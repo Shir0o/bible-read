@@ -1080,6 +1080,34 @@ class GroupService {
     });
   }
 
+  /// Everyone [uid] shares at least one Group with — their Circle, derived
+  /// from Group membership at read time (ADR-0003). Never stored: there is
+  /// no circle collection. Pending join requests confer nothing.
+  Future<Set<String>> circleMemberIds(String uid) async {
+    final memberships = await firestore
+        .collectionGroup(GroupCollections.members)
+        .where('uid', isEqualTo: uid)
+        .get();
+    final groupIds = memberships.docs
+        .map((doc) => doc.reference.parent.parent?.id)
+        .whereType<String>()
+        .toSet();
+
+    final circle = <String>{};
+    for (final groupId in groupIds) {
+      final members = await firestore
+          .collection(GroupCollections.groups)
+          .doc(groupId)
+          .collection(GroupCollections.members)
+          .get();
+      for (final member in members.docs) {
+        final id = (member.data()['uid'] as String?) ?? member.id;
+        if (id != uid) circle.add(id);
+      }
+    }
+    return circle;
+  }
+
   /// Stream of member display names for [groupId].
   Stream<List<String>> memberNames(String groupId) {
     final snaps = firestore
