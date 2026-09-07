@@ -100,8 +100,9 @@ describe('feedback: bugReports and featureRequests', () => {
       resolvedAt: null,
       resolutionNotes: null,
     });
+    // isAdmin() also honours a users/{uid} document flag; exercise that branch.
+    await seed('users/doc-admin', { admin: true });
   });
-
   it('lets an authenticated user file a valid bug report', async () => {
     const bob = await asUser('bob');
     await assertSucceeds(bob.doc('bugReports/report-2').set(validBugReport));
@@ -147,6 +148,11 @@ describe('feedback: bugReports and featureRequests', () => {
     await assertSucceeds(admin.doc('featureRequests/feature-1').get());
   });
 
+
+  it('lets users flagged admin in their profile document read reports', async () => {
+    const docAdmin = await asUser('doc-admin');
+    await assertSucceeds(docAdmin.doc('bugReports/report-1').get());
+  });
   it('denies users without the admin claim reading others’ reports', async () => {
     const bob = await asUser('bob');
     await assertFails(bob.doc('featureRequests/feature-1').get());
@@ -216,6 +222,7 @@ describe('collection-group rules', () => {
     await seed('groups/g1/members/alice', { uid: 'alice', role: 'member' });
     await seed('groups/g1/members/bob', { uid: 'bob', role: 'member' });
     await seed('groups/g1/joinRequests/carol', { uid: 'carol' });
+    await seed('read_logs/cg-day/entries/alice', { uid: 'alice', chapters: 1 });
   });
 
   it('lets a user query their own membership records across groups', async () => {
@@ -235,5 +242,17 @@ describe('collection-group rules', () => {
     await assertSucceeds(
       carol.collectionGroup('joinRequests').where('uid', '==', 'carol').get(),
     );
+  });
+
+  it('lets a user query their own progress entries across collections', async () => {
+    const alice = await asUser('alice');
+    await assertSucceeds(
+      alice.collectionGroup('entries').where('uid', '==', 'alice').get(),
+    );
+  });
+
+  it('denies a query for other users’ progress entries', async () => {
+    const bob = await asUser('bob');
+    await assertFails(bob.collectionGroup('entries').where('uid', '==', 'alice').get());
   });
 });

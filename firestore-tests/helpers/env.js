@@ -21,25 +21,19 @@ function getTestEnv() {
       projectId: PROJECT_ID,
       firestore: {
         rules: fs.readFileSync(RULES_FILE, 'utf8'),
-        host: emulatorHost(),
-        port: emulatorPort(),
+        ...emulatorEndpoint(),
       },
     });
   }
   return envPromise;
 }
 
-function emulatorHost() {
-  const raw = process.env.FIRESTORE_EMULATOR_HOST;
-  if (!raw) return '127.0.0.1';
-  const withoutPort = raw.replace(/:\d+$/, '');
-  return withoutPort || '127.0.0.1';
-}
-
-function emulatorPort() {
+// Honours FIRESTORE_EMULATOR_HOST; malformed values surface the SDK's own
+// error instead of being masked here.
+function emulatorEndpoint() {
   const raw = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080';
-  const port = Number(raw.split(':').pop());
-  return Number.isFinite(port) && port > 0 ? port : 8080;
+  const split = raw.lastIndexOf(':');
+  return { host: raw.slice(0, split), port: Number(raw.slice(split + 1)) };
 }
 
 async function seed(docPath, data) {
@@ -64,7 +58,6 @@ async function asUnauthenticated() {
 }
 
 module.exports = {
-  PROJECT_ID,
   asAdmin,
   asUnauthenticated,
   asUser,
