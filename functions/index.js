@@ -9,8 +9,11 @@
 
 const { onCall } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { setGlobalOptions } = require("firebase-functions/v2");
+const {
+  settleReadThroughBadges,
+  settleFirstBookBadge,
+} = require("./badge-awarding");
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 const {
@@ -1138,6 +1141,18 @@ exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
     );
   }
 });
+
+
+
+exports.awardReadThroughBadges = onDocumentCreated(
+  { region: "us-central1", document: "users/{uid}/read_throughs/{docId}" },
+  (event) => settleReadThroughBadges(admin.firestore(), event.params.uid)
+);
+
+exports.awardFirstBookBadge = onDocumentCreated(
+  { region: "us-central1", document: "users/{uid}/bible_books/{book}" },
+  (event) => settleFirstBookBadge(admin.firestore(), event.params.uid)
+);
 
 
 

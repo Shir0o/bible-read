@@ -315,28 +315,6 @@ class BibleProgressPageState extends State<BibleProgressPage> {
           );
           await _loadData();
         }
-
-        // Award the first-book badge. Named `first_book` because that is what
-        // it has always actually tracked — the first completed book of either
-        // testament, not a New Testament one.
-        final booksSnap = await widget.firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('bible_books')
-            .get();
-
-        if (booksSnap.docs.length == 1) {
-          await widget.firestore
-              .collection('users')
-              .doc(user.uid)
-              .collection('achievements')
-              .doc('first_book')
-              .set({
-            'title': 'First book',
-            'type': 'achievement',
-            'dateUnlocked': FieldValue.serverTimestamp(),
-          });
-        }
       } else {
         await widget.firestore
             .collection('users')

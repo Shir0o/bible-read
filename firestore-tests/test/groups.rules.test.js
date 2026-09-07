@@ -341,3 +341,48 @@ describe('groups/{groupId}/joinRequests', () => {
     await assertSucceeds(dave.doc(`groups/${PRIVATE_GROUP}/joinRequests/dave`).delete());
   });
 });
+
+// The per-Group badge mirror: the server writes a member's latest badge here
+// when it awards one, and co-members read it — the rule a one-line membership
+// check, per ADR-0004. Writes are server-only.
+describe('groups/{groupId}/badges', () => {
+  before(async () => {
+    await seedGroup('g-badges', 'owner', false);
+    await seed('groups/g-badges/members/alice', { uid: 'alice', role: 'member' });
+    await seed('groups/g-badges/members/bob', { uid: 'bob', role: 'member' });
+    // Server-authored mirror of alice's latest badge.
+    await seed('groups/g-badges/badges/alice', { badgeId: 'first_nt', type: 'read_through' });
+  });
+
+  it('lets a co-member read a member’s mirrored badge', async () => {
+    const bob = await asUser('bob');
+    await assertSucceeds(bob.doc('groups/g-badges/badges/alice').get());
+  });
+
+  it('lets the badge owner read their own mirror', async () => {
+    const alice = await asUser('alice');
+    await assertSucceeds(alice.doc('groups/g-badges/badges/alice').get());
+  });
+
+  it('denies reads to non-members', async () => {
+    const carol = await asUser('carol');
+    await assertFails(carol.doc('groups/g-badges/badges/alice').get());
+  });
+
+  it('denies unauthenticated reads', async () => {
+    const anon = await asUnauthenticated();
+    await assertFails(anon.doc('groups/g-badges/badges/alice').get());
+  });
+
+  it('denies client writes, members included', async () => {
+    const bob = await asUser('bob');
+    const anon = await asUnauthenticated();
+    await assertFails(
+      bob.doc('groups/g-badges/badges/bob').set({ badgeId: 'self_granted' }),
+    );
+    await assertFails(
+      bob.doc('groups/g-badges/badges/alice').update({ badgeId: 'forged' }),
+    );
+    await assertFails(anon.doc('groups/g-badges/badges/alice').delete());
+  });
+});
