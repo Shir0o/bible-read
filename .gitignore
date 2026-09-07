@@ -105,3 +105,7 @@ design/store-assets/canvas.json
 # Derived splits: render_store_assets.py rebuilds these from the captures.
 design/store-assets/captures/**/_*.png
 design/store-assets/captures/_*.png
+
+# Seeded design-canvas payload (~2.5MB, editor baked in).
+# Regenerate from design/canvas/*.dc.html; the published artifact is the shared copy.
+circle-and-path.html

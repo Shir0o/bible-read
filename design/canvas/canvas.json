@@ -1,0 +1,176 @@
+{
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Screens"
+    },
+    {
+      "id": "page-2",
+      "name": "Navigation"
+    }
+  ],
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "page": "page-1",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Circle \u2014 populated"
+    },
+    {
+      "file": "CircleShowedUp.dc.html",
+      "page": "page-1",
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Circle \u2014 showed-up states"
+    },
+    {
+      "file": "CircleEmpty.dc.html",
+      "page": "page-1",
+      "x": 940,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Circle \u2014 empty"
+    },
+    {
+      "file": "Path.dc.html",
+      "page": "page-1",
+      "x": 1410,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Path \u2014 populated"
+    },
+    {
+      "file": "PathEmpty.dc.html",
+      "page": "page-1",
+      "x": 1880,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Path \u2014 empty"
+    },
+    {
+      "file": "StartPlan.dc.html",
+      "page": "page-1",
+      "x": 2350,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Start a plan"
+    },
+    {
+      "file": "JoinByCode.dc.html",
+      "page": "page-1",
+      "x": 0,
+      "y": 984,
+      "w": 390,
+      "h": 844,
+      "title": "Join by code"
+    },
+    {
+      "file": "ShareCode.dc.html",
+      "page": "page-1",
+      "x": 470,
+      "y": 984,
+      "w": 390,
+      "h": 844,
+      "title": "Share code"
+    },
+    {
+      "file": "ApproveRequest.dc.html",
+      "page": "page-1",
+      "x": 940,
+      "y": 984,
+      "w": 390,
+      "h": 844,
+      "title": "Approve a join request"
+    },
+    {
+      "file": "AdjustPace.dc.html",
+      "page": "page-1",
+      "x": 1410,
+      "y": 984,
+      "w": 390,
+      "h": 844,
+      "title": "Adjust pace"
+    },
+    {
+      "file": "ReflectSheet.dc.html",
+      "page": "page-1",
+      "x": 1880,
+      "y": 984,
+      "w": 390,
+      "h": 844,
+      "title": "Reflect \u2014 share toggle"
+    },
+    {
+      "file": "NavOptions.dc.html",
+      "page": "page-2",
+      "x": 0,
+      "y": 0,
+      "w": 430,
+      "h": 860,
+      "title": "Bottom bar \u2014 four treatments"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "note-1",
+      "page": "page-1",
+      "x": 0,
+      "y": -232,
+      "w": 430,
+      "text": "Circle, people-first.\nThe row carries all four things at once: today's status, progress, an opted-in reflection, and the latest achievement. Groups are the filter chips and the section beneath \u2014 never the primary object."
+    },
+    {
+      "id": "note-2",
+      "page": "page-1",
+      "x": 940,
+      "y": -232,
+      "w": 430,
+      "text": "This is the screen the new user failed on.\nCreate, browse and a code field are all on it, labelled. Nothing hides behind a \"Manage\" link or a bottom sheet."
+    },
+    {
+      "id": "note-3",
+      "page": "page-1",
+      "x": 2350,
+      "y": -232,
+      "w": 430,
+      "text": "Solo-or-shared is a FIELD here, not a modal fork.\nThis is what replaces showNewPlanPicker \u2014 one flow, asked in context, after you already know what you're reading."
+    },
+    {
+      "id": "note-4",
+      "page": "page-1",
+      "x": 1410,
+      "y": -232,
+      "w": 430,
+      "text": "Path owns the plan lifecycle.\nSolo and shared plans in one list, with Adjust pace on the card \u2014 the answer to \"where do I edit my plan\"."
+    },
+    {
+      "id": "note-5",
+      "page": "page-2",
+      "x": 0,
+      "y": -186,
+      "w": 430,
+      "text": "B is the pick \u2014 icons alone at rest, the active tab the only one labelled.\nEvery screen on page 1 uses it. A, C and D are kept for the record."
+    },
+    {
+      "id": "note-6",
+      "page": "page-1",
+      "x": 470,
+      "y": -232,
+      "w": 430,
+      "text": "Every status a row can carry.\nAde tapped the bare \"I read today\" button and has no plan at all. Sam has a plan, showed up, and still has Genesis 12 to read \u2014 both true at once. The habit never advances a plan, so a habit-only row must never show a reading reference.\n\nAchievements are not plan-tied either: Ade's 30 days is pure consistency."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-1"
+  }
+}

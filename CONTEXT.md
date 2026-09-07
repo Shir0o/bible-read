@@ -59,7 +59,21 @@ _Avoid_: Group plan (the group's plan and its schedule are distinct)
 
 **Group**:
 A named set of readers reading a shared schedule together, with an owner and members.
-_Avoid_: Team, circle, cohort
+_Avoid_: Team, cohort, and "circle" *as a name for a Group* — a Circle is a different
+thing (below)
+
+**Circle**:
+Everyone a reader shares at least one Group with. Derived from Group membership and
+never established directly: there is no separate mutual-connection graph, so being in
+someone's Circle means being in a Group with them. A reader in two Groups has one
+Circle, with any overlapping person counted once.
+_Avoid_: Friend, contact, follower
+
+**Nudge**:
+A gentle prompt one reader sends another in their Circle who has not Shown up today.
+It invites them to read; it never refers to a schedule they are Behind on, and it is
+not tied to any one Group.
+_Avoid_: Poke, reminder, ping
 
 ### Read-throughs
 
@@ -133,3 +147,21 @@ word is Badge), trophy, reward (reserved for Seasonal Challenges)
 ## Known conflict
 
 The check-in payoff renders `seasonDays` under the label "days this season", but `home_page.dart` passes `_totalReadDays` — an all-time figure. Either the label or the value is wrong. Until that is settled, do not describe that number as a streak or as season-scoped.
+
+## Pending the Community/Journey redesign
+
+These are decided but not yet built. Until the work lands, the entries above describe
+the app as it is. See `docs/community_journey_ia.md`,
+[ADR-0003](docs/adr/0003-circle-derived-from-groups.md) and
+[ADR-0004](docs/adr/0004-per-group-reading-feed.md).
+
+- **Reading plan and Group schedule become one term.** The redesign treats them as a
+  single concept — a **Plan**, which is either solo or shared, differing only in who
+  else follows the same schedule — on the grounds that the split is what makes
+  plan creation ask readers to classify something before they have decided. Until
+  that ships, the two entries above stand and "group plan" remains a term to avoid.
+- **Friend ceases to exist.** The friend graph is deleted and Circle replaces it
+  entirely.
+- **Badge is confirmed as the reader-facing word.** The redesign's specs and tickets
+  were drafted saying "achievement" reader-facing; they defer to Badge, as recorded
+  under Read-throughs above. The Firestore collection keeps the `achievements` name.
