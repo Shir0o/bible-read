@@ -46,6 +46,18 @@ This document describes the Firebase Cloud Functions exported from [`functions/i
   * `internal` for unexpected transaction failures.
 * **Returns:** `{ first: boolean }` indicating whether the caller was the first reader.
 
+## awardReadThroughBadges
+
+* **Type:** Firestore trigger (`onDocumentCreated`) on `users/{uid}/read_throughs/{docId}`.
+* **Firestore:** Recounts the reader's read-through ledger and awards any read-through badge (`first_ot`, `first_nt`, `first_bible`, `bible_5`, `bible_10`) the new total earns, under `users/{uid}/achievements/`. Also mirrors the biggest newly earned badge into `groups/{g}/badges/{uid}` for each of the reader's groups, the path co-members can read (ADR-0004).
+* **Idempotency:** Badges are created, not set — a re-run never re-awards one or moves its `dateUnlocked`.
+
+## awardFirstBookBadge
+
+* **Type:** Firestore trigger (`onDocumentCreated`) on `users/{uid}/bible_books/{book}`.
+* **Firestore:** The collection only ever holds completed books, so when it holds exactly one document the reader earns the `first_book` badge and their groups' badge mirrors update as above.
+
+
 ### Related Collections and Config
 
 * `notificationPrefs` – subcollection under each user controlling notification opt‑ins.
@@ -58,7 +70,7 @@ This document describes the Firebase Cloud Functions exported from [`functions/i
 Deploy Cloud Functions from the repository root or the `functions/` directory:
 
 ```
-firebase deploy --only functions:sendLikeNotification,functions:sendCommentNotification,functions:sendSignupNotification,functions:markFirstReader
+firebase deploy --only functions:sendLikeNotification,functions:sendCommentNotification,functions:sendSignupNotification,functions:markFirstReader,functions:awardReadThroughBadges,functions:awardFirstBookBadge
 ```
 
 

@@ -52,16 +52,6 @@ class BadgeDefinition {
     ),
   ];
 
-  /// Whether [counts] earns this badge.
-  bool isEarnedBy(ReadThroughCounts counts) => switch (id) {
-        'first_ot' => counts.oldTestament >= 1,
-        'first_nt' => counts.newTestament >= 1,
-        'first_bible' => counts.wholeBible >= 1,
-        'bible_5' => counts.wholeBible >= 5,
-        'bible_10' => counts.wholeBible >= 10,
-        _ => false,
-      };
-
   /// How far along the reader is, for the "still to come" line.
   int remainingFor(ReadThroughCounts counts) => switch (id) {
         'first_ot' => 1 - counts.oldTestament,

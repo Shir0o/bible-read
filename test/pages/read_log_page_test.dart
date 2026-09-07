@@ -430,7 +430,7 @@ void main() {
       expect(called, isTrue);
     });
 
-    test('writeReadLogEntry unlocks achievement when first reader', () async {
+    test('writeReadLogEntry writes no firstReader badge (retired)', () async {
       final firestore = FakeFirebaseFirestore();
       final user = MockUser(uid: 'u1', displayName: 'Tester');
 
@@ -444,14 +444,14 @@ void main() {
         },
       );
 
-      final achievementDoc = await firestore
+      final achievements = await firestore
           .collection('users')
           .doc(user.uid)
           .collection('achievements')
-          .doc('firstReader')
           .get();
 
-      expect(achievementDoc.exists, isTrue);
+      expect(achievements.docs, isEmpty,
+          reason: 'Badges are server-authored only; firstReader is retired.');
     });
 
     testWidgets('shows sign in prompt when not authenticated', (tester) async {

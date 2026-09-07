@@ -179,8 +179,14 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
+      // Badges. Awarded only by the server (Admin SDK bypasses these rules);
+      // no client — not even the owner — can grant one. Co-members read them
+      // through the per-Group mirror in the groups block below: sharing a
+      // group with the owner is not expressible as a rule on this personal
+      // path (see ADR-0004).
       match /achievements/{achievementId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
       }
 
       match /friendRequestsSent/{toUid} {
@@ -378,6 +384,14 @@ service cloud.firestore {
           allow write: if request.auth != null && request.auth.uid == uid;
           allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
         }
+      }
+
+      // The server mirrors a member's latest badge here when it awards one,
+      // so co-members can see it. Membership is the one check this path can
+      // express (ADR-0004); writes stay server-only.
+      match /badges/{memberUid} {
+        allow read: if isMember();
+        allow write: if false;
       }
 
       match /joinRequests/{uid} {

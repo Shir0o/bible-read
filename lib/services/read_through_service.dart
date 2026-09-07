@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/read_through.dart';
-import 'badge_service.dart';
 
 /// Owns the ledger of times a user has finished the Old Testament, the New
 /// Testament and — by derivation — the whole Bible.
@@ -16,15 +15,10 @@ import 'badge_service.dart';
 ///
 /// See `docs/adr/0002-read-through-tracking.md`.
 class ReadThroughService {
-  ReadThroughService({FirebaseFirestore? firestore, BadgeService? badgeService})
-      : firestore = firestore ?? FirebaseFirestore.instance,
-        badgeService = badgeService ??
-            BadgeService(firestore: firestore ?? FirebaseFirestore.instance);
+  ReadThroughService({FirebaseFirestore? firestore})
+      : firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore firestore;
-
-  /// Awards the landmark badges a new record may have earned.
-  final BadgeService badgeService;
 
   /// Subcollection holding a user's read-throughs. Owner-only read: the public
   /// announcement of a read-through is a separate object on the day's read log.
@@ -199,13 +193,6 @@ class ReadThroughService {
     // new records back out of it rather than numbering them among themselves.
     final createdIds = created.map((r) => r.id).toSet();
     final ledger = await fetchAll(uid);
-
-    // Badges follow from the totals, so they are settled here rather than at
-    // each call site. Best-effort: a missing badge is not worth losing the
-    // read-through over.
-    try {
-      await badgeService.awardFor(uid, countsFrom(ledger));
-    } catch (_) {}
 
     return ledger.where((r) => createdIds.contains(r.id)).toList();
   }
