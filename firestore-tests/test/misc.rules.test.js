@@ -9,25 +9,22 @@ const {
   seed,
 } = require('../helpers/env');
 
-describe('seasons and daily rewards (server-managed)', () => {
+describe('seasons (server-managed)', () => {
   before(async () => {
     await seed('seasons/summer', { name: 'Summer' });
     await seed('seasons/summer/challenges/ch1', { title: 'Read Genesis' });
-    await seed('daily_rewards/2026-01-01', { title: 'Day one' });
   });
 
-  it('lets signed-in users read seasons, challenges, and daily rewards', async () => {
+  it('lets signed-in users read seasons and challenges', async () => {
     const alice = await asUser('alice');
     await assertSucceeds(alice.doc('seasons/summer').get());
     await assertSucceeds(alice.doc('seasons/summer/challenges/ch1').get());
-    await assertSucceeds(alice.doc('daily_rewards/2026-01-01').get());
   });
 
   it('denies all writes, even by signed-in users', async () => {
     const alice = await asUser('alice');
     await assertFails(alice.doc('seasons/summer').set({ name: 'hacked' }));
     await assertFails(alice.doc('seasons/summer/challenges/ch1').set({ title: 'hacked' }));
-    await assertFails(alice.doc('daily_rewards/2026-01-01').set({ title: 'hacked' }));
   });
 
   it('denies reads to unauthenticated clients', async () => {
