@@ -1,0 +1,5 @@
+{
+  "spec": "test/*.rules.test.js",
+  "timeout": 60000,
+  "forbidOnly": true
+}

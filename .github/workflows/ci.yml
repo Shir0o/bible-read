@@ -24,6 +24,35 @@ jobs:
       - name: Run Flutter tests
         run: flutter test --no-pub --fail-fast $(find test -name "*_test.dart" ! -path "test/goldens/*")
 
+  firestore-rules-tests:
+    name: Firestore rules tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: firestore-tests
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: firestore-tests/package-lock.json
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Firestore rules tests
+        run: npm run test:emulator
+
   functions-tests:
     name: Firebase Functions tests
     runs-on: ubuntu-latest

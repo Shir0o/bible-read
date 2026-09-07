@@ -1,0 +1,17 @@
+{
+  "name": "firestore-tests",
+  "private": true,
+  "description": "Emulator-backed Firestore security rules tests (see firestore.rules)",
+  "scripts": {
+    "test": "mocha",
+    "test:emulator": "firebase emulators:exec --only firestore --project demo-bible-read \"npm test\""
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase-tools": "^15.29.0",
+    "mocha": "^11.7.4"
+  }
+}
