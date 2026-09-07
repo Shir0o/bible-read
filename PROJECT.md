@@ -74,9 +74,18 @@ To run tests for Firebase Cloud Functions:
 cd functions
 npm test
 cd ..
+### Firestore Rules Tests
+Security rules are tested behaviourally against the Firestore emulator (no text matching). The suite lives in `firestore-tests/` and replaces the removed `test/rules/*.dart` suites:
+```bash
+cd firestore-tests
+npm run test:emulator
+cd ..
+```
+This requires Node.js 20+ and a JDK 21+ (used by the emulator). `npm run test:emulator` starts the emulator on the port configured in the `emulators` block of `firebase.json`, runs the suite, and shuts it down.
 ### CI/CD
 The project uses GitHub Actions for continuous integration.
 *   **Flutter tests** are run on `ubuntu-latest` using `flutter test --no-pub --fail-fast`.
+*   **Firestore rules tests** are run on `ubuntu-latest` against the Firestore emulator using `npm run test:emulator` in the `firestore-tests/` directory.
 *   **Firebase Functions tests** are run on `ubuntu-latest` using `npm test` in the `functions/` directory.
 ## Development Conventions
 ### Code Formatting and Analysis

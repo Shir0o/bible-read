@@ -1,0 +1,6 @@
+{
+  "spec": "test/*.rules.test.js",
+  "require": "./helpers/root-hooks.cjs",
+  "timeout": 60000,
+  "forbidOnly": true
+}

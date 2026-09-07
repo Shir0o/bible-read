@@ -51,6 +51,11 @@
       ]
     }
   ],
+  "emulators": {
+    "firestore": {
+      "port": 8080
+    }
+  },
   "firestore": {
     "database": "(default)",
     "location": "nam5",
