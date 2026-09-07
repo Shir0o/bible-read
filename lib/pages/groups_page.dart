@@ -15,10 +15,11 @@ import '../widgets/group_card.dart';
 import '../widgets/skeletons/group_list_skeleton.dart';
 import '../widgets/sub_header.dart';
 
-import '../pages/group_detail_page.dart';
 import '../pages/all_groups_page.dart';
 import '../pages/create_group_page.dart';
 import '../pages/full_schedule_page.dart';
+import '../pages/group_detail_page.dart';
+import '../pages/join_by_code_page.dart';
 
 class GroupsPage extends StatefulWidget {
   final GroupService groupService;
@@ -152,6 +153,23 @@ class _GroupsPageState extends State<GroupsPage> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => AllGroupsPage(
+                        groupService: widget.groupService,
+                        auth: widget.auth,
+                        vibrationService: widget.vibrationService,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.pin),
+                title: const Text('Enter a Join Code'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => JoinByCodePage(
                         groupService: widget.groupService,
                         auth: widget.auth,
                         vibrationService: widget.vibrationService,

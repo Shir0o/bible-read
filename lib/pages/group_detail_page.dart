@@ -25,6 +25,7 @@ import 'full_schedule_page.dart';
 import 'group_join_requests_page.dart';
 import 'group_members_page.dart';
 import 'invite_member_page.dart';
+import 'share_code_page.dart';
 import 'group_catch_up_page.dart';
 
 typedef GroupDatePicker = Future<DateTime?> Function({
@@ -484,80 +485,97 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           appBar: CommonStyles.buildAppBar(
             context,
             widget.group.name,
-            actions: hasAdminPrivileges
-                ? [
-                    IconButton(
-                      icon: const Icon(Icons.person_add_alt_1),
-                      tooltip: 'Invite member',
-                      onPressed: () {
-                        unawaited(widget.vibrationService.lightImpact());
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => InviteMemberPage(
-                              group: widget.group,
-                              groupService: widget.groupService,
-                              friendService: widget.friendService,
-                              auth: widget.auth,
-                              vibrationService: widget.vibrationService,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.people_alt_outlined),
-                      tooltip: 'Members',
-                      onPressed: () {
-                        unawaited(widget.vibrationService.lightImpact());
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => GroupMembersPage(
-                              group: widget.group,
-                              groupService: widget.groupService,
-                              friendService: widget.friendService,
-                              auth: widget.auth,
-                              vibrationService: widget.vibrationService,
-                              currentDate: widget.currentDate,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.group_add_outlined),
-                      tooltip: 'Join requests',
-                      onPressed: () {
-                        unawaited(widget.vibrationService.lightImpact());
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => GroupJoinRequestsPage(
-                              groupId: widget.group.id,
-                              groupService: widget.groupService,
-                              auth: widget.auth,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      tooltip: 'Edit Group Plan',
-                      onPressed: () {
-                        unawaited(widget.vibrationService.lightImpact());
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => EditGroupPage(
-                              group: widget.group,
-                              groupService: widget.groupService,
-                              auth: widget.auth,
-                              vibrationService: widget.vibrationService,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ]
-                : null,
+            actions: [
+              if (isMember)
+                IconButton(
+                  icon: const Icon(Icons.ios_share),
+                  tooltip: 'Share code',
+                  onPressed: () {
+                    unawaited(widget.vibrationService.lightImpact());
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ShareCodePage(
+                          group: widget.group,
+                          groupService: widget.groupService,
+                          vibrationService: widget.vibrationService,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              if (hasAdminPrivileges) ...[
+                IconButton(
+                  icon: const Icon(Icons.person_add_alt_1),
+                  tooltip: 'Invite member',
+                  onPressed: () {
+                    unawaited(widget.vibrationService.lightImpact());
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => InviteMemberPage(
+                          group: widget.group,
+                          groupService: widget.groupService,
+                          friendService: widget.friendService,
+                          auth: widget.auth,
+                          vibrationService: widget.vibrationService,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.people_alt_outlined),
+                  tooltip: 'Members',
+                  onPressed: () {
+                    unawaited(widget.vibrationService.lightImpact());
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => GroupMembersPage(
+                          group: widget.group,
+                          groupService: widget.groupService,
+                          friendService: widget.friendService,
+                          auth: widget.auth,
+                          vibrationService: widget.vibrationService,
+                          currentDate: widget.currentDate,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.group_add_outlined),
+                  tooltip: 'Join requests',
+                  onPressed: () {
+                    unawaited(widget.vibrationService.lightImpact());
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => GroupJoinRequestsPage(
+                          groupId: widget.group.id,
+                          groupService: widget.groupService,
+                          auth: widget.auth,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  tooltip: 'Edit Group Plan',
+                  onPressed: () {
+                    unawaited(widget.vibrationService.lightImpact());
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => EditGroupPage(
+                          group: widget.group,
+                          groupService: widget.groupService,
+                          auth: widget.auth,
+                          vibrationService: widget.vibrationService,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ],
           ),
           body: Container(
             decoration: CommonStyles.backgroundDecoration(
