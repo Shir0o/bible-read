@@ -5,7 +5,7 @@ fail to find how to join a group, invite others, or create a group._
 
 Vocabulary in this document is the vocabulary in [CONTEXT.md](../CONTEXT.md).
 The friend-graph removal has its own record in
-[ADR-0002](adr/0002-circle-derived-from-groups.md).
+[ADR-0003](adr/0003-circle-derived-from-groups.md).
 
 ## The diagnosis
 
@@ -41,7 +41,7 @@ no deep-link handling of any kind to receive it.
 - **Progress** is always per-person, never pooled — and every member of a Group
   can see every other member's.
 - **Circle** replaces Friends entirely: everyone you share a Group with. Group
-  is the only relationship primitive. See ADR-0002.
+  is the only relationship primitive. See ADR-0003.
 - **Nudge** is person-to-person, not tied to a Group. `nudgeFriend` →
   `nudgeMember`.
 
@@ -84,7 +84,7 @@ That stays the default. The reflect sheet gains a **"share with your circle"
 toggle, default off**, decided at the moment of writing, while the person is
 looking at the actual words. Not a global setting: consent given once and
 forgotten is how a hard day's entry ends up in front of strangers — and under
-ADR-0002 the Circle is auto-derived, so a group owner approving a join request
+ADR-0003 the Circle is auto-derived, so a group owner approving a join request
 would otherwise be publishing someone else's journal on their behalf.
 
 #### The feed already exists
@@ -104,7 +104,7 @@ reverses the Circle redesign's removal of Friends Activity
 ([design_diff.md](design_diff.md)). Two changes required:
 
 - Scope reads to the Circle by **denormalizing entries per Group** — see
-  [ADR-0003](adr/0003-per-group-reading-feed.md). The current rule is
+  [ADR-0004](adr/0004-per-group-reading-feed.md). The current rule is
   `allow read: if request.auth != null`, so every signed-in user can read
   everyone's feed today; that is a live privacy hole, not just a redesign gap.
 - Drop threaded comments (see below), with their model, rules, and function.
@@ -137,6 +137,15 @@ There is **no rules block for the subcollection** and no `{document=**}`
 anywhere in `firestore.rules`, so Firestore denies by default — both writes have
 been silently failing behind their `catch (_) { // Best-effort }`. "Finished the
 NT" and "read 50 days" do not exist in any form.
+
+> **Partly superseded on main (2026-09-06).** #782 added a rules block for the
+> achievements subcollection, so writes are no longer denied — but it grants
+> `read, write` to the owner, which fixes the denial while leaving the client able
+> to grant itself a Badge. The remaining work is to tighten it to co-member read and
+> server-only write. Separately, #784 shipped Read-Throughs and Badges, which already
+> cover the completion family below (a book, the NT, the OT, the whole Bible); the
+> catalogue here should defer to that rather than duplicate it, and the reader-facing
+> word is **Badge**, not achievement.
 
 Achievements are **awarded server-side by Firestore triggers** on `bible_books`
 and read-log writes. A client must not be able to grant itself a trophy, and the
@@ -185,9 +194,9 @@ your first completed book, whatever it is.
 
 | Target | Why |
 |---|---|
-| `friends_page.dart`, `add_friend_page.dart`, `friend_requests_page.dart`, `friends_view.dart`, `friend_service.dart` (~1,180 lines) | ADR-0002 |
-| `acceptFriendRequest`, `deleteFriendRequestPair` + notification-prune trigger (`functions/index.js`) | ADR-0002 |
-| `friends`, `friendRequestsSent`, `friendRequestsReceived`, `friendStreakLinks`, `friendStreakInvites` rules blocks | ADR-0002; the streak ones were already dead schema |
+| `friends_page.dart`, `add_friend_page.dart`, `friend_requests_page.dart`, `friends_view.dart`, `friend_service.dart` (~1,180 lines) | ADR-0003 |
+| `acceptFriendRequest`, `deleteFriendRequestPair` + notification-prune trigger (`functions/index.js`) | ADR-0003 |
+| `friends`, `friendRequestsSent`, `friendRequestsReceived`, `friendStreakLinks`, `friendStreakInvites` rules blocks | ADR-0003; the streak ones were already dead schema |
 | `reading_plans_page.dart` | Duplicate "My Reading Plans"; superseded by Path |
 | `new_plan_picker_sheet.dart` | The personal-vs-group fork no longer exists |
 | `community_reading_hero.dart` | Today owns the reading |
@@ -204,7 +213,7 @@ your first completed book, whatever it is.
 - "Share with your circle" toggle on the reflect sheet, default off.
 - `achievements` rules block (nothing works without it).
 - Firestore triggers that award achievements server-side.
-- Per-Group reading feed + migration off the global `read_logs` (ADR-0003).
+- Per-Group reading feed + migration off the global `read_logs` (ADR-0004).
 - Retire `firstReader`; fix the `nt_starter` naming bug.
 
 ## Screens to mock

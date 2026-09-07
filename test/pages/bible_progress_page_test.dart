@@ -52,7 +52,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 1. Initially Genesis is not completed
-      expect(find.bySemanticsLabel('Genesis, Not completed'), findsOneWidget);
+      expect(find.bySemanticsLabel('Genesis, Not read yet'), findsOneWidget);
 
       // 2. Tap to complete
       await tester.tap(find.text('Genesis'));
@@ -65,7 +65,7 @@ void main() {
       // even without waiting for Firestore or pumpAndSettle (though pump() is needed for next frame)
       await tester.pump();
 
-      expect(find.bySemanticsLabel('Genesis, Completed'), findsOneWidget);
+      expect(find.bySemanticsLabel('Genesis, Read this lap'), findsOneWidget);
 
       // 4. Verify Firestore was eventually called (optional but good)
       final doc = await firestore

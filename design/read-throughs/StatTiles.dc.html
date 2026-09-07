@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; }
+    a { color: #6A53AD; } a:hover { color: #5B449E; }
+    .rt-tile { flex-grow: 1; flex-basis: 0; padding: 18px; border-radius: 16px; background: #FFFDFA; border: 1px solid #EDEAEA; display: flex; flex-direction: column; gap: 6px; box-sizing: border-box; }
+    .rt-val { display: flex; align-items: baseline; gap: 4px; }
+    .rt-num { font-family: 'Spectral', Georgia, serif; font-size: 24px; font-weight: 500; letter-spacing: -0.3px; color: #231E2C; }
+    .rt-unit { font-size: 13px; color: #6C6577; }
+    .rt-lab { font-size: 14px; font-weight: 600; color: #231E2C; }
+    .rt-sub { font-size: 13px; color: #6C6577; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 300px; background: #F4F0E8; color: #231E2C; box-sizing: border-box; padding: 20px">
+
+  <div style="display: flex; gap: 12px">
+    <div class="rt-tile">
+      <div class="rt-val"><div class="rt-num">41</div><div class="rt-unit">days</div></div>
+      <div class="rt-lab">Day streak</div>
+      <div class="rt-sub">Longest: 96</div>
+    </div>
+    <div class="rt-tile" style="background: rgba(190,138,82,0.14); border-color: rgba(160,112,47,0.28)">
+      <div class="rt-val"><div class="rt-num" style="color: #6E4D20">2</div><div class="rt-unit" style="color: #6E4D20">times</div></div>
+      <div class="rt-lab">Whole Bible</div>
+      <div class="rt-sub">3rd OT &middot; 4th NT underway</div>
+    </div>
+  </div>
+
+  <div style="padding-top: 22px; text-align: center; font-size: 13px; line-height: 1.5; color: #8C8694">Sits beside the existing streak tile on Journey, in the same 18px / 16px-radius tile.</div>
+
+</div>
+</x-dc>
+</body>
+</html>

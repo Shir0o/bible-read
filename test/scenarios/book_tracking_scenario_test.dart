@@ -69,9 +69,13 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       await tester.pumpAndSettle();
 
-      // 4. Verify Ruth is marked completed in the library (History category).
+      // 4. Verify Ruth is marked read in the library (History category). The
+      // lap banner sits above the categories now, so scroll to reach them.
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -260));
+      await tester.pumpAndSettle();
+
       expect(find.text('HISTORY'), findsOneWidget);
-      expect(find.bySemanticsLabel('Ruth, Completed'), findsOneWidget);
+      expect(find.bySemanticsLabel('Ruth, Read this lap'), findsOneWidget);
     },
   );
 }

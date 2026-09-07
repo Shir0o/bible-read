@@ -27,4 +27,4 @@ membership check.
 - Existing `read_logs` data needs migrating, and the global collection retiring.
 - Visibility now follows the same unit as everything else in the app — the
   Group — which is consistent with `Circle` being derived from Group membership
-  ([ADR-0002](0002-circle-derived-from-groups.md)).
+  ([ADR-0003](0003-circle-derived-from-groups.md)).

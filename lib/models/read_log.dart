@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../services/milestone_announcer.dart';
 import 'comment.dart';
 
 /// Represents a single read log entry.
@@ -25,6 +26,9 @@ class ReadLog {
   /// Time when the user read.
   final DateTime? timestamp;
 
+  /// A read-through this reader finished today, when they finished one.
+  final FeedMilestone? milestone;
+
   const ReadLog({
     required this.uid,
     required this.name,
@@ -33,6 +37,7 @@ class ReadLog {
     required this.liked,
     required this.firstReader,
     this.timestamp,
+    this.milestone,
   });
 
   /// Creates a copy of this log with the given fields updated.
@@ -42,6 +47,7 @@ class ReadLog {
     bool? liked,
     bool? firstReader,
     DateTime? timestamp,
+    FeedMilestone? milestone,
   }) {
     return ReadLog(
       uid: uid,
@@ -51,6 +57,7 @@ class ReadLog {
       liked: liked ?? this.liked,
       firstReader: firstReader ?? this.firstReader,
       timestamp: timestamp ?? this.timestamp,
+      milestone: milestone ?? this.milestone,
     );
   }
 
@@ -88,6 +95,7 @@ class ReadLog {
       liked: liked,
       firstReader: firstReaderUid != null && doc.id == firstReaderUid,
       timestamp: (data['timestamp'] as Timestamp?)?.toDate(),
+      milestone: FeedMilestone.fromMap(data['milestone']),
     );
   }
 

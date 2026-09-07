@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../models/read_log.dart';
+import '../services/milestone_announcer.dart';
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 
 class FeedCard extends StatelessWidget {
@@ -21,6 +23,7 @@ class FeedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isLiked = log.liked;
+    final milestone = log.milestone;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -28,7 +31,12 @@ class FeedCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+        side: BorderSide(
+          color: milestone != null
+              ? colorScheme.tertiary.withValues(alpha: 0.28)
+              : colorScheme.outlineVariant,
+          width: 0.5,
+        ),
       ),
       color: colorScheme.surfaceContainerLow,
       child: Padding(
@@ -44,6 +52,10 @@ class FeedCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
+            if (milestone != null) ...[
+              _MilestoneBanner(milestone: milestone),
+              const SizedBox(height: 10),
+            ],
             MergeSemantics(
               child: Row(
                 children: [
@@ -171,6 +183,73 @@ class _ActionButton extends StatelessWidget {
         excludeFromSemantics: true,
         borderRadius: BorderRadius.circular(20),
         child: child,
+      ),
+    );
+  }
+}
+
+/// The gold band on a feed card for a reader who finished a read-through
+/// today.
+class _MilestoneBanner extends StatelessWidget {
+  final FeedMilestone milestone;
+
+  const _MilestoneBanner({required this.milestone});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Semantics(
+      label: '${milestone.headline}. ${milestone.detail}',
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+        decoration: BoxDecoration(
+          color: AppColors.of(context).accentSoft,
+          borderRadius: BorderRadius.circular(AppSpacing.rChip),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF2A2438), width: 1.5),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFFFFE9A8), Color(0xFFFFC24D)],
+                ),
+              ),
+              child: const Icon(
+                Icons.check_rounded,
+                size: 18,
+                color: Color(0xFF2A2438),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    milestone.headline,
+                    style: textTheme.titleLarge?.copyWith(height: 1.25),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    milestone.detail,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onTertiaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

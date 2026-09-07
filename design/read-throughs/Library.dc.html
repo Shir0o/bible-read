@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; }
+    a { color: #6A53AD; } a:hover { color: #5B449E; }
+    .rt-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; padding: 0 16px; }
+    .rt-tile { height: 84px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; box-sizing: border-box; padding: 0 8px; }
+    .rt-tile-name { font-size: 11.5px; font-weight: 700; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rt-sec { display: flex; align-items: center; gap: 8px; padding: 24px 16px 12px; }
+    .rt-sec-line { flex-grow: 1; height: 1px; background: rgba(43,33,58,0.085); }
+    .rt-sec-text { font-size: 11px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #6C6577; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 1420px; background: #F4F0E8; color: #231E2C; box-sizing: border-box; display: flex; flex-direction: column; cursor: pointer" onClick="{{ cycle }}">
+
+  <div style="display: flex; align-items: center; gap: 4px; padding: 10px 14px 8px">
+    <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#231E2C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+    </div>
+    <div style="flex-grow: 1; font-family: 'Spectral', Georgia, serif; font-size: 24px; font-weight: 500; letter-spacing: -0.2px">Bible Library</div>
+  </div>
+
+  <div style="padding: 6px 16px 0">
+    <div style="padding: 18px 20px 20px; border-radius: 22px; background: {{ banner.bg }}; border: 1px solid {{ banner.line }}; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: flex-end; gap: 12px">
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 5px">
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: {{ banner.eyebrow }}">{{ banner.kicker }}</div>
+          <div style="font-family: 'Spectral', Georgia, serif; font-size: 26px; font-weight: 500; letter-spacing: -0.4px; line-height: 1.15; color: #231E2C; white-space: pre-line">{{ banner.title }}</div>
+        </div>
+        <div style="flex-shrink: 0; text-align: right; display: flex; flex-direction: column; gap: 3px">
+          <div style="font-size: 20px; font-weight: 700; line-height: 1; color: #6A53AD">{{ banner.count }}</div>
+          <div style="font-size: 13px; color: #6C6577">of 27</div>
+        </div>
+      </div>
+      <div style="height: 16px; border-radius: 8px; background: #E3DBCC; overflow: hidden">
+        <div style="height: 100%; width: {{ banner.pct }}; border-radius: 8px; background: #6A53AD"></div>
+      </div>
+      <div style="font-size: 13px; color: #6C6577; line-height: 1.45">{{ banner.sub }}</div>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 16px; padding: 14px 16px 0">
+    <div style="display: flex; align-items: center; gap: 7px">
+      <div style="width: 13px; height: 13px; border-radius: 4px; background: rgba(106,83,173,0.10); border: 1px solid rgba(106,83,173,0.26)"></div>
+      <div style="font-size: 13px; color: #6C6577">Read this lap</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 7px">
+      <div style="width: 13px; height: 13px; border-radius: 4px; background: #EFEAE0; border: 1px dashed rgba(43,33,58,0.15)"></div>
+      <div style="font-size: 13px; color: #6C6577">Read in an earlier lap</div>
+    </div>
+  </div>
+
+  <div class="rt-sec"><div class="rt-sec-line"></div><div class="rt-sec-text">Gospels &amp; Acts</div><div class="rt-sec-line"></div></div>
+  <div class="rt-grid">
+    <sc-for list="{{ gospels }}" as="b" hint-placeholder-count="5">
+      <div class="rt-tile" style="background: {{ b.bg }}; border: 1px {{ b.style }} {{ b.line }}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ b.ink }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"></path></svg>
+        <div class="rt-tile-name" style="color: {{ b.ink }}">{{ b.name }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div class="rt-sec"><div class="rt-sec-line"></div><div class="rt-sec-text">Epistles</div><div class="rt-sec-line"></div></div>
+  <div class="rt-grid">
+    <sc-for list="{{ epistles }}" as="b" hint-placeholder-count="21">
+      <div class="rt-tile" style="background: {{ b.bg }}; border: 1px {{ b.style }} {{ b.line }}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ b.ink }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"></path></svg>
+        <div class="rt-tile-name" style="color: {{ b.ink }}">{{ b.name }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div class="rt-sec"><div class="rt-sec-line"></div><div class="rt-sec-text">Prophecy</div><div class="rt-sec-line"></div></div>
+  <div class="rt-grid">
+    <sc-for list="{{ prophecy }}" as="b" hint-placeholder-count="1">
+      <div class="rt-tile" style="background: {{ b.bg }}; border: 1px {{ b.style }} {{ b.line }}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ b.ink }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"></path></svg>
+        <div class="rt-tile-name" style="color: {{ b.ink }}">{{ b.name }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="padding: 22px 16px 0; text-align: center; font-size: 13px; line-height: 1.5; color: #8C8694">{{ footer }}</div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"moment":{"editor":"enum","options":["Lap 3, three days in","The moment lap 2 finished"],"default":"Lap 3, three days in","section":"State"}}'>
+const GOSPELS = ['Matthew', 'Mark', 'Luke', 'John', 'Acts'];
+const EPISTLES = ['Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians', 'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians', '1 Timothy', '2 Timothy', 'Titus', 'Philemon', 'Hebrews', 'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John', 'Jude'];
+const PROPHECY = ['Revelation'];
+
+const THIS_LAP = { bg: 'rgba(106,83,173,0.10)', line: 'rgba(106,83,173,0.26)', ink: '#6A53AD', style: 'solid' };
+const PRIOR_LAP = { bg: '#EFEAE0', line: 'rgba(43,33,58,0.15)', ink: 'rgba(108,101,119,0.75)', style: 'dashed' };
+
+class Component extends DCLogic {
+  renderVals() {
+    const fromProp = this.props.moment === 'The moment lap 2 finished';
+    const full = this.state && this.state.full !== undefined ? this.state.full : fromProp;
+
+    const readThisLap = full ? 27 : 3;
+    const mark = (name, i) => {
+      const on = i < readThisLap;
+      const t = on ? THIS_LAP : PRIOR_LAP;
+      return { name: name, bg: t.bg, line: t.line, ink: t.ink, style: t.style };
+    };
+
+    let i = -1;
+    const next = (name) => { i += 1; return mark(name, i); };
+
+    const banner = full
+      ? {
+          kicker: 'New Testament · Lap 2',
+          title: 'That’s the whole\nNew Testament.',
+          count: '27',
+          pct: '100%',
+          sub: 'Lap 3 opens as soon as you mark your next chapter. Everything here stays in your history.',
+          bg: 'rgba(190,138,82,0.14)',
+          line: 'rgba(160,112,47,0.28)',
+          eyebrow: '#A0702F',
+        }
+      : {
+          kicker: 'New Testament · Lap 3',
+          title: 'Three books in,\nstarting again.',
+          count: '3',
+          pct: '11%',
+          sub: 'You’ve read the New Testament through twice before. Dashed books are the ones those laps covered.',
+          bg: '#FFFDFA',
+          line: 'rgba(43,33,58,0.085)',
+          eyebrow: '#6C6577',
+        };
+
+    return {
+      banner: banner,
+      gospels: GOSPELS.map(next),
+      epistles: EPISTLES.map(next),
+      prophecy: PROPHECY.map(next),
+      footer: full
+        ? '27 of 27 this lap. Your 3rd New Testament — and your 2nd whole Bible.'
+        : '3 of 27 this lap. Read in your own Bible — mark books as you go.',
+      cycle: () => this.setState({ full: !full }),
+    };
+  }
+}
+</script>
+</body>
+</html>
