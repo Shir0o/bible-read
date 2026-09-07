@@ -358,26 +358,11 @@ class AppTheme {
           borderSide: BorderSide(color: colorScheme.error, width: 2),
         ),
       ),
-      navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: colorScheme.surface,
-        indicatorColor: colorScheme.secondaryContainer,
-        labelTextStyle: WidgetStateProperty.resolveWith((states) {
-          final selected = states.contains(WidgetState.selected);
-          return themedText.labelMedium?.copyWith(
-            color: selected
-                ? colorScheme.onSecondaryContainer
-                : colorScheme.onSurfaceVariant,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-          );
-        }),
-      ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: colorScheme.surface,
-        indicatorColor: colorScheme.secondaryContainer,
-        selectedIconTheme: IconThemeData(
-          color: colorScheme.onSecondaryContainer,
-        ),
-        unselectedIconTheme: IconThemeData(color: colorScheme.onSurfaceVariant),
+        // No Material pill indicator: the rail marks selection by colour —
+        // the primary-coloured glyph and a bolded label — never a container.
+        indicatorColor: Colors.transparent,
         selectedLabelTextStyle: themedText.labelMedium?.copyWith(
           color: colorScheme.onSurface,
           fontWeight: FontWeight.w700,

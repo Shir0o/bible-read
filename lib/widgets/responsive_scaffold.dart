@@ -1,6 +1,8 @@
-// Displays a NavigationRail on wide layouts and a NavigationBar on narrow ones
-// by switching based on the current width.
+// Displays a NavigationRail on wide layouts and the drawn AppNavBar on narrow
+// ones by switching based on the current width.
 import 'package:flutter/material.dart';
+
+import 'app_nav_bar.dart';
 
 /// A scaffold that adapts its navigation UI to the screen width.
 ///
@@ -109,20 +111,10 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
       ),
       bottomNavigationBar: isWide || widget.destinations.length <= 1
           ? null
-          : NavigationBar(
+          : AppNavBar(
               selectedIndex: safeSelected,
               onDestinationSelected: widget.onDestinationSelected,
-              height: 88,
-              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-              destinations: widget.destinations.asMap().entries.map((entry) {
-                final d = entry.value;
-                return NavigationDestination(
-                  icon: d.icon,
-                  selectedIcon: d.selectedIcon ?? d.icon,
-                  label: d.label,
-                  tooltip: d.tooltip,
-                );
-              }).toList(),
+              destinations: widget.destinations,
             ),
     );
   }
