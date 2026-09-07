@@ -403,4 +403,61 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'group card appears for a member who does not own the group (#779)',
+    (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1'),
+        signedIn: true,
+      );
+      final groupService = GroupService(firestore: firestore);
+
+      // Regression for #779: u1 is only a member here. groupsForUser() used
+      // to emit an empty list first when the owner query resolved before the
+      // member query, and HomePage sampled exactly that event, hiding the
+      // group from Home.
+      final groupId = await groupService.createGroup(
+        ownerUid: 'naomi',
+        name: 'Test Group',
+      );
+      await firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('members')
+          .doc('u1')
+          .set({'uid': 'u1', 'role': 'member'});
+      final today = DateTime.now();
+      await groupService.updateSchedule(
+        groupId: groupId,
+        schedule: GroupSchedule(date: today, chapters: const ['John 1']),
+      );
+
+      await tester.pumpWidget(
+        _host(
+          HomePage(
+            firestore: firestore,
+            auth: auth,
+            vibrationService: const VibrationService(),
+            bibleProgressService: _StubBibleProgressService(),
+            groupService: groupService,
+            userPreferencesService: UserPreferencesService(
+              firestore: firestore,
+            ),
+            dateProvider: DateTime.now,
+            enableDriftAnimation: false,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+        await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+        await tester.pumpAndSettle();
+      }
+
+      expect(find.text('Test Group · together'), findsOneWidget);
+    },
+  );
 }

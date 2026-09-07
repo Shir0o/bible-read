@@ -542,6 +542,26 @@ void main() {
     });
 
     test(
+      'groupsForUser first event is complete for a member of a foreign group (#779)',
+      () async {
+        // Regression for #779: the merged stream used to publish an empty
+        // list first whenever the owner query resolved before the member
+        // query, and HomePage._loadGroup samples exactly that first event,
+        // so a member (non-owner) saw no group on Home.
+        final g1 = firestore.collection(GroupCollections.groups).doc('g1');
+        await g1.set({'name': 'Morning Light', 'ownerUid': 'naomi'});
+        await g1.collection(GroupCollections.members).doc('m1').set({
+          'uid': 'u1',
+          'role': 'member',
+          'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
+        });
+
+        final groups = await service.groupsForUser('u1').first;
+        expect(groups.map((g) => g.id), ['g1']);
+      },
+    );
+
+    test(
       'groupsForUser includes owned groups without membership doc',
       () async {
         final owned = firestore.collection(GroupCollections.groups).doc('g1');

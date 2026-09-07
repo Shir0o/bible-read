@@ -100,12 +100,6 @@ good: `firebase_auth_mocks` gives its mock user a photo URL on i.stack.imgur.com
 that 403s, and the resulting image exceptions are reported at teardown. The
 avatar falls back to a plain circle. Check the PNGs before assuming a failure.
 
-The seed also makes the user the **owner** of the group. That is a workaround for
-[#779](https://github.com/Shir0o/bible-read/issues/779) — `groupsForUser()` emits
-an empty list first, and `HomePage._loadGroup` samples only that first event, so
-a non-owned group silently never reaches "Today's reading". Remove the workaround
-when that is fixed.
-
 ## Design canvas
 
 `build_artboards.py` writes `.dc.html` artboards plus `canvas.json` for a Claude
