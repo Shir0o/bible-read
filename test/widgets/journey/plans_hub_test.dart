@@ -1,5 +1,5 @@
 import 'package:bible_read/models/reading_plan.dart';
-import 'package:bible_read/pages/all_plans_page.dart';
+import 'package:bible_read/widgets/journey/plans_hub.dart';
 import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
@@ -58,15 +58,17 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(splashFactory: NoSplash.splashFactory),
-        home: AllPlansPage(
-          firestore: firestore,
-          auth: auth,
-          groupService: groupService,
-          readingPlanService: planService,
-          userPreferencesService: prefsService,
-          friendService: friendService,
-          vibrationService: const _StubVibrationService(),
-          dateProvider: DateTime.now,
+        home: Scaffold(
+          body: PlansHub(
+            firestore: firestore,
+            auth: auth,
+            groupService: groupService,
+            readingPlanService: planService,
+            userPreferencesService: prefsService,
+            friendService: friendService,
+            vibrationService: const _StubVibrationService(),
+            dateProvider: DateTime.now,
+          ),
         ),
       ),
     );
@@ -78,9 +80,8 @@ void main() {
   ) async {
     await pumpPage(tester);
 
-    expect(find.text('My Reading Plans'), findsOneWidget);
     expect(find.text('On your own'), findsOneWidget);
-    expect(find.text('Morning Light'), findsOneWidget);
+
     expect(find.text('Continue'), findsOneWidget);
     expect(find.text('Enroll in a new plan'), findsOneWidget);
   });

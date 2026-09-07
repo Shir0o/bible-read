@@ -34,17 +34,26 @@ When someone comments on your reading, the `sendCommentNotification` function se
 Firestore permissions allow any signed-in user to read comments, authors to create them with their UID, and either the author or entry owner to delete them.
 
 
-## Achievements
+## Badges
 
-The app currently offers the following achievements. Badge icons are provided by the [Font Awesome](https://fontawesome.com) library via [`font_awesome_flutter`](https://pub.dev/packages/font_awesome_flutter). Scripture badges are generated for every book in the Bible using the canonical ordering from `ReferenceParser.allBooks`, ensuring the list is deterministic from Genesis through Revelation.
+The reader-facing word is **Badge**. Badges are earned once and never lost, and
+are awarded only by the server (`functions/badge-awarding.js` — clients cannot
+grant one). The catalogue:
 
-| Icon | ID | Description |
-| ---- | -- | ----------- |
-| ![book-open-reader](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/book-open-reader.svg) | `firstReader` | Be the first person to log reading for the day. |
-| ![fire](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/fire.svg) | `streak7` | Read the Bible seven days in a row. |
-| ![calendar-check](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/calendar-check.svg) | `days30` | Log 30 days of reading. |
-| ![fire-flame-curved](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/fire-flame-curved.svg) | `streak30` | Read every day for a full month. |
-| ![book](https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/svgs/solid/book.svg) | `book_*` | Complete every chapter of a specific book (e.g., `book_genesis`). |
+| ID | Description |
+| -- | ----------- |
+| `first_book` | Finish your first book of the Bible. |
+| `first_ot` | Finish the Old Testament. |
+| `first_nt` | Finish the New Testament. |
+| `first_bible` | Finish the Old and New Testaments. |
+| `bible_5` | Read the whole Bible 5 times. |
+| `bible_10` | Read the whole Bible 10 times. |
+| `days_7` | Show up on 7 days. |
+| `days_30` | Show up on 30 days. |
+| `days_50` | Show up on 50 days. |
+| `days_100` | Show up on 100 days. |
+| `days_365` | Show up on 365 days. |
+| `plan_finished` | Complete every reading in a Plan. |
 
 In addition to these evergreen achievements, rotating seasonal challenges provide
 time-boxed goals with bespoke rewards. Each season defines its own set of

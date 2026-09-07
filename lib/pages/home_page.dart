@@ -2,14 +2,12 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../services/error_logger.dart';
-import '../services/friend_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/bible_progress_service.dart';
 import '../services/catch_up_engine.dart';
@@ -31,15 +29,11 @@ import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or ve
 import '../theme/app_theme.dart';
 import '../widgets/member_presence_stack.dart';
 import '../widgets/navigation_menu_scope.dart';
-import '../widgets/new_plan_picker_sheet.dart';
 import '../widgets/reflect_sheet.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/sun_mark.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
-import 'all_plans_page.dart';
 import 'check_in_page.dart';
-import 'create_group_page.dart';
-import 'create_plan_page.dart';
 import 'full_schedule_page.dart';
 import 'plan_detail_page.dart';
 import 'read_log_page.dart';
@@ -51,21 +45,10 @@ class HomePage extends StatefulWidget {
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
 
-  /// Cloud Functions instance used for first reader checks.
-  final FirebaseFunctions? functions;
-
-  /// Optional handler to mark the first reader for testing.
-  final Future<Map<String, dynamic>?> Function({
-    required String dateKey,
-    required String uid,
-  })? markFirstReader;
-
   HomePage({
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-    this.functions,
-    this.markFirstReader,
     required this.dateProvider,
     this.onOpenJourney,
     this.onOpenCommunity,
@@ -77,7 +60,6 @@ class HomePage extends StatefulWidget {
     UserPreferencesService? userPreferencesService,
     ReflectionService? reflectionService,
     GroupService? groupService,
-    FriendService? friendService,
     this.enableDriftAnimation = true,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
@@ -103,9 +85,7 @@ class HomePage extends StatefulWidget {
         bibleProgressService =
             bibleProgressService ?? BibleProgressService(firestore: firestore),
         groupService = groupService ??
-            GroupService(firestore: firestore ?? FirebaseFirestore.instance),
-        friendService = friendService ??
-            FriendService(firestore: firestore ?? FirebaseFirestore.instance);
+            GroupService(firestore: firestore ?? FirebaseFirestore.instance);
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -128,9 +108,6 @@ class HomePage extends StatefulWidget {
   /// Loads the user's group, its schedule and member presence for the
   /// "together" reading card (design parity — Home group plan section).
   final GroupService groupService;
-
-  /// Loads friends so Home can show the "Your community" presence glimpse.
-  final FriendService friendService;
 
   /// Switches to the Journey tab when the consistency glimpse is tapped.
   final VoidCallback? onOpenJourney;
@@ -196,7 +173,7 @@ class _HomePageState extends State<HomePage>
   final Map<String, _GroupData> _groups = {};
 
   // Community presence. The bottom "Your community" glimpse — who among the
-  // user and their friends has read today.
+  // reader's Circle (the co-members of their Groups) has read today.
   List<_CommunityReader> _communityReaders = [];
   int _communityTotal = 0;
 
@@ -424,19 +401,20 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Loads today's community presence — the user plus friends who have read
-  /// today — for the bottom "Your community" glimpse. Best-effort.
+  /// Loads today's community presence — the reader plus the co-members of
+  /// their Groups (their Circle, derived per ADR-0003) who have read today —
+  /// for the bottom "Your community" glimpse. Best-effort.
   Future<void> _loadCommunity() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
     try {
-      final friends = await _firstWithTimeout<List<Friend>>(
-        widget.friendService.friends(user.uid),
-        timeout: const Duration(seconds: 5),
-        fallback: const <Friend>[],
-      );
-      final allUids = {user.uid, ...friends.map((f) => f.uid)};
+      final coMemberIds =
+          await widget.groupService.circleMemberIds(user.uid).timeout(
+                const Duration(seconds: 5),
+                onTimeout: () => const <String>{},
+              );
+      final allUids = {user.uid, ...coMemberIds};
 
       final today = widget.dateProvider();
       final dateKey =
@@ -454,7 +432,7 @@ class _HomePageState extends State<HomePage>
         final name = (doc.data()['name'] ?? '').toString();
         readers.add(_CommunityReader(uid: doc.id, name: name));
       }
-      // Show the current user last so friends lead the stack.
+      // Show the current user last so co-members lead the stack.
       readers.sort((a, b) {
         if (a.uid == user.uid) return 1;
         if (b.uid == user.uid) return -1;
@@ -792,8 +770,6 @@ class _HomePageState extends State<HomePage>
           ReadLogPage.writeReadLogEntry(
             refreshedUser ?? user,
             firestore: widget.firestore,
-            functions: widget.functions,
-            markFirstReader: widget.markFirstReader,
             dateProvider: () => today,
           ),
           widget.firestore
@@ -1481,18 +1457,20 @@ class _HomePageState extends State<HomePage>
                 fontWeight: FontWeight.w600,
               ),
             ),
-            TextButton(
-              onPressed: others.isNotEmpty
-                  ? () => _openReadingPlansHub()
-                  : () => _openPrimarySchedule(primary),
-              style: TextButton.styleFrom(
-                foregroundColor: colorScheme.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: const Size(0, 0),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            // Plan management moved to the Path tab (#808): with a single
+            // reading the header keeps its schedule link; with several there
+            // is no "All plans" affordance — the tab is one tap away.
+            if (others.isEmpty)
+              TextButton(
+                onPressed: () => _openPrimarySchedule(primary),
+                style: TextButton.styleFrom(
+                  foregroundColor: colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Schedule'),
               ),
-              child: Text(others.isNotEmpty ? 'All plans' : 'Schedule'),
-            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -1519,10 +1497,6 @@ class _HomePageState extends State<HomePage>
           const SizedBox(height: 10),
           _buildPlanMiniRow(context, it),
         ],
-
-        // Always offer to start another plan, no matter how many are active.
-        const SizedBox(height: 14),
-        _buildStartNewPlanButton(context),
       ],
     );
   }
@@ -2096,57 +2070,9 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Future<void> _openReadingPlansHub() async {
-    unawaited(widget.vibrationService.lightImpact());
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AllPlansPage(
-          firestore: widget.firestore,
-          auth: widget.auth,
-          groupService: widget.groupService,
-          readingPlanService: widget.readingPlanService,
-          userPreferencesService: widget.userPreferencesService,
-          friendService: widget.friendService,
-          vibrationService: widget.vibrationService,
-          dateProvider: widget.dateProvider,
-        ),
-      ),
-    );
-    // The hub can change the pinned reading; refresh the preference and reload
-    // the group so Home re-picks its hero (incl. surfacing a newly pinned group).
-    if (mounted) {
-      await _loadPreferences();
-      if (mounted) await _loadGroup();
-    }
-  }
-
-  /// The compact "Start a new plan" affordance, shown beneath an existing
-  /// reading list so a reader with an active plan/group can still add another.
-  Widget _buildStartNewPlanButton(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: OutlinedButton.icon(
-        onPressed: () => _startNewPlan(),
-        icon: const Icon(Icons.add, size: 18),
-        label: const Text('Start a new plan'),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: colorScheme.onSurfaceVariant,
-          side: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-      ),
-    );
-  }
-
   /// The richer "no active reading at all" invitation card — used only when
-  /// there's no plan or group to show at all. Distinct from the compact
-  /// [_buildStartNewPlanButton] used beneath an existing reading list.
+  /// there's no plan or group to show at all. It leads to the Path tab, where
+  /// the labelled start action lives (#808).
   Widget _buildStartPlanInvitationCard(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -2158,7 +2084,7 @@ class _HomePageState extends State<HomePage>
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _startNewPlan(),
+        onTap: () => widget.onOpenJourney?.call(),
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Row(
@@ -2211,43 +2137,6 @@ class _HomePageState extends State<HomePage>
         ),
       ),
     );
-  }
-
-  /// Asks whether to start a personal or group plan, then routes to the matching
-  /// creation flow. A new personal plan flows in through the active-plans stream
-  /// on its own; a new group isn't streamed, so the group branch reloads Home so
-  /// it can surface as the hero.
-  Future<void> _startNewPlan() async {
-    unawaited(widget.vibrationService.lightImpact());
-    final kind = await showNewPlanPicker(context);
-    if (kind == null || !mounted) return;
-
-    switch (kind) {
-      case NewPlanKind.personal:
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => CreatePlanPage(
-              firestore: widget.firestore,
-              auth: widget.auth,
-              vibrationService: widget.vibrationService,
-            ),
-          ),
-        );
-      case NewPlanKind.group:
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => CreateGroupPage(
-              groupService: widget.groupService,
-              auth: widget.auth,
-              vibrationService: widget.vibrationService,
-            ),
-          ),
-        );
-        if (mounted) {
-          await _loadPreferences();
-          if (mounted) await _loadGroup();
-        }
-    }
   }
 
   String _groupPresenceLabel(List<GroupMemberProgressData> readers) {
@@ -2545,8 +2434,9 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  /// The bottom "Your community" glimpse: who among the user and their friends
-  /// has read today. Tapping opens the Community tab.
+  /// The bottom "Your community" glimpse: who among the reader's Circle —
+  /// the co-members of their Groups — has read today. Tapping opens the
+  /// Community tab.
   Widget _buildCommunitySection(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;

@@ -20,9 +20,6 @@ class ReadLog {
   /// Whether the current user has liked this entry.
   final bool liked;
 
-  /// Whether this entry belongs to the first reader of the day.
-  final bool firstReader;
-
   /// Time when the user read.
   final DateTime? timestamp;
 
@@ -35,7 +32,6 @@ class ReadLog {
     required this.likeNames,
     required this.comments,
     required this.liked,
-    required this.firstReader,
     this.timestamp,
     this.milestone,
   });
@@ -45,7 +41,6 @@ class ReadLog {
     List<String>? likeNames,
     List<Comment>? comments,
     bool? liked,
-    bool? firstReader,
     DateTime? timestamp,
     FeedMilestone? milestone,
   }) {
@@ -55,7 +50,6 @@ class ReadLog {
       likeNames: likeNames ?? this.likeNames,
       comments: comments ?? this.comments,
       liked: liked ?? this.liked,
-      firstReader: firstReader ?? this.firstReader,
       timestamp: timestamp ?? this.timestamp,
       milestone: milestone ?? this.milestone,
     );
@@ -65,7 +59,6 @@ class ReadLog {
   static Future<ReadLog> fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> doc, {
     required String currentUid,
-    String? firstReaderUid,
   }) async {
     final data = doc.data() ?? <String, dynamic>{};
 
@@ -93,7 +86,6 @@ class ReadLog {
       likeNames: likeNames,
       comments: comments,
       liked: liked,
-      firstReader: firstReaderUid != null && doc.id == firstReaderUid,
       timestamp: (data['timestamp'] as Timestamp?)?.toDate(),
       milestone: FeedMilestone.fromMap(data['milestone']),
     );
@@ -108,7 +100,6 @@ class ReadLog {
             .map((c) => Comment.fromJson(Map<String, dynamic>.from(c as Map)))
             .toList(),
         liked: json['liked'] as bool? ?? false,
-        firstReader: json['firstReader'] as bool? ?? false,
         timestamp: json['timestamp'] != null
             ? (json['timestamp'] is Timestamp
                 ? (json['timestamp'] as Timestamp).toDate()
@@ -123,7 +114,6 @@ class ReadLog {
         'likeNames': likeNames,
         'comments': comments.map((c) => c.toJson()).toList(),
         'liked': liked,
-        'firstReader': firstReader,
         'timestamp': timestamp?.toIso8601String(),
       };
 }

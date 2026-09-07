@@ -20,11 +20,18 @@ class BadgeDefinition {
     required this.requirement,
   });
 
-  /// Every read-through badge, in the order they are displayed.
+  /// Every badge, in the order they are displayed.
   ///
-  /// Three landmarks that happen once, then two tiers far enough out to still
-  /// be ahead of a reader who has been at this for years.
+  /// Completion landmarks — the first book, then the Testaments — plus the
+  /// whole-Bible tiers; consistency tiers counting days shown up; and the
+  /// finished-Plan award. The server catalogue in
+  /// `functions/badge-awarding.js` mirrors these ids.
   static const List<BadgeDefinition> all = [
+    BadgeDefinition(
+      id: 'first_book',
+      title: 'First Book',
+      requirement: 'Finish your first book of the Bible',
+    ),
     BadgeDefinition(
       id: 'first_bible',
       title: 'First whole Bible',
@@ -50,16 +57,47 @@ class BadgeDefinition {
       title: 'Ten whole Bibles',
       requirement: 'Read the whole Bible 10 times',
     ),
+    BadgeDefinition(
+      id: 'days_7',
+      title: '7 days of showing up',
+      requirement: 'Show up on 7 days',
+    ),
+    BadgeDefinition(
+      id: 'days_30',
+      title: '30 days of showing up',
+      requirement: 'Show up on 30 days',
+    ),
+    BadgeDefinition(
+      id: 'days_50',
+      title: '50 days of showing up',
+      requirement: 'Show up on 50 days',
+    ),
+    BadgeDefinition(
+      id: 'days_100',
+      title: '100 days of showing up',
+      requirement: 'Show up on 100 days',
+    ),
+    BadgeDefinition(
+      id: 'days_365',
+      title: '365 days of showing up',
+      requirement: 'Show up on 365 days',
+    ),
+    BadgeDefinition(
+      id: 'plan_finished',
+      title: 'Finished a Plan',
+      requirement: 'Complete every reading in a Plan',
+    ),
   ];
 
-  /// How far along the reader is, for the "still to come" line.
-  int remainingFor(ReadThroughCounts counts) => switch (id) {
+  /// How far along the reader is, for the "still to come" line. Returns
+  /// null for badges whose progress is not a read-through count.
+  int? remainingFor(ReadThroughCounts counts) => switch (id) {
         'first_ot' => 1 - counts.oldTestament,
         'first_nt' => 1 - counts.newTestament,
         'first_bible' => 1 - counts.wholeBible,
         'bible_5' => 5 - counts.wholeBible,
         'bible_10' => 10 - counts.wholeBible,
-        _ => 0,
+        _ => null,
       };
 }
 

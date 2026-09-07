@@ -111,6 +111,40 @@ void main() {
     expect(find.text('No pending requests'), findsOneWidget);
   });
 
+  testWidgets('states what approving grants, in the body of the screen', (
+    tester,
+  ) async {
+    final groupId = 'g-consequence';
+
+    await firestore.collection(GroupCollections.groups).doc(groupId).set({
+      'name': 'Test',
+      'ownerUid': 'owner',
+      'memberCount': 1,
+    });
+    await firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.joinRequests)
+        .doc('u2')
+        .set({'uid': 'u2', 'name': 'Alice'});
+
+    await pumpPage(
+      tester,
+      groupId: groupId,
+      groupService: GroupService(firestore: firestore),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining(
+        'see what everyone in the group has read',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('send them encouragement'), findsOneWidget);
+  });
+
   testWidgets('shows error UI when stream emits error', (tester) async {
     final controller =
         StreamController<QuerySnapshot<Map<String, dynamic>>>.broadcast();

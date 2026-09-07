@@ -70,17 +70,6 @@ void main() {
           firestore: firestore,
           auth: auth,
           googleSignInProvider: createGoogleSignIn,
-          markFirstReader: ({required dateKey, required uid}) async {
-            if (firestore.shouldThrowOnSet) {
-              await Future.delayed(const Duration(milliseconds: 200));
-              throw FirebaseException(
-                plugin: 'cloud_firestore',
-                code: 'permission-denied',
-                message: 'forced failure',
-              );
-            }
-            return null;
-          },
         ),
       ),
     );

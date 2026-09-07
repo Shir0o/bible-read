@@ -1,9 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter/foundation.dart';
-import '../services/error_logger.dart';
 
 import '../services/reading_status_service.dart';
 
@@ -46,11 +43,6 @@ class ReadLogPage extends StatefulWidget {
   static Future<void> writeReadLogEntry(
     User user, {
     FirebaseFirestore? firestore,
-    FirebaseFunctions? functions,
-    Future<Map<String, dynamic>?> Function({
-      required String dateKey,
-      required String uid,
-    })? markFirstReader,
     DateTime Function()? dateProvider,
   }) async {
     final db = firestore ?? FirebaseFirestore.instance;
@@ -80,24 +72,6 @@ class ReadLogPage extends StatefulWidget {
           .set({'read': true}, SetOptions(merge: true));
     } catch (_) {
       // Best effort: ignore failures here since the log entry itself succeeded.
-    }
-    final handler = markFirstReader;
-    if (handler != null) {
-      // The first-reader badge is retired (no social achievements); the
-      // handler's daily_rewards record still drives the feed's first-reader
-      // display.
-      await handler(dateKey: dateKey, uid: user.uid);
-    } else if (functions != null) {
-      try {
-        await functions.httpsCallable('markFirstReader').call({
-          'dateKey': dateKey,
-        });
-      } catch (e, st) {
-        if (kDebugMode) {
-          debugPrint('markFirstReader failed: $e');
-        }
-        ErrorLogger.log(e, st);
-      }
     }
   }
 }

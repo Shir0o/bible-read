@@ -11,7 +11,6 @@ void main() {
       name: 'Bob',
       liked: true, // Test liked state
       likeNames: const [],
-      firstReader: false,
       comments: const [],
     );
 
@@ -71,7 +70,6 @@ void main() {
       name: 'Bob',
       liked: false,
       likeNames: const [],
-      firstReader: false,
       comments: const [],
     );
 
@@ -94,7 +92,6 @@ void main() {
       name: 'Bob',
       liked: false,
       likeNames: const [],
-      firstReader: false,
       comments: const [],
     );
 

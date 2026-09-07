@@ -8,11 +8,15 @@
  */
 
 const { onCall } = require("firebase-functions/v2/https");
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentWritten } = require(
+  "firebase-functions/v2/firestore"
+);
 const { setGlobalOptions } = require("firebase-functions/v2");
 const {
   settleReadThroughBadges,
   settleFirstBookBadge,
+  settleConsistencyBadges,
+  settlePlanFinishedBadge,
 } = require("./badge-awarding");
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
@@ -1038,117 +1042,30 @@ function remapProgress({ oldDays, newDays, completedByDate }) {
 }
 
 
-exports.markFirstReader = onCall({ region: 'us-central1' }, async (req) => {
-  if (!req.auth) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'User must be authenticated.'
-    );
-  }
-
-  const { dateKey } = req.data;
-  if (!dateKey) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing dateKey');
-  }
-
-  const uid = req.auth.uid;
-  const db = admin.firestore();
-  const rewardRef = db.collection('daily_rewards').doc(dateKey);
-  const entriesRef = db
-    .collection('read_logs')
-    .doc(dateKey)
-    .collection('entries');
-
-  try {
-    const result = await db.runTransaction(async (t) => {
-      const rewardSnap = await t.get(rewardRef);
-      if (rewardSnap.exists) {
-        const storedUid = rewardSnap.data()?.uid;
-        const storedTs = rewardSnap.data()?.timestamp;
-        return { first: storedUid === uid, existingUid: storedUid, existingTs: storedTs };
-      }
-
-      const entriesSnap = await t.get(
-        entriesRef.orderBy('timestamp').limit(2)
-      );
-
-      if (entriesSnap.empty) {
-        throw new functions.https.HttpsError(
-          'failed-precondition',
-          'No log entries found for the day'
-        );
-      }
-
-      const firstDoc = entriesSnap.docs[0];
-      const firstUid = firstDoc.id;
-      const firstData = typeof firstDoc.data === 'function' ? firstDoc.data() : firstDoc.data;
-      const firstTs = firstData?.timestamp;
-
-      let conflict = false;
-      const conflictUids = [];
-      if (entriesSnap.docs.length > 1) {
-        const secondDoc = entriesSnap.docs[1];
-        const secondData = typeof secondDoc.data === 'function' ? secondDoc.data() : secondDoc.data;
-        const secondTs = secondData?.timestamp;
-        if (secondTs && firstTs && secondTs.isEqual && secondTs.isEqual(firstTs)) {
-          conflict = true;
-          conflictUids.push(firstUid, secondDoc.id);
-        }
-      }
-
-      t.create(rewardRef, {
-        uid: firstUid,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      t.set(entriesRef.doc(firstUid), { firstReader: true }, { merge: true });
-
-      return { first: firstUid === uid, firstUid, firstTs, conflict, conflictUids };
-    });
-
-    const logTs = new Date().toISOString();
-    if (result.existingUid) {
-      functions.logger.info('First reader already recorded', {
-        dateKey,
-        storedUid: result.existingUid,
-        storedTimestamp: result.existingTs?.toDate ? result.existingTs.toDate().toISOString() : result.existingTs,
-        requestedUid: uid,
-        logTs,
-      });
-    } else {
-      functions.logger.info('First reader set', {
-        dateKey,
-        chosenUid: result.firstUid,
-        entryTimestamp: result.firstTs?.toDate ? result.firstTs.toDate().toISOString() : result.firstTs,
-        logTs,
-      });
-      if (result.conflict) {
-        functions.logger.warn('First reader conflict detected', {
-          dateKey,
-          timestamp: result.firstTs?.toDate ? result.firstTs.toDate().toISOString() : result.firstTs,
-          uids: result.conflictUids,
-          logTs,
-        });
-      }
-    }
-
-    return { first: result.first };
-  } catch (err) {
-    functions.logger.error('Failed to mark first reader', err);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Failed to mark first reader',
-      err instanceof Error ? err.message : String(err)
-    );
-  }
-});
-
-
 
 exports.awardReadThroughBadges = onDocumentCreated(
   { region: "us-central1", document: "users/{uid}/read_throughs/{docId}" },
   (event) => settleReadThroughBadges(admin.firestore(), event.params.uid)
 );
 
+
+exports.awardConsistencyBadges = onDocumentWritten(
+  { region: "us-central1", document: "users/{uid}/summary/data" },
+  (event) => {
+    const days = event.data?.after?.data?.()?.totalReadDays;
+    return settleConsistencyBadges(admin.firestore(), event.params.uid, days);
+  }
+);
+
+exports.awardPlanFinishedBadge = onDocumentWritten(
+  { region: "us-central1", document: "users/{uid}/plan_progress/{planId}" },
+  (event) =>
+    settlePlanFinishedBadge(
+      admin.firestore(),
+      event.params.uid,
+      event.params.planId
+    )
+);
 exports.awardFirstBookBadge = onDocumentCreated(
   { region: "us-central1", document: "users/{uid}/bible_books/{book}" },
   (event) => settleFirstBookBadge(admin.firestore(), event.params.uid)

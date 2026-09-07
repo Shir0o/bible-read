@@ -7,8 +7,11 @@
 const { describe, it } = require('mocha');
 const assert = require('node:assert');
 const {
+  BADGES,
   settleReadThroughBadges,
   settleFirstBookBadge,
+  settleConsistencyBadges,
+  settlePlanFinishedBadge,
 } = require('../badge-awarding');
 
 // A small in-memory Firestore double shaped like the surface the awarding
@@ -23,10 +26,16 @@ class FakeBatch {
     this.ops.push({ type: 'create', ref, data });
     return this;
   }
+  set(ref, data) {
+    this.ops.push({ type: 'set', ref, data });
+    return this;
+  }
   async commit() {
     for (const op of this.ops) {
       if (op.type === 'create') {
         await op.ref.create(op.data);
+      } else if (op.type === 'set') {
+        await op.ref.set(op.data);
       }
     }
   }
@@ -82,7 +91,10 @@ class FakeCollectionRef {
     this.path = path;
   }
   doc(id) {
-    const fullPath = `${this.path}/${id}`;
+    // Support no-argument doc() the way Firestore generates an id.
+    const resolved =
+      id ?? `auto-${(this.db._autoId = (this.db._autoId ?? 0) + 1)}`;
+    const fullPath = `${this.path}/${resolved}`;
     const parts = fullPath.split('/');
     return new FakeDocumentRef(this.db, fullPath, parts[parts.length - 1]);
   }
@@ -117,13 +129,16 @@ class FakeDocumentRef {
     const data = this.db._docs.get(this.path);
     return { exists: true, id: this.id, data: () => ({ ...data }) };
   }
-  async set(data) {
-    this.db._docs.set(this.path, { ...data });
-  }
   async create(data) {
+    if (this.db._refuseWrites) {
+      throw new Error(`write refused: ${this.path}`);
+    }
     if (this.db._docs.has(this.path)) {
       throw new Error(`already exists: ${this.path}`);
     }
+    this.db._docs.set(this.path, { ...data });
+  }
+  async set(data) {
     this.db._docs.set(this.path, { ...data });
   }
 }
@@ -302,5 +317,201 @@ describe('settleFirstBookBadge', () => {
     await settleFirstBookBadge(db, 'alice');
 
     assert.strictEqual(await badgeDoc(db, 'alice', 'first_book'), null);
+  });
+});
+
+describe('settleConsistencyBadges', () => {
+  it('awards the 50-day badge on the 50th day shown up, exactly once', async () => {
+    const db = new FakeFirestore();
+
+    await settleConsistencyBadges(db, 'alice', 49);
+    assert.strictEqual(await badgeDoc(db, 'alice', 'days_50'), null);
+
+    await settleConsistencyBadges(db, 'alice', 50);
+    const badge = await badgeDoc(db, 'alice', 'days_50');
+    assert.ok(badge, 'the 50th day must award the badge');
+    assert.ok(badge.dateUnlocked);
+
+    await settleConsistencyBadges(db, 'alice', 51);
+    const still = await badgeDoc(db, 'alice', 'days_50');
+    assert.strictEqual(
+      still.dateUnlocked,
+      badge.dateUnlocked,
+      'the 51st day must not move the unlock time',
+    );
+    assert.strictEqual(
+      (await badgeIds(db, 'alice')).filter((id) => id === 'days_50').length,
+      1,
+    );
+  });
+
+  it('awards every tier whose threshold is crossed', async () => {
+    const db = new FakeFirestore();
+
+    await settleConsistencyBadges(db, 'alice', 365);
+
+    assert.deepStrictEqual(await badgeIds(db, 'alice'), [
+      'days_100',
+      'days_30',
+      'days_365',
+      'days_50',
+      'days_7',
+    ]);
+  });
+
+  it('counts Showing up regardless of any Plan', async () => {
+    // The source is the Showing-up summary — a reader who only marks the
+    // day, with no plan attached, accrues consistency the same way.
+    const db = new FakeFirestore();
+
+    await settleConsistencyBadges(db, 'alice', 7);
+
+    assert.ok(await badgeDoc(db, 'alice', 'days_7'));
+  });
+
+  it('a re-run never re-awards or moves the unlock time', async () => {
+    const db = new FakeFirestore();
+    await settleConsistencyBadges(db, 'alice', 30);
+
+    await settleConsistencyBadges(db, 'alice', 30);
+    await settleConsistencyBadges(db, 'alice', 365);
+
+    const badge = await badgeDoc(db, 'alice', 'days_30');
+    assert.strictEqual(
+      (await badgeIds(db, 'alice')).filter((id) => id === 'days_30').length,
+      1,
+    );
+    assert.ok(badge.dateUnlocked);
+  });
+});
+
+describe('settlePlanFinishedBadge', () => {
+  function seedPlan(db, uid, completedDays) {
+    return Promise.all([
+      seed(db, `users/${uid}/plan_progress/p1`, {
+        planId: 'p1',
+        completedDays,
+      }),
+      seed(db, 'custom_plans/p1', {
+        title: 'Gospel of John',
+        durationDays: 3,
+        schedule: [
+          { day: 1, readings: ['John 1'] },
+          { day: 2, readings: ['John 2'] },
+          { day: 3, readings: ['John 3'] },
+        ],
+      }),
+    ]);
+  }
+
+  it('awards plan_finished when every day of the plan is complete', async () => {
+    const db = new FakeFirestore();
+    await seedPlan(db, 'alice', [1, 2, 3]);
+
+    await settlePlanFinishedBadge(db, 'alice', 'p1');
+
+    const badge = await badgeDoc(db, 'alice', 'plan_finished');
+    assert.strictEqual(badge.type, 'plan');
+    assert.ok(badge.dateUnlocked);
+  });
+
+  it('does not award while days remain', async () => {
+    const db = new FakeFirestore();
+    await seedPlan(db, 'alice', [1, 2]);
+
+    await settlePlanFinishedBadge(db, 'alice', 'p1');
+
+    assert.strictEqual(await badgeDoc(db, 'alice', 'plan_finished'), null);
+  });
+
+  it('skips quietly when the plan definition is missing', async () => {
+    const db = new FakeFirestore();
+    await seed(db, 'users/alice/plan_progress/p1', {
+      planId: 'p1',
+      completedDays: [1, 2, 3],
+    });
+
+    await settlePlanFinishedBadge(db, 'alice', 'p1');
+
+    assert.strictEqual(await badgeDoc(db, 'alice', 'plan_finished'), null);
+  });
+
+  it('a re-run never re-awards or moves the unlock time', async () => {
+    const db = new FakeFirestore();
+    await seedPlan(db, 'alice', [1, 2, 3]);
+    await settlePlanFinishedBadge(db, 'alice', 'p1');
+    const badge = await badgeDoc(db, 'alice', 'plan_finished');
+
+    await settlePlanFinishedBadge(db, 'alice', 'p1');
+
+    const still = await badgeDoc(db, 'alice', 'plan_finished');
+    assert.strictEqual(still.dateUnlocked, badge.dateUnlocked);
+  });
+});
+
+describe('unlock notifications', () => {
+  it('the reader is notified when a badge unlocks', async () => {
+    const db = new FakeFirestore();
+
+    await settleConsistencyBadges(db, 'alice', 7);
+
+    const notifications = await db
+      .collection('users')
+      .doc('alice')
+      .collection('notifications')
+      .get();
+    const docs = notifications.docs.map((d) => d.data());
+    assert.strictEqual(docs.length, 1);
+    assert.strictEqual(docs[0].type, 'badge');
+    assert.strictEqual(docs[0].read, false);
+    assert.ok(docs[0].message.includes('7'));
+    assert.ok(docs[0].timestamp, 'the notification carries a timestamp');
+  });
+
+  it('an already-held badge notifies nobody', async () => {
+    const db = new FakeFirestore();
+    // Day 50 crosses three tiers at once — one notification per badge.
+    await settleConsistencyBadges(db, 'alice', 50);
+
+    await settleConsistencyBadges(db, 'alice', 50);
+
+    const notifications = await db
+      .collection('users')
+      .doc('alice')
+      .collection('notifications')
+      .get();
+    assert.strictEqual(notifications.docs.length, 3);
+  });
+});
+
+describe('refused writes', () => {
+  it('a refused achievement write surfaces rather than being swallowed', async () => {
+    const db = new FakeFirestore();
+    db._refuseWrites = true;
+
+    await assert.rejects(() => settleConsistencyBadges(db, 'alice', 50));
+  });
+});
+
+
+describe('catalogue parity', () => {
+  it('the client display catalogue mirrors the server ids', () => {
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const dart = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'lib', 'models', 'badge_award.dart'),
+      'utf8',
+    );
+    const start = dart.indexOf('static const List<BadgeDefinition> all = [');
+    const end = dart.indexOf('];', start);
+    const clientIds = [...dart
+      .slice(start, end)
+      .matchAll(/id: '([^']+)'/g)].map((m) => m[1]);
+
+    assert.ok(clientIds.length > 0, 'client catalogue must be found');
+    assert.deepStrictEqual(
+      [...clientIds].sort(),
+      [...BADGES.map((b) => b.id)].sort(),
+    );
   });
 });

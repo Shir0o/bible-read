@@ -4,37 +4,38 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
-import '../models/group.dart';
-import '../models/group_member_progress.dart';
-import '../models/group_schedule.dart';
-import '../models/reading_plan.dart';
-import '../models/reading_plan_progress.dart';
-import '../services/catch_up_engine.dart';
-import '../services/error_logger.dart';
-import '../services/friend_service.dart';
-import '../services/group_service.dart';
-import '../services/reading_plan_service.dart';
-import '../services/user_preferences_service.dart';
-import '../services/vibration_service.dart';
-import '../widgets/catch_up_status_row.dart';
-import '../widgets/member_presence_stack.dart';
-import '../widgets/new_plan_picker_sheet.dart';
-import 'create_group_page.dart';
-import 'create_plan_page.dart';
-import 'full_schedule_page.dart';
-import 'group_detail_page.dart';
-import 'group_members_page.dart';
-import 'plan_detail_page.dart';
+import '../../models/group.dart';
+import '../../models/group_member_progress.dart';
+import '../../models/group_schedule.dart';
+import '../../models/reading_plan.dart';
+import '../../models/reading_plan_progress.dart';
+import '../../services/catch_up_engine.dart';
+import '../../services/error_logger.dart';
+import '../../services/friend_service.dart';
+import '../../services/group_service.dart';
+import '../../services/reading_plan_service.dart';
+import '../../services/user_preferences_service.dart';
+import '../../services/vibration_service.dart';
+import '../catch_up_status_row.dart';
+import '../member_presence_stack.dart';
+import '../new_plan_picker_sheet.dart';
+import '../../pages/create_group_page.dart';
+import '../../pages/create_plan_page.dart';
+import '../../pages/full_schedule_page.dart';
+import '../../pages/group_detail_page.dart';
+import '../../pages/group_members_page.dart';
+import '../../pages/plan_detail_page.dart';
 
-/// "My Reading Plans" — a single hub listing *everything* the user is reading:
-/// their personal plans ("On your own") and the group plans of circles they
-/// belong to ("Together"), each as a rich card tagged with its lifecycle state,
-/// with per-card actions (continue, pin as Home primary, edit, leave/manage).
-/// Completed plans collapse into a "Finished" list. Reached from Home's
-/// "All plans" / "Manage all N plans" affordances.
-class AllPlansPage extends StatefulWidget {
+/// The Path tab's plan hub — a single list of *everything* the user is
+/// reading: their personal plans ("On your own") and the shared plans of
+/// Groups they belong to ("Together"), each as a rich card tagged with its
+/// lifecycle state, with per-card actions (continue, pin as Home primary,
+/// edit, leave/manage). Completed plans collapse into a "Finished" list.
+/// Embedded in [JourneyPage]; there is no longer a pushed "My Reading
+/// Plans" page (#808).
+class PlansHub extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final GroupService groupService;
@@ -44,7 +45,7 @@ class AllPlansPage extends StatefulWidget {
   final VibrationService vibrationService;
   final DateTime Function() dateProvider;
 
-  const AllPlansPage({
+  const PlansHub({
     super.key,
     required this.firestore,
     required this.auth,
@@ -57,7 +58,7 @@ class AllPlansPage extends StatefulWidget {
   });
 
   @override
-  State<AllPlansPage> createState() => _AllPlansPageState();
+  State<PlansHub> createState() => PlansHubState();
 }
 
 class _PersonalRow {
@@ -87,7 +88,7 @@ class _GroupRow {
   String get pinKey => 'group:${group.id}';
 }
 
-class _AllPlansPageState extends State<AllPlansPage> {
+class PlansHubState extends State<PlansHub> {
   bool _loading = true;
   List<_PersonalRow> _personal = [];
   List<_GroupRow> _groups = [];
@@ -205,6 +206,10 @@ class _AllPlansPageState extends State<AllPlansPage> {
       if (mounted) setState(() => _loading = false);
     }
   }
+
+  /// Reloads the hub's plan lists. Called by the embedding page's
+  /// RefreshIndicator so a pull refreshes the whole tab.
+  Future<void> reload() => _load();
 
   // ---- Actions ------------------------------------------------------------
 
@@ -368,8 +373,6 @@ class _AllPlansPageState extends State<AllPlansPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     final personalActive =
         _personal.where((r) => r.state != PlanLifecycle.complete).toList();
     final personalDone =
@@ -382,54 +385,49 @@ class _AllPlansPageState extends State<AllPlansPage> {
     final hasFinished = personalDone.isNotEmpty || groupDone.isNotEmpty;
     final nothing = totalActive == 0 && !hasFinished;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Reading Plans'),
-        backgroundColor: colorScheme.surface,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-      ),
-      backgroundColor: colorScheme.surface,
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: nothing
-                  ? _emptyState(context)
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
-                      children: [
-                        _headerStrip(context, totalActive),
-                        if (personalActive.isNotEmpty) ...[
-                          _sectionHeading(
-                            context,
-                            icon: Icons.explore_outlined,
-                            title: 'On your own',
-                            count: personalActive.length,
-                            countLabel: 'personal',
-                          ),
-                          for (final row in personalActive)
-                            _personalCard(context, row),
-                        ],
-                        if (groupActive.isNotEmpty) ...[
-                          SizedBox(height: personalActive.isNotEmpty ? 22 : 0),
-                          _sectionHeading(
-                            context,
-                            icon: Icons.group_outlined,
-                            title: 'Together',
-                            count: groupActive.length,
-                            countLabel: 'group',
-                          ),
-                          for (final row in groupActive)
-                            _groupCard(context, row),
-                        ],
-                        if (hasFinished)
-                          _finishedSection(context, personalDone, groupDone),
-                        const SizedBox(height: 22),
-                        _enrollButton(context),
-                      ],
-                    ),
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 96),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (nothing) return _emptyState(context);
+
+    // Inline content of the tab — the embedding page owns scrolling, so the
+    // Showing-up tiles and calendar can sit beneath the list (#808).
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _headerStrip(context, totalActive),
+          if (personalActive.isNotEmpty) ...[
+            _sectionHeading(
+              context,
+              icon: Icons.explore_outlined,
+              title: 'On your own',
+              count: personalActive.length,
+              countLabel: 'personal',
             ),
+            for (final row in personalActive) _personalCard(context, row),
+          ],
+          if (groupActive.isNotEmpty) ...[
+            SizedBox(height: personalActive.isNotEmpty ? 22 : 0),
+            _sectionHeading(
+              context,
+              icon: Icons.group_outlined,
+              title: 'Together',
+              count: groupActive.length,
+              countLabel: 'group',
+            ),
+            for (final row in groupActive) _groupCard(context, row),
+          ],
+          if (hasFinished) _finishedSection(context, personalDone, groupDone),
+          const SizedBox(height: 22),
+          _enrollButton(context),
+          const SizedBox(height: 24),
+        ],
+      ),
     );
   }
 
@@ -921,34 +919,36 @@ class _AllPlansPageState extends State<AllPlansPage> {
   Widget _emptyState(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      children: [
-        const SizedBox(height: 100),
-        Icon(
-          Icons.menu_book_outlined,
-          size: 56,
-          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'No active plans yet',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w500,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 48, 24, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Icon(
+            Icons.menu_book_outlined,
+            size: 56,
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Start a plan to give your reading a gentle rhythm.',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
+          const SizedBox(height: 16),
+          Text(
+            'No active plans yet',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-        const SizedBox(height: 24),
-        _enrollButton(context),
-      ],
+          const SizedBox(height: 6),
+          Text(
+            'Start a plan to give your reading a gentle rhythm.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 24),
+          _enrollButton(context),
+        ],
+      ),
     );
   }
 

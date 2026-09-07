@@ -5,18 +5,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/data_cache_service.dart';
+import '../services/friend_service.dart';
+import '../services/group_service.dart';
+import '../services/reading_plan_service.dart';
+import '../services/user_preferences_service.dart';
 
 import '../widgets/journey/badge_strip.dart';
 import '../widgets/journey/consistency_calendar.dart';
-import '../widgets/journey/journey_progress_card.dart';
+import '../widgets/journey/plans_hub.dart';
 import '../widgets/journey/read_through_card.dart';
 import '../services/vibration_service.dart';
-import '../services/reading_plan_service.dart';
-import '../services/bible_progress_service.dart';
 import '../services/reading_status_service.dart';
 import '../widgets/app_header.dart';
-import '../models/reading_plan.dart';
-import '../models/reading_plan_progress.dart';
 
 class JourneyPage extends StatefulWidget {
   final FirebaseAuth auth;
@@ -43,10 +43,11 @@ class JourneyPage extends StatefulWidget {
 class _JourneyPageState extends State<JourneyPage>
     with AutomaticKeepAliveClientMixin {
   bool _isLoading = true;
-  List<ReadingPlan>? _plans;
-  List<UserPlanProgress>? _progress;
   Set<DateTime>? _readDates;
   int _streak = 0;
+
+  /// Reloads the plans hub; called together with the tab's own data refresh.
+  final GlobalKey<PlansHubState> _hubKey = GlobalKey<PlansHubState>();
 
   @override
   bool get wantKeepAlive => true;
@@ -138,6 +139,10 @@ class _JourneyPageState extends State<JourneyPage>
     );
   }
 
+  /// Loads the Showing-up record feeding the stat tiles and calendar. The
+  /// plans hub loads itself; the old prefetch of plan data — which gated the
+  /// whole tab behind a never-resolving `Future.wait` under fakes — went
+  /// with JourneyProgressCard (#808).
   Future<void> _loadData() async {
     final user = widget.auth.currentUser;
     if (user == null) {
@@ -145,10 +150,6 @@ class _JourneyPageState extends State<JourneyPage>
       return;
     }
 
-    final readingPlanService = ReadingPlanService(firestore: widget.firestore);
-    final bibleProgressService = BibleProgressService(
-      firestore: widget.firestore,
-    );
     final readingStatusService = ReadingStatusService(
       firestore: widget.firestore,
       auth: widget.auth,
@@ -166,8 +167,6 @@ class _JourneyPageState extends State<JourneyPage>
         if (cached != null) {
           if (mounted) {
             setState(() {
-              _plans = cached.plans;
-              _progress = cached.progress;
               _readDates = cached.readDates;
               _isLoading = false;
             });
@@ -176,22 +175,11 @@ class _JourneyPageState extends State<JourneyPage>
         }
       }
 
-      // Prepare futures for all critical components
-      final results = await Future.wait([
-        readingPlanService.getAvailablePlans(userId: user.uid),
-        readingPlanService.getActivePlans(user.uid).first,
-        bibleProgressService.completedChaptersByBook(user.uid),
-        readingStatusService.getReadStatusForRange(
-          user.uid,
-          daysInMonth,
-          referenceDate: now,
-        ),
-      ]);
-
-      final plans = results[0] as List<ReadingPlan>;
-      final progress = results[1] as List<UserPlanProgress>;
-      final completedByBook = results[2] as Map<String, Set<int>>;
-      final statusMap = results[3] as Map<String, bool>;
+      final statusMap = await readingStatusService.getReadStatusForRange(
+        user.uid,
+        daysInMonth,
+        referenceDate: now,
+      );
       final readDates = statusMap.entries
           .where((e) => e.value)
           .map((e) => DateTime.parse(e.key))
@@ -200,18 +188,11 @@ class _JourneyPageState extends State<JourneyPage>
       // Store in cache for next tab switch
       cache?.put<_JourneyData>(
         cacheKey,
-        _JourneyData(
-          plans: plans,
-          progress: progress,
-          completedByBook: completedByBook,
-          readDates: readDates,
-        ),
+        _JourneyData(readDates: readDates),
       );
 
       if (mounted) {
         setState(() {
-          _plans = plans;
-          _progress = progress;
           _readDates = readDates;
           _isLoading = false;
         });
@@ -254,13 +235,25 @@ class _JourneyPageState extends State<JourneyPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 16),
-                      JourneyProgressCard(
+                      const SizedBox(height: 8),
+                      // The unified plan list — solo and shared in one place
+                      // — is the tab itself now (#808).
+                      PlansHub(
+                        key: _hubKey,
                         firestore: widget.firestore,
                         auth: widget.auth,
-                        initialPlans: _plans,
-                        initialProgress: _progress,
-                        isLoading: _isLoading,
+                        groupService: GroupService(
+                          firestore: widget.firestore,
+                        ),
+                        readingPlanService: ReadingPlanService(
+                          firestore: widget.firestore,
+                        ),
+                        userPreferencesService: UserPreferencesService(
+                          firestore: widget.firestore,
+                        ),
+                        friendService: FriendService(
+                          firestore: widget.firestore,
+                        ),
                         vibrationService: widget.vibrationService,
                         dateProvider: widget.dateProvider,
                       ),
@@ -291,6 +284,15 @@ class _JourneyPageState extends State<JourneyPage>
                         ),
                       ),
                       const SizedBox(height: 32),
+                      // The Showing-up record sits beneath the plan list,
+                      // and renders even for a reader with no plans (#808).
+                      ConsistencyCalendar(
+                        firestore: widget.firestore,
+                        auth: widget.auth,
+                        initialReadDates: _readDates,
+                        isLoading: _isLoading,
+                      ),
+                      const SizedBox(height: 32),
                       ReadThroughCard(
                         firestore: widget.firestore,
                         auth: widget.auth,
@@ -299,13 +301,6 @@ class _JourneyPageState extends State<JourneyPage>
                       BadgeStrip(
                         firestore: widget.firestore,
                         auth: widget.auth,
-                      ),
-                      const SizedBox(height: 32),
-                      ConsistencyCalendar(
-                        firestore: widget.firestore,
-                        auth: widget.auth,
-                        initialReadDates: _readDates,
-                        isLoading: _isLoading,
                       ),
                     ],
                   ),
@@ -319,18 +314,10 @@ class _JourneyPageState extends State<JourneyPage>
   }
 }
 
-/// Value object holding pre-fetched data for the Journey tab.
+/// Value object holding the Showing-up record for the Journey tab.
 /// Stored in [DataCacheService] to avoid re-fetching on tab switches.
 class _JourneyData {
-  final List<ReadingPlan> plans;
-  final List<UserPlanProgress> progress;
-  final Map<String, Set<int>> completedByBook;
   final Set<DateTime> readDates;
 
-  const _JourneyData({
-    required this.plans,
-    required this.progress,
-    required this.completedByBook,
-    required this.readDates,
-  });
+  const _JourneyData({required this.readDates});
 }

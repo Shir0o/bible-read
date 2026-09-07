@@ -20,7 +20,6 @@ void main() {
       name: 'Alice',
       liked: false,
       likeNames: [],
-      firstReader: false,
       comments: [],
       timestamp: DateTime.now(),
     );
