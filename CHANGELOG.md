@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.27.0](https://github.com/Shir0o/bible-read/compare/v1.26.0...v1.27.0) (2026-09-07)
+
+
+### Features
+
+* **ci:** prefill Play Store release notes from changelog and standardize pipeline ([df5805f](https://github.com/Shir0o/bible-read/commit/df5805f22ad3ef62e7e7976f5b2ea07a3295b178))
+* redraw the bottom bar with custom glyphs and treatment B ([#812](https://github.com/Shir0o/bible-read/issues/812)) ([#818](https://github.com/Shir0o/bible-read/issues/818)) ([3320667](https://github.com/Shir0o/bible-read/commit/332066757bd8e2cf8da5ec18506673613921fae2))
+
 ## [1.26.0](https://github.com/Shir0o/bible-read/compare/v1.25.3...v1.26.0) (2026-09-06)
 
 
