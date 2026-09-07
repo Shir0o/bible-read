@@ -16,6 +16,7 @@ import 'package:bible_read/models/group_member_progress.dart';
 import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:bible_read/services/group_service.dart';
+import 'package:bible_read/services/join_code_service.dart';
 import 'package:bible_read/models/notification_preferences.dart';
 import 'package:bible_read/services/notification_service.dart'
     show NotificationCollections;
@@ -71,13 +72,17 @@ void main() {
 
       final doc =
           await firestore.collection(GroupCollections.groups).doc(id).get();
-      expect(doc.exists, isTrue);
-      expect(doc.data(), {
-        'name': 'Test',
-        'ownerUid': 'u1',
-        'memberCount': 1,
-        'isPublic': false,
-      });
+      final groupData = doc.data()!;
+      expect(groupData['name'], 'Test');
+      expect(groupData['ownerUid'], 'u1');
+      expect(groupData['memberCount'], 1);
+      expect(groupData['isPublic'], false);
+      final joinCode = groupData['joinCode'] as String?;
+      expect(joinCode, hasLength(JoinCodeService.codeLength));
+      expect(
+        joinCode!.split('').every(JoinCodeService.alphabet.contains),
+        isTrue,
+      );
 
       final member = await firestore
           .collection(GroupCollections.groups)

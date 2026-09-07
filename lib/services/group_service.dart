@@ -12,29 +12,13 @@ import '../models/group_invite.dart';
 import '../models/group_member_role.dart';
 import '../models/notification_preferences.dart';
 import 'error_logger.dart';
+import 'group_collections.dart';
+import 'join_code_service.dart';
 import 'read_through_coordinator.dart';
 import 'notification_service.dart';
 import 'progress_remap.dart';
 
-/// Names of Firestore collections used for group features.
-class GroupCollections {
-  GroupCollections._();
-
-  /// Top-level groups collection.
-  static const String groups = 'groups';
-
-  /// Sub-collection containing group members.
-  static const String members = 'members';
-
-  /// Sub-collection containing the reading schedule.
-  static const String schedule = 'schedule';
-
-  /// Sub-collection containing join requests awaiting approval.
-  static const String joinRequests = 'joinRequests';
-
-  /// Sub-collection containing invitations to join.
-  static const String invites = 'invites';
-}
+export 'group_collections.dart';
 
 /// Provides helper methods for managing reading groups.
 class GroupService {
@@ -51,11 +35,15 @@ class GroupService {
   /// Credits marked chapters to the reader's testament laps.
   final ReadThroughCoordinator readThroughCoordinator;
 
+  /// Manages per-group join codes.
+  final JoinCodeService joinCodeService;
+
   /// Creates a [GroupService] using [FirebaseFirestore.instance] by default.
   GroupService({
     FirebaseFirestore? firestore,
     NotificationService? notificationService,
     ReadThroughCoordinator? readThroughCoordinator,
+    JoinCodeService? joinCodeService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         notificationService = notificationService ??
             NotificationService(
@@ -64,7 +52,9 @@ class GroupService {
         readThroughCoordinator = readThroughCoordinator ??
             ReadThroughCoordinator(
               firestore: firestore ?? FirebaseFirestore.instance,
-            );
+            ),
+        joinCodeService = joinCodeService ??
+            JoinCodeService(firestore: firestore ?? FirebaseFirestore.instance);
 
   static Future<void> _safeLog(Object e, StackTrace? st) async {
     try {
@@ -129,6 +119,13 @@ class GroupService {
                 .set(updates, SetOptions(merge: true));
           }
         }
+      } catch (e, st) {
+        await _safeLog(e, st);
+      }
+      // Every new group is shareable: assign its join code. Best-effort —
+      // if it fails here the Share code screen fills one in later.
+      try {
+        await joinCodeService.ensureGroupCode(doc.id);
       } catch (e, st) {
         await _safeLog(e, st);
       }
@@ -2248,7 +2245,8 @@ class GroupService {
         await readThroughCoordinator.creditGroupReading(
           uid: uid,
           schedule: schedule,
-          checkedIndices: List<int>.generate(schedule.chapters.length, (i) => i),
+          checkedIndices:
+              List<int>.generate(schedule.chapters.length, (i) => i),
         );
       }
       return true;

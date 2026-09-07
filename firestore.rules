@@ -306,8 +306,19 @@ service cloud.firestore {
       allow read: if request.auth != null;
       // Allow any signed-in user to create a new group document.
       allow create: if request.auth != null;
-      // Restrict modifications and deletes to owner/admins of existing groups.
-      allow update: if isOwnerOrAdmin();
+      // Owner/admins may modify anything. A plain member may change only the
+      // group's join code — regenerating it from the Share code screen — and
+      // the new code must be a non-empty string whose lookup document exists
+      // (staged in the same transaction by ensure/regenerate, or committed
+      // earlier), so the group document can never point at a dead code.
+      allow update: if isOwnerOrAdmin() ||
+        (
+          isMember() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['joinCode']) &&
+          request.resource.data.joinCode is string &&
+          request.resource.data.joinCode.size() > 0 &&
+          existsAfter(/databases/$(database)/documents/joinCodes/$(request.resource.data.joinCode))
+        );
       allow delete: if isOwnerOrAdmin();
 
       match /members/{uid} {
@@ -401,6 +412,28 @@ service cloud.firestore {
         allow read: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
         allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
       }
+    }
+
+    // 🔗 Join codes. The document id IS the six-character code; the body
+    // carries only the group it redeems to — no member data lives here, so
+    // resolving a code exposes nothing beyond the group preview any
+    // signed-in user can already read. Point reads are what redemption
+    // needs; lists are denied outright, so codes cannot be enumerated.
+    match /joinCodes/{code} {
+      function isGroupMember(groupId) {
+        return request.auth != null &&
+          exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
+      }
+
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create: if request.resource.data.keys().hasOnly(['groupId']) &&
+        request.resource.data.groupId is string &&
+        isGroupMember(request.resource.data.groupId);
+      allow delete: if resource.data.keys().hasOnly(['groupId']) &&
+        resource.data.groupId is string &&
+        isGroupMember(resource.data.groupId);
+      allow update: if false;
     }
 
     // 🍂 Seasonal challenges
