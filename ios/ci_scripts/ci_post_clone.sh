@@ -73,6 +73,9 @@ cd "${REPO_ROOT}"
 echo "[CI] Flutter bootstrap: ${FLUTTER_BIN} pub get"
 "${FLUTTER_BIN}" pub get
 
+echo "[CI] Flutter bootstrap: ${FLUTTER_BIN} precache --ios"
+"${FLUTTER_BIN}" precache --ios
+
 # Remaining plugins (permission_handler_apple, vibration) still use CocoaPods;
 # keep the Pods sandbox in sync when CocoaPods is available.
 if [ -f "ios/Podfile" ] && command -v pod >/dev/null 2>&1; then
