@@ -68,7 +68,7 @@ This document describes the Firebase Cloud Functions exported from [`functions/i
 Deploy Cloud Functions from the repository root or the `functions/` directory:
 
 ```
-firebase deploy --only functions:sendLikeNotification,functions:sendCommentNotification,functions:sendSignupNotification,functions:markFirstReader,functions:awardReadThroughBadges,functions:awardFirstBookBadge
+firebase deploy --only functions:sendLikeNotification,functions:sendCommentNotification,functions:sendSignupNotification,functions:awardReadThroughBadges,functions:awardFirstBookBadge,functions:awardConsistencyBadges,functions:awardPlanFinishedBadge
 ```
 
 

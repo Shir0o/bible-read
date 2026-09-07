@@ -80,15 +80,22 @@ void main() {
     // Verify Jude is marked as completed
     expect(find.text('Jud'), findsAtLeast(1));
 
-    // 4. Verify Achievement is written to Firestore
-    final achievementDoc = await firestore
+    // 4. Verify the completion is recorded. Badges are server-authored only
+    // (functions/badge-awarding.js, #804): the client writes the completed
+    // book and never an achievements document.
+    final bookDoc = await firestore
+        .collection('users')
+        .doc('alice_uid')
+        .collection('bible_books')
+        .doc('Jude')
+        .get();
+    expect(bookDoc.exists, isTrue);
+    final achievements = await firestore
         .collection('users')
         .doc('alice_uid')
         .collection('achievements')
-        .doc('nt_starter')
         .get();
-    expect(achievementDoc.exists, isTrue);
-    expect(achievementDoc.data()?['title'], 'NT Starter');
+    expect(achievements.docs, isEmpty);
 
     // 5. Navigate to Profile and verify Badge is displayed
     // BibleProgressPage was pushed, so we need to pop it first to get back to MainPage

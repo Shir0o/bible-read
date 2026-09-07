@@ -64,7 +64,6 @@ void main() {
       home: MainPage(
         firestore: firestore,
         auth: auth,
-        markFirstReader: ({required dateKey, required uid}) async => null,
       ),
     ));
     await tester.pumpAndSettle();

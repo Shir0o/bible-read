@@ -58,8 +58,12 @@ Future<void> _seedReadToday(
 }) async {
   final dateKey =
       '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-  await firestore.collection('read_logs').doc(dateKey).collection('entries').doc(
-      uid).set({
+  await firestore
+      .collection('read_logs')
+      .doc(dateKey)
+      .collection('entries')
+      .doc(uid)
+      .set({
     'uid': uid,
     'name': name,
     'dateId': dateKey,
@@ -119,8 +123,10 @@ void main() {
     final today = DateTime.now();
 
     // u2 shares two Groups; u1 is in both and must appear once.
-    await _seedGroup(firestore, id: 'g1', ownerUid: 'u1', members: ['u2', 'u3']);
-    await _seedGroup(firestore, id: 'g2', ownerUid: 'u4', members: ['u2', 'u1']);
+    await _seedGroup(firestore,
+        id: 'g1', ownerUid: 'u1', members: ['u2', 'u3']);
+    await _seedGroup(firestore,
+        id: 'g2', ownerUid: 'u4', members: ['u2', 'u1']);
     await _seedReadToday(firestore, uid: 'u2', name: 'You', day: today);
     await _seedReadToday(firestore, uid: 'u3', name: 'Miriam', day: today);
     // A signed-in stranger who read today is outside the Circle.

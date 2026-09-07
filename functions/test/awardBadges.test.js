@@ -7,6 +7,7 @@
 const { describe, it } = require('mocha');
 const assert = require('node:assert');
 const {
+  BADGES,
   settleReadThroughBadges,
   settleFirstBookBadge,
   settleConsistencyBadges,
@@ -489,5 +490,28 @@ describe('refused writes', () => {
     db._refuseWrites = true;
 
     await assert.rejects(() => settleConsistencyBadges(db, 'alice', 50));
+  });
+});
+
+
+describe('catalogue parity', () => {
+  it('the client display catalogue mirrors the server ids', () => {
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const dart = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'lib', 'models', 'badge_award.dart'),
+      'utf8',
+    );
+    const start = dart.indexOf('static const List<BadgeDefinition> all = [');
+    const end = dart.indexOf('];', start);
+    const clientIds = [...dart
+      .slice(start, end)
+      .matchAll(/id: '([^']+)'/g)].map((m) => m[1]);
+
+    assert.ok(clientIds.length > 0, 'client catalogue must be found');
+    assert.deepStrictEqual(
+      [...clientIds].sort(),
+      [...BADGES.map((b) => b.id)].sort(),
+    );
   });
 });

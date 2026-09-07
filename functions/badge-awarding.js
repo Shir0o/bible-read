@@ -327,6 +327,7 @@ async function settlePlanFinishedBadge(db, uid, planId) {
 }
 
 module.exports = {
+  BADGES,
   settleReadThroughBadges,
   settleFirstBookBadge,
   settleConsistencyBadges,

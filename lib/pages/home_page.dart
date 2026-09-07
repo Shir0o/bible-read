@@ -432,7 +432,7 @@ class _HomePageState extends State<HomePage>
         final name = (doc.data()['name'] ?? '').toString();
         readers.add(_CommunityReader(uid: doc.id, name: name));
       }
-      // Show the current user last so friends lead the stack.
+      // Show the current user last so co-members lead the stack.
       readers.sort((a, b) {
         if (a.uid == user.uid) return 1;
         if (b.uid == user.uid) return -1;
