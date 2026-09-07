@@ -13,6 +13,8 @@ import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
 
 import 'package:bible_read/pages/friends_page.dart';
+import 'package:bible_read/widgets/app_nav_bar.dart';
+import 'package:bible_read/widgets/nav_glyphs.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -321,7 +323,7 @@ void main() {
     expect(responsive.selectedIndex, 0);
 
     // Tap Feed (Community, index 1)
-    await tester.tap(find.byIcon(Icons.people_outlined));
+    await tester.tap(find.byType(CircleGlyph));
     await tester.pumpAndSettle();
     // CommunityPage is shown directly
     expect(find.text('No active groups'), findsOneWidget);
@@ -332,7 +334,7 @@ void main() {
     expect(responsive.selectedIndex, 1);
 
     // Return home before opening menu destinations
-    await tester.tap(find.byIcon(Icons.home_outlined));
+    await tester.tap(find.byType(TodayGlyph));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     responsive = tester.widget<ResponsiveScaffold>(
@@ -396,7 +398,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    final hasNav = find.byType(NavigationBar).evaluate().isNotEmpty ||
+    final hasNav = find.byType(AppNavBar).evaluate().isNotEmpty ||
         find.byType(NavigationRail).evaluate().isNotEmpty;
     expect(hasNav, isTrue);
 
@@ -410,7 +412,7 @@ void main() {
     expect(find.byType(FriendsPage), findsOneWidget);
 
     final hasNavAfter = find
-            .byType(NavigationBar, skipOffstage: false)
+            .byType(AppNavBar, skipOffstage: false)
             .evaluate()
             .isNotEmpty ||
         find.byType(NavigationRail, skipOffstage: false).evaluate().isNotEmpty;
@@ -449,6 +451,48 @@ void main() {
     expect(vibration.lightCount, 1);
     expect(vibration.indexDuringCall, 0); // Starting index is 0
     expect(state.selectedIndex, 0); // Stays 0 as Friends is a pushed page
+  });
+
+  testWidgets('tapping a bar destination vibrates and switches tabs', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+    final vibration = _RecordingVibrationService();
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(size: Size(400, 600)),
+        child: MaterialApp(
+          home: MainPage(
+            auth: auth,
+            firestore: FakeFirebaseFirestore(),
+            vibrationService: vibration,
+            messaging: FakeFirebaseMessaging(null),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+      await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+      await tester.pumpAndSettle();
+    }
+
+    await tester.tap(find.byType(CircleGlyph));
+    await tester.pumpAndSettle();
+
+    expect(vibration.lightCount, 1);
+    final state =
+        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
+    expect(state.selectedIndex, 1);
   });
 
   testWidgets('_navigateFromMenu does not vibrate when navigation blocked', (
@@ -598,7 +642,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.byType(NavigationRail), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(AppNavBar), findsNothing);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -613,7 +657,7 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(AppNavBar), findsOneWidget);
   });
 
   testWidgets('unauthenticated navigation restricted to profile', (
@@ -746,7 +790,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     // Navigate to Community
-    await tester.tap(find.byIcon(Icons.people_outlined));
+    await tester.tap(find.byType(CircleGlyph));
     await tester.pumpAndSettle();
 
     // Wait for logs to load
@@ -834,7 +878,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     // Navigate to Community
-    await tester.tap(find.byIcon(Icons.people_outlined));
+    await tester.tap(find.byType(CircleGlyph));
     await tester.pumpAndSettle();
 
     // Wait for logs to load
@@ -944,7 +988,7 @@ void main() {
         tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
 
     // Navigate to a different page first
-    await tester.tap(find.byIcon(Icons.people_outlined));
+    await tester.tap(find.byType(CircleGlyph));
     await tester.pumpAndSettle();
     expect(find.text('No active groups'), findsOneWidget);
 
@@ -957,7 +1001,7 @@ void main() {
     expect(find.text('Get Started'), findsOneWidget);
 
     expect(find.byType(ResponsiveScaffold), findsNothing);
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(AppNavBar), findsNothing);
     expect(find.byType(NavigationRail), findsNothing);
 
     state.onItemTapped(1);

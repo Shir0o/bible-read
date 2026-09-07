@@ -85,18 +85,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.appTheme(colorScheme),
-        home: Scaffold(
-          body: TextField(),
-          bottomNavigationBar: NavigationBar(
-            destinations: const [
-              NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-              NavigationDestination(
-                icon: Icon(Icons.groups),
-                label: 'Community',
-              ),
-            ],
-          ),
-        ),
+        home: Scaffold(body: TextField()),
       ),
     );
 
@@ -113,8 +102,9 @@ void main() {
       BorderRadius.circular(AppSpacing.rField),
     );
 
-    final navTheme = theme.navigationBarTheme;
-    expect(navTheme.backgroundColor, colorScheme.surface);
-    expect(navTheme.indicatorColor, colorScheme.secondaryContainer);
+    // The rail carries no pill indicator; selection is marked by colour.
+    final railTheme = theme.navigationRailTheme;
+    expect(railTheme.backgroundColor, colorScheme.surface);
+    expect(railTheme.indicatorColor, Colors.transparent);
   });
 }

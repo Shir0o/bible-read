@@ -1,6 +1,7 @@
 import 'package:bible_read/pages/community_page.dart';
 import 'package:bible_read/pages/journey_page.dart';
 import 'package:bible_read/pages/home_page.dart';
+import 'package:bible_read/widgets/nav_glyphs.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 
 import 'package:bible_read/widgets/navigation_menu_scope.dart';
@@ -413,24 +414,24 @@ class MainPageState extends State<MainPage> {
         }
 
         // We have a user! Show the responsive UI immediately.
-        final destinations = const [
+        final colorScheme = Theme.of(context).colorScheme;
+        final destinations = [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            icon: TodayGlyph(color: colorScheme.onSurfaceVariant),
+            selectedIcon: TodayGlyph(color: colorScheme.primary),
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.people_outlined),
-            selectedIcon: Icon(Icons.people),
+            icon: CircleGlyph(color: colorScheme.onSurfaceVariant),
+            selectedIcon: CircleGlyph(color: colorScheme.primary),
             label: 'Community',
           ),
           NavigationDestination(
-            icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map),
+            icon: PathGlyph(color: colorScheme.onSurfaceVariant),
+            selectedIcon: PathGlyph(color: colorScheme.primary),
             label: 'Journey',
           ),
         ];
-
         return ReadThroughHost(
           auth: widget.auth,
           firestore: widget.firestore,
