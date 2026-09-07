@@ -169,7 +169,6 @@ class MainPageState extends State<MainPage> {
         readingStatusService: _readingStatusService,
         userPreferencesService: _userPreferencesService,
         groupService: _groupService,
-        friendService: _friendService,
         functions: widget.functions ?? FirebaseFunctions.instance,
         markFirstReader: widget.markFirstReader,
         googleSignInProvider: widget.googleSignInProvider,
