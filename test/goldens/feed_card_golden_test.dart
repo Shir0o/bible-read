@@ -20,7 +20,6 @@ void main() {
       ),
     ],
     liked: true,
-    firstReader: false,
     timestamp: DateTime(2023, 1, 1, 8, 0),
   );
 

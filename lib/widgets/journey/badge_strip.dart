@@ -60,10 +60,13 @@ class _Strip extends StatelessWidget {
   const _Strip({required this.held, required this.counts});
 
   /// The next badge the reader has not yet earned, for the "still to come"
-  /// line under the strip.
+  /// line under the strip. Only read-through landmarks count here — their
+  /// progress is the one the ledger can speak to.
   BadgeDefinition? get _next {
     for (final badge in BadgeDefinition.all) {
-      if (!held.contains(badge.id)) return badge;
+      if (held.contains(badge.id)) continue;
+      if (badge.remainingFor(counts) == null) continue;
+      return badge;
     }
     return null;
   }
@@ -208,7 +211,23 @@ class _BadgeGlyph extends StatelessWidget {
         );
       case 'first_bible':
         return Icon(Icons.menu_book_rounded, size: size * 1.07, color: color);
+      case 'first_book':
+        return Icon(Icons.auto_stories_rounded, size: size, color: color);
+      case 'plan_finished':
+        return Icon(Icons.flag_rounded, size: size, color: color);
       default:
+        if (badge.id.startsWith('days_')) {
+          // A day count, set in the same serif as the whole-Bible tiers.
+          return Text(
+            badge.id.substring('days_'.length),
+            style: TextStyle(
+              fontFamily: AppTheme.fontSerif,
+              fontSize: size * 0.79,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
+          );
+        }
         final times = badge.id == 'bible_5' ? 5 : 10;
         return Text(
           '×$times',
@@ -309,7 +328,7 @@ class _NextUp extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final remaining = badge.remainingFor(counts);
+    final remaining = badge.remainingFor(counts)!;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
@@ -324,7 +343,6 @@ class _NextUp extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
               color: colorScheme.surfaceContainer,
               border: Border.all(color: AppColors.of(context).border),
             ),

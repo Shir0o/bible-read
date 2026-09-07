@@ -261,6 +261,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         return 'Group Invite Notifications';
       case NotificationType.seasonalChallenge:
         return 'Seasonal Challenge Notifications';
+      case NotificationType.badge:
+        return 'Badge Notifications';
     }
   }
 }

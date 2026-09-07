@@ -32,19 +32,17 @@ This document describes the Firebase Cloud Functions exported from [`functions/i
 * **Errors:** Logs warnings when `ADMIN_UID` or the admin token is missing and logs an error if the send operation fails.
 * **Returns:** `void`.
 
-## markFirstReader
+## awardConsistencyBadges
 
-* **Type:** HTTPS callable.
-* **Input:** `dateKey` (YYYY-MM-DD string identifying the day).
-* **Firestore:**
-  * Checks and writes to `daily_rewards/{dateKey}` to record the first reader.
-  * Reads and updates entries under `read_logs/{dateKey}/entries`.
-* **Errors:**
-  * `unauthenticated` if the caller is not signed in.
-  * `invalid-argument` when `dateKey` is missing.
-  * `failed-precondition` if no log entries exist for the specified day.
-  * `internal` for unexpected transaction failures.
-* **Returns:** `{ first: boolean }` indicating whether the caller was the first reader.
+* **Type:** Firestore trigger (`onDocumentWritten`) on `users/{uid}/summary/data`.
+* **Firestore:** Reads the Showing-up summary's cumulative `totalReadDays` and awards the consistency badges (`days_7`, `days_30`, `days_50`, `days_100`, `days_365`) each new total earns, under `users/{uid}/achievements/`. Showing up counts however the day was marked — with or without a Plan. Also mirrors the biggest newly earned badge into `groups/{g}/badges/{uid}` for each of the reader's groups and writes a `badge` notification document for the reader.
+* **Idempotency:** Badges are created, not set — a re-run never re-awards one or moves its `dateUnlocked`.
+
+## awardPlanFinishedBadge
+
+* **Type:** Firestore trigger (`onDocumentWritten`) on `users/{uid}/plan_progress/{planId}`.
+* **Firestore:** When the progress document's `completedDays` covers every day of the plan's schedule (`custom_plans/{planId}`), the reader earns the `plan_finished` badge, with the mirror and notification as above. If the plan definition cannot be read, nothing is awarded rather than guessing.
+* **Idempotency:** As above.
 
 ## awardReadThroughBadges
 

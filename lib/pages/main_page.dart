@@ -70,12 +70,6 @@ class MainPage extends StatefulWidget {
   // Expose onNavigate for testing overrides if needed, though usually not passed
   final bool Function(int)? onNavigate;
 
-  /// Optional handler to mark the first reader for testing.
-  final Future<Map<String, dynamic>?> Function({
-    required String dateKey,
-    required String uid,
-  })? markFirstReader;
-
   MainPage({
     super.key,
     FirebaseFirestore? firestore,
@@ -85,7 +79,6 @@ class MainPage extends StatefulWidget {
     VibrationService? vibrationService,
     this.readingStatusService,
     this.friendService,
-    this.markFirstReader,
     ReadLogPage Function({
       Key? key,
       FirebaseFirestore? firestore,
@@ -169,8 +162,6 @@ class MainPageState extends State<MainPage> {
         readingStatusService: _readingStatusService,
         userPreferencesService: _userPreferencesService,
         groupService: _groupService,
-        functions: widget.functions ?? FirebaseFunctions.instance,
-        markFirstReader: widget.markFirstReader,
         googleSignInProvider: widget.googleSignInProvider,
         dateProvider: () => DateTime.now(),
         onOpenJourney: () => _onItemTapped(2),
@@ -478,7 +469,6 @@ class MainPageState extends State<MainPage> {
       vibrationService: widget.vibrationService,
       googleSignInProvider: widget.googleSignInProvider,
       readingStatusService: widget.readingStatusService,
-      markFirstReader: widget.markFirstReader,
       readLogPageBuilder: widget.readLogPageBuilder,
       sendLikeNotification: widget.sendLikeNotification,
       sendCommentNotification: widget.sendCommentNotification,

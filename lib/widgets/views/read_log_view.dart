@@ -133,27 +133,12 @@ class _ReadLogViewState extends State<ReadLogView>
           .collection('entries')
           .orderBy('timestamp', descending: true)
           .get();
-      String? firstReaderUid;
-      try {
-        final rewardDoc = await widget.firestore
-            .collection('daily_rewards')
-            .doc(dateKey)
-            .get();
-        firstReaderUid = rewardDoc.data()?['uid'] as String?;
-      } catch (e, st) {
-        if (kDebugMode) {
-          debugPrint('Load daily reward failed: $e');
-        }
-        ErrorLogger.log(e, st);
-        firstReaderUid = null;
-      }
 
       logs = await Future.wait(
         snapshot.docs.map((doc) {
           return ReadLog.fromFirestore(
             doc,
             currentUid: currentUser.uid,
-            firstReaderUid: firstReaderUid,
           );
         }).toList(),
       );

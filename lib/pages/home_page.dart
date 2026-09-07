@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -46,21 +45,10 @@ class HomePage extends StatefulWidget {
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
 
-  /// Cloud Functions instance used for first reader checks.
-  final FirebaseFunctions? functions;
-
-  /// Optional handler to mark the first reader for testing.
-  final Future<Map<String, dynamic>?> Function({
-    required String dateKey,
-    required String uid,
-  })? markFirstReader;
-
   HomePage({
     super.key,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-    this.functions,
-    this.markFirstReader,
     required this.dateProvider,
     this.onOpenJourney,
     this.onOpenCommunity,
@@ -782,8 +770,6 @@ class _HomePageState extends State<HomePage>
           ReadLogPage.writeReadLogEntry(
             refreshedUser ?? user,
             firestore: widget.firestore,
-            functions: widget.functions,
-            markFirstReader: widget.markFirstReader,
             dateProvider: () => today,
           ),
           widget.firestore
