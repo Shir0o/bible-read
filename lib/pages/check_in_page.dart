@@ -445,7 +445,7 @@ class _CheckInPageState extends State<CheckInPage>
                                     ),
                                     const SizedBox(height: 6),
                                     const Text(
-                                      'days this season',
+                                      'days shown up',
                                       style: TextStyle(
                                         fontSize: 17,
                                         fontWeight: FontWeight.w800,

@@ -33,7 +33,7 @@ Currently the reader's all-time total of days shown up (`totalReadDays`), despit
 _Avoid_: Using this interchangeably with Streak
 
 **Season**:
-A bounded period that owns Seasonal Challenges (`SeasonalChallenge.seasonId`). Unrelated to the "days this season" figure on the check-in payoff.
+A bounded period that owns Seasonal Challenges (`SeasonalChallenge.seasonId`). Unrelated to the all-time "days this season" figure on the Home consistency glimpse.
 
 **Behind**:
 Having one or more readings whose date has passed and that are still unmarked. Counted as `missedCount`, surfaced as "N readings behind".
@@ -146,7 +146,7 @@ word is Badge), trophy, reward (reserved for Seasonal Challenges)
 
 ## Known conflict
 
-The check-in payoff renders `seasonDays` under the label "days this season", but `home_page.dart` passes `_totalReadDays` — an all-time figure. Either the label or the value is wrong. Until that is settled, do not describe that number as a streak or as season-scoped.
+Settled (#780): the check-in payoff labels the all-time `totalReadDays` figure "days shown up". The Home consistency glimpse still reads "Here N days this season" for that same all-time number — do not describe it as a streak or as season-scoped.
 
 ## Pending the Community/Journey redesign
 

@@ -272,14 +272,9 @@ void main() {
       'm5': 'Miriam',
     };
 
-    // Sam owns the group. This is not cosmetic: groupsForUser() merges three
-    // snapshot streams and emits an EMPTY list first when the member query is
-    // not the first to resolve. HomePage takes .first, so a non-owned group
-    // silently never reaches "Today's reading". See the note in
-    // design/store-assets/README.md.
     await firestore.collection('groups').doc('g1').set({
       'name': 'Morning Light',
-      'ownerUid': 'u1',
+      'ownerUid': 'owner1',
       'memberCount': members.length,
       'createdAt': FieldValue.serverTimestamp(),
       'progress': 14,
@@ -303,7 +298,7 @@ void main() {
           .set({
         'uid': entry.key,
         'joinedAt': FieldValue.serverTimestamp(),
-        'role': entry.key == 'u1' ? 'owner' : 'member',
+        'role': entry.key == 'owner1' ? 'owner' : 'member',
         'displayName': entry.value,
       });
     }

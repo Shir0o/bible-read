@@ -976,7 +976,16 @@ class GroupService {
       var ownerGroups = <Group>[];
       var pendingGroups = <Group>[];
 
+      // Every source must report once (success or error) before anything is
+      // published: otherwise the fastest query emits a partial — often
+      // empty — first event, which first-event consumers like
+      // HomePage._loadGroup mistake for "no groups" (#779).
+      var memberReported = false;
+      var ownerReported = false;
+      var joinRequestsReported = false;
+
       Future<void> emit() async {
+        if (!(memberReported && ownerReported && joinRequestsReported)) return;
         if (controller.isClosed) return;
         final merged = <String, Group>{};
         for (final g in memberGroups) {
@@ -1006,6 +1015,7 @@ class GroupService {
           await _safeLog(e, st);
           memberGroups = <Group>[];
         }
+        memberReported = true;
         await emit();
       }
 
@@ -1016,6 +1026,7 @@ class GroupService {
           await _safeLog(e, st);
           ownerGroups = <Group>[];
         }
+        ownerReported = true;
         await emit();
       }
 
@@ -1032,6 +1043,7 @@ class GroupService {
           await _safeLog(e, st);
           pendingGroups = <Group>[];
         }
+        joinRequestsReported = true;
         await emit();
       }
 
@@ -1040,6 +1052,7 @@ class GroupService {
         onError: (e, st) async {
           await _safeLog(e, st);
           memberGroups = <Group>[];
+          memberReported = true;
           await emit();
         },
       );
@@ -1048,6 +1061,7 @@ class GroupService {
         onError: (e, st) async {
           await _safeLog(e, st);
           ownerGroups = <Group>[];
+          ownerReported = true;
           await emit();
         },
       );
@@ -1056,6 +1070,7 @@ class GroupService {
         onError: (e, st) async {
           await _safeLog(e, st);
           pendingGroups = <Group>[];
+          joinRequestsReported = true;
           await emit();
         },
       );

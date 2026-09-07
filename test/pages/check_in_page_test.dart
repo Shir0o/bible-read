@@ -60,7 +60,7 @@ void main() {
       expect(confirmed, isTrue);
       expect(find.text('Thank you for being here'), findsOneWidget);
       expect(find.text('42'), findsOneWidget);
-      expect(find.text('days this season'), findsOneWidget);
+      expect(find.text('days shown up'), findsOneWidget);
       expect(find.text('Done'), findsOneWidget);
     });
 
@@ -83,7 +83,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 1000));
         expect(find.text('Thank you for being here'), findsOneWidget);
         expect(find.text('15'), findsOneWidget);
-        expect(find.text('days this season'), findsOneWidget);
+        expect(find.text('days shown up'), findsOneWidget);
       },
     );
 
