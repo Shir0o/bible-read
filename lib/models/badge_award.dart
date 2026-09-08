@@ -89,6 +89,14 @@ class BadgeDefinition {
     ),
   ];
 
+  /// The badge with [id], or null when the id is not in the catalogue.
+  static BadgeDefinition? byId(String id) {
+    for (final badge in all) {
+      if (badge.id == id) return badge;
+    }
+    return null;
+  }
+
   /// How far along the reader is, for the "still to come" line. Returns
   /// null for badges whose progress is not a read-through count.
   int? remainingFor(ReadThroughCounts counts) => switch (id) {
@@ -119,4 +127,41 @@ class BadgeAward {
       unlockedAt: (data['dateUnlocked'] as Timestamp?)?.toDate(),
     );
   }
+}
+
+/// A member's latest badge as mirrored for their co-members.
+///
+/// The server copies the biggest badge just awarded into
+/// `groups/{g}/badges/{uid}` (ADR-0004) — the only achievement path a
+/// co-member can read. [dateUnlocked] is when that mirror was written.
+class BadgeMirror {
+  /// Member uid the mirror points at.
+  final String uid;
+
+  /// Server catalogue id of the mirrored badge.
+  final String badgeId;
+
+  final DateTime? dateUnlocked;
+
+  const BadgeMirror({
+    required this.uid,
+    required this.badgeId,
+    this.dateUnlocked,
+  });
+
+  factory BadgeMirror.fromFirestore(
+    String uid,
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data() ?? <String, dynamic>{};
+    return BadgeMirror(
+      uid: uid,
+      badgeId: (data['badgeId'] as String?) ?? '',
+      dateUnlocked: (data['dateUnlocked'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  /// Display title resolved against the client badge catalogue; falls back
+  /// to the server id for an unknown badge.
+  String get title => BadgeDefinition.byId(badgeId)?.title ?? badgeId;
 }

@@ -106,6 +106,27 @@ void main() {
         .set({'count': count, 'done': count >= total, 'dateId': key});
   }
 
+  /// Seeds the server-authored mirror of [uid]'s latest badge into
+  /// [groupId] (`groups/{g}/badges/{uid}`), exactly as badge-awarding.js
+  /// writes it — the only achievement path a co-member can read.
+  Future<void> seedBadge(
+    String groupId,
+    String uid,
+    String badgeId,
+    DateTime unlockedAt,
+  ) async {
+    await firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('badges')
+        .doc(uid)
+        .set({
+      'badgeId': badgeId,
+      'type': 'read_through',
+      'dateUnlocked': Timestamp.fromDate(unlockedAt),
+    });
+  }
+
   setUp(() {
     firestore = FakeFirebaseFirestore();
     auth = MockFirebaseAuth(
@@ -139,35 +160,37 @@ void main() {
   }
 
   testWidgets(
-    'Circle Scenario: a flat deduplicated people list with live statuses',
-    (tester) async {
-      // Alice shares g1 with Bob and Cara, and g2 with Cara and Dee. Cara is
-      // in both Groups — she must appear exactly once.
-      await seeder.seedUser(uid: 'alice', name: 'Alice');
-      await seeder.seedUser(uid: 'bob', name: 'Bob');
-      await seeder.seedUser(uid: 'cara', name: 'Cara');
-      await seeder.seedUser(uid: 'dee', name: 'Dee');
-      await seedGroup('g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara'});
-      await seedGroup('g2', 'Evening', {'alice': 'Alice', 'cara': 'Cara', 'dee': 'Dee'});
+      'Circle Scenario: a flat deduplicated people list with live statuses',
+      (tester) async {
+    // Alice shares g1 with Bob and Cara, and g2 with Cara and Dee. Cara is
+    // in both Groups — she must appear exactly once.
+    await seeder.seedUser(uid: 'alice', name: 'Alice');
+    await seeder.seedUser(uid: 'bob', name: 'Bob');
+    await seeder.seedUser(uid: 'cara', name: 'Cara');
+    await seeder.seedUser(uid: 'dee', name: 'Dee');
+    await seedGroup(
+        'g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara'});
+    await seedGroup(
+        'g2', 'Evening', {'alice': 'Alice', 'cara': 'Cara', 'dee': 'Dee'});
 
-      await pumpCircle(tester);
+    await pumpCircle(tester);
 
-      // Every co-member appears, and the reader's own row is present.
-      expect(find.text('You'), findsOneWidget);
-      expect(find.text('Bob'), findsOneWidget);
-      expect(find.text('Cara'), findsOneWidget);
-      expect(find.text('Dee'), findsOneWidget);
+    // Every co-member appears, and the reader's own row is present.
+    expect(find.text('You'), findsOneWidget);
+    expect(find.text('Bob'), findsOneWidget);
+    expect(find.text('Cara'), findsOneWidget);
+    expect(find.text('Dee'), findsOneWidget);
 
-      // Deduplicated: exactly one Cara row despite two shared Groups.
-      expect(find.text('Cara'), findsOneWidget);
+    // Deduplicated: exactly one Cara row despite two shared Groups.
+    expect(find.text('Cara'), findsOneWidget);
 
-      // Groups are filter chips above and a section beneath — never a
-      // reading hero.
-      expect(find.text('Everyone'), findsOneWidget);
-      expect(find.text('Morning'), findsWidgets);
-      expect(find.text('Evening'), findsWidgets);
-      expect(find.text("THE COMMUNITY'S READING"), findsNothing);
-    });
+    // Groups are filter chips above and a section beneath — never a
+    // reading hero.
+    expect(find.text('Everyone'), findsOneWidget);
+    expect(find.text('Morning'), findsWidgets);
+    expect(find.text('Evening'), findsWidgets);
+    expect(find.text("THE COMMUNITY'S READING"), findsNothing);
+  });
 
   testWidgets(
     'Circle Scenario: a bare Showing-up row names no scripture, '
@@ -177,7 +200,8 @@ void main() {
       await seeder.seedUser(uid: 'bob', name: 'Bob');
       await seeder.seedUser(uid: 'cara', name: 'Cara');
       await seeder.seedUser(uid: 'dee', name: 'Dee');
-      await seedGroup('g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara', 'dee': 'Dee'});
+      await seedGroup('g1', 'Morning',
+          {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara', 'dee': 'Dee'});
 
       // Two scheduled readings: yesterday's (Genesis 2) and today's
       // (Genesis 1). Dee skipped yesterday's — that is what being behind
@@ -231,29 +255,35 @@ void main() {
 
       await pumpCircle(tester);
 
-      // Ordering surfaces the not-shown-up first, then just-read — never
-      // alphabetical. Alice ("You") always leads.
+      // Ordering: not shown up first, then just-read with the freshest
+      // mark first. Alice ("You") always leads. All three co-members showed
+      // up in the same run — Dee's mark is freshest, then Cara, then Bob.
       final you = tester.getTopLeft(find.text('You')).dy;
       final bobRow = tester.getTopLeft(find.text('Bob')).dy;
       final caraRow = tester.getTopLeft(find.text('Cara')).dy;
       final deeRow = tester.getTopLeft(find.text('Dee')).dy;
       expect(you, lessThan(bobRow));
-      expect(bobRow, lessThan(caraRow));
-      expect(bobRow, lessThan(deeRow));
+      expect(caraRow, lessThan(bobRow));
+      expect(deeRow, lessThan(caraRow));
 
       String statusOf(String name) {
         // The row is Padding > Row > [avatar, Expanded(Row > Column)].
         // Find the name's nearest Column, then read its second Text.
         final nameText = find.text(name);
-        final statusTexts = tester.widgetList<Text>(
-          find.descendant(
-            of: find.ancestor(
-              of: nameText,
-              matching: find.byType(Column),
-            ).first,
-            matching: find.byType(Text),
-          ),
-        ).map((t) => t.data ?? '').toList();
+        final statusTexts = tester
+            .widgetList<Text>(
+              find.descendant(
+                of: find
+                    .ancestor(
+                      of: nameText,
+                      matching: find.byType(Column),
+                    )
+                    .first,
+                matching: find.byType(Text),
+              ),
+            )
+            .map((t) => t.data ?? '')
+            .toList();
         return statusTexts.last;
       }
 
@@ -312,10 +342,12 @@ void main() {
 
       await pumpCircle(tester);
 
-      final bobColumn = find.ancestor(
-        of: find.text('Bob'),
-        matching: find.byType(Column),
-      ).first;
+      final bobColumn = find
+          .ancestor(
+            of: find.text('Bob'),
+            matching: find.byType(Column),
+          )
+          .first;
       expect(bobColumn, findsOneWidget);
       // Status line present, no placeholder-looking gaps.
       expect(
@@ -323,7 +355,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('null'), findsNothing);
- expect(find.textContaining('Reflection'), findsNothing);
+      expect(find.textContaining('Reflection'), findsNothing);
     },
   );
 
@@ -333,7 +365,8 @@ void main() {
       await seeder.seedUser(uid: 'alice', name: 'Alice');
       await seeder.seedUser(uid: 'bob', name: 'Bob');
       await seeder.seedUser(uid: 'cara', name: 'Cara');
-      await seedGroup('g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara'});
+      await seedGroup(
+          'g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara'});
 
       await seedShowingUp('cara', ['g1']);
 
@@ -360,6 +393,86 @@ void main() {
 
       // The reader's own row never offers a Nudge.
       expect(find.text('Nudge'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Circle Scenario: a co-member\'s latest achievement renders on their '
+    'row, latest unlock winning',
+    (tester) async {
+      await seeder.seedUser(uid: 'alice', name: 'Alice');
+      await seeder.seedUser(uid: 'bob', name: 'Bob');
+      await seedGroup(
+        'g1',
+        'Morning',
+        {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara', 'dee': 'Dee'},
+      );
+      await seedGroup('g2', 'Evening', {'alice': 'Alice', 'bob': 'Bob'});
+
+      // Bob is mirrored in both Groups with different unlocks — the later
+      // one wins. Cara's mirror lives in g1 only. Dee holds none.
+      await seedBadge(
+        'g1',
+        'bob',
+        'days_7',
+        today.subtract(const Duration(days: 2)),
+      );
+      await seedBadge(
+        'g2',
+        'bob',
+        'first_book',
+        today.subtract(const Duration(days: 1)),
+      );
+      await seedBadge('g1', 'cara', 'first_nt', today);
+
+      await pumpCircle(tester);
+
+      // Titles resolve from the client badge catalogue by server id.
+      expect(find.text('First New Testament'), findsOneWidget);
+      expect(find.text('First Book'), findsOneWidget);
+      expect(find.text('7 days of showing up'), findsNothing);
+
+      // Dee holds no achievement: her row still renders, with no mark.
+      expect(find.text('Dee'), findsOneWidget);
+      final deeRow =
+          find.ancestor(of: find.text('Dee'), matching: find.byType(Row)).last;
+      expect(
+        tester.any(
+          find.descendant(
+            of: deeRow,
+            matching: find.byIcon(Icons.workspace_premium_rounded),
+          ),
+        ),
+        isFalse,
+      );
+    },
+  );
+
+  testWidgets(
+    'Circle Scenario: achievements a non-member holds never cross the surface',
+    (tester) async {
+      await seeder.seedUser(uid: 'alice', name: 'Alice');
+      await seeder.seedUser(uid: 'bob', name: 'Bob');
+      await seeder.seedUser(uid: 'carol', name: 'Carol');
+      await seedGroup('g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob'});
+      await seedGroup('g2', 'Evening', {'bob': 'Bob', 'carol': 'Carol'});
+
+      // Carol's latest badge is mirrored only into g2, which Alice does not
+      // belong to; the rules deny Alice the direct read there too.
+      await seedBadge('g2', 'carol', 'first_nt', today);
+      // Bob showed up in Alice's group so his row reads complete.
+      await seedShowingUp('bob', ['g1']);
+
+      await pumpCircle(tester);
+
+      // Carol shares no Group with Alice — no row, and her badge never
+      // renders on any surface Alice can see.
+      expect(find.text('Carol'), findsNothing);
+      expect(find.text('First New Testament'), findsNothing);
+
+      // Bob's row renders complete with his status; no badge exists for him.
+      expect(find.text('Bob'), findsOneWidget);
+      expect(find.text('Showed up'), findsOneWidget);
     },
   );
 }
