@@ -169,6 +169,7 @@ describe('owner-only user collections', () => {
     'notificationPrefs/likes',
     'settings/theme',
     'plan_progress/plan-1',
+    'plan_pace/group-1',
     'bible_books/Genesis',
     'read_throughs/rt-1',
     'read_through_state/old-testament',

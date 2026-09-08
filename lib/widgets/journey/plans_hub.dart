@@ -20,11 +20,14 @@ import '../../services/user_preferences_service.dart';
 import '../../services/vibration_service.dart';
 import '../catch_up_status_row.dart';
 import '../member_presence_stack.dart';
+import '../../pages/adjust_pace_page.dart';
 import '../../pages/create_plan_page.dart';
 import '../../pages/full_schedule_page.dart';
 import '../../pages/group_detail_page.dart';
 import '../../pages/group_members_page.dart';
 import '../../pages/plan_detail_page.dart';
+import '../../services/plan_pace.dart';
+import '../../services/plan_pace_service.dart';
 
 /// The Path tab's plan hub — a single list of *everything* the user is
 /// reading: their personal plans ("On your own") and the shared plans of
@@ -73,13 +76,18 @@ class _GroupRow {
   final List<GroupMemberProgressData> readers;
   final CatchUpStatus status;
   final PlanLifecycle state;
+
+  /// The reader's completed dates under [schedule] (`YYYY-MM-DD`), carried so
+  /// adjust pace can run its arithmetic without re-reading progress.
+  final Set<String> completedDateIds;
   const _GroupRow(
     this.group,
     this.schedule,
     this.readers,
     this.status,
-    this.state,
-  );
+    this.state, {
+    this.completedDateIds = const {},
+  });
 
   String get pinKey => 'group:${group.id}';
 }
@@ -185,6 +193,7 @@ class PlansHubState extends State<PlansHub> {
             readers,
             status,
             status.lifecycleAt(today),
+            completedDateIds: completed,
           ),
         );
       }
@@ -251,6 +260,150 @@ class PlansHubState extends State<PlansHub> {
       ),
     );
     if (changed == true && mounted) await _load();
+  }
+
+  /// Adjust pace on a personal plan (#810): the three options run against
+  /// the plan's dated schedule, and the chosen one is persisted in place.
+  Future<void> _adjustPersonalPace(_PersonalRow row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    final today = widget.dateProvider();
+    final days = PlanPace.datedPersonalSchedule(row.plan, row.progress.startDate);
+    final completed =
+        PlanPace.personalCompletedDateIds(row.plan, row.progress);
+    final behind = PlanPace.daysBehind(days, completed, today: today);
+    final choice = await Navigator.of(context).push<PaceOption>(
+      MaterialPageRoute(
+        builder: (_) => AdjustPacePage(
+          days: days,
+          completedDateIds: completed,
+          daysBehind: behind,
+          shared: false,
+          today: today,
+          vibrationService: widget.vibrationService,
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    try {
+      final paceService = PlanPaceService(firestore: widget.firestore);
+      switch (choice) {
+        case PaceOption.stretch:
+          await paceService.applyPersonalSchedule(
+            uid: uid,
+            plan: row.plan,
+            startDate: row.progress.startDate,
+            adjusted: PlanPace.stretch(
+              days: days,
+              completedDateIds: completed,
+              daysBehind: behind,
+            ),
+          );
+        case PaceOption.keepFinish:
+          await paceService.applyPersonalSchedule(
+            uid: uid,
+            plan: row.plan,
+            startDate: row.progress.startDate,
+            adjusted: PlanPace.redistribute(
+              days: days,
+              completedDateIds: completed,
+              resumeDate: PlanPace.resumeDate(days, completed, today: today),
+              finishDate: PlanPace.finishOf(days) ?? today,
+            ),
+          );
+        case PaceOption.beginAgain:
+          await paceService.beginPersonalPlanAgain(
+            uid: uid,
+            plan: row.plan,
+            startDate: PlanPace.resumeDate(days, completed, today: today),
+            progress: row.progress,
+          );
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Pace adjusted for "${row.plan.title}"')),
+      );
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
+  }
+
+  /// Adjust pace on a Shared plan (#810): the arithmetic runs on the Group's
+  /// schedule, but the outcome is stored as the reader's own overlay — the
+  /// Group's schedule and the other members' progress are never written.
+  Future<void> _adjustSharedPace(_GroupRow row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    final today = widget.dateProvider();
+    final completed = row.completedDateIds;
+    final choice = await Navigator.of(context).push<PaceOption>(
+      MaterialPageRoute(
+        builder: (_) => AdjustPacePage(
+          days: row.schedule,
+          completedDateIds: completed,
+          daysBehind: row.status.missedCount,
+          shared: true,
+          today: today,
+          vibrationService: widget.vibrationService,
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    try {
+      final paceService = PlanPaceService(firestore: widget.firestore);
+      switch (choice) {
+        case PaceOption.stretch:
+          await paceService.applySharedPlanOverlay(
+            uid: uid,
+            groupId: row.group.id,
+            adjusted: PlanPace.stretch(
+              days: row.schedule,
+              completedDateIds: completed,
+              daysBehind: row.status.missedCount,
+            ),
+          );
+        case PaceOption.keepFinish:
+          await paceService.applySharedPlanOverlay(
+            uid: uid,
+            groupId: row.group.id,
+            adjusted: PlanPace.redistribute(
+              days: row.schedule,
+              completedDateIds: completed,
+              resumeDate: PlanPace.resumeDate(
+                row.schedule,
+                completed,
+                today: today,
+              ),
+              finishDate: PlanPace.finishOf(row.schedule) ?? today,
+            ),
+          );
+        case PaceOption.beginAgain:
+          await paceService.applySharedPlanOverlay(
+            uid: uid,
+            groupId: row.group.id,
+            adjusted: PlanPace.beginAgain(
+              days: row.schedule,
+              startDate: PlanPace.resumeDate(
+                row.schedule,
+                completed,
+                today: today,
+              ),
+            ),
+          );
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Your pace adjusted — the group plan is unchanged'),
+        ),
+      );
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
   }
 
   Future<void> _leavePlan(_PersonalRow row) async {
@@ -544,7 +697,15 @@ class PlansHubState extends State<PlansHub> {
               const SizedBox(width: 9),
               _iconAction(
                 context,
+                icon: Icons.speed_outlined,
+                tooltip: 'Adjust pace',
+                onTap: () => _adjustPersonalPace(row),
+              ),
+              const SizedBox(width: 9),
+              _iconAction(
+                context,
                 icon: Icons.edit_outlined,
+                tooltip: 'Edit plan',
                 onTap: () => _editPlan(row),
               ),
               const SizedBox(width: 9),
@@ -647,7 +808,15 @@ class PlansHubState extends State<PlansHub> {
               const SizedBox(width: 9),
               _iconAction(
                 context,
+                icon: Icons.speed_outlined,
+                tooltip: 'Adjust pace',
+                onTap: () => _adjustSharedPace(row),
+              ),
+              const SizedBox(width: 9),
+              _iconAction(
+                context,
                 icon: Icons.settings_outlined,
+                tooltip: 'Manage members',
                 onTap: () => _manageGroup(row),
               ),
             ],
@@ -990,10 +1159,12 @@ class PlansHubState extends State<PlansHub> {
     BuildContext context, {
     required IconData icon,
     required VoidCallback onTap,
+    String? tooltip,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     return _squareButton(
       onTap: onTap,
+      tooltip: tooltip,
       background: colorScheme.surfaceContainerHighest,
       borderColor: AppColors.of(context).border,
       child: Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
