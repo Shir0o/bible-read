@@ -17,11 +17,9 @@ import 'package:bible_read/widgets/app_nav_bar.dart';
 import 'package:bible_read/widgets/nav_glyphs.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bible_read/services/vibration_service.dart';
 
-import '../helpers/test_read_log_page.dart';
 import 'dart:io';
 import 'dart:async';
 
@@ -551,55 +549,6 @@ void main() {
     expect(vibration.lightCount, 0);
     expect(state.selectedIndex, 0); // Should remain 0 as navigation is blocked
   });
-
-  testWidgets('onItemTapped refreshes read log page', (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(
-      mockUser: MockUser(uid: 'u1'),
-      signedIn: true,
-    );
-    late TestReadLogPage testPage;
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MainPage(
-          firestore: firestore,
-          auth: auth,
-          messaging: FakeFirebaseMessaging(null),
-          vibrationService: _RecordingVibrationService(),
-          readLogPageBuilder: ({
-            Key? key,
-            FirebaseFirestore? firestore,
-            FirebaseAuth? auth,
-            required SendLikeNotification onSendLikeNotification,
-            required SendCommentNotification onSendCommentNotification,
-          }) {
-            return testPage = TestReadLogPage(
-              key: key,
-              firestore: firestore,
-              auth: auth,
-              onSendLikeNotification: onSendLikeNotification,
-              onSendCommentNotification: onSendCommentNotification,
-            );
-          },
-        ),
-      ),
-    );
-    await tester.pump();
-
-    await tester.pump(const Duration(milliseconds: 500));
-
-    final state =
-        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
-    state.onItemTapped(1);
-    await tester.pumpAndSettle();
-
-    // CommunityPage defaults to Groups tab (index 0). Switch to Feed (index 1) to build ReadLogPage.
-    await tester.tap(find.text('Feed'));
-    await tester.pumpAndSettle();
-
-    expect(testPage.refreshed.value, isTrue);
-  }, skip: true);
 
   /*
   testWidgets('attemptSilentSignIn runs during initState', (tester) async {

@@ -1,6 +1,5 @@
 import 'package:bible_read/pages/community_page.dart';
 import 'package:bible_read/services/group_service.dart';
-import 'package:bible_read/services/reading_plan_service.dart';
 import 'package:bible_read/services/reading_status_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -20,7 +19,6 @@ void main() {
   late MockFirebaseAuth auth;
   late _RecordingVibrationService vibration;
   late GroupService groupService;
-  late ReadingPlanService readingPlanService;
   late ReadingStatusService readingStatusService;
 
   setUp(() {
@@ -35,7 +33,6 @@ void main() {
     );
     vibration = _RecordingVibrationService();
     groupService = GroupService(firestore: firestore);
-    readingPlanService = ReadingPlanService(firestore: firestore);
     readingStatusService = ReadingStatusService(
       firestore: firestore,
       auth: auth,
@@ -49,13 +46,8 @@ void main() {
           auth: auth,
           firestore: firestore,
           groupService: groupService,
-          readingPlanService: readingPlanService,
           readingStatusService: readingStatusService,
           vibrationService: vibration,
-          onSendLikeNotification: (
-              {required ownerUid, required likerName}) async {},
-          onSendCommentNotification: (
-              {required ownerUid, required commenterName}) async {},
           dateProvider: () => date ?? DateTime(2024, 1, 1),
         ),
       ),
@@ -76,13 +68,13 @@ void main() {
     expect(find.text('Join a group to see progress here.'), findsOneWidget);
   });
 
-  testWidgets('renders the community reading hero and group list', (
+  testWidgets('renders people-first with groups beneath, no reading hero', (
     tester,
   ) async {
     await firestore.collection('groups').doc('g1').set({
       'name': 'My Group',
       'ownerUid': 'u1',
-      'memberCount': 1,
+      'memberCount': 2,
     });
     await firestore
         .collection('groups')
@@ -92,8 +84,17 @@ void main() {
         .set({
       'uid': 'u1',
       'role': 'owner',
-      'joinedAt': Timestamp.now(),
       'name': 'Test User',
+    });
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u2')
+        .set({
+      'uid': 'u2',
+      'role': 'member',
+      'name': 'Bea',
     });
     await firestore
         .collection('groups')
@@ -107,17 +108,19 @@ void main() {
 
     await pumpPage(tester);
 
-    // Hero leads with the shared reading + "read with the community" CTA.
-    expect(find.text("THE COMMUNITY'S READING"), findsOneWidget);
-    expect(find.text('Gen 1'), findsOneWidget);
-    expect(find.text('Read with the community'), findsOneWidget);
+    // The reader's own row leads the people list.
+    expect(find.text('You'), findsOneWidget);
+    // Co-members render from Group membership.
+    expect(find.text('Bea'), findsOneWidget);
 
-    // "Your reading groups" list shows the group below the hero.
-    expect(find.text('Your reading groups'), findsOneWidget);
-    expect(find.text('Manage'), findsOneWidget);
+    // Groups are a section beneath the people, and the duplicate reading
+    // hero is gone from this screen.
+    expect(find.text('Your groups'), findsOneWidget);
     expect(find.text('My Group'), findsWidgets);
+    expect(find.text("THE COMMUNITY'S READING"), findsNothing);
+    expect(find.text('Read with the community'), findsNothing);
 
-    // The header eyebrow is the primary group's name (uppercased).
-    expect(find.text('MY GROUP'), findsOneWidget);
+    // The dead "Manage" passthrough is gone with the hero.
+    expect(find.text('Manage'), findsNothing);
   });
 }
