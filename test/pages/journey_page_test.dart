@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:bible_read/pages/journey_page.dart';
 import 'package:bible_read/widgets/journey/consistency_calendar.dart';
 import 'package:bible_read/widgets/journey/plans_hub.dart';
@@ -37,6 +39,48 @@ void main() {
     );
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
   }
+
+  testWidgets('exactly one page is titled "My Reading Plans"', (tester) async {
+    await pumpPage(tester);
+
+    // The header on the Journey tab renders the title exactly once; the
+    // retired duplicate page (ReadingPlansPage) is gone (#811).
+    expect(find.text('My Reading Plans'), findsOneWidget);
+    expect(find.byType(PlansHub), findsOneWidget);
+
+    // And the duplicate page's files no longer exist to be routed to.
+    expect(
+      File('lib/pages/reading_plans_page.dart').existsSync(),
+      isFalse,
+    );
+    expect(
+      File('lib/widgets/views/reading_plans_view.dart').existsSync(),
+      isFalse,
+    );
+  });
+
+  test('no user-facing copy uses "group plan" as a noun', () {
+    final offenders = <String>[];
+    // Scan the sources for the retired copy. This file lists the banned
+    // strings itself, so it is excluded from its own scan.
+    final self = File('test/pages/journey_page_test.dart').path;
+    for (final dir in ['lib', 'test']) {
+      Directory(dir)
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.dart'))
+          .where((f) => !f.path.endsWith(self))
+          .forEach((f) {
+        final text = f.readAsStringSync();
+        if (text.contains("'Edit Group Plan'") ||
+            text.contains("'New group plan'") ||
+            text.contains("'Group plan updated'")) {
+          offenders.add(f.path);
+        }
+      });
+    }
+    expect(offenders, isEmpty);
+  });
 
   testWidgets('the tab carries the plan hub, tiles and calendar', (
     tester,

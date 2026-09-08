@@ -135,8 +135,8 @@ void main() {
       auth: auth,
     );
 
-    expect(find.byTooltip('Edit Group Plan'), findsOneWidget);
-    await tester.tap(find.byTooltip('Edit Group Plan'));
+    expect(find.byTooltip('Edit plan'), findsOneWidget);
+    await tester.tap(find.byTooltip('Edit plan'));
     await pumpUntilSettled(tester);
 
     expect(find.byType(EditGroupPage), findsOneWidget);
@@ -236,7 +236,7 @@ void main() {
       service: GroupService(firestore: firestore),
       auth: auth,
     );
-    expect(find.byTooltip('Edit Group Plan'), findsNothing);
+    expect(find.byTooltip('Edit plan'), findsNothing);
   });
 
   testWidgets('join button via navigation sends join request', (tester) async {

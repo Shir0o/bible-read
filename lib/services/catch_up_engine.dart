@@ -11,7 +11,7 @@ enum ReadingStatus {
   done,
 
   /// The active reading due now (literally today for daily plans, this week's
-  /// passage for a weekly group plan).
+  /// passage for a weekly shared schedule).
   current,
 
   /// Due earlier than [current] and still unread — the catch-up set.
@@ -34,7 +34,7 @@ enum ReadingStatus {
 ///   • [ontrack]  — caught up; nothing outstanding right now.
 enum PlanLifecycle { complete, wrapup, behind, due, ontrack }
 
-/// One reading occurrence, normalized across personal and group plans so the
+/// One reading occurrence, normalized across personal and Shared plans so the
 /// engine can compute status without caring which kind of plan produced it.
 class ScheduleEntry {
   /// Stable order key — the plan day number (personal) or sorted position (group).
@@ -251,7 +251,7 @@ class CatchUpEngine {
     return compute(entries, today: today);
   }
 
-  /// Builds catch-up state for a group plan from its date-based [schedule].
+  /// Builds catch-up state for a Shared plan from its date-based [schedule].
   /// Group schedules already encode cadence (dates can skip days/weeks), so the
   /// engine's date-based `current` logic handles weekly groups for free.
   /// [completedDateIds] is the set of `YYYY-MM-DD` ids the user has read.

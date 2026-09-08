@@ -30,12 +30,13 @@ import '../../services/plan_pace.dart';
 import '../../services/plan_pace_service.dart';
 
 /// The Path tab's plan hub — a single list of *everything* the user is
-/// reading: their personal plans ("On your own") and the shared plans of
+/// reading: their personal plans ("On your own") and the Shared plans of
 /// Groups they belong to ("Together"), each as a rich card tagged with its
 /// lifecycle state, with per-card actions (continue, pin as Home primary,
-/// edit, leave/manage). Completed plans collapse into a "Finished" list.
-/// Embedded in [JourneyPage]; there is no longer a pushed "My Reading
-/// Plans" page (#808).
+/// edit, leave/manage). Completed plans collapse into a "Finished" list and
+/// left (archived) plans into an "Archived" list with restore and permanent
+/// delete. Embedded in [JourneyPage]; there is no pushed "My Reading Plans"
+/// page and no duplicate of it anywhere (#808, #811).
 class PlansHub extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
@@ -95,6 +96,7 @@ class _GroupRow {
 class PlansHubState extends State<PlansHub> {
   bool _loading = true;
   List<_PersonalRow> _personal = [];
+  List<_PersonalRow> _archived = [];
   List<_GroupRow> _groups = [];
   String? _pinnedReadingId;
 
@@ -144,6 +146,33 @@ class PlansHubState extends State<PlansHub> {
           today: today,
         );
         personal.add(
+          _PersonalRow(plan, progress, status, status.lifecycleAt(today)),
+        );
+      }
+
+      // Left (archived) personal plans — kept so a reader can restore or
+      // permanently delete them from the hub (#811; the retired duplicate
+      // page was their only home before).
+      final archivedProgress = await widget.readingPlanService
+          .getArchivedPlans(uid)
+          .first
+          .timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => const <UserPlanProgress>[],
+          );
+      final archived = <_PersonalRow>[];
+      for (final progress in archivedProgress) {
+        final plan = await widget.readingPlanService.getPlanById(
+          progress.planId,
+          userId: uid,
+        );
+        if (plan == null) continue;
+        final status = CatchUpEngine.forPersonalPlan(
+          plan,
+          progress,
+          today: today,
+        );
+        archived.add(
           _PersonalRow(plan, progress, status, status.lifecycleAt(today)),
         );
       }
@@ -201,6 +230,7 @@ class PlansHubState extends State<PlansHub> {
       if (mounted) {
         setState(() {
           _personal = personal;
+          _archived = archived;
           _groups = groupRows;
           _pinnedReadingId = pinned;
           _loading = false;
@@ -397,7 +427,7 @@ class PlansHubState extends State<PlansHub> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Your pace adjusted — the group plan is unchanged'),
+          content: Text('Your pace adjusted — the Shared plan is unchanged'),
         ),
       );
       await _load();
@@ -423,6 +453,73 @@ class PlansHubState extends State<PlansHub> {
     } catch (e, st) {
       ErrorLogger.log(e, st);
     }
+  }
+
+  /// Restores a left plan to active — it reappears in "On your own".
+  Future<void> _restorePlan(_PersonalRow row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    try {
+      await widget.readingPlanService.setPlanArchived(uid, row.plan.id, false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('"${row.plan.title}" restored to active')),
+      );
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
+  }
+
+  /// Permanently deletes a left plan's progress — the reader's record of
+  /// Showing up lives outside `plan_progress` and is never touched.
+  Future<void> _deletePlanPermanently(_PersonalRow row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    try {
+      await widget.readingPlanService.leavePlan(uid, row.plan.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('"${row.plan.title}" deleted permanently')),
+      );
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
+  }
+
+  /// Asks before the irreversible delete; the dialog mirrors the one the
+  /// retired duplicate page offered (#811).
+  void _confirmDeletePermanently(_PersonalRow row) {
+    showDialog(
+      context: context,
+      barrierColor: AppColors.of(context).scrim,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Delete "${row.plan.title}"?'),
+        content: const Text(
+          'Deleting removes this plan and its progress permanently. To keep '
+          'your progress, leave it archived instead.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _deletePlanPermanently(row);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Delete Permanently'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _continuePlan(_PersonalRow row) {
@@ -520,7 +617,7 @@ class PlansHubState extends State<PlansHub> {
         _groups.where((r) => r.state == PlanLifecycle.complete).toList();
     final totalActive = personalActive.length + groupActive.length;
     final hasFinished = personalDone.isNotEmpty || groupDone.isNotEmpty;
-    final nothing = totalActive == 0 && !hasFinished;
+    final nothing = totalActive == 0 && !hasFinished && _archived.isEmpty;
 
     if (_loading) {
       return const Padding(
@@ -560,6 +657,7 @@ class PlansHubState extends State<PlansHub> {
             for (final row in groupActive) _groupCard(context, row),
           ],
           if (hasFinished) _finishedSection(context, personalDone, groupDone),
+          if (_archived.isNotEmpty) _archivedSection(context),
           const SizedBox(height: 22),
           _enrollButton(context),
           const SizedBox(height: 24),
@@ -1048,6 +1146,109 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
+  Widget _archivedSection(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 28, 4, 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Archived',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              Text(
+                'left · progress kept',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        for (final row in _archived)
+          _archivedRow(context, row),
+      ],
+    );
+  }
+
+  Widget _archivedRow(BuildContext context, _PersonalRow row) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainer.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.archive_outlined,
+              size: 20,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  row.plan.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  'All ${row.status.total} readings kept',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => _restorePlan(row),
+            icon: const Icon(Icons.restore),
+            tooltip: 'Unarchive and continue',
+            color: colorScheme.primary,
+          ),
+          IconButton(
+            onPressed: () => _confirmDeletePermanently(row),
+            icon: const Icon(Icons.delete_outline),
+            tooltip: 'Delete permanently',
+            color: colorScheme.error.withValues(alpha: 0.7),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _enrollButton(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
@@ -1100,6 +1301,10 @@ class PlansHubState extends State<PlansHub> {
           ),
           const SizedBox(height: 24),
           _enrollButton(context),
+          if (_archived.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _archivedSection(context),
+          ],
         ],
       ),
     );
@@ -1273,7 +1478,7 @@ class PlansHubState extends State<PlansHub> {
   }
 }
 
-/// Rounded card chrome shared by personal and group plan cards, highlighted
+/// Rounded card chrome shared by personal and Shared plan cards, highlighted
 /// when the plan is pinned as the Home primary.
 class _PlanCardShell extends StatelessWidget {
   final bool pinned;

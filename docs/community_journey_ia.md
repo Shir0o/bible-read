@@ -197,8 +197,8 @@ your first completed book, whatever it is.
 | `friends_page.dart`, `add_friend_page.dart`, `friend_requests_page.dart`, `friends_view.dart`, `friend_service.dart` (~1,180 lines) | ADR-0003 |
 | `acceptFriendRequest`, `deleteFriendRequestPair` + notification-prune trigger (`functions/index.js`) | ADR-0003 |
 | `friends`, `friendRequestsSent`, `friendRequestsReceived`, `friendStreakLinks`, `friendStreakInvites` rules blocks | ADR-0003; the streak ones were already dead schema |
-| `reading_plans_page.dart` | Duplicate "My Reading Plans"; superseded by Path |
-| `new_plan_picker_sheet.dart` | The personal-vs-group fork no longer exists |
+| ~~`reading_plans_page.dart`~~ | Done (#811): the duplicate "My Reading Plans" page and its view are deleted; archive, restore and permanent delete live on the hub's plan cards |
+| ~~`new_plan_picker_sheet.dart`~~ | Done (#837): the personal-vs-group fork no longer exists |
 | `community_reading_hero.dart` | Today owns the reading |
 | `FriendService` passthrough in `ChallengesPage` | Never used |
 | `readLogBuilder` passthrough in `MainPage` / `CommunityPage` | Dead plumbing; Circle renders the feed directly |
