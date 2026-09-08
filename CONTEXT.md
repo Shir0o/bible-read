@@ -49,13 +49,18 @@ _Avoid_: Caught up, current
 
 ### People and plans
 
-**Reading plan**:
-A dated sequence of readings a reader follows personally. Owned by the reader.
-_Avoid_: Program, course, track
+**Plan**:
+A dated sequence of readings, either solo ("On your own") or shared — a Shared
+plan is a Plan whose schedule a Group follows; nothing else differs. One list
+(the Journey tab) owns the whole plan lifecycle: enroll, adjust pace, leave,
+restore, delete.
+_Avoid_: Group plan (a Group has a Shared plan; it is not a different kind of
+Plan), program, course, track
 
 **Group schedule**:
-A group's own dated sequence of readings, separate from any member's personal plan. A reader can be on track in one and behind in the other.
-_Avoid_: Group plan (the group's plan and its schedule are distinct)
+A group's own dated sequence of readings, separate from any member's personal
+plan overlay. A reader can be on track in one and behind in the other.
+_Avoid_: Group plan
 
 **Group**:
 A named set of readers reading a shared schedule together, with an owner and members.
@@ -155,13 +160,11 @@ the app as it is. See `docs/community_journey_ia.md`,
 [ADR-0003](docs/adr/0003-circle-derived-from-groups.md) and
 [ADR-0004](docs/adr/0004-per-group-reading-feed.md).
 
-- **Reading plan and Group schedule become one term.** The redesign treats them as a
-  single concept — a **Plan**, which is either solo or shared, differing only in who
-  else follows the same schedule — on the grounds that the split is what makes
-  plan creation ask readers to classify something before they have decided. Until
-  that ships, the two entries above stand and "group plan" remains a term to avoid.
-- **Friend ceases to exist.** The friend graph is deleted and Circle replaces it
-  entirely.
+- **Reading plan and Group schedule are one term now.** They merged into
+  **Plan** — solo or shared, differing only in who else follows the same
+  schedule (#837, #838, #811). The single creation flow asks who is reading as
+  a field, not a fork; the duplicate "My Reading Plans" page and the
+  new-plan picker sheet are gone. "Group plan" remains a term to avoid.
 - **Badge is confirmed as the reader-facing word.** The redesign's specs and tickets
   were drafted saying "achievement" reader-facing; they defer to Badge, as recorded
   under Read-throughs above. The Firestore collection keeps the `achievements` name.

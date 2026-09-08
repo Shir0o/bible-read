@@ -107,7 +107,7 @@ class HomePage extends StatefulWidget {
   final ReflectionService reflectionService;
 
   /// Loads the user's group, its schedule and member presence for the
-  /// "together" reading card (design parity — Home group plan section).
+  /// "together" reading card (design parity — Home shared-plan section).
   final GroupService groupService;
 
   /// Switches to the Journey tab when the consistency glimpse is tapped.

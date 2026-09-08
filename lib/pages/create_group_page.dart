@@ -132,7 +132,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
         child: Column(
           children: [
             SubHeader(
-              title: 'New group plan',
+              title: 'New shared plan',
               onBack: () => Navigator.pop(context),
             ),
             Expanded(

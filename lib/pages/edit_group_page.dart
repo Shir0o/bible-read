@@ -208,7 +208,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Group plan updated')));
+        ).showSnackBar(const SnackBar(content: Text('Plan updated')));
         Navigator.pop(context);
       }
     } catch (e, st) {
@@ -371,7 +371,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
         child: Column(
           children: [
             SubHeader(
-              title: 'Edit Group Plan',
+              title: 'Edit plan',
               onBack: () => Navigator.pop(context),
             ),
             Expanded(

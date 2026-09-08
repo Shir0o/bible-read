@@ -88,7 +88,7 @@ void main() {
       await tester.pumpApp(buildSubject());
       await tester.pumpAndSettle();
 
-      expect(find.text('New group plan'), findsOneWidget);
+      expect(find.text('New shared plan'), findsOneWidget);
       expect(find.byKey(GroupPlanKeys.nameField), findsOneWidget);
       expect(find.byKey(GroupPlanKeys.bookSearchField), findsOneWidget);
       expect(find.byKey(GroupPlanKeys.paceModeSegment), findsOneWidget);

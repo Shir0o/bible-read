@@ -284,7 +284,7 @@ class _FullSchedulePageState extends State<FullSchedulePage> {
   }
 
   /// Infers cadence from the median gap between consecutive schedule dates.
-  /// A gap of ~7 days means a weekly group plan ("This week"); otherwise the
+  /// A gap of ~7 days means a weekly shared schedule ("This week"); otherwise the
   /// current reading is labelled "Today".
   String _cadenceLabel(List<GroupSchedule> schedule) {
     if (schedule.length < 2) return 'Today';

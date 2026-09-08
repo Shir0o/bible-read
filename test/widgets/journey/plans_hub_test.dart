@@ -157,4 +157,65 @@ void main() {
         .get();
     expect(progress.data()?['completedDays'], isEmpty);
   });
+  testWidgets('leaving a plan archives it and the archive keeps restore '
+      'and permanent delete reachable', (tester) async {
+    await pumpPage(tester);
+
+    // Leave = archive: the inline confirm flow on the plan card.
+    await tester.tap(find.byTooltip('Leave plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Leave plan'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    var progress = await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('plan_progress')
+        .doc('p1')
+        .get();
+    expect(progress.data()?['isArchived'], isTrue);
+
+    // The card moves to the hub's Archived section — the capabilities the
+    // retired duplicate page owned (#811).
+    expect(find.text('Archived'), findsOneWidget);
+    expect(find.text('Morning Light'), findsOneWidget);
+
+    // Restore returns it to "On your own".
+    await tester.tap(find.byTooltip('Unarchive and continue'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+    progress = await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('plan_progress')
+        .doc('p1')
+        .get();
+    expect(progress.data()?['isArchived'], isFalse);
+    expect(find.text('On your own'), findsOneWidget);
+    expect(find.byTooltip('Unarchive and continue'), findsNothing);
+  });
+
+  testWidgets('delete permanently from the archive removes the progress '
+      'document', (tester) async {
+    await planService.setPlanArchived('u1', 'p1', true);
+    await pumpPage(tester);
+
+    expect(find.text('Archived'), findsOneWidget);
+    await tester.tap(find.byTooltip('Delete permanently'));
+    await tester.pumpAndSettle();
+
+    // The dialog names the consequence and asks first.
+    expect(find.text('Delete "Morning Light"?'), findsOneWidget);
+    expect(find.text('Delete Permanently'), findsOneWidget);
+    await tester.tap(find.text('Delete Permanently'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    final progress = await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('plan_progress')
+        .doc('p1')
+        .get();
+    expect(progress.exists, isFalse);
+    expect(find.text('Archived'), findsNothing);
+  });
  }

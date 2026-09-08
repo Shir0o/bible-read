@@ -532,7 +532,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.edit),
-                  tooltip: 'Edit Group Plan',
+                  tooltip: 'Edit plan',
                   onPressed: () {
                     unawaited(widget.vibrationService.lightImpact());
                     Navigator.of(context).push(

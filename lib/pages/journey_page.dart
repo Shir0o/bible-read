@@ -220,9 +220,7 @@ class _JourneyPageState extends State<JourneyPage>
               vibrationService: widget.vibrationService,
               dateProvider: widget.dateProvider,
               eyebrow: 'Keep going',
-              title: (widget.auth.currentUser?.displayName ?? 'Reader')
-                  .split(' ')
-                  .first,
+              title: 'My Reading Plans',
               showNotificationBell: false,
             ),
             Expanded(
