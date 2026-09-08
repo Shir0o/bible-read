@@ -11,17 +11,17 @@ List<NavigationDestination> _destinations(ColorScheme cs) => [
       NavigationDestination(
         icon: TodayGlyph(color: cs.onSurfaceVariant),
         selectedIcon: TodayGlyph(color: cs.primary),
-        label: 'Home',
+        label: 'Today',
       ),
       NavigationDestination(
         icon: CircleGlyph(color: cs.onSurfaceVariant),
         selectedIcon: CircleGlyph(color: cs.primary),
-        label: 'Community',
+        label: 'Circle',
       ),
       NavigationDestination(
         icon: PathGlyph(color: cs.onSurfaceVariant),
         selectedIcon: PathGlyph(color: cs.primary),
-        label: 'Journey',
+        label: 'Path',
       ),
     ];
 

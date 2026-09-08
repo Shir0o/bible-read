@@ -354,7 +354,7 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Join the community to start reading together.',
+                      'Join a group to start reading together.',
                       style: textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 32),

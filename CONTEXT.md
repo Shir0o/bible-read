@@ -52,7 +52,7 @@ _Avoid_: Caught up, current
 **Plan**:
 A dated sequence of readings, either solo ("On your own") or shared — a Shared
 plan is a Plan whose schedule a Group follows; nothing else differs. One list
-(the Journey tab) owns the whole plan lifecycle: enroll, adjust pace, leave,
+(the Path tab) owns the whole plan lifecycle: enroll, adjust pace, leave,
 restore, delete.
 _Avoid_: Group plan (a Group has a Shared plan; it is not a different kind of
 Plan), program, course, track
@@ -168,3 +168,7 @@ the app as it is. See `docs/community_journey_ia.md`,
 - **Badge is confirmed as the reader-facing word.** The redesign's specs and tickets
   were drafted saying "achievement" reader-facing; they defer to Badge, as recorded
   under Read-throughs above. The Firestore collection keeps the `achievements` name.
+- **The three tabs are Today / Circle / Path** (#813). The bar, the wide-layout
+  rail and every user-facing string use the new names; internal class names
+  (`CommunityPage`, `JourneyPage`, the `journey/` widgets directory) may lag.
+  Nothing the reader sees still says "Community" or "Journey".

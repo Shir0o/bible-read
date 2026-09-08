@@ -316,7 +316,7 @@ void main() {
     );
     expect(responsive.contentIndex, 0);
     final labels = responsive.destinations.map((d) => d.label).toList();
-    expect(labels, ['Home', 'Community', 'Journey']);
+    expect(labels, ['Today', 'Circle', 'Path']);
     expect(responsive.selectedIndex, 0);
 
     // Tap Feed (Community, index 1)

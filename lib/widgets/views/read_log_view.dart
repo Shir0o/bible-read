@@ -301,7 +301,7 @@ class _ReadLogViewState extends State<ReadLogView>
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Join the community and encourage others.',
+                              'Join a group and encourage others.',
                               style: AppTextStyles.body(context).copyWith(
                                 color: Theme.of(
                                   context,

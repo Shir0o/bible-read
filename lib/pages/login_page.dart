@@ -283,7 +283,7 @@ class _LoginPageState extends State<LoginPage> {
                       Container(
                         constraints: const BoxConstraints(maxWidth: 280),
                         child: Text(
-                          'Join your community in daily Scripture reading',
+                          'Join your circle in daily Scripture reading',
                           textAlign: TextAlign.center,
                           style: textTheme.bodyLarge?.copyWith(
                             color: colorScheme.onSurfaceVariant,

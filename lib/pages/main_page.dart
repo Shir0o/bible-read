@@ -336,17 +336,17 @@ class MainPageState extends State<MainPage> {
           NavigationDestination(
             icon: TodayGlyph(color: colorScheme.onSurfaceVariant),
             selectedIcon: TodayGlyph(color: colorScheme.primary),
-            label: 'Home',
+            label: 'Today',
           ),
           NavigationDestination(
             icon: CircleGlyph(color: colorScheme.onSurfaceVariant),
             selectedIcon: CircleGlyph(color: colorScheme.primary),
-            label: 'Community',
+            label: 'Circle',
           ),
           NavigationDestination(
             icon: PathGlyph(color: colorScheme.onSurfaceVariant),
             selectedIcon: PathGlyph(color: colorScheme.primary),
-            label: 'Journey',
+            label: 'Path',
           ),
         ];
         return ReadThroughHost(

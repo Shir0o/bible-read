@@ -1519,7 +1519,7 @@ class _HomePageState extends State<HomePage>
           CatchUpStatusRow(
             status: primary.status,
             onTrackLabel: primary.isGroup
-                ? 'In step with your community'
+                ? 'In step with your group'
                 : "You're on track",
             onTap: () => _openPrimarySchedule(primary),
           ),
@@ -1797,7 +1797,7 @@ class _HomePageState extends State<HomePage>
                   )
                 : isRead
                     ? _buildReadConfirmationRow(
-                        context, 'Read with your community')
+                        context, 'Read with your group')
                     : FilledButton.tonalIcon(
                         onPressed:
                             g.markLoading ? null : () => _toggleGroupReading(g),
@@ -1809,7 +1809,7 @@ class _HomePageState extends State<HomePage>
                                     CircularProgressIndicator(strokeWidth: 2.5),
                               )
                             : const Icon(Icons.check_rounded, size: 20),
-                        label: const Text('Read with your community'),
+                        label: const Text('Read with your group'),
                         style: _ghostMarkButtonStyle(context),
                       ),
           ),
@@ -2520,7 +2520,7 @@ class _HomePageState extends State<HomePage>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Your community',
+                'Your circle',
                 style: theme.textTheme.titleSmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,

@@ -49,7 +49,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Join the Community'), findsOneWidget);
+      expect(find.text('Join the Circle'), findsOneWidget);
       expect(
         find.text(
           'Sign up to track your progress and connect with your reading group.',

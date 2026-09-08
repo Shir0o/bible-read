@@ -881,7 +881,7 @@ class PlansHubState extends State<PlansHub> {
           const SizedBox(height: 12),
           CatchUpStatusRow(
             status: row.status,
-            onTrackLabel: 'In step with your community',
+            onTrackLabel: 'In step with your group',
             onTap: () => _reviewGroup(row),
           ),
           const SizedBox(height: 14),
