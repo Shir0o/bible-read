@@ -1,3 +1,4 @@
+import 'package:bible_read/pages/create_plan_page.dart';
 import 'package:bible_read/models/reading_plan.dart';
 import 'package:bible_read/widgets/journey/plans_hub.dart';
 import 'package:bible_read/services/group_service.dart';
@@ -105,4 +106,27 @@ void main() {
     final cleared = await prefsService.fetchPreferences('u1');
     expect(cleared.pinnedReadingId, isNull);
   });
-}
+
+  testWidgets('enrolling opens the creation flow with no modal fork', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+
+    await tester.tap(find.text('Enroll in a new plan'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    // The creation form is pushed directly — no personal-vs-group chooser
+    // before it (#809). The who-is-reading field sits below the fold.
+    expect(find.byType(CreatePlanPage), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('WHO IS READING'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    // The who-is-reading answer is a field in the flow, not a fork.
+    expect(find.text('Just you'), findsOneWidget);
+    expect(find.text('With a group'), findsOneWidget);
+  });
+ }

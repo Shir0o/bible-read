@@ -20,8 +20,6 @@ import '../../services/user_preferences_service.dart';
 import '../../services/vibration_service.dart';
 import '../catch_up_status_row.dart';
 import '../member_presence_stack.dart';
-import '../new_plan_picker_sheet.dart';
-import '../../pages/create_group_page.dart';
 import '../../pages/create_plan_page.dart';
 import '../../pages/full_schedule_page.dart';
 import '../../pages/group_detail_page.dart';
@@ -335,35 +333,23 @@ class PlansHubState extends State<PlansHub> {
 
   Future<void> _enroll() async {
     widget.vibrationService.lightImpact();
-    final kind = await showNewPlanPicker(context);
-    if (kind == null || !mounted) return;
 
-    // Both create pages replace themselves with a detail page on success
-    // (pushReplacement), so the push future can't reliably report whether a
-    // plan was created. Reload on return so a newly created plan/group always
-    // shows in the hub; the occasional wasted reload on cancel is cheap.
-    switch (kind) {
-      case NewPlanKind.personal:
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => CreatePlanPage(
-              firestore: widget.firestore,
-              auth: widget.auth,
-              vibrationService: widget.vibrationService,
-            ),
-          ),
-        );
-      case NewPlanKind.group:
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => CreateGroupPage(
-              groupService: widget.groupService,
-              auth: widget.auth,
-              vibrationService: widget.vibrationService,
-            ),
-          ),
-        );
-    }
+    // One creation flow, no modal fork (#809): what to read and over how
+    // long come first, who is reading is a field inside the form. The create
+    // page replaces itself with a detail page on success (pushReplacement),
+    // so the push future can't reliably report whether a plan was created.
+    // Reload on return so a newly created plan/group always shows in the
+    // hub; the occasional wasted reload on cancel is cheap.
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CreatePlanPage(
+          firestore: widget.firestore,
+          auth: widget.auth,
+          vibrationService: widget.vibrationService,
+          groupService: widget.groupService,
+        ),
+      ),
+    );
     if (mounted) await _load();
   }
 
