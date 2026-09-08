@@ -1,4 +1,3 @@
-import 'package:bible_read/models/notification_preferences.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -106,106 +105,6 @@ void main() {
       },
     );
 
-    test('sendGroupInvite creates invite and notification', () async {
-      final groupName = 'Test Group';
-      final senderUid = 'owner';
-      final senderName = 'Owner Name';
-      final recipientUid = 'user1';
-      final groupId = await groupService.createGroup(
-        ownerUid: senderUid,
-        name: groupName,
-      );
-
-      await groupService.sendGroupInvite(
-        groupId: groupId,
-        groupName: groupName,
-        senderUid: senderUid,
-        senderName: senderName,
-        recipientUid: recipientUid,
-      );
-
-      final inviteDoc = await firestore
-          .collection('groups')
-          .doc(groupId)
-          .collection('invites')
-          .doc(recipientUid)
-          .get();
-
-      expect(inviteDoc.exists, isTrue);
-      expect(inviteDoc.data()?['groupName'], equals(groupName));
-
-      final notificationSnap = await firestore
-          .collection('users')
-          .doc(recipientUid)
-          .collection('notifications')
-          .get();
-
-      expect(notificationSnap.docs.length, equals(1));
-      expect(
-        notificationSnap.docs.first.data()['type'],
-        equals(NotificationType.groupInvite.name),
-      );
-    });
-
-    test('sendGroupInvite requires existing group admin', () async {
-      final groupId = await groupService.createGroup(
-        ownerUid: 'owner',
-        name: 'Private Group',
-      );
-
-      await expectLater(
-        groupService.sendGroupInvite(
-          groupId: groupId,
-          groupName: 'Private Group',
-          senderUid: 'user1',
-          senderName: 'User One',
-          recipientUid: 'user2',
-        ),
-        throwsStateError,
-      );
-
-      final inviteDoc = await firestore
-          .collection('groups')
-          .doc(groupId)
-          .collection('invites')
-          .doc('user2')
-          .get();
-
-      expect(inviteDoc.exists, isFalse);
-    });
-
-    test('sendGroupInvite cannot invite existing member', () async {
-      final groupId = await groupService.createGroup(
-        ownerUid: 'owner',
-        name: 'Private Group',
-      );
-      await groupService.joinGroupDirectly(
-        groupId: groupId,
-        uid: 'user1',
-        name: 'User One',
-      );
-
-      await expectLater(
-        groupService.sendGroupInvite(
-          groupId: groupId,
-          groupName: 'Private Group',
-          senderUid: 'owner',
-          senderName: 'Owner',
-          recipientUid: 'user1',
-        ),
-        throwsStateError,
-      );
-
-      final inviteDoc = await firestore
-          .collection('groups')
-          .doc(groupId)
-          .collection('invites')
-          .doc('user1')
-          .get();
-
-      expect(inviteDoc.exists, isFalse);
-    });
-
     test('respondToGroupInvite (Accept) adds member and cleans up', () async {
       final groupId = await groupService.createGroup(
         ownerUid: 'owner',
@@ -214,11 +113,9 @@ void main() {
       final recipientUid = 'user1';
 
       // Setup invite and notification
-      await groupService.sendGroupInvite(
+      await seedInvite(
+        firestore,
         groupId: groupId,
-        groupName: 'Test Group',
-        senderUid: 'owner',
-        senderName: 'Owner',
         recipientUid: recipientUid,
       );
 
@@ -289,11 +186,9 @@ void main() {
         );
         final recipientUid = 'user1';
 
-        await groupService.sendGroupInvite(
+        await seedInvite(
+          firestore,
           groupId: groupId,
-          groupName: 'Test Group',
-          senderUid: 'owner',
-          senderName: 'Owner',
           recipientUid: recipientUid,
         );
 
@@ -345,4 +240,34 @@ void main() {
       expect(groupDoc.data()?['memberCount'], equals(1));
     });
   });
+}
+
+/// Writes an invite document and its notification directly, the way an
+/// invite authoring surface would have: [GroupService.sendGroupInvite] was
+/// retired with the InviteMemberPage (issue #799), but responding to an
+/// invite that already exists remains supported.
+Future<void> seedInvite(
+  FakeFirebaseFirestore firestore, {
+  required String groupId,
+  required String recipientUid,
+}) async {
+  await firestore
+      .collection('groups')
+      .doc(groupId)
+      .collection('invites')
+      .doc(recipientUid)
+      .set({
+    'groupId': groupId,
+    'groupName': 'Test Group',
+    'senderUid': 'owner',
+    'senderName': 'Owner',
+    'recipientUid': recipientUid,
+    'timestamp': DateTime.now(),
+  });
+  await firestore
+      .collection('users')
+      .doc(recipientUid)
+      .collection('notifications')
+      .doc('groupInvite_${groupId}_owner')
+      .set({'type': 'groupInvite', 'groupId': groupId, 'read': false});
 }

@@ -1,10 +1,9 @@
 import 'package:bible_read/models/group.dart';
 import 'package:bible_read/models/group_invite.dart';
+import 'package:bible_read/pages/edit_group_page.dart';
 import 'package:bible_read/pages/group_detail_page.dart';
 import 'package:bible_read/pages/groups_page.dart';
-import 'package:bible_read/pages/invite_member_page.dart';
 import 'package:bible_read/services/group_service.dart';
-import 'package:bible_read/services/friend_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
@@ -13,14 +12,11 @@ import 'package:mocktail/mocktail.dart';
 
 class MockGroupService extends Mock implements GroupService {}
 
-class MockFriendService extends Mock implements FriendService {}
-
 void main() {
   late FakeFirebaseFirestore firestore;
   late MockUser user;
   late MockFirebaseAuth auth;
   late MockGroupService groupService;
-  late MockFriendService friendService;
 
   setUp(() {
     firestore = FakeFirebaseFirestore();
@@ -31,7 +27,6 @@ void main() {
     );
     auth = MockFirebaseAuth(signedIn: true, mockUser: user);
     groupService = MockGroupService();
-    friendService = MockFriendService();
 
     // Default stubs
     when(() => groupService.firestore).thenReturn(firestore);
@@ -141,116 +136,61 @@ void main() {
     });
   });
 
-  group('InviteMemberPage Widget Tests', () {
-    testWidgets('shows friends list by default', (tester) async {
-      final group = Group(id: 'g1', name: 'G1', ownerUid: 'user1');
-      final friends = [Friend(uid: 'friend1', name: 'Friend One')];
-
-      when(
-        () => friendService.friends('user1'),
-      ).thenAnswer((_) => Stream.value(friends));
-
-      await tester.pumpWidget(
-        createWidget(
-          InviteMemberPage(
-            group: group,
-            groupService: groupService,
-            friendService: friendService,
-            auth: auth,
-          ),
-        ),
-      );
-
-      await tester.pump(); // Start stream
-      await tester.pump(); // Rebuild with data
-
-      expect(find.text('MY FRIENDS'), findsOneWidget);
-      expect(find.text('Friend One'), findsOneWidget);
-    });
-
-    testWidgets('shows invited status for friends with pending invites', (
+  group('InviteMemberPage retirement', () {
+    testWidgets('admin invite affordance is gone from GroupDetailPage', (
       tester,
     ) async {
-      final group = Group(id: 'g1', name: 'G1', ownerUid: 'user1');
-      final friends = [Friend(uid: 'friend1', name: 'Friend One')];
-
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc('g1')
-          .collection(GroupCollections.invites)
-          .doc('friend1')
-          .set({
-        'groupId': 'g1',
-        'groupName': 'G1',
-        'senderUid': 'user1',
-        'senderName': 'User One',
-        'recipientUid': 'friend1',
-        'timestamp': DateTime.now(),
-      });
+      final group = Group(
+        id: 'group1',
+        name: 'Owner Group',
+        ownerUid: 'user1',
+      );
 
       when(
-        () => friendService.friends('user1'),
-      ).thenAnswer((_) => Stream.value(friends));
+        () => groupService.schedule(any()),
+      ).thenAnswer((_) => Stream.value([]));
+      when(
+        () =>
+            groupService.memberDailyCompletion(any(), date: any(named: 'date')),
+      ).thenAnswer((_) => Stream.value([]));
+      when(
+        () => groupService.memberOverallCompletion(any()),
+      ).thenAnswer((_) => Stream.value([]));
 
       await tester.pumpWidget(
         createWidget(
-          InviteMemberPage(
-            group: group,
-            groupService: groupService,
-            friendService: friendService,
-            auth: auth,
-          ),
+          GroupDetailPage(group: group, groupService: groupService, auth: auth),
         ),
       );
 
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Friend One'), findsOneWidget);
-      expect(find.text('Invited'), findsOneWidget);
-      expect(find.byIcon(Icons.mark_email_read_outlined), findsOneWidget);
-      expect(find.widgetWithText(ElevatedButton, 'Invite'), findsNothing);
+      expect(find.byTooltip('Invite member'), findsNothing);
+      expect(find.byIcon(Icons.person_add_alt_1), findsNothing);
     });
 
-    testWidgets('shows member status for friends already in the group', (
-      tester,
-    ) async {
-      final group = Group(id: 'g1', name: 'G1', ownerUid: 'user1');
-      final friends = [Friend(uid: 'friend1', name: 'Friend One')];
-
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc('g1')
-          .collection(GroupCollections.members)
-          .doc('friend1')
-          .set({
-        'uid': 'friend1',
-        'role': 'member',
-        'joinedAt': DateTime.now(),
-      });
-
+    testWidgets('Copy Link is gone from EditGroupPage', (tester) async {
       when(
-        () => friendService.friends('user1'),
-      ).thenAnswer((_) => Stream.value(friends));
+        () => groupService.schedule(any()),
+      ).thenAnswer((_) => Stream.value([]));
+      when(
+        () => groupService.memberOverallCompletion(any()),
+      ).thenAnswer((_) => Stream.value([]));
 
       await tester.pumpWidget(
         createWidget(
-          InviteMemberPage(
-            group: group,
+          EditGroupPage(
+            group: const Group(id: 'g1', name: 'G1', ownerUid: 'user1'),
             groupService: groupService,
-            friendService: friendService,
             auth: auth,
           ),
         ),
       );
-
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Friend One'), findsOneWidget);
-      expect(find.text('Member'), findsOneWidget);
-      expect(find.byIcon(Icons.verified_user_outlined), findsOneWidget);
-      expect(find.widgetWithText(ElevatedButton, 'Invite'), findsNothing);
+      expect(find.text('Copy Link'), findsNothing);
     });
   });
 }

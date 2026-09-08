@@ -1,10 +1,8 @@
 import 'package:bible_read/pages/create_group_page.dart';
 import 'package:bible_read/pages/group_detail_page.dart';
 import 'package:bible_read/pages/groups_page.dart';
-import 'package:bible_read/pages/invite_member_page.dart';
 import 'package:bible_read/pages/main_page.dart';
-import 'package:bible_read/services/friend_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:bible_read/pages/share_code_page.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -34,30 +32,11 @@ void main() {
     );
     final auth = MockFirebaseAuth(mockUser: mockUser, signedIn: true);
 
-    // 1. Setup a friend to invite later
-    await firestore.collection('users').doc('friend_uid').set({
-      'displayName': 'Friend',
-      'email': 'friend@example.com',
-    });
-    // Add to owner's friends list
-    await firestore
-        .collection('users')
-        .doc('owner_uid')
-        .collection('friends')
-        .doc('friend_uid')
-        .set({
-      'name': 'Friend',
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-
-    final friendService = FriendService(firestore: firestore);
-
     // 2. Launch App
     await tester.pumpWidget(MaterialApp(
       home: MainPage(
         firestore: firestore,
         auth: auth,
-        friendService: friendService,
       ),
     ));
     await tester.pumpAndSettle();
@@ -124,44 +103,25 @@ void main() {
     expect(find.text('Jude Plan'), findsOneWidget);
     await takeScreenshot(tester, '11_group_detail');
 
-    // 7. Invite Friend
-    await tester.tap(find.byTooltip('Invite member'));
+    // 7. Share code is the only invite surface
+    await tester.tap(find.byTooltip('Share code'));
     await tester.pumpAndSettle();
-    expect(find.byType(InviteMemberPage), findsOneWidget);
+    expect(find.byType(ShareCodePage), findsOneWidget);
 
-    // Should see friend in "MY FRIENDS" section
-    expect(find.text('Friend'), findsOneWidget);
-    await tester.tap(find.text('Invite'));
-    await tester.pumpAndSettle();
-
-    // 8. Verify Firestore State
+    // A join code was assigned when the group was created: stored on the
+    // group document and indexed in the top-level joinCodes lookup.
     final groupsSnap = await firestore.collection('groups').get();
-    expect(groupsSnap.docs.length, 1);
     final groupData = groupsSnap.docs.first.data();
     expect(groupData['name'], 'Jude Plan');
     expect(groupData['ownerUid'], 'owner_uid');
+    expect(groupData['joinCode'], isNotNull);
 
     final groupId = groupsSnap.docs.first.id;
-    final scheduleSnap = await firestore
-        .collection('groups')
-        .doc(groupId)
-        .collection('schedule')
+    final codeSnap = await firestore
+        .collection('joinCodes')
+        .doc(groupData['joinCode'] as String)
         .get();
-    expect(scheduleSnap.docs.isNotEmpty, isTrue);
-
-    final invitesSnap = await firestore
-        .collection('groups')
-        .doc(groupId)
-        .collection('invites')
-        .get();
-    expect(invitesSnap.docs.length, 1);
-    expect(invitesSnap.docs.first.id, 'friend_uid');
-
-    final userInviteSnap = await firestore
-        .collection('users')
-        .doc('friend_uid')
-        .collection('notifications')
-        .get();
-    expect(userInviteSnap.docs.length, 1);
+    expect(codeSnap.exists, isTrue);
+    expect(codeSnap.data()?['groupId'], groupId);
   });
 }
