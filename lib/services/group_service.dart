@@ -8,6 +8,7 @@ import '../models/group_member_progress.dart';
 import '../models/group_plan_config.dart';
 import '../models/group_schedule.dart';
 import '../models/group.dart';
+import '../models/circle_member.dart';
 import '../models/group_invite.dart';
 import '../models/group_member_role.dart';
 import '../models/notification_preferences.dart';
@@ -532,6 +533,150 @@ class GroupService {
     }
   }
 
+  // ---- Group lifecycle: archive and 30-day trash (#776) -------------------
+
+  /// Archives the group owned by [ownerUid]: shelved for every member, its
+  /// schedule and history intact. Excluded from the active group lists until
+  /// unarchived.
+  Future<void> archiveGroup({
+    required String groupId,
+    required String ownerUid,
+  }) async {
+    await _setGroupLifecycle(
+      groupId: groupId,
+      ownerUid: ownerUid,
+      updates: {
+        'isArchived': true,
+        'archivedAt': Timestamp.now(),
+      },
+    );
+  }
+
+  /// Unarchives a group — it returns to every member's active lists.
+  Future<void> unarchiveGroup({
+    required String groupId,
+    required String ownerUid,
+  }) async {
+    await _setGroupLifecycle(
+      groupId: groupId,
+      ownerUid: ownerUid,
+      updates: {
+        'isArchived': false,
+        'archivedAt': null,
+      },
+    );
+  }
+
+  /// Soft-deletes the group owned by [ownerUid]: it moves to the Recently
+  /// Deleted hub for 30 days. [preDeleteState] records whether it was
+  /// archived, so restoring puts it back exactly. Members' access stays
+  /// frozen (the group disappears from their lists) until purge or restore.
+  Future<void> softDeleteGroup({
+    required String groupId,
+    required String ownerUid,
+    DateTime? now,
+  }) async {
+    final groupRef = firestore.collection(GroupCollections.groups).doc(groupId);
+    final snap = await groupRef.get();
+    final data = snap.data();
+    if (data == null || data['ownerUid'] != ownerUid) {
+      throw StateError('Only the group owner can delete this group.');
+    }
+    final wasArchived = data['isArchived'] as bool? ?? false;
+    final deletedAt = now ?? DateTime.now();
+    await groupRef.update({
+      'isArchived': wasArchived,
+      'deletedAt': Timestamp.fromDate(deletedAt),
+      'deleteAfter':
+          Timestamp.fromDate(deletedAt.add(const Duration(days: 30))),
+      'preDeleteState': wasArchived ? 'archived' : 'active',
+    });
+  }
+
+  /// Returns a soft-deleted group to its pre-deletion state (#776).
+  Future<void> restoreGroup({
+    required String groupId,
+    required String ownerUid,
+  }) async {
+    final groupRef = firestore.collection(GroupCollections.groups).doc(groupId);
+    final snap = await groupRef.get();
+    final data = snap.data();
+    if (data == null || data['ownerUid'] != ownerUid) {
+      throw StateError('Only the group owner can restore this group.');
+    }
+    final wasArchived = data['preDeleteState'] == 'archived';
+    await groupRef.update({
+      'isArchived': wasArchived,
+      'archivedAt': wasArchived ? data['archivedAt'] : null,
+      'deletedAt': null,
+      'deleteAfter': null,
+      'preDeleteState': null,
+    });
+  }
+
+  /// Permanently deletes a soft-deleted group and its subcollections.
+  /// Only the owner should call this.
+  Future<void> permanentlyDeleteGroup({
+    required String groupId,
+    required String ownerUid,
+  }) =>
+      deleteGroup(groupId: groupId, ownerUid: ownerUid);
+
+  /// Streams the owner's groups sitting in the Recently Deleted hub (#776).
+  Stream<List<Group>> getDeletedGroups(String ownerUid) {
+    return firestore
+        .collection(GroupCollections.groups)
+        .where('ownerUid', isEqualTo: ownerUid)
+        .where('deletedAt', isNull: false)
+        .snapshots()
+        .map((snap) => snap.docs.map(Group.fromFirestore).toList());
+  }
+
+  /// Archives [uid]'s participation in [groupId] (#776): the group keeps
+  /// running for everyone else, but the group disappears from this member's
+  /// active lists until they unarchive it from the Archive hub.
+  Future<void> archiveMemberParticipation({
+    required String groupId,
+    required String uid,
+  }) =>
+      _setMemberParticipationArchived(
+          groupId: groupId, uid: uid, archived: true);
+
+  /// Unarchives [uid]'s participation — the group returns to their lists.
+  Future<void> unarchiveMemberParticipation({
+    required String groupId,
+    required String uid,
+  }) =>
+      _setMemberParticipationArchived(
+          groupId: groupId, uid: uid, archived: false);
+
+  Future<void> _setMemberParticipationArchived({
+    required String groupId,
+    required String uid,
+    required bool archived,
+  }) async {
+    await firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.members)
+        .doc(uid)
+        .update({'isArchived': archived});
+  }
+
+  Future<void> _setGroupLifecycle({
+    required String groupId,
+    required String ownerUid,
+    required Map<String, dynamic> updates,
+  }) async {
+    final groupRef = firestore.collection(GroupCollections.groups).doc(groupId);
+    final snap = await groupRef.get();
+    final data = snap.data();
+    if (data == null || data['ownerUid'] != ownerUid) {
+      throw StateError('Only the group owner can change this group.');
+    }
+    await groupRef.update(updates);
+  }
+
   /// Promote the member with [uid] to `admin` when requested by [ownerUid].
   Future<void> promoteToAdmin({
     required String groupId,
@@ -854,7 +999,10 @@ class GroupService {
         (snap) async {
           if (controller.isClosed) return;
           try {
-            controller.add(snap.docs.map(Group.fromFirestore).toList());
+            controller.add(snap.docs
+                .map(Group.fromFirestore)
+                .where((g) => g.deletedAt == null)
+                .toList());
           } catch (e, st) {
             await _safeLog(e, st);
             if (!controller.isClosed) controller.add(<Group>[]);
@@ -880,6 +1028,7 @@ class GroupService {
     final ownerSnaps = firestore
         .collection(GroupCollections.groups)
         .where('ownerUid', isEqualTo: uid)
+        .where('deletedAt', isNull: true)
         .snapshots();
 
     final joinRequestSnaps = firestore
@@ -922,7 +1071,10 @@ class GroupService {
         QuerySnapshot<Map<String, dynamic>> snap,
       ) async {
         try {
+          // Participation archive (#776): a member who archived the group
+          // keeps their membership but hides it from the active lists.
           final ids = snap.docs
+              .where((doc) => doc.data()['isArchived'] != true)
               .map((doc) => doc.reference.parent.parent?.id)
               .whereType<String>()
               .toList();
@@ -937,7 +1089,12 @@ class GroupService {
 
       Future<void> handleOwner(QuerySnapshot<Map<String, dynamic>> snap) async {
         try {
-          ownerGroups = snap.docs.map(Group.fromFirestore).toList();
+          // Owner-archived groups (#776) are shelved: they leave the live
+          // lists and wait in the hub's Archive rows.
+          ownerGroups = snap.docs
+              .map(Group.fromFirestore)
+              .where((g) => !g.isArchived)
+              .toList();
         } catch (e, st) {
           await _safeLog(e, st);
           ownerGroups = <Group>[];
@@ -994,9 +1151,43 @@ class GroupService {
       controller.onCancel = () {
         sub1.cancel();
         sub2.cancel();
+
         sub3.cancel();
       };
     });
+  }
+
+  /// Groups the user with [uid] has shelved (#776): groups they own that are
+  /// archived, plus groups whose membership they archived. Soft-deleted
+  /// groups never appear here — they are in the trash.
+  Future<List<Group>> archivedGroupsForUser(String uid) async {
+    // Owner-archived groups.
+    final owned = await firestore
+        .collection(GroupCollections.groups)
+        .where('ownerUid', isEqualTo: uid)
+        .where('isArchived', isEqualTo: true)
+        .where('deletedAt', isNull: true)
+        .get();
+    final archived = <String, Group>{
+      for (final doc in owned.docs) doc.id: Group.fromFirestore(doc),
+    };
+
+    // Groups whose membership this reader archived.
+    final memberships = await firestore
+        .collectionGroup(GroupCollections.members)
+        .where('uid', isEqualTo: uid)
+        .where('isArchived', isEqualTo: true)
+        .get();
+    final ids = memberships.docs
+        .map((doc) => doc.reference.parent.parent?.id)
+        .whereType<String>()
+        .toSet()
+      ..removeAll(archived.keys);
+    final memberArchived = await _fetchGroupsByIds(ids.toList());
+    for (final g in memberArchived) {
+      archived[g.id] = g;
+    }
+    return archived.values.toList();
   }
 
   /// Everyone [uid] shares at least one Group with — their Circle, derived
@@ -1025,6 +1216,87 @@ class GroupService {
       }
     }
     return circle;
+  }
+
+  /// Live stream of the reader's Circle (ADR-0003): the co-members of every
+  /// Group [uid] belongs to, deduplicated by uid. A person in two shared
+  /// Groups appears once, carrying both Group ids. The reader is excluded —
+  /// Circle is who you read *with*; the reader renders their own row. No
+  /// Groups yields an empty list, not an error.
+  Stream<List<CircleMember>> circleMembers(String uid) {
+    final memberships = firestore
+        .collectionGroup(GroupCollections.members)
+        .where('uid', isEqualTo: uid)
+        .snapshots();
+
+    return memberships.asyncMap((memberSnaps) async {
+      final groupIds = memberSnaps.docs
+          .map((doc) => doc.reference.parent.parent?.id)
+          .whereType<String>()
+          .toSet();
+      if (groupIds.isEmpty) return <CircleMember>[];
+
+      final byUid = <String, CircleMember>{};
+      for (final groupId in groupIds) {
+        try {
+          final members = await firestore
+              .collection(GroupCollections.groups)
+              .doc(groupId)
+              .collection(GroupCollections.members)
+              .get();
+          for (final doc in members.docs) {
+            final data = doc.data();
+            final id = (data['uid'] as String?) ?? doc.id;
+            if (id.isEmpty || id == uid) continue;
+            final name = (data['name'] as String?)?.trim();
+            final photoUrl = (data['photoUrl'] as String?)?.trim();
+            final existing = byUid[id];
+            if (existing != null) {
+              existing.groupIds.add(groupId);
+              continue;
+            }
+            byUid[id] = CircleMember(
+              uid: id,
+              groupIds: {groupId},
+              name: (name != null && name.isNotEmpty) ? name : null,
+              photoUrl:
+                  (photoUrl != null && photoUrl.isNotEmpty) ? photoUrl : null,
+            );
+          }
+        } catch (e, st) {
+          await _safeLog(e, st);
+        }
+      }
+      return byUid.values.toList();
+    });
+  }
+
+  /// Stream of the `YYYY-MM-DD` ids [uid] has completed in [groupId]'s
+  /// schedule, read from `progress/{dateId}/entries/{uid}` (count > 0 or
+  /// done). This is how a Circle row learns a co-member's Plan reading.
+  Stream<Set<String>> memberCompletedDates(String groupId, String uid) {
+    return firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection('progress')
+        .snapshots()
+        .asyncMap((snap) async {
+      final done = <String>{};
+      for (final day in snap.docs) {
+        try {
+          final entry =
+              await day.reference.collection('entries').doc(uid).get();
+          final data = entry.data();
+          if (data == null) continue;
+          final count = (data['count'] as num?)?.toInt() ?? 0;
+          final complete = data['done'] == true;
+          if (count > 0 || complete) done.add(day.id);
+        } catch (e, st) {
+          await _safeLog(e, st);
+        }
+      }
+      return done;
+    });
   }
 
   /// Stream of member display names for [groupId].
@@ -2023,9 +2295,12 @@ class GroupService {
     }
 
     final results = await Future.wait(futures);
+    // Soft-deleted groups (#776) never leak into any live list, and an
+    // owner-archived group is shelved: neither returns through a live fetch.
     return results
         .expand((snap) => snap.docs)
         .map(Group.fromFirestore)
+        .where((g) => g.deletedAt == null && !g.isArchived)
         .toList();
   }
 

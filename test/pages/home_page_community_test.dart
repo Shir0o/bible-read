@@ -1,6 +1,6 @@
-// The Home "Your community" glimpse is sourced from the reader's Circle —
-// the co-members of their Groups, derived at read time (ADR-0003, #795) —
-// not from the friend graph.
+// The Home "Your circle" glimpse is sourced from the reader's Circle —
+// the co-members of their Groups, derived at read time (ADR-0003, #795).
+// There is no friend graph to consult.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -113,7 +113,7 @@ void main() {
   });
   tearDownAll(resetHttpOverrides);
 
-  testWidgets('glimpse counts co-members from Groups, not friends', (
+  testWidgets('glimpse counts co-members from Groups, not strangers', (
     tester,
   ) async {
     final firestore = FakeFirebaseFirestore();
@@ -139,7 +139,7 @@ void main() {
 
     await _pumpHome(tester, firestore, auth);
 
-    expect(find.text('Your community'), findsOneWidget);
+    expect(find.text('Your circle'), findsOneWidget);
     expect(find.text('2 of 4 read today'), findsOneWidget);
     expect(find.textContaining('Stranger'), findsNothing);
   });
@@ -155,7 +155,7 @@ void main() {
 
     await _pumpHome(tester, firestore, auth);
 
-    expect(find.text('Your community'), findsOneWidget);
+    expect(find.text('Your circle'), findsOneWidget);
     expect(find.text('0 of 1 read today'), findsOneWidget);
     expect(find.text('Be the first to show up today'), findsOneWidget);
   });

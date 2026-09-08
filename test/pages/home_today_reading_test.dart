@@ -380,7 +380,7 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      await tester.tap(find.text('Read with your community'));
+      await tester.tap(find.text('Read with your group'));
       await tester.pumpAndSettle();
 
       // First completion shows the one-time coupling prompt; choose "Yes".

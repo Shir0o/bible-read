@@ -69,7 +69,7 @@ void main() {
     // 2. Navigate to AuthSelectionPage
     await tester.tap(find.text('Get Started'));
     await tester.pumpAndSettle();
-    expect(find.text('Join the Community'), findsOneWidget);
+    expect(find.text('Join the Circle'), findsOneWidget);
 
     // 3. Navigate to SignupPage
     await tester.tap(find.text('Sign up with email'));

@@ -31,6 +31,7 @@ afterEach(() => utils.invalidateUserCache());
     }),
     configurable: true,
     writable: true,
+    configurable: true,
   });
 
   let captured;
@@ -49,8 +50,8 @@ afterEach(() => utils.invalidateUserCache());
   assert.equal(captured.token, 'token456');
   assert.match(captured.notification.body, /Alice/);
 
-  Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+  Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
 
@@ -67,6 +68,7 @@ afterEach(() => utils.invalidateUserCache());
     }),
     configurable: true,
     writable: true,
+    configurable: true,
   });
 
   let sent = false;
@@ -84,8 +86,8 @@ afterEach(() => utils.invalidateUserCache());
 
     assert.equal(sent, false);
 
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('throws when messaging fails', async () => {
@@ -101,6 +103,7 @@ afterEach(() => utils.invalidateUserCache());
       }),
       configurable: true,
       writable: true,
+      configurable: true,
     });
 
     const originalMessaging = admin.messaging;
@@ -118,11 +121,11 @@ afterEach(() => utils.invalidateUserCache());
       assert.fail('expected error');
     } catch (err) {
       assert.equal(err.code, 'internal');
-      assert.match(err.message, /Failed to send like notification/);
+      assert.match(err.message, /Failed to send Amen notification/);
     }
 
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
 });

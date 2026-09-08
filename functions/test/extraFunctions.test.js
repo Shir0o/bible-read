@@ -129,67 +129,6 @@ process.env.ADMIN_UID = 'admin1';
 
 describe('other cloud functions', () => {
   afterEach(() => utils.invalidateUserCache());
-  it('sendCommentNotification sends message', async () => {
-    const originalFirestore = admin.firestore;
-    const originalMessaging = admin.messaging;
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: () => ({
-            doc: () => ({ get: async () => ({ exists: false }) })
-          }),
-          get: async () => ({ data: () => ({ fcmToken: 'tokC' }) })
-        })
-      })
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    let sent;
-    Object.defineProperty(admin, 'firestore', {value: fakeFirestore, configurable: true, writable: true});
-    Object.defineProperty(admin, 'messaging', {value: () => ({ send: async (msg) => { sent = msg; } }), configurable: true, writable: true});
-
-    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
-    await wrapped({ data: { ownerUid: 'u1', commenterName: 'Bob' }, auth: { uid: 'u2' } });
-
-    assert.equal(sent.token, 'tokC');
-    assert.match(sent.notification.body, /Bob/);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
-  });
-
-  it('sendCommentNotification handles messaging error', async () => {
-    const originalFirestore = admin.firestore;
-    const originalMessaging = admin.messaging;
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: () => ({ doc: () => ({ get: async () => ({ exists: false }) }) }),
-          get: async () => ({ data: () => ({ fcmToken: 'tokErr' }) })
-        })
-      })
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-    Object.defineProperty(admin, 'messaging', {
-      value: () => ({ send: async () => { throw new Error('boom'); } }),
-      configurable: true,
-      writable: true
-    });
-
-    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
-    try {
-      await wrapped({ data: { ownerUid: 'u1', commenterName: 'Bob' }, auth: { uid: 'u2' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'internal');
-      assert.match(err.message, /Failed to send comment notification/);
-    }
-
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
-  });
-
   it('sendNudgeNotification logs and sends', async () => {
     const originalFirestore = admin.firestore;
     const originalMessaging = admin.messaging;
@@ -219,8 +158,8 @@ describe('other cloud functions', () => {
     assert.equal(res.alreadySent, false);
     assert.equal(captured.token, 'tokN');
     assert.ok(logSet);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendNudgeNotification handles messaging error', async () => {
@@ -260,201 +199,95 @@ describe('other cloud functions', () => {
     }
 
     assert.ok(!logSet); // should fail before log set
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
-  it('deleteFriendRequestPair removes docs', async () => {
+  it('sendNudgeNotification never touches friend collections', async () => {
     const originalFirestore = admin.firestore;
-    let deletedA = false, deletedB = false;
+    const touched = [];
     const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: (sub) => {
-            if (sub === 'friendRequestsReceived') {
-              return { doc: () => ({ delete: async () => { deletedA = true; } }) };
-            }
-            if (sub === 'friendRequestsSent') {
-              return { doc: () => ({ delete: async () => { deletedB = true; } }) };
-            }
-            if (sub === 'notifications') {
+      collection: (name) => {
+        touched.push(name);
+        return {
+          doc: () => ({
+            collection: (sub) => {
+              touched.push(`${name}/${sub}`);
               return {
-                where: () => ({ where: () => ({ get: async () => ({ forEach: () => {} }) }) })
+                doc: () => ({
+                  get: async () => ({ exists: false }),
+                  set: async () => {}
+                })
               };
-            }
-          }
-        })
-      })
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    Object.defineProperty(admin, 'firestore', {value: fakeFirestore, configurable: true, writable: true});
-
-    const wrapped = functionsTest.wrap(myFunctions.deleteFriendRequestPair);
-    const res = await wrapped({ data: { fromUid: 'u1', toUid: 'u2' }, auth: { uid: 'u2' } });
-    assert.equal(res.success, true);
-    assert.ok(deletedA && deletedB);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  });
-
-  it('deleteFriendRequestPair handles deletion error', async () => {
-    const originalFirestore = admin.firestore;
-    const stderrStub = sinon.stub(process.stderr, 'write');
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: (sub) => {
-            if (sub === 'friendRequestsReceived' || sub === 'friendRequestsSent') {
-              return { doc: () => ({ delete: async () => { throw new Error('nope'); } }) };
-            }
-            if (sub === 'notifications') {
-              return {
-                where: () => ({ where: () => ({ get: async () => ({ forEach: () => {} }) }) })
-              };
-            }
-          }
-        })
-      })
+            },
+            get: async () => ({ data: () => ({ fcmToken: 'tokN' }) })
+          })
+        };
+      }
     };
     function fakeFirestore() { return fakeDb; }
     fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
     Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    Object.defineProperty(admin, 'messaging', {
+      value: () => ({ send: async () => {} }),
+      configurable: true,
+      writable: true
+    });
 
-    const wrapped = functionsTest.wrap(myFunctions.deleteFriendRequestPair);
-    try {
-      await wrapped({ data: { fromUid: 'u1', toUid: 'u2' }, auth: { uid: 'u2' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'internal');
-    }
-    assert.ok(stderrStub.called);
-    assert.match(stderrStub.getCall(0).args[0], /Failed to delete friend request pair/);
-
-    stderrStub.restore();
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    const wrapped = functionsTest.wrap(myFunctions.sendNudgeNotification);
+    const res = await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
+    assert.equal(res.alreadySent, false);
+    const joined = touched.join(',');
+    assert.ok(!joined.includes('friend'), `nudge path touched: ${joined}`);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
 
-  it('acceptFriendRequest commits batch', async () => {
+  it('sendNudgeNotification dedupe is per recipient, not per group', async () => {
+    // The ledger document id is the recipient uid with no group dimension,
+    // so a recipient shared through two Groups hits the same document.
     const originalFirestore = admin.firestore;
-    let commit = false;
-    const fakeBatch = {
-      set: () => {},
-      delete: () => {},
-      commit: async () => { commit = true; }
-    };
+    const ledgerDocs = new Map();
     const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: (sub) => {
-            if (sub === 'notifications') {
+      collection: (name) => ({
+        doc: (docId) => ({
+          collection: (sub) => ({
+            doc: (subDocId) => {
+              const key = `${name}/${docId}/${sub}/${subDocId}`;
+              if (!ledgerDocs.has(key)) {
+                ledgerDocs.set(key, { exists: false, data: () => undefined });
+              }
+              const entry = ledgerDocs.get(key);
               return {
-                where: () => ({ where: () => ({ get: async () => ({ forEach: () => {} }) }) })
+                get: async () => entry,
+                set: async () => {
+                  entry.exists = true;
+                  entry.data = () => ({ timestamp: { toDate: () => new Date() } });
+                }
               };
             }
-            return { doc: () => ({}) };
-          }
-        })
-      }),
-      batch: () => fakeBatch
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    Object.defineProperty(admin, 'firestore', {value: fakeFirestore, configurable: true, writable: true});
-
-    const wrapped = functionsTest.wrap(myFunctions.acceptFriendRequest);
-    const res = await wrapped({ data: { fromUid: 'a', toUid: 'b', fromName: 'A', toName: 'B' }, auth: { uid: 'b' } });
-    assert.equal(res.success, true);
-    assert.ok(commit);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  });
-
-  it('acceptFriendRequest handles commit error', async () => {
-    const originalFirestore = admin.firestore;
-    const stderrStub = sinon.stub(process.stderr, 'write');
-    const fakeBatch = {
-      set: () => {},
-      delete: () => {},
-      commit: async () => { throw new Error('boom'); }
-    };
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: (sub) => {
-            if (sub === 'notifications') {
-              return {
-                where: () => ({ where: () => ({ get: async () => ({ forEach: () => {} }) }) })
-              };
-            }
-            return { doc: () => ({}) };
-          }
-        })
-      }),
-      batch: () => fakeBatch
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-
-    const wrapped = functionsTest.wrap(myFunctions.acceptFriendRequest);
-    try {
-      await wrapped({ data: { fromUid: 'a', toUid: 'b', fromName: 'A', toName: 'B' }, auth: { uid: 'b' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'internal');
-    }
-    assert.ok(stderrStub.called);
-    assert.match(stderrStub.getCall(0).args[0], /Failed to accept friend request/);
-
-    stderrStub.restore();
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  });
-});
-
-
-  it('sendCommentNotification returns when disabled', async () => {
-    const originalFirestore = admin.firestore;
-    const originalMessaging = admin.messaging;
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: () => ({
-            doc: () => ({ get: async () => ({ exists: true, data: () => ({ enabled: false }) }) })
           }),
-          get: async () => ({ data: () => ({ fcmToken: 'tokC' }) })
+          get: async () => ({ data: () => ({ fcmToken: 'tokN' }) })
         })
       })
     };
     function fakeFirestore() { return fakeDb; }
     fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    let sent = false;
     Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: () => ({ send: async () => { sent = true; } }), configurable: true, writable: true });
+    let sends = 0;
+    Object.defineProperty(admin, 'messaging', {
+      value: () => ({ send: async () => { sends++; } }),
+      configurable: true,
+      writable: true
+    });
 
-    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
-    const res = await wrapped({ data: { ownerUid: 'u1', commenterName: 'Bob' }, auth: { uid: 'u2' } });
-    assert.equal(res, undefined);
-    assert.equal(sent, false);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    const wrapped = functionsTest.wrap(myFunctions.sendNudgeNotification);
+    // Two "Groups" would mean two sends if the ledger had a group dimension;
+    // the second call for the same recipient must be refused instead.
+    await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
+    await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
+    assert.equal(sends, 1);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
-
-  it('deleteFriendRequestPair permission denied', async () => {
-    const originalFirestore = admin.firestore;
-    function fakeFirestore() { return {}; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-
-    const wrapped = functionsTest.wrap(myFunctions.deleteFriendRequestPair);
-    try {
-      await wrapped({ data: { fromUid: 'u1', toUid: 'u2' }, auth: { uid: 'u1' } });
-      assert.fail('should have thrown');
-    } catch (err) {
-      assert.equal(err.code, 'permission-denied');
-    }
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  });
-
-
   it('sendLikeNotification invalid data', async () => {
     const wrapped = functionsTest.wrap(myFunctions.sendLikeNotification);
     try {
@@ -488,8 +321,8 @@ describe('other cloud functions', () => {
     const res = await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
     assert.equal(res.alreadySent, false);
     assert.ok(setLog);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendNudgeNotification already nudged today', async () => {
@@ -522,8 +355,8 @@ describe('other cloud functions', () => {
     const res = await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
     assert.equal(res.alreadySent, true);
     assert.equal(captured, undefined);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: () => ({ send: async () => {} }), writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: () => ({ send: async () => {} }), writable: true, configurable: true });
   });
 
   it('sendNudgeNotification skips if already read today', async () => {
@@ -565,8 +398,8 @@ describe('other cloud functions', () => {
     assert.equal(res.alreadyRead, true);
     assert.equal(captured, undefined);
     assert.equal(sent, false);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendNudgeNotification timestamp object without toDate', async () => {
@@ -598,8 +431,8 @@ describe('other cloud functions', () => {
     assert.equal(res.alreadySent, false);
     assert.equal(captured.token, 'tokNA');
     assert.ok(logSet);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendLikeNotification missing data', async () => {
@@ -612,16 +445,6 @@ describe('other cloud functions', () => {
     }
   });
 
-  it('sendCommentNotification unauthenticated', async () => {
-    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
-    try {
-      await wrapped({ data: { ownerUid: 'u1', commenterName: 'Bob' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'unauthenticated');
-    }
-  });
-
   it('sendNudgeNotification missing params', async () => {
     const wrapped = functionsTest.wrap(myFunctions.sendNudgeNotification);
     try {
@@ -629,26 +452,6 @@ describe('other cloud functions', () => {
       assert.fail('expected error');
     } catch (err) {
       assert.equal(err.code, 'invalid-argument');
-    }
-  });
-
-  it('deleteFriendRequestPair invalid args', async () => {
-    const wrapped = functionsTest.wrap(myFunctions.deleteFriendRequestPair);
-    try {
-      await wrapped({ data: { toUid: 'u2' }, auth: { uid: 'u2' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'invalid-argument');
-    }
-  });
-
-  it('acceptFriendRequest not receiver', async () => {
-    const wrapped = functionsTest.wrap(myFunctions.acceptFriendRequest);
-    try {
-      await wrapped({ data: { fromUid: 'a', toUid: 'b', fromName: 'A', toName: 'B' }, auth: { uid: 'c' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'permission-denied');
     }
   });
 
@@ -666,8 +469,8 @@ describe('other cloud functions', () => {
     await wrapped({ displayName: 'x', uid: 'u1' });
     assert.equal(warned, false);
     process.env.ADMIN_UID = originalAdminUid;
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendLikeNotification auth required', async () => {
@@ -696,38 +499,7 @@ describe('other cloud functions', () => {
     const wrapped = functionsTest.wrap(myFunctions.sendLikeNotification);
     const res = await wrapped({ data: { ownerUid: 'u1', likerName: 'Bob' }, auth: { uid: 'u2' } });
     assert.equal(res, undefined);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  });
-
-  it('sendCommentNotification invalid args', async () => {
-    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
-    try {
-      await wrapped({ data: { ownerUid: 'u1' }, auth: { uid: 'u2' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'invalid-argument');
-    }
-  });
-
-  it('sendCommentNotification no token', async () => {
-    const originalFirestore = admin.firestore;
-    let sent = false;
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: () => ({ doc: () => ({ get: async () => ({ exists: false }), set: async () => {} }) }),
-          get: async () => ({ data: () => ({}) })
-        })
-      })
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: () => ({ send: async () => { sent = true; } }), configurable: true, writable: true });
-    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
-    await wrapped({ data: { ownerUid: 'u1', commenterName: 'Bob' }, auth: { uid: 'u2' } });
-    assert.equal(sent, false);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
 
   it('sendNudgeNotification unauthenticated', async () => {
@@ -759,154 +531,7 @@ describe('other cloud functions', () => {
     const res = await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
     assert.equal(res.alreadySent, false);
     assert.equal(sent, false);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  });
-
-  it('deleteFriendRequestPair unauthenticated', async () => {
-    const wrapped = functionsTest.wrap(myFunctions.deleteFriendRequestPair);
-    try {
-      await wrapped({ data: { fromUid: 'a', toUid: 'b' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'unauthenticated');
-    }
-  });
-
-  it('acceptFriendRequest invalid args', async () => {
-    const wrapped = functionsTest.wrap(myFunctions.acceptFriendRequest);
-    try {
-      await wrapped({ data: { fromUid: 'a' }, auth: { uid: 'b' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'invalid-argument');
-    }
-  });
-
-  it('acceptFriendRequest unauthenticated', async () => {
-    const wrapped = functionsTest.wrap(myFunctions.acceptFriendRequest);
-    try {
-      await wrapped({ data: { fromUid: 'a', toUid: 'b', fromName: 'A', toName: 'B' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'unauthenticated');
-    }
-  });
-
-  it('deleteFriendRequestPair removes notification', async () => {
-    const originalFirestore = admin.firestore;
-    let receivedDeleted = false;
-    let sentDeleted = false;
-    let notifDeleted = false;
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: (sub) => {
-            if (sub === 'friendRequestsReceived') {
-              return { doc: () => ({ delete: async () => { receivedDeleted = true; } }) };
-            }
-            if (sub === 'friendRequestsSent') {
-              return { doc: () => ({ delete: async () => { sentDeleted = true; } }) };
-            }
-            if (sub === 'notifications') {
-              return {
-                where: () => ({
-                  where: () => ({
-                    get: async () => ({
-                      forEach: (cb) => cb({ ref: { delete: async () => { notifDeleted = true; } } })
-                    })
-                  })
-                })
-              };
-            }
-          }
-        })
-      })
-    };
-    function fakeFirestore() { return fakeDb; }
-    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-    const wrapped = functionsTest.wrap(myFunctions.deleteFriendRequestPair);
-    await wrapped({ data: { fromUid: 'a', toUid: 'b' }, auth: { uid: 'b' } });
-    assert.equal(receivedDeleted, true);
-    assert.equal(sentDeleted, true);
-    assert.equal(notifDeleted, true);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  });
-
-  it('removeFriendRequestNotification prunes notifications on delete', async () => {
-    const originalFirestore = admin.firestore;
-    let notifDeleted = false;
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: (sub) => {
-            if (sub === 'notifications') {
-              return {
-                where: () => ({
-                  where: () => ({
-                    get: async () => ({
-                      forEach: (cb) => cb({ ref: { delete: async () => { notifDeleted = true; } } })
-                    })
-                  })
-                })
-              };
-            }
-            return {};
-          }
-        })
-      })
-    };
-    function fakeFirestore() { return fakeDb; }
-    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-    const wrapped = functionsTest.wrap(myFunctions.removeFriendRequestNotification);
-    await wrapped({}, { params: { uid: 'u2', fromUid: 'u1' } });
-    assert.equal(notifDeleted, true);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  });
-
-  it('acceptFriendRequest marks notification read', async () => {
-    const originalFirestore = admin.firestore;
-    const notifRef = { id: 'n1' };
-    let updated = false;
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: (sub) => {
-            if (sub === 'friends') {
-              return { doc: () => ({}) };
-            }
-            if (sub === 'friendRequestsSent' || sub === 'friendRequestsReceived') {
-              return { doc: () => ({}) };
-            }
-            if (sub === 'notifications') {
-              return {
-                where: () => ({
-                  where: () => ({
-                    get: async () => ({ forEach: (cb) => cb({ ref: notifRef }) })
-                  })
-                })
-              };
-            }
-          }
-        })
-      }),
-      batch: () => ({
-        set: () => {},
-        delete: () => {},
-        update: (ref, data) => {
-          if (ref === notifRef && data.read === true) {
-            updated = true;
-          }
-        },
-        commit: async () => {}
-      })
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-    const wrapped = functionsTest.wrap(myFunctions.acceptFriendRequest);
-    await wrapped({ data: { fromUid: 'a', toUid: 'b', fromName: 'A', toName: 'B' }, auth: { uid: 'b' } });
-    assert.equal(updated, true);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
 
   it('sendSignupNotification missing token', async () => {
@@ -920,7 +545,7 @@ describe('other cloud functions', () => {
     const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
     await wrapped({ displayName: 'User', uid: 'u1' });
     assert.equal(warned, false);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
 
   it('sendSignupNotification falls back to email', async () => {
@@ -935,8 +560,8 @@ describe('other cloud functions', () => {
     const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
     await wrapped({ email: 'a@b.c', uid: 'u1' });
     assert.match(captured.notification.body, /a@b.c/);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendSignupNotification uses default name', async () => {
@@ -951,8 +576,8 @@ describe('other cloud functions', () => {
     const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
     await wrapped({ uid: 'u3' });
     assert.match(captured.notification.body, /New user/);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendLikeNotification in production', async () => {
@@ -975,9 +600,11 @@ describe('other cloud functions', () => {
     const wrapped = functionsTest.wrap(myFunctions.sendLikeNotification);
     await wrapped({ data: { ownerUid: 'u1', likerName: 'Bob' }, auth: { uid: 'u2' } });
     assert.equal(sent.token, 'tokP');
-    process.env.NODE_ENV = env;
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    assert.equal(sent.notification.title, '📖 Amen on Your Reading!');
+    assert.equal(sent.notification.body, 'Bob said Amen to your reading.');
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
+});
 
 after(() => {
   admin.initializeApp = originalInit;

@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// Widget keys for the group plan configurator.
+/// Widget keys for the shared-plan configurator.
 ///
 /// These exist so tests can find controls by identity rather than by label.
 /// The screens they cover were previously asserted entirely through visible

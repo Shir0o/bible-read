@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/widgets/feed_card.dart';
 import 'package:bible_read/models/read_log.dart';
-import 'package:bible_read/models/comment.dart';
 import '../helpers/pump_golden.dart';
 
 void main() {
@@ -10,15 +9,6 @@ void main() {
     uid: 'u1',
     name: 'Bob',
     likeNames: ['Charlie', 'Dave'],
-    comments: [
-      Comment(
-        id: 'c1',
-        uid: 'u2',
-        authorName: 'Charlie',
-        message: 'Great job!',
-        timestamp: DateTime(2023, 1, 1, 12, 0),
-      ),
-    ],
     liked: true,
     timestamp: DateTime(2023, 1, 1, 8, 0),
   );

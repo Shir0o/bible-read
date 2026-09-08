@@ -18,7 +18,7 @@ import '../services/catch_up_engine.dart';
 /// Completion is forward-only: a [ReadingStatus.done] row is non-interactive
 /// (no un-mark/undo), matching the design's final behavior (chat18). Everything
 /// is driven by a [CatchUpStatus] from [CatchUpEngine], so it is cadence-
-/// agnostic and identical for daily/personal and weekly/irregular/group plans.
+/// agnostic and identical for personal and shared plans.
 class ScheduleScreenView extends StatefulWidget {
   /// Computed schedule + per-entry status from [CatchUpEngine].
   final CatchUpStatus status;
@@ -26,7 +26,7 @@ class ScheduleScreenView extends StatefulWidget {
   /// Heading shown in the summary card eyebrow (plan title / group name).
   final String title;
 
-  /// Whether this is a group plan — switches the catch-up affordance to the
+  /// Whether this is a Shared plan — switches the catch-up affordance to the
   /// gentle tray, enables the "with your group" anchor and "in step" card, and
   /// adds the "· WITH GROUP" row caption.
   final bool isGroup;

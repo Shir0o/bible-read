@@ -1,9 +1,7 @@
 enum NotificationType {
-  like,
+  amen,
   nudge,
   signup,
-  friendRequest,
-  comment,
   groupJoinRequest,
   groupScheduleUpdate,
   groupInvite,

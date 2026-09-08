@@ -1,5 +1,4 @@
 // ignore_for_file: depend_on_referenced_packages
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,18 +9,16 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import '../helpers/fake_google_sign_in_platform.dart';
 
 import 'package:bible_read/pages/main_page.dart';
+import 'package:bible_read/pages/challenges_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
 
-import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/widgets/app_nav_bar.dart';
 import 'package:bible_read/widgets/nav_glyphs.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bible_read/services/vibration_service.dart';
 
-import '../helpers/test_read_log_page.dart';
 import 'dart:io';
 import 'dart:async';
 
@@ -274,7 +271,7 @@ void main() {
     // Attempt to navigate to a protected page via the menu API.
     final state =
         tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
-    state.navigateFromMenu(4); // Friends index.
+    state.navigateFromMenu(5); // Challenges index.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
@@ -319,7 +316,7 @@ void main() {
     );
     expect(responsive.contentIndex, 0);
     final labels = responsive.destinations.map((d) => d.label).toList();
-    expect(labels, ['Home', 'Community', 'Journey']);
+    expect(labels, ['Today', 'Circle', 'Path']);
     expect(responsive.selectedIndex, 0);
 
     // Tap Feed (Community, index 1)
@@ -372,7 +369,6 @@ void main() {
 
     // These usages are now checking no-op behavior for pushed items
     await selectMenuItem('Challenges', 5); // 5 is pushed
-    await selectMenuItem('Friends', 4);
     await selectMenuItem('Sign Out', 10);
   });
 
@@ -404,12 +400,12 @@ void main() {
 
     final state =
         tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
-    state.navigateFromMenu(4);
+    state.navigateFromMenu(5);
     await tester.pump();
 
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byType(FriendsPage), findsOneWidget);
+    expect(find.byType(ChallengesPage), findsOneWidget);
 
     final hasNavAfter = find
             .byType(AppNavBar, skipOffstage: false)
@@ -445,12 +441,12 @@ void main() {
         tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
     vibration.getIndex = () => state.selectedIndex;
 
-    state.navigateFromMenu(4);
+    state.navigateFromMenu(5);
     await tester.pump();
 
     expect(vibration.lightCount, 1);
     expect(vibration.indexDuringCall, 0); // Starting index is 0
-    expect(state.selectedIndex, 0); // Stays 0 as Friends is a pushed page
+    expect(state.selectedIndex, 0); // Stays 0 as Challenges is a pushed page
   });
 
   testWidgets('tapping a bar destination vibrates and switches tabs', (
@@ -552,55 +548,6 @@ void main() {
     expect(vibration.lightCount, 0);
     expect(state.selectedIndex, 0); // Should remain 0 as navigation is blocked
   });
-
-  testWidgets('onItemTapped refreshes read log page', (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(
-      mockUser: MockUser(uid: 'u1'),
-      signedIn: true,
-    );
-    late TestReadLogPage testPage;
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MainPage(
-          firestore: firestore,
-          auth: auth,
-          messaging: FakeFirebaseMessaging(null),
-          vibrationService: _RecordingVibrationService(),
-          readLogPageBuilder: ({
-            Key? key,
-            FirebaseFirestore? firestore,
-            FirebaseAuth? auth,
-            required SendLikeNotification onSendLikeNotification,
-            required SendCommentNotification onSendCommentNotification,
-          }) {
-            return testPage = TestReadLogPage(
-              key: key,
-              firestore: firestore,
-              auth: auth,
-              onSendLikeNotification: onSendLikeNotification,
-              onSendCommentNotification: onSendCommentNotification,
-            );
-          },
-        ),
-      ),
-    );
-    await tester.pump();
-
-    await tester.pump(const Duration(milliseconds: 500));
-
-    final state =
-        tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
-    state.onItemTapped(1);
-    await tester.pumpAndSettle();
-
-    // CommunityPage defaults to Groups tab (index 0). Switch to Feed (index 1) to build ReadLogPage.
-    await tester.tap(find.text('Feed'));
-    await tester.pumpAndSettle();
-
-    expect(testPage.refreshed.value, isTrue);
-  }, skip: true);
 
   /*
   testWidgets('attemptSilentSignIn runs during initState', (tester) async {
@@ -730,168 +677,8 @@ void main() {
     expect(userDoc.exists, isTrue);
     expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
   });
-
-  testWidgets('calls sendLikeNotification when a like is triggered', (
-    tester,
-  ) async {
-    bool wasCalled = false;
-    String? calledUid;
-    String? calledName;
-
-    final fakeFirestore = FakeFirebaseFirestore();
-    final testUser = MockUser(uid: 'liker123', displayName: 'Test Liker');
-    final auth = MockFirebaseAuth(mockUser: testUser, signedIn: true);
-
-    // Insert a dummy user doc to like
-    await fakeFirestore.collection('users').doc('owner456').set({});
-
-    // Make 'owner456' a friend of 'liker123' so their activity shows up
-    await fakeFirestore
-        .collection('users')
-        .doc(testUser.uid)
-        .collection('friends')
-        .doc('owner456')
-        .set({'name': 'Owner User'});
-
-    // Add a read log entry for 'owner456'
-    final now = DateTime.now();
-    final dateKey =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-
-    // Ensure parent doc exists for FakeFirestore
-    await fakeFirestore.collection('read_logs').doc(dateKey).set({});
-
-    await fakeFirestore
-        .collection('read_logs')
-        .doc(dateKey)
-        .collection('entries')
-        .doc('owner456')
-        .set({'name': 'Owner User', 'timestamp': Timestamp.now()});
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MainPage(
-          auth: auth,
-          firestore: fakeFirestore,
-          messaging: FakeFirebaseMessaging(null),
-          vibrationService: _RecordingVibrationService(),
-          sendLikeNotification: (
-              {required String ownerUid, required String likerName}) async {
-            wasCalled = true;
-            calledUid = ownerUid;
-            calledName = likerName;
-          },
-        ),
-      ),
-    );
-
-    await tester.pump();
-
-    await tester.pump(const Duration(milliseconds: 500));
-
-    // Navigate to Community
-    await tester.tap(find.byType(CircleGlyph));
-    await tester.pumpAndSettle();
-
-    // Wait for logs to load
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pumpAndSettle();
-
-    // Verify loading is done
-    expect(find.byType(CircularProgressIndicator), findsNothing);
-
-    // Check if empty state is shown (debug)
-    if (find.text('No recent activity from friends.').evaluate().isNotEmpty) {
-      fail('Friends activity list is empty, expected "Owner"');
-    }
-
-    // Verify 'Owner' is visible (ReadLog splits name to first name)
-    // Note: It's in a RichText "Owner read today".
-    // "O" is found in avatar.
-    expect(find.text('O'), findsOneWidget);
-    // Expect like button
-    expect(find.byIcon(Icons.favorite_border), findsOneWidget);
-
-    // Tap like button (heart icon)
-    await tester.tap(find.byIcon(Icons.favorite_border));
-    await tester.pump();
-
-    await tester.pump(const Duration(milliseconds: 500));
-
-    expect(wasCalled, isTrue);
-    expect(calledUid, 'owner456');
-    expect(calledName, 'Test');
-    // Skipped: the Friends Activity feed (and its like button) was removed from
-    // Community in the "Circle" redesign.
-  }, skip: true);
-
-  testWidgets('calls sendCommentNotification when a comment is submitted', (
-    tester,
-  ) async {
-    final fakeFirestore = FakeFirebaseFirestore();
-    final commenter = MockUser(
-      uid: 'commenter123',
-      displayName: 'Test Commenter',
-    );
-    final auth = MockFirebaseAuth(mockUser: commenter, signedIn: true);
-
-    // Seed Firestore with an owner log entry
-    await fakeFirestore.collection('users').doc('owner456').set({});
-
-    // Make 'owner456' a friend of 'commenter123'
-    await fakeFirestore
-        .collection('users')
-        .doc(commenter.uid)
-        .collection('friends')
-        .doc('owner456')
-        .set({'name': 'Owner User'});
-
-    final now = DateTime.now();
-    final dateKey =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    await fakeFirestore
-        .collection('read_logs')
-        .doc(dateKey)
-        .collection('entries')
-        .doc('owner456')
-        .set({'name': 'Owner User', 'timestamp': Timestamp.now()});
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MainPage(
-          auth: auth,
-          firestore: fakeFirestore,
-          messaging: FakeFirebaseMessaging(null),
-          vibrationService: _RecordingVibrationService(),
-          sendCommentNotification: ({
-            required String ownerUid,
-            required String commenterName,
-          }) async {
-            // No-op
-          },
-        ),
-      ),
-    );
-
-    await tester.pump();
-
-    await tester.pump(const Duration(milliseconds: 500));
-
-    // Navigate to Community
-    await tester.tap(find.byType(CircleGlyph));
-    await tester.pumpAndSettle();
-
-    // Wait for logs to load
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pumpAndSettle();
-
-    // Verify 'Owner' is visible
-    expect(find.text('Owner'), findsOneWidget);
-
-    // New design doesn't support adding comments from the list directly
-  }, skip: true);
-
   testWidgets('shows error page when appCheckFailed is true', (tester) async {
+
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
       signedIn: true,

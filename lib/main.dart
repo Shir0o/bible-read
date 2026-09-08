@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:bible_read/pages/friend_requests_page.dart';
 import 'package:bible_read/pages/group_join_requests_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -18,7 +17,6 @@ import 'firebase_options.dart';
 import 'services/error_logger.dart';
 import 'services/google_sign_in_factory.dart';
 import 'services/reminder_service.dart';
-import 'services/friend_service.dart';
 import 'services/group_service.dart';
 import 'theme/app_theme.dart';
 
@@ -176,16 +174,6 @@ class NotificationNavigator {
     }
 
     switch (type) {
-      case 'friendRequest':
-        await navigator.push(
-          MaterialPageRoute<void>(
-            builder: (_) => FriendRequestsPage(
-              auth: auth,
-              friendService: FriendService(firestore: firestore),
-            ),
-          ),
-        );
-        break;
       case 'groupJoinRequest':
         final groupId = data['groupId']?.toString();
         if (groupId == null || groupId.isEmpty) {

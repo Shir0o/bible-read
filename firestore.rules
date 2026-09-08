@@ -98,7 +98,7 @@ service cloud.firestore {
 
     // 🔓 User profiles (publicly readable, user-owned writable)
     match /users/{userId} {
-      // Any signed-in user can read all user profiles (for searching friends, etc.)
+      // Any signed-in user can read all user profiles.
       allow read: if request.auth != null;
 
       // Only the user can create/update their own profile
@@ -137,11 +137,8 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
-      match /friends/{friendId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      match /nudges/{friendId} {
+      // Nudge ledger: one doc per recipient the sender nudged today.
+      match /nudges/{recipientUid} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
@@ -160,6 +157,14 @@ service cloud.firestore {
       }
 
       match /plan_progress/{planId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // The reader's private pace overlay for a Shared plan (#810): one
+      // member adjusting their own schedule must never move the Group's
+      // schedule or another member's progress, so the adjusted view lives
+      // here — strictly the reader's own, like plan_progress.
+      match /plan_pace/{groupId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
@@ -187,87 +192,6 @@ service cloud.firestore {
       match /achievements/{achievementId} {
         allow read: if request.auth != null && request.auth.uid == userId;
         allow write: if false;
-      }
-
-      match /friendRequestsSent/{toUid} {
-        // Only the sender can add, update or remove sent requests
-        allow create: if request.auth != null &&
-          request.auth.uid == userId &&
-          request.resource.data.keys().hasOnly(['timestamp']);
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow delete: if request.auth != null && request.auth.uid == userId;
-        allow update: if request.auth != null &&
-          request.auth.uid == userId &&
-          request.resource.data.keys().hasOnly(['timestamp']);
-      }
-
-      match /friendRequestsReceived/{fromUid} {
-        // Sender can create or update an incoming friend request on the receiver’s node
-        allow create: if request.auth != null &&
-          request.auth.uid == fromUid &&
-          request.resource.data.keys().hasOnly(['timestamp', 'name']);
-        // Receiver can list and get their incoming requests
-        allow read: if request.auth != null && request.auth.uid == userId;
-        // Allow sender or receiver to delete (cancel or decline)
-        allow delete: if request.auth != null &&
-          (request.auth.uid == fromUid || request.auth.uid == userId);
-        allow update: if request.auth != null &&
-          request.auth.uid == fromUid &&
-          request.resource.data.keys().hasOnly(['timestamp', 'name']);
-      }
-
-      match /friendStreakInvites/{partnerUid} {
-        function isOwnerOrPartner() {
-          return request.auth != null &&
-            (request.auth.uid == userId || request.auth.uid == partnerUid);
-        }
-
-        allow read: if isOwnerOrPartner();
-        allow create, update: if isOwnerOrPartner() &&
-          request.resource.data.keys().hasOnly([
-            'partnerUid',
-            'partnerName',
-            'initiatedBy',
-            'status',
-            'currentStreak',
-            'lastUserCovered',
-            'lastPartnerCovered',
-            'createdAt',
-            'updatedAt',
-          ]) &&
-          (!request.resource.data.keys().hasAny(['partnerUid']) ||
-            request.resource.data.partnerUid == partnerUid);
-        allow delete: if isOwnerOrPartner();
-      }
-
-      match /friendStreakLinks/{partnerUid} {
-        function isOwnerOrPartner() {
-          return request.auth != null &&
-            (request.auth.uid == userId || request.auth.uid == partnerUid);
-        }
-
-        function isOwnerOrFriend() {
-          return request.auth != null &&
-            (request.auth.uid == userId ||
-              exists(/databases/$(database)/documents/users/$(userId)/friends/$(request.auth.uid)));
-        }
-
-        allow read: if isOwnerOrFriend();
-        allow create, update: if isOwnerOrPartner() &&
-          request.resource.data.keys().hasOnly([
-            'partnerUid',
-            'partnerName',
-            'initiatedBy',
-            'status',
-            'currentStreak',
-            'lastUserCovered',
-            'lastPartnerCovered',
-            'createdAt',
-            'updatedAt',
-          ]) &&
-          (!request.resource.data.keys().hasAny(['partnerUid']) ||
-            request.resource.data.partnerUid == partnerUid);
-        allow delete: if isOwnerOrPartner();
       }
 
       match /summary/{docId} {

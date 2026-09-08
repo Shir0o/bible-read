@@ -15,7 +15,6 @@ import 'package:network_image_mock/network_image_mock.dart';
 import '../helpers/pump_app.dart';
 import '../helpers/firebase_seeder.dart';
 import '../helpers/mocks.dart';
-import '../helpers/stub_vibration_service.dart';
 import '../helpers/fake_google_sign_in_platform.dart';
 
 void main() {
@@ -31,7 +30,6 @@ void main() {
       final firestore = FakeFirebaseFirestore();
       final messaging = MockFirebaseMessaging();
       final functions = MockFirebaseFunctions();
-      final vibration = StubVibrationService();
       final seeder = FirebaseSeeder(firestore);
 
       // Stub messaging
@@ -87,9 +85,6 @@ void main() {
           functions: functions,
           sendLikeNotification: (
               {required ownerUid, required likerName}) async {},
-          sendCommentNotification: (
-              {required ownerUid, required commenterName}) async {},
-          vibrationService: vibration,
           googleSignInProvider: () => MockGoogleSignIn(),
         ),
       );
@@ -121,19 +116,15 @@ void main() {
       // Verify HomePage is shown
       expect(find.byType(HomePage), findsOneWidget);
 
-      // Navigate to Community
-      await tester.tap(find.text('Community'));
+      // Navigate to Circle
+      await tester.tap(find.text('Circle'));
       await tester.pumpAndSettle();
 
-      // Open the groups page via "Manage" in the "Your reading groups" section.
-      await tester.tap(find.text('Manage'));
-      await tester.pumpAndSettle();
-
-      // Verify group is listed
-      expect(find.text('Reading Group'), findsOneWidget);
-
-      // Tap group
-      await tester.tap(find.text('Reading Group'));
+      // Open the group via its tile in the "Your groups" section — the
+      // Circle tab is people-first now and the "Manage" button is gone.
+      // The name appears once as a filter chip and once as the group tile;
+      // the tile is the one inside the groups section.
+      await tester.tap(find.text('Reading Group').last);
       await tester.pumpAndSettle();
 
       // Verify GroupDetailPage

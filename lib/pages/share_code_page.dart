@@ -205,7 +205,7 @@ class _ShareCodePageState extends State<ShareCodePage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Friends can enter this code to join ${widget.group.name}.',
+                  'People can enter this code to join ${widget.group.name}.',
                   style: AppTextStyles.bodySmall(context).copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),

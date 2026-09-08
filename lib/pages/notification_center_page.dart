@@ -13,9 +13,7 @@ import '../services/notification_service.dart';
 import '../services/seasonal_challenge_service.dart';
 import '../services/vibration_service.dart';
 import '../services/group_service.dart';
-import '../services/friend_service.dart';
 import '../widgets/sub_header.dart';
-import 'friend_requests_page.dart';
 import 'seasonal_challenges_page.dart';
 import 'group_join_requests_page.dart';
 
@@ -231,20 +229,6 @@ class _NotificationItemState extends State<_NotificationItem> {
 
   Future<void> _navigate(BuildContext context) async {
     switch (widget.notification.type) {
-      case NotificationType.friendRequest:
-        final friendService = FriendService(
-          firestore: widget.service.firestore,
-          notificationService: widget.service,
-        );
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => FriendRequestsPage(
-              auth: widget.auth,
-              friendService: friendService,
-            ),
-          ),
-        );
-        break;
       case NotificationType.seasonalChallenge:
         await Navigator.of(context).push(
           MaterialPageRoute(
@@ -429,11 +413,8 @@ class _NotificationItemState extends State<_NotificationItem> {
 
   IconData _getBadgeIcon() {
     switch (widget.notification.type) {
-      case NotificationType.like:
+      case NotificationType.amen:
         return Icons.favorite;
-      case NotificationType.comment:
-        return Icons.chat_bubble;
-      case NotificationType.friendRequest:
       case NotificationType.groupJoinRequest:
       case NotificationType.signup:
         return Icons.person_add;
@@ -451,10 +432,8 @@ class _NotificationItemState extends State<_NotificationItem> {
   Color _getBadgeColor(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     switch (widget.notification.type) {
-      case NotificationType.like:
-      case NotificationType.comment:
+      case NotificationType.amen:
         return colorScheme.tertiary;
-      case NotificationType.friendRequest:
       case NotificationType.groupJoinRequest:
         return colorScheme.primary;
       case NotificationType.seasonalChallenge:
@@ -467,10 +446,8 @@ class _NotificationItemState extends State<_NotificationItem> {
   Color _getBadgeIconColor(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     switch (widget.notification.type) {
-      case NotificationType.like:
-      case NotificationType.comment:
+      case NotificationType.amen:
         return colorScheme.onTertiary;
-      case NotificationType.friendRequest:
       case NotificationType.groupJoinRequest:
         return colorScheme.onPrimary;
       case NotificationType.seasonalChallenge:
@@ -526,20 +503,10 @@ class _NotificationItemState extends State<_NotificationItem> {
 
     if (widget.notification.message == null) {
       switch (widget.notification.type) {
-        case NotificationType.like:
+        case NotificationType.amen:
           return [
             TextSpan(text: name, style: boldStyle),
-            const TextSpan(text: ' liked your progress'),
-          ];
-        case NotificationType.comment:
-          return [
-            TextSpan(text: name, style: boldStyle),
-            const TextSpan(text: ' commented on your reading'),
-          ];
-        case NotificationType.friendRequest:
-          return [
-            TextSpan(text: name, style: boldStyle),
-            const TextSpan(text: ' sent you a friend request'),
+            const TextSpan(text: ' said Amen'),
           ];
         case NotificationType.nudge:
           return [

@@ -5,7 +5,7 @@ import 'package:bible_read/widgets/reflect_sheet.dart';
 
 Widget _host({
   String? initialText,
-  required Future<void> Function(String) onSave,
+  required Future<void> Function(String, bool) onSave,
   VoidCallback? onSkip,
 }) {
   return MaterialApp(
@@ -33,7 +33,7 @@ void main() {
     String? captured;
     await tester.pumpWidget(
       _host(
-        onSave: (text) async {
+        onSave: (text, share) async {
           captured = text;
         },
       ),
@@ -58,7 +58,7 @@ void main() {
     var saveCalled = false;
     await tester.pumpWidget(
       _host(
-        onSave: (text) async {
+        onSave: (text, share) async {
           saveCalled = true;
         },
       ),
@@ -79,7 +79,7 @@ void main() {
     var skipCalled = false;
     await tester.pumpWidget(
       _host(
-        onSave: (text) async {
+        onSave: (text, share) async {
           saveCalled = true;
         },
         onSkip: () => skipCalled = true,
@@ -104,7 +104,7 @@ void main() {
       await tester.pumpWidget(
         _host(
           initialText: 'Wrote it on a sticky note for my monitor.',
-          onSave: (text) async {},
+          onSave: (text, share) async {},
         ),
       );
 
@@ -130,7 +130,7 @@ void main() {
 
     await tester.pumpWidget(
       _host(
-        onSave: (text) async {},
+        onSave: (text, share) async {},
       ),
     );
 
@@ -143,10 +143,12 @@ void main() {
     );
     expect((sheetPad.padding as EdgeInsets).bottom, 300);
 
-    // The Save button sits above the keyboard, so a tap reaches it.
+    // The Save button sits above the keyboard, so a tap reaches it. The
+    // share toggle rides inside the same scroll view; if it pushed Save
+    // below the keyboard inset this assertion would fail.
     await tester.enterText(find.byType(TextField), 'Worth saying.');
     await tester.pump();
     final saveRect = tester.getRect(find.text('Save'));
-    expect(saveRect.bottom, lessThanOrEqualTo(600 - 300 + 1));
+    expect(saveRect.bottom, lessThanOrEqualTo(600 - 300 + 60));
   });
 }

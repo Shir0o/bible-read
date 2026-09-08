@@ -25,10 +25,6 @@ class ReadLogView extends StatefulWidget {
     required String ownerUid,
     required String likerName,
   }) onSendLikeNotification;
-  final Future<void> Function({
-    required String ownerUid,
-    required String commenterName,
-  }) onSendCommentNotification;
   final DateTime Function() dateProvider;
   final VibrationService? vibrationService;
 
@@ -38,7 +34,6 @@ class ReadLogView extends StatefulWidget {
     FirebaseAuth? auth,
     required this.readingStatusService,
     required this.onSendLikeNotification,
-    required this.onSendCommentNotification,
     DateTime Function()? dateProvider,
     this.tabController,
     this.vibrationService,
@@ -60,13 +55,13 @@ class _ReadLogViewState extends State<ReadLogView>
   bool _readToday = true; // Default to true to show list skeleton
   StreamSubscription<List<QueryDocumentSnapshot<Map<String, dynamic>>>>? _logsSub;
 
-  Future<void> _sendLikeNotification({
+  Future<void> _sendAmenNotification({
     required String ownerUid,
-    required String likerName,
+    required String amenName,
   }) async {
     await widget.onSendLikeNotification(
       ownerUid: ownerUid,
-      likerName: likerName,
+      likerName: amenName,
     );
   }
 
@@ -99,7 +94,7 @@ class _ReadLogViewState extends State<ReadLogView>
   /// Subscribes to today's per-Group feed (ADR-0004). The stream is live:
   /// a co-member's mark or Amen arrives without a pull-to-refresh, so the
   /// five-minute silent reload path is gone with the one-shot query. Entries
-  /// hydrate from their documents — name, timestamp, milestone and likes —
+  /// hydrate from their documents — name, timestamp, milestone and Amens —
   /// so a card shows what the entry actually carries.
   void _subscribeLogs() {
     final currentUser = widget.auth.currentUser;
@@ -161,17 +156,17 @@ class _ReadLogViewState extends State<ReadLogView>
     if (index == -1) return;
     final original = _logs[index];
 
-    final likerName = (user.displayName ?? '').split(' ').first;
+    final amenName = (user.displayName ?? '').split(' ').first;
     final now = widget.dateProvider();
     final dateKey = ReadLogService.dateKeyFor(now);
     final service = ReadLogService(firestore: widget.firestore);
-    // The liker can only write a like inside a Group they belong to (the
+    // The liker can only write an Amen inside a Group they belong to (the
     // rules gate this path on membership), and they can only see the entry
     // through those same Groups — so the reader's own Groups locate the
     // entry. Falls back silently when the reader has none.
     final groupIds = await service.groupIdsFor(user.uid);
     if (groupIds.isEmpty) return;
-    final likeRef = widget.firestore
+    final amenRef = widget.firestore
         .collection('groups')
         .doc(groupIds.first)
         .collection('read_log')
@@ -182,18 +177,18 @@ class _ReadLogViewState extends State<ReadLogView>
         .doc(user.uid);
 
     if (original.liked) {
-      // Unlike logic
+      // Undo the Amen.
       final updatedNames = List<String>.from(original.likeNames)
-        ..remove(likerName);
+        ..remove(amenName);
       setState(() {
         _logs[index] = original.copyWith(liked: false, likeNames: updatedNames);
       });
 
       try {
-        await likeRef.delete();
+        await amenRef.delete();
       } catch (e, st) {
         if (kDebugMode) {
-          debugPrint('Failed to unlike: $e');
+          debugPrint('Failed to undo Amen: $e');
         }
         ErrorLogger.log(e, st);
         if (mounted) {
@@ -201,16 +196,16 @@ class _ReadLogViewState extends State<ReadLogView>
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                'Failed to remove encouragement. Please try again.',
+                'Failed to remove your Amen. Please try again.',
               ),
             ),
           );
         }
       }
     } else {
-      // Like logic
+      // Amen.
       final updatedNames = List<String>.from(original.likeNames)
-        ..add(likerName);
+        ..add(amenName);
       setState(() {
         _logs[index] = original.copyWith(liked: true, likeNames: updatedNames);
       });
@@ -219,34 +214,34 @@ class _ReadLogViewState extends State<ReadLogView>
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Encouragement sent'),
+            content: Text('Amen sent'),
             duration: Duration(seconds: 2),
           ),
         );
       }
 
       try {
-        final likeDoc = await likeRef.get();
-        if (likeDoc.exists) {
+        final amenDoc = await amenRef.get();
+        if (amenDoc.exists) {
           if (mounted) {
             setState(() => _logs[index] = original);
           }
           return;
         }
-        await likeRef.set({'timestamp': Timestamp.now(), 'name': likerName});
+        await amenRef.set({'timestamp': Timestamp.now(), 'name': amenName});
         if (logUid != user.uid) {
-          await _sendLikeNotification(ownerUid: logUid, likerName: likerName);
+          await _sendAmenNotification(ownerUid: logUid, amenName: amenName);
         }
       } catch (e, st) {
         if (kDebugMode) {
-          debugPrint('Failed to toggle like: $e');
+          debugPrint('Failed to toggle Amen: $e');
         }
         ErrorLogger.log(e, st);
         if (mounted) {
           setState(() => _logs[index] = original);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Failed to encourage. Please try again.'),
+              content: Text('Failed to send your Amen. Please try again.'),
             ),
           );
         }
@@ -306,7 +301,7 @@ class _ReadLogViewState extends State<ReadLogView>
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Join the community and encourage others.',
+                              'Join a group and encourage others.',
                               style: AppTextStyles.body(context).copyWith(
                                 color: Theme.of(
                                   context,

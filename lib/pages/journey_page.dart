@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/data_cache_service.dart';
-import '../services/friend_service.dart';
 import '../services/group_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/user_preferences_service.dart';
@@ -221,9 +220,7 @@ class _JourneyPageState extends State<JourneyPage>
               vibrationService: widget.vibrationService,
               dateProvider: widget.dateProvider,
               eyebrow: 'Keep going',
-              title: (widget.auth.currentUser?.displayName ?? 'Friend')
-                  .split(' ')
-                  .first,
+              title: 'My Reading Plans',
               showNotificationBell: false,
             ),
             Expanded(
@@ -249,9 +246,6 @@ class _JourneyPageState extends State<JourneyPage>
                           firestore: widget.firestore,
                         ),
                         userPreferencesService: UserPreferencesService(
-                          firestore: widget.firestore,
-                        ),
-                        friendService: FriendService(
                           firestore: widget.firestore,
                         ),
                         vibrationService: widget.vibrationService,

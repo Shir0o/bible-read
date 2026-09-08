@@ -12,7 +12,6 @@ void main() {
             onNavigate: (index) {
               // No-op
             },
-            friendsIndex: 2,
             child: const MenuButton(),
           ),
         ),

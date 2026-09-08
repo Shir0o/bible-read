@@ -178,8 +178,8 @@ void main() {
       const challenge = SeasonalChallenge(
         id: 'share',
         seasonId: 'spring2024',
-        title: 'Share with friends',
-        description: 'Share the app with friends',
+        title: 'Share with your Group',
+        description: 'Share the app with your Group',
         metric: 'shares',
         goal: 1,
       );

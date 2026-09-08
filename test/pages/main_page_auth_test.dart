@@ -220,7 +220,7 @@ void main() {
     expect(find.byType(ResponsiveScaffold), findsOneWidget);
     expect(find.byType(SettingsPage), findsNothing);
     expect(
-      find.text('Home'),
+      find.text('Today'),
       findsOneWidget,
     ); // Assuming Home tab is selected by default
   });

@@ -243,16 +243,12 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   String _label(NotificationType type) {
     switch (type) {
-      case NotificationType.like:
-        return 'Like Notifications';
+      case NotificationType.amen:
+        return 'Amen Notifications';
       case NotificationType.nudge:
         return 'Nudge Notifications';
       case NotificationType.signup:
         return 'Signup Alerts';
-      case NotificationType.friendRequest:
-        return 'Friend Request Notifications';
-      case NotificationType.comment:
-        return 'Comment Notifications';
       case NotificationType.groupJoinRequest:
         return 'Group Join Request Notifications';
       case NotificationType.groupScheduleUpdate:

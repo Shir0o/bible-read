@@ -1,8 +1,6 @@
 import 'package:bible_read/pages/feedback_page.dart';
 import 'package:bible_read/pages/settings_page.dart';
 import 'package:bible_read/services/feedback_service.dart';
-import 'package:bible_read/services/friend_service.dart';
-import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/widgets/app_menu_sheet.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -60,26 +58,6 @@ void main() {
           home: SettingsPage(
             auth: mockAuth,
             firestore: fakeFirestore,
-            friendService: FriendService(
-              firestore: fakeFirestore,
-              notificationService: NotificationService(
-                firestore: fakeFirestore,
-              ),
-              acceptFriendRequestFn: ({
-                required fromUid,
-                required toUid,
-                required fromName,
-                required toName,
-              }) async {},
-              deleteFriendRequestPairFn: (
-                  {required fromUid, required toUid}) async {},
-              sendNudgeNotificationFn: ({
-                required fromUid,
-                required toUid,
-                required fromName,
-              }) async =>
-                  NudgeResult.sent,
-            ),
             vibrationService: const _NoopVibrationService(),
             feedbackService: mockService,
           ),

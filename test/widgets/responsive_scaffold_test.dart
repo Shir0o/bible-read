@@ -25,12 +25,12 @@ Widget _harness({
           NavigationDestination(
             icon: TodayGlyph(color: colorScheme.onSurfaceVariant),
             selectedIcon: TodayGlyph(color: colorScheme.primary),
-            label: 'Home',
+            label: 'Today',
           ),
           NavigationDestination(
             icon: CircleGlyph(color: colorScheme.onSurfaceVariant),
             selectedIcon: CircleGlyph(color: colorScheme.primary),
-            label: 'Community',
+            label: 'Circle',
           ),
         ],
       ),
@@ -76,8 +76,8 @@ void main() {
       onDestinationSelected: (_) {},
     ));
 
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Community'), findsOneWidget);
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Circle'), findsOneWidget);
     // The rail shows the same drawn glyphs, not Material icons.
     expect(find.byType(CircleGlyph), findsOneWidget);
     expect(find.byType(Icon), findsNothing);
@@ -95,9 +95,9 @@ void main() {
           onDestinationSelected: (index) => selectedIndex = index,
         );
 
-    // Wide: select Community through the rail.
+    // Wide: select Circle through the rail.
     await tester.pumpWidget(build(const Size(800, 600)));
-    await tester.tap(find.text('Community'));
+    await tester.tap(find.text('Circle'));
     await tester.pumpAndSettle();
     expect(selectedIndex, 1);
 
@@ -125,8 +125,8 @@ void main() {
       onDestinationSelected: (_) {},
     ));
 
-    final home = tester.getSemantics(find.bySemanticsLabel('Home'));
-    final community = tester.getSemantics(find.bySemanticsLabel('Community'));
+    final home = tester.getSemantics(find.bySemanticsLabel('Today'));
+    final community = tester.getSemantics(find.bySemanticsLabel('Circle'));
     expect(home.flagsCollection.isSelected, Tristate.isTrue);
     expect(home.flagsCollection.isButton, isTrue);
     expect(community.flagsCollection.isSelected, isNot(Tristate.isTrue));
@@ -146,7 +146,7 @@ void main() {
       onDestinationSelected: (_) {},
     ));
 
-    for (final label in ['Home', 'Community']) {
+    for (final label in ['Today', 'Circle']) {
       final rect = tester.getRect(find.bySemanticsLabel(label));
       expect(rect.width, greaterThanOrEqualTo(44), reason: '$label width');
       expect(rect.height, greaterThanOrEqualTo(44), reason: '$label height');
@@ -203,8 +203,8 @@ void main() {
     ));
 
     expect(tester.takeException(), isNull);
-    expect(find.bySemanticsLabel('Home'), findsOneWidget);
-    expect(find.bySemanticsLabel('Community'), findsOneWidget);
+    expect(find.bySemanticsLabel('Today'), findsOneWidget);
+    expect(find.bySemanticsLabel('Circle'), findsOneWidget);
 
     semantics.dispose();
   });

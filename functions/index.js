@@ -73,8 +73,8 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
 
   try {
     return await sendNotification(token, {
-      title: "📖 New Like on Your Reading!",
-      body: `${likerName} liked your reading log.`,
+      title: "📖 Amen on Your Reading!",
+      body: `${likerName} said Amen to your reading.`,
       data: {
         type: 'like',
         ownerUid,
@@ -82,56 +82,10 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
       },
     });
   } catch (err) {
-    functions.logger.error('Failed to send like notification', err);
+    functions.logger.error('Failed to send Amen notification', err);
     throw new functions.https.HttpsError(
       'internal',
-      'Failed to send like notification',
-      err instanceof Error ? err.message : String(err)
-    );
-  }
-});
-
-exports.sendCommentNotification = onCall({ region: 'us-central1' }, async (req) => {
-  if (!req.auth) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'User must be authenticated.'
-    );
-  }
-
-  const actorUid = req.auth.uid;
-  const { ownerUid, commenterName } = req.data;
-  if (!ownerUid || !commenterName) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing data');
-  }
-
-  const [enabled, token] = await Promise.all([
-    isNotificationEnabled(ownerUid, 'comment'),
-    getFcmToken(ownerUid),
-  ]);
-
-  if (!enabled || !token) {
-    if (!token) {
-      functions.logger.info(`No FCM token for user ${ownerUid}`);
-    }
-    return;
-  }
-
-  try {
-    return await sendNotification(token, {
-      title: '📖 New Comment',
-      body: `${commenterName} commented on your reading.`,
-      data: {
-        type: 'comment',
-        ownerUid,
-        fromUid: actorUid,
-      },
-    });
-  } catch (err) {
-    functions.logger.error('Failed to send comment notification', err);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Failed to send comment notification',
+      'Failed to send Amen notification',
       err instanceof Error ? err.message : String(err)
     );
   }
@@ -361,134 +315,6 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
 
   return { alreadySent: false };
 });
-
-exports.deleteFriendRequestPair = onCall({ region: "us-central1" }, async (req) => {
-  if (!req.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
-  }
-
-  const { fromUid, toUid } = req.data;
-  if (!fromUid || !toUid) {
-    throw new functions.https.HttpsError("invalid-argument", "Missing fromUid or toUid");
-  }
-
-  if (req.auth.uid !== toUid) {
-    throw new functions.https.HttpsError("permission-denied", "Only the receiver can delete both friend request documents.");
-  }
-
-  const db = admin.firestore();
-
-  const receivedRef = db.collection("users").doc(toUid)
-    .collection("friendRequestsReceived").doc(fromUid);
-
-  const sentRef = db.collection("users").doc(fromUid)
-    .collection("friendRequestsSent").doc(toUid);
-  try {
-    const notificationsSnap = await db
-      .collection('users')
-      .doc(toUid)
-      .collection('notifications')
-      .where('type', '==', 'friendRequest')
-      .where('fromUid', '==', fromUid)
-      .get();
-
-    const ops = [receivedRef.delete(), sentRef.delete()];
-    notificationsSnap.forEach((doc) => ops.push(doc.ref.delete()));
-    await Promise.all(ops);
-  } catch (err) {
-    functions.logger.error('Failed to delete friend request pair', err);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Failed to delete friend request pair',
-      err instanceof Error ? err.message : String(err)
-    );
-  }
-
-  return { success: true };
-});
-
-exports.acceptFriendRequest = onCall({ region: "us-central1" }, async (req) => {
-  if (!req.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "User must be authenticated."
-    );
-  }
-
-  const { fromUid, toUid, fromName, toName } = req.data;
-  if (!fromUid || !toUid || !fromName || !toName) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "Missing parameters"
-    );
-  }
-
-  if (req.auth.uid !== toUid) {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "Only the receiver can accept this request."
-    );
-  }
-
-  const db = admin.firestore();
-  const fromRef = db.collection("users").doc(fromUid);
-  const toRef = db.collection("users").doc(toUid);
-
-  const batch = db.batch();
-
-  batch.set(fromRef.collection("friends").doc(toUid), {
-    timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    name: toName,
-  });
-
-  batch.set(toRef.collection("friends").doc(fromUid), {
-    timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    name: fromName,
-  });
-
-  // Remove the pending request documents now that the users are friends
-  batch.delete(fromRef.collection("friendRequestsSent").doc(toUid));
-  batch.delete(toRef.collection("friendRequestsReceived").doc(fromUid));
-  try {
-    const notificationsSnap = await toRef
-      .collection('notifications')
-      .where('type', '==', 'friendRequest')
-      .where('fromUid', '==', fromUid)
-      .get();
-    notificationsSnap.forEach((doc) => batch.update(doc.ref, { read: true }));
-    await batch.commit();
-  } catch (err) {
-    functions.logger.error('Failed to accept friend request', err);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Failed to accept friend request',
-      err instanceof Error ? err.message : String(err)
-    );
-  }
-
-  return { success: true };
-});
-
-exports.removeFriendRequestNotification = functions.firestore
-  .document('users/{uid}/friendRequestsReceived/{fromUid}')
-  .onDelete(async (_snap, context) => {
-    const { uid, fromUid } = context.params;
-    const db = admin.firestore();
-    try {
-      const notificationsSnap = await db
-        .collection('users')
-        .doc(uid)
-        .collection('notifications')
-        .where('type', '==', 'friendRequest')
-        .where('fromUid', '==', fromUid)
-        .get();
-      const deletions = [];
-      notificationsSnap.forEach((doc) => deletions.push(doc.ref.delete()));
-      await Promise.all(deletions);
-    } catch (err) {
-      functions.logger.error('Failed to prune friend request notifications', err);
-    }
-  });
 
 exports.sendSignupNotification = functions.auth.user().onCreate(async (user) => {
   const adminUid = process.env.ADMIN_UID;

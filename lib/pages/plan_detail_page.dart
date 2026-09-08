@@ -133,13 +133,53 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         );
       },
     );
-
     if (pickedDate != null) {
-      await _planService.startPlan(
+      // Re-enrollment collision (#776): the plan was soft-deleted earlier and
+      // its old progress still waits in the trash. Ask before clobbering it.
+      final collision = await _planService.startPlan(
         user.uid,
         widget.plan.id,
         startDate: pickedDate,
       );
+      if (collision != null && mounted) {
+        final restore = await showDialog<bool>(
+          context: context,
+          barrierColor: AppColors.of(context).scrim,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Restore your progress?'),
+            content: Text(
+              'You deleted "${widget.plan.title}" earlier, but its reading '
+              'record is still there for a few more days. Restore it and '
+              'continue where you left off, or start fresh?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Start Fresh'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Restore Progress'),
+              ),
+            ],
+          ),
+        );
+        if (restore == true) {
+          await _planService.startPlan(
+            user.uid,
+            widget.plan.id,
+            restoreDeleted: true,
+          );
+        } else {
+          // Start fresh: drop the trashed record, then start anew.
+          await _planService.permanentlyDeletePlan(user.uid, widget.plan.id);
+          await _planService.startPlan(
+            user.uid,
+            widget.plan.id,
+            startDate: pickedDate,
+          );
+        }
+      }
     }
   }
 

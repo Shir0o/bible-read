@@ -19,15 +19,12 @@ import 'package:bible_read/pages/welcome_page.dart';
 import 'package:bible_read/pages/auth_selection_page.dart';
 import 'package:bible_read/pages/login_page.dart'; // Added
 import 'package:bible_read/widgets/animated_page_route.dart'; // Added
-import 'friends_page.dart';
 import 'challenges_page.dart';
 import 'streak_history_page.dart';
 import '../services/admin_role_service.dart';
-import '../services/friend_service.dart';
 
 import '../services/google_sign_in_factory.dart';
 import '../services/group_service.dart';
-import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/data_cache_service.dart';
 import '../services/user_preferences_service.dart';
@@ -36,34 +33,20 @@ import '../services/connectivity_service.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/read_through_host.dart';
 import 'app_check_error_page.dart';
-import 'read_log_page.dart';
 
 typedef SendLikeNotification = Future<void> Function({
   required String ownerUid,
   required String likerName,
-});
-typedef SendCommentNotification = Future<void> Function({
-  required String ownerUid,
-  required String commenterName,
 });
 
 class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
-  final ReadLogPage Function({
-    Key? key,
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-    required SendLikeNotification onSendLikeNotification,
-    required SendCommentNotification onSendCommentNotification,
-  }) readLogPageBuilder;
   final SendLikeNotification? sendLikeNotification;
-  final SendCommentNotification? sendCommentNotification;
   final FirebaseMessaging messaging;
   final VibrationService vibrationService;
   final ReadingStatusService? readingStatusService;
-  final FriendService? friendService;
   final bool appCheckFailed;
   final FirebaseFunctions? functions;
 
@@ -78,16 +61,7 @@ class MainPage extends StatefulWidget {
     FirebaseMessaging? messaging,
     VibrationService? vibrationService,
     this.readingStatusService,
-    this.friendService,
-    ReadLogPage Function({
-      Key? key,
-      FirebaseFirestore? firestore,
-      FirebaseAuth? auth,
-      required SendLikeNotification onSendLikeNotification,
-      required SendCommentNotification onSendCommentNotification,
-    })? readLogPageBuilder,
     this.sendLikeNotification,
-    this.sendCommentNotification,
     this.appCheckFailed = false,
     this.functions,
     this.onNavigate,
@@ -95,8 +69,7 @@ class MainPage extends StatefulWidget {
         auth = auth ?? FirebaseAuth.instance,
         messaging = messaging ?? FirebaseMessaging.instance,
         googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
-        vibrationService = vibrationService ?? const VibrationService(),
-        readLogPageBuilder = readLogPageBuilder ?? ReadLogPage.new;
+        vibrationService = vibrationService ?? const VibrationService();
 
   @override
   State<MainPage> createState() => MainPageState();
@@ -113,10 +86,8 @@ class MainPageState extends State<MainPage> {
 
   VibrationService get vibrationService => widget.vibrationService;
   late final AdminRoleService _adminRoleService;
-  late final FriendService _friendService;
   late final GroupService _groupService;
 
-  late final ReadingPlanService _readingPlanService;
   late final DataCacheService _cacheService;
   late final ReadingStatusService _readingStatusService;
   late final UserPreferencesService _userPreferencesService;
@@ -140,10 +111,7 @@ class MainPageState extends State<MainPage> {
           auth: widget.auth,
           cache: _cacheService,
         );
-    _friendService =
-        widget.friendService ?? FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
-    _readingPlanService = ReadingPlanService(firestore: widget.firestore);
     _userPreferencesService = UserPreferencesService(
       firestore: widget.firestore,
     );
@@ -171,39 +139,8 @@ class MainPageState extends State<MainPage> {
         auth: widget.auth,
         firestore: widget.firestore,
         groupService: _groupService,
-        friendService: _friendService,
-        readingPlanService: _readingPlanService,
         readingStatusService: _readingStatusService,
         vibrationService: widget.vibrationService,
-        readLogBuilder: widget.readLogPageBuilder,
-        onSendLikeNotification: widget.sendLikeNotification ??
-            ({required String ownerUid, required String likerName}) async {
-              final user = FirebaseAuth.instance.currentUser;
-              if (user == null) return;
-              await user.getIdToken(true);
-              final functions = widget.functions ??
-                  FirebaseFunctions.instanceFor(region: 'us-central1');
-              final callable = functions.httpsCallable('sendLikeNotification');
-              await callable.call({
-                'ownerUid': ownerUid,
-                'likerName': likerName,
-              });
-            },
-        onSendCommentNotification: widget.sendCommentNotification ??
-            ({required String ownerUid, required String commenterName}) async {
-              final user = FirebaseAuth.instance.currentUser;
-              if (user == null) return;
-              await user.getIdToken(true);
-              final functions = widget.functions ??
-                  FirebaseFunctions.instanceFor(region: 'us-central1');
-              final callable = functions.httpsCallable(
-                'sendCommentNotification',
-              );
-              await callable.call({
-                'ownerUid': ownerUid,
-                'commenterName': commenterName,
-              });
-            },
         dateProvider: () => DateTime.now(),
       ),
       JourneyPage(
@@ -280,15 +217,6 @@ class MainPageState extends State<MainPage> {
       });
     } else {
       switch (index) {
-        case 4: // Friends
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  FriendsPage(auth: widget.auth, friendService: _friendService),
-            ),
-          );
-          break;
         case 5: // Challenges
           Navigator.push(
             context,
@@ -296,7 +224,6 @@ class MainPageState extends State<MainPage> {
               builder: (_) => ChallengesPage(
                 auth: widget.auth,
                 firestore: widget.firestore,
-                friendService: _friendService,
                 vibrationService: widget.vibrationService,
               ),
             ),
@@ -409,17 +336,17 @@ class MainPageState extends State<MainPage> {
           NavigationDestination(
             icon: TodayGlyph(color: colorScheme.onSurfaceVariant),
             selectedIcon: TodayGlyph(color: colorScheme.primary),
-            label: 'Home',
+            label: 'Today',
           ),
           NavigationDestination(
             icon: CircleGlyph(color: colorScheme.onSurfaceVariant),
             selectedIcon: CircleGlyph(color: colorScheme.primary),
-            label: 'Community',
+            label: 'Circle',
           ),
           NavigationDestination(
             icon: PathGlyph(color: colorScheme.onSurfaceVariant),
             selectedIcon: PathGlyph(color: colorScheme.primary),
-            label: 'Journey',
+            label: 'Path',
           ),
         ];
         return ReadThroughHost(
@@ -437,7 +364,6 @@ class MainPageState extends State<MainPage> {
             },
             child: NavigationMenuScope(
               onNavigate: _navigateFromMenu,
-              friendsIndex: 0,
               vibrationService: widget.vibrationService,
               adminRoleService: _adminRoleService,
               auth: widget.auth,
@@ -469,9 +395,7 @@ class MainPageState extends State<MainPage> {
       vibrationService: widget.vibrationService,
       googleSignInProvider: widget.googleSignInProvider,
       readingStatusService: widget.readingStatusService,
-      readLogPageBuilder: widget.readLogPageBuilder,
       sendLikeNotification: widget.sendLikeNotification,
-      sendCommentNotification: widget.sendCommentNotification,
       appCheckFailed: widget.appCheckFailed,
       onNavigate: widget.onNavigate,
     );

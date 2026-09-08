@@ -103,7 +103,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
 
               // Title
               Text(
-                'Join the Community',
+                'Join the Circle',
                 textAlign: TextAlign.center,
                 style: textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
