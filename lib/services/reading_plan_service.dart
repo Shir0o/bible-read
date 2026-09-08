@@ -83,11 +83,41 @@ class ReadingPlanService {
   }
 
   /// Starts a reading plan for a user.
-  Future<void> startPlan(
+  ///
+  /// Returns the soft-deleted progress record when the same plan was moved to
+  /// the Recently Deleted hub and never restored or purged (#776) — the
+  /// caller offers restore-progress vs start-fresh and calls again with
+  /// [restoreDeleted] to keep the old record. Null means a fresh start
+  /// happened (or the plan was simply started).
+  Future<UserPlanProgress?> startPlan(
     String userId,
     String planId, {
     DateTime? startDate,
+    bool restoreDeleted = false,
   }) async {
+    final docRef = firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .doc(planId);
+    final existing = await docRef.get();
+
+    // Re-enrollment collision (#776): a soft-deleted record still exists.
+    if (existing.exists) {
+      final previous = UserPlanProgress.fromFirestore(existing);
+      if (previous.deletedAt != null) {
+        if (!restoreDeleted) return previous;
+        // Restore the prior record intact — its start date and completed
+        // days come back, nothing is reset.
+        await docRef.update({
+          'deletedAt': null,
+          'deleteAfter': null,
+          'preDeleteState': null,
+        });
+        return null;
+      }
+    }
+
     final progress = UserPlanProgress(
       planId: planId,
       userId: userId,
@@ -95,12 +125,8 @@ class ReadingPlanService {
       completedDays: [],
     );
 
-    await firestore
-        .collection('users')
-        .doc(userId)
-        .collection('plan_progress')
-        .doc(planId)
-        .set(progress.toFirestore());
+    await docRef.set(progress.toFirestore());
+    return null;
   }
 
   /// Removes a reading plan for a user.
@@ -112,6 +138,55 @@ class ReadingPlanService {
         .doc(planId)
         .delete();
   }
+
+  /// Moves a plan to the Recently Deleted hub (#776): the progress document
+  /// keeps its id and history but gains a 30-day purge deadline. [preDeleteState]
+  /// records whether it was archived, so restoring puts it back exactly.
+  Future<void> softDeletePlan(
+    String userId,
+    String planId, {
+    DateTime? now,
+  }) async {
+    final docRef = firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .doc(planId);
+    final snap = await docRef.get();
+    if (!snap.exists) return;
+    final progress = UserPlanProgress.fromFirestore(snap);
+    final deletedAt = now ?? DateTime.now();
+    await docRef.update({
+      'deletedAt': Timestamp.fromDate(deletedAt),
+      'deleteAfter':
+          Timestamp.fromDate(deletedAt.add(const Duration(days: 30))),
+      'preDeleteState': progress.isArchived ? 'archived' : 'active',
+    });
+  }
+
+  /// Returns a soft-deleted plan to its pre-deletion state (#776): archived
+  /// plans return to the Archive hub, active ones to the active lists.
+  Future<void> restorePlan(String userId, String planId) async {
+    final docRef = firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .doc(planId);
+    final snap = await docRef.get();
+    if (!snap.exists) return;
+    final progress = UserPlanProgress.fromFirestore(snap);
+    final wasArchived = progress.preDeleteState == 'archived';
+    await docRef.update({
+      'isArchived': wasArchived,
+      'deletedAt': null,
+      'deleteAfter': null,
+      'preDeleteState': null,
+    });
+  }
+
+  /// Permanently purges a soft-deleted plan's progress document.
+  Future<void> permanentlyDeletePlan(String userId, String planId) =>
+      leavePlan(userId, planId);
 
   /// Streams the user's progress for a specific plan.
   Stream<UserPlanProgress?> getPlanProgress(String userId, String planId) {
@@ -127,13 +202,14 @@ class ReadingPlanService {
     });
   }
 
-  /// Streams all active (non-archived) plans for a user.
+  /// Streams all active (non-archived, not soft-deleted) plans for a user.
   Stream<List<UserPlanProgress>> getActivePlans(String userId) {
     return firestore
         .collection('users')
         .doc(userId)
         .collection('plan_progress')
         .where('isArchived', isEqualTo: false)
+        .where('deletedAt', isNull: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
@@ -142,13 +218,30 @@ class ReadingPlanService {
     });
   }
 
-  /// Streams all archived plans for a user.
+  /// Streams all archived plans for a user (soft-deleted ones excluded —
+  /// they live in the Recently Deleted hub until restored or purged).
   Stream<List<UserPlanProgress>> getArchivedPlans(String userId) {
     return firestore
         .collection('users')
         .doc(userId)
         .collection('plan_progress')
         .where('isArchived', isEqualTo: true)
+        .where('deletedAt', isNull: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => UserPlanProgress.fromFirestore(doc))
+          .toList();
+    });
+  }
+
+  /// Streams everything sitting in the Recently Deleted hub (#776).
+  Stream<List<UserPlanProgress>> getDeletedPlans(String userId) {
+    return firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .where('deletedAt', isNull: false)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
@@ -163,13 +256,25 @@ class ReadingPlanService {
     String planId,
     bool isArchived,
   ) async {
-    await firestore
+    final docRef = firestore
         .collection('users')
         .doc(userId)
         .collection('plan_progress')
-        .doc(planId)
-        .update({'isArchived': isArchived});
+        .doc(planId);
+    await docRef.update({
+      'isArchived': isArchived,
+      'archivedAt': isArchived ? Timestamp.now() : null,
+    });
   }
+
+  /// Archives a plan (#776): it leaves the active lists but keeps its
+  /// progress and shows in the Archive hub.
+  Future<void> archivePlan(String userId, String planId) =>
+      setPlanArchived(userId, planId, true);
+
+  /// Unarchives a plan — it returns to the active lists with all progress.
+  Future<void> unarchivePlan(String userId, String planId) =>
+      setPlanArchived(userId, planId, false);
 
   /// Marks a specific day in the plan as completed.
   Future<void> markDayComplete(String userId, String planId, int day) async {

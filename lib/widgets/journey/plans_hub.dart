@@ -26,6 +26,7 @@ import '../../pages/full_schedule_page.dart';
 import '../../pages/group_detail_page.dart';
 import '../../pages/group_members_page.dart';
 import '../../pages/plan_detail_page.dart';
+import '../../pages/recently_deleted_page.dart';
 import '../../services/plan_pace.dart';
 import '../../services/plan_pace_service.dart';
 
@@ -97,6 +98,8 @@ class PlansHubState extends State<PlansHub> {
   bool _loading = true;
   List<_PersonalRow> _personal = [];
   List<_PersonalRow> _archived = [];
+  List<Group> _archivedGroups = [];
+  int _trashedCount = 0;
   List<_GroupRow> _groups = [];
   String? _pinnedReadingId;
 
@@ -150,16 +153,13 @@ class PlansHubState extends State<PlansHub> {
         );
       }
 
-      // Left (archived) personal plans — kept so a reader can restore or
-      // permanently delete them from the hub (#811; the retired duplicate
-      // page was their only home before).
-      final archivedProgress = await widget.readingPlanService
-          .getArchivedPlans(uid)
-          .first
-          .timeout(
-            const Duration(seconds: 5),
-            onTimeout: () => const <UserPlanProgress>[],
-          );
+      // Left (archived) personal plans — kept so a reader can restore,
+      // trash or permanently delete them from the hub (#811, #776).
+      final archivedProgress =
+          await widget.readingPlanService.getArchivedPlans(uid).first.timeout(
+                const Duration(seconds: 5),
+                onTimeout: () => const <UserPlanProgress>[],
+              );
       final archived = <_PersonalRow>[];
       for (final progress in archivedProgress) {
         final plan = await widget.readingPlanService.getPlanById(
@@ -176,6 +176,28 @@ class PlansHubState extends State<PlansHub> {
           _PersonalRow(plan, progress, status, status.lifecycleAt(today)),
         );
       }
+
+      // Archived groups (#776): owned-and-archived, or participation the
+      // reader shelved. Both return via the Archive rows below.
+      final archivedGroups =
+          await widget.groupService.archivedGroupsForUser(uid).timeout(
+                const Duration(seconds: 5),
+                onTimeout: () => const <Group>[],
+              );
+
+      // Count of everything sitting in the Recently Deleted hub, so the
+      // shortcut can hint there is something waiting (#776).
+      final trashedPlans =
+          await widget.readingPlanService.getDeletedPlans(uid).first.timeout(
+                const Duration(seconds: 5),
+                onTimeout: () => const <UserPlanProgress>[],
+              );
+      final trashedGroups =
+          await widget.groupService.getDeletedGroups(uid).first.timeout(
+                const Duration(seconds: 5),
+                onTimeout: () => const <Group>[],
+              );
+      final trashedCount = trashedPlans.length + trashedGroups.length;
 
       // Group readings (the user's groups).
       final groups = await widget.groupService.groupsForUser(uid).first.timeout(
@@ -231,6 +253,8 @@ class PlansHubState extends State<PlansHub> {
         setState(() {
           _personal = personal;
           _archived = archived;
+          _archivedGroups = archivedGroups;
+          _trashedCount = trashedCount;
           _groups = groupRows;
           _pinnedReadingId = pinned;
           _loading = false;
@@ -299,9 +323,9 @@ class PlansHubState extends State<PlansHub> {
     if (uid == null) return;
     widget.vibrationService.lightImpact();
     final today = widget.dateProvider();
-    final days = PlanPace.datedPersonalSchedule(row.plan, row.progress.startDate);
-    final completed =
-        PlanPace.personalCompletedDateIds(row.plan, row.progress);
+    final days =
+        PlanPace.datedPersonalSchedule(row.plan, row.progress.startDate);
+    final completed = PlanPace.personalCompletedDateIds(row.plan, row.progress);
     final behind = PlanPace.daysBehind(days, completed, today: today);
     final choice = await Navigator.of(context).push<PaceOption>(
       MaterialPageRoute(
@@ -472,17 +496,27 @@ class PlansHubState extends State<PlansHub> {
     }
   }
 
-  /// Permanently deletes a left plan's progress — the reader's record of
-  /// Showing up lives outside `plan_progress` and is never touched.
-  Future<void> _deletePlanPermanently(_PersonalRow row) async {
+  /// Unarchives a group (#776): an owned group returns for every member; a
+  /// shelved participation returns to this reader's active lists.
+  Future<void> _unarchiveGroup(Group group) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
     try {
-      await widget.readingPlanService.leavePlan(uid, row.plan.id);
+      if (uid == group.ownerUid) {
+        await widget.groupService.unarchiveGroup(
+          groupId: group.id,
+          ownerUid: uid,
+        );
+      } else {
+        await widget.groupService.unarchiveMemberParticipation(
+          groupId: group.id,
+          uid: uid,
+        );
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"${row.plan.title}" deleted permanently')),
+        SnackBar(content: Text('"${group.name}" restored')),
       );
       await _load();
     } catch (e, st) {
@@ -490,17 +524,17 @@ class PlansHubState extends State<PlansHub> {
     }
   }
 
-  /// Asks before the irreversible delete; the dialog mirrors the one the
-  /// retired duplicate page offered (#811).
-  void _confirmDeletePermanently(_PersonalRow row) {
+  /// Asks before the owner soft-deletes the group — recoverable for 30 days
+  /// from the Recently Deleted hub.
+  void _confirmTrashGroup(Group group) {
     showDialog(
       context: context,
       barrierColor: AppColors.of(context).scrim,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Delete "${row.plan.title}"?'),
+        title: Text('Delete "${group.name}"?'),
         content: const Text(
-          'Deleting removes this plan and its progress permanently. To keep '
-          'your progress, leave it archived instead.',
+          'The group moves to Recently Deleted for 30 days. Members lose '
+          'access until you restore it or the 30 days run out.',
         ),
         actions: [
           TextButton(
@@ -510,12 +544,98 @@ class PlansHubState extends State<PlansHub> {
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              _deletePlanPermanently(row);
+              _trashGroup(group);
             },
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Delete Permanently'),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _trashGroup(Group group) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    try {
+      await widget.groupService.softDeleteGroup(
+        groupId: group.id,
+        ownerUid: uid,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('"${group.name}" moved to Recently Deleted')),
+      );
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
+  }
+
+  /// Opens the Recently Deleted hub (#776).
+  void _openTrash() {
+    widget.vibrationService.lightImpact();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RecentlyDeletedPage(
+          firestore: widget.firestore,
+          auth: widget.auth,
+          groupService: widget.groupService,
+          readingPlanService: widget.readingPlanService,
+          vibrationService: widget.vibrationService,
+          dateProvider: widget.dateProvider,
+        ),
+      ),
+    );
+  }
+
+  /// Moves a plan to the Recently Deleted hub (#776): recoverable for 30
+  /// days, restorable to the state it had — archived or active.
+  Future<void> _trashPlan(_PersonalRow row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    try {
+      await widget.readingPlanService.softDeletePlan(uid, row.plan.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('"${row.plan.title}" moved to Recently Deleted')),
+      );
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
+  }
+
+  /// Asks before moving the plan to the trash — recoverable for 30 days.
+  void _confirmTrashPlan(_PersonalRow row) {
+    showDialog(
+      context: context,
+      barrierColor: AppColors.of(context).scrim,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Delete "${row.plan.title}"?'),
+        content: const Text(
+          'It moves to Recently Deleted and waits there for 30 days. '
+          'Restore it any time before then.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _trashPlan(row);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -617,7 +737,10 @@ class PlansHubState extends State<PlansHub> {
         _groups.where((r) => r.state == PlanLifecycle.complete).toList();
     final totalActive = personalActive.length + groupActive.length;
     final hasFinished = personalDone.isNotEmpty || groupDone.isNotEmpty;
-    final nothing = totalActive == 0 && !hasFinished && _archived.isEmpty;
+    final nothing = totalActive == 0 &&
+        !hasFinished &&
+        _archived.isEmpty &&
+        _archivedGroups.isEmpty;
 
     if (_loading) {
       return const Padding(
@@ -657,9 +780,12 @@ class PlansHubState extends State<PlansHub> {
             for (final row in groupActive) _groupCard(context, row),
           ],
           if (hasFinished) _finishedSection(context, personalDone, groupDone),
-          if (_archived.isNotEmpty) _archivedSection(context),
+          if (_archived.isNotEmpty || _archivedGroups.isNotEmpty)
+            _archivedSection(context),
           const SizedBox(height: 22),
           _enrollButton(context),
+          const SizedBox(height: 10),
+          _trashShortcut(context),
           const SizedBox(height: 24),
         ],
       ),
@@ -1164,7 +1290,7 @@ class PlansHubState extends State<PlansHub> {
                 ),
               ),
               Text(
-                'left · progress kept',
+                'shelved · progress kept',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
@@ -1173,9 +1299,84 @@ class PlansHubState extends State<PlansHub> {
             ],
           ),
         ),
-        for (final row in _archived)
-          _archivedRow(context, row),
+        for (final row in _archived) _archivedRow(context, row),
+        for (final group in _archivedGroups) _archivedGroupRow(context, group),
       ],
+    );
+  }
+
+  /// Archive row for an archived group (#776): owned groups return with
+  /// unarchive (owner) — participation returns with unarchive (member).
+  Widget _archivedGroupRow(BuildContext context, Group group) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final uid = widget.auth.currentUser?.uid;
+    final isOwner = uid != null && uid == group.ownerUid;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainer.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.group_outlined,
+              size: 20,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  group.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  isOwner ? 'Group archived' : 'Your participation archived',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => _unarchiveGroup(group),
+            icon: const Icon(Icons.restore),
+            tooltip: 'Unarchive group',
+            color: colorScheme.primary,
+          ),
+          if (isOwner)
+            IconButton(
+              onPressed: () => _confirmTrashGroup(group),
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Delete group',
+              color: colorScheme.error.withValues(alpha: 0.7),
+            ),
+        ],
+      ),
     );
   }
 
@@ -1239,9 +1440,9 @@ class PlansHubState extends State<PlansHub> {
             color: colorScheme.primary,
           ),
           IconButton(
-            onPressed: () => _confirmDeletePermanently(row),
+            onPressed: () => _confirmTrashPlan(row),
             icon: const Icon(Icons.delete_outline),
-            tooltip: 'Delete permanently',
+            tooltip: 'Delete plan',
             color: colorScheme.error.withValues(alpha: 0.7),
           ),
         ],
@@ -1262,6 +1463,37 @@ class PlansHubState extends State<PlansHub> {
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
           textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Bottom shortcut to the Recently Deleted hub (#776), with a hint of how
+  /// much is waiting in the trash.
+  Widget _trashShortcut(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton.icon(
+        onPressed: _openTrash,
+        icon: const Icon(Icons.delete_outline, size: 18),
+        label: Text(
+          _trashedCount > 0
+              ? 'Recently Deleted · $_trashedCount waiting'
+              : 'Recently Deleted',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: AppColors.of(context).border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -1301,7 +1533,9 @@ class PlansHubState extends State<PlansHub> {
           ),
           const SizedBox(height: 24),
           _enrollButton(context),
-          if (_archived.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          _trashShortcut(context),
+          if (_archived.isNotEmpty || _archivedGroups.isNotEmpty) ...[
             const SizedBox(height: 8),
             _archivedSection(context),
           ],

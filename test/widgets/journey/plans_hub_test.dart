@@ -131,7 +131,8 @@ void main() {
     expect(find.text('With a group'), findsOneWidget);
   });
 
-  testWidgets('adjust pace is reachable from the plan card and previews '
+  testWidgets(
+      'adjust pace is reachable from the plan card and previews '
       'the finish before committing', (tester) async {
     await pumpPage(tester);
 
@@ -157,7 +158,8 @@ void main() {
         .get();
     expect(progress.data()?['completedDays'], isEmpty);
   });
-  testWidgets('leaving a plan archives it and the archive keeps restore '
+  testWidgets(
+      'leaving a plan archives it and the archive keeps restore '
       'and permanent delete reachable', (tester) async {
     await pumpPage(tester);
 
@@ -194,19 +196,20 @@ void main() {
     expect(find.byTooltip('Unarchive and continue'), findsNothing);
   });
 
-  testWidgets('delete permanently from the archive removes the progress '
-      'document', (tester) async {
+  testWidgets(
+      'delete from the archive moves the plan to Recently Deleted '
+      'with a 30-day recovery window', (tester) async {
     await planService.setPlanArchived('u1', 'p1', true);
     await pumpPage(tester);
 
     expect(find.text('Archived'), findsOneWidget);
-    await tester.tap(find.byTooltip('Delete permanently'));
+    await tester.tap(find.byTooltip('Delete plan'));
     await tester.pumpAndSettle();
 
-    // The dialog names the consequence and asks first.
+    // The dialog names the consequence — 30 days in the trash — and asks.
     expect(find.text('Delete "Morning Light"?'), findsOneWidget);
-    expect(find.text('Delete Permanently'), findsOneWidget);
-    await tester.tap(find.text('Delete Permanently'));
+    expect(find.text('Delete'), findsOneWidget);
+    await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
 
     final progress = await firestore
@@ -215,7 +218,11 @@ void main() {
         .collection('plan_progress')
         .doc('p1')
         .get();
-    expect(progress.exists, isFalse);
+    // The progress document survives in the trash, not destroyed.
+    expect(progress.exists, isTrue);
+    expect(progress.data()?['deletedAt'], isNotNull);
+    expect(progress.data()?['preDeleteState'], 'archived');
     expect(find.text('Archived'), findsNothing);
+    expect(find.text('Recently Deleted · 1 waiting'), findsOneWidget);
   });
- }
+}

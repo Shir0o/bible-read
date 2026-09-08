@@ -1265,6 +1265,9 @@ void main() {
             () => groups.where('ownerUid', isEqualTo: 'u1'),
           ).thenReturn(ownerQuery);
           when(
+            () => ownerQuery.where('deletedAt', isNull: true),
+          ).thenReturn(ownerQuery);
+          when(
             () => ownerQuery.snapshots(),
           ).thenAnswer((_) => Stream.value(ownerSnap));
           when(() => ownerSnap.docs).thenReturn([]);

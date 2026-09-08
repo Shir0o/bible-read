@@ -9,6 +9,18 @@ class UserPlanProgress {
   final DateTime? lastReadDate;
   final bool isArchived;
 
+  /// When the plan was moved to the Recently Deleted hub (#776). Null while
+  /// the plan is live; non-null soft-deleted items are excluded from every
+  /// active query.
+  final DateTime? deletedAt;
+
+  /// When the soft-deleted plan is permanently purged: [deletedAt] + 30 days.
+  final DateTime? deleteAfter;
+
+  /// The state the plan was in when soft-deleted — 'active' or 'archived' —
+  /// so restoring returns it to exactly where it was.
+  final String? preDeleteState;
+
   UserPlanProgress({
     required this.planId,
     required this.userId,
@@ -16,6 +28,9 @@ class UserPlanProgress {
     required this.completedDays,
     this.lastReadDate,
     this.isArchived = false,
+    this.deletedAt,
+    this.deleteAfter,
+    this.preDeleteState,
   });
 
   factory UserPlanProgress.fromFirestore(
@@ -29,6 +44,9 @@ class UserPlanProgress {
       completedDays: List<int>.from(data['completedDays'] as List? ?? []),
       lastReadDate: (data['lastReadDate'] as Timestamp?)?.toDate(),
       isArchived: data['isArchived'] as bool? ?? false,
+      deletedAt: (data['deletedAt'] as Timestamp?)?.toDate(),
+      deleteAfter: (data['deleteAfter'] as Timestamp?)?.toDate(),
+      preDeleteState: data['preDeleteState'] as String?,
     );
   }
 
@@ -49,6 +67,9 @@ class UserPlanProgress {
     List<int>? completedDays,
     DateTime? lastReadDate,
     bool? isArchived,
+    DateTime? deletedAt,
+    DateTime? deleteAfter,
+    String? preDeleteState,
   }) {
     return UserPlanProgress(
       planId: planId ?? this.planId,
@@ -57,6 +78,9 @@ class UserPlanProgress {
       completedDays: completedDays ?? this.completedDays,
       lastReadDate: lastReadDate ?? this.lastReadDate,
       isArchived: isArchived ?? this.isArchived,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deleteAfter: deleteAfter ?? this.deleteAfter,
+      preDeleteState: preDeleteState ?? this.preDeleteState,
     );
   }
 }
