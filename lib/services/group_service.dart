@@ -8,6 +8,7 @@ import '../models/group_member_progress.dart';
 import '../models/group_plan_config.dart';
 import '../models/group_schedule.dart';
 import '../models/group.dart';
+import '../models/circle_member.dart';
 import '../models/group_invite.dart';
 import '../models/group_member_role.dart';
 import '../models/notification_preferences.dart';
@@ -1025,6 +1026,89 @@ class GroupService {
       }
     }
     return circle;
+  }
+
+  /// Live stream of the reader's Circle (ADR-0003): the co-members of every
+  /// Group [uid] belongs to, deduplicated by uid. A person in two shared
+  /// Groups appears once, carrying both Group ids. The reader is excluded —
+  /// Circle is who you read *with*; the reader renders their own row. No
+  /// Groups yields an empty list, not an error.
+  Stream<List<CircleMember>> circleMembers(String uid) {
+    final memberships = firestore
+        .collectionGroup(GroupCollections.members)
+        .where('uid', isEqualTo: uid)
+        .snapshots();
+
+    return memberships.asyncMap((memberSnaps) async {
+      final groupIds = memberSnaps.docs
+          .map((doc) => doc.reference.parent.parent?.id)
+          .whereType<String>()
+          .toSet();
+      if (groupIds.isEmpty) return <CircleMember>[];
+
+      final byUid = <String, CircleMember>{};
+      for (final groupId in groupIds) {
+        try {
+          final members = await firestore
+              .collection(GroupCollections.groups)
+              .doc(groupId)
+              .collection(GroupCollections.members)
+              .get();
+          for (final doc in members.docs) {
+            final data = doc.data();
+            final id = (data['uid'] as String?) ?? doc.id;
+            if (id.isEmpty || id == uid) continue;
+            final name = (data['name'] as String?)?.trim();
+            final photoUrl = (data['photoUrl'] as String?)?.trim();
+            final existing = byUid[id];
+            if (existing != null) {
+              existing.groupIds.add(groupId);
+              continue;
+            }
+            byUid[id] = CircleMember(
+              uid: id,
+              groupIds: {groupId},
+              name: (name != null && name.isNotEmpty) ? name : null,
+              photoUrl:
+                  (photoUrl != null && photoUrl.isNotEmpty) ? photoUrl : null,
+            );
+          }
+        } catch (e, st) {
+          await _safeLog(e, st);
+        }
+      }
+      return byUid.values.toList();
+    });
+  }
+
+  /// Stream of the `YYYY-MM-DD` ids [uid] has completed in [groupId]'s
+  /// schedule, read from `progress/{dateId}/entries/{uid}` (count > 0 or
+  /// done). This is how a Circle row learns a co-member's Plan reading.
+  Stream<Set<String>> memberCompletedDates(String groupId, String uid) {
+    return firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection('progress')
+        .snapshots()
+        .asyncMap((snap) async {
+      final done = <String>{};
+      for (final day in snap.docs) {
+        try {
+          final entry = await day.reference
+              .collection('entries')
+              .doc(uid)
+              .get();
+          final data = entry.data();
+          if (data == null) continue;
+          final count = (data['count'] as num?)?.toInt() ?? 0;
+          final complete = data['done'] == true;
+          if (count > 0 || complete) done.add(day.id);
+        } catch (e, st) {
+          await _safeLog(e, st);
+        }
+      }
+      return done;
+    });
   }
 
   /// Stream of member display names for [groupId].
