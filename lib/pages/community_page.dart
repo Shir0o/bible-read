@@ -5,9 +5,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../models/badge_award.dart';
 import '../models/circle_member.dart';
 import '../models/group.dart';
 import '../models/group_schedule.dart';
+import '../services/badge_service.dart';
 import '../services/catch_up_engine.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
@@ -117,8 +119,7 @@ class _CommunityPageState extends State<CommunityPage>
                     child: _GroupFilterChips(
                       groups: groups,
                       selectedId: _filterGroupId,
-                      onSelected: (id) =>
-                          setState(() => _filterGroupId = id),
+                      onSelected: (id) => setState(() => _filterGroupId = id),
                     ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 16)),
@@ -240,7 +241,12 @@ class _GroupFilterChips extends StatelessWidget {
 /// deduplicated by uid. Ordering is deliberate, never alphabetical —
 /// people who have not shown up lead (they are who a nudge reaches),
 /// then people who just read (freshest mark first).
-class _CirclePeopleList extends StatelessWidget {
+///
+/// Stateful so row status survives rebuilds: each row's Showing-up mark is
+/// written back into its [_PersonStatus] by the row's live feed stream, and
+/// the badge stream re-emits independently — a fresh object per build would
+/// wipe a mark that its stream is not due to re-send yet.
+class _CirclePeopleList extends StatefulWidget {
   final FirebaseAuth auth;
   final GroupService groupService;
   final ReadingStatusService readingStatusService;
@@ -260,47 +266,74 @@ class _CirclePeopleList extends StatelessWidget {
   });
 
   @override
+  State<_CirclePeopleList> createState() => _CirclePeopleListState();
+}
+
+class _CirclePeopleListState extends State<_CirclePeopleList> {
+  /// Row statuses keyed by uid, carried across rebuilds.
+  final Map<String, _PersonStatus> _statuses = {};
+
+  _PersonStatus _statusFor(String uid, String? name, bool isMe) {
+    final existing = _statuses[uid];
+    if (existing != null && existing.name == name) return existing;
+    final status = _PersonStatus(uid: uid, name: name, isMe: isMe);
+    _statuses[uid] = status;
+    return status;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final myUid = widget.myUid;
+    final groupIds = widget.groupIds;
     final colorScheme = Theme.of(context).colorScheme;
-    return StreamBuilder<List<CircleMember>>(
-      stream: groupService.circleMembers(myUid),
-      builder: (context, circleSnap) {
-        final circle = (circleSnap.data ?? const <CircleMember>[])
-            .where((m) => m.groupIds.any(groupIds.contains))
-            .toList();
+    return StreamBuilder<Map<String, BadgeMirror>>(
+      stream: BadgeService(firestore: widget.groupService.firestore)
+          .watchForGroups(groupIds),
+      builder: (context, badgeSnap) {
+        final badges = badgeSnap.data ?? const <String, BadgeMirror>{};
+        return StreamBuilder<List<CircleMember>>(
+          stream: widget.groupService.circleMembers(myUid),
+          builder: (context, circleSnap) {
+            final circle = (circleSnap.data ?? const <CircleMember>[])
+                .where((m) => m.groupIds.any(groupIds.contains))
+                .toList();
 
-        final members = <_PersonStatus>[
-          _PersonStatus(uid: myUid, name: null, isMe: true),
-          for (final m in circle)
-            _PersonStatus(uid: m.uid, name: m.name, isMe: false),
-        ]..sort(_PersonStatus.ordering(myUid));
-
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colorScheme.outlineVariant, width: 0.5),
-          ),
-          child: Column(
-            children: [
-              for (var i = 0; i < members.length; i++) ...[
-                if (i > 0)
-                  Divider(height: 1, color: AppColors.of(context).border),
-                _CirclePersonRow(
-                  key: ValueKey(members[i].uid),
-                  person: members[i],
-                  auth: auth,
-                  groupService: groupService,
-                  readingStatusService: readingStatusService,
-                  dateProvider: dateProvider,
-                  groupIds: groupIds,
-                  myUid: myUid,
-                  nudgeService: nudgeService,
+            final members = <_PersonStatus>[
+              _statusFor(myUid, null, true),
+              for (final m in circle) _statusFor(m.uid, m.name, false),
+            ]..sort(_PersonStatus.ordering(myUid));
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: colorScheme.outlineVariant,
+                  width: 0.5,
                 ),
-              ],
-            ],
-          ),
+              ),
+              child: Column(
+                children: [
+                  for (var i = 0; i < members.length; i++) ...[
+                    if (i > 0)
+                      Divider(height: 1, color: AppColors.of(context).border),
+                    _CirclePersonRow(
+                      key: ValueKey(members[i].uid),
+                      person: members[i],
+                      auth: widget.auth,
+                      groupService: widget.groupService,
+                      readingStatusService: widget.readingStatusService,
+                      dateProvider: widget.dateProvider,
+                      groupIds: groupIds,
+                      myUid: myUid,
+                      nudgeService: widget.nudgeService,
+                      badges: badges,
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -337,8 +370,9 @@ class _PersonStatus {
 /// One person's row. Each fact streams independently and the row renders
 /// complete with any of them absent: the Showing-up mark (from the per-Group
 /// feed, ADR-0004), what they read and whether they are behind (from the
-/// Group schedule + their progress). No Reflection and no achievement exist
-/// yet (#807 / #806 are later) — the row never waits on them.
+/// Group schedule + their progress), and the latest achievement (#806,
+/// mirrored per-Group). No Reflection exists yet (#807 is later) — the row
+/// never waits on it.
 class _CirclePersonRow extends StatefulWidget {
   final _PersonStatus person;
   final FirebaseAuth auth;
@@ -348,6 +382,7 @@ class _CirclePersonRow extends StatefulWidget {
   final List<String> groupIds;
   final String myUid;
   final NudgeService nudgeService;
+  final Map<String, BadgeMirror> badges;
 
   const _CirclePersonRow({
     super.key,
@@ -359,6 +394,7 @@ class _CirclePersonRow extends StatefulWidget {
     required this.groupIds,
     required this.myUid,
     required this.nudgeService,
+    required this.badges,
   });
 
   @override
@@ -429,8 +465,8 @@ class _CirclePersonRowState extends State<_CirclePersonRow> {
             builder: (context, scheduleSnap) {
               return StreamBuilder<Set<String>>(
                 stream: widget.groupIds.length == 1
-                    ? widget.groupService.memberCompletedDates(
-                        widget.groupIds.first, person.uid)
+                    ? widget.groupService
+                        .memberCompletedDates(widget.groupIds.first, person.uid)
                     : const Stream.empty(),
                 builder: (context, completedSnap) {
                   final status = widget.groupIds.length == 1
@@ -448,6 +484,7 @@ class _CirclePersonRowState extends State<_CirclePersonRow> {
                     statusDate: widget.dateProvider(),
                     nudgeService: widget.nudgeService,
                     myUid: widget.myUid,
+                    badge: widget.badges[person.uid],
                   );
                 },
               );
@@ -469,6 +506,10 @@ class _RowContent extends StatelessWidget {
   final NudgeService nudgeService;
   final String myUid;
 
+  /// The member's latest achievement, mirrored per-Group (#806). Null when
+  /// they hold none — the row renders complete without it.
+  final BadgeMirror? badge;
+
   const _RowContent({
     required this.person,
     required this.isMe,
@@ -477,6 +518,7 @@ class _RowContent extends StatelessWidget {
     required this.statusDate,
     required this.nudgeService,
     required this.myUid,
+    this.badge,
   });
 
   @override
@@ -495,9 +537,8 @@ class _RowContent extends StatelessWidget {
     final readTodayOnPlan =
         status != null && completedDateKeys.contains(todayKey);
     final current = status?.currentReadings ?? const <String>[];
-    final reference = readTodayOnPlan && current.isNotEmpty
-        ? current.first
-        : null;
+    final reference =
+        readTodayOnPlan && current.isNotEmpty ? current.first : null;
     final String reading;
     if (!showedUp) {
       reading = _CirclePersonRowStatics._notYet;
@@ -538,18 +579,57 @@ class _RowContent extends StatelessWidget {
               ],
             ),
           ),
+          if (badge != null) ...[
+            const SizedBox(width: 8),
+            Semantics(
+              label: 'Latest achievement: ${badge!.title}',
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.of(context).accentSoft,
+                      border: Border.all(
+                        color: colorScheme.tertiary.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.workspace_premium_rounded,
+                      size: 15,
+                      color: colorScheme.tertiary,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 96),
+                    child: Text(
+                      badge!.title,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.tertiary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (!isMe && !showedUp)
             _NudgeChip(
               onTap: () async {
                 await showNudgeSheet(
                   context,
                   person: NudgePerson(name: person.name ?? 'Reader'),
-                  onSend: (message) =>
-                      nudgeService.nudgeMember(
-                        currentUid: myUid,
-                        memberUid: person.uid,
-                        currentName: 'You',
-                      ),
+                  onSend: (message) => nudgeService.nudgeMember(
+                    currentUid: myUid,
+                    memberUid: person.uid,
+                    currentName: 'You',
+                  ),
                 );
               },
             ),
