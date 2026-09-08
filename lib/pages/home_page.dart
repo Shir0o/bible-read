@@ -28,6 +28,8 @@ import '../widgets/catch_up_status_row.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
 import '../theme/app_theme.dart';
 import '../widgets/member_presence_stack.dart';
+import '../services/read_log_service.dart';
+
 import '../widgets/navigation_menu_scope.dart';
 import '../widgets/reflect_sheet.dart';
 import '../widgets/skeleton_loader.dart';
@@ -36,7 +38,6 @@ import '../widgets/skeletons/home_page_skeleton.dart';
 import 'check_in_page.dart';
 import 'full_schedule_page.dart';
 import 'plan_detail_page.dart';
-import 'read_log_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
 /// Firestore when the app starts.
@@ -420,19 +421,41 @@ class _HomePageState extends State<HomePage>
       final dateKey =
           '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
-      final entriesSnap = await widget.firestore
-          .collection('read_logs')
-          .doc(dateKey)
-          .collection('entries')
-          .get();
+      // The feed is per Group (ADR-0004): read the reader's Groups' entries
+      // for today and intersect with the Circle, so a stranger's entry can
+      // never surface.
+      final readLogService = ReadLogService(firestore: widget.firestore);
+      final groupIds = await readLogService
+          .groupIdsFor(user.uid)
+          .timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => const <String>[],
+          );
+      final entriesSnap = await readLogService
+          .entriesForGroups(groupIds, dateKey: dateKey)
+          .first
+          .timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => const <String>[],
+          );
 
-      final readers = <_CommunityReader>[];
-      for (final doc in entriesSnap.docs) {
-        if (!allUids.contains(doc.id)) continue;
-        final name = (doc.data()['name'] ?? '').toString();
-        readers.add(_CommunityReader(uid: doc.id, name: name));
-      }
-      // Show the current user last so co-members lead the stack.
+      // Resolve display names for the uids that showed up. Member docs and
+      // profiles both carry them; the entry itself no longer needs a name —
+      // the uid is the identity.
+      final nameFutures = <String, Future<String>>{
+        for (final uid in entriesSnap)
+          if (allUids.contains(uid))
+            uid: _displayNameFor(uid),
+      };
+      final names = {
+        for (final e in nameFutures.entries) e.key: await e.value,
+      };
+
+      final readers = <_CommunityReader>[
+        for (final uid in entriesSnap)
+          if (allUids.contains(uid))
+            _CommunityReader(uid: uid, name: names[uid] ?? ''),
+      ];
       readers.sort((a, b) {
         if (a.uid == user.uid) return 1;
         if (b.uid == user.uid) return -1;
@@ -448,6 +471,23 @@ class _HomePageState extends State<HomePage>
     } catch (e, st) {
       ErrorLogger.log(e, st);
     }
+  }
+
+  /// Best-effort display name for a uid: member doc first, then profile.
+  /// Falls back to '?' so the avatar stack renders a placeholder.
+  Future<String> _displayNameFor(String uid) async {
+    try {
+      final profile =
+          await widget.firestore.collection('users').doc(uid).get();
+      final data = profile.data();
+      final name = (data?['name'] as String?) ??
+          (data?['displayName'] as String?) ??
+          (data?['username'] as String?);
+      if (name != null && name.isNotEmpty) return name;
+    } catch (_) {
+      // Best-effort; the glimpse renders a placeholder instead.
+    }
+    return '?';
   }
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -741,18 +781,13 @@ class _HomePageState extends State<HomePage>
     } catch (_) {}
     final refreshedUser = widget.auth.currentUser;
 
+    final readLogService = ReadLogService(firestore: widget.firestore);
     try {
-      final dateKey =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      final dateKey = ReadLogService.dateKeyFor(today);
 
       if (wasRead) {
         final List<Future<void>> backendWrites = [
-          widget.firestore
-              .collection('read_logs')
-              .doc(dateKey)
-              .collection('entries')
-              .doc(user.uid)
-              .delete(),
+          readLogService.clear(refreshedUser ?? user, date: today),
           widget.firestore
               .collection('users')
               .doc(user.uid)
@@ -767,11 +802,7 @@ class _HomePageState extends State<HomePage>
         // record the habit (see PlanDetailPage), but the bare habit tap does not
         // touch plan progress.
         final List<Future<void>> backendWrites = [
-          ReadLogPage.writeReadLogEntry(
-            refreshedUser ?? user,
-            firestore: widget.firestore,
-            dateProvider: () => today,
-          ),
+          readLogService.mark(refreshedUser ?? user, date: today),
           widget.firestore
               .collection('users')
               .doc(user.uid)

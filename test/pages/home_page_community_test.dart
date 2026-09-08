@@ -55,19 +55,20 @@ Future<void> _seedReadToday(
   required String uid,
   required String name,
   required DateTime day,
+  required List<String> groupIds,
 }) async {
   final dateKey =
       '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-  await firestore
-      .collection('read_logs')
-      .doc(dateKey)
-      .collection('entries')
-      .doc(uid)
-      .set({
-    'uid': uid,
-    'name': name,
-    'dateId': dateKey,
-  });
+  for (final groupId in groupIds) {
+    await firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('read_log')
+        .doc(dateKey)
+        .collection('entries')
+        .doc(uid)
+        .set({'uid': uid, 'name': name, 'dateId': dateKey});
+  }
 }
 
 Future<void> _pumpHome(
@@ -127,10 +128,14 @@ void main() {
         id: 'g1', ownerUid: 'u1', members: ['u2', 'u3']);
     await _seedGroup(firestore,
         id: 'g2', ownerUid: 'u4', members: ['u2', 'u1']);
-    await _seedReadToday(firestore, uid: 'u2', name: 'You', day: today);
-    await _seedReadToday(firestore, uid: 'u3', name: 'Miriam', day: today);
-    // A signed-in stranger who read today is outside the Circle.
-    await _seedReadToday(firestore, uid: 'u9', name: 'Stranger', day: today);
+    // The reader (u2) is in both Groups; u3 only shares g1; the stranger's
+    // entry lives in a Group u2 does not belong to and must never surface.
+    await _seedReadToday(firestore,
+        uid: 'u2', name: 'You', day: today, groupIds: ['g1', 'g2']);
+    await _seedReadToday(firestore,
+        uid: 'u3', name: 'Miriam', day: today, groupIds: ['g1']);
+    await _seedReadToday(firestore,
+        uid: 'u9', name: 'Stranger', day: today, groupIds: ['g9']);
 
     await _pumpHome(tester, firestore, auth);
 

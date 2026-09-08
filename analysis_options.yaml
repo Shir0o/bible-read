@@ -20,6 +20,7 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    - firestore-tests/node_modules/**
 
 linter:
   # The lint rules applied to this project can be customized in the

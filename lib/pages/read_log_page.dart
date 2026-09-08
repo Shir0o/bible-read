@@ -39,41 +39,6 @@ class ReadLogPage extends StatefulWidget {
 
   @override
   State<ReadLogPage> createState() => _ReadLogPageState();
-
-  static Future<void> writeReadLogEntry(
-    User user, {
-    FirebaseFirestore? firestore,
-    DateTime Function()? dateProvider,
-  }) async {
-    final db = firestore ?? FirebaseFirestore.instance;
-    final now = (dateProvider ?? DateTime.now)();
-    final dateKey =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    await db
-        .collection('read_logs')
-        .doc(dateKey)
-        .collection('entries')
-        .doc(user.uid)
-        .set({
-      'name': (user.displayName ?? '').split(' ').first,
-      'email': user.email?.toLowerCase() ?? '',
-      'uid': user.uid,
-      'timestamp': Timestamp.now(),
-      'dateId': dateKey,
-    });
-
-    // Keep the per-user reading collection in sync for streak calculations.
-    try {
-      await db
-          .collection('users')
-          .doc(user.uid)
-          .collection('reading')
-          .doc(dateKey)
-          .set({'read': true}, SetOptions(merge: true));
-    } catch (_) {
-      // Best effort: ignore failures here since the log entry itself succeeded.
-    }
-  }
 }
 
 class _ReadLogPageState extends State<ReadLogPage> {

@@ -43,6 +43,15 @@ async function seed(docPath, data) {
   });
 }
 
+// Deletes a document bypassing security rules — how tests simulate a state
+// change only the server can make (e.g. a member leaving a Group).
+async function unseed(docPath) {
+  const env = await getTestEnv();
+  await env.withSecurityRulesDisabled(async (context) => {
+    await context.firestore().doc(docPath).delete();
+  });
+}
+
 async function asUser(uid, claims) {
   const env = await getTestEnv();
   return env.authenticatedContext(uid, claims).firestore();
@@ -65,4 +74,5 @@ module.exports = {
   assertSucceeds,
   getTestEnv,
   seed,
+  unseed,
 };

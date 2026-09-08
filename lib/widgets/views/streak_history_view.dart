@@ -7,6 +7,8 @@ import '../streak_stats_box.dart';
 import '../week_streak_calendar.dart';
 import '../month_streak_calendar.dart';
 import '../../services/error_logger.dart';
+import '../../services/read_log_service.dart';
+
 import '../skeleton_loader.dart';
 import '../skeletons/streak_history_skeleton.dart';
 
@@ -235,7 +237,7 @@ class _StreakHistoryViewState extends State<StreakHistoryView>
     final result = <DateTime>{};
     final dates = <DateTime>[];
     final uid = userDocRef.id;
-    final fallbacks = <Future<DocumentSnapshot<Map<String, dynamic>>>>[];
+    final fallbackKeys = <String>[];
     final fallbackIdx = <int>[];
 
     final totalDays = end.difference(start).inDays;
@@ -249,23 +251,31 @@ class _StreakHistoryViewState extends State<StreakHistoryView>
           readingDataMap[key]?['read'] == true) {
         result.add(day);
       } else {
-        fallbacks.add(
-          widget.firestore
-              .collection('read_logs')
-              .doc(key)
-              .collection('entries')
-              .doc(uid)
-              .get(),
-        );
+        fallbackKeys.add(key);
         fallbackIdx.add(dates.length - 1);
       }
     }
 
-    if (fallbacks.isNotEmpty) {
-      final fbSnaps = await Future.wait(fallbacks);
-      for (int j = 0; j < fbSnaps.length; j++) {
-        if (fbSnaps[j].exists) {
-          result.add(dates[fallbackIdx[j]]);
+    if (fallbackKeys.isNotEmpty) {
+      // The per-Group feed (ADR-0004) is the fallback source: any Group's
+      // entry for the day counts as having shown up. All days are queried
+      // concurrently — a month view with a sparse reading doc must not turn
+      // into 31 serial round-trips.
+      final service = ReadLogService(firestore: widget.firestore);
+      final groupIds = await service.groupIdsFor(uid);
+      final perDay = await Future.wait([
+        for (final key in fallbackKeys)
+          service
+              .entriesForGroups(groupIds, dateKey: key)
+              .first
+              .timeout(
+                const Duration(seconds: 5),
+                onTimeout: () => const <String>[],
+              ),
+      ]);
+      for (var i = 0; i < fallbackKeys.length; i++) {
+        if (perDay[i].contains(uid)) {
+          result.add(dates[fallbackIdx[i]]);
         }
       }
     }
