@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +10,8 @@ import '../../services/vibration_service.dart';
 import '../common_styles.dart';
 import '../read_log_list.dart';
 import '../../services/reading_status_service.dart';
+import '../../services/read_log_service.dart';
+
 import '../../models/read_log.dart';
 import '../skeleton_loader.dart';
 import '../skeletons/read_log_skeleton.dart';
@@ -54,7 +58,7 @@ class _ReadLogViewState extends State<ReadLogView>
   bool _loading = true;
   bool _loadError = false;
   bool _readToday = true; // Default to true to show list skeleton
-  DateTime? _lastLoadTime;
+  StreamSubscription<List<QueryDocumentSnapshot<Map<String, dynamic>>>>? _logsSub;
 
   Future<void> _sendLikeNotification({
     required String ownerUid,
@@ -69,8 +73,7 @@ class _ReadLogViewState extends State<ReadLogView>
   @override
   void initState() {
     super.initState();
-    widget.tabController?.addListener(_onTabChanged);
-    _loadLogs();
+    _subscribeLogs();
     _checkReadStatus();
   }
 
@@ -89,79 +92,67 @@ class _ReadLogViewState extends State<ReadLogView>
 
   @override
   void dispose() {
-    widget.tabController?.removeListener(_onTabChanged);
+    _logsSub?.cancel();
     super.dispose();
   }
 
-  void _onTabChanged() {
-    if (widget.tabController?.index == 1) {
-      // We are on the Feed tab (index 1)
-      final now = DateTime.now();
-      if (_lastLoadTime != null &&
-          now.difference(_lastLoadTime!) > const Duration(minutes: 5)) {
-        _loadLogs(silent: true);
-      }
-    }
-  }
-
-  Future<void> _loadLogs({bool silent = false}) async {
+  /// Subscribes to today's per-Group feed (ADR-0004). The stream is live:
+  /// a co-member's mark or Amen arrives without a pull-to-refresh, so the
+  /// five-minute silent reload path is gone with the one-shot query. Entries
+  /// hydrate from their documents — name, timestamp, milestone and likes —
+  /// so a card shows what the entry actually carries.
+  void _subscribeLogs() {
     final currentUser = widget.auth.currentUser;
     if (currentUser == null) {
       if (mounted) {
-        setState(() {
-          _loading = false;
-        });
+        setState(() => _loading = false);
       }
       return;
     }
 
-    if (!silent) {
-      setState(() {
-        _loading = true;
-        _loadError = false;
-      });
-    }
-    bool error = false;
-    List<ReadLog> logs = [];
-    try {
-      final now = widget.dateProvider();
-      final dateKey =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-      final snapshot = await widget.firestore
-          .collection('read_logs')
-          .doc(dateKey)
-          .collection('entries')
-          .orderBy('timestamp', descending: true)
-          .get();
-
-      logs = await Future.wait(
-        snapshot.docs.map((doc) {
-          return ReadLog.fromFirestore(
-            doc,
-            currentUid: currentUser.uid,
-          );
-        }).toList(),
-      );
-      _lastLoadTime = DateTime.now();
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Load logs failed: $e');
-      }
-      ErrorLogger.log(e, st);
-      error = true;
-    } finally {
-      setState(() {
-        if (!error) {
-          _logs = logs;
+    final dateKey = ReadLogService.dateKeyFor(widget.dateProvider());
+    final service = ReadLogService(firestore: widget.firestore);
+    _logsSub?.cancel();
+    _logsSub = service
+        .entryDocsForGroupsForUser(currentUser.uid, dateKey: dateKey)
+        .listen(
+      (docs) async {
+        if (!mounted) return;
+        try {
+          final logs = await Future.wait([
+            for (final doc in docs)
+              ReadLog.fromFirestore(doc, currentUid: currentUser.uid),
+          ]);
+          setState(() {
+            _logs = logs;
+            _loading = false;
+            _loadError = false;
+          });
+        } catch (e, st) {
+          ErrorLogger.log(e, st);
+          if (mounted) {
+            setState(() {
+              _loading = false;
+              _loadError = true;
+            });
+          }
         }
-        _loading = false;
-        _loadError = error;
-      });
-    }
+      },
+      onError: (e, st) {
+        ErrorLogger.log(e, st);
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _loadError = true;
+          });
+        }
+      },
+    );
   }
 
-  /// Reloads the read log entries.
-  Future<void> refresh() => _loadLogs();
+  /// Re-subscribes to the live feed. Kept for the RefreshIndicator path and
+  /// the ReadLogPage.refresh() key.
+  void refresh() => _subscribeLogs();
 
   Future<void> _toggleLike(String logUid) async {
     final user = widget.auth.currentUser;
@@ -172,10 +163,18 @@ class _ReadLogViewState extends State<ReadLogView>
 
     final likerName = (user.displayName ?? '').split(' ').first;
     final now = widget.dateProvider();
-    final dateKey =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final dateKey = ReadLogService.dateKeyFor(now);
+    final service = ReadLogService(firestore: widget.firestore);
+    // The liker can only write a like inside a Group they belong to (the
+    // rules gate this path on membership), and they can only see the entry
+    // through those same Groups — so the reader's own Groups locate the
+    // entry. Falls back silently when the reader has none.
+    final groupIds = await service.groupIdsFor(user.uid);
+    if (groupIds.isEmpty) return;
     final likeRef = widget.firestore
-        .collection('read_logs')
+        .collection('groups')
+        .doc(groupIds.first)
+        .collection('read_log')
         .doc(dateKey)
         .collection('entries')
         .doc(logUid)

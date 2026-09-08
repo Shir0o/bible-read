@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/read_through.dart';
@@ -5,19 +7,27 @@ import 'error_logger.dart';
 
 /// Announces a detected read-through in the feed.
 ///
-/// The announcement is a field on that day's own read-log entry rather than a
-/// record of its own: finishing your last chapter *is* reading that day, so the
-/// entry already exists or is about to, and riding on it means the milestone
-/// inherits the likes and comments that entry already supports.
+/// The announcement is a field on that day's own feed entry rather than a
+/// record of its own: finishing your last chapter *is* reading that day, so
+/// the entry already exists or is about to, and riding on it means the
+/// milestone reaches the same co-members the entry reaches.
 ///
 /// Only detected read-throughs are ever announced. Hand-entered and migrated
 /// records are claims about the past, and the ledger they live in is
 /// owner-only, so nothing else can leak here.
 class MilestoneAnnouncer {
-  MilestoneAnnouncer({FirebaseFirestore? firestore})
-      : firestore = firestore ?? FirebaseFirestore.instance;
+  MilestoneAnnouncer({
+    FirebaseFirestore? firestore,
+    List<String> Function()? groupIdsResolver,
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        _groupIdsResolver = groupIdsResolver;
 
   final FirebaseFirestore firestore;
+
+  /// Resolves the Groups the announcing reader belongs to; the milestone is
+  /// fanned out onto every Group's feed entry (ADR-0004). Defaults to reading
+  /// memberships from Firestore.
+  final List<String> Function()? _groupIdsResolver;
 
   /// Writes the milestone for [completed] onto today's read-log entry.
   ///
@@ -52,12 +62,7 @@ class MilestoneAnnouncer {
       final profile = await firestore.collection('users').doc(uid).get();
       final name = (profile.data()?['name'] as String?) ?? '';
 
-      await firestore
-          .collection('read_logs')
-          .doc(dateKey)
-          .collection('entries')
-          .doc(uid)
-          .set({
+      final data = {
         'uid': uid,
         if (name.isNotEmpty) 'name': name,
         'dateId': dateKey,
@@ -67,12 +72,47 @@ class MilestoneAnnouncer {
           'lapNumber': testament.lapNumber,
           if (wholeBible != null) 'wholeBibleLap': wholeBible.lapNumber,
         },
-      }, SetOptions(merge: true));
+      };
+
+      // One entry per Group the reader belongs to (ADR-0004). A reader with
+      // no Groups announces nothing here — their marking still lands through
+      // ReadLogService.mark, which owns the plain presence entry.
+      final groupIds = _groupIdsResolver?.call() ??
+          await _resolveGroupIds(uid);
+      if (groupIds.isEmpty) return;
+
+      final batch = firestore.batch();
+      for (final groupId in groupIds) {
+        batch.set(
+          firestore
+              .collection('groups')
+              .doc(groupId)
+              .collection('read_log')
+              .doc(dateKey)
+              .collection('entries')
+              .doc(uid),
+          data,
+          SetOptions(merge: true),
+        );
+      }
+      await batch.commit();
     } catch (e, st) {
       // The read-through is already recorded; a missed announcement is not
       // worth failing the marking over.
       ErrorLogger.log(e, st);
     }
+  }
+
+  Future<List<String>> _resolveGroupIds(String uid) async {
+    final memberships = await firestore
+        .collectionGroup('members')
+        .where('uid', isEqualTo: uid)
+        .get();
+    return memberships.docs
+        .map((doc) => doc.reference.parent.parent?.id)
+        .whereType<String>()
+        .toSet()
+        .toList();
   }
 }
 

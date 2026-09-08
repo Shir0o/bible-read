@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/user_preferences.dart';
-import '../pages/read_log_page.dart';
+import 'read_log_service.dart';
 import '../widgets/sync_sheet.dart';
 import 'error_logger.dart';
 import 'read_through_coordinator.dart';
@@ -110,7 +110,7 @@ class PlanCompletionCoordinator {
     void Function(String message)? onMessage,
   ) async {
     try {
-      await ReadLogPage.writeReadLogEntry(user, firestore: firestore);
+      await ReadLogService(firestore: firestore).mark(user);
     } catch (e, st) {
       ErrorLogger.log(e, st);
       onMessage?.call(

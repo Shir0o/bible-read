@@ -1,3 +1,5 @@
+import 'read_log_service.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
@@ -98,6 +100,9 @@ class FriendService {
   /// Function used to invoke the send nudge notification Cloud Function.
   final SendNudgeNotificationFn _nudgeFn;
 
+  /// Reads the per-Group feed for [readTodayUids].
+  final ReadLogService _readLogService;
+
   /// Creates a [FriendService] using [FirebaseFirestore.instance] by default.
   FriendService({
     FirebaseFirestore? firestore,
@@ -113,7 +118,8 @@ class FriendService {
         _acceptFn = acceptFriendRequestFn ?? _defaultAcceptFriendRequest,
         _deleteFn =
             deleteFriendRequestPairFn ?? _defaultDeleteFriendRequestPair,
-        _nudgeFn = sendNudgeNotificationFn ?? _defaultSendNudgeNotification;
+        _nudgeFn = sendNudgeNotificationFn ?? _defaultSendNudgeNotification,
+        _readLogService = ReadLogService(firestore: firestore);
 
   /// Default implementation that invokes the Cloud Function.
   static Future<void> _defaultAcceptFriendRequest({
@@ -359,20 +365,18 @@ class FriendService {
 
   /// Stream of the UIDs (among [uid] and [friendUids]) who marked their daily
   /// reading on [date], so the Friends list can show who has shown up today.
+  /// Reads the per-Group feed (ADR-0004): the reader's Groups' entries for the
+  /// day, intersected with the requested uids.
   Stream<Set<String>> readTodayUids({
     required String uid,
     required List<String> friendUids,
     required DateTime date,
   }) {
-    final dateKey =
-        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    final uids = {uid, ...friendUids};
-    return firestore
-        .collection('read_logs')
-        .doc(dateKey)
-        .collection('entries')
-        .snapshots()
-        .map((s) => s.docs.map((d) => d.id).toSet().intersection(uids));
+    final dateKey = ReadLogService.dateKeyFor(date);
+    final wanted = {uid, ...friendUids};
+    return _readLogService
+        .entriesForGroupsForUser(uid, dateKey: dateKey)
+        .map((uids) => uids.toSet().intersection(wanted));
   }
 
   /// Stream of pending friend requests for [uid].

@@ -13,15 +13,29 @@ void main() {
 
   group('MilestoneAnnouncer', () {
     late MilestoneAnnouncer announcer;
-    setUp(() => announcer = MilestoneAnnouncer(firestore: firestore));
 
-    Future<Map<String, dynamic>?> entry(String dateKey) async => (await firestore
-            .collection('read_logs')
-            .doc(dateKey)
-            .collection('entries')
-            .doc(uid)
-            .get())
-        .data();
+    setUp(() {
+      announcer = MilestoneAnnouncer(
+        firestore: firestore,
+        // Membership is resolved by the real path in production; the tests
+        // pin the Group list so each case states exactly what it asserts on.
+        groupIdsResolver: () => const ['g1', 'g2'],
+      );
+    });
+
+    Future<Map<String, dynamic>?> groupEntry(
+      String groupId,
+      String dateKey,
+    ) async =>
+        (await firestore
+                .collection('groups')
+                .doc(groupId)
+                .collection('read_log')
+                .doc(dateKey)
+                .collection('entries')
+                .doc(uid)
+                .get())
+            .data();
 
     ReadThrough row(
       ReadThroughScope scope,
@@ -36,7 +50,7 @@ void main() {
           lapNumber: lap,
         );
 
-    test('a detected testament is announced on that day', () async {
+    test('a detected testament is announced on that day, in every Group', () async {
       await announcer.announce(
         uid: uid,
         completed: [row(ReadThroughScope.newTestament,
@@ -44,9 +58,11 @@ void main() {
         now: DateTime(2026, 9, 5),
       );
 
-      final data = await entry('2026-09-05');
-      expect(data?['milestone'], {'scope': 'nt', 'lapNumber': 3});
-      expect(data?['uid'], uid);
+      for (final groupId in const ['g1', 'g2']) {
+        final data = await groupEntry(groupId, '2026-09-05');
+        expect(data?['milestone'], {'scope': 'nt', 'lapNumber': 3});
+        expect(data?['uid'], uid);
+      }
     });
 
     test('a whole Bible closed at the same time rides along', () async {
@@ -60,7 +76,8 @@ void main() {
         now: DateTime(2026, 9, 5),
       );
 
-      final milestone = (await entry('2026-09-05'))?['milestone'] as Map?;
+      final milestone =
+          (await groupEntry('g1', '2026-09-05'))?['milestone'] as Map?;
       expect(milestone?['wholeBibleLap'], 2);
     });
 
@@ -73,7 +90,8 @@ void main() {
         now: DateTime(2026, 9, 5),
       );
 
-      expect(await entry('2026-09-05'), isNull);
+      expect(await groupEntry('g1', '2026-09-05'), isNull);
+      expect(await groupEntry('g2', '2026-09-05'), isNull);
     });
 
     test('migrated records are never announced', () async {
@@ -86,10 +104,28 @@ void main() {
         now: DateTime(2026, 9, 5),
       );
 
-      expect(await entry('2026-09-05'), isNull);
+      expect(await groupEntry('g1', '2026-09-05'), isNull);
+      expect(await groupEntry('g2', '2026-09-05'), isNull);
+    });
+
+    test('a reader with no Groups announces nothing and nothing errors', () async {
+      final solo = MilestoneAnnouncer(
+        firestore: firestore,
+        groupIdsResolver: () => const [],
+      );
+      await solo.announce(
+        uid: uid,
+        completed: [
+          row(ReadThroughScope.newTestament, ReadThroughSource.detected,
+              lap: 1),
+        ],
+        now: DateTime(2026, 9, 5),
+      );
+
+      expect((await firestore.collectionGroup('read_log').get()).docs,
+          isEmpty);
     });
   });
-
   group('FeedMilestone copy', () {
     test('names the testament and the pairing', () {
       const milestone = FeedMilestone(

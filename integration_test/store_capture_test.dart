@@ -342,20 +342,14 @@ void main() {
       }
     }
 
-    // ---- Friends + today's read log (drives the community glimpse) ----
-    for (final entry in members.entries) {
-      if (entry.key == 'u1') continue;
-      await firestore
-          .collection('users')
-          .doc('u1')
-          .collection('friends')
-          .doc(entry.key)
-          .set({'name': entry.value});
-    }
+    // ---- Today's read log (drives the community glimpse) — per Group
+    // (ADR-0004): entries live inside the Group the reader belongs to.
     for (final entry in members.entries) {
       if (entry.key == 'm4' || entry.key == 'm5') continue;
       await firestore
-          .collection('read_logs')
+          .collection('groups')
+          .doc('g1')
+          .collection('read_log')
           .doc(dk(today))
           .collection('entries')
           .doc(entry.key)
