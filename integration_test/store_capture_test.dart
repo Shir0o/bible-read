@@ -65,9 +65,27 @@ const List<List<String>> kPlanReadings = [
   ['Exodus 39', 'Exodus 40', 'Leviticus 1', 'Leviticus 2', 'Matthew 23'],
   ['Leviticus 3', 'Leviticus 4', 'Leviticus 5', 'Leviticus 6', 'Matthew 24'],
   ['Leviticus 7', 'Leviticus 8', 'Leviticus 9', 'Leviticus 10', 'Matthew 25'],
-  ['Leviticus 11', 'Leviticus 12', 'Leviticus 13', 'Leviticus 14', 'Matthew 26'],
-  ['Leviticus 15', 'Leviticus 16', 'Leviticus 17', 'Leviticus 18', 'Matthew 27'],
-  ['Leviticus 19', 'Leviticus 20', 'Leviticus 21', 'Leviticus 22', 'Matthew 28'],
+  [
+    'Leviticus 11',
+    'Leviticus 12',
+    'Leviticus 13',
+    'Leviticus 14',
+    'Matthew 26'
+  ],
+  [
+    'Leviticus 15',
+    'Leviticus 16',
+    'Leviticus 17',
+    'Leviticus 18',
+    'Matthew 27'
+  ],
+  [
+    'Leviticus 19',
+    'Leviticus 20',
+    'Leviticus 21',
+    'Leviticus 22',
+    'Matthew 28'
+  ],
   ['Leviticus 23', 'Leviticus 24', 'Leviticus 25', 'Leviticus 26', 'Mark 1'],
   ['Leviticus 27', 'Numbers 1', 'Numbers 2', 'Numbers 3', 'Mark 2'],
 ];
@@ -312,7 +330,8 @@ void main() {
           .collection('schedule')
           .doc(dk(date))
           .set({
-        'date': Timestamp.fromDate(DateTime.utc(date.year, date.month, date.day)),
+        'date':
+            Timestamp.fromDate(DateTime.utc(date.year, date.month, date.day)),
         'chapters': kGroupReadings[i],
       });
     }
@@ -438,7 +457,8 @@ void main() {
     }
 
     // ===================== 1. Check-in, the ask =====================
-    await pumpCheckIn(readToday: false, at: today.add(const Duration(hours: 7)));
+    await pumpCheckIn(
+        readToday: false, at: today.add(const Duration(hours: 7)));
     await shot(tester, '10_checkin_dawn');
 
     await pumpCheckIn(
@@ -547,6 +567,6 @@ void openReflectSheet(
     context,
     initialText: initialText,
     prompt: prompt,
-    onSave: (_) async {},
+    onSave: (_, __) async {},
   );
 }

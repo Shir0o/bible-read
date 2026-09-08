@@ -351,6 +351,11 @@ class _PersonStatus {
   bool showedUp = false;
   DateTime? markedAt;
 
+  /// The person's shared Reflection text for today, when they opted in
+  /// (#807). Rides on the same feed entry as the Showing-up mark; null when
+  /// nothing is shared.
+  String? sharedReflection;
+
   _PersonStatus({
     required this.uid,
     required this.name,
@@ -368,11 +373,11 @@ class _PersonStatus {
 }
 
 /// One person's row. Each fact streams independently and the row renders
-/// complete with any of them absent: the Showing-up mark (from the per-Group
-/// feed, ADR-0004), what they read and whether they are behind (from the
-/// Group schedule + their progress), and the latest achievement (#806,
-/// mirrored per-Group). No Reflection exists yet (#807 is later) — the row
-/// never waits on it.
+/// complete with any of them absent: the Showing-up mark and the optional
+/// shared Reflection (both from the per-Group feed, ADR-0004), what they
+/// read and whether they are behind (from the Group schedule + their
+/// progress), and the latest achievement (#806, mirrored per-Group). A row
+/// without a shared Reflection — the common case — renders complete.
 class _CirclePersonRow extends StatefulWidget {
   final _PersonStatus person;
   final FirebaseAuth auth;
@@ -437,12 +442,15 @@ class _CirclePersonRowState extends State<_CirclePersonRow> {
         .listen((docs) {
       if (!mounted) return;
       final doc = docs.where((d) => d.id == widget.person.uid).firstOrNull;
+      final shared = doc?.data()['sharedReflection'];
       setState(() {
         widget.person
           ..showedUp = doc != null
           ..markedAt = doc != null
               ? (doc.data()['timestamp'] as Timestamp?)?.toDate()
-              : null;
+              : null
+          ..sharedReflection =
+              shared is String && shared.trim().isNotEmpty ? shared : null;
       });
     }, onError: (e, st) {
       unawaited(ErrorLogger.log(e, st));
@@ -576,6 +584,29 @@ class _RowContent extends StatelessWidget {
                         : colorScheme.onSurfaceVariant,
                   ),
                 ),
+                if (person.sharedReflection != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    person.sharedReflection!,
+                    key: const ValueKey('circle_row_reflection'),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontSerif,
+                      fontSize: 13,
+                      height: 1.4,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Shared reflection',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

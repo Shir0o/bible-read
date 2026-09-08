@@ -132,6 +132,9 @@ class _HomePageState extends State<HomePage>
   /// Today's saved reflection text, or `null` if none has been saved yet.
   String? _reflection;
 
+  /// Whether today's reflection is currently shared with the Circle (#807).
+  bool _reflectionShared = false;
+
   /// Whether the page is currently fetching or toggling the read status.
   bool _toggleLoading = false;
 
@@ -273,7 +276,10 @@ class _HomePageState extends State<HomePage>
         _dateKeyFor(widget.dateProvider()),
       );
       if (!_disposed && mounted) {
-        setState(() => _reflection = reflection?.text);
+        setState(() {
+          _reflection = reflection?.text;
+          _reflectionShared = reflection?.shared ?? false;
+        });
       }
     } catch (e, st) {
       ErrorLogger.log(e, st);
@@ -425,9 +431,7 @@ class _HomePageState extends State<HomePage>
       // for today and intersect with the Circle, so a stranger's entry can
       // never surface.
       final readLogService = ReadLogService(firestore: widget.firestore);
-      final groupIds = await readLogService
-          .groupIdsFor(user.uid)
-          .timeout(
+      final groupIds = await readLogService.groupIdsFor(user.uid).timeout(
             const Duration(seconds: 5),
             onTimeout: () => const <String>[],
           );
@@ -444,8 +448,7 @@ class _HomePageState extends State<HomePage>
       // the uid is the identity.
       final nameFutures = <String, Future<String>>{
         for (final uid in entriesSnap)
-          if (allUids.contains(uid))
-            uid: _displayNameFor(uid),
+          if (allUids.contains(uid)) uid: _displayNameFor(uid),
       };
       final names = {
         for (final e in nameFutures.entries) e.key: await e.value,
@@ -477,8 +480,7 @@ class _HomePageState extends State<HomePage>
   /// Falls back to '?' so the avatar stack renders a placeholder.
   Future<String> _displayNameFor(String uid) async {
     try {
-      final profile =
-          await widget.firestore.collection('users').doc(uid).get();
+      final profile = await widget.firestore.collection('users').doc(uid).get();
       final data = profile.data();
       final name = (data?['name'] as String?) ??
           (data?['displayName'] as String?) ??
@@ -2221,12 +2223,18 @@ class _HomePageState extends State<HomePage>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'YOUR REFLECTION',
-                style: AppTextStyles.caption(context).copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
+              Expanded(
+                child: Text(
+                  _reflectionShared
+                      ? 'YOUR REFLECTION · SHARED WITH YOUR CIRCLE'
+                      : 'YOUR REFLECTION',
+                  style: AppTextStyles.caption(context).copyWith(
+                    color: _reflectionShared
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
                 ),
               ),
               TextButton(
@@ -2336,7 +2344,8 @@ class _HomePageState extends State<HomePage>
 
   /// Opens the reflection editor. Saving/skipping is entirely independent of
   /// the daily habit mark — this is only ever reachable once that's already
-  /// happened.
+  /// happened. A saved entry opens with its current share state; a fresh one
+  /// always starts unshared (#807).
   Future<void> _openReflectSheet(
     BuildContext context, {
     required String? initialText,
@@ -2344,14 +2353,28 @@ class _HomePageState extends State<HomePage>
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     final dateKey = _dateKeyFor(widget.dateProvider());
+    final savedReflection = await widget.reflectionService.fetchReflection(
+      uid,
+      dateKey,
+    );
+    if (!mounted || !context.mounted) return;
     await showReflectSheet(
       context,
       initialText: initialText,
       prompt: reflectionPromptFor(widget.dateProvider()),
-      onSave: (text) async {
-        await widget.reflectionService.saveReflection(uid, dateKey, text);
+      initialShared: savedReflection?.shared ?? false,
+      onSave: (text, share) async {
+        await widget.reflectionService.saveReflection(
+          uid,
+          dateKey,
+          text,
+          share: share,
+        );
         if (!_disposed && mounted) {
-          setState(() => _reflection = text);
+          setState(() {
+            _reflection = text;
+            _reflectionShared = share;
+          });
         }
       },
     );
