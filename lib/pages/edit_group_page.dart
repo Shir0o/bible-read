@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../models/group.dart';
 import '../models/group_member_progress.dart';
@@ -344,13 +343,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
     }
   }
 
-  void _copyLink() {
-    Clipboard.setData(ClipboardData(text: 'Join my group: ${widget.group.id}'));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Link copied to clipboard')));
-  }
-
   Future<GroupPlanDraft?> _openAdjustDays(GroupPlanDraft draft) {
     return Navigator.push<GroupPlanDraft>(
       context,
@@ -448,23 +440,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
               ),
             ),
             const SizedBox(width: 16),
-            FilledButton.icon(
-              onPressed: _copyLink,
-              icon: const Icon(Icons.link, size: 18),
-              label: const Text('Copy Link'),
-              style: FilledButton.styleFrom(
-                backgroundColor: colorScheme.primaryContainer,
-                foregroundColor: colorScheme.onPrimaryContainer,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                shape: const StadiumBorder(),
-                textStyle: textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 24),

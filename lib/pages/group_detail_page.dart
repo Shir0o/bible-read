@@ -24,7 +24,6 @@ import 'edit_group_page.dart';
 import 'full_schedule_page.dart';
 import 'group_join_requests_page.dart';
 import 'group_members_page.dart';
-import 'invite_member_page.dart';
 import 'share_code_page.dart';
 import 'group_catch_up_page.dart';
 
@@ -504,24 +503,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   },
                 ),
               if (hasAdminPrivileges) ...[
-                IconButton(
-                  icon: const Icon(Icons.person_add_alt_1),
-                  tooltip: 'Invite member',
-                  onPressed: () {
-                    unawaited(widget.vibrationService.lightImpact());
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => InviteMemberPage(
-                          group: widget.group,
-                          groupService: widget.groupService,
-                          friendService: widget.friendService,
-                          auth: widget.auth,
-                          vibrationService: widget.vibrationService,
-                        ),
-                      ),
-                    );
-                  },
-                ),
                 IconButton(
                   icon: const Icon(Icons.people_alt_outlined),
                   tooltip: 'Members',
