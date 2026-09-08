@@ -160,6 +160,14 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
+      // The reader's private pace overlay for a Shared plan (#810): one
+      // member adjusting their own schedule must never move the Group's
+      // schedule or another member's progress, so the adjusted view lives
+      // here — strictly the reader's own, like plan_progress.
+      match /plan_pace/{groupId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
       match /bible_books/{bookName} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }

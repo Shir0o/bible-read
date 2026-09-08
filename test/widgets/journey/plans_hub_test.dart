@@ -1,3 +1,4 @@
+import 'package:bible_read/pages/adjust_pace_page.dart';
 import 'package:bible_read/pages/create_plan_page.dart';
 import 'package:bible_read/models/reading_plan.dart';
 import 'package:bible_read/widgets/journey/plans_hub.dart';
@@ -128,5 +129,32 @@ void main() {
     // The who-is-reading answer is a field in the flow, not a fork.
     expect(find.text('Just you'), findsOneWidget);
     expect(find.text('With a group'), findsOneWidget);
+  });
+
+  testWidgets('adjust pace is reachable from the plan card and previews '
+      'the finish before committing', (tester) async {
+    await pumpPage(tester);
+
+    await tester.tap(find.byTooltip('Adjust pace'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 600));
+
+    // The screen is the shared adjust-pace page with the three options, each
+    // showing the resulting finish date before the reader commits.
+    expect(find.byType(AdjustPacePage), findsOneWidget);
+    expect(find.text('Stretch it out'), findsOneWidget);
+    expect(find.text('Keep the finish'), findsOneWidget);
+    expect(find.text('Begin again'), findsOneWidget);
+    expect(find.textContaining('ends'), findsWidgets);
+
+    // Backing out commits nothing.
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 600));
+    final progress = await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('plan_progress')
+        .doc('p1')
+        .get();
+    expect(progress.data()?['completedDays'], isEmpty);
   });
  }
