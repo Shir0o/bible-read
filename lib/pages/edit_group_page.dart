@@ -255,6 +255,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
     return result;
   }
 
+  /// Owner action (#776): archives the group — shelved for every member,
+  /// schedule and history intact, restorable from the hub's Archive rows.
   Future<void> _archiveGroup() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -262,7 +264,56 @@ class _EditGroupPageState extends State<EditGroupPage> {
       builder: (context) => AlertDialog(
         title: const Text('Archive Group'),
         content: const Text(
-          'Are you sure you want to archive (delete) this group? This cannot be undone.',
+          'The group is shelved for every member. Its schedule and history '
+          'stay intact, and you can unarchive it any time.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Archive'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await widget.groupService.archiveGroup(
+          groupId: widget.group.id,
+          ownerUid: widget.auth.currentUser!.uid,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Group archived')),
+          );
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      } catch (e, st) {
+        ErrorLogger.log(e, st);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to archive group')),
+          );
+        }
+      }
+    }
+  }
+
+  /// Owner action (#776): soft-deletes the group — 30 days in the Recently
+  /// Deleted hub, restorable, then purged.
+  Future<void> _deleteGroup() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      barrierColor: AppColors.of(context).scrim,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Group'),
+        content: const Text(
+          'The group moves to Recently Deleted for 30 days. Members lose '
+          'access until you restore it or the 30 days run out.',
         ),
         actions: [
           TextButton(
@@ -274,7 +325,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Archive'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -282,10 +333,88 @@ class _EditGroupPageState extends State<EditGroupPage> {
 
     if (confirm == true) {
       try {
-        await widget.groupService.deleteGroup(
+        await widget.groupService.softDeleteGroup(
           groupId: widget.group.id,
           ownerUid: widget.auth.currentUser!.uid,
         );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Group moved to Recently Deleted')),
+          );
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      } catch (e, st) {
+        ErrorLogger.log(e, st);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to delete group')),
+          );
+        }
+      }
+    }
+  }
+
+  /// Member action (#776): archives this member's participation only — the
+  /// group keeps running for everyone else.
+  Future<void> _archiveParticipation() async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      await widget.groupService.archiveMemberParticipation(
+        groupId: widget.group.id,
+        uid: uid,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Participation archived — find it in your Archive'),
+          ),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to archive participation')),
+        );
+      }
+    }
+  }
+
+  /// Member action (#776): leaves the group; the group stays intact for
+  /// everyone else.
+  Future<void> _leaveGroup() async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      barrierColor: AppColors.of(context).scrim,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave Group'),
+        content: const Text(
+          'You leave this group. The group stays intact for the other '
+          'members, and your reading record for it is removed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Leave'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      try {
+        await widget.groupService
+            .leaveGroup(groupId: widget.group.id, uid: uid);
         if (mounted) {
           Navigator.of(context).popUntil((route) => route.isFirst);
         }
@@ -293,7 +422,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
         ErrorLogger.log(e, st);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to archive group')),
+            const SnackBar(content: Text('Failed to leave group')),
           );
         }
       }
@@ -607,7 +736,10 @@ class _EditGroupPageState extends State<EditGroupPage> {
           ),
         ),
         const SizedBox(height: 16),
-        if (isOwner)
+        // Role-based lifecycle actions (#776): the owner archives or
+        // soft-deletes the whole group; a member only ever touches their
+        // own participation.
+        if (isOwner) ...[
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -631,6 +763,79 @@ class _EditGroupPageState extends State<EditGroupPage> {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _deleteGroup,
+              icon: Icon(Icons.delete_outline, color: colorScheme.error),
+              label: Text(
+                'Delete Group',
+                style: TextStyle(color: colorScheme.error),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(
+                  color: colorScheme.error.withValues(alpha: 0.3),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                textStyle: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ] else ...[
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _archiveParticipation,
+              icon: Icon(Icons.inventory_2, color: colorScheme.tertiary),
+              label: Text(
+                'Archive Participation',
+                style: TextStyle(color: colorScheme.tertiary),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(
+                  color: colorScheme.tertiary.withValues(alpha: 0.3),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                textStyle: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _leaveGroup,
+              icon: Icon(Icons.logout, color: colorScheme.error),
+              label: Text(
+                'Leave Group',
+                style: TextStyle(color: colorScheme.error),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(
+                  color: colorScheme.error.withValues(alpha: 0.3),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                textStyle: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
