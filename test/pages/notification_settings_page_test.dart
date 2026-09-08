@@ -53,7 +53,6 @@ void main() {
       'Like Notifications',
       'Nudge Notifications',
       'Signup Alerts',
-      'Friend Request Notifications',
       'Comment Notifications',
       'Group Join Request Notifications',
       'Group Schedule Update Notifications',

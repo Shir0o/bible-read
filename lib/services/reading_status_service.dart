@@ -182,23 +182,6 @@ class ReadingStatusService {
           'name': refreshedUser?.displayName ?? '',
           'email': refreshedUser?.email?.toLowerCase() ?? '',
         });
-
-        // Initialize subcollections so later queries succeed.
-        final friendsCollection = userDocRef.collection('friends');
-        final friendRequestsSentCollection = userDocRef.collection(
-          'friendRequestsSent',
-        );
-
-        await Future.wait([
-          friendsCollection.doc('init').set({
-            'status': 'placeholder',
-            'timestamp': Timestamp.now(),
-          }, SetOptions(merge: true)),
-          friendRequestsSentCollection.doc('init').set({
-            'status': 'placeholder',
-            'timestamp': Timestamp.now(),
-          }, SetOptions(merge: true)),
-        ]);
       }
 
       bool readToday = false;

@@ -19,11 +19,9 @@ import 'package:bible_read/pages/welcome_page.dart';
 import 'package:bible_read/pages/auth_selection_page.dart';
 import 'package:bible_read/pages/login_page.dart'; // Added
 import 'package:bible_read/widgets/animated_page_route.dart'; // Added
-import 'friends_page.dart';
 import 'challenges_page.dart';
 import 'streak_history_page.dart';
 import '../services/admin_role_service.dart';
-import '../services/friend_service.dart';
 
 import '../services/google_sign_in_factory.dart';
 import '../services/group_service.dart';
@@ -63,7 +61,6 @@ class MainPage extends StatefulWidget {
   final FirebaseMessaging messaging;
   final VibrationService vibrationService;
   final ReadingStatusService? readingStatusService;
-  final FriendService? friendService;
   final bool appCheckFailed;
   final FirebaseFunctions? functions;
 
@@ -78,7 +75,6 @@ class MainPage extends StatefulWidget {
     FirebaseMessaging? messaging,
     VibrationService? vibrationService,
     this.readingStatusService,
-    this.friendService,
     ReadLogPage Function({
       Key? key,
       FirebaseFirestore? firestore,
@@ -113,7 +109,6 @@ class MainPageState extends State<MainPage> {
 
   VibrationService get vibrationService => widget.vibrationService;
   late final AdminRoleService _adminRoleService;
-  late final FriendService _friendService;
   late final GroupService _groupService;
 
   late final ReadingPlanService _readingPlanService;
@@ -140,8 +135,6 @@ class MainPageState extends State<MainPage> {
           auth: widget.auth,
           cache: _cacheService,
         );
-    _friendService =
-        widget.friendService ?? FriendService(firestore: widget.firestore);
     _groupService = GroupService(firestore: widget.firestore);
     _readingPlanService = ReadingPlanService(firestore: widget.firestore);
     _userPreferencesService = UserPreferencesService(
@@ -171,7 +164,6 @@ class MainPageState extends State<MainPage> {
         auth: widget.auth,
         firestore: widget.firestore,
         groupService: _groupService,
-        friendService: _friendService,
         readingPlanService: _readingPlanService,
         readingStatusService: _readingStatusService,
         vibrationService: widget.vibrationService,
@@ -280,15 +272,6 @@ class MainPageState extends State<MainPage> {
       });
     } else {
       switch (index) {
-        case 4: // Friends
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  FriendsPage(auth: widget.auth, friendService: _friendService),
-            ),
-          );
-          break;
         case 5: // Challenges
           Navigator.push(
             context,
@@ -296,7 +279,6 @@ class MainPageState extends State<MainPage> {
               builder: (_) => ChallengesPage(
                 auth: widget.auth,
                 firestore: widget.firestore,
-                friendService: _friendService,
                 vibrationService: widget.vibrationService,
               ),
             ),
@@ -437,7 +419,6 @@ class MainPageState extends State<MainPage> {
             },
             child: NavigationMenuScope(
               onNavigate: _navigateFromMenu,
-              friendsIndex: 0,
               vibrationService: widget.vibrationService,
               adminRoleService: _adminRoleService,
               auth: widget.auth,

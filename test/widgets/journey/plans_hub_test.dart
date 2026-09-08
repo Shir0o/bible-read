@@ -1,6 +1,5 @@
 import 'package:bible_read/models/reading_plan.dart';
 import 'package:bible_read/widgets/journey/plans_hub.dart';
-import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
 import 'package:bible_read/services/user_preferences_service.dart';
@@ -36,7 +35,6 @@ void main() {
   late MockFirebaseAuth auth;
   late ReadingPlanService planService;
   late GroupService groupService;
-  late FriendService friendService;
   late UserPreferencesService prefsService;
 
   setUp(() async {
@@ -44,7 +42,6 @@ void main() {
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     planService = ReadingPlanService(firestore: firestore);
     groupService = GroupService(firestore: firestore);
-    friendService = FriendService(firestore: firestore);
     prefsService = UserPreferencesService(firestore: firestore);
 
     await firestore.collection('custom_plans').doc('p1').set({
@@ -65,7 +62,6 @@ void main() {
             groupService: groupService,
             readingPlanService: planService,
             userPreferencesService: prefsService,
-            friendService: friendService,
             vibrationService: const _StubVibrationService(),
             dateProvider: DateTime.now,
           ),

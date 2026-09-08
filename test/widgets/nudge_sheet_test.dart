@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bible_read/services/friend_service.dart';
+import 'package:bible_read/services/nudge_service.dart';
 import 'package:bible_read/widgets/nudge_sheet.dart';
 
 Widget _host({required Future<NudgeResult> Function(String) onSend}) {

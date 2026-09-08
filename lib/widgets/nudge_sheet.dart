@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-import '../services/friend_service.dart';
+import '../services/nudge_service.dart';
 import '../services/vibration_service.dart';
 
 /// Encouraging preset notes offered in the nudge sheet. A nudge is a soft tap
@@ -18,7 +18,7 @@ const List<String> kNudgePresets = [
 ];
 
 /// A person a nudge can be sent to. Kept intentionally lightweight so it works
-/// for friends, community entries, and group members alike.
+/// for Circle members anywhere in the app.
 class NudgePerson {
   /// Display name of the person.
   final String name;
@@ -35,7 +35,7 @@ class NudgePerson {
 
 /// Opens the friendly nudge bottom sheet for [person].
 ///
-/// [onSend] performs the actual send (e.g. `friendService.nudgeMember`) and
+/// [onSend] performs the actual send (e.g. `nudgeService.nudgeMember`) and
 /// returns the [NudgeResult]; the chosen [message] is the sender-side UX note.
 Future<void> showNudgeSheet(
   BuildContext context, {

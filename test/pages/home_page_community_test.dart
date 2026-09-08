@@ -1,6 +1,6 @@
 // The Home "Your community" glimpse is sourced from the reader's Circle —
-// the co-members of their Groups, derived at read time (ADR-0003, #795) —
-// not from the friend graph.
+// the co-members of their Groups, derived at read time (ADR-0003, #795).
+// There is no friend graph to consult.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -113,7 +113,7 @@ void main() {
   });
   tearDownAll(resetHttpOverrides);
 
-  testWidgets('glimpse counts co-members from Groups, not friends', (
+  testWidgets('glimpse counts co-members from Groups, not strangers', (
     tester,
   ) async {
     final firestore = FakeFirebaseFirestore();

@@ -25,7 +25,6 @@ void main() {
       MaterialApp(
         home: NavigationMenuScope(
           onNavigate: (_) {},
-          friendsIndex: 2,
           child: Builder(
             builder: (context) {
               capturedScope = NavigationMenuScope.of(context);
@@ -73,13 +72,11 @@ void main() {
 
     NavigationMenuScope buildScope({
       ValueChanged<int>? navigate,
-      int friendsIndex = 2,
       VibrationService? vibrationService,
       AdminRoleService? adminRoleService,
     }) {
       return NavigationMenuScope(
         onNavigate: navigate ?? onNavigate,
-        friendsIndex: friendsIndex,
         vibrationService: vibrationService ?? baseVibration,
         adminRoleService: adminRoleService,
         child: const SizedBox(),
@@ -91,13 +88,6 @@ void main() {
     expect(
       buildScope(
         navigate: alternateOnNavigate,
-        adminRoleService: baseAdminService,
-      ).updateShouldNotify(baseScope),
-      isTrue,
-    );
-    expect(
-      buildScope(
-        friendsIndex: 5,
         adminRoleService: baseAdminService,
       ).updateShouldNotify(baseScope),
       isTrue,
@@ -141,7 +131,6 @@ void main() {
         home: Scaffold(
           body: NavigationMenuScope(
             onNavigate: onNavigate,
-            friendsIndex: 2,
             vibrationService: vibrationService,
             adminRoleService: adminRoleService,
             child: Builder(

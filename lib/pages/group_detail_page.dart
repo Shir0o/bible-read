@@ -12,8 +12,8 @@ import '../models/group.dart';
 import '../models/group_schedule.dart';
 import '../services/error_logger.dart';
 import '../services/bible_progress_service.dart';
-import '../services/friend_service.dart';
 import '../services/catch_up_engine.dart';
+import '../services/nudge_service.dart';
 import '../services/group_service.dart';
 import '../services/plan_completion_coordinator.dart';
 import '../services/vibration_service.dart';
@@ -53,10 +53,6 @@ class GroupDetailPage extends StatefulWidget {
 
   /// Aggregates completed chapters across joined groups.
   final BibleProgressService bibleProgressService;
-
-  /// Service for friend operations.
-  final FriendService friendService;
-
   /// Date to consider as "today" (for testing).
   final DateTime? currentDate;
 
@@ -65,7 +61,6 @@ class GroupDetailPage extends StatefulWidget {
     Key? key,
     required Group group,
     GroupService? groupService,
-    FriendService? friendService,
     FirebaseAuth? auth,
     VibrationService? vibrationService,
     GroupDatePicker? datePicker,
@@ -78,14 +73,11 @@ class GroupDetailPage extends StatefulWidget {
           firestore: resolvedGroupService.firestore,
           groupService: resolvedGroupService,
         );
-    final resolvedFriendService = friendService ??
-        FriendService(firestore: resolvedGroupService.firestore);
 
     return GroupDetailPage._(
       key: key,
       group: group,
       groupService: resolvedGroupService,
-      friendService: resolvedFriendService,
       auth: auth ?? FirebaseAuth.instance,
       vibrationService: vibrationService ?? const VibrationService(),
       datePicker: datePicker ?? _defaultDatePicker,
@@ -98,7 +90,6 @@ class GroupDetailPage extends StatefulWidget {
     super.key,
     required this.group,
     required this.groupService,
-    required this.friendService,
     required this.auth,
     required this.vibrationService,
     required this.datePicker,
@@ -513,7 +504,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         builder: (_) => GroupMembersPage(
                           group: widget.group,
                           groupService: widget.groupService,
-                          friendService: widget.friendService,
+                          nudgeService:
+                              NudgeService(firestore: widget.groupService.firestore),
                           auth: widget.auth,
                           vibrationService: widget.vibrationService,
                           currentDate: widget.currentDate,

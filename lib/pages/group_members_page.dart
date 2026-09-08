@@ -11,7 +11,7 @@ import '../models/group_invite.dart';
 import '../models/group_member_progress.dart';
 import '../models/group_member_role.dart';
 import '../services/error_logger.dart';
-import '../services/friend_service.dart';
+import '../services/nudge_service.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
@@ -27,7 +27,7 @@ class GroupMembersPage extends StatefulWidget {
   final GroupService groupService;
 
   /// Service used to send nudges.
-  final FriendService friendService;
+  final NudgeService nudgeService;
 
   /// Authentication used to identify the current user.
   final FirebaseAuth auth;
@@ -43,7 +43,7 @@ class GroupMembersPage extends StatefulWidget {
     super.key,
     required this.group,
     required this.groupService,
-    required this.friendService,
+    required this.nudgeService,
     required this.auth,
     required this.vibrationService,
     this.currentDate,
@@ -328,13 +328,13 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
     await showNudgeSheet(
       context,
       person: NudgePerson(
-        name: member.name ?? 'Friend',
+        name: member.name ?? 'Reader',
         photoUrl: member.photoUrl,
       ),
       vibrationService: widget.vibrationService,
       onSend: (message) async {
         try {
-          return await widget.friendService.nudgeMember(
+          return await widget.nudgeService.nudgeMember(
             currentUid: me.uid,
             memberUid: member.uid,
             currentName: me.displayName ?? 'You',

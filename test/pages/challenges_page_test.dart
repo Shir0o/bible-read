@@ -1,5 +1,4 @@
 import 'package:bible_read/pages/challenges_page.dart';
-import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -7,20 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockFriendService extends Mock implements FriendService {}
-
 class MockVibrationService extends Mock implements VibrationService {}
 
 void main() {
   late MockFirebaseAuth auth;
   late FakeFirebaseFirestore firestore;
-  late MockFriendService friendService;
   late MockVibrationService vibrationService;
 
   setUp(() {
     auth = MockFirebaseAuth(signedIn: true);
     firestore = FakeFirebaseFirestore();
-    friendService = MockFriendService();
     vibrationService = MockVibrationService();
   });
 
@@ -32,7 +27,6 @@ void main() {
         home: ChallengesPage(
           auth: auth,
           firestore: firestore,
-          friendService: friendService,
           vibrationService: vibrationService,
         ),
       ),
@@ -57,7 +51,6 @@ void main() {
         home: ChallengesPage(
           auth: auth,
           firestore: firestore,
-          friendService: friendService,
           vibrationService: vibrationService,
         ),
       ),

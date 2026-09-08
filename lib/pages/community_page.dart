@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import '../models/group.dart';
 import '../models/group_schedule.dart';
 import '../services/error_logger.dart';
-import '../services/friend_service.dart';
 import '../services/group_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
@@ -27,7 +26,6 @@ class CommunityPage extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final GroupService groupService;
-  final FriendService friendService;
   final ReadingPlanService readingPlanService;
   final ReadingStatusService readingStatusService;
   final VibrationService vibrationService;
@@ -62,7 +60,6 @@ class CommunityPage extends StatefulWidget {
     required this.auth,
     required this.firestore,
     required this.groupService,
-    required this.friendService,
     required this.readingPlanService,
     required this.readingStatusService,
     required this.vibrationService,
