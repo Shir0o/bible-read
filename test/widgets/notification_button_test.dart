@@ -63,7 +63,7 @@ void main() {
     );
     final n1 = AppNotification(
       id: 'n1',
-      type: NotificationType.like,
+      type: NotificationType.amen,
       timestamp: DateTime.now(),
       read: false,
       senderUid: 'a',

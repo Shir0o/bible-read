@@ -15,7 +15,6 @@ void main() {
         name: 'Alice',
         liked: false,
         likeNames: const [],
-        comments: const [],
       ),
     ];
 
@@ -48,7 +47,6 @@ void main() {
         name: 'Bob',
         liked: false,
         likeNames: const [],
-        comments: const [],
       ),
     ];
 

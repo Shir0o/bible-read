@@ -8,8 +8,8 @@ const originalFirestore = admin.firestore;
 const originalMessaging = admin.messaging;
 
 afterEach(() => {
-  Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+  Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   utils.invalidateUserCache();
 });
 

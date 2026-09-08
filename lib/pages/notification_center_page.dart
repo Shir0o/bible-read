@@ -413,10 +413,8 @@ class _NotificationItemState extends State<_NotificationItem> {
 
   IconData _getBadgeIcon() {
     switch (widget.notification.type) {
-      case NotificationType.like:
+      case NotificationType.amen:
         return Icons.favorite;
-      case NotificationType.comment:
-        return Icons.chat_bubble;
       case NotificationType.groupJoinRequest:
       case NotificationType.signup:
         return Icons.person_add;
@@ -434,8 +432,7 @@ class _NotificationItemState extends State<_NotificationItem> {
   Color _getBadgeColor(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     switch (widget.notification.type) {
-      case NotificationType.like:
-      case NotificationType.comment:
+      case NotificationType.amen:
         return colorScheme.tertiary;
       case NotificationType.groupJoinRequest:
         return colorScheme.primary;
@@ -449,8 +446,7 @@ class _NotificationItemState extends State<_NotificationItem> {
   Color _getBadgeIconColor(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     switch (widget.notification.type) {
-      case NotificationType.like:
-      case NotificationType.comment:
+      case NotificationType.amen:
         return colorScheme.onTertiary;
       case NotificationType.groupJoinRequest:
         return colorScheme.onPrimary;
@@ -507,15 +503,10 @@ class _NotificationItemState extends State<_NotificationItem> {
 
     if (widget.notification.message == null) {
       switch (widget.notification.type) {
-        case NotificationType.like:
+        case NotificationType.amen:
           return [
             TextSpan(text: name, style: boldStyle),
-            const TextSpan(text: ' liked your progress'),
-          ];
-        case NotificationType.comment:
-          return [
-            TextSpan(text: name, style: boldStyle),
-            const TextSpan(text: ' commented on your reading'),
+            const TextSpan(text: ' said Amen'),
           ];
         case NotificationType.nudge:
           return [

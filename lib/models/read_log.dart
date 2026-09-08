@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../services/milestone_announcer.dart';
-import 'comment.dart';
 
 /// Represents a single read log entry.
 class ReadLog {
@@ -13,9 +12,6 @@ class ReadLog {
 
   /// Names of users who liked this entry.
   final List<String> likeNames;
-
-  /// Comments left on this entry.
-  final List<Comment> comments;
 
   /// Whether the current user has liked this entry.
   final bool liked;
@@ -30,7 +26,6 @@ class ReadLog {
     required this.uid,
     required this.name,
     required this.likeNames,
-    required this.comments,
     required this.liked,
     this.timestamp,
     this.milestone,
@@ -39,7 +34,6 @@ class ReadLog {
   /// Creates a copy of this log with the given fields updated.
   ReadLog copyWith({
     List<String>? likeNames,
-    List<Comment>? comments,
     bool? liked,
     DateTime? timestamp,
     FeedMilestone? milestone,
@@ -48,43 +42,29 @@ class ReadLog {
       uid: uid,
       name: name,
       likeNames: likeNames ?? this.likeNames,
-      comments: comments ?? this.comments,
       liked: liked ?? this.liked,
       timestamp: timestamp ?? this.timestamp,
       milestone: milestone ?? this.milestone,
     );
   }
 
-  /// Builds a [ReadLog] from Firestore including likes and comments.
+  /// Builds a [ReadLog] from Firestore including likes.
   static Future<ReadLog> fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> doc, {
     required String currentUid,
   }) async {
     final data = doc.data() ?? <String, dynamic>{};
 
-    final likesFuture = doc.reference.collection('likes').get();
-    final commentsFuture =
-        doc.reference.collection('comments').orderBy('timestamp').get();
-
-    final results = await Future.wait<QuerySnapshot<Map<String, dynamic>>>([
-      likesFuture,
-      commentsFuture,
-    ]);
-    final likeDocs = results[0].docs;
-    final commentsSnap = results[1];
-
-    final liked = likeDocs.any((d) => d.id == currentUid);
-    final likeNames = likeDocs
+    final likesSnap = await doc.reference.collection('likes').get();
+    final liked = likesSnap.docs.any((d) => d.id == currentUid);
+    final likeNames = likesSnap.docs
         .map((d) => (d.data()['name'] ?? 'Unknown').toString())
         .toList();
-    final comments =
-        commentsSnap.docs.map((d) => Comment.fromFirestore(d)).toList();
     final name = (data['name'] ?? doc.id).toString().split(' ').first;
     return ReadLog(
       uid: doc.id,
       name: name,
       likeNames: likeNames,
-      comments: comments,
       liked: liked,
       timestamp: (data['timestamp'] as Timestamp?)?.toDate(),
       milestone: FeedMilestone.fromMap(data['milestone']),
@@ -96,9 +76,6 @@ class ReadLog {
         uid: json['uid'] as String? ?? '',
         name: json['name'] as String? ?? '',
         likeNames: List<String>.from(json['likeNames'] as List? ?? []),
-        comments: (json['comments'] as List<dynamic>? ?? [])
-            .map((c) => Comment.fromJson(Map<String, dynamic>.from(c as Map)))
-            .toList(),
         liked: json['liked'] as bool? ?? false,
         timestamp: json['timestamp'] != null
             ? (json['timestamp'] is Timestamp
@@ -112,7 +89,6 @@ class ReadLog {
         'uid': uid,
         'name': name,
         'likeNames': likeNames,
-        'comments': comments.map((c) => c.toJson()).toList(),
         'liked': liked,
         'timestamp': timestamp?.toIso8601String(),
       };

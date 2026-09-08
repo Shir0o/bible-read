@@ -73,8 +73,8 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
 
   try {
     return await sendNotification(token, {
-      title: "📖 New Like on Your Reading!",
-      body: `${likerName} liked your reading log.`,
+      title: "📖 Amen on Your Reading!",
+      body: `${likerName} said Amen to your reading.`,
       data: {
         type: 'like',
         ownerUid,
@@ -82,56 +82,10 @@ exports.sendLikeNotification = onCall({ region: "us-central1" }, async (req) => 
       },
     });
   } catch (err) {
-    functions.logger.error('Failed to send like notification', err);
+    functions.logger.error('Failed to send Amen notification', err);
     throw new functions.https.HttpsError(
       'internal',
-      'Failed to send like notification',
-      err instanceof Error ? err.message : String(err)
-    );
-  }
-});
-
-exports.sendCommentNotification = onCall({ region: 'us-central1' }, async (req) => {
-  if (!req.auth) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'User must be authenticated.'
-    );
-  }
-
-  const actorUid = req.auth.uid;
-  const { ownerUid, commenterName } = req.data;
-  if (!ownerUid || !commenterName) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing data');
-  }
-
-  const [enabled, token] = await Promise.all([
-    isNotificationEnabled(ownerUid, 'comment'),
-    getFcmToken(ownerUid),
-  ]);
-
-  if (!enabled || !token) {
-    if (!token) {
-      functions.logger.info(`No FCM token for user ${ownerUid}`);
-    }
-    return;
-  }
-
-  try {
-    return await sendNotification(token, {
-      title: '📖 New Comment',
-      body: `${commenterName} commented on your reading.`,
-      data: {
-        type: 'comment',
-        ownerUid,
-        fromUid: actorUid,
-      },
-    });
-  } catch (err) {
-    functions.logger.error('Failed to send comment notification', err);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Failed to send comment notification',
+      'Failed to send Amen notification',
       err instanceof Error ? err.message : String(err)
     );
   }
