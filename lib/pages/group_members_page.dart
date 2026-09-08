@@ -334,9 +334,9 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
       vibrationService: widget.vibrationService,
       onSend: (message) async {
         try {
-          return await widget.friendService.nudgeFriend(
+          return await widget.friendService.nudgeMember(
             currentUid: me.uid,
-            friendUid: member.uid,
+            memberUid: member.uid,
             currentName: me.displayName ?? 'You',
           );
         } catch (e, st) {

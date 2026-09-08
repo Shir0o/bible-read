@@ -411,9 +411,9 @@ class _FriendsViewState extends State<FriendsView>
   Future<void> _sendAmen(BuildContext context, User user, Friend friend) async {
     unawaited(widget.vibrationService.lightImpact());
     try {
-      final result = await widget.friendService.nudgeFriend(
+      final result = await widget.friendService.nudgeMember(
         currentUid: user.uid,
-        friendUid: friend.uid,
+        memberUid: friend.uid,
         currentName: user.displayName ?? 'You',
       );
       if (!mounted || !context.mounted) return;
@@ -485,9 +485,9 @@ class _FriendsViewState extends State<FriendsView>
       vibrationService: widget.vibrationService,
       onSend: (message) async {
         try {
-          final result = await widget.friendService.nudgeFriend(
+          final result = await widget.friendService.nudgeMember(
             currentUid: user.uid,
-            friendUid: friend.uid,
+            memberUid: friend.uid,
             currentName: user.displayName ?? 'You',
           );
           if (mounted && result != NudgeResult.alreadySent) {
