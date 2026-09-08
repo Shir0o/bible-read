@@ -55,6 +55,13 @@ This document describes the Firebase Cloud Functions exported from [`functions/i
 * **Type:** Firestore trigger (`onDocumentCreated`) on `users/{uid}/bible_books/{book}`.
 * **Firestore:** The collection only ever holds completed books, so when it holds exactly one document the reader earns the `first_book` badge and their groups' badge mirrors update as above.
 
+## backfill-achievements (one-off script)
+
+* **Type:** One-off, re-runnable script (`node functions/backfill-achievements.js`), not a deployed trigger.
+* **Firestore:** For every reader holding history in `read_throughs`, `bible_books`, `plan_progress` or `summary`, re-derives each badge family from the same sources the triggers use and awards what is missing — silently: no notification documents and no FCM push, since these are milestones earned long ago. The unlock stamp is the backfill run's date; where a crossing date cannot be recovered from the ledger, no past date is invented.
+* **Idempotency:** As the triggers — a second run re-derives the same earned set, finds every badge held, and writes nothing.
+* **Verification:** `functions/verify-backfill-emulator.js` seeds fixtures into the Firestore emulator, runs the pass twice, and asserts derivation, stamps, mirror and no-op idempotency.
+
 
 ### Related Collections and Config
 

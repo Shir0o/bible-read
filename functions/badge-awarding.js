@@ -31,6 +31,57 @@ const {
 // The member's latest badge is mirrored into groups/{g}/badges/{uid} for each
 // of their groups — the path co-members can read (ADR-0004).
 // ---------------------------------------------------------------------------
+// The achievements backfill (backfill-achievements.js) reuses awardBadges
+// but must stay silent: awarding a reader milestones they earned long ago
+// must not drop a stack of stale "Badge unlocked" notifications on them. It
+// sets this flag for the duration of its settle calls; trigger paths never
+// touch it and always announce.
+const BACKFILL_QUIET = Symbol.for('backfill-achievements.quiet');
+function isBackfillQuiet() {
+  return globalThis[BACKFILL_QUIET] === true;
+}
+
+/**
+ * Awards every badge in [earned] that [uid] does not hold yet — announcing
+ * each in the reader's notifications in the same batch — then mirrors the
+ * biggest one into each of the reader's groups. Any refusal of the durable
+ * write rejects: nothing here is swallowed.
+ * @param {FirebaseFirestore.Firestore} db Firestore handle.
+ * @param {string} uid Reader id.
+ * @param {Array<{id: string, type: string, rank: number, title: string}>} earned Badges due.
+ */
+async function awardBadges(db, uid, earned) {
+  if (earned.length === 0) return;
+  const userDoc = db.collection('users').doc(uid);
+  const achievements = userDoc.collection('achievements');
+  const held = await achievements.get();
+  const heldIds = new Set(held.docs.map((d) => d.id));
+  const missing = earned.filter((b) => !heldIds.has(b.id));
+  if (missing.length === 0) return;
+
+  const batch = db.batch();
+  const notifications = userDoc.collection('notifications');
+  for (const badge of missing) {
+    batch.create(achievements.doc(badge.id), {
+      type: badge.type,
+      dateUnlocked: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    if (!isBackfillQuiet()) {
+      batch.set(notifications.doc(), {
+        type: 'badge',
+        read: false,
+        message: `Badge unlocked — ${badge.title}.`,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+  }
+  await batch.commit();
+
+  await mirrorLatestBadge(db, uid, missing);
+  if (!isBackfillQuiet()) {
+    await pushBadgeUnlock(db, uid, missing);
+  }
+}
 
 // The catalogue — every badge the server can award, as data. `type` is the
 // family stored on the achievement document; `rank` breaks ties when several
@@ -161,17 +212,21 @@ async function awardBadges(db, uid, earned) {
       type: badge.type,
       dateUnlocked: admin.firestore.FieldValue.serverTimestamp(),
     });
-    batch.set(notifications.doc(), {
-      type: 'badge',
-      read: false,
-      message: `Badge unlocked — ${badge.title}.`,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    if (!isBackfillQuiet()) {
+      batch.set(notifications.doc(), {
+        type: 'badge',
+        read: false,
+        message: `Badge unlocked — ${badge.title}.`,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
   }
   await batch.commit();
 
   await mirrorLatestBadge(db, uid, missing);
-  await pushBadgeUnlock(db, uid, missing);
+  if (!isBackfillQuiet()) {
+    await pushBadgeUnlock(db, uid, missing);
+  }
 }
 
 /**
@@ -328,6 +383,8 @@ async function settlePlanFinishedBadge(db, uid, planId) {
 
 module.exports = {
   BADGES,
+  awardBadges,
+  isBackfillQuiet,
   settleReadThroughBadges,
   settleFirstBookBadge,
   settleConsistencyBadges,
