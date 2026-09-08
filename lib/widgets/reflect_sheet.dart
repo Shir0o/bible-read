@@ -18,15 +18,18 @@ String reflectionPromptFor(DateTime date) {
 }
 
 /// Opens the reflection editor sheet. [initialText] pre-fills the field when
-/// editing an existing reflection; pass `null` for a fresh entry. [onSave] is
-/// called with the trimmed text and should persist it; the sheet closes once
+/// editing an existing reflection; pass `null` for a fresh entry.
+/// [initialShared] reflects the saved entry's current share state — a fresh
+/// entry always starts unshared. [onSave] is called with the trimmed text and
+/// the share toggle's state, and should persist both; the sheet closes once
 /// it resolves. [onSkip] fires if the user skips/dismisses without saving —
 /// either way the daily habit mark this sheet is opened from is untouched.
 Future<void> showReflectSheet(
   BuildContext context, {
   required String? initialText,
   required String prompt,
-  required Future<void> Function(String text) onSave,
+  required Future<void> Function(String text, bool share) onSave,
+  bool initialShared = false,
   VoidCallback? onSkip,
 }) {
   return showModalBottomSheet<void>(
@@ -38,6 +41,7 @@ Future<void> showReflectSheet(
       initialText: initialText,
       prompt: prompt,
       onSave: onSave,
+      initialShared: initialShared,
       onSkip: onSkip,
     ),
   );
@@ -48,12 +52,14 @@ class _ReflectSheet extends StatefulWidget {
     required this.initialText,
     required this.prompt,
     required this.onSave,
+    required this.initialShared,
     required this.onSkip,
   });
 
   final String? initialText;
   final String prompt;
-  final Future<void> Function(String text) onSave;
+  final Future<void> Function(String text, bool share) onSave;
+  final bool initialShared;
   final VoidCallback? onSkip;
 
   @override
@@ -65,6 +71,10 @@ class _ReflectSheetState extends State<_ReflectSheet> {
     text: widget.initialText ?? '',
   );
   bool _saving = false;
+
+  // Defaults to OFF for every sheet, including edits of an unshared entry;
+  // editing a shared entry opens with the toggle still on (initialShared).
+  late bool _share = widget.initialShared;
 
   bool get _isEditing => (widget.initialText ?? '').isNotEmpty;
 
@@ -78,7 +88,7 @@ class _ReflectSheetState extends State<_ReflectSheet> {
     if (_saving || _controller.text.trim().isEmpty) return;
     setState(() => _saving = true);
     try {
-      await widget.onSave(_controller.text.trim());
+      await widget.onSave(_controller.text.trim(), _share);
       if (mounted) Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -92,7 +102,8 @@ class _ReflectSheetState extends State<_ReflectSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final canSave = _controller.text.trim().isNotEmpty && !_saving;
 
     return AnimatedPadding(
@@ -174,7 +185,46 @@ class _ReflectSheetState extends State<_ReflectSheet> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
+                Row(
+                  key: const ValueKey('reflect_sheet_share_toggle'),
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Share with your circle',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _share
+                                ? 'On — the people you read with can read '
+                                    'this one.'
+                                : 'Off — only you can read this. Turning it '
+                                    'on lets the people you share a group '
+                                    'with read it.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      key: const ValueKey('reflect_sheet_share_switch'),
+                      value: _share,
+                      onChanged: _saving
+                          ? null
+                          : (value) => setState(() => _share = value),
+                      activeThumbColor: colorScheme.primary,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 SizedBox(
                   height: 50,
                   child: FilledButton.icon(

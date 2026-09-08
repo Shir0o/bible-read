@@ -8,8 +8,18 @@ class Reflection {
   /// Time the reflection was last saved.
   final DateTime updatedAt;
 
+  /// Whether the reader opted to share this Reflection with their Circle
+  /// (#807). The private document stays owner-only either way; sharing
+  /// copies the text onto the day's read-log entry. Absent on documents
+  /// written before sharing existed — those are unshared, never shared.
+  final bool shared;
+
   /// Creates a [Reflection].
-  const Reflection({required this.text, required this.updatedAt});
+  const Reflection({
+    required this.text,
+    required this.updatedAt,
+    this.shared = false,
+  });
 
   /// Reads a [Reflection] from a Firestore document, or `null` if the
   /// document doesn't exist or has no text.
@@ -22,6 +32,7 @@ class Reflection {
     return Reflection(
       text: text,
       updatedAt: ts is Timestamp ? ts.toDate() : DateTime.now(),
+      shared: data['shared'] == true,
     );
   }
 
@@ -29,5 +40,6 @@ class Reflection {
   Map<String, dynamic> toFirestore() => {
         'text': text,
         'updatedAt': Timestamp.fromDate(updatedAt),
+        'shared': shared,
       };
 }

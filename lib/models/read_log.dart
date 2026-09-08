@@ -16,6 +16,11 @@ class ReadLog {
   /// Whether the current user has liked this entry.
   final bool liked;
 
+  /// The reader's shared Reflection text for this day, when they opted in
+  /// (#807). Copied onto this entry by ReflectionService — the private
+  /// Reflection document stays owner-only. Null when nothing is shared.
+  final String? sharedReflection;
+
   /// Time when the user read.
   final DateTime? timestamp;
 
@@ -27,16 +32,18 @@ class ReadLog {
     required this.name,
     required this.likeNames,
     required this.liked,
+    this.sharedReflection,
     this.timestamp,
     this.milestone,
   });
 
-  /// Creates a copy of this log with the given fields updated.
   ReadLog copyWith({
     List<String>? likeNames,
     bool? liked,
     DateTime? timestamp,
     FeedMilestone? milestone,
+    String? sharedReflection,
+    bool clearSharedReflection = false,
   }) {
     return ReadLog(
       uid: uid,
@@ -45,6 +52,9 @@ class ReadLog {
       liked: liked ?? this.liked,
       timestamp: timestamp ?? this.timestamp,
       milestone: milestone ?? this.milestone,
+      sharedReflection: clearSharedReflection
+          ? null
+          : (sharedReflection ?? this.sharedReflection),
     );
   }
 
@@ -66,6 +76,10 @@ class ReadLog {
       name: name,
       likeNames: likeNames,
       liked: liked,
+      sharedReflection:
+          (data['sharedReflection'] as String?)?.trim().isEmpty ?? true
+              ? null
+              : data['sharedReflection'] as String?,
       timestamp: (data['timestamp'] as Timestamp?)?.toDate(),
       milestone: FeedMilestone.fromMap(data['milestone']),
     );
@@ -77,6 +91,7 @@ class ReadLog {
         name: json['name'] as String? ?? '',
         likeNames: List<String>.from(json['likeNames'] as List? ?? []),
         liked: json['liked'] as bool? ?? false,
+        sharedReflection: json['sharedReflection'] as String?,
         timestamp: json['timestamp'] != null
             ? (json['timestamp'] is Timestamp
                 ? (json['timestamp'] as Timestamp).toDate()
@@ -90,6 +105,7 @@ class ReadLog {
         'name': name,
         'likeNames': likeNames,
         'liked': liked,
+        if (sharedReflection != null) 'sharedReflection': sharedReflection,
         'timestamp': timestamp?.toIso8601String(),
       };
 }
