@@ -58,7 +58,7 @@ void main() {
   testWidgets('renders header with eyebrow and title', (tester) async {
     await pumpPage(tester, date: DateTime(2024, 1, 1, 9)); // 9 AM
     expect(find.text('TOGETHER'), findsOneWidget);
-    expect(find.text('Community'), findsOneWidget);
+    expect(find.text('Circle'), findsOneWidget);
   });
 
   testWidgets('renders empty group state when no groups', (tester) async {

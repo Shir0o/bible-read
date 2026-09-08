@@ -1,4 +1,4 @@
-// The Home "Your community" glimpse is sourced from the reader's Circle —
+// The Home "Your circle" glimpse is sourced from the reader's Circle —
 // the co-members of their Groups, derived at read time (ADR-0003, #795).
 // There is no friend graph to consult.
 import 'package:flutter/material.dart';
@@ -139,7 +139,7 @@ void main() {
 
     await _pumpHome(tester, firestore, auth);
 
-    expect(find.text('Your community'), findsOneWidget);
+    expect(find.text('Your circle'), findsOneWidget);
     expect(find.text('2 of 4 read today'), findsOneWidget);
     expect(find.textContaining('Stranger'), findsNothing);
   });
@@ -155,7 +155,7 @@ void main() {
 
     await _pumpHome(tester, firestore, auth);
 
-    expect(find.text('Your community'), findsOneWidget);
+    expect(find.text('Your circle'), findsOneWidget);
     expect(find.text('0 of 1 read today'), findsOneWidget);
     expect(find.text('Be the first to show up today'), findsOneWidget);
   });

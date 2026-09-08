@@ -589,7 +589,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Visible in community search results',
+                      'Visible in group search results',
                       style: textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                         fontSize: 14,

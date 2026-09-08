@@ -114,11 +114,11 @@ void main() {
         // Verify Home Page is revealed
         expect(find.byType(HomePage), findsOneWidget);
 
-        // Navigate to Community and verify the design header renders
-        await tester.tap(find.text('Community'));
+        // Navigate to Circle and verify the design header renders
+        await tester.tap(find.text('Circle'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Community'), findsWidgets);
+        expect(find.text('Circle'), findsWidgets);
         expect(find.text('TOGETHER'), findsOneWidget);
       });
     },

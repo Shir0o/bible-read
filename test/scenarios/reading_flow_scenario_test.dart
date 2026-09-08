@@ -116,8 +116,8 @@ void main() {
       // Verify HomePage is shown
       expect(find.byType(HomePage), findsOneWidget);
 
-      // Navigate to Community
-      await tester.tap(find.text('Community'));
+      // Navigate to Circle
+      await tester.tap(find.text('Circle'));
       await tester.pumpAndSettle();
 
       // Open the group via its tile in the "Your groups" section — the

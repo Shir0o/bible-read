@@ -102,7 +102,7 @@ class _CommunityPageState extends State<CommunityPage>
                                 .name
                             : 'Together'
                         : 'Together',
-                    title: 'Community',
+                    title: 'Circle',
                     showProfileIcon: false,
                   ),
                 ),

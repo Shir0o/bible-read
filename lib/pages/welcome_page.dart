@@ -58,7 +58,7 @@ class WelcomePage extends StatelessWidget {
 
               // Description
               Text(
-                'Experience the Bible in community. Create shared schedules, discuss insights, and keep each other accountable every day.',
+                'Experience the Bible together. Create shared schedules, discuss insights, and keep each other accountable every day.',
                 textAlign: TextAlign.center,
                 style: textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w400,
