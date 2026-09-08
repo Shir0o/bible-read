@@ -420,10 +420,10 @@ void main() {
       });
     });
 
-    group('nudgeFriend', () {
+    group('nudgeMember', () {
       test('calls Cloud Function with expected arguments', () async {
         const currentUid = 'userA';
-        const friendUid = 'userB';
+        const memberUid = 'userB';
         const currentName = 'Alice';
         bool called = false;
         Map<String, String>? lastArgs;
@@ -446,16 +446,16 @@ void main() {
           },
         );
 
-        final result = await friendService.nudgeFriend(
+        final result = await friendService.nudgeMember(
           currentUid: currentUid,
-          friendUid: friendUid,
+          memberUid: memberUid,
           currentName: currentName,
         );
 
         expect(called, isTrue);
         expect(lastArgs, {
           'fromUid': currentUid,
-          'toUid': friendUid,
+          'toUid': memberUid,
           'fromName': currentName,
         });
         expect(result, NudgeResult.sent);

@@ -408,6 +408,92 @@ describe('other cloud functions', () => {
     stderrStub.restore();
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
   });
+
+  it('sendNudgeNotification never touches friend collections', async () => {
+    const originalFirestore = admin.firestore;
+    const touched = [];
+    const fakeDb = {
+      collection: (name) => {
+        touched.push(name);
+        return {
+          doc: () => ({
+            collection: (sub) => {
+              touched.push(`${name}/${sub}`);
+              return {
+                doc: () => ({
+                  get: async () => ({ exists: false }),
+                  set: async () => {}
+                })
+              };
+            },
+            get: async () => ({ data: () => ({ fcmToken: 'tokN' }) })
+          })
+        };
+      }
+    };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    Object.defineProperty(admin, 'messaging', {
+      value: () => ({ send: async () => {} }),
+      configurable: true,
+      writable: true
+    });
+
+    const wrapped = functionsTest.wrap(myFunctions.sendNudgeNotification);
+    const res = await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
+    assert.equal(res.alreadySent, false);
+    const joined = touched.join(',');
+    assert.ok(!joined.includes('friend'), `nudge path touched: ${joined}`);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+  });
+
+  it('sendNudgeNotification dedupe is per recipient, not per group', async () => {
+    // The ledger document id is the recipient uid with no group dimension,
+    // so a recipient shared through two Groups hits the same document.
+    const originalFirestore = admin.firestore;
+    const ledgerDocs = new Map();
+    const fakeDb = {
+      collection: (name) => ({
+        doc: (docId) => ({
+          collection: (sub) => ({
+            doc: (subDocId) => {
+              const key = `${name}/${docId}/${sub}/${subDocId}`;
+              if (!ledgerDocs.has(key)) {
+                ledgerDocs.set(key, { exists: false, data: () => undefined });
+              }
+              const entry = ledgerDocs.get(key);
+              return {
+                get: async () => entry,
+                set: async () => {
+                  entry.exists = true;
+                  entry.data = () => ({ timestamp: { toDate: () => new Date() } });
+                }
+              };
+            }
+          }),
+          get: async () => ({ data: () => ({ fcmToken: 'tokN' }) })
+        })
+      })
+    };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
+    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
+    let sends = 0;
+    Object.defineProperty(admin, 'messaging', {
+      value: () => ({ send: async () => { sends++; } }),
+      configurable: true,
+      writable: true
+    });
+
+    const wrapped = functionsTest.wrap(myFunctions.sendNudgeNotification);
+    // Two "Groups" would mean two sends if the ledger had a group dimension;
+    // the second call for the same recipient must be refused instead.
+    await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
+    await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
+    assert.equal(sends, 1);
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+  });
 });
 
 

@@ -35,9 +35,9 @@ class RecordingFriendService extends FriendService {
   }
 
   @override
-  Future<NudgeResult> nudgeFriend({
+  Future<NudgeResult> nudgeMember({
     required String currentUid,
-    required String friendUid,
+    required String memberUid,
     required String currentName,
   }) async {
     nudged = true;
@@ -66,9 +66,9 @@ class AlreadySentFriendService extends RecordingFriendService {
   AlreadySentFriendService({required super.firestore});
 
   @override
-  Future<NudgeResult> nudgeFriend({
+  Future<NudgeResult> nudgeMember({
     required String currentUid,
-    required String friendUid,
+    required String memberUid,
     required String currentName,
   }) async {
     nudged = true;

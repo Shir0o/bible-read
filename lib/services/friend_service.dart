@@ -337,20 +337,21 @@ class FriendService {
     }
   }
 
-  /// Send a nudge notification to [friendUid] from [currentUid].
-  Future<NudgeResult> nudgeFriend({
+  /// Send a nudge notification to a fellow Circle member. A Nudge is
+  /// person-to-person: any co-member can be nudged, friendship not required.
+  Future<NudgeResult> nudgeMember({
     required String currentUid,
-    required String friendUid,
+    required String memberUid,
     required String currentName,
   }) async {
     return _nudgeFn(
       fromUid: currentUid,
-      toUid: friendUid,
+      toUid: memberUid,
       fromName: currentName,
     );
   }
 
-  /// Stream of friend UIDs nudged today by [uid].
+  /// Stream of Circle member UIDs nudged today by [uid].
   Stream<Set<String>> nudgedToday(String uid) {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);

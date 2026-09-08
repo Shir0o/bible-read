@@ -35,7 +35,7 @@ class NudgePerson {
 
 /// Opens the friendly nudge bottom sheet for [person].
 ///
-/// [onSend] performs the actual send (e.g. `friendService.nudgeFriend`) and
+/// [onSend] performs the actual send (e.g. `friendService.nudgeMember`) and
 /// returns the [NudgeResult]; the chosen [message] is the sender-side UX note.
 Future<void> showNudgeSheet(
   BuildContext context, {
