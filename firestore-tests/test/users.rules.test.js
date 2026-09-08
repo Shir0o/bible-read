@@ -165,7 +165,6 @@ describe('users/{userId}/achievements', () => {
 // Every collection gated by `read, write: if auth.uid == userId`.
 describe('owner-only user collections', () => {
   const ownerOnlyDocs = [
-    'friends/bob',
     'nudges/bob',
     'notificationPrefs/likes',
     'settings/theme',
@@ -196,6 +195,32 @@ describe('owner-only user collections', () => {
       const anon = await asUnauthenticated();
       await assertFails(bob.doc(`users/alice/${doc}`).get());
       await assertFails(bob.doc(`users/alice/${doc}`).set({ value: 3 }));
+      await assertFails(anon.doc(`users/alice/${doc}`).get());
+    });
+  }
+});
+
+// The friend graph is retired (ADR-0003): no rules block exists for these
+// collections any more, so every path is denied outright — including to the
+// owner, whose client no longer writes here either.
+describe('retired friend collections', () => {
+  const retiredDocs = [
+    'friends/bob',
+    'friendRequestsSent/bob',
+    'friendRequestsReceived/bob',
+    'friendStreakInvites/bob',
+    'friendStreakLinks/bob',
+  ];
+
+  for (const doc of retiredDocs) {
+    it(`denies everyone on users/alice/${doc}`, async () => {
+      const alice = await asUser('alice');
+      const bob = await asUser('bob');
+      const anon = await asUnauthenticated();
+      await assertFails(alice.doc(`users/alice/${doc}`).get());
+      await assertFails(alice.doc(`users/alice/${doc}`).set({ value: 1 }));
+      await assertFails(bob.doc(`users/alice/${doc}`).get());
+      await assertFails(bob.doc(`users/alice/${doc}`).set({ value: 1 }));
       await assertFails(anon.doc(`users/alice/${doc}`).get());
     });
   }
@@ -277,213 +302,5 @@ describe('users/{userId}/notifications', () => {
       bob.doc('users/alice/notifications/note-1').update({ read: true }),
     );
     await assertSucceeds(alice.doc('users/alice/notifications/note-1').delete());
-  });
-});
-
-describe('users/{userId}/friendRequestsSent', () => {
-  before(async () => {
-    await seed('users/alice/friendRequestsSent/bob', { timestamp: new Date() });
-  });
-
-  it('lets the sender create a request carrying only a timestamp', async () => {
-    const alice = await asUser('alice');
-    await assertSucceeds(
-      alice.doc('users/alice/friendRequestsSent/carol').set({ timestamp: new Date() }),
-    );
-  });
-
-  it('denies creating a request with extra fields', async () => {
-    const alice = await asUser('alice');
-    await assertFails(
-      alice
-        .doc('users/alice/friendRequestsSent/dave')
-        .set({ timestamp: new Date(), message: 'hi' }),
-    );
-  });
-
-  it('denies creating a request on someone else’s behalf', async () => {
-    const bob = await asUser('bob');
-    await assertFails(
-      bob.doc('users/alice/friendRequestsSent/dave').set({ timestamp: new Date() }),
-    );
-  });
-
-  it('lets only the sender read the request', async () => {
-    const alice = await asUser('alice');
-    const bob = await asUser('bob');
-    await assertSucceeds(alice.doc('users/alice/friendRequestsSent/bob').get());
-    await assertFails(bob.doc('users/alice/friendRequestsSent/bob').get());
-  });
-
-  it('lets the sender delete the request', async () => {
-    const alice = await asUser('alice');
-    await assertSucceeds(alice.doc('users/alice/friendRequestsSent/bob').delete());
-  });
-});
-
-describe('users/{userId}/friendRequestsReceived', () => {
-  before(async () => {
-    await seed('users/bob/friendRequestsReceived/alice', {
-      timestamp: new Date(),
-      name: 'Alice',
-    });
-  });
-
-  it('lets the sender create an incoming request with timestamp and name', async () => {
-    const carol = await asUser('carol');
-    await assertSucceeds(
-      carol
-        .doc('users/bob/friendRequestsReceived/carol')
-        .set({ timestamp: new Date(), name: 'Carol' }),
-    );
-  });
-
-  it('denies creating an incoming request with extra fields', async () => {
-    const carol = await asUser('carol');
-    await assertFails(
-      carol
-        .doc('users/bob/friendRequestsReceived/carol')
-        .set({ timestamp: new Date(), name: 'Carol', message: 'hi' }),
-    );
-  });
-
-  it('lets the receiver read, and denies the sender', async () => {
-    const bob = await asUser('bob');
-    const alice = await asUser('alice');
-    await assertSucceeds(bob.doc('users/bob/friendRequestsReceived/alice').get());
-    await assertFails(alice.doc('users/bob/friendRequestsReceived/alice').get());
-  });
-
-  it('lets the sender or receiver delete', async () => {
-    const alice = await asUser('alice');
-    const bob = await asUser('bob');
-    await assertSucceeds(alice.doc('users/bob/friendRequestsReceived/alice').delete());
-    await assertSucceeds(bob.doc('users/bob/friendRequestsReceived/alice').delete());
-  });
-
-  it('denies updates by anyone but the sender', async () => {
-    const alice = await asUser('alice');
-    const bob = await asUser('bob');
-    await assertSucceeds(
-      alice
-        .doc('users/bob/friendRequestsReceived/alice')
-        .set({ timestamp: new Date(), name: 'Alice' }),
-    );
-    await assertFails(
-      bob
-        .doc('users/bob/friendRequestsReceived/alice')
-        .set({ timestamp: new Date(), name: 'Alice' }),
-    );
-  });
-});
-
-describe('users/{userId}/friendStreakInvites', () => {
-  const invite = {
-    partnerUid: 'bob',
-    partnerName: 'Bob',
-    initiatedBy: 'alice',
-    status: 'pending',
-    currentStreak: 0,
-    lastUserCovered: null,
-    lastPartnerCovered: null,
-    createdAt: 1,
-    updatedAt: 1,
-  };
-
-  it('lets the owner or partner create with the exact field set', async () => {
-    const alice = await asUser('alice');
-    const bob = await asUser('bob');
-    await assertSucceeds(
-      alice.doc('users/alice/friendStreakInvites/bob').set(invite),
-    );
-    await assertSucceeds(
-      bob.doc('users/bob/friendStreakInvites/alice').set({
-        ...invite,
-        partnerUid: 'alice',
-        partnerName: 'Alice',
-        initiatedBy: 'bob',
-      }),
-    );
-  });
-
-  it('denies creation with extra fields', async () => {
-    const alice = await asUser('alice');
-    await assertFails(
-      alice
-        .doc('users/alice/friendStreakInvites/carol')
-        .set({ ...invite, partnerUid: 'carol', extra: true }),
-    );
-  });
-
-  it('denies creation by unrelated users', async () => {
-    const carol = await asUser('carol');
-    await assertFails(
-      carol
-        .doc('users/alice/friendStreakInvites/bob')
-        .set({ ...invite, partnerUid: 'carol' }),
-    );
-  });
-
-  it('lets only the owner or partner read', async () => {
-    const alice = await asUser('alice');
-    const bob = await asUser('bob');
-    const carol = await asUser('carol');
-    await assertSucceeds(alice.doc('users/alice/friendStreakInvites/bob').get());
-    await assertSucceeds(bob.doc('users/alice/friendStreakInvites/bob').get());
-    await assertFails(carol.doc('users/alice/friendStreakInvites/bob').get());
-  });
-});
-
-describe('users/{userId}/friendStreakLinks', () => {
-  const link = {
-    partnerUid: 'bob',
-    partnerName: 'Bob',
-    initiatedBy: 'alice',
-    status: 'active',
-    currentStreak: 3,
-    lastUserCovered: null,
-    lastPartnerCovered: null,
-    createdAt: 1,
-    updatedAt: 1,
-  };
-
-  before(async () => {
-    await seed('users/alice/friendStreakLinks/bob', link);
-    await seed('users/alice/friends/bob', { timestamp: new Date() });
-  });
-
-  it('lets the owner read', async () => {
-    const alice = await asUser('alice');
-    await assertSucceeds(alice.doc('users/alice/friendStreakLinks/bob').get());
-  });
-
-  it('lets a friend of the owner read', async () => {
-    const bob = await asUser('bob');
-    await assertSucceeds(bob.doc('users/alice/friendStreakLinks/bob').get());
-  });
-
-  it('denies reads by users who are not friends of the owner', async () => {
-    const carol = await asUser('carol');
-    await assertFails(carol.doc('users/alice/friendStreakLinks/bob').get());
-  });
-
-  it('lets the owner or partner create with the exact field set', async () => {
-    const alice = await asUser('alice');
-    await assertSucceeds(
-      alice.doc('users/alice/friendStreakLinks/carol').set({
-        ...link,
-        partnerUid: 'carol',
-        partnerName: 'Carol',
-      }),
-    );
-  });
-
-  it('denies creation with extra fields', async () => {
-    const alice = await asUser('alice');
-    await assertFails(
-      alice
-        .doc('users/alice/friendStreakLinks/dave')
-        .set({ ...link, partnerUid: 'dave', extra: true }),
-    );
   });
 });

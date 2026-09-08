@@ -37,21 +37,10 @@ void main() {
     );
     final auth = MockFirebaseAuth(mockUser: alice, signedIn: true);
 
-    // 2. Setup Bob (friend) and his activity
+    // 2. Setup Bob and his activity
     await firestore.collection('users').doc('bob_uid').set({
       'name': 'Bob',
       'email': 'bob@example.com',
-    });
-
-    // Alice and Bob are friends
-    await firestore
-        .collection('users')
-        .doc('alice_uid')
-        .collection('friends')
-        .doc('bob_uid')
-        .set({
-      'name': 'Bob',
-      'timestamp': Timestamp.fromDate(now),
     });
 
     // Bob has read today
@@ -95,7 +84,7 @@ void main() {
     expect(find.textContaining('Bob', findRichText: true), findsAtLeast(1));
     expect(
         find.textContaining('completed', findRichText: true), findsOneWidget);
-    await takeScreenshot(tester, '09_friends_activity_feed');
+    await takeScreenshot(tester, '09_group_activity_feed');
 
     // 6. Navigate to View All (ReadLogPage)
     final viewAllButton = find.text('View All').last;
@@ -106,7 +95,6 @@ void main() {
     // 7. Verify we are in ReadLogPage (Today's Readers)
     expect(find.text("Today's Readers"), findsOneWidget);
     // Wait for ReadLogView to load
-    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     expect(find.byType(FeedCard), findsOneWidget);

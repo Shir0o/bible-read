@@ -90,7 +90,7 @@ class _NewPlanPickerSheet extends StatelessWidget {
               _ChoiceTile(
                 icon: Icons.groups_outlined,
                 title: 'Group plan',
-                subtitle: 'Read through scripture with friends',
+                subtitle: 'Read through scripture together',
                 onTap: () => Navigator.of(context).pop(NewPlanKind.group),
               ),
             ],

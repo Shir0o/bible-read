@@ -249,8 +249,6 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         return 'Nudge Notifications';
       case NotificationType.signup:
         return 'Signup Alerts';
-      case NotificationType.friendRequest:
-        return 'Friend Request Notifications';
       case NotificationType.comment:
         return 'Comment Notifications';
       case NotificationType.groupJoinRequest:

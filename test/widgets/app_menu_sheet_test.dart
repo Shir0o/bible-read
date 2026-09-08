@@ -111,7 +111,7 @@ void main() {
     }
 
     await openMenu();
-    await select('Friends', 4);
+    await select('Challenges', 5);
 
     await openMenu();
     await select('Sign Out', 10);
@@ -249,7 +249,6 @@ void main() {
     for (final label in [
       'Settings',
       'Notifications',
-      'Friends',
       'Challenges',
       'Groups',
       'Library',

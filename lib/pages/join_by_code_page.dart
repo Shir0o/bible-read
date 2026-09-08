@@ -58,7 +58,7 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
     if (raw.trim().isEmpty) {
       setState(() {
         _match = null;
-        _error = 'Enter the code your friend shared.';
+        _error = 'Enter the code that was shared with you.';
       });
       return;
     }

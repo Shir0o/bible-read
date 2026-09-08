@@ -10,9 +10,9 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import '../helpers/fake_google_sign_in_platform.dart';
 
 import 'package:bible_read/pages/main_page.dart';
+import 'package:bible_read/pages/challenges_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
 
-import 'package:bible_read/pages/friends_page.dart';
 import 'package:bible_read/widgets/app_nav_bar.dart';
 import 'package:bible_read/widgets/nav_glyphs.dart';
 import 'package:bible_read/widgets/responsive_scaffold.dart';
@@ -274,7 +274,7 @@ void main() {
     // Attempt to navigate to a protected page via the menu API.
     final state =
         tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
-    state.navigateFromMenu(4); // Friends index.
+    state.navigateFromMenu(5); // Challenges index.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
@@ -372,7 +372,6 @@ void main() {
 
     // These usages are now checking no-op behavior for pushed items
     await selectMenuItem('Challenges', 5); // 5 is pushed
-    await selectMenuItem('Friends', 4);
     await selectMenuItem('Sign Out', 10);
   });
 
@@ -404,12 +403,12 @@ void main() {
 
     final state =
         tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
-    state.navigateFromMenu(4);
+    state.navigateFromMenu(5);
     await tester.pump();
 
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byType(FriendsPage), findsOneWidget);
+    expect(find.byType(ChallengesPage), findsOneWidget);
 
     final hasNavAfter = find
             .byType(AppNavBar, skipOffstage: false)
@@ -445,12 +444,12 @@ void main() {
         tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
     vibration.getIndex = () => state.selectedIndex;
 
-    state.navigateFromMenu(4);
+    state.navigateFromMenu(5);
     await tester.pump();
 
     expect(vibration.lightCount, 1);
     expect(vibration.indexDuringCall, 0); // Starting index is 0
-    expect(state.selectedIndex, 0); // Stays 0 as Friends is a pushed page
+    expect(state.selectedIndex, 0); // Stays 0 as Challenges is a pushed page
   });
 
   testWidgets('tapping a bar destination vibrates and switches tabs', (

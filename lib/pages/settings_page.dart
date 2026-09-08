@@ -10,7 +10,6 @@ import '../models/user_preferences.dart';
 import '../theme/app_theme.dart';
 import '../services/error_logger.dart';
 import '../services/feedback_service.dart';
-import '../services/friend_service.dart';
 import '../services/notification_preferences_service.dart';
 import '../services/user_preferences_service.dart';
 import '../services/google_sign_in_factory.dart';
@@ -31,7 +30,6 @@ class SettingsPage extends StatefulWidget {
   final GoogleSignIn Function() googleSignInProvider;
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
-  final FriendService friendService;
   final UserPreferencesService? userPreferencesService;
   final VibrationService vibrationService;
   final FeedbackService feedbackService;
@@ -43,7 +41,6 @@ class SettingsPage extends StatefulWidget {
     GoogleSignIn Function()? googleSignInProvider,
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
-    FriendService? friendService,
     UserPreferencesService? userPreferencesService,
     VibrationService? vibrationService,
     FeedbackService? feedbackService,
@@ -57,7 +54,6 @@ class SettingsPage extends StatefulWidget {
       googleSignInProvider: googleSignInProvider ?? createGoogleSignIn,
       auth: authInstance,
       firestore: fs,
-      friendService: friendService ?? FriendService(firestore: fs),
       userPreferencesService: userPreferencesService,
       vibrationService: vibrationService ?? const VibrationService(),
       feedbackService:
@@ -72,7 +68,6 @@ class SettingsPage extends StatefulWidget {
     required this.googleSignInProvider,
     required this.auth,
     required this.firestore,
-    required this.friendService,
     this.userPreferencesService,
     required this.vibrationService,
     required this.feedbackService,

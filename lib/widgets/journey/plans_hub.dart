@@ -13,7 +13,7 @@ import '../../models/reading_plan.dart';
 import '../../models/reading_plan_progress.dart';
 import '../../services/catch_up_engine.dart';
 import '../../services/error_logger.dart';
-import '../../services/friend_service.dart';
+import '../../services/nudge_service.dart';
 import '../../services/group_service.dart';
 import '../../services/reading_plan_service.dart';
 import '../../services/user_preferences_service.dart';
@@ -41,7 +41,6 @@ class PlansHub extends StatefulWidget {
   final GroupService groupService;
   final ReadingPlanService readingPlanService;
   final UserPreferencesService userPreferencesService;
-  final FriendService friendService;
   final VibrationService vibrationService;
   final DateTime Function() dateProvider;
 
@@ -52,7 +51,6 @@ class PlansHub extends StatefulWidget {
     required this.groupService,
     required this.readingPlanService,
     required this.userPreferencesService,
-    required this.friendService,
     required this.vibrationService,
     required this.dateProvider,
   });
@@ -311,7 +309,7 @@ class PlansHubState extends State<PlansHub> {
         builder: (_) => GroupMembersPage(
           group: row.group,
           groupService: widget.groupService,
-          friendService: widget.friendService,
+          nudgeService: NudgeService(firestore: widget.firestore),
           auth: widget.auth,
           vibrationService: widget.vibrationService,
         ),

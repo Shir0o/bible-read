@@ -2150,7 +2150,7 @@ class _HomePageState extends State<HomePage>
                     const SizedBox(height: 2),
                     Text(
                       'Optional — a gentle rhythm to read by, on your own '
-                      'or with friends.',
+                      'or together.',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),

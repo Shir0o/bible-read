@@ -13,9 +13,7 @@ import '../services/notification_service.dart';
 import '../services/seasonal_challenge_service.dart';
 import '../services/vibration_service.dart';
 import '../services/group_service.dart';
-import '../services/friend_service.dart';
 import '../widgets/sub_header.dart';
-import 'friend_requests_page.dart';
 import 'seasonal_challenges_page.dart';
 import 'group_join_requests_page.dart';
 
@@ -231,20 +229,6 @@ class _NotificationItemState extends State<_NotificationItem> {
 
   Future<void> _navigate(BuildContext context) async {
     switch (widget.notification.type) {
-      case NotificationType.friendRequest:
-        final friendService = FriendService(
-          firestore: widget.service.firestore,
-          notificationService: widget.service,
-        );
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => FriendRequestsPage(
-              auth: widget.auth,
-              friendService: friendService,
-            ),
-          ),
-        );
-        break;
       case NotificationType.seasonalChallenge:
         await Navigator.of(context).push(
           MaterialPageRoute(
@@ -433,7 +417,6 @@ class _NotificationItemState extends State<_NotificationItem> {
         return Icons.favorite;
       case NotificationType.comment:
         return Icons.chat_bubble;
-      case NotificationType.friendRequest:
       case NotificationType.groupJoinRequest:
       case NotificationType.signup:
         return Icons.person_add;
@@ -454,7 +437,6 @@ class _NotificationItemState extends State<_NotificationItem> {
       case NotificationType.like:
       case NotificationType.comment:
         return colorScheme.tertiary;
-      case NotificationType.friendRequest:
       case NotificationType.groupJoinRequest:
         return colorScheme.primary;
       case NotificationType.seasonalChallenge:
@@ -470,7 +452,6 @@ class _NotificationItemState extends State<_NotificationItem> {
       case NotificationType.like:
       case NotificationType.comment:
         return colorScheme.onTertiary;
-      case NotificationType.friendRequest:
       case NotificationType.groupJoinRequest:
         return colorScheme.onPrimary;
       case NotificationType.seasonalChallenge:
@@ -535,11 +516,6 @@ class _NotificationItemState extends State<_NotificationItem> {
           return [
             TextSpan(text: name, style: boldStyle),
             const TextSpan(text: ' commented on your reading'),
-          ];
-        case NotificationType.friendRequest:
-          return [
-            TextSpan(text: name, style: boldStyle),
-            const TextSpan(text: ' sent you a friend request'),
           ];
         case NotificationType.nudge:
           return [

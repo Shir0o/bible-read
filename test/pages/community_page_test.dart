@@ -1,5 +1,4 @@
 import 'package:bible_read/pages/community_page.dart';
-import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
 import 'package:bible_read/services/reading_status_service.dart';
@@ -21,7 +20,6 @@ void main() {
   late MockFirebaseAuth auth;
   late _RecordingVibrationService vibration;
   late GroupService groupService;
-  late FriendService friendService;
   late ReadingPlanService readingPlanService;
   late ReadingStatusService readingStatusService;
 
@@ -37,7 +35,6 @@ void main() {
     );
     vibration = _RecordingVibrationService();
     groupService = GroupService(firestore: firestore);
-    friendService = FriendService(firestore: firestore);
     readingPlanService = ReadingPlanService(firestore: firestore);
     readingStatusService = ReadingStatusService(
       firestore: firestore,
@@ -52,7 +49,6 @@ void main() {
           auth: auth,
           firestore: firestore,
           groupService: groupService,
-          friendService: friendService,
           readingPlanService: readingPlanService,
           readingStatusService: readingStatusService,
           vibrationService: vibration,

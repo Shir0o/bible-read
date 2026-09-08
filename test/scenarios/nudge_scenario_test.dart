@@ -6,9 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:bible_read/pages/group_members_page.dart';
 import 'package:bible_read/models/group.dart';
-import 'package:bible_read/services/friend_service.dart';
+import 'package:bible_read/services/nudge_service.dart';
 import 'package:bible_read/services/group_service.dart';
-import 'package:bible_read/services/notification_service.dart';
 import 'package:network_image_mock/network_image_mock.dart';
 import '../helpers/firebase_seeder.dart';
 import '../helpers/stub_vibration_service.dart';
@@ -22,7 +21,7 @@ void main() {
   late FakeFirebaseFirestore firestore;
   late MockFirebaseAuth auth;
   late GroupService groupService;
-  late FriendService friendService;
+  late NudgeService nudgeService;
   late FirebaseSeeder seeder;
   late StubVibrationService vibration;
   final sentTo = <String>[];
@@ -34,9 +33,8 @@ void main() {
       signedIn: true,
     );
     groupService = GroupService(firestore: firestore);
-    friendService = FriendService(
+    nudgeService = NudgeService(
       firestore: firestore,
-      notificationService: NotificationService(firestore: firestore),
       sendNudgeNotificationFn: ({
         required String fromUid,
         required String toUid,
@@ -80,7 +78,7 @@ void main() {
           home: GroupMembersPage(
             group: const Group(id: 'g1', name: 'Genesis', ownerUid: 'alice'),
             groupService: groupService,
-            friendService: friendService,
+            nudgeService: nudgeService,
             auth: auth,
             vibrationService: vibration,
             currentDate: DateTime(2026, 9, 8),

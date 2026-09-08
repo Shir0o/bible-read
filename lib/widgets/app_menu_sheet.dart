@@ -12,7 +12,6 @@ import '../models/app_notification.dart';
 import '../services/admin_role_service.dart';
 import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
-import '../services/friend_service.dart';
 import 'animated_page_route.dart';
 import '../pages/notification_center_page.dart';
 import '../services/notification_service.dart';
@@ -138,7 +137,6 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
                 auth: auth,
                 firestore: firestore,
                 googleSignInProvider: createGoogleSignIn,
-                friendService: FriendService(firestore: firestore),
                 vibrationService: widget.vibrationService,
               ),
             ),
@@ -161,7 +159,6 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
           );
         },
       ),
-      _MenuItem(icon: Icons.people_outline, label: 'Friends', index: 4),
       _MenuItem(
         icon: Icons.emoji_events_outlined,
         label: 'Challenges',
@@ -240,7 +237,6 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
 
   List<_MenuItem> _buildFallbackMenuList() {
     return [
-      _MenuItem(icon: Icons.people_outline, label: 'Friends', index: 4),
       _MenuItem(
         icon: Icons.bug_report_outlined,
         label: 'Feedback',
@@ -417,7 +413,7 @@ class _ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final user = auth?.currentUser;
-    final name = user?.displayName ?? 'Friend';
+    final name = user?.displayName ?? 'Reader';
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
     return Padding(

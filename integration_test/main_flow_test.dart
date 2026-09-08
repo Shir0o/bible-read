@@ -72,11 +72,10 @@ void main() {
     // Verify some menu items
     expect(find.text('Profile'), findsOneWidget);
     expect(find.text('Challenges'), findsOneWidget);
-    expect(find.text('Friends'), findsOneWidget);
 
-    // Tap Friends in menu
-    await tester.tap(find.text('Friends'));
+    // Tap Challenges in menu
+    await tester.tap(find.text('Challenges'));
     await tester.pumpAndSettle();
-    expect(find.text('Friends'), findsAtLeast(1));
+    expect(find.text('Challenges'), findsAtLeast(1));
   });
 }
