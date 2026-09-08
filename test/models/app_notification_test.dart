@@ -9,7 +9,7 @@ void main() {
     test('fromFirestore parses data', () {
       final date = DateTime(2024, 1, 1);
       final notif = AppNotification.fromFirestore('n1', {
-        'type': 'comment',
+        'type': 'amen',
         'fromUid': 'u1',
         'senderUid': 'u2',
         'message': 'hi',
@@ -17,7 +17,7 @@ void main() {
         'read': true,
       });
       expect(notif.id, 'n1');
-      expect(notif.type, NotificationType.comment);
+      expect(notif.type, NotificationType.amen);
       expect(notif.fromUid, 'u1');
       expect(notif.senderUid, 'u2');
       expect(notif.message, 'hi');
@@ -31,7 +31,7 @@ void main() {
         'timestamp': 'bad',
         'read': 'no',
       });
-      expect(notif.type, NotificationType.like);
+      expect(notif.type, NotificationType.amen);
       expect(notif.fromUid, isNull);
       expect(notif.senderUid, isNull);
       expect(notif.message, isNull);
@@ -43,7 +43,7 @@ void main() {
       final date = DateTime(2024, 1, 1);
       final notif = AppNotification(
         id: 'n1',
-        type: NotificationType.comment,
+        type: NotificationType.amen,
         fromUid: 'u1',
         senderUid: 'u2',
         message: 'hi',
@@ -52,7 +52,7 @@ void main() {
       );
       final map = notif.toFirestore();
       expect(map, {
-        'type': 'comment',
+        'type': 'amen',
         'fromUid': 'u1',
         'senderUid': 'u2',
         'message': 'hi',
@@ -65,13 +65,13 @@ void main() {
       final date = DateTime(2024, 1, 1);
       final notif = AppNotification(
         id: 'n1',
-        type: NotificationType.like,
+        type: NotificationType.amen,
         timestamp: date,
         read: false,
       );
       final map = notif.toFirestore();
       expect(map, {
-        'type': 'like',
+        'type': 'amen',
         'timestamp': Timestamp.fromDate(date),
         'read': false,
       });

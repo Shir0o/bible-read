@@ -129,67 +129,6 @@ process.env.ADMIN_UID = 'admin1';
 
 describe('other cloud functions', () => {
   afterEach(() => utils.invalidateUserCache());
-  it('sendCommentNotification sends message', async () => {
-    const originalFirestore = admin.firestore;
-    const originalMessaging = admin.messaging;
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: () => ({
-            doc: () => ({ get: async () => ({ exists: false }) })
-          }),
-          get: async () => ({ data: () => ({ fcmToken: 'tokC' }) })
-        })
-      })
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    let sent;
-    Object.defineProperty(admin, 'firestore', {value: fakeFirestore, configurable: true, writable: true});
-    Object.defineProperty(admin, 'messaging', {value: () => ({ send: async (msg) => { sent = msg; } }), configurable: true, writable: true});
-
-    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
-    await wrapped({ data: { ownerUid: 'u1', commenterName: 'Bob' }, auth: { uid: 'u2' } });
-
-    assert.equal(sent.token, 'tokC');
-    assert.match(sent.notification.body, /Bob/);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
-  });
-
-  it('sendCommentNotification handles messaging error', async () => {
-    const originalFirestore = admin.firestore;
-    const originalMessaging = admin.messaging;
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: () => ({ doc: () => ({ get: async () => ({ exists: false }) }) }),
-          get: async () => ({ data: () => ({ fcmToken: 'tokErr' }) })
-        })
-      })
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-    Object.defineProperty(admin, 'messaging', {
-      value: () => ({ send: async () => { throw new Error('boom'); } }),
-      configurable: true,
-      writable: true
-    });
-
-    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
-    try {
-      await wrapped({ data: { ownerUid: 'u1', commenterName: 'Bob' }, auth: { uid: 'u2' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'internal');
-      assert.match(err.message, /Failed to send comment notification/);
-    }
-
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
-  });
-
   it('sendNudgeNotification logs and sends', async () => {
     const originalFirestore = admin.firestore;
     const originalMessaging = admin.messaging;
@@ -219,8 +158,8 @@ describe('other cloud functions', () => {
     assert.equal(res.alreadySent, false);
     assert.equal(captured.token, 'tokN');
     assert.ok(logSet);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendNudgeNotification handles messaging error', async () => {
@@ -260,8 +199,8 @@ describe('other cloud functions', () => {
     }
 
     assert.ok(!logSet); // should fail before log set
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendNudgeNotification never touches friend collections', async () => {
@@ -300,7 +239,7 @@ describe('other cloud functions', () => {
     assert.equal(res.alreadySent, false);
     const joined = touched.join(',');
     assert.ok(!joined.includes('friend'), `nudge path touched: ${joined}`);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
 
   it('sendNudgeNotification dedupe is per recipient, not per group', async () => {
@@ -347,39 +286,8 @@ describe('other cloud functions', () => {
     await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
     await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
     assert.equal(sends, 1);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
-});
-
-
-  it('sendCommentNotification returns when disabled', async () => {
-    const originalFirestore = admin.firestore;
-    const originalMessaging = admin.messaging;
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: () => ({
-            doc: () => ({ get: async () => ({ exists: true, data: () => ({ enabled: false }) }) })
-          }),
-          get: async () => ({ data: () => ({ fcmToken: 'tokC' }) })
-        })
-      })
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    let sent = false;
-    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: () => ({ send: async () => { sent = true; } }), configurable: true, writable: true });
-
-    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
-    const res = await wrapped({ data: { ownerUid: 'u1', commenterName: 'Bob' }, auth: { uid: 'u2' } });
-    assert.equal(res, undefined);
-    assert.equal(sent, false);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
-  });
-
-
   it('sendLikeNotification invalid data', async () => {
     const wrapped = functionsTest.wrap(myFunctions.sendLikeNotification);
     try {
@@ -413,8 +321,8 @@ describe('other cloud functions', () => {
     const res = await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
     assert.equal(res.alreadySent, false);
     assert.ok(setLog);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendNudgeNotification already nudged today', async () => {
@@ -447,8 +355,8 @@ describe('other cloud functions', () => {
     const res = await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
     assert.equal(res.alreadySent, true);
     assert.equal(captured, undefined);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: () => ({ send: async () => {} }), writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: () => ({ send: async () => {} }), writable: true, configurable: true });
   });
 
   it('sendNudgeNotification skips if already read today', async () => {
@@ -490,8 +398,8 @@ describe('other cloud functions', () => {
     assert.equal(res.alreadyRead, true);
     assert.equal(captured, undefined);
     assert.equal(sent, false);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendNudgeNotification timestamp object without toDate', async () => {
@@ -523,8 +431,8 @@ describe('other cloud functions', () => {
     assert.equal(res.alreadySent, false);
     assert.equal(captured.token, 'tokNA');
     assert.ok(logSet);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendLikeNotification missing data', async () => {
@@ -534,16 +442,6 @@ describe('other cloud functions', () => {
       assert.fail('expected error');
     } catch (err) {
       assert.match(err.message, /invalid-argument/);
-    }
-  });
-
-  it('sendCommentNotification unauthenticated', async () => {
-    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
-    try {
-      await wrapped({ data: { ownerUid: 'u1', commenterName: 'Bob' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'unauthenticated');
     }
   });
 
@@ -571,8 +469,8 @@ describe('other cloud functions', () => {
     await wrapped({ displayName: 'x', uid: 'u1' });
     assert.equal(warned, false);
     process.env.ADMIN_UID = originalAdminUid;
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendLikeNotification auth required', async () => {
@@ -601,38 +499,7 @@ describe('other cloud functions', () => {
     const wrapped = functionsTest.wrap(myFunctions.sendLikeNotification);
     const res = await wrapped({ data: { ownerUid: 'u1', likerName: 'Bob' }, auth: { uid: 'u2' } });
     assert.equal(res, undefined);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  });
-
-  it('sendCommentNotification invalid args', async () => {
-    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
-    try {
-      await wrapped({ data: { ownerUid: 'u1' }, auth: { uid: 'u2' } });
-      assert.fail('expected error');
-    } catch (err) {
-      assert.equal(err.code, 'invalid-argument');
-    }
-  });
-
-  it('sendCommentNotification no token', async () => {
-    const originalFirestore = admin.firestore;
-    let sent = false;
-    const fakeDb = {
-      collection: () => ({
-        doc: () => ({
-          collection: () => ({ doc: () => ({ get: async () => ({ exists: false }), set: async () => {} }) }),
-          get: async () => ({ data: () => ({}) })
-        })
-      })
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: () => ({ send: async () => { sent = true; } }), configurable: true, writable: true });
-    const wrapped = functionsTest.wrap(myFunctions.sendCommentNotification);
-    await wrapped({ data: { ownerUid: 'u1', commenterName: 'Bob' }, auth: { uid: 'u2' } });
-    assert.equal(sent, false);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
 
   it('sendNudgeNotification unauthenticated', async () => {
@@ -664,7 +531,7 @@ describe('other cloud functions', () => {
     const res = await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
     assert.equal(res.alreadySent, false);
     assert.equal(sent, false);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
 
   it('sendSignupNotification missing token', async () => {
@@ -678,7 +545,7 @@ describe('other cloud functions', () => {
     const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
     await wrapped({ displayName: 'User', uid: 'u1' });
     assert.equal(warned, false);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
 
   it('sendSignupNotification falls back to email', async () => {
@@ -693,8 +560,8 @@ describe('other cloud functions', () => {
     const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
     await wrapped({ email: 'a@b.c', uid: 'u1' });
     assert.match(captured.notification.body, /a@b.c/);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendSignupNotification uses default name', async () => {
@@ -709,8 +576,8 @@ describe('other cloud functions', () => {
     const wrapped = functionsTest.wrap(myFunctions.sendSignupNotification);
     await wrapped({ uid: 'u3' });
     assert.match(captured.notification.body, /New user/);
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('sendLikeNotification in production', async () => {
@@ -733,9 +600,11 @@ describe('other cloud functions', () => {
     const wrapped = functionsTest.wrap(myFunctions.sendLikeNotification);
     await wrapped({ data: { ownerUid: 'u1', likerName: 'Bob' }, auth: { uid: 'u2' } });
     assert.equal(sent.token, 'tokP');
-    process.env.NODE_ENV = env;
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    assert.equal(sent.notification.title, '📖 Amen on Your Reading!');
+    assert.equal(sent.notification.body, 'Bob said Amen to your reading.');
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
+});
 
 after(() => {
   admin.initializeApp = originalInit;

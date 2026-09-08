@@ -71,7 +71,7 @@ void main() {
         uid,
         AppNotification(
           id: '1',
-          type: NotificationType.like,
+          type: NotificationType.amen,
           fromUid: 'user2',
           message: 'User 2 liked your reading',
           timestamp: DateTime.now(),
@@ -84,9 +84,9 @@ void main() {
         uid,
         AppNotification(
           id: '2',
-          type: NotificationType.comment,
+          type: NotificationType.amen,
           fromUid: 'user3',
-          message: 'User 3 commented',
+          message: 'User 3 said Amen',
           timestamp: DateTime.now().subtract(const Duration(days: 2)),
           read: true,
         ),
@@ -108,10 +108,10 @@ void main() {
         find.text('User 2 liked your reading', findRichText: true),
         findsOneWidget,
       );
-      // user3 not seeded, so name defaults to "Someone" but message is "User 3 commented".
-      // _buildTextSpans checks if message starts with name. "User 3 commented".startsWith("Someone") is false.
+      // user3 not seeded, so name defaults to "Someone" but message is "User 3 said Amen".
+      // _buildTextSpans checks if message starts with name. "User 3 said Amen".startsWith("Someone") is false.
       // So it renders raw message.
-      expect(find.text('User 3 commented', findRichText: true), findsOneWidget);
+      expect(find.text('User 3 said Amen', findRichText: true), findsOneWidget);
     });
 
     testWidgets('Mark all as read calls service', (tester) async {
@@ -121,7 +121,7 @@ void main() {
         uid,
         AppNotification(
           id: '1',
-          type: NotificationType.like,
+          type: NotificationType.amen,
           read: false,
           timestamp: DateTime.now(),
         ),

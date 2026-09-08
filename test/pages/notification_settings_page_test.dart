@@ -27,7 +27,7 @@ void main() {
         .collection('users')
         .doc('u1')
         .collection('notificationPrefs')
-        .doc('like')
+        .doc('amen')
         .set({'enabled': false});
     await firestore
         .collection('users')
@@ -50,10 +50,9 @@ void main() {
     await tester.pumpAndSettle();
 
     const labels = [
-      'Like Notifications',
+      'Amen Notifications',
       'Nudge Notifications',
       'Signup Alerts',
-      'Comment Notifications',
       'Group Join Request Notifications',
       'Group Schedule Update Notifications',
       'Group Invite Notifications',
@@ -65,18 +64,18 @@ void main() {
     }
 
     final likeSwitch = tester.widget<SwitchListTile>(
-      find.widgetWithText(SwitchListTile, 'Like Notifications'),
+      find.widgetWithText(SwitchListTile, 'Amen Notifications'),
     );
     expect(likeSwitch.value, isFalse);
 
-    await tester.tap(find.widgetWithText(SwitchListTile, 'Like Notifications'));
+    await tester.tap(find.widgetWithText(SwitchListTile, 'Amen Notifications'));
     await tester.pumpAndSettle();
 
     final doc = await firestore
         .collection('users')
         .doc('u1')
         .collection('notificationPrefs')
-        .doc('like')
+        .doc('amen')
         .get();
     expect(doc.data()?['enabled'], true);
 

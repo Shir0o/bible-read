@@ -45,7 +45,7 @@ class AppNotification {
     final typeName = data['type'] as String?;
     final type = NotificationType.values.firstWhere(
       (t) => t.name == typeName,
-      orElse: () => NotificationType.like,
+      orElse: () => NotificationType.amen,
     );
     final ts = data['timestamp'];
     return AppNotification(

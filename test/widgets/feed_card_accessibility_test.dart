@@ -11,7 +11,6 @@ void main() {
       name: 'Bob',
       liked: true, // Test liked state
       likeNames: const [],
-      comments: const [],
     );
 
     await tester.pumpWidget(
@@ -22,42 +21,38 @@ void main() {
       ),
     );
 
-    // 1. Check "Encourage" button semantics
+    // 1. Check "Amen" button semantics
     // We look for the Semantics widget we explicitly added.
-    // It should have label "Encourage" and selected: true.
-    final encourageSemanticsFinder = find.byWidgetPredicate((widget) {
+    // It should have label "Amen" and selected: true.
+    final amenSemanticsFinder = find.byWidgetPredicate((widget) {
       if (widget is Semantics) {
-        return widget.properties.label == 'Encourage' &&
+        return widget.properties.label == 'Amen' &&
             widget.properties.selected == true;
       }
       return false;
     });
 
-    expect(encourageSemanticsFinder, findsOneWidget);
+    expect(amenSemanticsFinder, findsOneWidget);
 
-    final encourageNode = tester.getSemantics(encourageSemanticsFinder);
-    final encourageData = encourageNode.getSemanticsData();
+    final amenNode = tester.getSemantics(amenSemanticsFinder);
+    final amenData = amenNode.getSemanticsData();
 
     // We expect it to have button flag
     // ignore: deprecated_member_use
     expect(
-      encourageData.hasFlag(SemanticsFlag.isButton),
+      amenData.hasFlag(SemanticsFlag.isButton),
       isTrue,
-      reason: 'Encourage should be a button',
+      reason: 'Amen should be a button',
     );
-    // We expect it to be enabled
-    // ignore: deprecated_member_use
     expect(
-      encourageData.hasFlag(SemanticsFlag.isEnabled),
+      amenData.hasFlag(SemanticsFlag.isEnabled),
       isTrue,
-      reason: 'Encourage should be enabled',
+      reason: 'Amen should be enabled',
     );
-    // We expect it to be selected (because liked=true)
-    // ignore: deprecated_member_use
     expect(
-      encourageData.hasFlag(SemanticsFlag.isSelected),
+      amenData.hasFlag(SemanticsFlag.isSelected),
       isTrue,
-      reason: 'Encourage should be selected',
+      reason: 'Amen should be selected',
     );
 
     expect(find.text('Comment'), findsNothing);
@@ -70,7 +65,6 @@ void main() {
       name: 'Bob',
       liked: false,
       likeNames: const [],
-      comments: const [],
     );
 
     await tester.pumpWidget(
@@ -83,7 +77,6 @@ void main() {
 
     expect(find.byType(TextField), findsNothing);
     expect(find.byIcon(Icons.send_rounded), findsNothing);
-    expect(find.byTooltip('Send comment'), findsNothing);
   });
 
   testWidgets('FeedCard Read today uses MergeSemantics', (tester) async {
@@ -92,7 +85,6 @@ void main() {
       name: 'Bob',
       liked: false,
       likeNames: const [],
-      comments: const [],
     );
 
     await tester.pumpWidget(

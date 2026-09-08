@@ -36,18 +36,18 @@ void main() {
     });
 
     test('updatePreference writes document and updates cache', () async {
-      await service.updatePreference('u1', NotificationType.comment, false);
+      await service.updatePreference('u1', NotificationType.amen, false);
       final doc = await firestore
           .collection('users')
           .doc('u1')
           .collection('notificationPrefs')
-          .doc('comment')
+          .doc('amen')
           .get();
       expect(doc.exists, isTrue);
       expect(doc.data()?['enabled'], false);
 
       final prefs = await service.fetchPreferences('u1');
-      expect(prefs[NotificationType.comment], isFalse);
+      expect(prefs[NotificationType.amen], isFalse);
     });
 
     test('fetchPreferences caches results', () async {
@@ -88,7 +88,7 @@ void main() {
 
       final prefs = await service.fetchPreferences('u1');
 
-      expect(prefs[NotificationType.like], isTrue);
+      expect(prefs[NotificationType.amen], isTrue);
     });
 
     test('fetchVibrationEnabled defaults to true', () async {

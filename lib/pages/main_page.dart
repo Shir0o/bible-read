@@ -38,17 +38,12 @@ typedef SendLikeNotification = Future<void> Function({
   required String ownerUid,
   required String likerName,
 });
-typedef SendCommentNotification = Future<void> Function({
-  required String ownerUid,
-  required String commenterName,
-});
 
 class MainPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
   final SendLikeNotification? sendLikeNotification;
-  final SendCommentNotification? sendCommentNotification;
   final FirebaseMessaging messaging;
   final VibrationService vibrationService;
   final ReadingStatusService? readingStatusService;
@@ -67,7 +62,6 @@ class MainPage extends StatefulWidget {
     VibrationService? vibrationService,
     this.readingStatusService,
     this.sendLikeNotification,
-    this.sendCommentNotification,
     this.appCheckFailed = false,
     this.functions,
     this.onNavigate,
@@ -402,7 +396,6 @@ class MainPageState extends State<MainPage> {
       googleSignInProvider: widget.googleSignInProvider,
       readingStatusService: widget.readingStatusService,
       sendLikeNotification: widget.sendLikeNotification,
-      sendCommentNotification: widget.sendCommentNotification,
       appCheckFailed: widget.appCheckFailed,
       onNavigate: widget.onNavigate,
     );

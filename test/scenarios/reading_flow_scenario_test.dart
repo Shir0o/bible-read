@@ -15,7 +15,6 @@ import 'package:network_image_mock/network_image_mock.dart';
 import '../helpers/pump_app.dart';
 import '../helpers/firebase_seeder.dart';
 import '../helpers/mocks.dart';
-import '../helpers/stub_vibration_service.dart';
 import '../helpers/fake_google_sign_in_platform.dart';
 
 void main() {
@@ -31,7 +30,6 @@ void main() {
       final firestore = FakeFirebaseFirestore();
       final messaging = MockFirebaseMessaging();
       final functions = MockFirebaseFunctions();
-      final vibration = StubVibrationService();
       final seeder = FirebaseSeeder(firestore);
 
       // Stub messaging
@@ -87,9 +85,6 @@ void main() {
           functions: functions,
           sendLikeNotification: (
               {required ownerUid, required likerName}) async {},
-          sendCommentNotification: (
-              {required ownerUid, required commenterName}) async {},
-          vibrationService: vibration,
           googleSignInProvider: () => MockGoogleSignIn(),
         ),
       );

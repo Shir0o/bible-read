@@ -117,7 +117,7 @@ class FeedCard extends StatelessWidget {
                 icon: isLiked
                     ? Icons.favorite_rounded
                     : Icons.favorite_border_rounded,
-                label: 'Encourage',
+                label: 'Amen',
                 color: isLiked
                     ? colorScheme.primary
                     : colorScheme.onSurfaceVariant,

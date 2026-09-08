@@ -34,7 +34,7 @@ void main() {
           .collection(NotificationCollections.notifications);
 
       await collection.doc('n1').set({
-        'type': NotificationType.like.name,
+        'type': NotificationType.amen.name,
         'timestamp': Timestamp.fromMillisecondsSinceEpoch(1),
         'read': false,
         'senderUid': 'a',
@@ -60,7 +60,7 @@ void main() {
           .collection(NotificationCollections.notifications);
 
       await collection.doc('n1').set({
-        'type': NotificationType.like.name,
+        'type': NotificationType.amen.name,
         'timestamp': Timestamp.now(),
         'read': false,
       });
@@ -107,7 +107,7 @@ void main() {
           .collection(NotificationCollections.notifications);
 
       await collection.doc('n1').set({
-        'type': NotificationType.like.name,
+        'type': NotificationType.amen.name,
         'timestamp': Timestamp.fromMillisecondsSinceEpoch(1),
       });
       await collection.doc('n2').set({

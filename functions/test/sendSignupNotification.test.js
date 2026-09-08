@@ -50,8 +50,8 @@ afterEach(() => utils.invalidateUserCache());
   assert.equal(captured.token, 'token123');
   assert.match(captured.notification.body, /Test User/);
 
-  Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-  Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+  Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+  Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('logs error when send fails', async () => {
@@ -83,8 +83,8 @@ afterEach(() => utils.invalidateUserCache());
     assert.match(log, /Failed to send signup notification/);
 
     stderrStub.restore();
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
   it('warns when ADMIN_UID is not set', async () => {
@@ -110,7 +110,7 @@ afterEach(() => utils.invalidateUserCache());
     assert.equal(sent, false);
 
     stderrStub.restore();
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
     process.env.ADMIN_UID = origEnv;
   });
 
@@ -145,8 +145,8 @@ afterEach(() => utils.invalidateUserCache());
     assert.equal(sent, false);
 
     stderrStub.restore();
-    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true });
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true });
+    Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
+    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
 
 });
