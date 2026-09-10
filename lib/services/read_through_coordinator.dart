@@ -81,6 +81,26 @@ class ReadThroughCoordinator {
     }
   }
 
+  /// Credits [day] of [planId] without announcing any completed Read-Through
+  /// (ADR-0005).
+  ///
+  /// Used by the Starting point: the day is a claim about reading done before
+  /// the app, so a Read-Through it completes must be silent, like a Backfilled
+  /// Read-Through — never a Milestone.
+  Future<void> creditPlanDaySilently({
+    required String uid,
+    required String planId,
+    required int day,
+  }) async {
+    try {
+      final plan = await planService.getPlanById(planId, userId: uid);
+      if (plan == null) return;
+      await _creditSilently(uid, _readingsForDay(plan, day));
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
+  }
+
   /// The chapter references [plan] schedules for [day].
   static List<String> _readingsForDay(ReadingPlan plan, int day) {
     for (final entry in plan.schedule) {
@@ -96,6 +116,17 @@ class ReadThroughCoordinator {
       if (result.isMilestone) {
         await announcer.announce(uid: uid, completed: result.completed);
       }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
+  }
+
+  /// Like [_credit] but never announces: the chapters are a claim about the
+  /// past (ADR-0005), so any Read-Through they complete stays silent.
+  Future<void> _creditSilently(String uid, List<String> references) async {
+    if (references.isEmpty) return;
+    try {
+      await lapService.recordChapters(uid, references);
     } catch (e, st) {
       ErrorLogger.log(e, st);
     }

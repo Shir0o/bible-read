@@ -129,6 +129,47 @@ class ReadingPlanService {
     return null;
   }
 
+  /// Starts a plan with a Starting point (ADR-0005): the reader has already
+  /// read up to [dayNumber] of this plan, so the start date shifts so that day
+  /// lands on [today], days 1..[dayNumber] are marked, and the days are
+  /// credited to coverage silently (never announced).
+  ///
+  /// Returns the shifted start date, or null when the plan has no such day.
+  Future<DateTime?> startPlanWithStartingPoint(
+    String userId,
+    String planId,
+    ReadingPlan plan, {
+    required int dayNumber,
+    required DateTime today,
+  }) async {
+    if (dayNumber < 1 || dayNumber > plan.durationDays) return null;
+
+    final startDate = DateTime(
+      today.year,
+      today.month,
+      today.day,
+    ).subtract(Duration(days: dayNumber - 1));
+
+    final completedDays = List<int>.generate(dayNumber, (i) => i + 1);
+
+    await firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .doc(planId)
+        .set(
+          UserPlanProgress(
+            planId: planId,
+            userId: userId,
+            startDate: startDate,
+            completedDays: completedDays,
+            lastReadDate: DateTime.now(),
+          ).toFirestore(),
+        );
+
+    return startDate;
+  }
+
   /// Removes a reading plan for a user.
   Future<void> leavePlan(String userId, String planId) async {
     await firestore

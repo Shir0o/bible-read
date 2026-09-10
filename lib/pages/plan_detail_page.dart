@@ -10,7 +10,9 @@ import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
 import '../services/catch_up_engine.dart';
 import '../services/plan_completion_coordinator.dart';
+import '../services/read_log_service.dart';
 import '../services/reading_plan_service.dart';
+import '../widgets/burst_undo_controller.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/schedule_preview.dart';
 import '../widgets/schedule_screen_view.dart';
@@ -44,6 +46,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   late Stream<UserPlanProgress?> _progressStream;
   Set<int>? _optimisticCompletedDays;
 
+  /// Coalesces rapid marks into one undoable burst (ADR-0005).
+  late final BurstUndoController _burstUndo;
+
   @override
   void initState() {
     super.initState();
@@ -52,12 +57,19 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       firestore: widget.firestore,
       planService: _planService,
     );
+    _burstUndo = BurstUndoController();
     final user = widget.auth.currentUser;
     if (user != null) {
       _progressStream = _planService.getPlanProgress(user.uid, widget.plan.id);
     } else {
       _progressStream = Stream.value(null);
     }
+  }
+
+  @override
+  void dispose() {
+    _burstUndo.dispose();
+    super.dispose();
   }
 
   Future<void> _startPlan() async {
@@ -251,6 +263,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
               optimisticCompletedDays: _optimisticCompletedDays,
               onToggleDay: _toggleDay,
               onStartPlan: _startPlan,
+              onMarkMonth: _markMonth,
               formatDate: _formatDate,
               formatDayOfWeek: _formatDayOfWeek,
             ),
@@ -263,8 +276,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   Future<void> _toggleDay(
     int dayNumber,
     bool wasCompleted,
-    Set<int> completedDays,
-  ) async {
+    Set<int> completedDays, {
+    bool coupleHabit = true,
+  }) async {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
@@ -297,20 +311,13 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         );
       } else {
         await _planService.markDayComplete(user.uid, widget.plan.id, dayNumber);
-        if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Day $dayNumber marked as read.'),
-              action: SnackBarAction(
-                label: 'Undo',
-                onPressed: () {
-                  _toggleDay(dayNumber, true, newCompletedDays);
-                },
-              ),
-            ),
-          );
+        // Snapshot today's habit at burst start so a burst undo can revert
+        // the habit exactly when the burst caused it (ADR-0005).
+        if (_burstUndo.count == 0) {
+          _burstUndo.habitBeforeBurst = await _isHabitRecordedToday(user);
         }
+        if (!mounted) return;
+        _burstUndo.add(context, () => _undoDay(dayNumber, newCompletedDays));
       }
     } catch (e) {
       if (mounted) {
@@ -328,13 +335,80 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
 
     // Coupling is one-directional and opt-in: finishing a plan reading may also
     // count as "showing up" for the day. Un-marking never touches the habit.
-    if (!wasCompleted && mounted) {
-      await _completionCoordinator.maybeCoupleHabit(
+    // During a burst (more than one mark) the follow-up message is folded into
+    // the burst toast, so it is suppressed here (ADR-0005).
+    if (!wasCompleted && mounted && coupleHabit) {
+      final coupled = await _completionCoordinator.maybeCoupleHabit(
         context: context,
         user: user,
-        onMessage: _showSnack,
+        onMessage: _burstUndo.count > 1 ? null : _showSnack,
+      );
+      if (coupled) _burstUndo.couplingFiredInBurst = true;
+    }
+  }
+
+  /// Whether today's habit ("showing up") is already recorded for [user].
+  Future<bool> _isHabitRecordedToday(User user) async {
+    final today = DateTime.now();
+    final dateKey = ReadLogService.dateKeyFor(today);
+    try {
+      final doc = await widget.firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('reading')
+          .doc(dateKey)
+          .get();
+      return doc.exists && doc.data()?['read'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Undoes one mark of a burst: un-marks the day and, when the burst caused
+  /// today's habit to be recorded, reverts it (ADR-0005).
+  void _undoDay(int dayNumber, Set<int> completedDays) {
+    _toggleDay(dayNumber, true, completedDays);
+    if (_burstUndo.couplingFiredInBurst && !_burstUndo.habitBeforeBurst) {
+      // Revert once per burst; later actions in the same burst skip.
+      _burstUndo.couplingFiredInBurst = false;
+      final user = widget.auth.currentUser;
+      if (user == null) return;
+      unawaited(
+        ReadLogService(firestore: widget.firestore).clear(
+          user,
+          date: DateTime.now(),
+        ),
       );
     }
+  }
+
+  /// Marks every uncompleted day of [month] up to and including today as one
+  /// burst (ADR-0005). [days] is the day numbers to mark, computed by the
+  /// content (which owns the start date). Couples the habit once, silently.
+  Future<void> _markMonth(List<int> days) async {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+    if (days.isEmpty) return;
+
+    final completed = _optimisticCompletedDays ??
+        (await _planService.getPlanProgress(user.uid, widget.plan.id).first)
+                ?.completedDays
+                .toSet() ??
+        {};
+
+    var running = Set<int>.from(completed);
+    for (final day in days) {
+      await _toggleDay(day, false, running, coupleHabit: false);
+      running = Set<int>.from(running)..add(day);
+    }
+
+    // Couple once, silently: the burst toast is the only feedback.
+    if (!mounted) return;
+    final coupled = await _completionCoordinator.maybeCoupleHabit(
+      context: context,
+      user: user,
+    );
+    if (coupled) _burstUndo.couplingFiredInBurst = true;
   }
 
   void _showSnack(String message) {
@@ -352,6 +426,7 @@ class _PlanDetailContent extends StatefulWidget {
   final Set<int>? optimisticCompletedDays;
   final Function(int, bool, Set<int>) onToggleDay;
   final VoidCallback onStartPlan;
+  final void Function(List<int> days)? onMarkMonth;
   final String Function(DateTime) formatDate;
   final String Function(DateTime) formatDayOfWeek;
 
@@ -362,6 +437,7 @@ class _PlanDetailContent extends StatefulWidget {
     this.optimisticCompletedDays,
     required this.onToggleDay,
     required this.onStartPlan,
+    this.onMarkMonth,
     required this.formatDate,
     required this.formatDayOfWeek,
   });
@@ -408,6 +484,23 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
       status: status,
       title: widget.plan.title,
       isGroup: false,
+      onMarkMonth: (month) {
+        // Days in [month] up to and including today that are still unmarked
+        // (ADR-0005 marks up to today, never ahead). Dates come from the
+        // start date, not the day number.
+        final today = DateTime.now();
+        final days = <int>[];
+        for (final day in widget.plan.schedule) {
+          final date = startDate.add(Duration(days: day.day - 1));
+          if (date.year == month.year &&
+              date.month == month.month &&
+              !date.isAfter(today) &&
+              !completedDays.contains(day.day)) {
+            days.add(day.day);
+          }
+        }
+        if (days.isNotEmpty) widget.onMarkMonth?.call(days);
+      },
       header: Padding(
         padding: const EdgeInsets.only(bottom: 4, left: 4, right: 4),
         child: Text(

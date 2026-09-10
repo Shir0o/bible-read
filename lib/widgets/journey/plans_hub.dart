@@ -758,6 +758,14 @@ class PlansHubState extends State<PlansHub> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _headerStrip(context, totalActive),
+          // The enroll CTA sits at the top of the list, right under the
+          // header, so it is never below the fold and no bottom-anchored
+          // toast can cover it (ADR-0005).
+          const SizedBox(height: 10),
+          _enrollButton(context),
+          const SizedBox(height: 10),
+          _trashShortcut(context),
+          const SizedBox(height: 16),
           if (personalActive.isNotEmpty) ...[
             _sectionHeading(
               context,
@@ -782,10 +790,6 @@ class PlansHubState extends State<PlansHub> {
           if (hasFinished) _finishedSection(context, personalDone, groupDone),
           if (_archived.isNotEmpty || _archivedGroups.isNotEmpty)
             _archivedSection(context),
-          const SizedBox(height: 22),
-          _enrollButton(context),
-          const SizedBox(height: 10),
-          _trashShortcut(context),
           const SizedBox(height: 24),
         ],
       ),

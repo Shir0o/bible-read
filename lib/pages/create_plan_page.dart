@@ -12,12 +12,14 @@ import '../models/reading_plan_progress.dart';
 import '../models/schedule_mode.dart';
 import '../services/catch_up_engine.dart';
 import '../services/group_service.dart';
+import '../services/plan_completion_coordinator.dart';
 import '../services/plan_generator.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reference_parser.dart';
 import '../services/schedule_generator.dart';
 import '../services/vibration_service.dart';
 import '../widgets/schedule_preview.dart';
+import '../widgets/start_chapter_sheet.dart';
 import 'group_detail_page.dart';
 import 'plan_detail_page.dart';
 
@@ -82,6 +84,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   final TextEditingController _groupNameController = TextEditingController();
   bool _isCreating = false;
   bool _isCustomPlanExpanded = false;
+
+  /// The reader's Starting point (ADR-0005): "I've already read up to this
+  /// chapter" when migrating an existing plan from elsewhere. Null when the
+  /// plan starts fresh. Only offered for solo plans.
+  String? _startingPointRef;
 
   static const Map<String, Map<String, List<String>>> _bookCategories = {
     'Old Testament': {
@@ -387,6 +394,23 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     }
   }
 
+  /// Asks the reader where they've already read up to (ADR-0005), reusing the
+  /// group plan's chapter picker. Resolves to a canonical "Book Chapter" ref.
+  Future<void> _pickStartingPoint() async {
+    final books = _plannedChapters();
+    if (books.isEmpty) return;
+    final currentRef = _startingPointRef ?? '${books.first} 1';
+    final picked = await showStartChapterSheet(
+      context,
+      books: books,
+      currentRef: currentRef,
+      vibrationService: widget.vibrationService,
+    );
+    if (picked != null && mounted) {
+      setState(() => _startingPointRef = picked);
+    }
+  }
+
   Future<void> _createPlan() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
@@ -428,8 +452,40 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       final plan = _buildPlan(id: '');
       final planId = await planService.saveCustomPlan(user.uid, plan);
 
-      // Auto-start the plan
-      await planService.startPlan(user.uid, planId, startDate: _startDate);
+      // Auto-start the plan. A Starting point (ADR-0005) shifts the start date
+      // so the reader's position lands on today, marks the days up to it, and
+      // credits them to coverage silently — never announced.
+      final startingPoint = _startingPointRef;
+      if (startingPoint != null) {
+        final parsed = ReferenceParser.parseChapterRef(startingPoint);
+        final dayNumber = parsed == null
+            ? null
+            : _dayNumberForChapter(plan, parsed.book, parsed.chapter);
+        if (dayNumber != null) {
+          final shifted = await planService.startPlanWithStartingPoint(
+            user.uid,
+            planId,
+            plan,
+            dayNumber: dayNumber,
+            today: DateTime.now(),
+          );
+          if (shifted != null) {
+            await PlanCompletionCoordinator(
+              firestore: widget.firestore,
+            ).creditPlanDaysSilently(
+              uid: user.uid,
+              planId: planId,
+              days: List<int>.generate(dayNumber, (i) => i + 1),
+            );
+          }
+        } else {
+          // The chapter isn't in this plan's schedule — fall back to a plain
+          // start rather than silently dropping the reader's claim.
+          await planService.startPlan(user.uid, planId, startDate: _startDate);
+        }
+      } else {
+        await planService.startPlan(user.uid, planId, startDate: _startDate);
+      }
 
       if (!mounted) return;
 
@@ -669,6 +725,22 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       case PlanType.ntOnly:
         return 'Complete the New Testament.';
     }
+  }
+
+  /// The plan day whose readings include [book] [chapter], or null when the
+  /// chapter is not scheduled in [plan].
+  int? _dayNumberForChapter(ReadingPlan plan, String book, int chapter) {
+    for (final day in plan.schedule) {
+      for (final ref in day.readings) {
+        final parsed = ReferenceParser.parseChapterRef(ref);
+        if (parsed != null &&
+            parsed.book == book &&
+            parsed.chapter == chapter) {
+          return day.day;
+        }
+      }
+    }
+    return null;
   }
 
   /// The "Who is reading?" field, answered in context after the reader has
@@ -988,6 +1060,40 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                           ],
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      const Divider(height: 1),
+                      const SizedBox(height: 16),
+
+                      // Starting point (ADR-0005): "I've already read up to
+                      // this chapter" when migrating an existing plan from
+                      // elsewhere. Shifts the start date so the position lands
+                      // on today and marks the days up to it.
+                      InkWell(
+                        onTap: _isEditing ? null : _pickStartingPoint,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.menu_book_outlined,
+                                  size: 20,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 12),
+                                const Text("I've already read up to"),
+                              ],
+                            ),
+                            Text(
+                              _startingPointRef ?? 'Start fresh',
+                              style: TextStyle(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1043,6 +1149,40 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                             ),
                             Text(
                               '${_months[_startDate.month - 1]} ${_startDate.day}, ${_startDate.year}',
+                              style: TextStyle(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(height: 1),
+                      const SizedBox(height: 16),
+
+                      // Starting point (ADR-0005): "I've already read up to
+                      // this chapter" when migrating an existing plan from
+                      // elsewhere. Shifts the start date so the position lands
+                      // on today and marks the days up to it.
+                      InkWell(
+                        onTap: _isEditing ? null : _pickStartingPoint,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.menu_book_outlined,
+                                  size: 20,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 12),
+                                const Text("I've already read up to"),
+                              ],
+                            ),
+                            Text(
+                              _startingPointRef ?? 'Start fresh',
                               style: TextStyle(
                                 color: colorScheme.primary,
                                 fontWeight: FontWeight.w600,

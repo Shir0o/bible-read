@@ -42,8 +42,9 @@ class PlanCompletionCoordinator {
   ///
   /// Throws if the underlying [ReadingPlanService.markDayComplete] write fails so
   /// callers can roll back optimistic UI; the coupling step is best-effort and
-  /// never throws.
-  Future<void> completePlanDay({
+  /// never throws. Returns whether the coupling recorded today's habit, so a
+  /// burst undo can revert it (ADR-0005).
+  Future<bool> completePlanDay({
     required BuildContext context,
     required User user,
     required String planId,
@@ -60,8 +61,8 @@ class PlanCompletionCoordinator {
       day: day,
     );
 
-    if (!context.mounted) return;
-    await maybeCoupleHabit(context: context, user: user);
+    if (!context.mounted) return false;
+    return maybeCoupleHabit(context: context, user: user);
   }
 
   /// Honors the one-directional reading→habit coupling after a reading is
@@ -69,7 +70,9 @@ class PlanCompletionCoordinator {
   ///
   /// Best-effort: failures are logged (and surfaced via [onMessage] when given)
   /// but never thrown — a reading is already recorded by the time this runs.
-  Future<void> maybeCoupleHabit({
+  /// Returns whether today's habit was recorded, so a burst undo can revert it
+  /// (ADR-0005).
+  Future<bool> maybeCoupleHabit({
     required BuildContext context,
     required User user,
     void Function(String message)? onMessage,
@@ -79,11 +82,11 @@ class PlanCompletionCoordinator {
       prefs = await preferencesService.fetchPreferences(user.uid);
     } catch (e, st) {
       ErrorLogger.log(e, st);
-      return;
+      return false;
     }
 
     if (!prefs.syncPromptAnswered) {
-      if (!context.mounted) return;
+      if (!context.mounted) return false;
       final choice = await SyncSheet.show(context);
       final linked = choice == true;
       try {
@@ -97,24 +100,50 @@ class PlanCompletionCoordinator {
           "Couldn't save your choice. We'll ask again next time.",
         );
       }
-      if (linked) await _recordHabitForToday(user, onMessage);
+      if (linked) return _recordHabitForToday(user, onMessage);
+      return false;
     } else if (prefs.autoMarkPlanRead) {
-      await _recordHabitForToday(user, onMessage);
+      return _recordHabitForToday(user, onMessage);
     }
+    return false;
   }
 
   /// Records the daily habit ("showing up") for today, equivalent to tapping
   /// "I read today" on Home. Idempotent; surfaces a gentle notice on failure.
-  Future<void> _recordHabitForToday(
+  /// Returns whether the habit was recorded.
+  Future<bool> _recordHabitForToday(
     User user,
     void Function(String message)? onMessage,
   ) async {
     try {
       await ReadLogService(firestore: firestore).mark(user);
+      return true;
     } catch (e, st) {
       ErrorLogger.log(e, st);
       onMessage?.call(
         "Saved your reading, but couldn't mark you as showing up today.",
+      );
+      return false;
+    }
+  }
+
+  /// Credits [days] of [planId] to the reader's testament laps without
+  /// announcing anything (ADR-0005).
+  ///
+  /// Used by the Starting point: the days are a claim about reading done
+  /// before the app, so any Read-Through they complete must be silent, like a
+  /// Backfilled Read-Through — never a Milestone. Best-effort, like every
+  /// credit.
+  Future<void> creditPlanDaysSilently({
+    required String uid,
+    required String planId,
+    required Iterable<int> days,
+  }) async {
+    for (final day in days) {
+      await readThroughCoordinator.creditPlanDaySilently(
+        uid: uid,
+        planId: planId,
+        day: day,
       );
     }
   }
