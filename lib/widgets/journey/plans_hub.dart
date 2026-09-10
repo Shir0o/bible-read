@@ -179,25 +179,35 @@ class PlansHubState extends State<PlansHub> {
 
       // Archived groups (#776): owned-and-archived, or participation the
       // reader shelved. Both return via the Archive rows below.
-      final archivedGroups =
-          await widget.groupService.archivedGroupsForUser(uid).timeout(
-                const Duration(seconds: 5),
-                onTimeout: () => const <Group>[],
-              );
+      List<Group> archivedGroups = const [];
+      try {
+        archivedGroups =
+            await widget.groupService.archivedGroupsForUser(uid).timeout(
+                  const Duration(seconds: 5),
+                  onTimeout: () => const <Group>[],
+                );
+      } catch (e, st) {
+        ErrorLogger.log(e, st);
+      }
 
       // Count of everything sitting in the Recently Deleted hub, so the
       // shortcut can hint there is something waiting (#776).
-      final trashedPlans =
-          await widget.readingPlanService.getDeletedPlans(uid).first.timeout(
-                const Duration(seconds: 5),
-                onTimeout: () => const <UserPlanProgress>[],
-              );
-      final trashedGroups =
-          await widget.groupService.getDeletedGroups(uid).first.timeout(
-                const Duration(seconds: 5),
-                onTimeout: () => const <Group>[],
-              );
-      final trashedCount = trashedPlans.length + trashedGroups.length;
+      int trashedCount = 0;
+      try {
+        final trashedPlans =
+            await widget.readingPlanService.getDeletedPlans(uid).first.timeout(
+                  const Duration(seconds: 5),
+                  onTimeout: () => const <UserPlanProgress>[],
+                );
+        final trashedGroups =
+            await widget.groupService.getDeletedGroups(uid).first.timeout(
+                  const Duration(seconds: 5),
+                  onTimeout: () => const <Group>[],
+                );
+        trashedCount = trashedPlans.length + trashedGroups.length;
+      } catch (e, st) {
+        ErrorLogger.log(e, st);
+      }
 
       // Group readings (the user's groups).
       final groups = await widget.groupService.groupsForUser(uid).first.timeout(
