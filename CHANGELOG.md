@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.28.1](https://github.com/Shir0o/bible-read/compare/v1.28.0...v1.28.1) (2026-09-10)
+
+
+### Bug Fixes
+
+* **plans:** hub hides newly created plans when group queries fail ([#843](https://github.com/Shir0o/bible-read/issues/843)) ([ba932fa](https://github.com/Shir0o/bible-read/commit/ba932fac35b7839e7162703fe9dc513d5f567905))
+
 ## [1.28.0](https://github.com/Shir0o/bible-read/compare/v1.27.0...v1.28.0) (2026-09-08)
 
 
