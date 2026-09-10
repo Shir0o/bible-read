@@ -24,6 +24,7 @@ import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
 
 import '../services/vibration_service.dart';
+import '../widgets/burst_undo_controller.dart';
 import '../widgets/catch_up_status_row.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
 import '../theme/app_theme.dart';
@@ -195,6 +196,9 @@ class _HomePageState extends State<HomePage>
 
   late final PlanCompletionCoordinator _completionCoordinator;
 
+  /// Coalesces rapid marks into one undoable burst (ADR-0005).
+  late final BurstUndoController _burstUndo;
+
   late final AnimationController _animationController;
 
   @override
@@ -204,6 +208,7 @@ class _HomePageState extends State<HomePage>
       firestore: widget.firestore,
       planService: widget.readingPlanService,
     );
+    _burstUndo = BurstUndoController();
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -692,9 +697,6 @@ class _HomePageState extends State<HomePage>
   /// sit on top of the payoff buttons.
   Future<void> _toggleReadStatus({bool showSnackBar = true}) async {
     if (_toggleLoading) return;
-    if (mounted) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    }
     unawaited(widget.vibrationService.mediumImpact());
     final wasRead = _readToday;
 
@@ -826,19 +828,12 @@ class _HomePageState extends State<HomePage>
       // Show a transient SnackBar with an Undo option when marked as read.
       // Skipped when confirming from the check-in page, where the sun-rise and
       // gold flood are the confirmation and the payoff buttons must stay clear.
+      // The undo is a single-mark burst: un-marking today reverts the habit
+      // itself, so no coupling revert is needed (ADR-0005).
       if (!wasRead && !_disposed && mounted && showSnackBar) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Daily reading marked as complete'),
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Undo',
-              onPressed: () {
-                _toggleReadStatus();
-              },
-            ),
-          ),
-        );
+        _burstUndo.add(context, () {
+          _toggleReadStatus();
+        });
       }
     } catch (e, st) {
       if (kDebugMode) {
@@ -929,33 +924,43 @@ class _HomePageState extends State<HomePage>
         );
       } else {
         if (!mounted) return;
-        await _completionCoordinator.completePlanDay(
+        // Snapshot today's habit at burst start so a burst undo can revert
+        // the habit exactly when the burst caused it (ADR-0005).
+        if (_burstUndo.count == 0) {
+          _burstUndo.habitBeforeBurst = await _isHabitRecordedToday(user);
+        }
+        if (!mounted) return;
+        final coupled = await _completionCoordinator.completePlanDay(
           context: context,
           user: user,
           planId: plan.id,
           day: day,
         );
+        if (coupled) _burstUndo.couplingFiredInBurst = true;
         // The coupling may have recorded the habit; refresh habit state.
         widget.readingStatusService.invalidateCache();
         unawaited(_loadReadStatus(showLoading: false));
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Day $day of "${plan.title}" marked as read.'),
-              action: SnackBarAction(
-                label: 'Undo',
-                onPressed: () {
-                  final p = _personalPlans.firstWhere(
-                    (pp) => pp.plan.id == plan.id,
-                  );
-                  _togglePlanReadingFor(p.plan, p.progress, day);
-                },
-              ),
-            ),
+        if (!mounted) return;
+        _burstUndo.add(context, () {
+          final p = _personalPlans.firstWhere(
+            (pp) => pp.plan.id == plan.id,
           );
-        }
+          _togglePlanReadingFor(p.plan, p.progress, day);
+          // Revert today's habit once when this burst caused it.
+          if (_burstUndo.couplingFiredInBurst &&
+              !_burstUndo.habitBeforeBurst) {
+            _burstUndo.couplingFiredInBurst = false;
+            final u = widget.auth.currentUser;
+            if (u == null) return;
+            unawaited(
+              ReadLogService(firestore: widget.firestore).clear(
+                u,
+                date: DateTime.now(),
+              ),
+            );
+          }
+        });
       }
     } catch (e, st) {
       if (kDebugMode) {
@@ -1028,29 +1033,36 @@ class _HomePageState extends State<HomePage>
         read: !wasRead,
       );
       if (!wasRead) {
+        // Snapshot today's habit at burst start so a burst undo can revert
+        // the habit exactly when the burst caused it (ADR-0005).
+        if (_burstUndo.count == 0) {
+          _burstUndo.habitBeforeBurst = await _isHabitRecordedToday(user);
+        }
         if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Group reading marked as complete.'),
-              action: SnackBarAction(
-                label: 'Undo',
-                onPressed: () => _toggleGroupReading(g),
-              ),
-            ),
-          );
+          _burstUndo.add(context, () {
+            _toggleGroupReading(g);
+            // Revert today's habit once when this burst caused it.
+            if (_burstUndo.couplingFiredInBurst &&
+                !_burstUndo.habitBeforeBurst) {
+              _burstUndo.couplingFiredInBurst = false;
+              final u = widget.auth.currentUser;
+              if (u == null) return;
+              unawaited(
+                ReadLogService(firestore: widget.firestore).clear(
+                  u,
+                  date: DateTime.now(),
+                ),
+              );
+            }
+          });
         }
         if (!mounted) return;
-        await _completionCoordinator.maybeCoupleHabit(
+        final coupled = await _completionCoordinator.maybeCoupleHabit(
           context: context,
           user: user,
-          onMessage: (message) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(message)));
-          },
+          onMessage: _burstUndo.count > 1 ? null : _showSnack,
         );
+        if (coupled) _burstUndo.couplingFiredInBurst = true;
         widget.readingStatusService.invalidateCache();
         unawaited(_loadReadStatus(showLoading: false));
       }
@@ -1069,6 +1081,31 @@ class _HomePageState extends State<HomePage>
         setState(() => g.markLoading = false);
       }
     }
+  }
+
+  /// Whether today's habit ("showing up") is already recorded for [user].
+  Future<bool> _isHabitRecordedToday(User user) async {
+    final today = DateTime.now();
+    final dateKey = ReadLogService.dateKeyFor(today);
+    try {
+      final doc = await widget.firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('reading')
+          .doc(dateKey)
+          .get();
+      return doc.exists && doc.data()?['read'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Shows a plain fixed SnackBar (used for coupling follow-up messages).
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// Recomputes summary data after marking today as read. Delegates to
@@ -2609,6 +2646,7 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _disposed = true;
+    _burstUndo.dispose();
     _animationController.dispose();
     _syncSub?.cancel();
     _activePlansSub?.cancel();

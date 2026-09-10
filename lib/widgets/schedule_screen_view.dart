@@ -35,6 +35,12 @@ class ScheduleScreenView extends StatefulWidget {
   /// [CatchUpStatus.entries]. Never called for done rows (forward-only).
   final void Function(int index) onToggle;
 
+  /// Invoked when a month header's "Mark month" action is tapped. [month] is
+  /// the first day of the month; the host decides which entries to mark (up to
+  /// and including today, per ADR-0005). Null hides the action (group
+  /// surfaces keep day-by-day marking).
+  final void Function(DateTime month)? onMarkMonth;
+
   /// Builds the group "with your group" anchor card for the current reading.
   /// Only used when [isGroup] and the current reading is due-and-unread. The
   /// host supplies it because member presence requires group streams.
@@ -54,6 +60,7 @@ class ScheduleScreenView extends StatefulWidget {
     required this.title,
     required this.isGroup,
     required this.onToggle,
+    this.onMarkMonth,
     this.todayAnchorBuilder,
     this.readOnly = false,
     this.header,
@@ -599,6 +606,21 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
   Widget _buildMonthRule(BuildContext context, DateTime date) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final onMarkMonth = widget.onMarkMonth;
+
+    // The action is offered only when the month has at least one entry that
+    // can still be marked: not done, and not in the future (ADR-0005 marks
+    // up to and including today, never ahead).
+    final today = DateTime.now();
+    final markable = onMarkMonth != null &&
+        widget.status.entries.any(
+          (e) =>
+              e.date.year == date.year &&
+              e.date.month == date.month &&
+              !e.completed &&
+              !e.date.isAfter(today),
+        );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(2, 16, 2, 12),
       child: Row(
@@ -612,6 +634,23 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
           ),
           const SizedBox(width: 12),
           Expanded(child: Divider(color: colorScheme.outlineVariant)),
+          if (markable) ...[
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: () => onMarkMonth(date),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Text(
+                  'Mark month',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

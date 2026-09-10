@@ -172,3 +172,11 @@ the app as it is. See `docs/community_journey_ia.md`,
   rail and every user-facing string use the new names; internal class names
   (`CommunityPage`, `JourneyPage`, the `journey/` widgets directory) may lag.
   Nothing the reader sees still says "Community" or "Journey".
+- **Starting point**: The position a Plan begins from when the reader has
+  already read ahead of the plan's start — entered once at creation when
+  migrating an existing plan from elsewhere. It marks the plan's days up to
+  that position as Shown up without touching the habit or streak, and any
+  Read-Through it completes is silent, like a Backfilled Read-Through. The
+  relation to Catch-up is the same as Backfilled Read-Through to Detected:
+  a claim about reading done before the app, entered by hand, never announced.
+  _Avoid_: Head start, "read up to", backfill (reserved for Read-Throughs)

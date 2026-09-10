@@ -8,7 +8,9 @@ import '../models/group.dart';
 import '../models/group_schedule.dart';
 import '../services/group_service.dart';
 import '../services/plan_completion_coordinator.dart';
+import '../services/read_log_service.dart';
 import '../services/vibration_service.dart';
+import '../widgets/burst_undo_controller.dart';
 
 class GroupCatchUpPage extends StatefulWidget {
   final Group group;
@@ -39,9 +41,13 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
   PlanCompletionCoordinator get _completionCoordinator => _coordinator ??=
       PlanCompletionCoordinator(firestore: FirebaseFirestore.instance);
 
+  /// Coalesces rapid marks into one undoable burst (ADR-0005).
+  late final BurstUndoController _burstUndo;
+
   @override
   void initState() {
     super.initState();
+    _burstUndo = BurstUndoController();
     _scheduleStream = widget.groupService.schedule(widget.group.id);
     final user = widget.auth.currentUser;
     if (user != null) {
@@ -52,6 +58,12 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
     } else {
       _progressStream = Stream.value({});
     }
+  }
+
+  @override
+  void dispose() {
+    _burstUndo.dispose();
+    super.dispose();
   }
 
   String _formatDate(DateTime date) {
@@ -124,28 +136,61 @@ class _GroupCatchUpPageState extends State<GroupCatchUpPage> {
     // one-directional reading→habit coupling (asks once via SyncSheet, then
     // respects the saved setting). Un-marking never touches the habit (chat20).
     if (!isRead) {
-      await _completionCoordinator.maybeCoupleHabit(
+      // Snapshot today's habit at burst start so a burst undo can revert
+      // the habit exactly when the burst caused it (ADR-0005).
+      if (_burstUndo.count == 0) {
+        _burstUndo.habitBeforeBurst = await _isHabitRecordedToday(user);
+      }
+      if (mounted) {
+        _burstUndo.add(context, () {
+          _handleToggle(schedule, true);
+          // Revert today's habit once when this burst caused it.
+          if (_burstUndo.couplingFiredInBurst &&
+              !_burstUndo.habitBeforeBurst) {
+            _burstUndo.couplingFiredInBurst = false;
+            final u = widget.auth.currentUser;
+            if (u == null) return;
+            unawaited(
+              ReadLogService(firestore: widget.groupService.firestore).clear(
+                u,
+                date: DateTime.now(),
+              ),
+            );
+          }
+        });
+      }
+      if (!mounted) return;
+      final coupled = await _completionCoordinator.maybeCoupleHabit(
         context: context,
         user: user,
-        onMessage: (message) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message)));
-        },
+        onMessage: _burstUndo.count > 1 ? null : _showSnack,
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Group reading marked as complete.'),
-            action: SnackBarAction(
-              label: 'Undo',
-              onPressed: () => _handleToggle(schedule, true),
-            ),
-          ),
-        );
-      }
+      if (coupled) _burstUndo.couplingFiredInBurst = true;
+    }
+  }
+
+  /// Shows a plain fixed SnackBar (used for coupling follow-up messages).
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Whether today's habit ("showing up") is already recorded for [user].
+  Future<bool> _isHabitRecordedToday(User user) async {
+    final today = DateTime.now();
+    final dateKey = ReadLogService.dateKeyFor(today);
+    try {
+      final doc = await widget.groupService.firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('reading')
+          .doc(dateKey)
+          .get();
+      return doc.exists && doc.data()?['read'] == true;
+    } catch (_) {
+      return false;
     }
   }
 
