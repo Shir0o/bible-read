@@ -75,6 +75,13 @@ void main() {
           vibrationService: const VibrationService(),
           bibleProgressService: _StubBibleProgressService(),
           dateProvider: () => today,
+          // The status service defaults to DateTime.now; freeze it to the
+          // seeded date so "today" matches the seeded read doc.
+          readingStatusService: ReadingStatusService(
+            firestore: firestore,
+            auth: auth,
+            nowProvider: () => today,
+          ),
         ),
       ),
     );
