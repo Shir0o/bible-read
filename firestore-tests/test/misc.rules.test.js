@@ -53,6 +53,16 @@ describe('custom_plans', () => {
     );
   });
 
+  // The app's saveCustomPlan writes with an auto-generated document id
+  // (collection.add), where `resource` is null on create — the rule must not
+  // dereference it. Regression for "new plan is not saving".
+  it('lets a user create a plan with an auto-generated id', async () => {
+    const carol = await asUser('carol');
+    await assertSucceeds(
+      carol.collection('custom_plans').add({ userId: 'carol', name: 'Carol plan' }),
+    );
+  });
+
   it('lets the owner read their plan and denies other users', async () => {
     const alice = await asUser('alice');
     const bob = await asUser('bob');

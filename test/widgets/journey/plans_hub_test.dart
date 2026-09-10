@@ -1,5 +1,6 @@
 import 'package:bible_read/pages/adjust_pace_page.dart';
 import 'package:bible_read/pages/create_plan_page.dart';
+import 'package:bible_read/models/group.dart';
 import 'package:bible_read/models/reading_plan.dart';
 import 'package:bible_read/widgets/journey/plans_hub.dart';
 import 'package:bible_read/services/group_service.dart';
@@ -17,6 +18,16 @@ class _StubVibrationService extends VibrationService {
   Future<void> lightImpact() async {}
   @override
   Future<void> mediumImpact() async {}
+}
+
+// Simulates a group query failing in production (e.g. a missing composite
+// index): the hub must still render the personal plans it already loaded.
+class _ThrowingGroupService extends GroupService {
+  _ThrowingGroupService({required super.firestore});
+  @override
+  Future<List<Group>> archivedGroupsForUser(String uid) async {
+    throw Exception('simulated missing index');
+  }
 }
 
 // A two-day plan starting today, so it is active (not yet complete).
@@ -82,6 +93,21 @@ void main() {
 
     expect(find.text('Continue'), findsOneWidget);
     expect(find.text('Enroll in a new plan'), findsOneWidget);
+  });
+
+  testWidgets(
+      'a failing group query does not hide the personal plans '
+      'already loaded', (tester) async {
+    // Regression: PlansHub._load() used to abort on the first group query
+    // error (missing index in production) and discard the personal plans it
+    // had already fetched — the hub showed "No active plans yet" right after
+    // a plan was created.
+    groupService = _ThrowingGroupService(firestore: firestore);
+    await pumpPage(tester);
+
+    expect(find.text('On your own'), findsOneWidget);
+    expect(find.text('Morning Light'), findsOneWidget);
+    expect(find.text('No active plans yet'), findsNothing);
   });
 
   testWidgets('pinning a plan persists it as the Home primary', (tester) async {

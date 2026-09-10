@@ -401,10 +401,11 @@ service cloud.firestore {
   }
   // 📖 Custom Reading Plans
   match /custom_plans/{planId} {
-    allow read, write: if request.auth != null && (
-      request.auth.uid == resource.data.userId || 
-      request.auth.uid == request.resource.data.userId
-    );
+    // Split read/write so `create` never dereferences `resource` (null on
+    // create — a null deref fails the whole rule closed in production).
+    allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+    allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
   }
   }
 }
