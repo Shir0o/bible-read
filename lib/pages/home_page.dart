@@ -69,6 +69,7 @@ class HomePage extends StatefulWidget {
             ReadingStatusService(
               firestore: firestore ?? FirebaseFirestore.instance,
               auth: auth ?? FirebaseAuth.instance,
+              dateProvider: dateProvider,
             ),
         readingPlanService = readingPlanService ??
             ReadingPlanService(
