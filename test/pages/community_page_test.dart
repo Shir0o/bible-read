@@ -123,4 +123,42 @@ void main() {
     // The dead "Manage" passthrough is gone with the hero.
     expect(find.text('Manage'), findsNothing);
   });
+
+  testWidgets('filter chips have shrinkWrap and centered label',
+      (tester) async {
+    await firestore.collection('groups').doc('g1').set({
+      'name': 'My Group',
+      'ownerUid': 'u1',
+      'memberCount': 2,
+    });
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u1')
+        .set({
+      'uid': 'u1',
+      'role': 'owner',
+      'name': 'Test User',
+    });
+
+    await pumpPage(tester);
+
+    final everyoneChipFinder = find.widgetWithText(FilterChip, 'Everyone');
+    expect(everyoneChipFinder, findsOneWidget);
+    final filterChip = tester.widget<FilterChip>(everyoneChipFinder);
+    expect(filterChip.materialTapTargetSize, MaterialTapTargetSize.shrinkWrap);
+    expect(filterChip.padding, EdgeInsets.zero);
+
+    final chipBox = tester.renderObject<RenderBox>(everyoneChipFinder);
+    final textBox = tester.renderObject<RenderBox>(find.text('Everyone'));
+    final chipTop = chipBox.localToGlobal(Offset.zero).dy;
+    final textTop = textBox.localToGlobal(Offset.zero).dy;
+    final chipBottom = chipTop + chipBox.size.height;
+    final textBottom = textTop + textBox.size.height;
+
+    final topDiff = (textTop - chipTop).abs();
+    final bottomDiff = (chipBottom - textBottom).abs();
+    expect((topDiff - bottomDiff).abs(), lessThanOrEqualTo(1.0));
+  });
 }

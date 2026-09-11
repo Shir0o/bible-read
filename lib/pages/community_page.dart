@@ -206,30 +206,58 @@ class _GroupFilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final colors = AppColors.of(context);
+
+    Widget buildChip({
+      required String label,
+      required bool selected,
+      required VoidCallback onTap,
+    }) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: FilterChip(
+          label: Text(label),
+          selected: selected,
+          showCheckmark: false,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          padding: EdgeInsets.zero,
+          labelPadding: const EdgeInsets.symmetric(horizontal: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          side: BorderSide(
+            color: selected ? colors.primaryLine : colors.border,
+          ),
+          selectedColor: colors.primarySoft,
+          backgroundColor: Colors.transparent,
+          labelStyle: theme.textTheme.labelMedium?.copyWith(
+            color:
+                selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+          onSelected: (_) => onTap(),
+        ),
+      );
+    }
+
     return SizedBox(
-      height: 36,
+      height: 34,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: const Text('Everyone'),
-              selected: selectedId == null,
-              showCheckmark: false,
-              onSelected: (_) => onSelected(null),
-            ),
+          buildChip(
+            label: 'Everyone',
+            selected: selectedId == null,
+            onTap: () => onSelected(null),
           ),
           for (final group in groups)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(group.name),
-                selected: selectedId == group.id,
-                showCheckmark: false,
-                onSelected: (_) => onSelected(group.id),
-              ),
+            buildChip(
+              label: group.name,
+              selected: selectedId == group.id,
+              onTap: () => onSelected(group.id),
             ),
         ],
       ),

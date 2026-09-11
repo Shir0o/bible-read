@@ -250,11 +250,11 @@ class ReadingPlanService {
         .doc(userId)
         .collection('plan_progress')
         .where('isArchived', isEqualTo: false)
-        .where('deletedAt', isNull: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
           .map((doc) => UserPlanProgress.fromFirestore(doc))
+          .where((p) => p.deletedAt == null)
           .toList();
     });
   }
@@ -267,11 +267,11 @@ class ReadingPlanService {
         .doc(userId)
         .collection('plan_progress')
         .where('isArchived', isEqualTo: true)
-        .where('deletedAt', isNull: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
           .map((doc) => UserPlanProgress.fromFirestore(doc))
+          .where((p) => p.deletedAt == null)
           .toList();
     });
   }
