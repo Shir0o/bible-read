@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 import '../models/user_preferences.dart';
 import '../theme/app_theme.dart';
+import '../services/apple_sign_in_service.dart';
 import '../services/error_logger.dart';
 import '../services/feedback_service.dart';
 import '../services/notification_preferences_service.dart';
@@ -16,6 +17,7 @@ import '../services/google_sign_in_factory.dart';
 import '../services/vibration_service.dart';
 import '../widgets/animated_action_button.dart';
 import '../widgets/animated_page_route.dart';
+import '../widgets/auth/apple_sign_in_button.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/sub_header.dart';
 import '../widgets/vibration_button.dart';
@@ -28,6 +30,7 @@ import 'signup_page.dart';
 class SettingsPage extends StatefulWidget {
   final GoogleSignInAccount? user;
   final GoogleSignIn Function() googleSignInProvider;
+  final AppleSignInService appleSignInService;
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final UserPreferencesService? userPreferencesService;
@@ -39,6 +42,7 @@ class SettingsPage extends StatefulWidget {
     Key? key,
     GoogleSignInAccount? user,
     GoogleSignIn Function()? googleSignInProvider,
+    AppleSignInService? appleSignInService,
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     UserPreferencesService? userPreferencesService,
@@ -52,6 +56,11 @@ class SettingsPage extends StatefulWidget {
       key: key,
       user: user,
       googleSignInProvider: googleSignInProvider ?? createGoogleSignIn,
+      appleSignInService: appleSignInService ??
+          DefaultAppleSignInService(
+            auth: authInstance,
+            firestore: fs,
+          ),
       auth: authInstance,
       firestore: fs,
       userPreferencesService: userPreferencesService,
@@ -66,6 +75,7 @@ class SettingsPage extends StatefulWidget {
     super.key,
     this.user,
     required this.googleSignInProvider,
+    required this.appleSignInService,
     required this.auth,
     required this.firestore,
     this.userPreferencesService,
@@ -212,6 +222,38 @@ class SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _handleAppleSignIn() async {
+    if (_isSigningIn) return;
+
+    setState(() {
+      _isSigningIn = true;
+    });
+
+    try {
+      final credential = await widget.appleSignInService.signIn();
+      if (credential == null) {
+        // Cancelled by user
+        return;
+      }
+      if (mounted) {
+        final page = widget.mainPageBuilder?.call(context) ?? MainPage();
+        Navigator.of(context).pushReplacement(animatedPageRoute(page));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSigningIn = false;
+        });
+      }
+    }
+  }
+
   Future<void> _handleSignOut() async {
     if (_isSigningOut) return;
 
@@ -291,7 +333,12 @@ class SettingsPageState extends State<SettingsPage> {
       // 1. Clean up personal Firestore data
       final userDoc = widget.firestore.collection('users').doc(uid);
       try {
-        final collections = ['summary', 'settings', 'plan_progress', 'reflections'];
+        final collections = [
+          'summary',
+          'settings',
+          'plan_progress',
+          'reflections'
+        ];
         for (final col in collections) {
           final snap = await userDoc.collection(col).get();
           for (final doc in snap.docs) {
@@ -340,7 +387,8 @@ class SettingsPageState extends State<SettingsPage> {
         if (e.code == 'requires-recent-login') {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Please sign out and sign in again before deleting your account for security.'),
+              content: Text(
+                  'Please sign out and sign in again before deleting your account for security.'),
             ),
           );
         } else {
@@ -383,6 +431,15 @@ class SettingsPageState extends State<SettingsPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (widget.appleSignInService.isSupported) ...[
+              AppleSignInButton(
+                service: widget.appleSignInService,
+                onPressed: _handleAppleSignIn,
+                height: 48,
+                cornerRadius: 12,
+              ),
+              const SizedBox(height: 8),
+            ],
             AnimatedActionButton(
               onPressed: _handleSignIn,
               isLoading: _isSigningIn,

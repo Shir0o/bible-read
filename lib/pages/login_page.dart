@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/signup_page.dart';
+import 'package:bible_read/services/apple_sign_in_service.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/theme/app_theme.dart';
 import 'package:bible_read/widgets/animated_page_route.dart';
+import 'package:bible_read/widgets/auth/apple_sign_in_button.dart';
 import 'package:bible_read/widgets/auth/auth_background.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -20,6 +22,7 @@ class LoginPage extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final GoogleSignIn Function() googleSignInProvider;
+  final AppleSignInService appleSignInService;
   final VibrationService vibrationService;
   final BaseCacheManager? cacheManager;
   final Widget Function(BuildContext)? mainPageBuilder;
@@ -29,12 +32,18 @@ class LoginPage extends StatefulWidget {
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     GoogleSignIn Function()? googleSignInProvider,
+    AppleSignInService? appleSignInService,
     VibrationService? vibrationService,
     this.cacheManager,
     this.mainPageBuilder,
   })  : auth = auth ?? FirebaseAuth.instance,
         firestore = firestore ?? FirebaseFirestore.instance,
         googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+        appleSignInService = appleSignInService ??
+            DefaultAppleSignInService(
+              auth: auth,
+              firestore: firestore,
+            ),
         vibrationService = vibrationService ?? const VibrationService();
 
   @override
@@ -49,6 +58,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible = false;
   bool _loading = false;
   bool _isGoogleSigningIn = false;
+  bool _isAppleSigningIn = false;
 
   @override
   void dispose() {
@@ -199,6 +209,56 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) {
         setState(() {
           _isGoogleSigningIn = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    if (_loading || _isGoogleSigningIn || _isAppleSigningIn) return;
+
+    setState(() {
+      _isAppleSigningIn = true;
+    });
+
+    unawaited(widget.vibrationService.lightImpact());
+
+    try {
+      final credential = await widget.appleSignInService.signIn();
+      if (credential == null) {
+        // Cancelled by user
+        return;
+      }
+
+      if (mounted) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: widget.mainPageBuilder ??
+                  (_) => MainPage(
+                        auth: widget.auth,
+                        firestore: widget.firestore,
+                        googleSignInProvider: widget.googleSignInProvider,
+                        vibrationService: widget.vibrationService,
+                      ),
+            ),
+            (route) => false,
+          );
+        }
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAppleSigningIn = false;
         });
       }
     }
@@ -488,6 +548,14 @@ class _LoginPageState extends State<LoginPage> {
                           ],
                         ),
                       ),
+
+                      if (widget.appleSignInService.isSupported) ...[
+                        AppleSignInButton(
+                          service: widget.appleSignInService,
+                          onPressed: _handleAppleSignIn,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
 
                       // Continue with Google Button
                       SizedBox(
