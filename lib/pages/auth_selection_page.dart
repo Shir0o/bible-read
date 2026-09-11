@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/signup_page.dart';
+import 'package:bible_read/services/apple_sign_in_service.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/widgets/animated_page_route.dart';
+import 'package:bible_read/widgets/auth/apple_sign_in_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -20,6 +22,7 @@ class AuthSelectionPage extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final GoogleSignIn Function() googleSignInProvider;
+  final AppleSignInService appleSignInService;
   final VibrationService vibrationService;
   final Widget Function(BuildContext)? mainPageBuilder;
 
@@ -28,11 +31,17 @@ class AuthSelectionPage extends StatefulWidget {
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     GoogleSignIn Function()? googleSignInProvider,
+    AppleSignInService? appleSignInService,
     VibrationService? vibrationService,
     this.mainPageBuilder,
   })  : auth = auth ?? FirebaseAuth.instance,
         firestore = firestore ?? FirebaseFirestore.instance,
         googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
+        appleSignInService = appleSignInService ??
+            DefaultAppleSignInService(
+              auth: auth,
+              firestore: firestore,
+            ),
         vibrationService = vibrationService ?? const VibrationService();
 
   @override
@@ -77,6 +86,36 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
             context,
           ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
         }
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSigningIn = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    if (_isSigningIn) return;
+
+    setState(() {
+      _isSigningIn = true;
+    });
+
+    unawaited(widget.vibrationService.lightImpact());
+
+    try {
+      final credential = await widget.appleSignInService.signIn();
+      if (credential == null) {
+        // User cancelled Apple sign-in
+        return;
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
       }
     } finally {
       if (mounted) {
@@ -132,7 +171,13 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              if (widget.appleSignInService.isSupported) ...[
+                AppleSignInButton(
+                  service: widget.appleSignInService,
+                  onPressed: _handleAppleSignIn,
+                ),
+                const SizedBox(height: 12),
+              ],
 
               // Continue with Google Button
               SizedBox(

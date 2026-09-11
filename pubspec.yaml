@@ -32,6 +32,8 @@ dependencies:
   dynamic_color: ^1.7.0
   google_fonts: ^6.3.3
   url_launcher: ^6.3.2
+  sign_in_with_apple: ^8.2.0
+  crypto: ^3.0.7
 dev_dependencies:
   flutter_test:
     sdk: flutter
