@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import '../services/catch_up_engine.dart';
 
 /// Faithful port of the design prototype's `ScheduleScreen` body
-/// (`schedule.jsx`), shared by the group `FullSchedulePage` and the personal
-/// `PlanDetailPage`.
+/// (`schedule.jsx`), used by `PlanDetailPage` for both group and personal plans.
 ///
 /// Renders, top to bottom: a summary card (name + pace + progress meter + date
 /// range + a "Jump to current" chip shown only when caught up), an optional

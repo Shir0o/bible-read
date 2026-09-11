@@ -23,11 +23,10 @@ import '../widgets/catch_up_status_row.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/vibration_button.dart';
 import 'edit_group_page.dart';
-import 'full_schedule_page.dart';
 import 'group_join_requests_page.dart';
 import 'group_members_page.dart';
+import 'plan_detail_page.dart';
 import 'share_code_page.dart';
-import 'group_catch_up_page.dart';
 
 typedef GroupDatePicker = Future<DateTime?> Function({
   required BuildContext context,
@@ -55,6 +54,7 @@ class GroupDetailPage extends StatefulWidget {
 
   /// Aggregates completed chapters across joined groups.
   final BibleProgressService bibleProgressService;
+
   /// Date to consider as "today" (for testing).
   final DateTime? currentDate;
 
@@ -540,8 +540,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         builder: (_) => GroupMembersPage(
                           group: widget.group,
                           groupService: widget.groupService,
-                          nudgeService:
-                              NudgeService(firestore: widget.groupService.firestore),
+                          nudgeService: NudgeService(
+                              firestore: widget.groupService.firestore),
                           auth: widget.auth,
                           vibrationService: widget.vibrationService,
                           currentDate: widget.currentDate,
@@ -736,10 +736,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         groupService: widget.groupService,
                         currentDate: _now,
                       ),
-                      if (isMember) ...[
-                        const SizedBox(height: 24),
-                        _buildLogProgressButton(context),
-                      ],
                     ],
                   );
                 },
@@ -780,7 +776,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             unawaited(widget.vibrationService.lightImpact());
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => FullSchedulePage(
+                builder: (_) => PlanDetailPage(
                   group: widget.group,
                   groupService: widget.groupService,
                   auth: widget.auth,
@@ -793,40 +789,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildLogProgressButton(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          unawaited(widget.vibrationService.lightImpact());
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => GroupCatchUpPage(
-                group: widget.group,
-                groupService: widget.groupService,
-                auth: widget.auth,
-                vibrationService: widget.vibrationService,
-              ),
-            ),
-          );
-        },
-        icon: const Icon(Icons.history_rounded),
-        label: const Text('Log Progress'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.primaryContainer,
-          foregroundColor: colorScheme.onPrimaryContainer,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          textStyle: theme.textTheme.titleMedium?.copyWith(fontSize: 16),
-        ),
-      ),
     );
   }
 }
