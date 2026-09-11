@@ -17,7 +17,7 @@ This assessment audits the entire user-facing surface of the application, verifi
 1. **In-App Account Deletion (Mandatory Store Requirement)**:
    - Added a permanent "Delete Account" action tile to `SettingsPage` under an "Account" section.
    - Implemented an irreversible confirmation dialog detailing data destruction.
-   - Wired cascading personal data wipe across Firestore collections (`summary`, `settings`, `plan_progress`, `reflections`, `users/{uid}`), group membership removal (`groups/{groupId}/members/{uid}`), and `FirebaseAuth` user deletion.
+   - Wired cascading personal data deletion across Firestore collections (`summary`, `settings`, `plan_progress`, `reflections`, `users/{uid}`), group membership removal (`groups/{groupId}/members/{uid}`), and `FirebaseAuth` user deletion.
    - Added handling for `requires-recent-login` re-authentication challenges.
    - Recorded architectural justification in [`docs/adr/0006-in-app-account-deletion.md`](adr/0006-in-app-account-deletion.md).
 2. **Version String Correction**:
@@ -105,7 +105,18 @@ This assessment audits the entire user-facing surface of the application, verifi
 
 ---
 
-## 4. Pre-Flight Submission Runbook
+## 4. Identified Issues & Remediation Matrix
+
+| Severity | Issue | Impact | Status / Remediation |
+| :---: | :--- | :--- | :--- |
+| **P0** | Missing In-App Account Deletion | Immediate App Store & Google Play rejection | **RESOLVED**: Added in-app Delete Account tile in Settings with confirmation dialog, Firestore cascading cleanup, and auth deletion. |
+| **P1** | Apple Sign-In Parity (Guideline 4.8) | Rejection risk on iOS App Store review if Google Sign-In is offered | **PLANNED FOR IOS SUBMISSION**: Google Play does not enforce this rule. Add Sign in with Apple before iOS App Store submission. |
+| **P2** | Settings hardcoded version string | Version mismatch confusion between UI (`v1.0`) and listing (`v1.28.1`) | **RESOLVED**: Updated string to `v1.28.1` matching `pubspec.yaml`. |
+| **P2** | Firestore cleanup ordering on re-auth | If auth deletion throws `requires-recent-login`, user docs are already purged | **RECOMMENDED FOLLOW-UP**: Re-authenticate the user *before* initiating personal data deletion. |
+
+---
+
+## 5. Pre-Flight Submission Runbook
 
 ### Step 1: Pre-Submission Review Credentials
 Configure the review account in Google Play Console (under **App Access → All or some functionality is restricted**) and App Store Connect (under **App Review Information**):
