@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.30.0](https://github.com/Shir0o/bible-read/compare/v1.29.0...v1.30.0) (2026-09-11)
+
+
+### Features
+
+* **auth:** implement Sign in with Apple UI and service ([#848](https://github.com/Shir0o/bible-read/issues/848)) ([#851](https://github.com/Shir0o/bible-read/issues/851)) ([40258a7](https://github.com/Shir0o/bible-read/commit/40258a767369b5dd096427832112002e4a225345))
+
 ## [1.29.0](https://github.com/Shir0o/bible-read/compare/v1.28.1...v1.29.0) (2026-09-11)
 
 
