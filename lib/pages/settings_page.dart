@@ -337,7 +337,7 @@ class SettingsPageState extends State<SettingsPage> {
           'summary',
           'settings',
           'plan_progress',
-          'reflections'
+          'reflections',
         ];
         for (final col in collections) {
           final snap = await userDoc.collection(col).get();
@@ -388,7 +388,8 @@ class SettingsPageState extends State<SettingsPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                  'Please sign out and sign in again before deleting your account for security.'),
+                'Please sign out and sign in again before deleting your account for security.',
+              ),
             ),
           );
         } else {

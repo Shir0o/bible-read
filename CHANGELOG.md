@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.29.0](https://github.com/Shir0o/bible-read/compare/v1.28.1...v1.29.0) (2026-09-11)
+
+
+### Features
+
+* add Google Play compliant account deletion page ([8c70548](https://github.com/Shir0o/bible-read/commit/8c70548b3c4f186287aea4586993f80255cab106))
+* add privacy policy page for GitHub Pages ([6367673](https://github.com/Shir0o/bible-read/commit/6367673787c29b213239d3ee7f17b6144fb50c16))
+* **compliance:** in-app account deletion, pre-submission assessment report & test driver ([#847](https://github.com/Shir0o/bible-read/issues/847)) ([#849](https://github.com/Shir0o/bible-read/issues/849)) ([67a0a31](https://github.com/Shir0o/bible-read/commit/67a0a3157b366f506ad94e6821a8bbb0f5f27eff))
+* **plans:** burst undo, month marking, and Starting point ([#844](https://github.com/Shir0o/bible-read/issues/844)) ([7a9ae93](https://github.com/Shir0o/bible-read/commit/7a9ae93b652f4baf02dc596ed04736427640339f))
+
+
+### Bug Fixes
+
+* update privacy policy contact email ([f4a45e2](https://github.com/Shir0o/bible-read/commit/f4a45e2a6c526d9b73aa399340130893355d3ce3))
+
 ## [1.28.1](https://github.com/Shir0o/bible-read/compare/v1.28.0...v1.28.1) (2026-09-10)
 
 
