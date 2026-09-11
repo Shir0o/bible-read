@@ -53,7 +53,8 @@ class _ReadLogViewState extends State<ReadLogView>
   bool _loading = true;
   bool _loadError = false;
   bool _readToday = true; // Default to true to show list skeleton
-  StreamSubscription<List<QueryDocumentSnapshot<Map<String, dynamic>>>>? _logsSub;
+  StreamSubscription<List<QueryDocumentSnapshot<Map<String, dynamic>>>>?
+      _logsSub;
 
   Future<void> _sendAmenNotification({
     required String ownerUid,
@@ -204,8 +205,7 @@ class _ReadLogViewState extends State<ReadLogView>
       }
     } else {
       // Amen.
-      final updatedNames = List<String>.from(original.likeNames)
-        ..add(amenName);
+      final updatedNames = List<String>.from(original.likeNames)..add(amenName);
       setState(() {
         _logs[index] = original.copyWith(liked: true, likeNames: updatedNames);
       });

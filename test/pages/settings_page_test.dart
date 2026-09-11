@@ -263,7 +263,8 @@ void main() {
     });
   });
 
-  testWidgets('delete account button shows confirmation dialog', (tester) async {
+  testWidgets('delete account button shows confirmation dialog',
+      (tester) async {
     await mockNetworkImagesFor(() async {
       final firestore = FakeFirebaseFirestore();
       final auth = MockFirebaseAuth(

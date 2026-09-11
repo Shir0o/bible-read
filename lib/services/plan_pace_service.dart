@@ -33,17 +33,14 @@ class PlanPaceService {
     required List<GroupSchedule> adjusted,
   }) async {
     final updated = PlanPace.withAdjustedSchedule(plan, startDate, adjusted);
-    await firestore
-        .collection('custom_plans')
-        .doc(plan.id)
-        .set(
-          {
-            ...updated.toJson(),
-            'userId': uid,
-            'updatedAt': FieldValue.serverTimestamp(),
-          },
-          SetOptions(merge: true),
-        );
+    await firestore.collection('custom_plans').doc(plan.id).set(
+      {
+        ...updated.toJson(),
+        'userId': uid,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
   }
 
   /// Begin again for a personal plan: re-anchors the schedule so day one is

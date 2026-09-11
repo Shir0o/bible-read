@@ -77,8 +77,7 @@ class MilestoneAnnouncer {
       // One entry per Group the reader belongs to (ADR-0004). A reader with
       // no Groups announces nothing here — their marking still lands through
       // ReadLogService.mark, which owns the plain presence entry.
-      final groupIds = _groupIdsResolver?.call() ??
-          await _resolveGroupIds(uid);
+      final groupIds = _groupIdsResolver?.call() ?? await _resolveGroupIds(uid);
       if (groupIds.isEmpty) return;
 
       final batch = firestore.batch();

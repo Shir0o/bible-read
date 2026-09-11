@@ -95,8 +95,7 @@ void main() {
         tester,
         completed: [
           row(ReadThroughScope.oldTestament),
-          row(ReadThroughScope.wholeBible,
-              source: ReadThroughSource.derived),
+          row(ReadThroughScope.wholeBible, source: ReadThroughSource.derived),
         ],
         counts: const ReadThroughCounts(oldTestament: 1, newTestament: 1),
       );

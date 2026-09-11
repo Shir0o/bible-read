@@ -203,8 +203,7 @@ class PlanPace {
           readings: day.chapters,
         ),
     ]..sort((a, b) => a.day.compareTo(b.day));
-    final lastDay =
-        schedule.isEmpty ? plan.durationDays : schedule.last.day;
+    final lastDay = schedule.isEmpty ? plan.durationDays : schedule.last.day;
     return plan.copyWith(schedule: schedule, durationDays: lastDay);
   }
 }

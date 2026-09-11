@@ -24,7 +24,8 @@ void main() {
       firestore: firestore,
       readThroughService: readThroughs,
     );
-    coordinator = ReadThroughCoordinator(firestore: firestore, lapService: laps);
+    coordinator =
+        ReadThroughCoordinator(firestore: firestore, lapService: laps);
   });
 
   group('group reading', () {

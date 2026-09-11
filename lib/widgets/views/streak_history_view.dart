@@ -265,10 +265,7 @@ class _StreakHistoryViewState extends State<StreakHistoryView>
       final groupIds = await service.groupIdsFor(uid);
       final perDay = await Future.wait([
         for (final key in fallbackKeys)
-          service
-              .entriesForGroups(groupIds, dateKey: key)
-              .first
-              .timeout(
+          service.entriesForGroups(groupIds, dateKey: key).first.timeout(
                 const Duration(seconds: 5),
                 onTimeout: () => const <String>[],
               ),

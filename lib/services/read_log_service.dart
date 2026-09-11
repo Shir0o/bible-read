@@ -222,21 +222,23 @@ class ReadLogService {
     required String dateKey,
   }) {
     if (groupIds.isEmpty) {
-      return Stream.value(const <QueryDocumentSnapshot<Map<String, dynamic>>>[]);
+      return Stream.value(
+          const <QueryDocumentSnapshot<Map<String, dynamic>>>[]);
     }
 
     return Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>>.multi(
       (controller) {
-        final latest = <String,
-            Map<String, QueryDocumentSnapshot<Map<String, dynamic>>>>{
-          for (final id in groupIds) id: <String,
-              QueryDocumentSnapshot<Map<String, dynamic>>>{},
+        final latest =
+            <String, Map<String, QueryDocumentSnapshot<Map<String, dynamic>>>>{
+          for (final id in groupIds)
+            id: <String, QueryDocumentSnapshot<Map<String, dynamic>>>{},
         };
         final reported = <String>{};
 
         void emit() {
           if (controller.isClosed) return;
-          final merged = <String, QueryDocumentSnapshot<Map<String, dynamic>>>{};
+          final merged =
+              <String, QueryDocumentSnapshot<Map<String, dynamic>>>{};
           for (final docs in latest.values) {
             for (final entry in docs.entries) {
               merged.putIfAbsent(entry.key, () => entry.value);
@@ -244,6 +246,7 @@ class ReadLogService {
           }
           controller.add(merged.values.toList());
         }
+
         final subs =
             <StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>[];
         for (final groupId in groupIds) {

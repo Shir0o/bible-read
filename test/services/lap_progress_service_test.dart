@@ -51,7 +51,8 @@ void main() {
       });
     });
 
-    test('an over-long chapter clamps to the end of the book, as the '
+    test(
+        'an over-long chapter clamps to the end of the book, as the '
         'reference parser has always done', () async {
       final result = await laps.recordChapters(uid, ['Genesis 999']);
 
@@ -129,7 +130,8 @@ void main() {
       expect(counts.wholeBible, 1);
     });
 
-    test('finishing the whole Bible in one marking completes both testaments '
+    test(
+        'finishing the whole Bible in one marking completes both testaments '
         'and derives the Bible', () async {
       final result = await laps.recordChapters(
         uid,

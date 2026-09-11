@@ -110,112 +110,112 @@ void main() {
   }
 
   testWidgets(
-    'Nudge Scenario: a co-member with no friendship can be nudged, '
-    'and only once per day', (tester) async {
-      // Alice and Bob share Group g1; no friendship documents exist.
-      await seeder.seedUser(uid: 'alice', name: 'Alice');
-      await seeder.seedUser(uid: 'bob', name: 'Bob');
-      await seeder.seedGroup(
-        groupId: 'g1',
-        ownerUid: 'alice',
-        members: ['bob'],
-      );
+      'Nudge Scenario: a co-member with no friendship can be nudged, '
+      'and only once per day', (tester) async {
+    // Alice and Bob share Group g1; no friendship documents exist.
+    await seeder.seedUser(uid: 'alice', name: 'Alice');
+    await seeder.seedUser(uid: 'bob', name: 'Bob');
+    await seeder.seedGroup(
+      groupId: 'g1',
+      ownerUid: 'alice',
+      members: ['bob'],
+    );
 
-      await seedMemberName('g1', 'bob', 'Bob');
+    await seedMemberName('g1', 'bob', 'Bob');
 
-      await pumpMembersPage(tester);
+    await pumpMembersPage(tester);
 
-      // Bob has not read today, so his row carries the Nudge chip — no
-      // friendship gate anywhere on the path.
-      expect(find.text('Bob'), findsOneWidget);
-      await sendNudge(tester);
+    // Bob has not read today, so his row carries the Nudge chip — no
+    // friendship gate anywhere on the path.
+    expect(find.text('Bob'), findsOneWidget);
+    await sendNudge(tester);
 
-      expect(find.text('Nudge sent to Bob'), findsOneWidget);
-      expect(sentTo, ['bob']);
+    expect(find.text('Nudge sent to Bob'), findsOneWidget);
+    expect(sentTo, ['bob']);
 
-      // The callable was asked exactly once for Bob; the once-per-day
-      // ledger is written under Alice's own nudges subcollection.
-      final ledger = await firestore
-          .collection('users')
-          .doc('alice')
-          .collection('nudges')
-          .get();
-      expect(ledger.docs.map((d) => d.id), ['bob']);
-    });
-
-  testWidgets(
-    'Nudge Scenario: a second nudge the same day is refused with '
-    'gentle copy', (tester) async {
-      await seeder.seedUser(uid: 'alice', name: 'Alice');
-      await seeder.seedUser(uid: 'bob', name: 'Bob');
-      await seeder.seedGroup(
-        groupId: 'g1',
-        ownerUid: 'alice',
-        members: ['bob'],
-      );
-      await seedMemberName('g1', 'bob', 'Bob');
-
-      // Alice already nudged Bob earlier today.
-      final now = DateTime(2026, 9, 8);
-      await firestore
-          .collection('users')
-          .doc('alice')
-          .collection('nudges')
-          .doc('bob')
-          .set({
-        'timestamp': Timestamp.fromDate(now.add(const Duration(hours: 1))),
-      });
-
-      await pumpMembersPage(tester);
-
-      final callsBeforeSheet = List<String>.from(sentTo);
-      await tester.tap(find.text('Nudge'));
-      await tester.pumpAndSettle();
-
-      // Sending reports already-sent without calling the callable again.
-      await tester.tap(find.text('Send nudge'));
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('already nudged Bob'), findsOneWidget);
-      expect(find.text('Nudge sent to Bob'), findsNothing);
-      expect(sentTo, callsBeforeSheet);
-      expect(sentTo, isEmpty);
-    });
+    // The callable was asked exactly once for Bob; the once-per-day
+    // ledger is written under Alice's own nudges subcollection.
+    final ledger = await firestore
+        .collection('users')
+        .doc('alice')
+        .collection('nudges')
+        .get();
+    expect(ledger.docs.map((d) => d.id), ['bob']);
+  });
 
   testWidgets(
-    'Nudge Scenario: a co-member shared through two Groups is nudged '
-    'once, not once per Group', (tester) async {
-      // Bob is in both of Alice's Groups; a Nudge is person-to-person, so
-      // the recipient ledger has a single entry regardless of Group count.
-      await seeder.seedUser(uid: 'alice', name: 'Alice');
-      await seeder.seedUser(uid: 'bob', name: 'Bob');
-      await seeder.seedGroup(
-        groupId: 'g1',
-        ownerUid: 'alice',
-        members: ['bob'],
-      );
-      await seeder.seedGroup(
-        groupId: 'g2',
-        ownerUid: 'alice',
-        name: 'Psalms',
-        members: ['bob'],
-      );
+      'Nudge Scenario: a second nudge the same day is refused with '
+      'gentle copy', (tester) async {
+    await seeder.seedUser(uid: 'alice', name: 'Alice');
+    await seeder.seedUser(uid: 'bob', name: 'Bob');
+    await seeder.seedGroup(
+      groupId: 'g1',
+      ownerUid: 'alice',
+      members: ['bob'],
+    );
+    await seedMemberName('g1', 'bob', 'Bob');
 
-      await seedMemberName('g1', 'bob', 'Bob');
-      await seedMemberName('g2', 'bob', 'Bob');
-
-      await pumpMembersPage(tester);
-      await sendNudge(tester);
-
-      expect(find.text('Nudge sent to Bob'), findsOneWidget);
-      expect(sentTo, ['bob']);
-
-      final ledger = await firestore
-          .collection('users')
-          .doc('alice')
-          .collection('nudges')
-          .get();
-      // One recipient document — keyed by recipient, no group dimension.
-      expect(ledger.docs.map((d) => d.id), ['bob']);
+    // Alice already nudged Bob earlier today.
+    final now = DateTime(2026, 9, 8);
+    await firestore
+        .collection('users')
+        .doc('alice')
+        .collection('nudges')
+        .doc('bob')
+        .set({
+      'timestamp': Timestamp.fromDate(now.add(const Duration(hours: 1))),
     });
+
+    await pumpMembersPage(tester);
+
+    final callsBeforeSheet = List<String>.from(sentTo);
+    await tester.tap(find.text('Nudge'));
+    await tester.pumpAndSettle();
+
+    // Sending reports already-sent without calling the callable again.
+    await tester.tap(find.text('Send nudge'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('already nudged Bob'), findsOneWidget);
+    expect(find.text('Nudge sent to Bob'), findsNothing);
+    expect(sentTo, callsBeforeSheet);
+    expect(sentTo, isEmpty);
+  });
+
+  testWidgets(
+      'Nudge Scenario: a co-member shared through two Groups is nudged '
+      'once, not once per Group', (tester) async {
+    // Bob is in both of Alice's Groups; a Nudge is person-to-person, so
+    // the recipient ledger has a single entry regardless of Group count.
+    await seeder.seedUser(uid: 'alice', name: 'Alice');
+    await seeder.seedUser(uid: 'bob', name: 'Bob');
+    await seeder.seedGroup(
+      groupId: 'g1',
+      ownerUid: 'alice',
+      members: ['bob'],
+    );
+    await seeder.seedGroup(
+      groupId: 'g2',
+      ownerUid: 'alice',
+      name: 'Psalms',
+      members: ['bob'],
+    );
+
+    await seedMemberName('g1', 'bob', 'Bob');
+    await seedMemberName('g2', 'bob', 'Bob');
+
+    await pumpMembersPage(tester);
+    await sendNudge(tester);
+
+    expect(find.text('Nudge sent to Bob'), findsOneWidget);
+    expect(sentTo, ['bob']);
+
+    final ledger = await firestore
+        .collection('users')
+        .doc('alice')
+        .collection('nudges')
+        .get();
+    // One recipient document — keyed by recipient, no group dimension.
+    expect(ledger.docs.map((d) => d.id), ['bob']);
+  });
 }

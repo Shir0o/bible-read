@@ -94,9 +94,7 @@ void main() {
         date: fixedDate,
       );
 
-      final stray = await firestore
-          .collectionGroup('read_log')
-          .get();
+      final stray = await firestore.collectionGroup('read_log').get();
       expect(stray.docs, isEmpty);
     });
 
@@ -233,9 +231,9 @@ void main() {
       // The stream is live: an early event may carry only the Groups whose
       // snapshots have arrived so far, so drain until u3 (g2-only) has been
       // reported rather than asserting on the first event alone.
-      final uids = await ReadLogService(firestore: firestore)
-          .entriesForGroups(const ['g1', 'g2'], dateKey: today)
-          .firstWhere((uids) => uids.contains('u3'));
+      final uids = await ReadLogService(firestore: firestore).entriesForGroups(
+          const ['g1', 'g2'],
+          dateKey: today).firstWhere((uids) => uids.contains('u3'));
 
       // u9 seeded an entry in g1 as well — the feed shows a Group's entries;
       // narrowing to the Circle is #802's job, not the feed's.
@@ -264,17 +262,16 @@ void main() {
 
       // Drain until both Groups have reported (two distinct uids would mean
       // dedupe broke; one uid reported twice means merge failed).
-      final uids = await ReadLogService(firestore: firestore)
-          .entriesForGroups(const ['g1', 'g2'], dateKey: today)
-          .firstWhere((uids) => uids.length == 1);
+      final uids = await ReadLogService(firestore: firestore).entriesForGroups(
+          const ['g1', 'g2'],
+          dateKey: today).firstWhere((uids) => uids.length == 1);
 
       expect(uids, ['u1']);
     });
 
     test('no Groups yields an empty list, not an error', () async {
       final uids = await ReadLogService(firestore: firestore)
-          .entriesForGroups(const [], dateKey: '2025-07-15')
-          .first;
+          .entriesForGroups(const [], dateKey: '2025-07-15').first;
       expect(uids, isEmpty);
     });
 
@@ -285,8 +282,7 @@ void main() {
       final service = ReadLogService(firestore: firestore);
       final emitted = <List<String>>[];
       final sub = service
-          .entriesForGroups(const ['g1'], dateKey: today)
-          .listen(emitted.add);
+          .entriesForGroups(const ['g1'], dateKey: today).listen(emitted.add);
       await Future<void>.delayed(Duration.zero);
       // Wait for the first (empty) event.
       while (emitted.isEmpty) {
@@ -315,8 +311,7 @@ void main() {
       await seedGroup(id: 'g1', ownerUid: 'u1', members: ['u2']);
       await seedGroup(id: 'g2', ownerUid: 'u3', members: []);
 
-      final ids =
-          await ReadLogService(firestore: firestore).groupIdsFor('u2');
+      final ids = await ReadLogService(firestore: firestore).groupIdsFor('u2');
 
       expect(ids, ['g1']);
     });

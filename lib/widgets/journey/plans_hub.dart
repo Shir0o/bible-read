@@ -22,7 +22,6 @@ import '../catch_up_status_row.dart';
 import '../member_presence_stack.dart';
 import '../../pages/adjust_pace_page.dart';
 import '../../pages/create_plan_page.dart';
-import '../../pages/group_detail_page.dart';
 import '../../pages/group_members_page.dart';
 import '../../pages/plan_detail_page.dart';
 import '../../pages/recently_deleted_page.dart';
@@ -666,19 +665,6 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  void _openGroup(_GroupRow row) {
-    widget.vibrationService.lightImpact();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => GroupDetailPage(
-          group: row.group,
-          groupService: widget.groupService,
-          auth: widget.auth,
-        ),
-      ),
-    );
-  }
-
   void _manageGroup(_GroupRow row) {
     widget.vibrationService.lightImpact();
     Navigator.of(context).push(
@@ -1030,8 +1016,8 @@ class PlansHubState extends State<PlansHub> {
                 child: _primaryAction(
                   context,
                   icon: Icons.chevron_right,
-                  label: 'Read together',
-                  onTap: () => _openGroup(row),
+                  label: 'Open schedule',
+                  onTap: () => _reviewGroup(row),
                 ),
               ),
               const SizedBox(width: 9),

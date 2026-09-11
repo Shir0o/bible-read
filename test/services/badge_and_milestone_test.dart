@@ -50,11 +50,13 @@ void main() {
           lapNumber: lap,
         );
 
-    test('a detected testament is announced on that day, in every Group', () async {
+    test('a detected testament is announced on that day, in every Group',
+        () async {
       await announcer.announce(
         uid: uid,
-        completed: [row(ReadThroughScope.newTestament,
-            ReadThroughSource.detected, lap: 3)],
+        completed: [
+          row(ReadThroughScope.newTestament, ReadThroughSource.detected, lap: 3)
+        ],
         now: DateTime(2026, 9, 5),
       );
 
@@ -108,7 +110,8 @@ void main() {
       expect(await groupEntry('g2', '2026-09-05'), isNull);
     });
 
-    test('a reader with no Groups announces nothing and nothing errors', () async {
+    test('a reader with no Groups announces nothing and nothing errors',
+        () async {
       final solo = MilestoneAnnouncer(
         firestore: firestore,
         groupIdsResolver: () => const [],
@@ -122,8 +125,7 @@ void main() {
         now: DateTime(2026, 9, 5),
       );
 
-      expect((await firestore.collectionGroup('read_log').get()).docs,
-          isEmpty);
+      expect((await firestore.collectionGroup('read_log').get()).docs, isEmpty);
     });
   });
   group('FeedMilestone copy', () {
@@ -155,8 +157,7 @@ void main() {
   group('BadgeDefinition', () {
     test('remaining counts down to the next landmark', () {
       const counts = ReadThroughCounts(oldTestament: 3, newTestament: 4);
-      final five =
-          BadgeDefinition.all.firstWhere((b) => b.id == 'bible_5');
+      final five = BadgeDefinition.all.firstWhere((b) => b.id == 'bible_5');
       expect(counts.wholeBible, 3);
       expect(five.remainingFor(counts), 2);
     });
