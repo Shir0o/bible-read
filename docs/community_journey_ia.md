@@ -249,3 +249,132 @@ plan-creation entry points and keeps its two glimpses.
   optional Reflection, and the latest achievement — and most rows will be
   missing the Reflection, since sharing is opt-in and default off. The row needs
   to read well in both states.
+
+---
+
+# Second pass — what the first pass missed
+
+_Settled 2026-09-10, after a review of the shipped redesign. Every decision
+above was implemented (#786–#813). Nothing below contradicts them; it finishes
+them._
+
+## The diagnosis
+
+**The delete list above omitted `GroupsPage`.** So the new surfaces were built
+alongside the old ones instead of replacing them, and the app now carries two of
+almost everything:
+
+| Thing | Surfaces |
+|---|---|
+| A Group's schedule | `FullSchedulePage` has **7 push sites** — Today's card, the Path card's tap target, its catch-up row, the group page's progress card, the group page's catch-up row, `GroupsPage`, and the group page itself |
+| A Group | `GroupDetailPage` has **7 push sites** |
+| Marking a past reading | `PlanDetailPage`, `FullSchedulePage`, and `GroupCatchUpPage` ("Log Progress") |
+| Creating a Group | `CreatePlanPage`'s "With a group" field (#809) **and** `CreateGroupPage` behind Menu → Groups |
+| Your groups, on Circle | filter chips **and** a "Your groups" section — the spec said a filter *or* a section |
+| Re-dating a schedule | `AdjustPacePage` (personal overlay) and `EditGroupPage` → `AdjustDaysPage` (the Group's schedule), with no names to tell them apart |
+
+Two first-pass requirements also did not land:
+
+- **The empty Circle carries no actions at all** — `EmptyGroupState` is an icon,
+  "No active groups", and "Join a group to see progress here." This is the exact
+  screen the observed user failed on, and the reason this whole document exists.
+- **Path's header still reads "My Reading Plans"** — the string named in cause 2
+  of the original diagnosis.
+
+## Decisions
+
+### Path owns the plan lifecycle outright
+
+The Shared plan lives in the Path card and nowhere else. Group surfaces keep
+nothing plan-shaped: no progress card, no today's-reading card, no catch-up row,
+no pencil.
+
+`PlanDetailPage` widens to accept a Group schedule and becomes **the** schedule
+page; `FullSchedulePage` is deleted. Month-burst marking (#844) and Starting
+point stop being solo-only privileges. Today's reading card opens that one page
+whether the reading is solo or shared — the current split (solo →
+`PlanDetailPage`, group → `FullSchedulePage`) is itself a violation of "nothing
+else differs".
+
+**"Log Progress" is deleted.** Catching up is marking a past day in the
+schedule, which the schedule page already does. A dedicated page also reframes
+catching up as a chore you go and do, against the voice recorded in `CONTEXT.md`
+("growth, not failure").
+
+### Circle is people only
+
+The flat people list is the tab. The **filter chips stay** — they qualify
+*people* ("who is this person to me?"). The **"Your groups" section goes**: two
+representations of one set on one screen is the mess.
+
+The empty state gains its three actions, with the code first:
+
+> **No one here yet**
+> Your Circle is everyone you share a group with.
+> [Have a code?] · Find a group · Create a group
+
+The body line is doing domain work — it is the only place the app explains what
+a Circle *is*, and without it the title reads as a failure state rather than a
+not-yet state.
+
+### The legacy Groups surface is deleted
+
+`GroupsPage`, `AllGroupsPage`, `all_groups_view.dart` and the Menu → Groups item
+go. "Find a group" (public browse) and "Have a code?" rehome onto Circle;
+`CreateGroupPage` becomes unreachable, since `CreatePlanPage` already creates the
+Group itself.
+
+A non-member browsing a public group gets a **minimal preview sheet** — name,
+what the group is reading, member **count**, and "Request to join". No names and
+no progress: those are exactly what the approval gate protects under ADR-0003,
+and showing them before approval makes the gate decorative.
+
+### `GroupDetailPage` dies
+
+Once the plan content leaves, it is a members page with extra buttons.
+`GroupMembersPage` becomes the group page — roster, share code, join requests,
+settings — reached from the Path card's "Manage members" and from nothing else.
+"Read together" as a *destination* was the conceptual bug: reading together is
+what the Path card already shows.
+
+Notification taps carrying a `groupId` land on that Group's Path card.
+
+### Adjust pace and Reschedule are different operations
+
+**Adjust pace** is always personal; **Reschedule** is the owner re-dating the
+Group schedule for everyone. See
+[ADR-0007](adr/0007-shared-plan-schedule-is-fixed.md) and the `CONTEXT.md`
+entries. `EditGroupPage` survives, slimmed to group settings plus Reschedule,
+reached from `GroupMembersPage`. Its pencil stops saying "Edit plan".
+
+## Corrected delete list
+
+| Target | Lines | Why |
+|---|---|---|
+| `groups_page.dart` | 414 | The legacy Groups surface — the omission that caused all of this |
+| `all_groups_page.dart` + `views/all_groups_view.dart` | 285 | Public browse becomes a sheet from Circle |
+| `create_group_page.dart` | 241 | Unreachable; `CreatePlanPage:535` creates the Group |
+| `group_detail_page.dart` | 832 | `GroupMembersPage` is the group page |
+| `full_schedule_page.dart` | 542 | Merged into `PlanDetailPage` |
+| `group_catch_up_page.dart` | 342 | Catch-up is marking in the schedule |
+| `widgets/community/community_group_progress_card.dart` | 380 | Already dead — rendered by nothing |
+| `widgets/group_progress_card.dart` | 206 | Only consumer was the group page |
+| `widgets/todays_reading_card.dart` | — | Same; Today owns the reading |
+| "Groups" item, `app_menu_sheet.dart:169` | — | The doorway to the legacy surface |
+| Circle's "Your groups" section | — | Groups are the filter chips only |
+
+## To build
+
+- Widen `PlanDetailPage` to a Group schedule source; retire `FullSchedulePage`.
+- Circle empty state: the three actions and the copy above.
+- Public-group preview sheet.
+- Share code and join requests onto `GroupMembersPage`.
+- Reschedule: owner-only, consequence copy, on the slimmed `EditGroupPage`.
+- Rename Path's header off "My Reading Plans".
+- Route `groupId` notifications to the Path card.
+
+## Order
+
+The deletions land **first**, as their own change. Every issue after is then
+written against an app with one doorway per thing — which is the discipline the
+first pass lacked.
