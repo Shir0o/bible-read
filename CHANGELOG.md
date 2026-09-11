@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.30.2](https://github.com/Shir0o/bible-read/compare/v1.30.1...v1.30.2) (2026-09-11)
+
+
+### Refactoring
+
+* **groups:** delete legacy groups surface and dead references ([#854](https://github.com/Shir0o/bible-read/issues/854)) ([#864](https://github.com/Shir0o/bible-read/issues/864)) ([8c56ef0](https://github.com/Shir0o/bible-read/commit/8c56ef09da0c77f7661ff5ff01fe77cfb7dd1783))
+
 ## [1.30.1](https://github.com/Shir0o/bible-read/compare/v1.30.0...v1.30.1) (2026-09-11)
 
 
