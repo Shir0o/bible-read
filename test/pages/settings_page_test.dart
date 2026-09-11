@@ -263,6 +263,48 @@ void main() {
     });
   });
 
+  testWidgets('delete account button shows confirmation dialog', (tester) async {
+    await mockNetworkImagesFor(() async {
+      final firestore = FakeFirebaseFirestore();
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1', email: 'test@example.com'),
+        signedIn: true,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SettingsPage(
+            auth: auth,
+            firestore: firestore,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final deleteTile = find.text('Delete Account');
+      expect(deleteTile, findsOneWidget);
+
+      await tester.ensureVisible(deleteTile);
+      await tester.pumpAndSettle();
+
+      await tester.tap(deleteTile);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete Account?'), findsOneWidget);
+      expect(
+        find.textContaining('permanently delete all your reading data'),
+        findsOneWidget,
+      );
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('Delete'), findsOneWidget);
+
+      // Dismissing cancel closes dialog without error
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete Account?'), findsNothing);
+    });
+  });
+
   testWidgets('notification settings button vibrates', (tester) async {
     await mockNetworkImagesFor(() async {
       final vibration = _RecordingVibrationService();

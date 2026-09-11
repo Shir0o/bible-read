@@ -148,6 +148,16 @@ lost, unlike a Lap, which resets.
 _Avoid_: Achievement (the Firestore collection keeps that name; the reader-facing
 word is Badge), trophy, reward (reserved for Seasonal Challenges)
 
+### Account and settings
+
+**Account deletion**:
+A reader-initiated, permanent purge of their Firebase Auth identity and personal data (summary, reflections, plan progress, and group memberships). Required by App Store Guideline 5.1.1(v) and Google Play policy.
+_Avoid_: Deactivation, account wipe, unsubscribe
+
+**Pre-submission assessment**:
+An end-to-end verification pass and compliance audit of all app features, states, and store policies performed before submitting a release for review.
+_Avoid_: Smoke test, release pass
+
 
 ## Known conflict
 
