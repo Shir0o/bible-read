@@ -62,6 +62,19 @@ A group's own dated sequence of readings, separate from any member's personal
 plan overlay. A reader can be on track in one and behind in the other.
 _Avoid_: Group plan
 
+**Adjust pace**:
+A reader re-dating their own schedule after falling behind. Applies to solo and
+Shared plans alike; on a Shared plan it writes the reader's own overlay and never
+touches the Group schedule or another member's progress. Always personal — see
+[ADR-0007](docs/adr/0007-shared-plan-schedule-is-fixed.md).
+_Avoid_: Edit plan, reschedule
+
+**Reschedule**:
+An owner re-dating the Group schedule itself, for every member at once. Distinct
+from Adjust pace, which is always personal, and owner-only because it changes
+dates for people who are not in the room.
+_Avoid_: Edit plan, adjust pace, edit group plan
+
 **Group**:
 A named set of readers reading a shared schedule together, with an owner and members.
 _Avoid_: Team, cohort, and "circle" *as a name for a Group* — a Circle is a different
@@ -178,6 +191,12 @@ the app as it is. See `docs/community_journey_ia.md`,
 - **Badge is confirmed as the reader-facing word.** The redesign's specs and tickets
   were drafted saying "achievement" reader-facing; they defer to Badge, as recorded
   under Read-throughs above. The Firestore collection keeps the `achievements` name.
+- **Second pass (2026-09-10).** The first pass added the new surfaces without
+  deleting the old ones, so a Group schedule had seven entrances. Path's plan
+  card now owns the plan lifecycle outright; Circle is people only; the legacy
+  Groups surface, the group detail page and the duplicate schedule and
+  catch-up pages are deleted. See the "Second pass" section of
+  `docs/community_journey_ia.md`.
 - **The three tabs are Today / Circle / Path** (#813). The bar, the wide-layout
   rail and every user-facing string use the new names; internal class names
   (`CommunityPage`, `JourneyPage`, the `journey/` widgets directory) may lag.

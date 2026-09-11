@@ -1,0 +1,42 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",         "x": 0,    "y": 0,    "w": 390, "h": 844, "title": "Circle — empty" },
+    { "file": "CircleFull.dc.html",   "x": 470,  "y": 0,    "w": 390, "h": 844, "title": "Circle — people" },
+    { "file": "Path.dc.html",         "x": 940,  "y": 0,    "w": 390, "h": 980, "title": "Path" },
+    { "file": "Schedule.dc.html",     "x": 0,    "y": 1120, "w": 390, "h": 900, "title": "Schedule — one page" },
+    { "file": "GroupPage.dc.html",    "x": 470,  "y": 1120, "w": 390, "h": 844, "title": "Group page" },
+    { "file": "GroupPreview.dc.html", "x": 940,  "y": 1120, "w": 390, "h": 844, "title": "Public group preview" },
+    { "file": "Reschedule.dc.html",   "x": 1410, "y": 1120, "w": 390, "h": 900, "title": "Reschedule" }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 0,
+      "y": -230,
+      "w": 390,
+      "text": "Second pass — the screens the decisions change.\n\nThis empty Circle is the screen the observed user failed on. Today it has no actions at all: an icon, \"No active groups\", and one dim sentence. Code first, because these groups form in person."
+    },
+    {
+      "id": "circle-people",
+      "x": 470,
+      "y": -230,
+      "w": 390,
+      "text": "Circle is people only now.\n\nThe filter chips stay — they qualify people. The \"Your groups\" section below the list is gone; it was the second rendering of the same set, and the doorway into a whole parallel plan surface.\n\nThe Reflections tweak above the frame shows the row in both its states."
+    },
+    {
+      "id": "path-parity",
+      "x": 940,
+      "y": -230,
+      "w": 390,
+      "text": "One card shape, solo or shared.\n\nSame anatomy, same primary action, same pace control. The shared card adds members; nothing else differs — which is what the first spec decided and the build did not do.\n\n\"Open schedule\" replaces \"Read together\": the card already is reading together."
+    },
+    {
+      "id": "two-operations",
+      "x": 1410,
+      "y": 940,
+      "w": 390,
+      "text": "The pencil tooltipped \"Edit plan\" became this.\n\nOwner-only, consequence stated before the options, and an explicit way out to Adjust pace for the reader who only needs their own dates moved."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

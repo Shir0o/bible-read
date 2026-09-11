@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #6A53AD; } a:hover { color: #5B449E; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 900px; background: #F4F0E8; color: #231E2C; font-family: 'Hanken Grotesk', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="height: 44px; flex-shrink: 0"></div>
+
+  <div style="flex-shrink: 0; height: 56px; display: flex; align-items: center; gap: 4px; padding: 0 8px">
+    <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#231E2C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 L8 12 L15 19"></path></svg>
+    </div>
+    <div style="font-family: Spectral, Georgia, serif; font-size: 19px; font-weight: 500; letter-spacing: -0.2px">Reschedule</div>
+  </div>
+
+  <div style="flex: 1; padding: 8px 16px 0; overflow: hidden">
+
+    <div style="font-family: Spectral, Georgia, serif; font-size: 24px; font-weight: 500; letter-spacing: -0.3px; line-height: 1.25; text-wrap: pretty">Move the dates for Morning Crew</div>
+
+    <div style="margin-top: 16px; padding: 16px; border-radius: 22px; background: rgba(190,138,82,0.14)">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A0702F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 L21 19.5 L3 19.5 Z M12 10 L12 14 M12 16.8 L12 17"></path></svg>
+        <span style="font-size: 14px; font-weight: 600; color: #A0702F">This changes everyone's dates</span>
+      </div>
+      <div style="font-size: 13px; line-height: 1.45; color: #6C6577; margin-top: 6px; text-wrap: pretty">All 5 members follow this schedule. Their readings move too, including ones they have already marked.</div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 18px">
+
+      <div style="background: #FFFDFA; border: 1.5px solid #6A53AD; border-radius: 22px; padding: 16px; display: flex; gap: 12px">
+        <div style="width: 22px; height: 22px; flex-shrink: 0; margin-top: 1px; border-radius: 11px; border: 2px solid #6A53AD; display: flex; align-items: center; justify-content: center">
+          <div style="width: 11px; height: 11px; border-radius: 6px; background: #6A53AD"></div>
+        </div>
+        <div style="flex-grow: 1; min-width: 0">
+          <div style="font-size: 15px; font-weight: 600">Stretch the schedule</div>
+          <div style="font-size: 13px; line-height: 1.45; color: #6C6577; margin-top: 3px; text-wrap: pretty">Everything shifts later by 4 days. Finishes 14 Dec instead of 10 Dec.</div>
+        </div>
+      </div>
+
+      <div style="background: #FFFDFA; border: 1px solid #EDEAEA; border-radius: 22px; padding: 16px; display: flex; gap: 12px">
+        <div style="width: 22px; height: 22px; flex-shrink: 0; margin-top: 1px; border-radius: 11px; border: 2px solid #8C8694"></div>
+        <div style="flex-grow: 1; min-width: 0">
+          <div style="font-size: 15px; font-weight: 600">Keep the finish date</div>
+          <div style="font-size: 13px; line-height: 1.45; color: #6C6577; margin-top: 3px; text-wrap: pretty">The remaining readings spread across the days that are left. Slightly more each day.</div>
+        </div>
+      </div>
+
+      <div style="background: #FFFDFA; border: 1px solid #EDEAEA; border-radius: 22px; padding: 16px; display: flex; gap: 12px">
+        <div style="width: 22px; height: 22px; flex-shrink: 0; margin-top: 1px; border-radius: 11px; border: 2px solid #8C8694"></div>
+        <div style="flex-grow: 1; min-width: 0">
+          <div style="font-size: 15px; font-weight: 600">Begin again</div>
+          <div style="font-size: 13px; line-height: 1.45; color: #6C6577; margin-top: 3px; text-wrap: pretty">Restart from today at the original pace. Nothing already marked is lost.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="height: 1px; background: rgba(43,33,58,0.085); margin: 22px 2px"></div>
+
+    <div style="padding: 0 2px">
+      <div style="font-size: 11px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #6C6577">Only you can do this</div>
+      <div style="font-size: 14px; line-height: 1.45; color: #6C6577; margin-top: 8px; text-wrap: pretty">If it is only your own week that got away from you, <strong style="color: #231E2C; font-weight: 600">Adjust pace</strong> re-dates your copy and leaves the group's schedule alone.</div>
+      <div style="font-size: 15px; font-weight: 600; color: #6A53AD; margin-top: 12px">Adjust my pace instead</div>
+    </div>
+
+  </div>
+
+  <div style="flex-shrink: 0; padding: 16px 16px 28px">
+    <button style="width: 100%; height: 52px; border: none; border-radius: 16px; background: #6A53AD; color: #FFFFFF; font-family: 'Hanken Grotesk', system-ui, sans-serif; font-size: 15px; font-weight: 600; cursor: pointer">Reschedule for everyone</button>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
