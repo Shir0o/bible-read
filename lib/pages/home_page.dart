@@ -37,7 +37,6 @@ import '../widgets/skeleton_loader.dart';
 import '../widgets/sun_mark.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
 import 'check_in_page.dart';
-import 'full_schedule_page.dart';
 import 'plan_detail_page.dart';
 
 /// Landing page that displays reading progress and loads user data from
@@ -948,8 +947,7 @@ class _HomePageState extends State<HomePage>
           );
           _togglePlanReadingFor(p.plan, p.progress, day);
           // Revert today's habit once when this burst caused it.
-          if (_burstUndo.couplingFiredInBurst &&
-              !_burstUndo.habitBeforeBurst) {
+          if (_burstUndo.couplingFiredInBurst && !_burstUndo.habitBeforeBurst) {
             _burstUndo.couplingFiredInBurst = false;
             final u = widget.auth.currentUser;
             if (u == null) return;
@@ -1556,9 +1554,8 @@ class _HomePageState extends State<HomePage>
           const SizedBox(height: 10),
           CatchUpStatusRow(
             status: primary.status,
-            onTrackLabel: primary.isGroup
-                ? 'In step with your group'
-                : "You're on track",
+            onTrackLabel:
+                primary.isGroup ? 'In step with your group' : "You're on track",
             onTap: () => _openPrimarySchedule(primary),
           ),
         ],
@@ -1834,8 +1831,7 @@ class _HomePageState extends State<HomePage>
                     ),
                   )
                 : isRead
-                    ? _buildReadConfirmationRow(
-                        context, 'Read with your group')
+                    ? _buildReadConfirmationRow(context, 'Read with your group')
                     : FilledButton.tonalIcon(
                         onPressed:
                             g.markLoading ? null : () => _toggleGroupReading(g),
@@ -2222,7 +2218,7 @@ class _HomePageState extends State<HomePage>
     unawaited(widget.vibrationService.lightImpact());
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => FullSchedulePage(
+        builder: (_) => PlanDetailPage(
           group: g.group,
           groupService: widget.groupService,
           auth: widget.auth,

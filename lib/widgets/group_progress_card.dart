@@ -6,7 +6,7 @@ import '../models/group_schedule.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
-import '../pages/full_schedule_page.dart';
+import '../pages/plan_detail_page.dart';
 
 /// A card that displays the overall progress of a reading group.
 class GroupProgressCard extends StatelessWidget {
@@ -162,7 +162,7 @@ class GroupProgressCard extends StatelessWidget {
                       vibrationService?.lightImpact();
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => FullSchedulePage(
+                          builder: (_) => PlanDetailPage(
                             group: group!,
                             groupService: groupService,
                             auth: auth!,

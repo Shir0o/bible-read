@@ -22,7 +22,6 @@ import '../catch_up_status_row.dart';
 import '../member_presence_stack.dart';
 import '../../pages/adjust_pace_page.dart';
 import '../../pages/create_plan_page.dart';
-import '../../pages/full_schedule_page.dart';
 import '../../pages/group_detail_page.dart';
 import '../../pages/group_members_page.dart';
 import '../../pages/plan_detail_page.dart';
@@ -699,7 +698,7 @@ class PlansHubState extends State<PlansHub> {
     widget.vibrationService.lightImpact();
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => FullSchedulePage(
+        builder: (_) => PlanDetailPage(
           group: row.group,
           groupService: widget.groupService,
           auth: widget.auth,
