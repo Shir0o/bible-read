@@ -323,7 +323,7 @@ void main() {
     await tester.tap(find.byType(CircleGlyph));
     await tester.pumpAndSettle();
     // CommunityPage is shown directly
-    expect(find.text('No active groups'), findsOneWidget);
+    expect(find.text('No one here yet'), findsOneWidget);
     responsive = tester.widget<ResponsiveScaffold>(
       find.byType(ResponsiveScaffold),
     );
@@ -678,7 +678,6 @@ void main() {
     expect(userDoc.data()!.containsKey('fcmToken'), isTrue);
   });
   testWidgets('shows error page when appCheckFailed is true', (tester) async {
-
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
       signedIn: true,
@@ -777,7 +776,7 @@ void main() {
     // Navigate to a different page first
     await tester.tap(find.byType(CircleGlyph));
     await tester.pumpAndSettle();
-    expect(find.text('No active groups'), findsOneWidget);
+    expect(find.text('No one here yet'), findsOneWidget);
 
     // Go to profile through the menu and sign out
     state.navigateFromMenu(10);
