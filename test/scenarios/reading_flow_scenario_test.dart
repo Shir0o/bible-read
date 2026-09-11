@@ -4,7 +4,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bible_read/pages/main_page.dart';
-import 'package:bible_read/pages/group_detail_page.dart';
+import 'package:bible_read/pages/group_members_page.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/pages/check_in_page.dart';
 import 'package:bible_read/models/group_schedule.dart';
@@ -120,16 +120,16 @@ void main() {
       await tester.tap(find.text('Path'));
       await tester.pumpAndSettle();
 
-      // Tap 'Read together' button on the group card in PlansHub
-      await tester.tap(find.text('Read together'));
+      // Tap 'Manage members' button on the group card in PlansHub
+      await tester.tap(find.byTooltip('Manage members'));
       await tester.pumpAndSettle();
 
-      // Verify GroupDetailPage
-      expect(find.byType(GroupDetailPage), findsOneWidget);
+      // Verify GroupMembersPage
+      expect(find.byType(GroupMembersPage), findsOneWidget);
       await tester.pumpAndSettle();
 
-      // Verify "Gen 1" is displayed
-      expect(find.textContaining('Gen 1'), findsOneWidget);
+      // Verify GroupMembersPage shows member roster
+      expect(find.textContaining('Members'), findsAtLeastNWidgets(1));
     });
   });
 }

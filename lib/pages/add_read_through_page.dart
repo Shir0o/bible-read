@@ -48,7 +48,8 @@ class _AddReadThroughPageState extends State<AddReadThroughPage> {
   @override
   void initState() {
     super.initState();
-    _service = widget.service ?? ReadThroughService(firestore: widget.firestore);
+    _service =
+        widget.service ?? ReadThroughService(firestore: widget.firestore);
     final existing = widget.existing;
     _completedAt = existing?.completedAt ?? DateTime.now();
     _precision = existing?.datePrecision ?? DatePrecision.year;
@@ -148,7 +149,8 @@ class _AddReadThroughPageState extends State<AddReadThroughPage> {
       ErrorLogger.log(e, st);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't remove that. Please try again.")),
+        const SnackBar(
+            content: Text("Couldn't remove that. Please try again.")),
       );
     }
   }
@@ -439,12 +441,11 @@ class _PrecisionTabs extends StatelessWidget {
                     ),
                     child: Text(
                       entry.value,
-                      style:
-                          Theme.of(context).textTheme.labelMedium?.copyWith(
-                                color: value == entry.key
-                                    ? colorScheme.onSurface
-                                    : colorScheme.onSurfaceVariant,
-                              ),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: value == entry.key
+                                ? colorScheme.onSurface
+                                : colorScheme.onSurfaceVariant,
+                          ),
                     ),
                   ),
                 ),

@@ -40,12 +40,11 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
   }
 
-  testWidgets('exactly one page is titled "My Reading Plans"', (tester) async {
+  testWidgets('Path page is titled "Path"', (tester) async {
     await pumpPage(tester);
 
-    // The header on the Journey tab renders the title exactly once; the
-    // retired duplicate page (ReadingPlansPage) is gone (#811).
-    expect(find.text('My Reading Plans'), findsOneWidget);
+    // The header on the Journey tab renders the title "Path".
+    expect(find.text('Path'), findsOneWidget);
     expect(find.byType(PlansHub), findsOneWidget);
 
     // And the duplicate page's files no longer exist to be routed to.

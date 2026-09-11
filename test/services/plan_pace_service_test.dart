@@ -28,9 +28,7 @@ ReadingPlan _plan({DateTime? start}) {
       ReadingPlanDay(day: 2, readings: ['Gen 2']),
       ReadingPlanDay(day: 3, readings: ['Gen 3']),
     ],
-    config: start == null
-        ? null
-        : {'startDate': start.toIso8601String()},
+    config: start == null ? null : {'startDate': start.toIso8601String()},
   );
 }
 
@@ -188,17 +186,27 @@ void main() {
   });
 
   group('applySharedPlanOverlay', () {
-    test('writes only the adjusting reader\'s overlay — the group schedule '
+    test(
+        'writes only the adjusting reader\'s overlay — the group schedule '
         'and other members\' progress are untouched', () async {
       // The Group's schedule, shared by every member.
       final groupSchedule = [
-        {'chapters': ['Gen 1'], 'date': DateTime(2026, 1, 1)},
-        {'chapters': ['Gen 2'], 'date': DateTime(2026, 1, 2)},
+        {
+          'chapters': ['Gen 1'],
+          'date': DateTime(2026, 1, 1)
+        },
+        {
+          'chapters': ['Gen 2'],
+          'date': DateTime(2026, 1, 2)
+        },
       ];
       final groupRef = firestore.collection('groups').doc('g1');
       for (final day in groupSchedule) {
-        await groupRef.collection('schedule').doc('2026-01-0'
-            '${groupSchedule.indexOf(day) + 1}').set(day);
+        await groupRef
+            .collection('schedule')
+            .doc('2026-01-0'
+                '${groupSchedule.indexOf(day) + 1}')
+            .set(day);
       }
       // Another member has progress.
       await groupRef
@@ -240,7 +248,8 @@ void main() {
 
       // The Group's schedule is exactly as it was.
       final schedule = await groupRef.collection('schedule').get();
-      expect(schedule.docs.map((d) => d.id).toSet(), {'2026-01-01', '2026-01-02'});
+      expect(
+          schedule.docs.map((d) => d.id).toSet(), {'2026-01-01', '2026-01-02'});
       expect(
         schedule.docs.map((d) => (d.data()['date'] as dynamic).toDate()),
         everyElement(anyOf(DateTime(2026, 1, 1), DateTime(2026, 1, 2))),

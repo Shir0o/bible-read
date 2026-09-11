@@ -1,12 +1,14 @@
 import 'package:bible_read/models/group.dart';
 import 'package:bible_read/pages/edit_group_page.dart';
-import 'package:bible_read/pages/group_detail_page.dart';
+import 'package:bible_read/pages/group_members_page.dart';
 import 'package:bible_read/services/group_service.dart';
+import 'package:bible_read/services/nudge_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import '../helpers/stub_vibration_service.dart';
 
 class MockGroupService extends Mock implements GroupService {}
 
@@ -40,8 +42,16 @@ void main() {
     return MaterialApp(home: child);
   }
 
-  group('GroupDetailPage Widget Tests', () {
-    testWidgets('shows Join Group for public group', (tester) async {
+  GroupMembersPage buildMembersPage(Group group) => GroupMembersPage(
+        group: group,
+        groupService: groupService,
+        nudgeService: NudgeService(firestore: firestore),
+        auth: auth,
+        vibrationService: const StubVibrationService(),
+      );
+
+  group('GroupMembersPage Widget Tests', () {
+    testWidgets('renders Members heading for a public group', (tester) async {
       final group = Group(
         id: 'group1',
         name: 'Public Group',
@@ -50,26 +60,23 @@ void main() {
       );
 
       when(
-        () => groupService.schedule(any()),
+        () => groupService.membersWithRoles(any()),
       ).thenAnswer((_) => Stream.value([]));
       when(
         () =>
             groupService.memberDailyCompletion(any(), date: any(named: 'date')),
       ).thenAnswer((_) => Stream.value([]));
       when(
-        () => groupService.memberOverallCompletion(any()),
+        () => groupService.pendingInvites(any()),
       ).thenAnswer((_) => Stream.value([]));
 
-      await tester.pumpWidget(
-        createWidget(
-          GroupDetailPage(group: group, groupService: groupService, auth: auth),
-        ),
-      );
+      await tester.pumpWidget(createWidget(buildMembersPage(group)));
+      await tester.pump();
 
-      expect(find.text('Join Group'), findsOneWidget);
+      expect(find.textContaining('Members'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('shows Request to Join for private group', (tester) async {
+    testWidgets('renders Members heading for a private group', (tester) async {
       final group = Group(
         id: 'group1',
         name: 'Private Group',
@@ -78,28 +85,25 @@ void main() {
       );
 
       when(
-        () => groupService.schedule(any()),
+        () => groupService.membersWithRoles(any()),
       ).thenAnswer((_) => Stream.value([]));
       when(
         () =>
             groupService.memberDailyCompletion(any(), date: any(named: 'date')),
       ).thenAnswer((_) => Stream.value([]));
       when(
-        () => groupService.memberOverallCompletion(any()),
+        () => groupService.pendingInvites(any()),
       ).thenAnswer((_) => Stream.value([]));
 
-      await tester.pumpWidget(
-        createWidget(
-          GroupDetailPage(group: group, groupService: groupService, auth: auth),
-        ),
-      );
+      await tester.pumpWidget(createWidget(buildMembersPage(group)));
+      await tester.pump();
 
-      expect(find.text('Request to Join'), findsOneWidget);
+      expect(find.textContaining('Members'), findsAtLeastNWidgets(1));
     });
   });
 
   group('InviteMemberPage retirement', () {
-    testWidgets('admin invite affordance is gone from GroupDetailPage', (
+    testWidgets('admin invite affordance is gone from GroupMembersPage', (
       tester,
     ) async {
       final group = Group(
@@ -109,21 +113,17 @@ void main() {
       );
 
       when(
-        () => groupService.schedule(any()),
+        () => groupService.membersWithRoles(any()),
       ).thenAnswer((_) => Stream.value([]));
       when(
         () =>
             groupService.memberDailyCompletion(any(), date: any(named: 'date')),
       ).thenAnswer((_) => Stream.value([]));
       when(
-        () => groupService.memberOverallCompletion(any()),
+        () => groupService.pendingInvites(any()),
       ).thenAnswer((_) => Stream.value([]));
 
-      await tester.pumpWidget(
-        createWidget(
-          GroupDetailPage(group: group, groupService: groupService, auth: auth),
-        ),
-      );
+      await tester.pumpWidget(createWidget(buildMembersPage(group)));
 
       await tester.pump();
       await tester.pump();

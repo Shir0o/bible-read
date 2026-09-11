@@ -1,4 +1,5 @@
 import 'package:bible_read/pages/create_plan_page.dart';
+import 'package:bible_read/pages/group_members_page.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
@@ -94,7 +95,8 @@ void main() {
     expect(find.text('Morning Light'), findsWidgets);
   });
 
-  testWidgets('with a group takes a group name and creates the group and '
+  testWidgets(
+      'with a group takes a group name and creates the group and '
       'the shared plan together', (tester) async {
     await pumpPage(tester);
 
@@ -134,11 +136,12 @@ void main() {
     // A join code was assigned so the group is shareable immediately.
     expect(group.data()['joinCode'], isNotEmpty);
 
-    // The flow lands the reader in the group.
-    expect(find.text('Thursday morning group'), findsWidgets);
+    // The flow lands the reader in the group members page.
+    expect(find.byType(GroupMembersPage), findsOneWidget);
   });
 
-  testWidgets('a newly created solo plan appears in the Path list '
+  testWidgets(
+      'a newly created solo plan appears in the Path list '
       'immediately', (tester) async {
     await pumpPage(tester);
 

@@ -120,8 +120,10 @@ void main() {
 
       // Day 3's reading now lands on Jan 7 — in the future, not missed.
       expect(after.missedCount, 0);
-      expect(after.entries.every((e) => !e.date.isBefore(today) ||
-          ids.contains(_id(e.date))), isTrue);
+      expect(
+          after.entries.every(
+              (e) => !e.date.isBefore(today) || ids.contains(_id(e.date))),
+          isTrue);
       // Completed days keep their dates, so the ticks stay where they are.
       expect(after.doneCount, 2);
       // Same readings in the same order, nothing dropped or duplicated.
@@ -162,7 +164,9 @@ void main() {
       expect(PlanPace.finishOf(redistributed), DateTime(2026, 1, 7));
       // Gen 2..7 = 6 remaining readings across Jan 5-7: two per day.
       expect(
-        redistributed.where((d) => !ids.contains(_id(d.date))).map((d) => d.chapters),
+        redistributed
+            .where((d) => !ids.contains(_id(d.date)))
+            .map((d) => d.chapters),
         [
           ['Gen 2', 'Gen 3'],
           ['Gen 4', 'Gen 5'],
@@ -210,9 +214,12 @@ void main() {
         resumeDate: PlanPace.resumeDate(days, ids, today: today),
         finishDate: PlanPace.finishOf(days)!,
       );
-      final ordered = [for (final d in redistributed.where(
-        (d) => !ids.contains(_id(d.date)),
-      )) ...d.chapters];
+      final ordered = [
+        for (final d in redistributed.where(
+          (d) => !ids.contains(_id(d.date)),
+        ))
+          ...d.chapters
+      ];
       expect(ordered, ['Gen 3', 'Gen 4', 'Gen 5', 'Gen 6', 'Gen 7']);
     });
 

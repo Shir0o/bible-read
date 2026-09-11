@@ -24,10 +24,8 @@ class ReadThroughService {
   /// announcement of a read-through is a separate object on the day's read log.
   static const String collectionName = 'read_throughs';
 
-  CollectionReference<Map<String, dynamic>> _collection(String uid) => firestore
-      .collection('users')
-      .doc(uid)
-      .collection(collectionName);
+  CollectionReference<Map<String, dynamic>> _collection(String uid) =>
+      firestore.collection('users').doc(uid).collection(collectionName);
 
   /// All of [uid]'s read-throughs, oldest first, with lap numbers assigned.
   Future<List<ReadThrough>> fetchAll(String uid) async {

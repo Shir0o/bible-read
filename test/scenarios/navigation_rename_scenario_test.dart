@@ -67,6 +67,7 @@ void main() {
       await tester.pumpAndSettle();
     }
   }
+
   testWidgets('the rail reads Today, Circle, Path top to bottom', (
     tester,
   ) async {

@@ -20,7 +20,8 @@ import '../services/schedule_generator.dart';
 import '../services/vibration_service.dart';
 import '../widgets/schedule_preview.dart';
 import '../widgets/start_chapter_sheet.dart';
-import 'group_detail_page.dart';
+import '../services/nudge_service.dart';
+import 'group_members_page.dart';
 import 'plan_detail_page.dart';
 
 /// Who a new plan is for. Answered as a field inside the creation flow
@@ -549,7 +550,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => GroupDetailPage(
+        builder: (_) => GroupMembersPage(
           group: Group(
             id: groupId,
             name: name,
@@ -558,6 +559,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             planConfig: draft,
           ),
           groupService: groupService,
+          nudgeService: NudgeService(firestore: widget.firestore),
           auth: widget.auth,
           vibrationService: widget.vibrationService,
         ),

@@ -50,7 +50,8 @@ void main() {
           DateTime(2026, 3, 4));
     });
 
-    test('the derived record is dated when the pair closed, not when the '
+    test(
+        'the derived record is dated when the pair closed, not when the '
         'earlier half finished', () async {
       await detect(ReadThroughScope.oldTestament, DateTime(2020, 1, 1));
       await detect(ReadThroughScope.newTestament, DateTime(2026, 9, 5));
@@ -132,7 +133,8 @@ void main() {
   });
 
   group('backfill', () {
-    test('a whole-Bible backfill records both testaments and derives one '
+    test(
+        'a whole-Bible backfill records both testaments and derives one '
         'whole Bible', () async {
       await service.addBackfilled(
         uid: uid,

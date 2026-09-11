@@ -76,7 +76,8 @@ enum ReadThroughSource {
   /// Detected and derived records are the app's own account of what happened,
   /// so they are never deleted — only their human-supplied fields are edited.
   bool get isDeletable =>
-      this == ReadThroughSource.backfilled || this == ReadThroughSource.migrated;
+      this == ReadThroughSource.backfilled ||
+      this == ReadThroughSource.migrated;
 }
 
 /// A record that a user finished reading a [ReadThroughScope] end to end.
@@ -196,8 +197,18 @@ class ReadThrough {
   String get ordinalLabel => '${_ordinal(lapNumber)} time';
 
   static const List<String> _monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   static String _ordinal(int n) {

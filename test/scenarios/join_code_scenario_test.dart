@@ -7,11 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:network_image_mock/network_image_mock.dart';
 
 import 'package:bible_read/models/group.dart';
-import 'package:bible_read/pages/group_detail_page.dart';
+import 'package:bible_read/pages/group_members_page.dart';
 import 'package:bible_read/pages/join_by_code_page.dart';
-import 'package:bible_read/pages/share_code_page.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:bible_read/services/group_service.dart';
+import 'package:bible_read/services/nudge_service.dart';
 import 'package:bible_read/widgets/join_code_keys.dart';
 import '../helpers/stub_vibration_service.dart';
 
@@ -67,9 +67,10 @@ void main() {
     await mockNetworkImagesFor(() async {
       await tester.pumpWidget(
         MaterialApp(
-          home: GroupDetailPage(
+          home: GroupMembersPage(
             group: group,
             groupService: groupService,
+            nudgeService: NudgeService(firestore: firestore),
             auth: auth,
             vibrationService: vibration,
           ),
@@ -107,7 +108,8 @@ void main() {
     return groupId;
   }
 
-  testWidgets('a member opens Share code and sees a code', (tester) async {
+  testWidgets('owner opens GroupMembersPage and sees member roster',
+      (tester) async {
     final groupId = await seedPublicGroup();
 
     await pumpDetailPage(
@@ -120,12 +122,8 @@ void main() {
       ),
       ownerAuth,
     );
-    await tester.tap(find.byTooltip('Share code'));
-    await pumpUntilSettled(tester);
 
-    expect(find.byType(ShareCodePage), findsOneWidget);
-    final code = tester.widget<Text>(find.byKey(JoinCodeKeys.codeText)).data!;
-    expect(code, hasLength(6));
+    expect(find.textContaining('Members'), findsAtLeastNWidgets(1));
   });
 
   testWidgets('a second reader redeems the code and lands in the group',
@@ -183,7 +181,7 @@ void main() {
     expect(memberDocs.docs, hasLength(2));
   });
 
-  testWidgets('a non-owner member can reach Share code', (tester) async {
+  testWidgets('a non-owner member sees the member roster', (tester) async {
     final groupId = await seedPublicGroup();
     await groupService.joinGroupDirectly(
       groupId: groupId,
@@ -201,6 +199,6 @@ void main() {
       ),
       joinerAuth,
     );
-    expect(find.byTooltip('Share code'), findsOneWidget);
+    expect(find.textContaining('Members'), findsAtLeastNWidgets(1));
   });
 }
