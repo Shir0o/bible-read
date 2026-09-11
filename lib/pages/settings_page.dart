@@ -251,6 +251,114 @@ class SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _confirmDeleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Account?'),
+        content: const Text(
+          'This action is permanent. It will permanently delete all your reading data, '
+          'reflections, streaks, and remove you from any reading groups. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await _handleDeleteAccount();
+    }
+  }
+
+  Future<void> _handleDeleteAccount() async {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
+
+    try {
+      // 1. Clean up personal Firestore data
+      final userDoc = widget.firestore.collection('users').doc(uid);
+      try {
+        final collections = ['summary', 'settings', 'plan_progress', 'reflections'];
+        for (final col in collections) {
+          final snap = await userDoc.collection(col).get();
+          for (final doc in snap.docs) {
+            await doc.reference.delete();
+          }
+        }
+        await userDoc.delete();
+      } catch (e, st) {
+        ErrorLogger.log(e, st);
+      }
+
+      // 2. Remove group memberships
+      try {
+        final memberships = await widget.firestore
+            .collectionGroup('members')
+            .where('uid', isEqualTo: uid)
+            .get();
+        for (final mDoc in memberships.docs) {
+          await mDoc.reference.delete();
+        }
+      } catch (e, st) {
+        ErrorLogger.log(e, st);
+      }
+
+      // 3. Delete Firebase Auth user
+      await user.delete();
+
+      // 4. Sign out from Google if connected
+      await clearSilentSignInFlag();
+      final googleSignIn = widget.googleSignInProvider();
+      try {
+        await googleSignIn.signOut();
+        await googleSignIn.disconnect();
+      } catch (_) {}
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Account deleted successfully')),
+        );
+        final page = widget.mainPageBuilder?.call(context) ?? MainPage();
+        Navigator.of(context).pushReplacement(animatedPageRoute(page));
+      }
+    } on FirebaseAuthException catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        if (e.code == 'requires-recent-login') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please sign out and sign in again before deleting your account for security.'),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.message ?? 'Failed to delete account')),
+          );
+        }
+      }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete account')),
+        );
+      }
+    }
+  }
+
   /// Serif section title matching the redesigned design system.
   Widget _sectionTitle(BuildContext context, String title) {
     return Text(
@@ -510,9 +618,38 @@ class SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
+            const SizedBox(height: AppSpacing.gap24),
+
+            // Account / Danger zone
+            _sectionTitle(context, 'Account'),
+            const SizedBox(height: AppSpacing.gap12),
+            CommonStyles.buildBorderedCard(
+              context: context,
+              child: ListTile(
+                leading: Icon(
+                  Icons.delete_forever_outlined,
+                  color: colorScheme.error,
+                ),
+                title: Text(
+                  'Delete Account',
+                  style: TextStyle(color: colorScheme.error),
+                ),
+                subtitle: const Text(
+                  'Permanently remove your account and all reading data',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.hPadding,
+                ),
+                onTap: () {
+                  unawaited(widget.vibrationService.lightImpact());
+                  _confirmDeleteAccount();
+                },
+              ),
+            ),
             const SizedBox(height: AppSpacing.gap20),
             Text(
-              'Bible Read · v1.0',
+              'Bible Read · v1.28.1',
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,
