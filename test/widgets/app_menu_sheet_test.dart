@@ -250,7 +250,6 @@ void main() {
       'Settings',
       'Notifications',
       'Challenges',
-      'Groups',
       'Library',
       'Feedback',
       'Sign Out',

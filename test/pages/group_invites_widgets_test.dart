@@ -1,8 +1,6 @@
 import 'package:bible_read/models/group.dart';
-import 'package:bible_read/models/group_invite.dart';
 import 'package:bible_read/pages/edit_group_page.dart';
 import 'package:bible_read/pages/group_detail_page.dart';
-import 'package:bible_read/pages/groups_page.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -97,42 +95,6 @@ void main() {
       );
 
       expect(find.text('Request to Join'), findsOneWidget);
-    });
-  });
-
-  group('GroupsPage Invitation UI', () {
-    testWidgets('shows INVITATIONS section when invites exist', (tester) async {
-      final invites = [
-        GroupInvite(
-          id: 'invite1',
-          groupId: 'group1',
-          groupName: 'Cool Group',
-          senderUid: 'owner',
-          senderName: 'Owner Name',
-          recipientUid: 'user1',
-          timestamp: DateTime.now(),
-        ),
-      ];
-
-      when(
-        () => groupService.userInvites('user1'),
-      ).thenAnswer((_) => Stream.value(invites));
-      when(
-        () => groupService.groupsForUser('user1'),
-      ).thenAnswer((_) => Stream.value([]));
-
-      await tester.pumpWidget(
-        createWidget(GroupsPage(groupService: groupService, auth: auth)),
-      );
-
-      await tester.pump(); // Start stream
-      await tester.pump(); // Rebuild with data
-
-      expect(find.text('INVITATIONS'), findsOneWidget);
-      expect(find.text('Cool Group'), findsOneWidget);
-      expect(find.text('Invited by Owner Name'), findsOneWidget);
-      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
-      expect(find.byIcon(Icons.cancel_outlined), findsOneWidget);
     });
   });
 
