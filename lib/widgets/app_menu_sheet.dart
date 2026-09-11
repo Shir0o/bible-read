@@ -18,9 +18,7 @@ import '../services/notification_service.dart';
 
 import '../pages/settings_page.dart';
 import '../pages/bible_progress_page.dart';
-import '../pages/groups_page.dart';
 import '../services/google_sign_in_factory.dart';
-import '../services/group_service.dart';
 
 /// The hub sheet opened from the avatar — matches the design's `MenuSheet`:
 /// a profile header, a two-column grid of destinations, and a quiet full-width
@@ -163,21 +161,6 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
         icon: Icons.emoji_events_outlined,
         label: 'Challenges',
         index: 5,
-      ),
-      _MenuItem(
-        icon: Icons.explore_outlined,
-        label: 'Groups',
-        onTap: (context) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => GroupsPage(
-                groupService: GroupService(firestore: firestore),
-                auth: auth,
-                vibrationService: widget.vibrationService,
-              ),
-            ),
-          );
-        },
       ),
       _MenuItem(
         icon: Icons.menu_book_outlined,
