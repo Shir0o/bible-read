@@ -4,6 +4,7 @@
 // it in the archive; trashing hides it everywhere and lists it with a
 // countdown; restoring puts it back to its pre-deletion state; purging
 // removes it for good; re-enrolling a trashed plan collides.
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -193,6 +194,27 @@ void main() {
       expect(collision, isNull);
       final active = await service.getActivePlans('u1').first;
       expect(active, hasLength(1));
+    });
+
+    test(
+        'getActivePlans returns plans even when deletedAt field is missing from doc',
+        () async {
+      await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('plan_progress')
+          .doc('legacy_p')
+          .set({
+        'planId': 'legacy_p',
+        'userId': 'u1',
+        'startDate': Timestamp.fromDate(DateTime(2026, 9, 1)),
+        'completedDays': <int>[],
+        'isArchived': false,
+        // deletedAt, deleteAfter, preDeleteState omitted
+      });
+
+      final active = await service.getActivePlans('u1').first;
+      expect(active.map((p) => p.planId), contains('legacy_p'));
     });
   });
 }
