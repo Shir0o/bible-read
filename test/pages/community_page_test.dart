@@ -64,11 +64,17 @@ void main() {
   testWidgets('renders empty group state when no groups', (tester) async {
     await pumpPage(tester);
 
-    expect(find.text('No active groups'), findsOneWidget);
-    expect(find.text('Join a group to see progress here.'), findsOneWidget);
+    expect(find.text('No one here yet'), findsOneWidget);
+    expect(
+      find.text('Your Circle is everyone you share a group with.'),
+      findsOneWidget,
+    );
+    expect(find.text('Have a code?'), findsOneWidget);
+    expect(find.text('Find a group'), findsOneWidget);
+    expect(find.text('Create a group'), findsOneWidget);
   });
 
-  testWidgets('renders people-first with groups beneath, no reading hero', (
+  testWidgets('renders people-first with no groups beneath, no reading hero', (
     tester,
   ) async {
     await firestore.collection('groups').doc('g1').set({
@@ -113,10 +119,9 @@ void main() {
     // Co-members render from Group membership.
     expect(find.text('Bea'), findsOneWidget);
 
-    // Groups are a section beneath the people, and the duplicate reading
-    // hero is gone from this screen.
-    expect(find.text('Your groups'), findsOneWidget);
-    expect(find.text('My Group'), findsWidgets);
+    // "Your groups" section is removed; groups exist only as filter chips.
+    expect(find.text('Your groups'), findsNothing);
+    expect(find.text('My Group'), findsOneWidget);
     expect(find.text("THE COMMUNITY'S READING"), findsNothing);
     expect(find.text('Read with the community'), findsNothing);
 

@@ -184,11 +184,11 @@ void main() {
     // Deduplicated: exactly one Cara row despite two shared Groups.
     expect(find.text('Cara'), findsOneWidget);
 
-    // Groups are filter chips above and a section beneath — never a
-    // reading hero.
+    // Groups are filter chips above — never a reading hero, and groups
+    // section is removed.
     expect(find.text('Everyone'), findsOneWidget);
-    expect(find.text('Morning'), findsWidgets);
-    expect(find.text('Evening'), findsWidgets);
+    expect(find.text('Morning'), findsOneWidget);
+    expect(find.text('Evening'), findsOneWidget);
     expect(find.text("THE COMMUNITY'S READING"), findsNothing);
   });
 

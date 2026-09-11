@@ -18,8 +18,6 @@ import '../services/read_log_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/common_styles.dart';
-import 'group_detail_page.dart';
 import '../widgets/app_header.dart';
 import '../widgets/community/empty_group_state.dart';
 import '../widgets/nudge_sheet.dart';
@@ -108,10 +106,15 @@ class _CommunityPageState extends State<CommunityPage>
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 8)),
                 if (groups.isEmpty)
-                  const SliverToBoxAdapter(
+                  SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: EmptyGroupState(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: EmptyGroupState(
+                        auth: widget.auth,
+                        firestore: widget.firestore,
+                        groupService: widget.groupService,
+                        vibrationService: widget.vibrationService,
+                      ),
                     ),
                   )
                 else ...[
@@ -136,56 +139,11 @@ class _CommunityPageState extends State<CommunityPage>
                       myUid: user.uid,
                     ),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  SliverToBoxAdapter(
-                    child: _buildGroupsSection(context, groups),
-                  ),
                 ],
               ],
             );
           },
         ),
-      ),
-    );
-  }
-
-  /// Groups as the secondary section — people come first. Tapping opens the
-  /// Group's detail page, the home of its schedule and actions.
-  Widget _buildGroupsSection(BuildContext context, List<Group> groups) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 2, bottom: 4),
-            child: Text(
-              'Your groups',
-              style: AppTextStyles.title(context).copyWith(fontSize: 19),
-            ),
-          ),
-          for (final group in groups)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _GroupTile(
-                group: group,
-                onTap: () {
-                  widget.vibrationService.lightImpact();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => GroupDetailPage(
-                        group: group,
-                        groupService: widget.groupService,
-                        auth: widget.auth,
-                        vibrationService: widget.vibrationService,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          SizedBox(height: 4, child: Container()),
-        ],
       ),
     );
   }
@@ -781,66 +739,6 @@ class _NudgeChip extends StatelessWidget {
                   color: colorScheme.onSecondaryContainer,
                   fontWeight: FontWeight.w600,
                 ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// One Group in the section beneath the people list.
-class _GroupTile extends StatelessWidget {
-  final Group group;
-  final VoidCallback onTap;
-
-  const _GroupTile({required this.group, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Material(
-      color: colorScheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-          child: Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.groups_outlined,
-                  size: 18,
-                  color: colorScheme.onPrimaryContainer,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  group.name,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-              ),
-            ],
           ),
         ),
       ),

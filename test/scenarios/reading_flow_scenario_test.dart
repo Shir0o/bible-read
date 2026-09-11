@@ -116,15 +116,12 @@ void main() {
       // Verify HomePage is shown
       expect(find.byType(HomePage), findsOneWidget);
 
-      // Navigate to Circle
-      await tester.tap(find.text('Circle'));
+      // Navigate to Path to open the group via PlansHub
+      await tester.tap(find.text('Path'));
       await tester.pumpAndSettle();
 
-      // Open the group via its tile in the "Your groups" section — the
-      // Circle tab is people-first now and the "Manage" button is gone.
-      // The name appears once as a filter chip and once as the group tile;
-      // the tile is the one inside the groups section.
-      await tester.tap(find.text('Reading Group').last);
+      // Tap 'Read together' button on the group card in PlansHub
+      await tester.tap(find.text('Read together'));
       await tester.pumpAndSettle();
 
       // Verify GroupDetailPage
