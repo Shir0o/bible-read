@@ -58,6 +58,10 @@ class UserPlanProgress {
         'lastReadDate':
             lastReadDate != null ? Timestamp.fromDate(lastReadDate!) : null,
         'isArchived': isArchived,
+        'deletedAt': deletedAt != null ? Timestamp.fromDate(deletedAt!) : null,
+        'deleteAfter':
+            deleteAfter != null ? Timestamp.fromDate(deleteAfter!) : null,
+        'preDeleteState': preDeleteState,
       };
 
   UserPlanProgress copyWith({

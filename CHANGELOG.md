@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.30.1](https://github.com/Shir0o/bible-read/compare/v1.30.0...v1.30.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **plans:** serialize soft delete fields and vertically center circle filter chips ([#860](https://github.com/Shir0o/bible-read/issues/860)) ([f4d1a97](https://github.com/Shir0o/bible-read/commit/f4d1a97f8a1d0e7148b608b669d0fae65840039a))
+
 ## [1.30.0](https://github.com/Shir0o/bible-read/compare/v1.29.0...v1.30.0) (2026-09-11)
 
 
