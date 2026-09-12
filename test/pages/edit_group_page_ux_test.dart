@@ -4,13 +4,15 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bible_read/models/group.dart';
-import 'package:bible_read/pages/edit_group_page.dart';
-import 'package:bible_read/services/group_service.dart';
-import 'package:bible_read/services/vibration_service.dart';
-import 'package:bible_read/services/error_logger.dart';
-import 'package:bible_read/widgets/group_plan_keys.dart';
 import 'package:mocktail/mocktail.dart';
+
+import 'package:bible_read/models/group.dart';
+import 'package:bible_read/models/group_schedule.dart';
+import 'package:bible_read/pages/reschedule_page.dart';
+import 'package:bible_read/services/error_logger.dart';
+import 'package:bible_read/services/group_service.dart';
+import 'package:bible_read/services/plan_pace_service.dart';
+import 'package:bible_read/services/vibration_service.dart';
 
 class MockVibrationService extends Mock implements VibrationService {}
 
@@ -24,31 +26,70 @@ void main() {
 
   late FakeFirebaseFirestore firestore;
   late MockFirebaseAuth auth;
-  late Group group;
   late MockVibrationService vibrationService;
+  late Group group;
 
   setUp(() {
     firestore = FakeFirebaseFirestore();
-    group = const Group(id: 'g1', name: 'Study', ownerUid: 'u1');
+    group = const Group(
+      id: 'g1',
+      name: 'Morning Crew',
+      ownerUid: 'u1',
+      memberCount: 5,
+    );
     auth = MockFirebaseAuth();
     vibrationService = MockVibrationService();
     ErrorLogger.muteForTest = true;
     when(() => vibrationService.lightImpact()).thenAnswer((_) async {});
   });
 
-  Future<void> pumpPage(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(
-      1080,
-      2400,
-    ); // Set a large mobile screen size
-    tester.view.devicePixelRatio = 3.0;
+  Future<void> seedGroup() async {
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('schedule')
+        .doc('2026-01-01')
+        .set(
+          GroupSchedule(
+            date: DateTime(2026, 1, 1),
+            chapters: const ['Gen 1'],
+          ).toFirestore(),
+        );
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('schedule')
+        .doc('2026-01-02')
+        .set(
+          GroupSchedule(
+            date: DateTime(2026, 1, 2),
+            chapters: const ['Gen 2'],
+          ).toFirestore(),
+        );
+  }
 
+  Future<void> pumpPage(WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: EditGroupPage(
+        home: ReschedulePage(
           group: group,
           groupService: GroupService(firestore: firestore),
+          paceService: PlanPaceService(firestore: firestore),
           auth: auth,
+          schedule: [
+            GroupSchedule(
+              date: DateTime(2026, 1, 1),
+              chapters: const ['Gen 1'],
+            ),
+            GroupSchedule(
+              date: DateTime(2026, 1, 2),
+              chapters: const ['Gen 2'],
+            ),
+          ],
+          completedDateIds: const {},
+          daysBehind: 4,
+          today: DateTime(2026, 1, 3),
           vibrationService: vibrationService,
         ),
       ),
@@ -56,56 +97,50 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Frequency presets fire haptic feedback and update selection', (
-    tester,
-  ) async {
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+  testWidgets('states the consequence before the owner commits',
+      (tester) async {
+    await seedGroup();
     auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-
     await pumpPage(tester);
 
-    // The shared form exposes the Daily / Weekdays presets as keys.
-    final weekdaysChip = find.byKey(GroupPlanKeys.weekdayPreset('Weekdays'));
-    expect(weekdaysChip, findsOneWidget);
+    expect(find.text('Move the dates for Morning Crew'), findsOneWidget);
+    expect(find.text('This changes everyone\'s dates'), findsOneWidget);
+    expect(find.text('Stretch the schedule'), findsOneWidget);
+    expect(find.text('Keep the finish date'), findsOneWidget);
+    expect(find.text('Begin again'), findsOneWidget);
+    expect(find.text('Reschedule for everyone'), findsOneWidget);
+    expect(find.text('Adjust my pace instead'), findsOneWidget);
+  });
+
+  testWidgets('owner stretch moves every Group reading later', (tester) async {
+    await seedGroup();
+    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
+    await pumpPage(tester);
+
+    await tester.tap(find.text('Stretch the schedule'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reschedule for everyone'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 800));
+
+    final schedule = await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('schedule')
+        .get();
     expect(
-      find.byKey(GroupPlanKeys.weekdayPreset('Daily')),
-      findsOneWidget,
+      schedule.docs.map((doc) => doc.id).toSet(),
+      {'2026-01-05', '2026-01-06'},
     );
+  });
 
-    final scrollableFinder = find.byType(Scrollable).first;
-    final ScrollableState scrollable = tester.state(scrollableFinder);
-    await scrollable.position.ensureVisible(
-      tester.renderObject(weekdaysChip),
-      alignment: 0.5,
+  testWidgets('non-owner cannot commit a Reschedule', (tester) async {
+    await seedGroup();
+    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'm2'), signedIn: true);
+    await pumpPage(tester);
+
+    final button = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Reschedule for everyone'),
     );
-    await tester.pumpAndSettle();
-
-    await tester.tap(weekdaysChip);
-    await tester.pumpAndSettle();
-
-    verify(() => vibrationService.lightImpact()).called(greaterThan(0));
-
-    // After tapping Weekdays, the form's weekday chips show Mon–Fri only.
-    for (var i = 1; i <= 7; i++) {
-      // Walk up to find the Semantics widget above the InkWell.
-      final semantics = tester
-          .widgetList<Semantics>(
-            find.ancestor(
-              of: find.byKey(GroupPlanKeys.weekday(i)),
-              matching: find.byType(Semantics),
-            ),
-          )
-          .first;
-      final expectedSelected = i >= 1 && i <= 5;
-      final label = expectedSelected ? 'selected' : 'deselected';
-      expect(
-        semantics.properties.selected,
-        expectedSelected,
-        reason: 'Weekday $i should be $label',
-      );
-    }
+    expect(button.onPressed, isNull);
   });
 }

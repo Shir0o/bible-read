@@ -120,6 +120,8 @@ void main() {
         MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     await pumpPage(tester, auth);
     await scrollToSettings(tester);
+    await tester.ensureVisible(find.text('Delete Group'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Delete Group'));
     await tester.pumpAndSettle();
@@ -178,6 +180,8 @@ void main() {
         MockFirebaseAuth(mockUser: MockUser(uid: 'm2'), signedIn: true);
     await pumpPage(tester, auth);
     await scrollToSettings(tester);
+    await tester.ensureVisible(find.text('Leave Group'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Leave Group'));
     await tester.pumpAndSettle();

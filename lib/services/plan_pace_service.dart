@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../models/group_plan_config.dart';
 import '../models/group_schedule.dart';
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
@@ -146,4 +147,67 @@ class PlanPaceService {
       ];
     });
   }
+
+  /// Owner-only Reschedule: rewrites the Group schedule for every member.
+  ///
+  /// Refuses when [uid] is not the Group owner. The caller remains
+  /// responsible for repairing member progress against the new dates.
+  /// Returns the new planConfig revision.
+  Future<int> rescheduleGroup({
+    required String uid,
+    required String groupId,
+    required List<GroupSchedule> adjusted,
+  }) async {
+    final groupRef = firestore.collection('groups').doc(groupId);
+    final groupSnap = await groupRef.get();
+    if (groupSnap.exists == false) {
+      throw StateError('Group not found: $groupId');
+    }
+    final data = groupSnap.data() ?? <String, dynamic>{};
+    if (data['ownerUid'] != uid) {
+      throw StateError('Only the group owner can reschedule this group.');
+    }
+
+    final scheduleRef = groupRef.collection('schedule');
+    final previous = await scheduleRef.get();
+    final oldDays = previous.docs.map(GroupSchedule.fromFirestore).toList();
+    final newDateIds = {for (final day in adjusted) PlanPace.dateId(day.date)};
+
+    for (var i = 0; i < adjusted.length; i += _scheduleWriteBatchSize) {
+      final batch = firestore.batch();
+      final end = (i + _scheduleWriteBatchSize < adjusted.length)
+          ? i + _scheduleWriteBatchSize
+          : adjusted.length;
+      for (var j = i; j < end; j++) {
+        final day = adjusted[j];
+        batch.set(
+          scheduleRef.doc(PlanPace.dateId(day.date)),
+          day.toFirestore(),
+        );
+      }
+      await batch.commit();
+    }
+
+    for (final doc in previous.docs) {
+      if (newDateIds.contains(doc.id) == false) {
+        await doc.reference.delete();
+      }
+    }
+
+    final rawConfig = data['planConfig'];
+    final configMap = rawConfig is Map
+        ? rawConfig.map((key, value) => MapEntry('$key', value))
+        : null;
+    final oldDraft = configMap == null
+        ? GroupPlanDraft.inferFromSchedule(oldDays)
+        : GroupPlanDraft.fromMap(configMap);
+    final revision = oldDraft.revision + 1;
+    await groupRef.set(
+      {'planConfig': oldDraft.copyWith(revision: revision).toFirestore()},
+      SetOptions(merge: true),
+    );
+    return revision;
+  }
+
+  static const int _scheduleWriteBatchSize = 450;
 }

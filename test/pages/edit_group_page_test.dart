@@ -30,7 +30,24 @@ void main() {
     ErrorLogger.muteForTest = true;
   });
 
-  Future<void> pumpPage(WidgetTester tester) async {
+  Future<void> seedGroup() async {
+    await firestore.collection('groups').doc('g1').set(group.toFirestore());
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u1')
+        .set({
+      'uid': 'u1',
+      'name': 'Owner',
+      'role': 'owner',
+      'joinedAt': Timestamp.now(),
+    });
+  }
+
+  Future<void> pumpPage(
+      WidgetTester tester, MockFirebaseAuth signedInAuth) async {
+    auth = signedInAuth;
     await tester.pumpWidget(
       MaterialApp(
         home: EditGroupPage(
@@ -44,48 +61,38 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('renders all sections', (tester) async {
-    await firestore.collection('groups').doc('g1').set(group.toFirestore());
-    // Add owner member so they show up
-    await firestore
-        .collection('groups')
-        .doc('g1')
-        .collection('members')
-        .doc('u1')
-        .set({
-      'uid': 'u1',
-      'name': 'Owner',
-      'photoUrl': null,
-      'role': 'owner',
-      'joinedAt': Timestamp.now(),
-    });
-
-    auth = MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-
-    await pumpPage(tester);
-
-    // The shared form is in place — books search, pace, days, save button.
-    expect(find.byKey(GroupPlanKeys.bookSearchField), findsOneWidget);
-    expect(find.byKey(GroupPlanKeys.paceModeSegment), findsOneWidget);
-
-    final scrollableFinder = find.byType(Scrollable).first;
-
-    final membersFinder = find.text('Members');
-    await tester.scrollUntilVisible(
-      membersFinder,
-      500,
-      scrollable: scrollableFinder,
+  testWidgets('owner sees group settings and no plan editor', (tester) async {
+    await seedGroup();
+    await pumpPage(
+      tester,
+      MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true),
     );
-    expect(membersFinder, findsOneWidget);
 
-    final settingsFinder = find.text('Group Settings');
-    await tester.scrollUntilVisible(
-      settingsFinder,
-      500,
-      scrollable: scrollableFinder,
+    expect(find.text('Group settings'), findsOneWidget);
+    expect(find.byKey(const Key('group-settings-name')), findsOneWidget);
+    expect(find.text('Public Group'), findsOneWidget);
+    expect(find.text('Reschedule'), findsOneWidget);
+    expect(find.text('Archive Group'), findsOneWidget);
+    expect(find.text('Delete Group'), findsOneWidget);
+
+    // The old shared plan editor is retired from this screen.
+    expect(find.byKey(GroupPlanKeys.bookSearchField), findsNothing);
+    expect(find.byKey(GroupPlanKeys.paceModeSegment), findsNothing);
+    expect(find.byKey(GroupPlanKeys.submitButton), findsNothing);
+  });
+
+  testWidgets('member sees lifecycle actions but no Reschedule',
+      (tester) async {
+    await seedGroup();
+    await pumpPage(
+      tester,
+      MockFirebaseAuth(mockUser: MockUser(uid: 'm2'), signedIn: true),
     );
-    expect(settingsFinder, findsOneWidget);
 
-    expect(find.byKey(GroupPlanKeys.submitButton), findsOneWidget);
+    expect(find.text('Archive Participation'), findsOneWidget);
+    expect(find.text('Leave Group'), findsOneWidget);
+    expect(find.text('Reschedule'), findsNothing);
+    expect(find.text('Archive Group'), findsNothing);
+    expect(find.text('Delete Group'), findsNothing);
   });
 }
