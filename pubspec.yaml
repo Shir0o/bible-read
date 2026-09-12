@@ -1,7 +1,7 @@
 name: bible_read
 description: A Bible Reading Challenge app for groups and individuals.
 publish_to: none
-version: 1.31.0
+version: 1.31.1
 environment:
   sdk: ^3.5.4
 dependencies:

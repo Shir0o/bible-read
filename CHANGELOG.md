@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.1](https://github.com/Shir0o/bible-read/compare/v1.31.0...v1.31.1) (2026-09-12)
+
+
+### Bug Fixes
+
+* **schedule:** prevent viewport scroll jump when catch-up tray collapses ([#876](https://github.com/Shir0o/bible-read/issues/876)) ([d42540e](https://github.com/Shir0o/bible-read/commit/d42540ea0ec36a2ed8096bca4144d86b9ded4d93))
+
 ## [1.31.0](https://github.com/Shir0o/bible-read/compare/v1.30.2...v1.31.0) (2026-09-12)
 
 
