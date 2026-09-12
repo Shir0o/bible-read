@@ -71,6 +71,7 @@ class ScheduleScreenView extends StatefulWidget {
 
 class _ScheduleScreenViewState extends State<ScheduleScreenView> {
   final ScrollController _controller = ScrollController();
+  final GlobalKey _scheduleHeaderKey = GlobalKey();
 
   /// Per-row resume scroll keys, cached by row position so a row's key never
   /// moves to a different row — a moving GlobalKey would drag its element,
@@ -121,12 +122,47 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
   /// settling into its completed look.
   static const _transientFeedbackDuration = Duration(milliseconds: 600);
 
+  /// Preserves the visual scroll position of the schedule across layouts where
+  /// elements above the schedule (such as the catch-up tray or in-step card)
+  /// expand or collapse.
+  void _preserveScrollAnchor(VoidCallback action) {
+    double? headerYBefore;
+    final headerBox =
+        _scheduleHeaderKey.currentContext?.findRenderObject() as RenderBox?;
+    if (headerBox != null && headerBox.attached) {
+      headerYBefore = headerBox.localToGlobal(Offset.zero).dy;
+    }
+
+    action();
+
+    if (headerYBefore != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_controller.hasClients) return;
+        final currentHeaderBox =
+            _scheduleHeaderKey.currentContext?.findRenderObject() as RenderBox?;
+        if (currentHeaderBox != null && currentHeaderBox.attached) {
+          final headerYAfter = currentHeaderBox.localToGlobal(Offset.zero).dy;
+          final diff = headerYAfter - headerYBefore!;
+          if (diff.abs() > 0.5) {
+            final targetOffset = (_controller.offset + diff).clamp(
+              _controller.position.minScrollExtent,
+              _controller.position.maxScrollExtent,
+            );
+            _controller.jumpTo(targetOffset);
+          }
+        }
+      });
+    }
+  }
+
   /// Handles a tap on entry [index]: flags the row for the transient
   /// highlight, forwards to the host's optimistic toggle, and schedules the
   /// highlight to settle without blocking on the backend.
   void _handleToggle(int index) {
-    setState(() => _recentlyToggled = index);
-    widget.onToggle(index);
+    _preserveScrollAnchor(() {
+      setState(() => _recentlyToggled = index);
+      widget.onToggle(index);
+    });
     _feedbackTimer?.cancel();
     _feedbackTimer = Timer(_transientFeedbackDuration, () {
       if (mounted) setState(() => _recentlyToggled = null);
@@ -239,7 +275,10 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
             _buildInStepCard(context),
           ],
           const SizedBox(height: 20),
-          _buildFullScheduleHeader(context),
+          KeyedSubtree(
+            key: _scheduleHeaderKey,
+            child: _buildFullScheduleHeader(context),
+          ),
           const SizedBox(height: 4),
           if (entries.isEmpty)
             _buildEmpty(context)
@@ -636,7 +675,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
           if (markable) ...[
             const SizedBox(width: 8),
             InkWell(
-              onTap: () => onMarkMonth(date),
+              onTap: () => _preserveScrollAnchor(() => onMarkMonth(date)),
               borderRadius: BorderRadius.circular(8),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
