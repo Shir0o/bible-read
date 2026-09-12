@@ -3,6 +3,7 @@ import 'package:bible_read/pages/create_plan_page.dart';
 import 'package:bible_read/models/group.dart';
 import 'package:bible_read/models/reading_plan.dart';
 import 'package:bible_read/widgets/journey/plans_hub.dart';
+import 'package:bible_read/widgets/skeletons/plans_hub_skeleton.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
 import 'package:bible_read/services/user_preferences_service.dart';
@@ -283,4 +284,76 @@ void main() {
 
     expect(find.text('Evening Light'), findsOneWidget);
   });
+
+  testWidgets('leaving a plan displays error SnackBar if backend call fails', (
+    tester,
+  ) async {
+    // Throwing reading plan service to simulate failure
+    final failingPlanService = _FailingReadingPlanService(firestore: firestore);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
+        home: Scaffold(
+          body: PlansHub(
+            firestore: firestore,
+            auth: auth,
+            groupService: groupService,
+            readingPlanService: failingPlanService,
+            userPreferencesService: prefsService,
+            vibrationService: const _StubVibrationService(),
+            dateProvider: DateTime.now,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    // Initiate leave confirmation
+    await tester.tap(find.byTooltip('Leave plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Leave plan'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Failed to leave "Morning Light". Please try again.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('renders PlansHubSkeleton while loading', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
+        home: Scaffold(
+          body: PlansHub(
+            firestore: firestore,
+            auth: auth,
+            groupService: groupService,
+            readingPlanService: planService,
+            userPreferencesService: prefsService,
+            vibrationService: const _StubVibrationService(),
+            dateProvider: DateTime.now,
+          ),
+        ),
+      ),
+    );
+    // Pump immediately before load completes / before skeleton minTime passes
+    await tester.pump();
+    expect(find.byType(PlansHubSkeleton), findsOneWidget);
+
+    // Header and enroll button remain visible during skeleton loading
+    expect(find.text('Enroll in a new plan'), findsOneWidget);
+
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+    expect(find.byType(PlansHubSkeleton), findsNothing);
+  });
+}
+
+class _FailingReadingPlanService extends ReadingPlanService {
+  _FailingReadingPlanService({required super.firestore});
+
+  @override
+  Future<void> setPlanArchived(String uid, String planId, bool archived) async {
+    throw Exception('Simulated network failure');
+  }
 }

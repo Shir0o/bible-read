@@ -27,6 +27,8 @@ import '../../pages/plan_detail_page.dart';
 import '../../pages/recently_deleted_page.dart';
 import '../../services/plan_pace.dart';
 import '../../services/plan_pace_service.dart';
+import '../skeleton_loader.dart';
+import '../skeletons/plans_hub_skeleton.dart';
 
 /// The Path tab's plan hub — a single list of *everything* the user is
 /// reading: their personal plans ("On your own") and the Shared plans of
@@ -500,6 +502,13 @@ class PlansHubState extends State<PlansHub> {
       await _load();
     } catch (e, st) {
       ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to adjust pace. Please try again.'),
+          ),
+        );
+      }
     }
   }
 
@@ -576,6 +585,13 @@ class PlansHubState extends State<PlansHub> {
       await _load();
     } catch (e, st) {
       ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to adjust pace. Please try again.'),
+          ),
+        );
+      }
     }
   }
 
@@ -595,6 +611,14 @@ class PlansHubState extends State<PlansHub> {
       await _load();
     } catch (e, st) {
       ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Failed to leave "${row.plan.title}". Please try again.'),
+          ),
+        );
+      }
     }
   }
 
@@ -612,6 +636,14 @@ class PlansHubState extends State<PlansHub> {
       await _load();
     } catch (e, st) {
       ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Failed to restore "${row.plan.title}". Please try again.'),
+          ),
+        );
+      }
     }
   }
 
@@ -640,6 +672,14 @@ class PlansHubState extends State<PlansHub> {
       await _load();
     } catch (e, st) {
       ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Failed to restore "${group.name}". Please try again.'),
+          ),
+        );
+      }
     }
   }
 
@@ -691,6 +731,14 @@ class PlansHubState extends State<PlansHub> {
       await _load();
     } catch (e, st) {
       ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Failed to delete "${group.name}". Please try again.'),
+          ),
+        );
+      }
     }
   }
 
@@ -727,6 +775,14 @@ class PlansHubState extends State<PlansHub> {
       await _load();
     } catch (e, st) {
       ErrorLogger.log(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Failed to delete "${row.plan.title}". Please try again.'),
+          ),
+        );
+      }
     }
   }
 
@@ -848,16 +904,8 @@ class PlansHubState extends State<PlansHub> {
         _archived.isEmpty &&
         _archivedGroups.isEmpty;
 
-    if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 96),
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-    if (nothing) return _emptyState(context);
+    if (!_loading && nothing) return _emptyState(context);
 
-    // Inline content of the tab — the embedding page owns scrolling, so the
-    // Showing-up tiles and calendar can sit beneath the list (#808).
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
       child: Column(
@@ -871,31 +919,42 @@ class PlansHubState extends State<PlansHub> {
           _enrollButton(context),
           const SizedBox(height: 10),
           _trashShortcut(context),
-          const SizedBox(height: 16),
-          if (personalActive.isNotEmpty) ...[
-            _sectionHeading(
-              context,
-              icon: Icons.explore_outlined,
-              title: 'On your own',
-              count: personalActive.length,
-              countLabel: 'personal',
+          SkeletonLoader(
+            loading: _loading,
+            minTime: const Duration(milliseconds: 1000),
+            skeleton: const PlansHubSkeleton(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 16),
+                if (personalActive.isNotEmpty) ...[
+                  _sectionHeading(
+                    context,
+                    icon: Icons.explore_outlined,
+                    title: 'On your own',
+                    count: personalActive.length,
+                    countLabel: 'personal',
+                  ),
+                  for (final row in personalActive) _personalCard(context, row),
+                ],
+                if (groupActive.isNotEmpty) ...[
+                  SizedBox(height: personalActive.isNotEmpty ? 22 : 0),
+                  _sectionHeading(
+                    context,
+                    icon: Icons.group_outlined,
+                    title: 'Together',
+                    count: groupActive.length,
+                    countLabel: 'group',
+                  ),
+                  for (final row in groupActive) _groupCard(context, row),
+                ],
+                if (hasFinished)
+                  _finishedSection(context, personalDone, groupDone),
+                if (_archived.isNotEmpty || _archivedGroups.isNotEmpty)
+                  _archivedSection(context),
+              ],
             ),
-            for (final row in personalActive) _personalCard(context, row),
-          ],
-          if (groupActive.isNotEmpty) ...[
-            SizedBox(height: personalActive.isNotEmpty ? 22 : 0),
-            _sectionHeading(
-              context,
-              icon: Icons.group_outlined,
-              title: 'Together',
-              count: groupActive.length,
-              countLabel: 'group',
-            ),
-            for (final row in groupActive) _groupCard(context, row),
-          ],
-          if (hasFinished) _finishedSection(context, personalDone, groupDone),
-          if (_archived.isNotEmpty || _archivedGroups.isNotEmpty)
-            _archivedSection(context),
+          ),
           const SizedBox(height: 24),
         ],
       ),
