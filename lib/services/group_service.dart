@@ -1229,45 +1229,118 @@ class GroupService {
         .where('uid', isEqualTo: uid)
         .snapshots();
 
-    return memberships.asyncMap((memberSnaps) async {
-      final groupIds = memberSnaps.docs
-          .map((doc) => doc.reference.parent.parent?.id)
-          .whereType<String>()
-          .toSet();
-      if (groupIds.isEmpty) return <CircleMember>[];
+    return Stream<List<CircleMember>>.multi((controller) {
+      final groupSubs =
+          <String, StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>{};
+      final perGroup = <String, List<CircleMember>>{};
+      var activeGroupIds = <String>{};
+      var membershipsReported = false;
+      var closed = false;
 
-      final byUid = <String, CircleMember>{};
-      for (final groupId in groupIds) {
-        try {
-          final members = await firestore
-              .collection(GroupCollections.groups)
-              .doc(groupId)
-              .collection(GroupCollections.members)
-              .get();
-          for (final doc in members.docs) {
-            final data = doc.data();
-            final id = (data['uid'] as String?) ?? doc.id;
-            if (id.isEmpty || id == uid) continue;
-            final name = (data['name'] as String?)?.trim();
-            final photoUrl = (data['photoUrl'] as String?)?.trim();
-            final existing = byUid[id];
-            if (existing != null) {
+      CircleMember? memberFrom(
+        QueryDocumentSnapshot<Map<String, dynamic>> doc,
+        String groupId,
+      ) {
+        final data = doc.data();
+        final id = (data['uid'] as String?) ?? doc.id;
+        if (id.isEmpty || id == uid) return null;
+        final name = (data['name'] as String?)?.trim();
+        final photoUrl = (data['photoUrl'] as String?)?.trim();
+        return CircleMember(
+          uid: id,
+          groupIds: {groupId},
+          name: (name != null && name.isNotEmpty) ? name : null,
+          photoUrl: (photoUrl != null && photoUrl.isNotEmpty) ? photoUrl : null,
+        );
+      }
+
+      void emit() {
+        if (controller.isClosed || closed) return;
+        if (membershipsReported == false) return;
+        for (final groupId in activeGroupIds) {
+          if (perGroup.containsKey(groupId) == false) return;
+        }
+
+        final byUid = <String, CircleMember>{};
+        for (final groupId in activeGroupIds) {
+          for (final member in perGroup[groupId] ?? const <CircleMember>[]) {
+            final existing = byUid[member.uid];
+            if (existing == null) {
+              byUid[member.uid] = CircleMember(
+                uid: member.uid,
+                groupIds: {groupId},
+                name: member.name,
+                photoUrl: member.photoUrl,
+              );
+            } else {
               existing.groupIds.add(groupId);
-              continue;
             }
-            byUid[id] = CircleMember(
-              uid: id,
-              groupIds: {groupId},
-              name: (name != null && name.isNotEmpty) ? name : null,
-              photoUrl:
-                  (photoUrl != null && photoUrl.isNotEmpty) ? photoUrl : null,
+          }
+        }
+        controller.add(byUid.values.toList());
+      }
+
+      void cancelGroup(String groupId) {
+        groupSubs.remove(groupId)?.cancel();
+        perGroup.remove(groupId);
+      }
+
+      final membershipSub = memberships.listen(
+        (memberSnaps) {
+          final groupIds = memberSnaps.docs
+              .map((doc) => doc.reference.parent.parent?.id)
+              .whereType<String>()
+              .toSet();
+          activeGroupIds = groupIds;
+
+          for (final existing in groupSubs.keys.toList()) {
+            if (groupIds.contains(existing) == false) {
+              cancelGroup(existing);
+            }
+          }
+
+          for (final groupId in groupIds) {
+            if (groupSubs.containsKey(groupId)) continue;
+            groupSubs[groupId] = firestore
+                .collection(GroupCollections.groups)
+                .doc(groupId)
+                .collection(GroupCollections.members)
+                .snapshots()
+                .listen(
+              (memberSnap) {
+                final members = <CircleMember>[];
+                for (final doc in memberSnap.docs) {
+                  final member = memberFrom(doc, groupId);
+                  if (member != null) members.add(member);
+                }
+                perGroup[groupId] = members;
+                emit();
+              },
+              onError: (Object e, StackTrace st) {
+                unawaited(_safeLog(e, st));
+                perGroup[groupId] = const <CircleMember>[];
+                emit();
+              },
             );
           }
-        } catch (e, st) {
-          await _safeLog(e, st);
+
+          membershipsReported = true;
+          emit();
+        },
+        onError: (Object e, StackTrace st) {
+          unawaited(_safeLog(e, st));
+          membershipsReported = true;
+          controller.addError(e, st);
+        },
+      );
+
+      controller.onCancel = () {
+        closed = true;
+        membershipSub.cancel();
+        for (final subscription in groupSubs.values) {
+          subscription.cancel();
         }
-      }
-      return byUid.values.toList();
+      };
     });
   }
 

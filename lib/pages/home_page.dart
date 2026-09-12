@@ -10,7 +10,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../services/error_logger.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/bible_progress_service.dart';
-import '../services/catch_up_engine.dart';
+import '../services/catch_up_engine.dart' hide ReadingStatus;
 import '../services/group_service.dart';
 import '../services/plan_completion_coordinator.dart';
 import '../services/reading_plan_service.dart';
@@ -22,6 +22,7 @@ import '../models/group_member_progress.dart';
 import '../models/group_schedule.dart';
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
+import '../models/reflection.dart';
 
 import '../services/vibration_service.dart';
 import '../widgets/burst_undo_controller.dart';
@@ -157,6 +158,26 @@ class _HomePageState extends State<HomePage>
   /// Subscription to the active-plans stream, cancelled on dispose.
   StreamSubscription<List<UserPlanProgress>>? _activePlansSub;
 
+  /// Streams the current reading status, so a Firestore change updates Home
+  /// without a pull-to-refresh.
+  StreamSubscription<ReadingStatus>? _statusSub;
+
+  /// Streams today's reflection document.
+  StreamSubscription<dynamic>? _reflectionSub;
+
+  /// Streams the reader's group list; changes re-subscribe the per-group
+  /// schedule/progress watchers below.
+  StreamSubscription<List<Group>>? _groupMembershipSub;
+
+  /// Streaming change triggers for each group shown on Home.
+  final Set<StreamSubscription<dynamic>> _groupTriggerSubs = {};
+
+  /// Streaming change trigger for today's Circle feed.
+  StreamSubscription<dynamic>? _communityFeedSub;
+
+  Timer? _groupRefreshTimer;
+  Timer? _communityRefreshTimer;
+
   /// Timers/subscriptions created by best-effort loads, tracked so they can be
   /// cancelled on dispose (otherwise a slow stream's timeout Timer can outlive
   /// the widget and trip the "Timer still pending" test invariant).
@@ -214,10 +235,135 @@ class _HomePageState extends State<HomePage>
     );
     _loadInitialData();
     _setupSyncListener();
+    _watchLiveData();
     _animationController.forward();
   }
 
-  Future<void> _loadInitialData() async {
+  /// Starts live listeners for the data Home displays. Firestore snapshots
+  /// mean a remote change reaches the tab without a manual refresh, while a
+  /// stream that does not change stays quiet.
+  void _watchLiveData() {
+    _statusSub?.cancel();
+    _reflectionSub?.cancel();
+    _groupMembershipSub?.cancel();
+    _communityFeedSub?.cancel();
+    for (final subscription in _groupTriggerSubs) {
+      subscription.cancel();
+    }
+    _groupTriggerSubs.clear();
+
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+
+    _statusSub = widget.readingStatusService.watchStatus().listen(
+          _applyStatus,
+          onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+        );
+
+    _reflectionSub = widget.reflectionService
+        .watchReflection(uid, _dateKeyFor(widget.dateProvider()))
+        .listen(
+          _applyReflection,
+          onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+        );
+
+    _watchGroupsAndCommunity(uid);
+  }
+
+  void _applyStatus(ReadingStatus status) {
+    if (_disposed || mounted == false) return;
+    setState(() {
+      _readToday = status.readToday;
+      _pastWeek = status.pastWeek;
+      _pastMonth = status.pastMonth;
+      _readDates = status.readDates;
+      _currentStreak = status.streak;
+      _totalReadDays = status.totalReadDays;
+      _initialLoading = false;
+    });
+  }
+
+  void _applyReflection(Reflection? reflection) {
+    if (_disposed || mounted == false) return;
+    setState(() {
+      _reflection = reflection?.text;
+      _reflectionShared = reflection?.shared ?? false;
+    });
+  }
+
+  void _watchGroupsAndCommunity(String uid) {
+    _groupMembershipSub?.cancel();
+    _groupMembershipSub = widget.groupService.groupsForUser(uid).listen(
+      (groups) {
+        for (final subscription in _groupTriggerSubs) {
+          subscription.cancel();
+        }
+        _groupTriggerSubs.clear();
+
+        for (final group in groups) {
+          _groupTriggerSubs.add(
+            widget.groupService.schedule(group.id).listen(
+                  (_) => _scheduleGroupReload(),
+                  onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+                ),
+          );
+          _groupTriggerSubs.add(
+            widget.groupService
+                .memberDailyCompletion(group.id, includeUid: uid)
+                .listen(
+                  (_) => _scheduleGroupReload(),
+                  onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+                ),
+          );
+          _groupTriggerSubs.add(
+            widget.groupService.userProgressForGroup(group.id, uid).listen(
+                  (_) => _scheduleGroupReload(),
+                  onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+                ),
+          );
+        }
+
+        _scheduleGroupReload();
+        _watchCommunity(uid);
+      },
+      onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+    );
+  }
+
+  void _watchCommunity(String uid) {
+    _communityFeedSub?.cancel();
+    final dateKey = _dateKeyFor(widget.dateProvider());
+    _communityFeedSub = ReadLogService(firestore: widget.firestore)
+        .entryDocsForGroupsForUser(uid, dateKey: dateKey)
+        .listen(
+          (_) => _scheduleCommunityReload(),
+          onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+        );
+  }
+
+  void _scheduleGroupReload() {
+    _groupRefreshTimer?.cancel();
+    _groupRefreshTimer = Timer(
+      const Duration(milliseconds: 250),
+      () {
+        if (_disposed || mounted == false) return;
+        unawaited(_loadGroup());
+      },
+    );
+  }
+
+  void _scheduleCommunityReload() {
+    _communityRefreshTimer?.cancel();
+    _communityRefreshTimer = Timer(
+      const Duration(milliseconds: 250),
+      () {
+        if (_disposed || mounted == false) return;
+        unawaited(_loadCommunity());
+      },
+    );
+  }
+
+  Future<void> _loadInitialData({bool forceRefresh = false}) async {
     final shouldAutoOpenCheckIn = !_hasAutoOpenedCheckIn;
     _hasAutoOpenedCheckIn = true;
 
@@ -228,7 +374,7 @@ class _HomePageState extends State<HomePage>
     // Start the remaining loads in parallel.
     // _initialLoading will be set to false when the primary reading status is ready.
     final futures = [
-      _loadReadStatus(showLoading: false).then((_) {
+      _loadReadStatus(showLoading: false, forceRefresh: forceRefresh).then((_) {
         if (!_disposed && mounted) {
           setState(() {
             _initialLoading = false;
@@ -540,12 +686,16 @@ class _HomePageState extends State<HomePage>
         _initialLoading = true;
       });
       _setupSyncListener();
+      _watchLiveData();
       unawaited(_loadInitialData());
     }
   }
 
   /// Fetches today's read flag and calendar history.
-  Future<void> _loadReadStatus({bool showLoading = true}) async {
+  Future<void> _loadReadStatus({
+    bool showLoading = true,
+    bool forceRefresh = false,
+  }) async {
     if (showLoading && !_disposed && mounted) {
       setState(() {
         _toggleLoading = true; // Start loading indicator.
@@ -553,7 +703,9 @@ class _HomePageState extends State<HomePage>
     }
 
     try {
-      final status = await widget.readingStatusService.fetchStatus();
+      final status = await widget.readingStatusService.fetchStatus(
+        forceRefresh: forceRefresh,
+      );
       if (!_disposed && mounted) {
         setState(() {
           _readToday = status.readToday;
@@ -1204,7 +1356,7 @@ class _HomePageState extends State<HomePage>
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: RefreshIndicator(
-        onRefresh: _loadInitialData,
+        onRefresh: () => _loadInitialData(forceRefresh: true),
         child: SkeletonLoader(
           loading: _initialLoading || _isSyncing,
           minTime: const Duration(milliseconds: 1000),
@@ -2646,6 +2798,16 @@ class _HomePageState extends State<HomePage>
     _animationController.dispose();
     _syncSub?.cancel();
     _activePlansSub?.cancel();
+    _statusSub?.cancel();
+    _reflectionSub?.cancel();
+    _groupMembershipSub?.cancel();
+    _communityFeedSub?.cancel();
+    _groupRefreshTimer?.cancel();
+    _communityRefreshTimer?.cancel();
+    for (final subscription in _groupTriggerSubs) {
+      subscription.cancel();
+    }
+    _groupTriggerSubs.clear();
     for (final timer in _loadTimers) {
       timer.cancel();
     }

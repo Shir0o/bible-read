@@ -65,6 +65,11 @@ class _CommunityPageState extends State<CommunityPage>
   @override
   bool get wantKeepAlive => true;
 
+  Future<void> _refresh() async {
+    if (mounted) setState(() {});
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -85,62 +90,66 @@ class _CommunityPageState extends State<CommunityPage>
               _filterGroupId = null;
             }
 
-            return CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: AppHeader(
-                    auth: widget.auth,
-                    firestore: widget.firestore,
-                    vibrationService: widget.vibrationService,
-                    dateProvider: widget.dateProvider,
-                    eyebrow: groups.isNotEmpty
-                        ? _filterGroupId != null
-                            ? groups
-                                .firstWhere((g) => g.id == _filterGroupId)
-                                .name
-                            : 'Together'
-                        : 'Together',
-                    title: 'Circle',
-                    showProfileIcon: false,
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 8)),
-                if (groups.isEmpty)
+            return RefreshIndicator(
+              onRefresh: _refresh,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: EmptyGroupState(
-                        auth: widget.auth,
-                        firestore: widget.firestore,
-                        groupService: widget.groupService,
-                        vibrationService: widget.vibrationService,
+                    child: AppHeader(
+                      auth: widget.auth,
+                      firestore: widget.firestore,
+                      vibrationService: widget.vibrationService,
+                      dateProvider: widget.dateProvider,
+                      eyebrow: groups.isNotEmpty
+                          ? _filterGroupId != null
+                              ? groups
+                                  .firstWhere((g) => g.id == _filterGroupId)
+                                  .name
+                              : 'Together'
+                          : 'Together',
+                      title: 'Circle',
+                      showProfileIcon: false,
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                  if (groups.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: EmptyGroupState(
+                          auth: widget.auth,
+                          firestore: widget.firestore,
+                          groupService: widget.groupService,
+                          vibrationService: widget.vibrationService,
+                        ),
+                      ),
+                    )
+                  else ...[
+                    SliverToBoxAdapter(
+                      child: _GroupFilterChips(
+                        groups: groups,
+                        selectedId: _filterGroupId,
+                        onSelected: (id) => setState(() => _filterGroupId = id),
                       ),
                     ),
-                  )
-                else ...[
-                  SliverToBoxAdapter(
-                    child: _GroupFilterChips(
-                      groups: groups,
-                      selectedId: _filterGroupId,
-                      onSelected: (id) => setState(() => _filterGroupId = id),
+                    const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                    SliverToBoxAdapter(
+                      child: _CirclePeopleList(
+                        auth: widget.auth,
+                        groupService: widget.groupService,
+                        readingStatusService: widget.readingStatusService,
+                        nudgeService: _nudgeService,
+                        dateProvider: widget.dateProvider,
+                        groupIds: _filterGroupId != null
+                            ? [_filterGroupId!]
+                            : groups.map((g) => g.id).toList(),
+                        myUid: user.uid,
+                      ),
                     ),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                  SliverToBoxAdapter(
-                    child: _CirclePeopleList(
-                      auth: widget.auth,
-                      groupService: widget.groupService,
-                      readingStatusService: widget.readingStatusService,
-                      nudgeService: _nudgeService,
-                      dateProvider: widget.dateProvider,
-                      groupIds: _filterGroupId != null
-                          ? [_filterGroupId!]
-                          : groups.map((g) => g.id).toList(),
-                      myUid: user.uid,
-                    ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             );
           },
         ),

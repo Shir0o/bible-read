@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -133,6 +134,128 @@ class ReadingStatusService {
       );
     }
     return _fetchStatusFromFirestore();
+  }
+
+  /// Streams the current reading status. Emits once for the initial state,
+  /// then again whenever a document that feeds the status changes.
+  Stream<ReadingStatus> watchStatus() {
+    final user = auth.currentUser;
+    if (user == null) {
+      return Stream<ReadingStatus>.value(_emptyStatus());
+    }
+
+    final controller = StreamController<ReadingStatus>();
+    final subscriptions = <StreamSubscription<dynamic>>[];
+    var fetching = false;
+    var pending = false;
+    var closed = false;
+
+    final userDocRef = firestore.collection('users').doc(user.uid);
+
+    Future<void> emitStatus() async {
+      if (closed) return;
+      if (fetching) {
+        pending = true;
+        return;
+      }
+      fetching = true;
+      do {
+        pending = false;
+        try {
+          final status = await _fetchStatusFromFirestore();
+          if (closed == false) controller.add(status);
+        } catch (e, st) {
+          if (closed == false) controller.addError(e, st);
+        }
+      } while (pending);
+      fetching = false;
+    }
+
+    void watch(Stream<dynamic> stream) {
+      subscriptions.add(stream.listen(
+        (_) => unawaited(emitStatus()),
+        onError: (Object e, StackTrace st) => unawaited(emitStatus()),
+      ));
+    }
+
+    watch(userDocRef.snapshots());
+    watch(userDocRef.collection('reading').snapshots());
+    watch(userDocRef.collection('summary').doc('data').snapshots());
+
+    controller.onCancel = () async {
+      closed = true;
+      for (final subscription in subscriptions) {
+        await subscription.cancel();
+      }
+    };
+
+    return controller.stream;
+  }
+
+  /// Streams only the current streak value from the user summary document.
+  Stream<int> watchStreak(String uid) {
+    return firestore
+        .collection('users')
+        .doc(uid)
+        .collection('summary')
+        .doc('data')
+        .snapshots()
+        .map((doc) {
+      final data = doc.data();
+      final value = data?['streak'];
+      if (value is num) return value.toInt();
+      return 0;
+    });
+  }
+
+  /// Streams the set of read dates in the [daysBack] window ending at
+  /// [referenceDate], recomputed whenever the reading documents change.
+  Stream<Set<DateTime>> watchReadDatesForRange(
+    String uid,
+    int daysBack, {
+    DateTime? referenceDate,
+  }) {
+    final base = referenceDate != null
+        ? _dateOnly(referenceDate)
+        : _dateOnly(nowProvider());
+    final startDate = _shiftDate(base, -(daysBack - 1));
+
+    return firestore
+        .collection('users')
+        .doc(uid)
+        .collection('reading')
+        .where(FieldPath.documentId,
+            isGreaterThanOrEqualTo: _formatDateKey(startDate))
+        .where(FieldPath.documentId, isLessThanOrEqualTo: _formatDateKey(base))
+        .snapshots()
+        .map((snapshot) {
+      final dates = <DateTime>{};
+      for (final doc in snapshot.docs) {
+        if (doc.data()['read'] == true) {
+          final parsed = DateTime.tryParse(doc.id);
+          if (parsed != null) {
+            dates.add(DateTime(parsed.year, parsed.month, parsed.day));
+          }
+        }
+      }
+      return dates;
+    });
+  }
+
+  ReadingStatus _emptyStatus() {
+    final today = _dateOnly(nowProvider());
+    final defaultMonthKey =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}';
+    return ReadingStatus(
+      readToday: false,
+      pastWeek: const [],
+      pastMonth: const [],
+      readDates: const {},
+      streak: 0,
+      totalReadDays: 0,
+      graceCreditsAvailable: 0,
+      graceCreditsMonth: defaultMonthKey,
+    );
   }
 
   /// Internal method that always reads from Firestore.
@@ -708,6 +831,11 @@ class ReadingStatusService {
     );
   }
 }
+
+String _formatDateKey(DateTime value) =>
+    '${value.year.toString().padLeft(4, '0')}-'
+    '${value.month.toString().padLeft(2, '0')}-'
+    '${value.day.toString().padLeft(2, '0')}';
 
 DateTime _dateOnly(DateTime value) =>
     DateTime(value.year, value.month, value.day);

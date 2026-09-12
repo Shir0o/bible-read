@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -7,6 +9,19 @@ import 'package:bible_read/services/group_service.dart';
 // #795): everyone the reader shares at least one Group with. There is no
 // stored circle collection, a person in several Groups appears once, and
 // the reader themselves is not part of their own Circle.
+
+Future<T> nextWhere<T>(Stream<T> stream, bool Function(T value) predicate) {
+  final completer = Completer<T>();
+  late StreamSubscription<T> subscription;
+  subscription = stream.listen((value) {
+    if (predicate(value) && completer.isCompleted == false) {
+      completer.complete(value);
+      subscription.cancel();
+    }
+  });
+  return completer.future;
+}
+
 void main() {
   late FakeFirebaseFirestore firestore;
   late GroupService groupService;
@@ -88,5 +103,24 @@ void main() {
     final circle = await groupService.circleMemberIds('u2');
 
     expect(circle, {'u3'});
+  });
+
+  test('circleMembers stream emits when a new member joins', () async {
+    await seedGroup(id: 'g1', ownerUid: 'u1', members: ['u2']);
+
+    final joined = nextWhere(
+      groupService.circleMembers('u2'),
+      (members) => members.any((member) => member.uid == 'u3'),
+    );
+
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u3')
+        .set({'uid': 'u3', 'role': 'member'});
+
+    final circle = await joined.timeout(const Duration(seconds: 3));
+    expect(circle.map((member) => member.uid), contains('u3'));
   });
 }

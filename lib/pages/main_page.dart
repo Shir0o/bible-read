@@ -148,7 +148,6 @@ class MainPageState extends State<MainPage> {
         firestore: widget.firestore,
         vibrationService: widget.vibrationService,
         dateProvider: () => DateTime.now(),
-        cache: _cacheService,
       ),
     ];
   }

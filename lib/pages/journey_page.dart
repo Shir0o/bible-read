@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../services/data_cache_service.dart';
 import '../services/group_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/user_preferences_service.dart';
@@ -23,16 +22,12 @@ class JourneyPage extends StatefulWidget {
   final VibrationService vibrationService;
   final DateTime Function() dateProvider;
 
-  /// Optional cache to avoid redundant data loading between tab switches.
-  final DataCacheService? cache;
-
   const JourneyPage({
     super.key,
     required this.auth,
     required this.firestore,
     required this.vibrationService,
     required this.dateProvider,
-    this.cache,
   });
 
   @override
@@ -45,6 +40,10 @@ class _JourneyPageState extends State<JourneyPage>
   Set<DateTime>? _readDates;
   int _streak = 0;
 
+  late final ReadingStatusService _statusService;
+  StreamSubscription<Set<DateTime>>? _readDatesSub;
+  StreamSubscription<int>? _streakSub;
+
   /// Reloads the plans hub; called together with the tab's own data refresh.
   final GlobalKey<PlansHubState> _hubKey = GlobalKey<PlansHubState>();
 
@@ -54,26 +53,84 @@ class _JourneyPageState extends State<JourneyPage>
   @override
   void initState() {
     super.initState();
-    _loadData();
-    unawaited(_loadStreak());
+    _statusService = ReadingStatusService(
+      firestore: widget.firestore,
+      auth: widget.auth,
+      dateProvider: widget.dateProvider,
+    );
+    _subscribeReadDates();
+    _subscribeStreak();
   }
 
-  /// Loads the current streak for the "Day streak" stat tile.
-  Future<void> _loadStreak() async {
+  void _subscribeReadDates() {
     final user = widget.auth.currentUser;
     if (user == null) return;
+    final now = widget.dateProvider();
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    _readDatesSub?.cancel();
+    _readDatesSub = _statusService
+        .watchReadDatesForRange(user.uid, daysInMonth, referenceDate: now)
+        .listen(
+      (dates) {
+        if (mounted) {
+          setState(() {
+            _readDates = dates;
+            _isLoading = false;
+          });
+        }
+      },
+      onError: (Object e, StackTrace st) {
+        debugPrint('Error watching Journey data: $e');
+        if (mounted) setState(() => _isLoading = false);
+      },
+    );
+  }
+
+  void _subscribeStreak() {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+    _streakSub?.cancel();
+    _streakSub = _statusService.watchStreak(user.uid).listen(
+      (streak) {
+        if (mounted) setState(() => _streak = streak);
+      },
+      onError: (Object e, StackTrace st) =>
+          debugPrint('Error watching streak: $e'),
+    );
+  }
+
+  Future<void> _refresh() async {
+    final user = widget.auth.currentUser;
+    if (user == null) return;
+    final now = widget.dateProvider();
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     try {
-      final doc = await widget.firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('summary')
-          .doc('data')
-          .get();
-      final streak = (doc.data()?['streak'] as num?)?.toInt() ?? 0;
-      if (mounted) setState(() => _streak = streak);
-    } catch (_) {
-      // Best-effort; the tile simply shows 0 if unavailable.
+      final statusMap = await _statusService.getReadStatusForRange(
+        user.uid,
+        daysInMonth,
+        referenceDate: now,
+      );
+      final readDates = statusMap.entries
+          .where((e) => e.value)
+          .map((e) => DateTime.parse(e.key))
+          .toSet();
+      if (mounted) {
+        setState(() {
+          _readDates = readDates;
+          _isLoading = false;
+        });
+      }
+      await _hubKey.currentState?.reload();
+    } catch (e) {
+      debugPrint('Error refreshing Journey data: $e');
     }
+  }
+
+  @override
+  void dispose() {
+    _readDatesSub?.cancel();
+    _streakSub?.cancel();
+    super.dispose();
   }
 
   /// A single stat tile ("value unit" + label + sub), paired side-by-side on
@@ -138,72 +195,6 @@ class _JourneyPageState extends State<JourneyPage>
     );
   }
 
-  /// Loads the Showing-up record feeding the stat tiles and calendar. The
-  /// plans hub loads itself; the old prefetch of plan data — which gated the
-  /// whole tab behind a never-resolving `Future.wait` under fakes — went
-  /// with JourneyProgressCard (#808).
-  Future<void> _loadData() async {
-    final user = widget.auth.currentUser;
-    if (user == null) {
-      setState(() => _isLoading = false);
-      return;
-    }
-
-    final readingStatusService = ReadingStatusService(
-      firestore: widget.firestore,
-      auth: widget.auth,
-    );
-    final cache = widget.cache;
-
-    try {
-      final now = widget.dateProvider();
-      final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
-      final cacheKey = 'journey:${user.uid}';
-
-      // If cache has fresh data, use it directly.
-      if (cache != null) {
-        final cached = cache.peek<_JourneyData>(cacheKey);
-        if (cached != null) {
-          if (mounted) {
-            setState(() {
-              _readDates = cached.readDates;
-              _isLoading = false;
-            });
-          }
-          return;
-        }
-      }
-
-      final statusMap = await readingStatusService.getReadStatusForRange(
-        user.uid,
-        daysInMonth,
-        referenceDate: now,
-      );
-      final readDates = statusMap.entries
-          .where((e) => e.value)
-          .map((e) => DateTime.parse(e.key))
-          .toSet();
-
-      // Store in cache for next tab switch
-      cache?.put<_JourneyData>(
-        cacheKey,
-        _JourneyData(readDates: readDates),
-      );
-
-      if (mounted) {
-        setState(() {
-          _readDates = readDates;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error pre-loading Journey data: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -225,7 +216,7 @@ class _JourneyPageState extends State<JourneyPage>
             ),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: _loadData,
+                onRefresh: _refresh,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 24),
@@ -306,12 +297,4 @@ class _JourneyPageState extends State<JourneyPage>
       ),
     );
   }
-}
-
-/// Value object holding the Showing-up record for the Journey tab.
-/// Stored in [DataCacheService] to avoid re-fetching on tab switches.
-class _JourneyData {
-  final Set<DateTime> readDates;
-
-  const _JourneyData({required this.readDates});
 }
