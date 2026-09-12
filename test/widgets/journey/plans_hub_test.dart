@@ -251,4 +251,36 @@ void main() {
     expect(find.text('Archived'), findsNothing);
     expect(find.text('Recently Deleted · 1 waiting'), findsOneWidget);
   });
+
+  testWidgets('a new plan appears without a manual reload', (tester) async {
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpPage(tester);
+
+    const secondPlan = ReadingPlan(
+      id: 'p2',
+      title: 'Evening Light',
+      description: 'A second plan',
+      durationDays: 2,
+      tags: [],
+      schedule: [
+        ReadingPlanDay(day: 1, readings: ['John 1']),
+        ReadingPlanDay(day: 2, readings: ['John 2']),
+      ],
+    );
+
+    await tester.runAsync(() async {
+      await firestore.collection('custom_plans').doc('p2').set({
+        ...secondPlan.toJson(),
+        'userId': 'u1',
+      });
+      await planService.startPlan('u1', 'p2', startDate: DateTime.now());
+    });
+    await tester.pumpAndSettle(const Duration(milliseconds: 1500));
+
+    expect(find.text('Evening Light'), findsOneWidget);
+  });
 }

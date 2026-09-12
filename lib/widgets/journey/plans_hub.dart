@@ -104,10 +104,19 @@ class PlansHubState extends State<PlansHub> {
   /// Id of the personal plan whose inline "leave" tap is awaiting confirmation.
   String? _confirmingLeaveId;
 
+  final Set<StreamSubscription<dynamic>> _watchSubs = {};
+  final Set<StreamSubscription<dynamic>> _groupWatchSubs = {};
+  Timer? _reloadTimer;
+  bool _watchStarted = false;
+  bool _loadInFlight = false;
+  bool _reloadQueued = false;
+
   @override
   void initState() {
     super.initState();
-    _load();
+    _load().whenComplete(() {
+      if (mounted) _startWatching();
+    });
   }
 
   Future<void> _load() async {
@@ -116,6 +125,12 @@ class PlansHubState extends State<PlansHub> {
       if (mounted) setState(() => _loading = false);
       return;
     }
+    if (_loadInFlight) {
+      _reloadQueued = true;
+      return;
+    }
+    _loadInFlight = true;
+
     final today = widget.dateProvider();
 
     try {
@@ -271,7 +286,103 @@ class PlansHubState extends State<PlansHub> {
     } catch (e, st) {
       ErrorLogger.log(e, st);
       if (mounted) setState(() => _loading = false);
+    } finally {
+      _loadInFlight = false;
+      if (_reloadQueued) {
+        _reloadQueued = false;
+        _scheduleReload();
+      }
     }
+  }
+
+  void _startWatching() {
+    if (_watchStarted) return;
+    _watchStarted = true;
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+
+    _listen(widget.readingPlanService.getActivePlans(uid));
+    _listen(widget.readingPlanService.getArchivedPlans(uid));
+    _listen(widget.readingPlanService.getDeletedPlans(uid));
+    _listen(widget.userPreferencesService.streamPreferences(uid));
+    _watchGroups(uid);
+  }
+
+  void _listen(Stream<dynamic> stream) {
+    var first = true;
+    _watchSubs.add(stream.listen(
+      (_) {
+        if (first) {
+          first = false;
+          return;
+        }
+        _scheduleReload();
+      },
+      onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+    ));
+  }
+
+  void _watchGroups(String uid) {
+    var first = true;
+    _watchSubs.add(widget.groupService.groupsForUser(uid).listen(
+      (groups) {
+        if (first) {
+          first = false;
+          return;
+        }
+        for (final subscription in _groupWatchSubs) {
+          subscription.cancel();
+        }
+        _groupWatchSubs.clear();
+        for (final group in groups) {
+          _listenGroup(widget.groupService.schedule(group.id));
+          _listenGroup(widget.groupService.userProgressForGroup(group.id, uid));
+          _listenGroup(widget.groupService.memberDailyCompletion(
+            group.id,
+            date: widget.dateProvider(),
+          ));
+        }
+        _scheduleReload();
+      },
+      onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+    ));
+    _listen(widget.groupService.getDeletedGroups(uid));
+  }
+
+  void _listenGroup(Stream<dynamic> stream) {
+    var first = true;
+    _groupWatchSubs.add(stream.listen(
+      (_) {
+        if (first) {
+          first = false;
+          return;
+        }
+        _scheduleReload();
+      },
+      onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+    ));
+  }
+
+  void _scheduleReload() {
+    _reloadTimer?.cancel();
+    _reloadTimer = Timer(
+      const Duration(milliseconds: 300),
+      () {
+        if (mounted) unawaited(_load());
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _reloadTimer?.cancel();
+    for (final subscription in _watchSubs) {
+      subscription.cancel();
+    }
+    for (final subscription in _groupWatchSubs) {
+      subscription.cancel();
+    }
+    super.dispose();
   }
 
   /// Reloads the hub's plan lists. Called by the embedding page's

@@ -42,6 +42,12 @@ class ReflectionService {
     return Reflection.fromFirestore(doc);
   }
 
+  /// Streams the reflection saved for [dateKey]. Emits `null` when no
+  /// reflection exists and again whenever the document changes.
+  Stream<Reflection?> watchReflection(String uid, String dateKey) {
+    return _doc(uid, dateKey).snapshots().map(Reflection.fromFirestore);
+  }
+
   /// Saves [text] as the reflection for [dateKey]. An empty/blank [text]
   /// deletes the reflection instead, so clearing the field in the editor
   /// behaves the same as skipping.
