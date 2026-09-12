@@ -334,4 +334,58 @@ void main() {
     );
     expect(controller.offset, greaterThan(0));
   });
+
+  testWidgets(
+      'marking yesterday reading as read in group plan does not jump past today reading',
+      (tester) async {
+    // 30 days so the view is long and scrollable
+    final days = [
+      for (var i = 10; i >= 1; i--)
+        (
+          dayOffset: -i,
+          completed: i > 1
+        ), // Only offset -1 (yesterday) is missed!
+      (dayOffset: 0, completed: false), // today (current)
+      for (var i = 1; i <= 20; i++) (dayOffset: i, completed: false),
+    ];
+
+    await tester.pumpWidget(
+      _OptimisticHost(
+        today: today,
+        isGroup: true,
+        days: days,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // In group plan with yesterday missed and today unread:
+    // Today's reading is Genesis 11 (offset 0). Yesterday is Genesis 10 (offset -1).
+    expect(find.text('Catch up at your own pace'), findsOneWidget);
+    final todayRowFinder = find.ancestor(
+      of: find.text('Genesis 11'),
+      matching: find.byType(InkWell),
+    );
+    expect(todayRowFinder, findsWidgets);
+
+    final todayTopBefore = tester.getRect(todayRowFinder.first).top;
+
+    // Now tap yesterday's reading (either in tray or in schedule). Let's tap yesterday's row in schedule or tray.
+    final yesterdayFinder = find.ancestor(
+      of: find.text('Genesis 10'),
+      matching: find.byType(InkWell),
+    );
+    await tester.tap(yesterdayFinder.first);
+    await tester.pumpAndSettle();
+
+    final todayTopAfter = tester.getRect(todayRowFinder.first).top;
+
+    // Check how much today's row moved relative to the screen or how the scroll offset changed.
+    // print('Offset before: $initialOffset, after: ${controller.offset}');
+    // print('Today top before: $todayTopBefore, after: $todayTopAfter');
+
+    // If it jumps up past the viewport or jumps drastically:
+    expect((todayTopAfter - todayTopBefore).abs(), lessThan(50),
+        reason:
+            'Today reading jumped by ${(todayTopAfter - todayTopBefore).abs()}px');
+  });
 }
