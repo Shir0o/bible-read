@@ -315,4 +315,104 @@ void main() {
       expect(await paceService.sharedPlanOverlay('u1', 'g1').first, isNull);
     });
   });
+
+  group('rescheduleGroup', () {
+    Future<void> seedGroup() async {
+      await firestore.collection('groups').doc('g1').set({
+        'ownerUid': 'u1',
+        'memberCount': 3,
+        'name': 'Morning Crew',
+      });
+      await firestore
+          .collection('groups')
+          .doc('g1')
+          .collection('schedule')
+          .doc('2026-01-01')
+          .set(
+            GroupSchedule(
+              date: DateTime(2026, 1, 1),
+              chapters: const ['Gen 1'],
+            ).toFirestore(),
+          );
+      await firestore
+          .collection('groups')
+          .doc('g1')
+          .collection('schedule')
+          .doc('2026-01-02')
+          .set(
+            GroupSchedule(
+              date: DateTime(2026, 1, 2),
+              chapters: const ['Gen 2'],
+            ).toFirestore(),
+          );
+    }
+
+    test('refuses a non-owner without touching the Group schedule', () async {
+      await seedGroup();
+      final adjusted = [
+        GroupSchedule(
+          date: DateTime(2026, 1, 5),
+          chapters: const ['Gen 1'],
+        ),
+        GroupSchedule(
+          date: DateTime(2026, 1, 6),
+          chapters: const ['Gen 2'],
+        ),
+      ];
+
+      await expectLater(
+        () => paceService.rescheduleGroup(
+          uid: 'u2',
+          groupId: 'g1',
+          adjusted: adjusted,
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      final schedule = await firestore
+          .collection('groups')
+          .doc('g1')
+          .collection('schedule')
+          .get();
+      expect(
+        schedule.docs.map((doc) => doc.id).toSet(),
+        {'2026-01-01', '2026-01-02'},
+      );
+    });
+
+    test('rewrites the Group schedule and bumps the plan revision', () async {
+      await seedGroup();
+      final adjusted = [
+        GroupSchedule(
+          date: DateTime(2026, 1, 5),
+          chapters: const ['Gen 1'],
+        ),
+        GroupSchedule(
+          date: DateTime(2026, 1, 6),
+          chapters: const ['Gen 2'],
+        ),
+      ];
+
+      final revision = await paceService.rescheduleGroup(
+        uid: 'u1',
+        groupId: 'g1',
+        adjusted: adjusted,
+      );
+      expect(revision, 1);
+
+      final schedule = await firestore
+          .collection('groups')
+          .doc('g1')
+          .collection('schedule')
+          .get();
+      expect(
+        schedule.docs.map((doc) => doc.id).toSet(),
+        {'2026-01-05', '2026-01-06'},
+      );
+
+      final group = await firestore.collection('groups').doc('g1').get();
+      final config = group.data()?['planConfig'] as Map?;
+      expect(config?['revision'], 1);
+    });
+  });
 }

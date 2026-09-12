@@ -16,6 +16,7 @@ import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/nudge_sheet.dart';
+import 'edit_group_page.dart';
 
 /// Roster management for a reading group: roles, per-member read status,
 /// nudge, promote / transfer ownership / remove, and pending invites.
@@ -98,6 +99,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                     _buildRoster(roster, readByUid),
                     const SizedBox(height: 20),
                     _buildPendingInvites(roster),
+                    _buildGroupSettingsLink(),
                   ],
                 );
               },
@@ -582,6 +584,67 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
         'admin' => 'Admin',
         _ => 'Member',
       };
+
+  Widget _buildGroupSettingsLink() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final appColors = AppColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: InkWell(
+        onTap: _openGroupSettings,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: appColors.border),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.settings_outlined, color: colorScheme.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Group settings',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Name, visibility, reschedule',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: colorScheme.outline),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openGroupSettings() async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => EditGroupPage(
+          group: widget.group,
+          groupService: widget.groupService,
+          auth: widget.auth,
+          vibrationService: widget.vibrationService,
+        ),
+      ),
+    );
+  }
 }
 
 /// A small badge indicating a member's role. Renders nothing for plain members.
