@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../app_bottom_sheet.dart';
 import '../common_styles.dart';
 import '../find_group_card.dart';
+import '../group_preview_sheet.dart';
 import '../nav_glyphs.dart';
 
 /// The empty state for Circle when the reader has no active groups.
@@ -220,7 +221,6 @@ class _FindGroupSheetContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final user = auth.currentUser;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -268,33 +268,16 @@ class _FindGroupSheetContent extends StatelessWidget {
                     final group = groups[index];
                     return FindGroupCard(
                       group: group,
-                      groupService: groupService,
-                      onJoin: () async {
+                      readingSummary: GroupPreviewSheet.readingLabel(group),
+                      onTap: () {
                         vibrationService.lightImpact();
-                        if (user == null) return;
-                        try {
-                          await groupService.joinGroup(
-                            groupId: group.id,
-                            uid: user.uid,
-                            name: user.displayName ?? 'Reader',
-                            photoUrl: user.photoURL,
-                            isPublic: group.isPublic,
-                          );
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Joined ${group.name}!'),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Failed to join: $e')),
-                            );
-                          }
-                        }
+                        GroupPreviewSheet.show(
+                          context: context,
+                          group: group,
+                          groupService: groupService,
+                          auth: auth,
+                          vibrationService: vibrationService,
+                        );
                       },
                     );
                   },
