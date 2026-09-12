@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.31.0](https://github.com/Shir0o/bible-read/compare/v1.30.2...v1.31.0) (2026-09-12)
+
+
+### Features
+
+* **circle:** add public group preview sheet ([#858](https://github.com/Shir0o/bible-read/issues/858)) ([#872](https://github.com/Shir0o/bible-read/issues/872)) ([49bc25a](https://github.com/Shir0o/bible-read/commit/49bc25ada3b97d4b059d616d9eb11ddc012af1be))
+* **circle:** remove your groups section and enhance empty state ([#855](https://github.com/Shir0o/bible-read/issues/855)) ([#866](https://github.com/Shir0o/bible-read/issues/866)) ([a13cabc](https://github.com/Shir0o/bible-read/commit/a13cabc0a091aa2145659578807fc58402d5f96a))
+* **groups:** separate Adjust pace from owner Reschedule ([#859](https://github.com/Shir0o/bible-read/issues/859)) ([#873](https://github.com/Shir0o/bible-read/issues/873)) ([78d7acc](https://github.com/Shir0o/bible-read/commit/78d7acc52f56e887ad9b443f02dd1589131110f5))
+* **path:** add skeleton loader and optimistic failure handling ([#868](https://github.com/Shir0o/bible-read/issues/868)) ([#875](https://github.com/Shir0o/bible-read/issues/875)) ([b0e09ff](https://github.com/Shir0o/bible-read/commit/b0e09ff2b57b2e34a98883435c6e645bf2bc27c7))
+
+
+### Bug Fixes
+
+* **tabs:** auto-refresh Today, Circle, Path from live data ([#869](https://github.com/Shir0o/bible-read/issues/869)) ([#874](https://github.com/Shir0o/bible-read/issues/874)) ([3c542fa](https://github.com/Shir0o/bible-read/commit/3c542fa068024f56df68bb1a9c853d22222265e7))
+
+
+### Refactoring
+
+* **groups:** delete GroupDetailPage, promote GroupMembersPage as group page ([#857](https://github.com/Shir0o/bible-read/issues/857)) ([#871](https://github.com/Shir0o/bible-read/issues/871)) ([67945e9](https://github.com/Shir0o/bible-read/commit/67945e9f5f9c5d7ce96234dd16a8d34425374091))
+* **schedule:** merge FullSchedulePage into PlanDetailPage and retire Log Progress ([#856](https://github.com/Shir0o/bible-read/issues/856)) ([#870](https://github.com/Shir0o/bible-read/issues/870)) ([bc4454c](https://github.com/Shir0o/bible-read/commit/bc4454ce1608ab1dd336694cb2916948f47ea912))
+
 ## [1.30.2](https://github.com/Shir0o/bible-read/compare/v1.30.1...v1.30.2) (2026-09-11)
 
 
