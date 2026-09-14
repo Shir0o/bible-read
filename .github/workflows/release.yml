@@ -104,25 +104,13 @@ jobs:
           chmod 600 android/key.properties
           echo "CI keystore and key.properties assembled (file contents not echoed)."
 
-      - name: Derive Android versionCode from tag (major*10000 + minor*100 + patch)
+      - name: Derive Android versionCode from tag
         id: vc
         run: |
           set -euo pipefail
-          tag="$TAG"
-          ver="${tag#v}"
-          ver="${ver%%-*}"
-          if [[ ! "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Tag '$tag' is not a plain semantic version (expected vMAJOR.MINOR.PATCH)."
-            exit 1
-          fi
-          IFS='.' read -r major minor patch <<< "$ver"
-          if [ -z "$major" ] || [ -z "$minor" ] || [ -z "$patch" ]; then
-            echo "::error::Could not parse semver from tag '$tag' (parsed major='$major' minor='$minor' patch='$patch')."
-            exit 1
-          fi
-          code=$(( 10#$major * 10000 + 10#$minor * 100 + 10#$patch ))
+          code="$(dart tool/version_code.dart "$TAG")"
           echo "code=$code" >> "$GITHUB_OUTPUT"
-          echo "Derived versionCode=$code from tag $tag (major=$major minor=$minor patch=$patch)"
+          echo "Derived versionCode=$code from tag $TAG"
 
       - name: Bootstrap Android project (Generates gradlew)
         run: flutter build apk --debug
@@ -130,10 +118,14 @@ jobs:
           CI: 'true'
 
       - name: Build signed release AAB
-        run: flutter build appbundle --release --no-tree-shake-icons --build-number=${{ steps.vc.outputs.code }}
+        env:
+          VERSION_CODE: ${{ steps.vc.outputs.code }}
+        run: flutter build appbundle --release --no-tree-shake-icons --build-number="$VERSION_CODE"
 
       - name: Build signed release APK
-        run: flutter build apk --release --no-tree-shake-icons --build-number=${{ steps.vc.outputs.code }}
+        env:
+          VERSION_CODE: ${{ steps.vc.outputs.code }}
+        run: flutter build apk --release --no-tree-shake-icons --build-number="$VERSION_CODE"
 
       - name: Locate built artifacts
         id: locate
@@ -179,7 +171,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           generate_release_notes: false
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             ${{ steps.locate.outputs.aab }}
             ${{ steps.locate.outputs.apk }}
@@ -196,14 +188,16 @@ jobs:
 
       - name: Extract Play Store release notes from CHANGELOG.md
         if: steps.prerelease.outputs.is_prerelease != 'true'
+        env:
+          VERSION_CODE: ${{ steps.vc.outputs.code }}
         run: |
           set -euo pipefail
           mkdir -p fastlane/metadata/android/en-US/changelogs
-          CHANGELOG_DEST="fastlane/metadata/android/en-US/changelogs/${{ steps.vc.outputs.code }}.txt"
+          CHANGELOG_DEST="fastlane/metadata/android/en-US/changelogs/${VERSION_CODE}.txt"
 
           ruby -e '# encoding: utf-8
             changelog = File.exist?("CHANGELOG.md") ? File.read("CHANGELOG.md", encoding: "utf-8") : ""
-            tag = ENV["GITHUB_REF_NAME"] || ""
+            tag = ENV["TAG"] || ""
             ver = tag.sub(/^v/, "").split("-").first || ""
 
             pattern = if !ver.empty?
