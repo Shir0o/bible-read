@@ -10,6 +10,9 @@ updates:
         patterns:
           - "*"
 
+  # Keeps the commit-SHA pins in .github/workflows/*.yml current. Dependabot
+  # understands the uses: owner/repo@<sha> # vX form and rewrites both the SHA
+  # and the version comment.
   - package-ecosystem: github-actions
     directory: /
     schedule:

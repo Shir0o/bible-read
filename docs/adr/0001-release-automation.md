@@ -86,6 +86,30 @@ internal-track-first (fail-safe by default).
   access to the repo and Play Console respectively until manually
   revoked. Rotate by deleting the secrets in GitHub settings.
 
+## Hardening (2026-09)
+
+Issue #878 tightened the trust boundary around the pipeline without changing
+the release model recorded above:
+
+- The tag is consumed only as the `TAG` environment variable; no `${{ }}`
+  expression is interpolated into a `run:` body in any workflow.
+- `tool/version_code.dart` owns the `major * 10000 + minor * 100 + patch`
+  arithmetic and rejects anything that is not `v?MAJOR.MINOR.PATCH` with an
+  optional pre-release suffix. The workflow calls it instead of shell.
+- Every third-party `uses:` is pinned to a commit SHA; Dependabot keeps the
+  pins current.
+- The `production` environment must require a reviewer, so the Play Console
+  service account is only touched after a human approves.
+- `release.yml` attaches release assets with the short-lived `GITHUB_TOKEN`;
+  `RELEASE_PLEASE_TOKEN` is required only by `release-please.yml`, scoped to
+  this repository with `contents:write` + `pull-requests:write`.
+- Secret-backed files are removed by an `if: always()` cleanup step.
+- `test/release/workflow_security_test.dart` asserts the workflow invariants.
+
+The same hardening is intended for the shared template and the `attd` / `bnpb`
+mirrors; that cross-repository work is tracked at
+<https://github.com/Shir0o/.github/issues/1>.
+
 ## References
 
 - release-please config: [`release-please-config.json`](../../release-please-config.json)

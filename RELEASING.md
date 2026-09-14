@@ -28,8 +28,10 @@ internal-track-first, Play App Signing, etc.) see
 4. The merge pushes a tag (e.g. `v1.26.0`). The
    `.github/workflows/release.yml` workflow fires:
    - Assembles `key.properties` from secrets.
-   - Derives the `versionCode` from the tag.
-   - Builds a signed AAB and a signed APK with `--build-number=$vc`.
+   - Derives the `versionCode` from the tag with the pure
+     `tool/version_code.dart` module (never shell arithmetic).
+   - Builds a signed AAB and a signed APK with
+     `--build-number="$VERSION_CODE"`.
    - Attaches both to the GitHub Release for the tag.
    - Uploads the AAB to the Play Console internal testing track via
      `fastlane play_upload` as a **draft** (testers are not
@@ -39,6 +41,47 @@ internal-track-first, Play App Signing, etc.) see
 
 That's the whole flow. There is no manual version bump, no manual tag,
 no manual upload.
+
+## Security model
+
+The pipeline treats everything it consumes as data and gives the runner as
+little to execute as possible:
+
+- **Tag-as-data.** Workflow steps read the tag from the `TAG` environment
+  variable. No `${{ }}` expression is interpolated into a `run:` shell body
+  anywhere under `.github/workflows/`; the invariant is asserted by
+  `test/release/workflow_security_test.dart`.
+- **Pure version derivation.** `tool/version_code.dart` owns the
+  `major * 10000 + minor * 100 + patch` contract. It accepts only
+  `v?MAJOR.MINOR.PATCH` with an optional `-prerelease` suffix and rejects
+  anything else (leading zeros, build metadata, shell metacharacters, values
+  that would overflow the Android limit). The workflow calls the module
+  instead of re-implementing the arithmetic in shell.
+- **Immutable action pins.** Every third-party `uses:` is pinned to a full
+  40-character commit SHA with a version comment. Dependabot
+  (`.github/dependabot.yml`, `github-actions` ecosystem) raises the pin
+  updates, so pinning does not freeze dependencies.
+- **Approval gate.** The `build-and-publish` job runs in the `production`
+  environment, which must require at least one reviewer (see below).
+- **Short-lived tokens.** `release.yml` attaches release assets with the
+  workflow's own `GITHUB_TOKEN`. The long-lived `RELEASE_PLEASE_TOKEN` is
+  used only by `.github/workflows/release-please.yml`, where a token that
+  can trigger the downstream `on: push: tags` workflow is genuinely required.
+- **Credential lifecycle.** Every file written from a secret
+  (`fastlane/play-supply-credentials.json`, `android/key.properties`,
+  `android/app/google-services.json`, and `~/.keystores`) is deleted by a
+  step guarded with `if: always()`, so a failed release does not leave
+  credentials in the workspace.
+- **Narrow artifacts.** No workflow uploads the working tree; artifact paths
+  are enumerated explicitly.
+
+## Production environment approval (required)
+
+The release job cannot touch the Play Console service account until a human
+approves it. Configure the gate under Settings > Environments > production >
+Required reviewers and add at least one reviewer. Without a reviewer the
+environment auto-approves and a bad tag could publish unattended. This is
+one-time repository setup; it cannot be expressed in `release.yml` itself.
 
 ## PR title conventions (required)
 
@@ -63,7 +106,7 @@ create them under **Settings → Secrets and variables → Actions**:
 
 | Secret                  | Purpose                                                                 |
 | ----------------------- | ----------------------------------------------------------------------- |
-| `RELEASE_PLEASE_TOKEN`  | PAT with `repo` (or fine-grained `contents:write` & `pull-requests:write`). **Required**: Tags created using GitHub's built-in `GITHUB_TOKEN` are suppressed by GitHub Actions and will never trigger the downstream `release.yml` workflow. A PAT is required for automated deployment. |
+| `RELEASE_PLEASE_TOKEN`  | Fine-grained PAT scoped to **this repository only** with `Contents: write` and `Pull requests: write`. **Required** because tags created with the built-in `GITHUB_TOKEN` are suppressed by GitHub Actions and would never trigger the downstream `release.yml` workflow. `release.yml` no longer consumes this PAT; it attaches assets with the short-lived `GITHUB_TOKEN`. |
 | `ANDROID_KEYSTORE_BASE64` | `base64` of the CI **upload** keystore (`~/.keystores/my-key.keystore` on this machine). |
 | `KEY_ALIAS`             | Alias of the upload key inside the keystore.                            |
 | `KEY_PASSWORD`          | Password for the upload key.                                            |
@@ -71,9 +114,10 @@ create them under **Settings → Secrets and variables → Actions**:
 | `PLAY_SUPPLY_JSON_KEY`  | Contents of the Play Console service-account JSON (release-manager).    |
 | `GOOGLE_SERVICES_JSON`  | Contents of `android/app/google-services.json`. The Google Services Gradle plugin requires this at build time; mounted from this secret at workflow runtime, never logged. |
 
-> **Important:** `RELEASE_PLEASE_TOKEN` is mandatory for end-to-end automation. While `GITHUB_TOKEN`
-> has permission to create tags, GitHub's recursion prevention prevents tags created by `GITHUB_TOKEN`
-> from firing downstream `on: push: tags` workflows. Always keep `RELEASE_PLEASE_TOKEN` set.
+> **Important:** `RELEASE_PLEASE_TOKEN` is mandatory for end-to-end automation, but is required
+> *only* by `release-please.yml`. While `GITHUB_TOKEN` has permission to create tags, GitHub's
+> recursion prevention stops tags it creates from firing downstream `on: push: tags` workflows.
+> Keep the PAT scoped to this repository and to `contents:write` + `pull-requests:write` only.
 
 All seven secrets were seeded via `gh secret set` from the same local
 sources the attd pipeline uses (shared upload keystore + Play Console
@@ -140,6 +184,20 @@ gh secret set PLAY_SUPPLY_JSON_KEY --repo Shir0o/bible-read < ~/path/to/key.json
 A tag matching `*-rc*` or `*-beta*` (e.g. `v1.27.0-rc1`) still builds
 APK + AAB and attaches them to a GitHub pre-release, but **skips** the
 Play Console upload. Use this for external testers who sideload.
+
+## Rehearsing a hostile tag
+
+To demonstrate end-to-end that a crafted tag executes nothing:
+
+1. In a scratch fork with **no release secrets configured**, push a tag such
+   as `v1.2.3;echo pwned`.
+2. Confirm the run stops at the tag validation step (the pure module rejects
+   the tag before any shell sees it) or, if validation somehow passed, at the
+   `production` approval gate.
+3. Confirm no step logged the tag as executable code and no upload ran.
+
+This rehearsal is manual because it requires pushing a tag; the module's
+rejection table and the workflow invariants cover the regression path in CI.
 
 ## Local equivalent
 
