@@ -78,10 +78,11 @@ little to execute as possible:
 ## Production environment approval (required)
 
 The release job cannot touch the Play Console service account until a human
-approves it. Configure the gate under Settings > Environments > production >
-Required reviewers and add at least one reviewer. Without a reviewer the
-environment auto-approves and a bad tag could publish unattended. This is
-one-time repository setup; it cannot be expressed in `release.yml` itself.
+approves it. The gate is configured under Settings > Environments > production >
+Required reviewers with the maintainer as the sole reviewer, so the environment
+never auto-approves. This is repository-settings configuration and cannot be
+expressed in `release.yml` itself; if it is ever removed, a bad tag could publish
+unattended.
 
 ## PR title conventions (required)
 
