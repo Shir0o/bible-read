@@ -128,6 +128,28 @@ String stepBlock(Workflow workflow, String name, {int span = 16}) {
   return lines.sublist(start, end).join('\n');
 }
 
+/// The `env:` block of the `google-github-actions/run-gemini-cli` step in
+/// [workflow], or an empty string if the workflow has no such step.
+String geminiCliEnv(Workflow workflow) {
+  final lines = workflow.lines;
+  final start = lines.indexWhere((line) => line.contains('run-gemini-cli@'));
+  if (start < 0) return '';
+  // The `env:` block starts after the `uses:` line and ends at the next
+  // key indented no deeper than `env:` itself (`with:`).
+  final envIndex = lines.indexWhere((line) => line.trim() == 'env:', start);
+  if (envIndex < 0) return '';
+  final indent = lines[envIndex].length - lines[envIndex].trimLeft().length;
+  final buffer = StringBuffer();
+  for (var i = envIndex + 1; i < lines.length; i++) {
+    final line = lines[i];
+    if (line.trim().isEmpty) continue;
+    final lineIndent = line.length - line.trimLeft().length;
+    if (lineIndent <= indent) break;
+    buffer.writeln(line.trim());
+  }
+  return buffer.toString();
+}
+
 void main() {
   final allWorkflows = workflows();
 
@@ -232,6 +254,40 @@ void main() {
       isEmpty,
       reason:
           'Environment-reading tools granted to agents:\n${offenders.join('\n')}',
+    );
+  });
+
+  test('triage agents receive no GitHub credential', () {
+    const triageWorkflows = {
+      'gemini-triage.yml',
+      'gemini-scheduled-triage.yml'
+    };
+    final offenders = <String>[];
+    for (final workflow in allWorkflows) {
+      if (!triageWorkflows.contains(workflow.name)) continue;
+      final env = geminiCliEnv(workflow);
+      if (env.isEmpty) {
+        offenders.add('${workflow.name}: no run-gemini-cli step found');
+        continue;
+      }
+      if (!env.contains('GITHUB_TOKEN:')) {
+        offenders.add(
+            '${workflow.name}: triage agent env does not declare GITHUB_TOKEN');
+        continue;
+      }
+      final tokenLine = env
+          .split('\n')
+          .firstWhere((l) => l.trim().startsWith('GITHUB_TOKEN:'));
+      if (!tokenLine.contains("''")) {
+        offenders.add(
+            '${workflow.name}: triage agent is handed a GitHub credential');
+      }
+    }
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Triage agents must never receive a GitHub credential:\n${offenders.join('\n')}',
     );
   });
 
