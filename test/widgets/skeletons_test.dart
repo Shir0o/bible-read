@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bible_read/widgets/skeleton.dart';
 import 'package:bible_read/widgets/skeletons/group_list_skeleton.dart';
 import 'package:bible_read/widgets/skeletons/read_log_skeleton.dart';
 import 'package:bible_read/widgets/skeletons/read_log_empty_skeleton.dart';
 import 'package:bible_read/widgets/skeletons/streak_history_skeleton.dart';
+import 'package:bible_read/widgets/skeletons/stat_tiles_skeleton.dart';
+import 'package:bible_read/widgets/skeletons/read_through_card_skeleton.dart';
+import 'package:bible_read/widgets/skeletons/badge_next_up_skeleton.dart';
 
 void main() {
   group('Skeletons', () {
@@ -35,6 +39,31 @@ void main() {
         const MaterialApp(home: Scaffold(body: StreakHistorySkeleton())),
       );
       expect(find.byType(StreakHistorySkeleton), findsOneWidget);
+    });
+
+    testWidgets('StatTilesSkeleton builds correctly', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: StatTilesSkeleton())),
+      );
+      expect(find.byType(StatTilesSkeleton), findsOneWidget);
+      expect(find.byType(Skeleton), findsNWidgets(6));
+    });
+
+    testWidgets('ReadThroughCardSkeleton builds correctly', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: ReadThroughCardSkeleton())),
+      );
+      expect(find.byType(ReadThroughCardSkeleton), findsOneWidget);
+      expect(find.text('Times through'), findsOneWidget);
+      expect(find.byType(Skeleton), findsNWidgets(6));
+    });
+
+    testWidgets('BadgeNextUpSkeleton builds correctly', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: BadgeNextUpSkeleton())),
+      );
+      expect(find.byType(BadgeNextUpSkeleton), findsOneWidget);
+      expect(find.byType(Skeleton), findsNWidgets(3));
     });
   });
 }

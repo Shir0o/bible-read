@@ -6,6 +6,8 @@ import '../../models/read_through.dart';
 import '../../pages/read_throughs_page.dart';
 import '../../services/read_through_service.dart';
 import '../../theme/app_theme.dart';
+import '../skeleton_loader.dart';
+import '../skeletons/read_through_card_skeleton.dart';
 
 /// How many times through, on the Journey tab, and the way in to the history.
 class ReadThroughCard extends StatelessWidget {
@@ -33,14 +35,19 @@ class ReadThroughCard extends StatelessWidget {
         final counts = ReadThroughService.countsFrom(
           snapshot.data ?? const <ReadThrough>[],
         );
-        return _Card(
-          counts: counts,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ReadThroughsPage(
-                firestore: firestore,
-                auth: auth,
-                service: service,
+        return SkeletonLoader(
+          loading: snapshot.connectionState == ConnectionState.waiting,
+          minTime: const Duration(milliseconds: 1000),
+          skeleton: const ReadThroughCardSkeleton(),
+          child: _Card(
+            counts: counts,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ReadThroughsPage(
+                  firestore: firestore,
+                  auth: auth,
+                  service: service,
+                ),
               ),
             ),
           ),
