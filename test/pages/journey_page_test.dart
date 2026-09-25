@@ -21,7 +21,10 @@ void main() {
     firestore = FakeFirebaseFirestore();
   });
 
-  Future<void> pumpPage(WidgetTester tester) async {
+  Future<void> pumpPage(
+    WidgetTester tester, {
+    DateTime Function() dateProvider = DateTime.now,
+  }) async {
     tester.view.physicalSize = const Size(1200, 3000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -33,7 +36,7 @@ void main() {
           auth: auth,
           firestore: firestore,
           vibrationService: const VibrationService(),
-          dateProvider: DateTime.now,
+          dateProvider: dateProvider,
         ),
       ),
     );
@@ -149,5 +152,39 @@ void main() {
     expect(find.text('Shown up'), findsOneWidget);
     expect(find.text('Day streak'), findsOneWidget);
     expect(find.byType(ConsistencyCalendar), findsOneWidget);
+  });
+
+  testWidgets(
+      '"Shown up · this month" counts the calendar month, including '
+      'feed-only days, like the calendar', (tester) async {
+    final userRef = firestore.collection('users').doc('u1');
+    // Last month's days fall inside a rolling 30-day window but are not
+    // "this month".
+    for (final key in ['2026-08-27', '2026-08-28']) {
+      await userRef.collection('reading').doc(key).set({'read': true});
+    }
+    for (final key in ['2026-09-10', '2026-09-11']) {
+      await userRef.collection('reading').doc(key).set({'read': true});
+    }
+    // A day recorded only in a Group feed (no per-user reading doc), which
+    // the calendar counts as shown up.
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('read_log')
+        .doc('2026-09-02')
+        .collection('entries')
+        .doc('u1')
+        .set({'uid': 'u1', 'dateId': '2026-09-02'});
+
+    await pumpPage(tester, dateProvider: () => DateTime(2026, 9, 24, 9));
+
+    final tile = find
+        .ancestor(of: find.text('Shown up'), matching: find.byType(Column))
+        .first;
+    expect(
+      find.descendant(of: tile, matching: find.text('3')),
+      findsOneWidget,
+    );
   });
 }

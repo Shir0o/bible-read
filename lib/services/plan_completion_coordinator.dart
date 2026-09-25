@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/user_preferences.dart';
 import 'read_log_service.dart';
+import 'reading_status_service.dart';
 import '../widgets/sync_sheet.dart';
 import 'error_logger.dart';
 import 'read_through_coordinator.dart';
@@ -27,11 +28,16 @@ class PlanCompletionCoordinator {
   final UserPreferencesService preferencesService;
   final ReadThroughCoordinator readThroughCoordinator;
 
+  /// Recomputes the stored summary (streak) after the coupling records the
+  /// habit, as the Home tap does. Omitted by callers that never couple.
+  final ReadingStatusService? readingStatusService;
+
   PlanCompletionCoordinator({
     required this.firestore,
     ReadingPlanService? planService,
     UserPreferencesService? preferencesService,
     ReadThroughCoordinator? readThroughCoordinator,
+    this.readingStatusService,
   })  : planService = planService ?? ReadingPlanService(firestore: firestore),
         preferencesService =
             preferencesService ?? UserPreferencesService(firestore: firestore),
@@ -117,7 +123,6 @@ class PlanCompletionCoordinator {
   ) async {
     try {
       await ReadLogService(firestore: firestore).mark(user);
-      return true;
     } catch (e, st) {
       ErrorLogger.log(e, st);
       onMessage?.call(
@@ -125,6 +130,14 @@ class PlanCompletionCoordinator {
       );
       return false;
     }
+    // The stored streak is only recomputed here and on the Home tap; without
+    // this, readers who show up through their plan keep a stale streak.
+    try {
+      await readingStatusService?.updateSummary();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
+    return true;
   }
 
   /// Credits [days] of [planId] to the reader's testament laps without

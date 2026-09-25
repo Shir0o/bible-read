@@ -13,6 +13,7 @@ import '../services/catch_up_engine.dart';
 import '../services/group_service.dart';
 import '../services/plan_completion_coordinator.dart';
 import '../services/read_log_service.dart';
+import '../services/reading_status_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
@@ -67,6 +68,10 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       _coordinator ??= PlanCompletionCoordinator(
         firestore: _effectiveFirestore,
         planService: widget.plan != null ? _planService : null,
+        readingStatusService: ReadingStatusService(
+          firestore: _effectiveFirestore,
+          auth: widget.auth,
+        ),
       );
 
   FirebaseFirestore get _effectiveFirestore =>

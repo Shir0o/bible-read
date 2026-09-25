@@ -66,10 +66,14 @@ class _JourneyPageState extends State<JourneyPage>
     final user = widget.auth.currentUser;
     if (user == null) return;
     final now = widget.dateProvider();
-    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    // "This month" is the calendar month to date, counted from the same
+    // source as the ConsistencyCalendar (reading docs plus Group feed
+    // entries); the reading-doc stream only signals when to recount.
+    final daysThisMonth = now.day;
     _readDatesSub?.cancel();
     _readDatesSub = _statusService
-        .watchReadDatesForRange(user.uid, daysInMonth, referenceDate: now)
+        .watchReadDatesForRange(user.uid, daysThisMonth, referenceDate: now)
+        .asyncMap((_) => _readDatesThisMonth(user.uid, now))
         .listen(
       (dates) {
         if (mounted) {
@@ -99,21 +103,25 @@ class _JourneyPageState extends State<JourneyPage>
     );
   }
 
+  /// Days shown up from the 1st of [now]'s month through [now].
+  Future<Set<DateTime>> _readDatesThisMonth(String uid, DateTime now) async {
+    final statusMap = await _statusService.getReadStatusForRange(
+      uid,
+      now.day,
+      referenceDate: now,
+    );
+    return statusMap.entries
+        .where((e) => e.value)
+        .map((e) => DateTime.parse(e.key))
+        .toSet();
+  }
+
   Future<void> _refresh() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
     final now = widget.dateProvider();
-    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     try {
-      final statusMap = await _statusService.getReadStatusForRange(
-        user.uid,
-        daysInMonth,
-        referenceDate: now,
-      );
-      final readDates = statusMap.entries
-          .where((e) => e.value)
-          .map((e) => DateTime.parse(e.key))
-          .toSet();
+      final readDates = await _readDatesThisMonth(user.uid, now);
       if (mounted) {
         setState(() {
           _readDates = readDates;

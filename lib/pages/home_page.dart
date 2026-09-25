@@ -227,6 +227,7 @@ class _HomePageState extends State<HomePage>
     _completionCoordinator = PlanCompletionCoordinator(
       firestore: widget.firestore,
       planService: widget.readingPlanService,
+      readingStatusService: widget.readingStatusService,
     );
     _burstUndo = BurstUndoController();
     _animationController = AnimationController(
