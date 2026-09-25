@@ -34,8 +34,7 @@ class CatchUpStatusRow extends StatelessWidget {
     required this.onTap,
     this.onTrackLabel = "You're on track",
     this.onTrackAction = 'View your schedule',
-    this.behindSubtitle =
-        'Jump to your schedule and catch up — any order, no rush',
+    this.behindSubtitle = 'Catch up in any order — no rush',
   });
 
   @override

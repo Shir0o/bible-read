@@ -103,8 +103,8 @@ class PlansHubState extends State<PlansHub> {
   List<_GroupRow> _groups = [];
   String? _pinnedReadingId;
 
-  /// Id of the personal plan whose inline "leave" tap is awaiting confirmation.
-  String? _confirmingLeaveId;
+  /// Whether the Archived section lists every row, not just the first few.
+  bool _showAllArchived = false;
 
   final Set<StreamSubscription<dynamic>> _watchSubs = {};
   final Set<StreamSubscription<dynamic>> _groupWatchSubs = {};
@@ -595,27 +595,32 @@ class PlansHubState extends State<PlansHub> {
     }
   }
 
-  Future<void> _leavePlan(_PersonalRow row) async {
+  /// Archives a plan straight away — it is fully reversible, so an Undo
+  /// snackbar stands in for a confirmation step.
+  Future<void> _archivePlan(_PersonalRow row) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
     try {
       await widget.readingPlanService.setPlanArchived(uid, row.plan.id, true);
       if (!mounted) return;
-      // Clear the inline confirmation only once the archive has succeeded, so a
-      // failed write leaves the card in its "tap to confirm" state.
-      setState(() => _confirmingLeaveId = null);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Left "${row.plan.title}"')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Archived "${row.plan.title}"'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () => _restorePlan(row),
+          ),
+        ),
+      );
       await _load();
     } catch (e, st) {
       ErrorLogger.log(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:
-                Text('Failed to leave "${row.plan.title}". Please try again.'),
+            content: Text(
+                'Failed to archive "${row.plan.title}". Please try again.'),
           ),
         );
       }
@@ -911,14 +916,11 @@ class PlansHubState extends State<PlansHub> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _headerStrip(context, totalActive),
           // The enroll CTA sits at the top of the list, right under the
           // header, so it is never below the fold and no bottom-anchored
           // toast can cover it (ADR-0005).
           const SizedBox(height: 10),
           _enrollButton(context),
-          const SizedBox(height: 10),
-          _trashShortcut(context),
           SkeletonLoader(
             loading: _loading,
             minTime: const Duration(milliseconds: 1000),
@@ -932,8 +934,6 @@ class PlansHubState extends State<PlansHub> {
                     context,
                     icon: Icons.explore_outlined,
                     title: 'On your own',
-                    count: personalActive.length,
-                    countLabel: 'personal',
                   ),
                   for (final row in personalActive) _personalCard(context, row),
                 ],
@@ -943,8 +943,6 @@ class PlansHubState extends State<PlansHub> {
                     context,
                     icon: Icons.group_outlined,
                     title: 'Together',
-                    count: groupActive.length,
-                    countLabel: 'group',
                   ),
                   for (final row in groupActive) _groupCard(context, row),
                 ],
@@ -955,44 +953,9 @@ class PlansHubState extends State<PlansHub> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
-
-  Widget _headerStrip(BuildContext context, int totalActive) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              "Everything you're reading — on your own and together",
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppColors.of(context).primarySoft,
-              borderRadius: BorderRadius.circular(99),
-              border: Border.all(color: AppColors.of(context).primaryLine),
-            ),
-            child: Text(
-              '$totalActive ongoing',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
+          const SizedBox(height: 12),
+          _trashShortcut(context),
+          const SizedBox(height: 12),
         ],
       ),
     );
@@ -1002,42 +965,20 @@ class PlansHubState extends State<PlansHub> {
     BuildContext context, {
     required IconData icon,
     required String title,
-    required int count,
-    required String countLabel,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 16, 4, 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Icon(icon, size: 17, color: colorScheme.onSurfaceVariant),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.3,
-                ),
-              ),
-            ],
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.of(context).primarySoft,
-              borderRadius: BorderRadius.circular(99),
-              border: Border.all(color: AppColors.of(context).primaryLine),
-            ),
-            child: Text(
-              '$count $countLabel',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w700,
-              ),
+          Icon(icon, size: 17, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.3,
             ),
           ),
         ],
@@ -1047,7 +988,6 @@ class PlansHubState extends State<PlansHub> {
 
   Widget _personalCard(BuildContext context, _PersonalRow row) {
     final pinned = _pinnedReadingId == row.pinKey;
-    final confirming = _confirmingLeaveId == row.plan.id;
     return _PlanCardShell(
       pinned: pinned,
       child: Column(
@@ -1058,7 +998,6 @@ class PlansHubState extends State<PlansHub> {
             title: row.plan.title,
             subtitle: row.plan.description,
             state: row.state,
-            missed: row.status.missedCount,
           ),
           if (pinned) _primaryOnHomeTag(context),
           _progressBlock(context, row.status),
@@ -1088,47 +1027,24 @@ class PlansHubState extends State<PlansHub> {
                 },
               ),
               const SizedBox(width: 9),
-              _iconAction(
+              _moreMenu(
                 context,
-                icon: Icons.speed_outlined,
-                tooltip: 'Adjust pace',
-                onTap: () => _adjustPersonalPace(row),
-              ),
-              const SizedBox(width: 9),
-              _iconAction(
-                context,
-                icon: Icons.edit_outlined,
-                tooltip: 'Edit plan',
-                onTap: () => _editPlan(row),
-              ),
-              const SizedBox(width: 9),
-              _leaveButton(
-                context,
-                confirming: confirming,
-                onTap: () {
-                  if (confirming) {
-                    _leavePlan(row);
-                  } else {
-                    setState(() => _confirmingLeaveId = row.plan.id);
-                  }
-                },
+                items: [
+                  (
+                    Icons.speed_outlined,
+                    'Adjust pace',
+                    () => _adjustPersonalPace(row),
+                  ),
+                  (Icons.edit_outlined, 'Edit plan', () => _editPlan(row)),
+                  (
+                    Icons.archive_outlined,
+                    'Archive plan',
+                    () => _archivePlan(row),
+                  ),
+                ],
               ),
             ],
           ),
-          if (confirming)
-            Padding(
-              padding: const EdgeInsets.only(top: 9),
-              child: GestureDetector(
-                onTap: () => setState(() => _confirmingLeaveId = null),
-                child: Text(
-                  'Tap the check to leave "${row.plan.title}", or cancel',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -1149,7 +1065,6 @@ class PlansHubState extends State<PlansHub> {
             subtitle:
                 'Reading together · $members member${members == 1 ? '' : 's'}',
             state: row.state,
-            missed: row.status.missedCount,
           ),
           if (pinned) _primaryOnHomeTag(context),
           if (row.readers.isNotEmpty) ...[
@@ -1186,7 +1101,7 @@ class PlansHubState extends State<PlansHub> {
                 child: _primaryAction(
                   context,
                   icon: Icons.chevron_right,
-                  label: 'Open schedule',
+                  label: 'Continue',
                   onTap: () => _reviewGroup(row),
                 ),
               ),
@@ -1199,18 +1114,20 @@ class PlansHubState extends State<PlansHub> {
                 },
               ),
               const SizedBox(width: 9),
-              _iconAction(
+              _moreMenu(
                 context,
-                icon: Icons.speed_outlined,
-                tooltip: 'Adjust pace',
-                onTap: () => _adjustSharedPace(row),
-              ),
-              const SizedBox(width: 9),
-              _iconAction(
-                context,
-                icon: Icons.settings_outlined,
-                tooltip: 'Manage members',
-                onTap: () => _manageGroup(row),
+                items: [
+                  (
+                    Icons.speed_outlined,
+                    'Adjust pace',
+                    () => _adjustSharedPace(row),
+                  ),
+                  (
+                    Icons.settings_outlined,
+                    'Manage members',
+                    () => _manageGroup(row),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1224,9 +1141,9 @@ class PlansHubState extends State<PlansHub> {
     required String title,
     required String subtitle,
     required PlanLifecycle state,
-    required int missed,
   }) {
     final theme = Theme.of(context);
+    final badge = _stateBadge(context, state);
     final colorScheme = theme.colorScheme;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1258,8 +1175,10 @@ class PlansHubState extends State<PlansHub> {
             ],
           ),
         ),
-        const SizedBox(width: 10),
-        _stateBadge(context, state, missed),
+        if (badge != null) ...[
+          const SizedBox(width: 10),
+          badge,
+        ],
       ],
     );
   }
@@ -1443,6 +1362,15 @@ class PlansHubState extends State<PlansHub> {
 
   Widget _archivedSection(BuildContext context) {
     final theme = Theme.of(context);
+    final rows = [
+      for (final row in _archived) _archivedRow(context, row),
+      for (final group in _archivedGroups) _archivedGroupRow(context, group),
+    ];
+    // Keep a long archive from pushing the rest of Path far down the page.
+    const collapsedCount = 2;
+    final collapsible = rows.length > collapsedCount;
+    final shown =
+        collapsible && !_showAllArchived ? rows.take(collapsedCount) : rows;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1468,8 +1396,17 @@ class PlansHubState extends State<PlansHub> {
             ],
           ),
         ),
-        for (final row in _archived) _archivedRow(context, row),
-        for (final group in _archivedGroups) _archivedGroupRow(context, group),
+        ...shown,
+        if (collapsible)
+          Center(
+            child: TextButton(
+              onPressed: () =>
+                  setState(() => _showAllArchived = !_showAllArchived),
+              child: Text(
+                _showAllArchived ? 'Show less' : 'Show all ${rows.length}',
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -1631,7 +1568,12 @@ class PlansHubState extends State<PlansHub> {
         style: FilledButton.styleFrom(
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
-          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          // From the theme so the label keeps the app font; a bare TextStyle
+          // here replaces the theme's and falls back to the system font.
+          textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -1640,32 +1582,21 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  /// Bottom shortcut to the Recently Deleted hub (#776), with a hint of how
-  /// much is waiting in the trash.
+  /// Quiet link to the Recently Deleted hub (#776) at the foot of the list,
+  /// with a hint of how much is waiting in the trash.
   Widget _trashShortcut(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: OutlinedButton.icon(
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: TextButton.icon(
         onPressed: _openTrash,
         icon: const Icon(Icons.delete_outline, size: 18),
         label: Text(
           _trashedCount > 0
               ? 'Recently Deleted · $_trashedCount waiting'
               : 'Recently Deleted',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: colorScheme.onSurfaceVariant,
-          ),
         ),
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: AppColors.of(context).border),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+        style: TextButton.styleFrom(
+          foregroundColor: colorScheme.onSurfaceVariant,
         ),
       ),
     );
@@ -1731,7 +1662,10 @@ class PlansHubState extends State<PlansHub> {
         style: FilledButton.styleFrom(
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
-          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -1763,41 +1697,44 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  Widget _iconAction(
+  /// Overflow for the occasional per-card actions, so the primary button
+  /// keeps its width at large text sizes.
+  Widget _moreMenu(
     BuildContext context, {
-    required IconData icon,
-    required VoidCallback onTap,
-    String? tooltip,
+    required List<(IconData, String, VoidCallback)> items,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    return _squareButton(
-      onTap: onTap,
-      tooltip: tooltip,
-      background: colorScheme.surfaceContainerHighest,
-      borderColor: AppColors.of(context).border,
-      child: Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
-    );
-  }
-
-  Widget _leaveButton(
-    BuildContext context, {
-    required bool confirming,
-    required VoidCallback onTap,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return _squareButton(
-      onTap: onTap,
-      tooltip: 'Leave plan',
-      background: confirming
-          ? AppColors.of(context).accentSoft
-          : colorScheme.surfaceContainerHighest,
-      borderColor: confirming
-          ? colorScheme.tertiary.withValues(alpha: 0.5)
-          : AppColors.of(context).border,
-      child: Icon(
-        confirming ? Icons.check : Icons.close,
-        size: 18,
-        color: confirming ? colorScheme.tertiary : colorScheme.onSurfaceVariant,
+    return PopupMenuButton<VoidCallback>(
+      tooltip: 'More actions',
+      onSelected: (action) => action(),
+      itemBuilder: (context) => [
+        for (final (icon, label, action) in items)
+          PopupMenuItem<VoidCallback>(
+            value: action,
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: colorScheme.onSurfaceVariant),
+                const SizedBox(width: 12),
+                Text(label),
+              ],
+            ),
+          ),
+      ],
+      child: SizedBox(
+        width: 46,
+        height: 46,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.of(context).border),
+          ),
+          child: Icon(
+            Icons.more_horiz,
+            size: 20,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
     );
   }
@@ -1828,7 +1765,9 @@ class PlansHubState extends State<PlansHub> {
     return tooltip == null ? button : Tooltip(message: tooltip, child: button);
   }
 
-  Widget _stateBadge(BuildContext context, PlanLifecycle state, int missed) {
+  /// Only states the catch-up row beneath does not already say get a badge —
+  /// "behind" and "on track" are left to that row.
+  Widget? _stateBadge(BuildContext context, PlanLifecycle state) {
     final colorScheme = Theme.of(context).colorScheme;
     late final String label;
     late final Color color;
@@ -1837,22 +1776,14 @@ class PlansHubState extends State<PlansHub> {
         label = 'Due today';
         color = colorScheme.primary;
         break;
-      case PlanLifecycle.behind:
-        label = '$missed behind';
-        color = colorScheme.tertiary;
-        break;
       case PlanLifecycle.wrapup:
-        label = 'Ended · finish';
+        label = 'Ended';
         color = colorScheme.tertiary;
         break;
+      case PlanLifecycle.behind:
       case PlanLifecycle.complete:
-        label = 'Finished';
-        color = colorScheme.primary;
-        break;
       case PlanLifecycle.ontrack:
-        label = 'On track';
-        color = colorScheme.onSurfaceVariant;
-        break;
+        return null;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

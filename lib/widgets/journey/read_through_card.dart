@@ -176,12 +176,18 @@ class _Count extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 5),
-          Text(
-            label,
-            style: textTheme.bodySmall?.copyWith(
-              color: accented
-                  ? colorScheme.onTertiaryContainer
-                  : colorScheme.onSurfaceVariant,
+          // One word per line, shrunk rather than broken mid-word when a
+          // large text size makes "Testament" wider than the tile.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              label.replaceAll(' ', '\n'),
+              style: textTheme.bodySmall?.copyWith(
+                color: accented
+                    ? colorScheme.onTertiaryContainer
+                    : colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
