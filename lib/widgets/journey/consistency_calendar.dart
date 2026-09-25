@@ -205,8 +205,10 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                         colorScheme,
                         label: 'Missed',
                         color: Colors.transparent,
-                        borderColor: colorScheme.outlineVariant.withValues(
-                          alpha: 0.5,
+                        // outlineVariant at half strength vanished on the
+                        // dark card; match the legend label's tone instead.
+                        borderColor: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.6,
                         ),
                       ),
                       const SizedBox(width: 16),

@@ -163,7 +163,9 @@ void main() {
       'the finish before committing', (tester) async {
     await pumpPage(tester);
 
-    await tester.tap(find.byTooltip('Adjust pace'));
+    await tester.tap(find.byTooltip('More actions'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Adjust pace'));
     await tester.pumpAndSettle(const Duration(milliseconds: 600));
 
     // The screen is the shared adjust-pace page with the three options, each
@@ -185,15 +187,19 @@ void main() {
         .get();
     expect(progress.data()?['completedDays'], isEmpty);
   });
+  Future<void> archiveViaMenu(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('More actions'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Archive plan'));
+  }
+
   testWidgets(
-      'leaving a plan archives it and the archive keeps restore '
+      'archiving a plan moves it to Archived and the archive keeps restore '
       'and permanent delete reachable', (tester) async {
     await pumpPage(tester);
 
-    // Leave = archive: the inline confirm flow on the plan card.
-    await tester.tap(find.byTooltip('Leave plan'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Leave plan'));
+    // Archive is reversible, so it happens straight from the card's menu.
+    await archiveViaMenu(tester);
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
 
     var progress = await firestore
@@ -253,6 +259,57 @@ void main() {
     expect(find.text('Recently Deleted · 1 waiting'), findsOneWidget);
   });
 
+  testWidgets('Undo on the archive snackbar restores the plan', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+
+    await archiveViaMenu(tester);
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+    expect(find.text('Archived "Morning Light"'), findsOneWidget);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    final progress = await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('plan_progress')
+        .doc('p1')
+        .get();
+    expect(progress.data()?['isArchived'], isFalse);
+    expect(find.text('On your own'), findsOneWidget);
+  });
+
+  testWidgets('a long archive collapses to two rows until expanded', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    for (final id in ['p2', 'p3']) {
+      await firestore.collection('custom_plans').doc(id).set({
+        ..._plan.toJson(),
+        'id': id,
+        'title': 'Plan $id',
+        'userId': 'u1',
+      });
+      await planService.startPlan('u1', id, startDate: DateTime.now());
+    }
+    for (final id in ['p1', 'p2', 'p3']) {
+      await planService.setPlanArchived('u1', id, true);
+    }
+    await pumpPage(tester);
+
+    expect(find.byTooltip('Unarchive and continue'), findsNWidgets(2));
+    await tester.tap(find.text('Show all 3'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Unarchive and continue'), findsNWidgets(3));
+    expect(find.text('Show less'), findsOneWidget);
+  });
+
   testWidgets('a new plan appears without a manual reload', (tester) async {
     tester.view.physicalSize = const Size(1200, 3000);
     tester.view.devicePixelRatio = 1.0;
@@ -285,7 +342,8 @@ void main() {
     expect(find.text('Evening Light'), findsOneWidget);
   });
 
-  testWidgets('leaving a plan displays error SnackBar if backend call fails', (
+  testWidgets('archiving a plan displays error SnackBar if backend call fails',
+      (
     tester,
   ) async {
     // Throwing reading plan service to simulate failure
@@ -308,14 +366,11 @@ void main() {
     );
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
 
-    // Initiate leave confirmation
-    await tester.tap(find.byTooltip('Leave plan'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Leave plan'));
+    await archiveViaMenu(tester);
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Failed to leave "Morning Light". Please try again.'),
+      find.text('Failed to archive "Morning Light". Please try again.'),
       findsOneWidget,
     );
   });

@@ -52,10 +52,16 @@ _Avoid_: Caught up, current
 **Plan**:
 A dated sequence of readings, either solo ("On your own") or shared — a Shared
 plan is a Plan whose schedule a Group follows; nothing else differs. One list
-(the Path tab) owns the whole plan lifecycle: enroll, adjust pace, leave,
+(the Path tab) owns the whole plan lifecycle: enroll, adjust pace, archive,
 restore, delete.
 _Avoid_: Group plan (a Group has a Shared plan; it is not a different kind of
 Plan), program, course, track
+
+**Archive**:
+Taking a solo Plan off the active list with all its progress kept. Fully
+reversible — an archived Plan is restored and picks up where it left off.
+Distinct from delete, which sends it to Recently Deleted.
+_Avoid_: Leave (reserved for leaving a Group), shelve
 
 **Group schedule**:
 A group's own dated sequence of readings, separate from any member's personal

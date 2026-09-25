@@ -120,8 +120,10 @@ void main() {
       await tester.tap(find.text('Path'));
       await tester.pumpAndSettle();
 
-      // Tap 'Manage members' button on the group card in PlansHub
-      await tester.tap(find.byTooltip('Manage members'));
+      // Open 'Manage members' from the group card's overflow menu
+      await tester.tap(find.byTooltip('More actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Manage members'));
       await tester.pumpAndSettle();
 
       // Verify GroupMembersPage

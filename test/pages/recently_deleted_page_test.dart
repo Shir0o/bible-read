@@ -220,10 +220,10 @@ void main() {
         (tester) async {
       await pumpPage(tester);
 
-      // Leave = archive via the card's inline confirm.
-      await tester.tap(find.byTooltip('Leave plan'));
+      // Archive from the card's overflow menu.
+      await tester.tap(find.byTooltip('More actions'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Leave plan'));
+      await tester.tap(find.text('Archive plan'));
       await tester.pumpAndSettle(const Duration(milliseconds: 1200));
       expect(find.text('Archived'), findsOneWidget);
 
