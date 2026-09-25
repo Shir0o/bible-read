@@ -15,6 +15,8 @@ import '../widgets/journey/read_through_card.dart';
 import '../services/vibration_service.dart';
 import '../services/reading_status_service.dart';
 import '../widgets/app_header.dart';
+import '../widgets/skeleton_loader.dart';
+import '../widgets/skeletons/stat_tiles_skeleton.dart';
 
 class JourneyPage extends StatefulWidget {
   final FirebaseAuth auth;
@@ -37,6 +39,7 @@ class JourneyPage extends StatefulWidget {
 class _JourneyPageState extends State<JourneyPage>
     with AutomaticKeepAliveClientMixin {
   bool _isLoading = true;
+  bool _streakLoaded = false;
   Set<DateTime>? _readDates;
   int _streak = 0;
 
@@ -64,7 +67,10 @@ class _JourneyPageState extends State<JourneyPage>
 
   void _subscribeReadDates() {
     final user = widget.auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      _isLoading = false;
+      return;
+    }
     final now = widget.dateProvider();
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     _readDatesSub?.cancel();
@@ -88,14 +94,24 @@ class _JourneyPageState extends State<JourneyPage>
 
   void _subscribeStreak() {
     final user = widget.auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      _streakLoaded = true;
+      return;
+    }
     _streakSub?.cancel();
     _streakSub = _statusService.watchStreak(user.uid).listen(
       (streak) {
-        if (mounted) setState(() => _streak = streak);
+        if (mounted) {
+          setState(() {
+            _streak = streak;
+            _streakLoaded = true;
+          });
+        }
       },
-      onError: (Object e, StackTrace st) =>
-          debugPrint('Error watching streak: $e'),
+      onError: (Object e, StackTrace st) {
+        debugPrint('Error watching streak: $e');
+        if (mounted) setState(() => _streakLoaded = true);
+      },
     );
   }
 
@@ -243,28 +259,33 @@ class _JourneyPageState extends State<JourneyPage>
                         dateProvider: widget.dateProvider,
                       ),
                       const SizedBox(height: 16),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _buildStatTile(
-                                context,
-                                value: '${_readDates?.length ?? 0}',
-                                unit: 'days',
-                                label: 'Shown up',
-                                sub: 'this month',
-                              ),
-                              const SizedBox(width: 12),
-                              _buildStatTile(
-                                context,
-                                value: '$_streak',
-                                unit: _streak == 1 ? 'day' : 'days',
-                                label: 'Day streak',
-                                sub: 'current',
-                              ),
-                            ],
+                      SkeletonLoader(
+                        loading: _isLoading || !_streakLoaded,
+                        minTime: const Duration(milliseconds: 1000),
+                        skeleton: const StatTilesSkeleton(),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildStatTile(
+                                  context,
+                                  value: '${_readDates?.length ?? 0}',
+                                  unit: 'days',
+                                  label: 'Shown up',
+                                  sub: 'this month',
+                                ),
+                                const SizedBox(width: 12),
+                                _buildStatTile(
+                                  context,
+                                  value: '$_streak',
+                                  unit: _streak == 1 ? 'day' : 'days',
+                                  label: 'Day streak',
+                                  sub: 'current',
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

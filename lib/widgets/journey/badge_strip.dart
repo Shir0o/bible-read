@@ -7,6 +7,8 @@ import '../../models/read_through.dart';
 import '../../services/badge_service.dart';
 import '../../services/read_through_service.dart';
 import '../../theme/app_theme.dart';
+import '../skeleton_loader.dart';
+import '../skeletons/badge_next_up_skeleton.dart';
 
 /// The read-through badges, earned and still to come.
 class BadgeStrip extends StatelessWidget {
@@ -45,7 +47,10 @@ class BadgeStrip extends StatelessWidget {
             final counts = ReadThroughService.countsFrom(
               ledgerSnapshot.data ?? const <ReadThrough>[],
             );
-            return _Strip(held: held, counts: counts);
+            final loading =
+                badgeSnapshot.connectionState == ConnectionState.waiting ||
+                    ledgerSnapshot.connectionState == ConnectionState.waiting;
+            return _Strip(held: held, counts: counts, loading: loading);
           },
         );
       },
@@ -56,8 +61,13 @@ class BadgeStrip extends StatelessWidget {
 class _Strip extends StatelessWidget {
   final Set<String> held;
   final ReadThroughCounts counts;
+  final bool loading;
 
-  const _Strip({required this.held, required this.counts});
+  const _Strip({
+    required this.held,
+    required this.counts,
+    required this.loading,
+  });
 
   /// The next badge the reader has not yet earned, for the "still to come"
   /// line under the strip. Only read-through landmarks count here — their
@@ -99,7 +109,12 @@ class _Strip extends StatelessWidget {
         if (next != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-            child: _NextUp(badge: next, counts: counts),
+            child: SkeletonLoader(
+              loading: loading,
+              minTime: const Duration(milliseconds: 1000),
+              skeleton: const BadgeNextUpSkeleton(),
+              child: _NextUp(badge: next, counts: counts),
+            ),
           ),
       ],
     );
