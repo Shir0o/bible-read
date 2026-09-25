@@ -83,7 +83,10 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                   onPressed: _markingAllRead ? null : _markAllAsRead,
                   style: TextButton.styleFrom(
                     foregroundColor: colorScheme.primary,
-                    textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                    textStyle: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
                   ),
                   child: _markingAllRead
                       ? SizedBox(
