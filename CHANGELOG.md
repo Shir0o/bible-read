@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.32.0](https://github.com/Shir0o/bible-read/compare/v1.31.1...v1.32.0) (2026-09-26)
+
+
+### Features
+
+* **path:** polish Path page for large text; Archive replaces Leave ([#896](https://github.com/Shir0o/bible-read/issues/896)) ([38d4c8f](https://github.com/Shir0o/bible-read/commit/38d4c8fde6dad851aa0746fc82f9028d03a0d65d))
+* **path:** skeleton loaders for stat tiles, read-through card and badge strip ([#895](https://github.com/Shir0o/bible-read/issues/895)) ([#897](https://github.com/Shir0o/bible-read/issues/897)) ([4775db4](https://github.com/Shir0o/bible-read/commit/4775db41ed40af44a1b701aa3d82bdb72dc1f6c8))
+
+
+### Bug Fixes
+
+* **notifications:** keep theme font on Mark all read button ([#906](https://github.com/Shir0o/bible-read/issues/906)) ([17a0d21](https://github.com/Shir0o/bible-read/commit/17a0d21b879f93a1f7864c72760cb12ece3f8bb8))
+* **path:** stat tiles agree with the Showing-up calendar ([#905](https://github.com/Shir0o/bible-read/issues/905)) ([51ff0dd](https://github.com/Shir0o/bible-read/commit/51ff0dd355c0c82ba989fb9a08483c1791f7dde8))
+
 ## [1.31.1](https://github.com/Shir0o/bible-read/compare/v1.31.0...v1.31.1) (2026-09-12)
 
 
