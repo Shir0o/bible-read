@@ -18,7 +18,6 @@ jobs:
     name: Build, attach, and upload release
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    environment: production
     env:
       TAG: ${{ github.ref_name }}
     steps:

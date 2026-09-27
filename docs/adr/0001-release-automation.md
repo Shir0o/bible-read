@@ -98,10 +98,9 @@ the release model recorded above:
   optional pre-release suffix. The workflow calls it instead of shell.
 - Every third-party `uses:` is pinned to a commit SHA; Dependabot keeps the
   pins current.
-- The `production` environment must require a reviewer, so the Play Console
-  service account is only touched after a human approves. The reviewer gate is
-  configured in repository settings (Settings → Environments → production →
-  Required reviewers); it cannot be expressed in the workflow itself.
+- Deployments run automatically upon release without a manual approval gate:
+  merging a release-please PR triggers the release workflow directly to build,
+  attach release assets, and upload to the Play Console internal track.
 - `release.yml` attaches release assets with the short-lived `GITHUB_TOKEN`;
   `RELEASE_PLEASE_TOKEN` is required only by `release-please.yml`, scoped to
   this repository with `contents:write` + `pull-requests:write`.
