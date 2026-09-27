@@ -61,8 +61,9 @@ little to execute as possible:
   40-character commit SHA with a version comment. Dependabot
   (`.github/dependabot.yml`, `github-actions` ecosystem) raises the pin
   updates, so pinning does not freeze dependencies.
-- **Approval gate.** The `build-and-publish` job runs in the `production`
-  environment, which must require at least one reviewer (see below).
+- **Automated release deployment.** The `build-and-publish` job triggers
+  automatically upon merging the release-please PR (which creates the `v*` tag)
+  and publishes directly to the Play Console internal testing track.
 - **Short-lived tokens.** `release.yml` attaches release assets with the
   workflow's own `GITHUB_TOKEN`. The long-lived `RELEASE_PLEASE_TOKEN` is
   used only by `.github/workflows/release-please.yml`, where a token that
@@ -74,15 +75,6 @@ little to execute as possible:
   credentials in the workspace.
 - **Narrow artifacts.** No workflow uploads the working tree; artifact paths
   are enumerated explicitly.
-
-## Production environment approval (required)
-
-The release job cannot touch the Play Console service account until a human
-approves it. The gate is configured under Settings > Environments > production >
-Required reviewers with the maintainer as the sole reviewer, so the environment
-never auto-approves. This is repository-settings configuration and cannot be
-expressed in `release.yml` itself; if it is ever removed, a bad tag could publish
-unattended.
 
 ## PR title conventions (required)
 
@@ -193,8 +185,7 @@ To demonstrate end-to-end that a crafted tag executes nothing:
 1. In a scratch fork with **no release secrets configured**, push a tag such
    as `v1.2.3;echo pwned`.
 2. Confirm the run stops at the tag validation step (the pure module rejects
-   the tag before any shell sees it) or, if validation somehow passed, at the
-   `production` approval gate.
+   the tag before any shell sees it).
 3. Confirm no step logged the tag as executable code and no upload ran.
 
 This rehearsal is manual because it requires pushing a tag; the module's

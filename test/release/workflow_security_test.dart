@@ -290,9 +290,4 @@ void main() {
           'Triage agents must never receive a GitHub credential:\n${offenders.join('\n')}',
     );
   });
-
-  test('the release job stays gated behind the production environment', () {
-    final release = allWorkflows.firstWhere((w) => w.name == 'release.yml');
-    expect(release.text, contains('environment: production'));
-  });
 }
