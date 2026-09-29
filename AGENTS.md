@@ -63,9 +63,32 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Screen Captures and Verification
+
+**Screenshots only for visual changes (1–2 of final state). Never record video. Skip captures for logic.**
+
+- **Logic-only tasks**: Skip all captures and app launches altogether. Verify exclusively through automated test suites, compiler/type checks, linting, and static analysis.
+- **Visual changes (shapes, effects, UI)**:
+  - Take **1–2 screenshots of the final state only** to confirm what changed on screen.
+  - **No videos or screen recordings**, and do not capture every combination or intermediate state.
+  - The user performs a short manual playtest at milestones (e.g. after a ticket lands), rather than agents recording or continuously running the app.
+
+## 6. Legal & Regulatory Compliance (US & California)
+
+**Prevent statutory exposure before writing or shipping features.**
+See full standards in [Shir0o/.github/docs/standards/legal-compliance.md](https://github.com/Shir0o/.github/blob/main/docs/standards/legal-compliance.md).
+
+Before introducing new features, enforce these gates:
+- **COPPA (Age Gating)**: If collecting personal info or public user sign-ups, require a neutral age check. Never collect PII from under-13 users without parental consent.
+- **CIPA / Wiretapping (Session Replay)**: Do not add session recording/replay scripts (Clarity, FullStory, LogRocket) without explicit opt-in. Mask all input fields at the capture layer.
+- **CAN-SPAM (Emails)**: Every email template must include a valid physical postal address and a working 1-click unsubscribe/opt-out mechanism.
+- **California ARL (Subscriptions)**: Auto-renewal terms, recurring price, and cancel instructions must appear right next to the checkout/subscribe button.
+- **Privacy & CDNs (Google Fonts)**: Self-host web fonts and static resources locally; do not link remote `fonts.googleapis.com` CDNs that leak user IP addresses.
+- **DMCA Safe Harbor**: If hosting user-generated uploads, ensure designated DMCA agent details and takedown procedures are in place.
+
 ---
 
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, zero regulatory compliance gaps, zero video recordings or superfluous captures, and clarifying questions come before implementation rather than after mistakes.
 
 ---
 
@@ -145,9 +168,18 @@ To run tests for Firebase Cloud Functions:
 cd functions
 npm test
 cd ..
+### Firestore Rules Tests
+Security rules are tested behaviourally against the Firestore emulator (no text matching). The suite lives in `firestore-tests/` and replaces the removed `test/rules/*.dart` suites:
+```bash
+cd firestore-tests
+npm run test:emulator
+cd ..
+```
+This requires Node.js 20+ and a JDK 21+ (used by the emulator). `npm run test:emulator` starts the emulator on the port configured in the `emulators` block of `firebase.json`, runs the suite, and shuts it down.
 ### CI/CD
 The project uses GitHub Actions for continuous integration.
 *   **Flutter tests** are run on `ubuntu-latest` using `flutter test --no-pub --fail-fast`.
+*   **Firestore rules tests** are run on `ubuntu-latest` against the Firestore emulator using `npm run test:emulator` in the `firestore-tests/` directory.
 *   **Firebase Functions tests** are run on `ubuntu-latest` using `npm test` in the `functions/` directory.
 ## Development Conventions
 ### Code Formatting and Analysis
@@ -187,3 +219,17 @@ Additional documentation is available in the `docs/` directory, covering topics 
 *   `docs/coverage.md`: Test coverage reports.
 *   `docs/functions.md`: Cloud Function details.
 *   `docs/groups.md`: Details on group reading.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs live as GitHub issues on this repo; use the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles map to same-named labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` at the root plus `docs/adr/`. See `docs/agents/domain.md`.
