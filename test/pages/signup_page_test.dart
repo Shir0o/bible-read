@@ -103,7 +103,11 @@ class MockVibrationService extends VibrationService {
 
 class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
   @override
-  Future<String?> getToken({String? vapidKey}) async => 'fake_token';
+  Future<String?> getToken({
+    String? vapidKey,
+    String? serviceWorkerScriptPath,
+  }) async =>
+      'fake_token';
 }
 
 void main() {

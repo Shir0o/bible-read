@@ -23,7 +23,11 @@ import '../helpers/stub_vibration_service.dart';
 
 class _FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
   @override
-  Future<String?> getToken({String? vapidKey}) async => null;
+  Future<String?> getToken({
+    String? vapidKey,
+    String? serviceWorkerScriptPath,
+  }) async =>
+      null;
 }
 
 void main() {

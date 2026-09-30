@@ -148,7 +148,11 @@ class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
   final String? token;
 
   @override
-  Future<String?> getToken({String? vapidKey}) async => token;
+  Future<String?> getToken({
+    String? vapidKey,
+    String? serviceWorkerScriptPath,
+  }) async =>
+      token;
 
   @override
   Future<NotificationSettings> requestPermission({
