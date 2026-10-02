@@ -22,7 +22,7 @@ permissions:
 jobs:
   build-and-publish-ios:
     name: Build IPA, attach, and upload to TestFlight
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     env:
       TAG: ${{ github.event.inputs.tag || github.ref_name }}
