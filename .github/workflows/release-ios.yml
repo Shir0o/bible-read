@@ -112,6 +112,7 @@ jobs:
           security default-keychain -s "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
 
           CERT_PATH="$RUNNER_TEMP/distribution.p12"
           echo "$IOS_DISTRIBUTION_CERT_BASE64" | base64 -d > "$CERT_PATH"
@@ -122,6 +123,7 @@ jobs:
           mkdir -p "$PROFILE_DIR"
           echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 -d > "$RUNNER_TEMP/profile.mobileprovision"
           PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /dev/stdin <<< $(security cms -D -i "$RUNNER_TEMP/profile.mobileprovision"))
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print Name" /dev/stdin <<< $(security cms -D -i "$RUNNER_TEMP/profile.mobileprovision"))
           cp "$RUNNER_TEMP/profile.mobileprovision" "$PROFILE_DIR/${PROFILE_UUID}.mobileprovision"
           rm -f "$RUNNER_TEMP/profile.mobileprovision" "$CERT_PATH"
 
@@ -151,10 +153,12 @@ jobs:
           CODE_SIGN_STYLE = Manual
           DEVELOPMENT_TEAM = 4DP58Y67SQ
           PROVISIONING_PROFILE_SPECIFIER = ${PROFILE_UUID}
+          PROVISIONING_PROFILE = ${PROFILE_UUID}
           CODE_SIGN_IDENTITY = Apple Distribution
+          CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Distribution
           EOF
 
-          echo "Provisioning profile (${PROFILE_UUID}) and distribution certificate installed."
+          echo "Provisioning profile (${PROFILE_NAME} / ${PROFILE_UUID}) and distribution certificate installed."
 
       - name: Materialize App Store Connect API key
         env:
