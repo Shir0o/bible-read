@@ -220,7 +220,7 @@ void main() {
     expect(cleanupIos, contains('if: always()'));
     for (final path in const [
       'fastlane/asc-api-key.p8',
-      'release.mobileprovision',
+      '.mobileprovision',
       'build.keychain',
     ]) {
       expect(cleanupIos, contains(path), reason: 'cleanup must remove $path');
