@@ -1,14 +1,15 @@
 # Releasing Bible Reading Challenge
 
 This document describes the release pipeline that ships Android APK + AAB
-artifacts to GitHub Releases and to the Google Play Console **internal
-testing** track. Production promotion remains a manual step in the Play
-Console UI. The pipeline mirrors the one in [`~/attd`](https://github.com/Shir0o/attd)
-(see its [`RELEASING.md`](https://github.com/Shir0o/attd/blob/main/RELEASING.md)).
+and iOS IPA artifacts to GitHub Releases, to the Google Play Console **internal
+testing** track, and to Apple **TestFlight**. Production promotion remains a manual step
+in the respective store consoles. The pipeline mirrors the one in [`~/attd`](https://github.com/Shir0o/attd)
+and [`cisa-campus-work-tracker`](https://github.com/Shir0o/cisa-campus-work-tracker).
 
 For the rationale behind each choice (release-please vs. alternatives,
-internal-track-first, Play App Signing, etc.) see
-[`docs/adr/0001-release-automation.md`](docs/adr/0001-release-automation.md).
+internal-track-first, Play App Signing, App Store Connect API Key, etc.) see
+[`docs/adr/0001-release-automation.md`](docs/adr/0001-release-automation.md) and
+[`docs/adr/0009-ios-testflight-release-automation.md`](docs/adr/0009-ios-testflight-release-automation.md).
 
 ## How a release happens
 
@@ -17,27 +18,26 @@ internal-track-first, Play App Signing, etc.) see
    reads **PR titles**, not commit messages.
 2. The `.github/workflows/release-please.yml` workflow opens or updates a
    **release PR**. The PR bumps `pubspec.yaml` (bare semver, e.g.
-   `1.26.0`) and regenerates `CHANGELOG.md`. The Android `versionCode` is
-   derived from the tag by the `release.yml` workflow at build time
-   (`major*10000 + minor*100 + patch`, e.g. `v1.26.0` → `12600`). Note
-   this replaces the old manually-managed `+buildNumber` in pubspec
-   (`1.25.0+26`); the tag-derived versionCode (12500+) is already past
-   every legacy build number shipped to the Play Console.
+   `1.26.0`) and regenerates `CHANGELOG.md`. The numeric build number is
+   derived from the tag at build time (`major*10000 + minor*100 + patch`,
+   e.g. `v1.26.0` → `12600`).
 3. You review the release PR (check the changelog draft and the version
    bump), then merge it.
-4. The merge pushes a tag (e.g. `v1.26.0`). The
-   `.github/workflows/release.yml` workflow fires:
-   - Assembles `key.properties` from secrets.
-   - Derives the `versionCode` from the tag with the pure
-     `tool/version_code.dart` module (never shell arithmetic).
-   - Builds a signed AAB and a signed APK with
-     `--build-number="$VERSION_CODE"`.
-   - Attaches both to the GitHub Release for the tag.
-   - Uploads the AAB to the Play Console internal testing track via
-     `fastlane play_upload` as a **draft** (testers are not
-     auto-notified).
-5. **You** open the Play Console, verify the AAB on the internal track,
-   and click **Promote release → Production** when ready.
+4. The merge pushes a tag (e.g. `v1.26.0`). Two release workflows fire in parallel:
+   - **Android (`.github/workflows/release.yml`)**:
+     - Assembles `key.properties` from secrets.
+     - Derives `versionCode` using `tool/version_code.dart`.
+     - Builds signed AAB + APK with `--build-number="$VERSION_CODE"`.
+     - Attaches both to the GitHub Release.
+     - Uploads the AAB to Play Console internal testing track via `fastlane play_upload` as draft.
+   - **iOS (`.github/workflows/release-ios.yml`)**:
+     - Installs the Apple Distribution certificate and mobileprovision profile into a temporary CI keychain.
+     - Materializes the App Store Connect API key (`.p8`).
+     - Builds signed IPA with `--build-number="$VERSION_CODE"`.
+     - Attaches the IPA to the GitHub Release.
+     - Uploads the IPA to TestFlight via `fastlane ios testflight_upload`.
+5. **You** open the Play Console and TestFlight, verify the builds on internal tracks,
+   and promote to Production when ready.
 
 That's the whole flow. There is no manual version bump, no manual tag,
 no manual upload.
@@ -97,6 +97,8 @@ titles don't match a conventional-commit prefix. Allowed prefixes:
 The pipeline needs seven GitHub secrets. None of them are committed;
 create them under **Settings → Secrets and variables → Actions**:
 
+### Android Secrets
+
 | Secret                  | Purpose                                                                 |
 | ----------------------- | ----------------------------------------------------------------------- |
 | `RELEASE_PLEASE_TOKEN`  | Fine-grained PAT scoped to **this repository only** with `Contents: write` and `Pull requests: write`. **Required** because tags created with the built-in `GITHUB_TOKEN` are suppressed by GitHub Actions and would never trigger the downstream `release.yml` workflow. `release.yml` no longer consumes this PAT; it attaches assets with the short-lived `GITHUB_TOKEN`. |
@@ -107,24 +109,26 @@ create them under **Settings → Secrets and variables → Actions**:
 | `PLAY_SUPPLY_JSON_KEY`  | Contents of the Play Console service-account JSON (release-manager).    |
 | `GOOGLE_SERVICES_JSON`  | Contents of `android/app/google-services.json`. The Google Services Gradle plugin requires this at build time; mounted from this secret at workflow runtime, never logged. |
 
+### iOS Secrets
+
+| Secret                            | Purpose                                                                 |
+| --------------------------------- | ----------------------------------------------------------------------- |
+| `IOS_DISTRIBUTION_CERT_BASE64`    | `base64` of Apple Distribution `.p12` certificate.                      |
+| `IOS_CERT_PASSWORD`               | Password for the `.p12` certificate.                                   |
+| `IOS_PROVISIONING_PROFILE_BASE64` | `base64` of App Store distribution provisioning profile (`.mobileprovision`). |
+| `ASC_API_KEY_P8_BASE64`           | `base64` of the App Store Connect API Key (`AuthKey_*.p8`).             |
+| `ASC_KEY_ID`                      | 10-character Key ID from App Store Connect.                             |
+| `ASC_ISSUER_ID`                   | Issuer ID (UUID) from App Store Connect Users and Access → Integrations. |
+
 > **Important:** `RELEASE_PLEASE_TOKEN` is mandatory for end-to-end automation, but is required
 > *only* by `release-please.yml`. While `GITHUB_TOKEN` has permission to create tags, GitHub's
 > recursion prevention stops tags it creates from firing downstream `on: push: tags` workflows.
 > Keep the PAT scoped to this repository and to `contents:write` + `pull-requests:write` only.
 
-All seven secrets were seeded via `gh secret set` from the same local
-sources the attd pipeline uses (shared upload keystore + Play Console
-service account). The service account is linked to the Play developer
-account that owns both apps, so a single JSON key covers both.
-
-Play App Signing is enabled on this app. The CI signs AABs with the
-**upload key** (the same `my-key.keystore` local builds sign with, and
-the key registered on the Play Console); Google's app-signing key is
-what the Play Store actually serves to users.
-
-If the keystore or credentials ever need re-provisioning:
+All secrets are seeded under **Settings → Secrets and variables → Actions** or via `gh secret set`:
 
 ```bash
+# Android
 base64 -i ~/.keystores/my-key.keystore | tr -d '\n' | \
   gh secret set ANDROID_KEYSTORE_BASE64 --repo Shir0o/bible-read
 gh secret set KEY_ALIAS --repo Shir0o/bible-read --body "my-key-alias"
@@ -132,6 +136,17 @@ gh secret set KEY_PASSWORD --repo Shir0o/bible-read --body "<your-key-password>"
 gh secret set STORE_PASSWORD --repo Shir0o/bible-read --body "<your-store-password>"
 gh secret set PLAY_SUPPLY_JSON_KEY --repo Shir0o/bible-read < ~/release-please-supply-key.json
 gh secret set GOOGLE_SERVICES_JSON --repo Shir0o/bible-read < android/app/google-services.json
+
+# iOS
+base64 -i ~/certs/distribution.p12 | tr -d '\n' | \
+  gh secret set IOS_DISTRIBUTION_CERT_BASE64 --repo Shir0o/bible-read
+gh secret set IOS_CERT_PASSWORD --repo Shir0o/bible-read --body "<your-cert-password>"
+base64 -i ~/certs/BibleRead_AppStore.mobileprovision | tr -d '\n' | \
+  gh secret set IOS_PROVISIONING_PROFILE_BASE64 --repo Shir0o/bible-read
+base64 -i ~/certs/AuthKey_XXXXXXXXXX.p8 | tr -d '\n' | \
+  gh secret set ASC_API_KEY_P8_BASE64 --repo Shir0o/bible-read
+gh secret set ASC_KEY_ID --repo Shir0o/bible-read --body "XXXXXXXXXX"
+gh secret set ASC_ISSUER_ID --repo Shir0o/bible-read --body "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 ```
 
 ### Play Console service-account JSON
