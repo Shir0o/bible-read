@@ -131,6 +131,25 @@ jobs:
             rm -f "$RUNNER_TEMP/AppleRoots.pem"
           fi
 
+          PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILE_DIR"
+          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 -d > "$RUNNER_TEMP/profile.mobileprovision"
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /dev/stdin <<< $(security cms -D -i "$RUNNER_TEMP/profile.mobileprovision"))
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print Name" /dev/stdin <<< $(security cms -D -i "$RUNNER_TEMP/profile.mobileprovision"))
+          cp "$RUNNER_TEMP/profile.mobileprovision" "$PROFILE_DIR/${PROFILE_UUID}.mobileprovision"
+
+          # Extract DeveloperCertificates from the provisioning profile and import into keychain to guarantee pairing with private key
+          security cms -D -i "$RUNNER_TEMP/profile.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          cert_count=$(/usr/libexec/PlistBuddy -c "Print DeveloperCertificates" "$RUNNER_TEMP/profile.plist" 2>/dev/null | grep -c "Array {" || true)
+          # PlistBuddy array entries can be iterated
+          idx=0
+          while /usr/libexec/PlistBuddy -c "Print DeveloperCertificates:$idx" "$RUNNER_TEMP/profile.plist" > "$RUNNER_TEMP/cert_$idx.der" 2>/dev/null; do
+            security import "$RUNNER_TEMP/cert_$idx.der" -k "$KEYCHAIN_PATH" -T /usr/bin/codesign -T /usr/bin/security || true
+            rm -f "$RUNNER_TEMP/cert_$idx.der"
+            idx=$((idx + 1))
+          done
+          rm -f "$RUNNER_TEMP/profile.plist"
+
           CERT_PATH="$RUNNER_TEMP/distribution.p12"
           echo "$IOS_DISTRIBUTION_CERT_BASE64" | base64 -d > "$CERT_PATH"
           security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$IOS_CERT_PASSWORD" -A -T /usr/bin/codesign -T /usr/bin/security
@@ -139,12 +158,6 @@ jobs:
           echo "Available valid code signing identities in keychain:"
           security find-identity -v -p codesigning "$KEYCHAIN_PATH"
 
-          PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
-          mkdir -p "$PROFILE_DIR"
-          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 -d > "$RUNNER_TEMP/profile.mobileprovision"
-          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /dev/stdin <<< $(security cms -D -i "$RUNNER_TEMP/profile.mobileprovision"))
-          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print Name" /dev/stdin <<< $(security cms -D -i "$RUNNER_TEMP/profile.mobileprovision"))
-          cp "$RUNNER_TEMP/profile.mobileprovision" "$PROFILE_DIR/${PROFILE_UUID}.mobileprovision"
           rm -f "$RUNNER_TEMP/profile.mobileprovision" "$CERT_PATH"
 
           # Create ExportOptions.plist for app-store distribution with the profile UUID
