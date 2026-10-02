@@ -142,7 +142,7 @@ jobs:
             <key>provisioningProfiles</key>
             <dict>
               <key>com.bibleread.challenge</key>
-              <string>${PROFILE_UUID}</string>
+              <string>${PROFILE_NAME}</string>
             </dict>
           </dict>
           </plist>
@@ -152,7 +152,7 @@ jobs:
           cat >> ios/Flutter/Release.xcconfig <<EOF
           CODE_SIGN_STYLE = Manual
           DEVELOPMENT_TEAM = 4DP58Y67SQ
-          PROVISIONING_PROFILE_SPECIFIER = ${PROFILE_UUID}
+          PROVISIONING_PROFILE_SPECIFIER = ${PROFILE_NAME}
           PROVISIONING_PROFILE = ${PROFILE_UUID}
           CODE_SIGN_IDENTITY = Apple Distribution
           CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Distribution
