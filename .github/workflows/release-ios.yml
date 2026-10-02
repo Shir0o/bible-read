@@ -205,6 +205,12 @@ jobs:
       - name: Build signed iOS IPA
         env:
           VERSION_CODE: ${{ steps.version.outputs.code }}
+          # ci_post_clone.sh is invoked by the [CI] Bootstrap Flutter Xcode build
+          # phase. On macos-26 the system Flutter (pre-installed, older Dart) is
+          # found first by command -v flutter inside xcodebuild's environment,
+          # causing `flutter pub get` to fail. We already ran pub get above with
+          # the correct SDK, so skip the in-build bootstrap entirely.
+          SKIP_CI_BOOTSTRAP: "1"
         run: |
           set -euo pipefail
           flutter build ipa --release --build-number="$VERSION_CODE" --export-options-plist="$RUNNER_TEMP/ExportOptions.plist"
