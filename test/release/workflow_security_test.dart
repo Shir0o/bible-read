@@ -212,7 +212,21 @@ void main() {
     ]) {
       expect(cleanup, contains(path), reason: 'cleanup must remove $path');
     }
+
+    final releaseIos = allWorkflows.firstWhere((w) => w.name == 'release-ios.yml');
+    final cleanupIos = stepBlock(releaseIos, 'Remove mounted credentials and temporary keychain');
+    expect(cleanupIos, isNot(isEmpty),
+        reason: 'release-ios.yml must keep its cleanup step');
+    expect(cleanupIos, contains('if: always()'));
+    for (final path in const [
+      'fastlane/asc-api-key.p8',
+      'release.mobileprovision',
+      'build.keychain',
+    ]) {
+      expect(cleanupIos, contains(path), reason: 'cleanup must remove $path');
+    }
   });
+
 
   test('no workflow uploads a broad or dynamic artifact path', () {
     const broad = {'.', './', '/', '*', '**', './*', './**'};

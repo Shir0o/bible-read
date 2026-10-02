@@ -79,3 +79,48 @@ lane :play_upload do |options|
 
   UI.success("Uploaded #{aab_path} to Play Console internal track for #{APP_PACKAGE_NAME}.")
 end
+
+platform :ios do
+  desc "Upload IPA to TestFlight using App Store Connect API Key"
+  lane :testflight_upload do |options|
+    ipa_path = options[:ipa_path] || ENV["FASTLANE_IPA_PATH"] || File.expand_path("../build/ios/ipa/Bible Read.ipa", __dir__)
+    unless File.exist?(ipa_path)
+      alt_path = File.expand_path("../build/ios/ipa/bible_read.ipa", __dir__)
+      ipa_path = alt_path if File.exist?(alt_path)
+    end
+
+    unless File.exist?(ipa_path)
+      UI.user_error!("IPA not found at #{ipa_path}. Confirm the build step ran successfully.")
+    end
+
+    api_key_path = options[:api_key_path] || ENV["ASC_API_KEY_PATH"] || File.expand_path("asc-api-key.p8", __dir__)
+    key_id = options[:key_id] || ENV["ASC_KEY_ID"]
+    issuer_id = options[:issuer_id] || ENV["ASC_ISSUER_ID"]
+
+    api_key = if key_id && issuer_id && File.exist?(api_key_path)
+      app_store_connect_api_key(
+        key_id: key_id,
+        issuer_id: issuer_id,
+        key_filepath: api_key_path,
+        duration: 1200,
+        in_house: false
+      )
+    else
+      nil
+    end
+
+    changelog = options[:changelog] || ENV["CHANGELOG_TEXT"]
+
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: ipa_path,
+      skip_waiting_for_build_processing: true,
+      skip_submission: true,
+      distribute_external: false,
+      changelog: changelog
+    )
+
+    UI.success("Uploaded #{ipa_path} to TestFlight.")
+  end
+end
+
