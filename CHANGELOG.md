@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.33.0](https://github.com/Shir0o/bible-read/compare/v1.32.0...v1.33.0) (2026-10-02)
+
+
+### Features
+
+* add iOS TestFlight release automation pipeline ([#931](https://github.com/Shir0o/bible-read/issues/931)) ([5e1e7cd](https://github.com/Shir0o/bible-read/commit/5e1e7cd076584203b8b7b5c821dcd3d1c3e4ef5e))
+
 ## [1.32.0](https://github.com/Shir0o/bible-read/compare/v1.31.1...v1.32.0) (2026-09-26)
 
 
