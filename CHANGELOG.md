@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.33.1](https://github.com/Shir0o/bible-read/compare/v1.33.0...v1.33.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* **ios:** refresh SwiftPM Package.resolved for recaptcha dependency ([#943](https://github.com/Shir0o/bible-read/issues/943)) ([02dad54](https://github.com/Shir0o/bible-read/commit/02dad5445c0354bc5f6a04a4d2f72db13f9241a6))
+
 ## [1.33.0](https://github.com/Shir0o/bible-read/compare/v1.32.0...v1.33.0) (2026-10-02)
 
 
