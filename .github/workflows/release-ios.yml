@@ -109,15 +109,23 @@ jobs:
           KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain"
 
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security default-keychain -s "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+          security default-keychain -s "$KEYCHAIN_PATH"
+
+          # Download and install Apple Worldwide Developer Relations intermediate certificates (G3)
+          curl -sS https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer > "$RUNNER_TEMP/AppleWWDRCAG3.cer"
+          security import "$RUNNER_TEMP/AppleWWDRCAG3.cer" -k "$KEYCHAIN_PATH" -T /usr/bin/codesign -T /usr/bin/security
+          rm -f "$RUNNER_TEMP/AppleWWDRCAG3.cer"
 
           CERT_PATH="$RUNNER_TEMP/distribution.p12"
           echo "$IOS_DISTRIBUTION_CERT_BASE64" | base64 -d > "$CERT_PATH"
-          security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$IOS_CERT_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$IOS_CERT_PASSWORD" -A -T /usr/bin/codesign -T /usr/bin/security
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          echo "Available valid code signing identities in keychain:"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
 
           PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PROFILE_DIR"
