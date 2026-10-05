@@ -67,7 +67,21 @@ class _PersonalRow {
   final UserPlanProgress progress;
   final CatchUpStatus status;
   final PlanLifecycle state;
-  const _PersonalRow(this.plan, this.progress, this.status, this.state);
+
+  /// The reader Finished this plan (ADR-0010): closed as done, with unread
+  /// readings left unmarked. Kept apart from [state], which stays what the
+  /// readings say, so "every reading marked" is never inferred from the list.
+  final bool finished;
+  const _PersonalRow(
+    this.plan,
+    this.progress,
+    this.status,
+    this.state, {
+    this.finished = false,
+  });
+
+  _PersonalRow withFinished(bool finished) =>
+      _PersonalRow(plan, progress, status, state, finished: finished);
 
   String get pinKey => 'plan:${plan.id}';
 }
@@ -82,6 +96,9 @@ class _GroupRow {
   /// The reader's completed dates under [schedule] (`YYYY-MM-DD`), carried so
   /// adjust pace can run its arithmetic without re-reading progress.
   final Set<String> completedDateIds;
+
+  /// The reader Finished their participation in this Shared plan (ADR-0010).
+  final bool finished;
   const _GroupRow(
     this.group,
     this.schedule,
@@ -89,7 +106,18 @@ class _GroupRow {
     this.status,
     this.state, {
     this.completedDateIds = const {},
+    this.finished = false,
   });
+
+  _GroupRow withFinished(bool finished) => _GroupRow(
+        group,
+        schedule,
+        readers,
+        status,
+        state,
+        completedDateIds: completedDateIds,
+        finished: finished,
+      );
 
   String get pinKey => 'group:${group.id}';
 }
@@ -164,7 +192,13 @@ class PlansHubState extends State<PlansHub> {
           today: today,
         );
         personal.add(
-          _PersonalRow(plan, progress, status, status.lifecycleAt(today)),
+          _PersonalRow(
+            plan,
+            progress,
+            status,
+            status.lifecycleAt(today),
+            finished: progress.finishedAt != null,
+          ),
         );
       }
 
@@ -229,6 +263,13 @@ class PlansHubState extends State<PlansHub> {
             const Duration(seconds: 5),
             onTimeout: () => const <Group>[],
           );
+      var finishedGroupIds = const <String>{};
+      try {
+        finishedGroupIds =
+            await widget.groupService.finishedGroupIdsForUser(uid);
+      } catch (e, st) {
+        ErrorLogger.log(e, st);
+      }
       final groupRows = <_GroupRow>[];
       for (final group in groups) {
         final results = await Future.wait([
@@ -270,6 +311,7 @@ class PlansHubState extends State<PlansHub> {
             status,
             status.lifecycleAt(today),
             completedDateIds: completed,
+            finished: finishedGroupIds.contains(group.id),
           ),
         );
       }
@@ -442,74 +484,16 @@ class PlansHubState extends State<PlansHub> {
   Future<void> _adjustPersonalPace(_PersonalRow row) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
-    widget.vibrationService.lightImpact();
-    final today = widget.dateProvider();
-    final days =
-        PlanPace.datedPersonalSchedule(row.plan, row.progress.startDate);
-    final completed = PlanPace.personalCompletedDateIds(row.plan, row.progress);
-    final behind = PlanPace.daysBehind(days, completed, today: today);
-    final choice = await Navigator.of(context).push<PaceOption>(
-      MaterialPageRoute(
-        builder: (_) => AdjustPacePage(
-          days: days,
-          completedDateIds: completed,
-          daysBehind: behind,
-          shared: false,
-          today: today,
-          vibrationService: widget.vibrationService,
-        ),
-      ),
+    final applied = await adjustPersonalPace(
+      context,
+      firestore: widget.firestore,
+      uid: uid,
+      plan: row.plan,
+      progress: row.progress,
+      today: widget.dateProvider(),
+      vibrationService: widget.vibrationService,
     );
-    if (choice == null || !mounted) return;
-    try {
-      final paceService = PlanPaceService(firestore: widget.firestore);
-      switch (choice) {
-        case PaceOption.stretch:
-          await paceService.applyPersonalSchedule(
-            uid: uid,
-            plan: row.plan,
-            startDate: row.progress.startDate,
-            adjusted: PlanPace.stretch(
-              days: days,
-              completedDateIds: completed,
-              daysBehind: behind,
-            ),
-          );
-        case PaceOption.keepFinish:
-          await paceService.applyPersonalSchedule(
-            uid: uid,
-            plan: row.plan,
-            startDate: row.progress.startDate,
-            adjusted: PlanPace.redistribute(
-              days: days,
-              completedDateIds: completed,
-              resumeDate: PlanPace.resumeDate(days, completed, today: today),
-              finishDate: PlanPace.finishOf(days) ?? today,
-            ),
-          );
-        case PaceOption.beginAgain:
-          await paceService.beginPersonalPlanAgain(
-            uid: uid,
-            plan: row.plan,
-            startDate: PlanPace.resumeDate(days, completed, today: today),
-            progress: row.progress,
-          );
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Pace adjusted for "${row.plan.title}"')),
-      );
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to adjust pace. Please try again.'),
-          ),
-        );
-      }
-    }
+    if (applied && mounted) await _load();
   }
 
   /// Adjust pace on a Shared plan (#810): the arithmetic runs on the Group's
@@ -621,6 +605,154 @@ class PlansHubState extends State<PlansHub> {
           SnackBar(
             content: Text(
                 'Failed to archive "${row.plan.title}". Please try again.'),
+          ),
+        );
+      }
+    }
+  }
+
+  void _setPersonalFinished(_PersonalRow row, bool finished) {
+    final i = _personal.indexWhere((r) => r.plan.id == row.plan.id);
+    if (i < 0) return;
+    setState(
+      () => _personal = [..._personal]..[i] = row.withFinished(finished),
+    );
+  }
+
+  void _setGroupFinished(_GroupRow row, bool finished) {
+    final i = _groups.indexWhere((r) => r.group.id == row.group.id);
+    if (i < 0) return;
+    setState(() => _groups = [..._groups]..[i] = row.withFinished(finished));
+  }
+
+  /// Finishes an ended plan straight away (ADR-0010) — it is fully
+  /// reversible, so an Undo snackbar stands in for a confirmation step. The
+  /// plan moves to Finished at once and rolls back if the write fails.
+  Future<void> _finishPlan(_PersonalRow row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    _setPersonalFinished(row, true);
+    try {
+      await widget.readingPlanService.finishPlan(uid, row.plan.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Finished "${row.plan.title}"'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () => _unfinishPlan(row),
+          ),
+        ),
+      );
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        _setPersonalFinished(row, false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to finish "${row.plan.title}". Please try again.',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Restores a finished plan to where it was — ended, same readings marked.
+  Future<void> _unfinishPlan(_PersonalRow row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    _setPersonalFinished(row, false);
+    try {
+      await widget.readingPlanService.unfinishPlan(uid, row.plan.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('"${row.plan.title}" restored')));
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        _setPersonalFinished(row, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to restore "${row.plan.title}". Please try again.',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Finishes the reader's own participation in an ended Shared plan
+  /// (ADR-0010). The Group schedule and the other members carry on.
+  Future<void> _finishGroup(_GroupRow row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    _setGroupFinished(row, true);
+    try {
+      await widget.groupService.finishMemberParticipation(
+        groupId: row.group.id,
+        uid: uid,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Finished "${row.group.name}"'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () => _unfinishGroup(row),
+          ),
+        ),
+      );
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        _setGroupFinished(row, false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to finish "${row.group.name}". Please try again.',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Restores a finished Shared plan — it returns with the Group's current
+  /// dates, which may have moved since the reader finished.
+  Future<void> _unfinishGroup(_GroupRow row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    _setGroupFinished(row, false);
+    try {
+      await widget.groupService.unfinishMemberParticipation(
+        groupId: row.group.id,
+        uid: uid,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('"${row.group.name}" restored')));
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        _setGroupFinished(row, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to restore "${row.group.name}". Please try again.',
+            ),
           ),
         );
       }
@@ -894,14 +1026,18 @@ class PlansHubState extends State<PlansHub> {
 
   @override
   Widget build(BuildContext context) {
+    // Finished lists both fully-read plans and ones the reader Finished
+    // early (ADR-0010); `state` alone no longer says which.
+    bool isDone(PlanLifecycle state, bool finished) =>
+        state == PlanLifecycle.complete || finished;
     final personalActive =
-        _personal.where((r) => r.state != PlanLifecycle.complete).toList();
+        _personal.where((r) => !isDone(r.state, r.finished)).toList();
     final personalDone =
-        _personal.where((r) => r.state == PlanLifecycle.complete).toList();
+        _personal.where((r) => isDone(r.state, r.finished)).toList();
     final groupActive =
-        _groups.where((r) => r.state != PlanLifecycle.complete).toList();
+        _groups.where((r) => !isDone(r.state, r.finished)).toList();
     final groupDone =
-        _groups.where((r) => r.state == PlanLifecycle.complete).toList();
+        _groups.where((r) => isDone(r.state, r.finished)).toList();
     final totalActive = personalActive.length + groupActive.length;
     final hasFinished = personalDone.isNotEmpty || groupDone.isNotEmpty;
     final nothing = totalActive == 0 &&
@@ -1036,6 +1172,12 @@ class PlansHubState extends State<PlansHub> {
                     () => _adjustPersonalPace(row),
                   ),
                   (Icons.edit_outlined, 'Edit plan', () => _editPlan(row)),
+                  if (row.state == PlanLifecycle.wrapup)
+                    (
+                      Icons.task_alt_outlined,
+                      'Finish plan',
+                      () => _finishPlan(row),
+                    ),
                   (
                     Icons.archive_outlined,
                     'Archive plan',
@@ -1122,6 +1264,12 @@ class PlansHubState extends State<PlansHub> {
                     'Adjust pace',
                     () => _adjustSharedPace(row),
                   ),
+                  if (row.state == PlanLifecycle.wrapup)
+                    (
+                      Icons.task_alt_outlined,
+                      'Finish plan',
+                      () => _finishGroup(row),
+                    ),
                   (
                     Icons.settings_outlined,
                     'Manage members',
@@ -1269,7 +1417,7 @@ class PlansHubState extends State<PlansHub> {
                 ),
               ),
               Text(
-                'completed in full',
+                'done · progress kept',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
@@ -1278,22 +1426,29 @@ class PlansHubState extends State<PlansHub> {
             ],
           ),
         ),
+        // A fully-read plan keeps its look; one the reader Finished early
+        // says how much was read and can be restored (ADR-0010).
         for (final row in personalDone)
           _finishedRow(
             context,
             icon: Icons.check_circle,
             title: row.plan.title,
-            subtitle: 'All ${row.status.total} readings complete',
+            subtitle: row.finished && row.state != PlanLifecycle.complete
+                ? 'Finished · ${row.status.doneCount} of ${row.status.total} read'
+                : 'All ${row.status.total} readings complete',
             onReview: () => _continuePlan(row),
+            onRestore: row.finished ? () => _unfinishPlan(row) : null,
           ),
         for (final row in groupDone)
           _finishedRow(
             context,
             icon: Icons.group,
             title: row.group.name,
-            subtitle:
-                'Finished together · All ${row.status.total} readings complete',
+            subtitle: row.finished && row.state != PlanLifecycle.complete
+                ? 'Finished · ${row.status.doneCount} of ${row.status.total} read'
+                : 'Finished together · All ${row.status.total} readings complete',
             onReview: () => _reviewGroup(row),
+            onRestore: row.finished ? () => _unfinishGroup(row) : null,
           ),
       ],
     );
@@ -1305,6 +1460,7 @@ class PlansHubState extends State<PlansHub> {
     required String title,
     required String subtitle,
     required VoidCallback onReview,
+    VoidCallback? onRestore,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -1355,6 +1511,13 @@ class PlansHubState extends State<PlansHub> {
             ),
           ),
           TextButton(onPressed: onReview, child: const Text('Review')),
+          if (onRestore != null)
+            IconButton(
+              onPressed: onRestore,
+              icon: const Icon(Icons.restore),
+              tooltip: 'Restore plan',
+              color: colorScheme.primary,
+            ),
         ],
       ),
     );

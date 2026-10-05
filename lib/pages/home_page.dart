@@ -37,6 +37,7 @@ import '../widgets/reflect_sheet.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/sun_mark.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
+import 'adjust_pace_page.dart';
 import 'check_in_page.dart';
 import 'plan_detail_page.dart';
 
@@ -294,7 +295,9 @@ class _HomePageState extends State<HomePage>
 
   void _watchGroupsAndCommunity(String uid) {
     _groupMembershipSub?.cancel();
-    _groupMembershipSub = widget.groupService.groupsForUser(uid).listen(
+    _groupMembershipSub = widget.groupService
+        .groupsForUser(uid, includeFinished: false)
+        .listen(
       (groups) {
         for (final subscription in _groupTriggerSubs) {
           subscription.cancel();
@@ -484,7 +487,7 @@ class _HomePageState extends State<HomePage>
 
     try {
       final groups = await _firstWithTimeout<List<Group>>(
-        widget.groupService.groupsForUser(uid),
+        widget.groupService.groupsForUser(uid, includeFinished: false),
         timeout: const Duration(seconds: 5),
         fallback: const <Group>[],
       );
@@ -731,7 +734,7 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Loads *every* active (non-archived) personal plan with its plan document,
+  /// Loads *every* active (non-archived, unfinished) personal plan with its plan document,
   /// so Home can rank them and choose a primary. Streams updates so marking a
   /// reading re-ranks live.
   Future<void> _loadActivePlans() async {
@@ -743,7 +746,10 @@ class _HomePageState extends State<HomePage>
 
     _activePlansSub?.cancel();
     _activePlansSub = widget.readingPlanService.getActivePlans(uid).listen(
-      (progresses) async {
+      (allProgress) async {
+        // A plan the reader Finished (ADR-0010) has left Home.
+        final progresses =
+            allProgress.where((p) => p.finishedAt == null).toList();
         if (progresses.isEmpty) {
           if (!_disposed && mounted) {
             setState(() => _personalPlans = []);
@@ -2011,7 +2017,9 @@ class _HomePageState extends State<HomePage>
 
   /// Hero variant for a plan whose calendar window has ended but isn't finished.
   /// Reframed away from "today / day X of Y" — it's now "finish at your pace."
-  /// No "mark done" shortcut: a plan only closes when every reading is read.
+  /// No "mark done" shortcut: a plan is fully read only when every reading is
+  /// marked. A reader who is done anyway can Finish it (ADR-0010), which
+  /// leaves the unread readings unmarked.
   Widget _buildWrapUpHero(BuildContext context, _ReadingItem item) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -2108,7 +2116,12 @@ class _HomePageState extends State<HomePage>
                   child: FilledButton.icon(
                     onPressed: () => _openPrimarySchedule(item),
                     icon: const Icon(Icons.eco_outlined, size: 18),
-                    label: const Text('Keep reading'),
+                    label: const Text(
+                      'Keep reading',
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     style: FilledButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -2119,27 +2132,44 @@ class _HomePageState extends State<HomePage>
               ),
               if (!item.isGroup) ...[
                 const SizedBox(width: 9),
-                SizedBox(
-                  height: 48,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _openPrimarySchedule(item),
-                    icon: const Icon(Icons.calendar_today_outlined, size: 17),
-                    label: const Text('Reschedule'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.onSurfaceVariant,
-                      side: BorderSide(
-                        color: colorScheme.outlineVariant.withValues(
-                          alpha: 0.4,
-                        ),
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _adjustPace(item),
+                      icon: const Icon(Icons.speed_outlined, size: 17),
+                      label: const Text(
+                        'Adjust pace',
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colorScheme.onSurfaceVariant,
+                        side: BorderSide(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.4,
+                          ),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ],
             ],
+          ),
+          const SizedBox(height: 4),
+          Center(
+            child: TextButton(
+              onPressed: () => _finishReading(item),
+              style: TextButton.styleFrom(
+                foregroundColor: colorScheme.onSurfaceVariant,
+              ),
+              child: const Text('Finish plan'),
+            ),
           ),
         ],
       ),
@@ -2239,7 +2269,7 @@ class _HomePageState extends State<HomePage>
       case PlanLifecycle.behind:
         return '${s.missedCount} behind · $ref';
       case PlanLifecycle.wrapup:
-        return 'Finish · ${s.remaining} reading${s.remaining == 1 ? '' : 's'} left';
+        return 'Ended · ${s.remaining} reading${s.remaining == 1 ? '' : 's'} left';
       case PlanLifecycle.ontrack:
       case PlanLifecycle.complete:
         return 'On track · $ref';
@@ -2263,6 +2293,107 @@ class _HomePageState extends State<HomePage>
       'Dec',
     ];
     return '${months[d.month - 1]} ${d.day}';
+  }
+
+  /// Adjust pace on the Plan ended card's personal plan — the same flow as
+  /// Path's plan menu. A schedule rewrite doesn't touch `plan_progress`, so
+  /// the plans are reloaded to pick up the new dates.
+  Future<void> _adjustPace(_ReadingItem item) async {
+    final uid = widget.auth.currentUser?.uid;
+    final plan = item.plan;
+    final progress = item.progress;
+    if (uid == null || plan == null || progress == null) return;
+    final applied = await adjustPersonalPace(
+      context,
+      firestore: widget.firestore,
+      uid: uid,
+      plan: plan,
+      progress: progress,
+      today: widget.dateProvider(),
+      vibrationService: widget.vibrationService,
+    );
+    if (applied && !_disposed && mounted) await _loadActivePlans();
+  }
+
+  /// Finishes the ended plan on the card (ADR-0010) — personal, optimistic
+  /// and undoable. The plan leaves Home at once and returns if the write
+  /// fails; unread readings stay unmarked.
+  Future<void> _finishReading(_ReadingItem item) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    unawaited(widget.vibrationService.lightImpact());
+    final group = item.group;
+    final plan = item.plan;
+    final previousPlans = _personalPlans;
+    final previousGroup = group == null ? null : _groups[group.id];
+    setState(() {
+      if (group != null) {
+        _groups.remove(group.id);
+      } else {
+        _personalPlans =
+            _personalPlans.where((pp) => pp.plan.id != plan!.id).toList();
+      }
+    });
+    try {
+      if (group != null) {
+        await widget.groupService.finishMemberParticipation(
+          groupId: group.id,
+          uid: uid,
+        );
+      } else {
+        await widget.readingPlanService.finishPlan(uid, plan!.id);
+      }
+      if (_disposed || !mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Finished "${item.title}"'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () => _unfinishReading(item),
+          ),
+        ),
+      );
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (_disposed || !mounted) return;
+      setState(() {
+        if (previousGroup != null) {
+          _groups[previousGroup.group.id] = previousGroup;
+        } else {
+          _personalPlans = previousPlans;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to finish "${item.title}". Please try again.'),
+        ),
+      );
+    }
+  }
+
+  /// Undoes [_finishReading]; the live plan/group streams bring it back.
+  Future<void> _unfinishReading(_ReadingItem item) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final group = item.group;
+      if (group != null) {
+        await widget.groupService.unfinishMemberParticipation(
+          groupId: group.id,
+          uid: uid,
+        );
+      } else {
+        await widget.readingPlanService.unfinishPlan(uid, item.plan!.id);
+      }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (_disposed || !mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to restore "${item.title}". Please try again.'),
+        ),
+      );
+    }
   }
 
   /// Opens the schedule/detail for any reading item (personal plan or group).

@@ -63,6 +63,20 @@ reversible — an archived Plan is restored and picks up where it left off.
 Distinct from delete, which sends it to Recently Deleted.
 _Avoid_: Leave (reserved for leaving a Group), shelve
 
+**Finish**:
+A reader closing a Plan as done once its dates have ended, whether or not every
+reading is marked. Unmarked readings stay unmarked, so Coverage and Read-Throughs
+are untouched. Always personal — on a Shared plan it closes only the reader's own
+participation; the Group schedule carries on for everyone else, and the reader
+stays a full member (Circle and feed unchanged). Only the reader undoes it — an
+owner's Reschedule never reopens it. Reversible: a finished Plan is restored to
+where it was. Distinct from Archive (shelving, not
+done) and from a Plan that is complete because every reading is marked. Lives
+on Path with the rest of the lifecycle; Home's ended-plan card carries the one
+shortcut to it. See [ADR-0010](docs/adr/0010-finish-leaves-readings-unmarked.md).
+_Avoid_: Close, complete (reserved for every reading marked), mark the rest read,
+leave (reserved for leaving a Group)
+
 **Group schedule**:
 A group's own dated sequence of readings, separate from any member's personal
 plan overlay. A reader can be on track in one and behind in the other.
