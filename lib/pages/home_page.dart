@@ -12,6 +12,7 @@ import '../services/google_sign_in_factory.dart';
 import '../services/bible_progress_service.dart';
 import '../services/catch_up_engine.dart' hide ReadingStatus;
 import '../services/group_service.dart';
+import '../services/plan_pace_service.dart';
 import '../services/plan_completion_coordinator.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
@@ -325,6 +326,14 @@ class _HomePageState extends State<HomePage>
                   onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
                 ),
           );
+          _groupTriggerSubs.add(
+            PlanPaceService(firestore: widget.firestore)
+                .sharedPlanOverlay(uid, group.id)
+                .listen(
+                  (_) => _scheduleGroupReload(),
+                  onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+                ),
+          );
         }
 
         _scheduleGroupReload();
@@ -499,6 +508,7 @@ class _HomePageState extends State<HomePage>
       }
 
       final today = _dateOnly(widget.dateProvider());
+      final paceService = PlanPaceService(firestore: widget.firestore);
 
       // Load every group the user belongs to in parallel — each group's
       // schedule, today's member presence, and the user's per-chapter progress —
@@ -524,10 +534,17 @@ class _HomePageState extends State<HomePage>
               timeout: const Duration(seconds: 3),
               fallback: const <String, int>{},
             ),
+            paceService.getSharedPlanOverlay(uid, group.id).timeout(
+                  const Duration(seconds: 3),
+                  onTimeout: () => null,
+                ),
           ]);
 
-          final schedule = results[0] as List<GroupSchedule>;
-          final members = results[1] as List<GroupMemberProgressData>;
+          // The reader's own pace overlay, when they adjusted pace
+          // (ADR-0007), replaces the Group's dates in their view.
+          final overlay = results[3] as List<GroupSchedule>?;
+          final schedule = overlay ?? results[0] as List<GroupSchedule>;
+          var members = results[1] as List<GroupMemberProgressData>;
           final progress = results[2] as Map<String, int>;
 
           GroupSchedule? todayEntry;
@@ -536,6 +553,26 @@ class _HomePageState extends State<HomePage>
               todayEntry = s;
               break;
             }
+          }
+
+          // Presence scores today against the Group's own reading, so on the
+          // reader's own dates their read-today comes from their progress.
+          if (overlay != null) {
+            final todayCount = progress[GroupService.dateId(today)] ?? 0;
+            final readToday = todayEntry != null &&
+                todayCount > 0 &&
+                todayCount >= todayEntry.chapters.length;
+            members = [
+              for (final m in members)
+                m.uid == uid
+                    ? GroupMemberProgressData(
+                        uid: m.uid,
+                        name: m.name,
+                        photoUrl: m.photoUrl,
+                        completion: readToday ? 1.0 : 0.0,
+                      )
+                    : m,
+            ];
           }
 
           return _GroupData(

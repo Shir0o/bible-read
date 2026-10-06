@@ -6,6 +6,7 @@ import 'package:bible_read/models/reading_plan.dart';
 import 'package:bible_read/widgets/journey/plans_hub.dart';
 import 'package:bible_read/widgets/skeletons/plans_hub_skeleton.dart';
 import 'package:bible_read/services/group_service.dart';
+import 'package:bible_read/services/plan_pace_service.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
 import 'package:bible_read/services/user_preferences_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
@@ -581,6 +582,33 @@ void main() {
 
     expect((await memberRef(groupId).get()).data()?['finishedAt'], isNull);
     expect(find.text('Together'), findsOneWidget);
+  });
+
+  testWidgets(
+      "a Shared plan follows the reader's pace overlay, not the Group's "
+      'dates', (tester) async {
+    final groupId = await seedEndedSharedPlan();
+    final today = DateTime.now();
+    // The reader's Adjust pace moved the unread reading to today.
+    await PlanPaceService(firestore: firestore).applySharedPlanOverlay(
+      uid: 'u1',
+      groupId: groupId,
+      adjusted: [
+        GroupSchedule(
+          date: DateTime(today.year, today.month, today.day - 10),
+          chapters: const ['Jer 1'],
+        ),
+        GroupSchedule(
+          date: DateTime(today.year, today.month, today.day),
+          chapters: const ['Jer 2'],
+        ),
+      ],
+    );
+    await pumpPage(tester);
+
+    expect(find.text('Together'), findsOneWidget);
+    expect(find.text('Due today'), findsOneWidget);
+    expect(find.text('Ended'), findsNothing);
   });
 
   testWidgets(

@@ -25,6 +25,7 @@ import '../../pages/create_plan_page.dart';
 import '../../pages/group_members_page.dart';
 import '../../pages/plan_detail_page.dart';
 import '../../pages/recently_deleted_page.dart';
+import '../../services/plan_pace_service.dart';
 import '../skeleton_loader.dart';
 import '../skeletons/plans_hub_skeleton.dart';
 
@@ -269,6 +270,7 @@ class PlansHubState extends State<PlansHub> {
         ErrorLogger.log(e, st);
       }
       final groupRows = <_GroupRow>[];
+      final paceService = PlanPaceService(firestore: widget.firestore);
       for (final group in groups) {
         final results = await Future.wait([
           widget.groupService.schedule(group.id).first.timeout(
@@ -286,8 +288,15 @@ class PlansHubState extends State<PlansHub> {
                 const Duration(seconds: 3),
                 onTimeout: () => const <GroupMemberProgressData>[],
               ),
+          paceService.getSharedPlanOverlay(uid, group.id).timeout(
+                const Duration(seconds: 3),
+                onTimeout: () => null,
+              ),
         ]);
-        final schedule = results[0] as List<GroupSchedule>;
+        // The reader's own pace overlay, when they adjusted pace (ADR-0007),
+        // replaces the Group's dates in their view.
+        final schedule = results[3] as List<GroupSchedule>? ??
+            results[0] as List<GroupSchedule>;
         final progressMap = results[1] as Map<String, int>;
         final members = results[2] as List<GroupMemberProgressData>;
         final completed = progressMap.entries
