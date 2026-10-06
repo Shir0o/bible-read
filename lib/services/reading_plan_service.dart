@@ -317,6 +317,29 @@ class ReadingPlanService {
   Future<void> unarchivePlan(String userId, String planId) =>
       setPlanArchived(userId, planId, false);
 
+  /// Finishes a plan (ADR-0010): the reader closes it as done once its dates
+  /// have ended. It leaves the active lists for Path's Finished list, but its
+  /// completed days are untouched — unread readings stay unmarked.
+  Future<void> finishPlan(String userId, String planId) =>
+      _setPlanFinishedAt(userId, planId, Timestamp.now());
+
+  /// Restores a finished plan to where it was — ended, same readings marked.
+  Future<void> unfinishPlan(String userId, String planId) =>
+      _setPlanFinishedAt(userId, planId, null);
+
+  Future<void> _setPlanFinishedAt(
+    String userId,
+    String planId,
+    Timestamp? finishedAt,
+  ) async {
+    await firestore
+        .collection('users')
+        .doc(userId)
+        .collection('plan_progress')
+        .doc(planId)
+        .update({'finishedAt': finishedAt});
+  }
+
   /// Marks a specific day in the plan as completed.
   Future<void> markDayComplete(String userId, String planId, int day) async {
     final docRef = firestore

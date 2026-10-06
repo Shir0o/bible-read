@@ -9,6 +9,11 @@ class UserPlanProgress {
   final DateTime? lastReadDate;
   final bool isArchived;
 
+  /// When the reader Finished the plan (ADR-0010): closed as done once its
+  /// dates ended, with unread readings left unmarked. Null while the plan is
+  /// still being read; [completedDays] is never touched by Finish.
+  final DateTime? finishedAt;
+
   /// When the plan was moved to the Recently Deleted hub (#776). Null while
   /// the plan is live; non-null soft-deleted items are excluded from every
   /// active query.
@@ -28,6 +33,7 @@ class UserPlanProgress {
     required this.completedDays,
     this.lastReadDate,
     this.isArchived = false,
+    this.finishedAt,
     this.deletedAt,
     this.deleteAfter,
     this.preDeleteState,
@@ -44,6 +50,7 @@ class UserPlanProgress {
       completedDays: List<int>.from(data['completedDays'] as List? ?? []),
       lastReadDate: (data['lastReadDate'] as Timestamp?)?.toDate(),
       isArchived: data['isArchived'] as bool? ?? false,
+      finishedAt: (data['finishedAt'] as Timestamp?)?.toDate(),
       deletedAt: (data['deletedAt'] as Timestamp?)?.toDate(),
       deleteAfter: (data['deleteAfter'] as Timestamp?)?.toDate(),
       preDeleteState: data['preDeleteState'] as String?,
@@ -58,6 +65,8 @@ class UserPlanProgress {
         'lastReadDate':
             lastReadDate != null ? Timestamp.fromDate(lastReadDate!) : null,
         'isArchived': isArchived,
+        'finishedAt':
+            finishedAt != null ? Timestamp.fromDate(finishedAt!) : null,
         'deletedAt': deletedAt != null ? Timestamp.fromDate(deletedAt!) : null,
         'deleteAfter':
             deleteAfter != null ? Timestamp.fromDate(deleteAfter!) : null,
@@ -71,6 +80,7 @@ class UserPlanProgress {
     List<int>? completedDays,
     DateTime? lastReadDate,
     bool? isArchived,
+    DateTime? finishedAt,
     DateTime? deletedAt,
     DateTime? deleteAfter,
     String? preDeleteState,
@@ -82,6 +92,7 @@ class UserPlanProgress {
       completedDays: completedDays ?? this.completedDays,
       lastReadDate: lastReadDate ?? this.lastReadDate,
       isArchived: isArchived ?? this.isArchived,
+      finishedAt: finishedAt ?? this.finishedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       deleteAfter: deleteAfter ?? this.deleteAfter,
       preDeleteState: preDeleteState ?? this.preDeleteState,

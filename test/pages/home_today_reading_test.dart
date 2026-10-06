@@ -5,6 +5,7 @@
 // These build MaterialApp with NoSplash to avoid the InkSparkle fragment-shader
 // asset that the headless test environment can't decode, so plan-card taps are
 // exercisable here.
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -12,6 +13,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 
+import 'package:bible_read/pages/adjust_pace_page.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/services/bible_progress_service.dart';
@@ -55,6 +57,109 @@ Future<void> _seedPlan(
     'userId': 'u1',
   });
   await planService.startPlan('u1', 'p1', startDate: now);
+}
+
+/// Pumps Home for u1 and dismisses the auto-opened check-in.
+Future<void> _pumpHome(
+  WidgetTester tester,
+  FakeFirebaseFirestore firestore, {
+  ReadingPlanService? planService,
+  GroupService? groupService,
+}) async {
+  await tester.pumpWidget(
+    _host(
+      HomePage(
+        firestore: firestore,
+        auth: MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true),
+        vibrationService: const VibrationService(),
+        bibleProgressService: _StubBibleProgressService(),
+        readingPlanService: planService,
+        groupService: groupService,
+        userPreferencesService: UserPreferencesService(firestore: firestore),
+        dateProvider: DateTime.now,
+        enableDriftAnimation: false,
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+    await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+    await tester.pumpAndSettle();
+  }
+}
+
+/// Seeds the two-day plan so its dates ended 10 days ago with day 1 read —
+/// the "Plan ended" state, one reading left.
+Future<void> _seedEndedPlan(
+  FakeFirebaseFirestore firestore,
+  ReadingPlanService planService,
+) async {
+  await _seedPlan(
+    firestore,
+    planService,
+    now: DateTime.now().subtract(const Duration(days: 10)),
+  );
+  await _planProgressRef(firestore).update({
+    'completedDays': [1],
+  });
+}
+
+DocumentReference<Map<String, dynamic>> _planProgressRef(
+  FakeFirebaseFirestore firestore,
+) =>
+    firestore
+        .collection('users')
+        .doc('u1')
+        .collection('plan_progress')
+        .doc('p1');
+
+/// A Shared plan u1 reads as a member whose two readings ended 10 days ago,
+/// the first one read — "Ended · 1 reading left" on Home.
+Future<String> _seedEndedSharedPlan(
+  FakeFirebaseFirestore firestore,
+  GroupService groupService, {
+  bool finished = false,
+}) async {
+  final groupId = await groupService.createGroup(
+    ownerUid: 'naomi',
+    name: 'Jeremiah Plan',
+  );
+  await firestore
+      .collection('groups')
+      .doc(groupId)
+      .collection('members')
+      .doc('u1')
+      .set({
+    'uid': 'u1',
+    'role': 'member',
+    if (finished) 'finishedAt': Timestamp.now(),
+  });
+  final today = DateTime.now();
+  final first = DateTime(today.year, today.month, today.day - 10);
+  final second = DateTime(today.year, today.month, today.day - 9);
+  await groupService.updateSchedule(
+    groupId: groupId,
+    schedule: GroupSchedule(date: first, chapters: const ['Jer 1']),
+  );
+  await groupService.updateSchedule(
+    groupId: groupId,
+    schedule: GroupSchedule(date: second, chapters: const ['Jer 2']),
+  );
+  await firestore
+      .collection('groups')
+      .doc(groupId)
+      .collection('progress')
+      .doc(GroupService.dateId(first))
+      .collection('entries')
+      .doc('u1')
+      .set({
+    'groupId': groupId,
+    'uid': 'u1',
+    'dateId': GroupService.dateId(first),
+    'count': 1,
+    'done': true,
+  });
+  return groupId;
 }
 
 void main() {
@@ -460,4 +565,154 @@ void main() {
       expect(find.text('Test Group · together'), findsOneWidget);
     },
   );
+  group('Plan ended card (ADR-0010)', () {
+    testWidgets(
+      'shows Keep reading and Adjust pace side by side, plus a quiet Finish '
+      'plan, with no Reschedule',
+      (tester) async {
+        final firestore = FakeFirebaseFirestore();
+        final planService = ReadingPlanService(firestore: firestore);
+        await _seedEndedPlan(firestore, planService);
+
+        await _pumpHome(tester, firestore, planService: planService);
+
+        expect(find.text('Plan ended · finish at your pace'), findsOneWidget);
+        expect(find.text('Keep reading'), findsOneWidget);
+        expect(find.text('Adjust pace'), findsOneWidget);
+        expect(find.text('Finish plan'), findsOneWidget);
+        expect(find.text('Reschedule'), findsNothing);
+
+        // Equal halves, each label on a single line.
+        final keep =
+            tester.getSize(find.widgetWithText(FilledButton, 'Keep reading'));
+        final adjust =
+            tester.getSize(find.widgetWithText(OutlinedButton, 'Adjust pace'));
+        expect(keep.width, adjust.width);
+        expect(
+          tester.getSize(find.text('Keep reading')).height,
+          lessThan(24),
+        );
+      },
+    );
+
+    testWidgets('Adjust pace opens the Adjust pace flow', (tester) async {
+      final firestore = FakeFirebaseFirestore();
+      final planService = ReadingPlanService(firestore: firestore);
+      await _seedEndedPlan(firestore, planService);
+
+      await _pumpHome(tester, firestore, planService: planService);
+      await tester.tap(find.text('Adjust pace'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AdjustPacePage), findsOneWidget);
+      expect(find.text('Stretch it out'), findsOneWidget);
+    });
+
+    testWidgets(
+      'Finish plan removes the plan from Home without marking readings, and '
+      'Undo brings it back',
+      (tester) async {
+        final firestore = FakeFirebaseFirestore();
+        final planService = ReadingPlanService(firestore: firestore);
+        await _seedEndedPlan(firestore, planService);
+
+        await _pumpHome(tester, firestore, planService: planService);
+        await tester.tap(find.text('Finish plan'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Plan ended · finish at your pace'), findsNothing);
+        expect(find.text('Finished "Test Plan"'), findsOneWidget);
+        final finished = await _planProgressRef(firestore).get();
+        expect(finished.data()?['finishedAt'], isNotNull);
+        expect(finished.data()?['completedDays'], [1]);
+
+        await tester.tap(find.text('Undo'));
+        await tester.pumpAndSettle();
+
+        expect(
+          (await _planProgressRef(firestore).get()).data()?['finishedAt'],
+          isNull,
+        );
+        expect(find.text('Plan ended · finish at your pace'), findsOneWidget);
+      },
+    );
+
+    testWidgets('a finished solo plan does not appear on Home', (
+      tester,
+    ) async {
+      final firestore = FakeFirebaseFirestore();
+      final planService = ReadingPlanService(firestore: firestore);
+      await _seedEndedPlan(firestore, planService);
+      await planService.finishPlan('u1', 'p1');
+
+      await _pumpHome(tester, firestore, planService: planService);
+
+      expect(find.text('Plan ended · finish at your pace'), findsNothing);
+      expect(find.text('Test Plan'), findsNothing);
+    });
+
+    testWidgets(
+      'an ended Shared plan offers Finish plan, which closes only the '
+      "reader's own participation",
+      (tester) async {
+        final firestore = FakeFirebaseFirestore();
+        final groupService = GroupService(firestore: firestore);
+        final groupId = await _seedEndedSharedPlan(firestore, groupService);
+
+        await _pumpHome(tester, firestore, groupService: groupService);
+
+        expect(find.text('Plan ended · finish at your pace'), findsOneWidget);
+        expect(find.text('Keep reading'), findsOneWidget);
+        expect(find.text('Finish plan'), findsOneWidget);
+
+        await tester.tap(find.text('Finish plan'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Plan ended · finish at your pace'), findsNothing);
+        final member = await firestore
+            .collection('groups')
+            .doc(groupId)
+            .collection('members')
+            .doc('u1')
+            .get();
+        expect(member.data()?['finishedAt'], isNotNull);
+        expect(member.data()?['role'], 'member');
+      },
+    );
+
+    testWidgets('a finished Shared plan does not appear on Home', (
+      tester,
+    ) async {
+      final firestore = FakeFirebaseFirestore();
+      final groupService = GroupService(firestore: firestore);
+      await _seedEndedSharedPlan(firestore, groupService, finished: true);
+
+      await _pumpHome(tester, firestore, groupService: groupService);
+
+      expect(find.text('Plan ended · finish at your pace'), findsNothing);
+      expect(find.text('Jeremiah Plan · together'), findsNothing);
+    });
+
+    testWidgets('the compact Shared plan row reads "Ended · N readings left"', (
+      tester,
+    ) async {
+      final firestore = FakeFirebaseFirestore();
+      final planService = ReadingPlanService(firestore: firestore);
+      final groupService = GroupService(firestore: firestore);
+      // A running plan is the hero; the ended Shared plan folds into a row.
+      await _seedPlan(firestore, planService, now: DateTime.now());
+      await _seedEndedSharedPlan(firestore, groupService);
+
+      await _pumpHome(
+        tester,
+        firestore,
+        planService: planService,
+        groupService: groupService,
+      );
+
+      expect(find.text('Jeremiah Plan · together'), findsOneWidget);
+      expect(find.text('Ended · 1 reading left'), findsOneWidget);
+      expect(find.textContaining('Finish ·'), findsNothing);
+    });
+  });
 }

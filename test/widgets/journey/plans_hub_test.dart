@@ -1,6 +1,7 @@
 import 'package:bible_read/pages/adjust_pace_page.dart';
 import 'package:bible_read/pages/create_plan_page.dart';
 import 'package:bible_read/models/group.dart';
+import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/models/reading_plan.dart';
 import 'package:bible_read/widgets/journey/plans_hub.dart';
 import 'package:bible_read/widgets/skeletons/plans_hub_skeleton.dart';
@@ -8,6 +9,7 @@ import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
 import 'package:bible_read/services/user_preferences_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
@@ -375,6 +377,251 @@ void main() {
     );
   });
 
+  // ---- Finish (ADR-0010) ---------------------------------------------------
+
+  DocumentReference<Map<String, dynamic>> progressRef() => firestore
+      .collection('users')
+      .doc('u1')
+      .collection('plan_progress')
+      .doc('p1');
+
+  DocumentReference<Map<String, dynamic>> memberRef(String groupId) => firestore
+      .collection('groups')
+      .doc(groupId)
+      .collection('members')
+      .doc('u1');
+
+  /// Moves the seeded two-day plan into the past with day 1 read, so its
+  /// dates have ended with one reading still unread (wrap-up).
+  Future<void> endPlanWithOneRead() => progressRef().update({
+        'startDate': Timestamp.fromDate(
+          DateTime.now().subtract(const Duration(days: 10)),
+        ),
+        'completedDays': [1],
+      });
+
+  /// A Shared plan u1 reads as a member: two past readings, the first read,
+  /// so its dates have ended with one reading unread. Returns the group id.
+  Future<String> seedEndedSharedPlan() async {
+    final groupId = await groupService.createGroup(
+      ownerUid: 'naomi',
+      name: 'Jeremiah Plan',
+    );
+    await memberRef(groupId).set({'uid': 'u1', 'role': 'member'});
+    final today = DateTime.now();
+    final first = DateTime(today.year, today.month, today.day - 10);
+    final second = DateTime(today.year, today.month, today.day - 9);
+    await groupService.updateSchedule(
+      groupId: groupId,
+      schedule: GroupSchedule(date: first, chapters: const ['Jer 1']),
+    );
+    await groupService.updateSchedule(
+      groupId: groupId,
+      schedule: GroupSchedule(date: second, chapters: const ['Jer 2']),
+    );
+    await firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('progress')
+        .doc(GroupService.dateId(first))
+        .collection('entries')
+        .doc('u1')
+        .set({
+      'groupId': groupId,
+      'uid': 'u1',
+      'dateId': GroupService.dateId(first),
+      'count': 1,
+      'done': true,
+    });
+    // Leave only the Shared plan on screen.
+    await planService.leavePlan('u1', 'p1');
+    return groupId;
+  }
+
+  Future<void> openMenu(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('More actions'));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('a plan that is still running offers no Finish item', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+
+    await openMenu(tester);
+    expect(find.text('Adjust pace'), findsOneWidget);
+    expect(find.text('Finish plan'), findsNothing);
+  });
+
+  testWidgets(
+      'finishing an ended solo plan moves it to Finished with how much was '
+      'read, leaves its readings unmarked, and Restore returns it',
+      (tester) async {
+    await endPlanWithOneRead();
+    await pumpPage(tester);
+
+    await openMenu(tester);
+    await tester.tap(find.text('Finish plan'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    expect(find.text('Finished'), findsOneWidget);
+    expect(find.text('Finished · 1 of 2 read'), findsOneWidget);
+    expect(find.text('On your own'), findsNothing);
+    final finished = await progressRef().get();
+    expect(finished.data()?['finishedAt'], isNotNull);
+    // Finish never marks readings: day 2 stays unread.
+    expect(finished.data()?['completedDays'], [1]);
+
+    await tester.tap(find.byTooltip('Restore plan'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    final restored = await progressRef().get();
+    expect(restored.data()?['finishedAt'], isNull);
+    expect(restored.data()?['completedDays'], [1]);
+    expect(find.text('On your own'), findsOneWidget);
+    expect(find.text('Finished · 1 of 2 read'), findsNothing);
+  });
+
+  testWidgets('Undo on the finish snackbar restores the plan', (tester) async {
+    await endPlanWithOneRead();
+    await pumpPage(tester);
+
+    await openMenu(tester);
+    await tester.tap(find.text('Finish plan'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+    expect(find.text('Finished "Morning Light"'), findsOneWidget);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    expect((await progressRef().get()).data()?['finishedAt'], isNull);
+    expect(find.text('On your own'), findsOneWidget);
+    expect(find.text('Finished · 1 of 2 read'), findsNothing);
+  });
+
+  testWidgets('a fully-read plan keeps its existing Finished look', (
+    tester,
+  ) async {
+    await progressRef().update({
+      'startDate': Timestamp.fromDate(
+        DateTime.now().subtract(const Duration(days: 10)),
+      ),
+      'completedDays': [1, 2],
+    });
+    await pumpPage(tester);
+
+    expect(find.text('Finished'), findsOneWidget);
+    expect(find.text('All 2 readings complete'), findsOneWidget);
+    expect(find.byTooltip('Restore plan'), findsNothing);
+  });
+
+  testWidgets(
+      'finishing a solo plan displays an error SnackBar and rolls back if the '
+      'backend call fails', (tester) async {
+    await endPlanWithOneRead();
+    planService = _FailingReadingPlanService(firestore: firestore);
+    await pumpPage(tester);
+
+    await openMenu(tester);
+    await tester.tap(find.text('Finish plan'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Failed to finish "Morning Light". Please try again.'),
+      findsOneWidget,
+    );
+    expect(find.text('On your own'), findsOneWidget);
+    expect(find.text('Finished · 1 of 2 read'), findsNothing);
+  });
+
+  testWidgets(
+      'finishing an ended Shared plan closes only the reader\'s own '
+      'participation and Restore returns it', (tester) async {
+    final groupId = await seedEndedSharedPlan();
+    await pumpPage(tester);
+
+    expect(find.text('Together'), findsOneWidget);
+    await openMenu(tester);
+    await tester.tap(find.text('Finish plan'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    expect(find.text('Finished · 1 of 2 read'), findsOneWidget);
+    expect(find.text('Together'), findsNothing);
+    final member = await memberRef(groupId).get();
+    expect(member.data()?['finishedAt'], isNotNull);
+    // Still a full member: nothing about the membership changed.
+    expect(member.data()?['role'], 'member');
+    expect(member.data()?['isArchived'], isNull);
+    expect(
+      (await groupService.groupsForUser('u1').first).map((g) => g.id),
+      contains(groupId),
+    );
+
+    await tester.tap(find.byTooltip('Restore plan'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    expect((await memberRef(groupId).get()).data()?['finishedAt'], isNull);
+    expect(find.text('Together'), findsOneWidget);
+    expect(find.text('Finished · 1 of 2 read'), findsNothing);
+  });
+
+  testWidgets('Undo on the finish snackbar restores a Shared plan', (
+    tester,
+  ) async {
+    final groupId = await seedEndedSharedPlan();
+    await pumpPage(tester);
+
+    await openMenu(tester);
+    await tester.tap(find.text('Finish plan'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+    expect(find.text('Finished "Jeremiah Plan"'), findsOneWidget);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    expect((await memberRef(groupId).get()).data()?['finishedAt'], isNull);
+    expect(find.text('Together'), findsOneWidget);
+  });
+
+  testWidgets(
+      'a finished Shared plan stays finished when the owner moves the '
+      'schedule later, and Restore shows the new dates', (tester) async {
+    final groupId = await seedEndedSharedPlan();
+    await pumpPage(tester);
+    await openMenu(tester);
+    await tester.tap(find.text('Finish plan'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    // The owner's Reschedule: the Group schedule now runs into the future.
+    final later = DateTime.now().add(const Duration(days: 5));
+    await tester.runAsync(
+      () => groupService.updateSchedule(
+        groupId: groupId,
+        schedule: GroupSchedule(
+          date: DateTime(later.year, later.month, later.day),
+          chapters: const ['Jer 3'],
+        ),
+      ),
+    );
+    // Re-open the hub from scratch so it loads the moved schedule.
+    await tester.pumpWidget(const SizedBox());
+    await pumpPage(tester);
+
+    // Re-opening the hub: the reader's choice stands, now that the plan's
+    // dates are no longer over.
+    expect((await memberRef(groupId).get()).data()?['finishedAt'], isNotNull);
+    expect(find.text('Finished · 1 of 3 read'), findsOneWidget);
+    expect(find.text('Together'), findsNothing);
+
+    await tester.tap(find.byTooltip('Restore plan'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    // Back with the new dates: running again, so no longer "Ended".
+    expect(find.text('Together'), findsOneWidget);
+    expect(find.text('Ended'), findsNothing);
+    expect(find.text('Finish plan'), findsNothing);
+  });
+
   testWidgets('renders PlansHubSkeleton while loading', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -409,6 +656,11 @@ class _FailingReadingPlanService extends ReadingPlanService {
 
   @override
   Future<void> setPlanArchived(String uid, String planId, bool archived) async {
+    throw Exception('Simulated network failure');
+  }
+
+  @override
+  Future<void> finishPlan(String userId, String planId) async {
     throw Exception('Simulated network failure');
   }
 }

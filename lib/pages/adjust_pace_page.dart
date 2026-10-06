@@ -1,9 +1,14 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/group_schedule.dart';
+import '../models/reading_plan.dart';
+import '../models/reading_plan_progress.dart';
+import '../services/error_logger.dart';
 import '../services/plan_pace.dart';
+import '../services/plan_pace_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/plan_day_list.dart';
@@ -324,5 +329,87 @@ class _AdjustPacePageState extends State<AdjustPacePage> {
         ),
       ),
     );
+  }
+}
+
+/// Runs the Adjust pace flow on a personal plan (#810): the three options run
+/// against the plan's dated schedule, and the chosen one is persisted in
+/// place. Shared by Path's plan card and Home's Plan ended card. Returns
+/// whether a pace was applied, so the caller can refresh.
+Future<bool> adjustPersonalPace(
+  BuildContext context, {
+  required FirebaseFirestore firestore,
+  required String uid,
+  required ReadingPlan plan,
+  required UserPlanProgress progress,
+  required DateTime today,
+  required VibrationService vibrationService,
+}) async {
+  vibrationService.lightImpact();
+  final days = PlanPace.datedPersonalSchedule(plan, progress.startDate);
+  final completed = PlanPace.personalCompletedDateIds(plan, progress);
+  final behind = PlanPace.daysBehind(days, completed, today: today);
+  final choice = await Navigator.of(context).push<PaceOption>(
+    MaterialPageRoute(
+      builder: (_) => AdjustPacePage(
+        days: days,
+        completedDateIds: completed,
+        daysBehind: behind,
+        shared: false,
+        today: today,
+        vibrationService: vibrationService,
+      ),
+    ),
+  );
+  if (choice == null || !context.mounted) return false;
+  try {
+    final paceService = PlanPaceService(firestore: firestore);
+    switch (choice) {
+      case PaceOption.stretch:
+        await paceService.applyPersonalSchedule(
+          uid: uid,
+          plan: plan,
+          startDate: progress.startDate,
+          adjusted: PlanPace.stretch(
+            days: days,
+            completedDateIds: completed,
+            daysBehind: behind,
+          ),
+        );
+      case PaceOption.keepFinish:
+        await paceService.applyPersonalSchedule(
+          uid: uid,
+          plan: plan,
+          startDate: progress.startDate,
+          adjusted: PlanPace.redistribute(
+            days: days,
+            completedDateIds: completed,
+            resumeDate: PlanPace.resumeDate(days, completed, today: today),
+            finishDate: PlanPace.finishOf(days) ?? today,
+          ),
+        );
+      case PaceOption.beginAgain:
+        await paceService.beginPersonalPlanAgain(
+          uid: uid,
+          plan: plan,
+          startDate: PlanPace.resumeDate(days, completed, today: today),
+          progress: progress,
+        );
+    }
+    if (!context.mounted) return true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Pace adjusted for "${plan.title}"')),
+    );
+    return true;
+  } catch (e, st) {
+    ErrorLogger.log(e, st);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to adjust pace. Please try again.'),
+        ),
+      );
+    }
+    return false;
   }
 }

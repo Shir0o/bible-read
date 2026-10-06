@@ -650,6 +650,55 @@ class GroupService {
       _setMemberParticipationArchived(
           groupId: groupId, uid: uid, archived: false);
 
+  /// Finishes [uid]'s participation in [groupId] (ADR-0010): the reader
+  /// closes the Shared plan as done once its dates have ended. They stay a
+  /// full member — Circle and feed are unchanged — and the Group schedule and
+  /// everyone else carry on. Only the reader undoes it; an owner's
+  /// Reschedule never reads or clears it.
+  Future<void> finishMemberParticipation({
+    required String groupId,
+    required String uid,
+  }) =>
+      _setMemberFinishedAt(
+        groupId: groupId,
+        uid: uid,
+        finishedAt: Timestamp.now(),
+      );
+
+  /// Restores [uid]'s finished participation — the plan returns to their
+  /// active lists with whatever dates the Group schedule has now.
+  Future<void> unfinishMemberParticipation({
+    required String groupId,
+    required String uid,
+  }) =>
+      _setMemberFinishedAt(groupId: groupId, uid: uid, finishedAt: null);
+
+  Future<void> _setMemberFinishedAt({
+    required String groupId,
+    required String uid,
+    required Timestamp? finishedAt,
+  }) async {
+    await firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.members)
+        .doc(uid)
+        .update({'finishedAt': finishedAt});
+  }
+
+  /// Ids of the Groups whose Shared plan [uid] has Finished (ADR-0010).
+  Future<Set<String>> finishedGroupIdsForUser(String uid) async {
+    final memberships = await firestore
+        .collectionGroup(GroupCollections.members)
+        .where('uid', isEqualTo: uid)
+        .get();
+    return memberships.docs
+        .where((doc) => doc.data()['finishedAt'] != null)
+        .map((doc) => doc.reference.parent.parent?.id)
+        .whereType<String>()
+        .toSet();
+  }
+
   Future<void> _setMemberParticipationArchived({
     required String groupId,
     required String uid,
@@ -1018,8 +1067,14 @@ class GroupService {
     });
   }
 
-  /// Stream of groups the user with [uid] belongs to or owns.
-  Stream<List<Group>> groupsForUser(String uid) {
+  /// Stream of groups the user with [uid] belongs to or owns. A Group whose
+  /// Shared plan the reader Finished (ADR-0010) is still theirs — Circle and
+  /// feed use it — so it is listed unless [includeFinished] is false, which
+  /// is what Home passes to drop finished plans.
+  Stream<List<Group>> groupsForUser(
+    String uid, {
+    bool includeFinished = true,
+  }) {
     final memberSnaps = firestore
         .collectionGroup(GroupCollections.members)
         .where('uid', isEqualTo: uid)
@@ -1040,6 +1095,7 @@ class GroupService {
       var memberGroups = <Group>[];
       var ownerGroups = <Group>[];
       var pendingGroups = <Group>[];
+      var finishedIds = <String>{};
 
       // Every source must report once (success or error) before anything is
       // published: otherwise the fastest query emits a partial — often
@@ -1062,6 +1118,9 @@ class GroupService {
         for (final g in pendingGroups) {
           merged[g.id] = g;
         }
+        if (!includeFinished) {
+          merged.removeWhere((id, _) => finishedIds.contains(id));
+        }
         if (!controller.isClosed) {
           controller.add(merged.values.toList());
         }
@@ -1079,6 +1138,13 @@ class GroupService {
               .whereType<String>()
               .toList();
           memberGroups = await _fetchGroupsByIds(ids);
+          // The owner's own member doc counts too: the owner query above
+          // lists the group regardless of it.
+          finishedIds = snap.docs
+              .where((doc) => doc.data()['finishedAt'] != null)
+              .map((doc) => doc.reference.parent.parent?.id)
+              .whereType<String>()
+              .toSet();
         } catch (e, st) {
           await _safeLog(e, st);
           memberGroups = <Group>[];
