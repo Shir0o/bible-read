@@ -23,11 +23,18 @@ export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
 # Repository root: Xcode Cloud exports CI_PRIMARY_REPOSITORY_PATH; otherwise
-# derive from this script's own location (ios/ci_scripts/ci_post_clone.sh).
+# derive from this script's own location (ci_scripts/ or ios/ci_scripts/).
 if [ -n "${CI_PRIMARY_REPOSITORY_PATH:-}" ] && [ -d "${CI_PRIMARY_REPOSITORY_PATH}" ]; then
   REPO_ROOT="${CI_PRIMARY_REPOSITORY_PATH}"
 else
-  REPO_ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
+  SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+  if [ -f "${SCRIPT_DIR}/../pubspec.yaml" ]; then
+    REPO_ROOT="$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)"
+  elif [ -f "${SCRIPT_DIR}/../../pubspec.yaml" ]; then
+    REPO_ROOT="$(CDPATH= cd -- "${SCRIPT_DIR}/../.." && pwd)"
+  else
+    REPO_ROOT="$(pwd)"
+  fi
 fi
 
 # Locate the Flutter SDK: honor FLUTTER_ROOT / PATH, then common install paths.
