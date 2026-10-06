@@ -680,6 +680,70 @@ void main() {
       },
     );
 
+    testWidgets(
+      'an ended Shared plan shows Keep reading and Adjust pace side by side',
+      (tester) async {
+        final firestore = FakeFirebaseFirestore();
+        final groupService = GroupService(firestore: firestore);
+        await _seedEndedSharedPlan(firestore, groupService);
+
+        await _pumpHome(tester, firestore, groupService: groupService);
+
+        expect(find.text('Keep reading'), findsOneWidget);
+        expect(find.text('Adjust pace'), findsOneWidget);
+        expect(find.text('Finish plan'), findsOneWidget);
+        expect(find.text('Reschedule'), findsNothing);
+
+        // Equal halves, each label on a single line.
+        final keep =
+            tester.getSize(find.widgetWithText(FilledButton, 'Keep reading'));
+        final adjust =
+            tester.getSize(find.widgetWithText(OutlinedButton, 'Adjust pace'));
+        expect(keep.width, adjust.width);
+        expect(tester.getSize(find.text('Adjust pace')).height, lessThan(24));
+      },
+    );
+
+    testWidgets(
+      "Adjust pace on a Shared plan writes only the reader's own overlay",
+      (tester) async {
+        final firestore = FakeFirebaseFirestore();
+        final groupService = GroupService(firestore: firestore);
+        final groupId = await _seedEndedSharedPlan(firestore, groupService);
+        final scheduleRef =
+            firestore.collection('groups').doc(groupId).collection('schedule');
+        Future<Map<String, Object?>> scheduleSnapshot() async => {
+              for (final doc in (await scheduleRef.get()).docs)
+                doc.id: doc.data(),
+            };
+        final scheduleBefore = await scheduleSnapshot();
+
+        await _pumpHome(tester, firestore, groupService: groupService);
+        await tester.tap(find.text('Adjust pace'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AdjustPacePage), findsOneWidget);
+        expect(find.textContaining('only your own schedule'), findsOneWidget);
+
+        await tester.tap(find.text('Stretch it out'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Apply'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AdjustPacePage), findsNothing);
+        final overlay = await firestore
+            .collection('users')
+            .doc('u1')
+            .collection('plan_pace')
+            .doc(groupId)
+            .get();
+        expect(overlay.exists, isTrue);
+        expect(overlay.data()?['groupId'], groupId);
+        expect(overlay.data()?['days'], isNotEmpty);
+        expect(await scheduleSnapshot(), scheduleBefore);
+      },
+    );
+
     testWidgets('a finished Shared plan does not appear on Home', (
       tester,
     ) async {

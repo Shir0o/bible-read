@@ -25,8 +25,6 @@ import '../../pages/create_plan_page.dart';
 import '../../pages/group_members_page.dart';
 import '../../pages/plan_detail_page.dart';
 import '../../pages/recently_deleted_page.dart';
-import '../../services/plan_pace.dart';
-import '../../services/plan_pace_service.dart';
 import '../skeleton_loader.dart';
 import '../skeletons/plans_hub_skeleton.dart';
 
@@ -502,81 +500,18 @@ class PlansHubState extends State<PlansHub> {
   Future<void> _adjustSharedPace(_GroupRow row) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
-    widget.vibrationService.lightImpact();
-    final today = widget.dateProvider();
-    final completed = row.completedDateIds;
-    final choice = await Navigator.of(context).push<PaceOption>(
-      MaterialPageRoute(
-        builder: (_) => AdjustPacePage(
-          days: row.schedule,
-          completedDateIds: completed,
-          daysBehind: row.status.missedCount,
-          shared: true,
-          today: today,
-          vibrationService: widget.vibrationService,
-        ),
-      ),
+    final applied = await adjustSharedPace(
+      context,
+      firestore: widget.firestore,
+      uid: uid,
+      groupId: row.group.id,
+      schedule: row.schedule,
+      completedDateIds: row.completedDateIds,
+      daysBehind: row.status.missedCount,
+      today: widget.dateProvider(),
+      vibrationService: widget.vibrationService,
     );
-    if (choice == null || !mounted) return;
-    try {
-      final paceService = PlanPaceService(firestore: widget.firestore);
-      switch (choice) {
-        case PaceOption.stretch:
-          await paceService.applySharedPlanOverlay(
-            uid: uid,
-            groupId: row.group.id,
-            adjusted: PlanPace.stretch(
-              days: row.schedule,
-              completedDateIds: completed,
-              daysBehind: row.status.missedCount,
-            ),
-          );
-        case PaceOption.keepFinish:
-          await paceService.applySharedPlanOverlay(
-            uid: uid,
-            groupId: row.group.id,
-            adjusted: PlanPace.redistribute(
-              days: row.schedule,
-              completedDateIds: completed,
-              resumeDate: PlanPace.resumeDate(
-                row.schedule,
-                completed,
-                today: today,
-              ),
-              finishDate: PlanPace.finishOf(row.schedule) ?? today,
-            ),
-          );
-        case PaceOption.beginAgain:
-          await paceService.applySharedPlanOverlay(
-            uid: uid,
-            groupId: row.group.id,
-            adjusted: PlanPace.beginAgain(
-              days: row.schedule,
-              startDate: PlanPace.resumeDate(
-                row.schedule,
-                completed,
-                today: today,
-              ),
-            ),
-          );
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Your pace adjusted — the Shared plan is unchanged'),
-        ),
-      );
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to adjust pace. Please try again.'),
-          ),
-        );
-      }
-    }
+    if (applied && mounted) await _load();
   }
 
   /// Archives a plan straight away — it is fully reversible, so an Undo

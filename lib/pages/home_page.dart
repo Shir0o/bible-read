@@ -2130,35 +2130,33 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
               ),
-              if (!item.isGroup) ...[
-                const SizedBox(width: 9),
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _adjustPace(item),
-                      icon: const Icon(Icons.speed_outlined, size: 17),
-                      label: const Text(
-                        'Adjust pace',
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 9),
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _adjustPace(item),
+                    icon: const Icon(Icons.speed_outlined, size: 17),
+                    label: const Text(
+                      'Adjust pace',
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.onSurfaceVariant,
+                      side: BorderSide(
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: colorScheme.onSurfaceVariant,
-                        side: BorderSide(
-                          color: colorScheme.outlineVariant.withValues(
-                            alpha: 0.4,
-                          ),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                   ),
                 ),
-              ],
+              ),
             ],
           ),
           const SizedBox(height: 4),
@@ -2295,11 +2293,30 @@ class _HomePageState extends State<HomePage>
     return '${months[d.month - 1]} ${d.day}';
   }
 
-  /// Adjust pace on the Plan ended card's personal plan — the same flow as
-  /// Path's plan menu. A schedule rewrite doesn't touch `plan_progress`, so
-  /// the plans are reloaded to pick up the new dates.
+  /// Adjust pace on the Plan ended card — the same flow as Path's plan menu.
+  /// A personal plan's schedule is rewritten in place; a Shared plan only
+  /// gets the reader's own pace overlay (ADR-0007). A schedule rewrite
+  /// doesn't touch `plan_progress`, so the plans are reloaded afterwards.
   Future<void> _adjustPace(_ReadingItem item) async {
     final uid = widget.auth.currentUser?.uid;
+    final group = item.group;
+    if (uid != null && group != null) {
+      final data = _groups[group.id];
+      if (data == null) return;
+      final applied = await adjustSharedPace(
+        context,
+        firestore: widget.firestore,
+        uid: uid,
+        groupId: group.id,
+        schedule: data.schedule,
+        completedDateIds: data.completedDateIds,
+        daysBehind: item.status.missedCount,
+        today: widget.dateProvider(),
+        vibrationService: widget.vibrationService,
+      );
+      if (applied && !_disposed && mounted) await _loadGroup();
+      return;
+    }
     final plan = item.plan;
     final progress = item.progress;
     if (uid == null || plan == null || progress == null) return;

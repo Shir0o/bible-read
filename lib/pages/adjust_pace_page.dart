@@ -413,3 +413,95 @@ Future<bool> adjustPersonalPace(
     return false;
   }
 }
+
+/// Runs the Adjust pace flow on a Shared plan (#810): the arithmetic runs on
+/// the Group's [schedule], but the outcome is stored as the reader's own
+/// overlay — the Group's schedule and the other members' progress are never
+/// written. Shared by Path's plan card and Home's Plan ended card. Returns
+/// whether a pace was applied, so the caller can refresh.
+Future<bool> adjustSharedPace(
+  BuildContext context, {
+  required FirebaseFirestore firestore,
+  required String uid,
+  required String groupId,
+  required List<GroupSchedule> schedule,
+  required Set<String> completedDateIds,
+  required int daysBehind,
+  required DateTime today,
+  required VibrationService vibrationService,
+}) async {
+  vibrationService.lightImpact();
+  final choice = await Navigator.of(context).push<PaceOption>(
+    MaterialPageRoute(
+      builder: (_) => AdjustPacePage(
+        days: schedule,
+        completedDateIds: completedDateIds,
+        daysBehind: daysBehind,
+        shared: true,
+        today: today,
+        vibrationService: vibrationService,
+      ),
+    ),
+  );
+  if (choice == null || !context.mounted) return false;
+  try {
+    final paceService = PlanPaceService(firestore: firestore);
+    switch (choice) {
+      case PaceOption.stretch:
+        await paceService.applySharedPlanOverlay(
+          uid: uid,
+          groupId: groupId,
+          adjusted: PlanPace.stretch(
+            days: schedule,
+            completedDateIds: completedDateIds,
+            daysBehind: daysBehind,
+          ),
+        );
+      case PaceOption.keepFinish:
+        await paceService.applySharedPlanOverlay(
+          uid: uid,
+          groupId: groupId,
+          adjusted: PlanPace.redistribute(
+            days: schedule,
+            completedDateIds: completedDateIds,
+            resumeDate: PlanPace.resumeDate(
+              schedule,
+              completedDateIds,
+              today: today,
+            ),
+            finishDate: PlanPace.finishOf(schedule) ?? today,
+          ),
+        );
+      case PaceOption.beginAgain:
+        await paceService.applySharedPlanOverlay(
+          uid: uid,
+          groupId: groupId,
+          adjusted: PlanPace.beginAgain(
+            days: schedule,
+            startDate: PlanPace.resumeDate(
+              schedule,
+              completedDateIds,
+              today: today,
+            ),
+          ),
+        );
+    }
+    if (!context.mounted) return true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Your pace adjusted — the Shared plan is unchanged'),
+      ),
+    );
+    return true;
+  } catch (e, st) {
+    ErrorLogger.log(e, st);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to adjust pace. Please try again.'),
+        ),
+      );
+    }
+    return false;
+  }
+}
