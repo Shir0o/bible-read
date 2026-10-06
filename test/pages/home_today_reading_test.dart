@@ -199,6 +199,64 @@ Future<void> _seedPaceOverlayToToday(
   );
 }
 
+/// A Shared plan u1 is on track with: Jer 1 read yesterday, Jer 2 tomorrow.
+/// With [ownPace] those are the reader's own overlay dates and the Group's
+/// schedule ended 9 days ago; without it they are the Group's dates.
+Future<void> _seedOnTrackSharedPlan(
+  FakeFirebaseFirestore firestore,
+  GroupService groupService, {
+  required bool ownPace,
+}) async {
+  final groupId = await groupService.createGroup(
+    ownerUid: 'naomi',
+    name: 'Jeremiah Plan',
+  );
+  await firestore
+      .collection('groups')
+      .doc(groupId)
+      .collection('members')
+      .doc('u1')
+      .set({'uid': 'u1', 'role': 'member'});
+  final today = DateTime.now();
+  DateTime day(int offset) =>
+      DateTime(today.year, today.month, today.day + offset);
+  final own = [
+    GroupSchedule(date: day(-1), chapters: const ['Jer 1']),
+    GroupSchedule(date: day(1), chapters: const ['Jer 2']),
+  ];
+  final groupSchedule = ownPace
+      ? [
+          GroupSchedule(date: day(-10), chapters: const ['Jer 1']),
+          GroupSchedule(date: day(-9), chapters: const ['Jer 2']),
+        ]
+      : own;
+  for (final s in groupSchedule) {
+    await groupService.updateSchedule(groupId: groupId, schedule: s);
+  }
+  if (ownPace) {
+    await PlanPaceService(firestore: firestore).applySharedPlanOverlay(
+      uid: 'u1',
+      groupId: groupId,
+      adjusted: own,
+    );
+  }
+  final readId = GroupService.dateId(day(-1));
+  await firestore
+      .collection('groups')
+      .doc(groupId)
+      .collection('progress')
+      .doc(readId)
+      .collection('entries')
+      .doc('u1')
+      .set({
+    'groupId': groupId,
+    'uid': 'u1',
+    'dateId': readId,
+    'count': 1,
+    'done': true,
+  });
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseCoreMocks();
@@ -867,5 +925,34 @@ void main() {
       expect(find.text('Ended · 1 reading left'), findsOneWidget);
       expect(find.textContaining('Finish ·'), findsNothing);
     });
+    testWidgets(
+      'an on-track Shared plan on the Group schedule reads "In step with '
+      'your group"',
+      (tester) async {
+        final firestore = FakeFirebaseFirestore();
+        final groupService = GroupService(firestore: firestore);
+        await _seedOnTrackSharedPlan(firestore, groupService, ownPace: false);
+
+        await _pumpHome(tester, firestore, groupService: groupService);
+
+        expect(find.text('In step with your group'), findsOneWidget);
+        expect(find.text("You're on track"), findsNothing);
+      },
+    );
+
+    testWidgets(
+      "an on-track Shared plan on the reader's own pace reads \"You're on "
+      'track"',
+      (tester) async {
+        final firestore = FakeFirebaseFirestore();
+        final groupService = GroupService(firestore: firestore);
+        await _seedOnTrackSharedPlan(firestore, groupService, ownPace: true);
+
+        await _pumpHome(tester, firestore, groupService: groupService);
+
+        expect(find.text("You're on track"), findsOneWidget);
+        expect(find.text('In step with your group'), findsNothing);
+      },
+    );
   });
 }

@@ -98,6 +98,9 @@ class _GroupRow {
 
   /// The reader Finished their participation in this Shared plan (ADR-0010).
   final bool finished;
+
+  /// The reader follows their own pace overlay instead of the Group schedule.
+  final bool ownPace;
   const _GroupRow(
     this.group,
     this.schedule,
@@ -106,6 +109,7 @@ class _GroupRow {
     this.state, {
     this.completedDateIds = const {},
     this.finished = false,
+    this.ownPace = false,
   });
 
   _GroupRow withFinished(bool finished) => _GroupRow(
@@ -116,6 +120,7 @@ class _GroupRow {
         state,
         completedDateIds: completedDateIds,
         finished: finished,
+        ownPace: ownPace,
       );
 
   String get pinKey => 'group:${group.id}';
@@ -295,8 +300,8 @@ class PlansHubState extends State<PlansHub> {
         ]);
         // The reader's own pace overlay, when they adjusted pace (ADR-0007),
         // replaces the Group's dates in their view.
-        final schedule = results[3] as List<GroupSchedule>? ??
-            results[0] as List<GroupSchedule>;
+        final overlay = results[3] as List<GroupSchedule>?;
+        final schedule = overlay ?? results[0] as List<GroupSchedule>;
         final progressMap = results[1] as Map<String, int>;
         final members = results[2] as List<GroupMemberProgressData>;
         final completed = progressMap.entries
@@ -319,6 +324,7 @@ class PlansHubState extends State<PlansHub> {
             status.lifecycleAt(today),
             completedDateIds: completed,
             finished: finishedGroupIds.contains(group.id),
+            ownPace: overlay != null,
           ),
         );
       }
@@ -1177,7 +1183,8 @@ class PlansHubState extends State<PlansHub> {
           const SizedBox(height: 12),
           CatchUpStatusRow(
             status: row.status,
-            onTrackLabel: 'In step with your group',
+            onTrackLabel:
+                row.ownPace ? "You're on track" : 'In step with your group',
             onTap: () => _reviewGroup(row),
           ),
           const SizedBox(height: 14),
