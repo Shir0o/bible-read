@@ -584,6 +584,7 @@ class _HomePageState extends State<HomePage>
                 .where((e) => e.value > 0)
                 .map((e) => e.key)
                 .toSet(),
+            ownPace: overlay != null,
           );
         }),
       );
@@ -1750,8 +1751,12 @@ class _HomePageState extends State<HomePage>
           const SizedBox(height: 10),
           CatchUpStatusRow(
             status: primary.status,
-            onTrackLabel:
-                primary.isGroup ? 'In step with your group' : "You're on track",
+            // A reader on their own pace overlay is on track with their own
+            // dates, not in step with the Group schedule (ADR-0007).
+            onTrackLabel: primary.isGroup &&
+                    !(_groups[primary.group!.id]?.ownPace ?? false)
+                ? 'In step with your group'
+                : "You're on track",
             onTap: () => _openPrimarySchedule(primary),
           ),
         ],
@@ -3062,6 +3067,7 @@ class _GroupData {
     this.today,
     this.members = const [],
     this.completedDateIds = const {},
+    this.ownPace = false,
   });
 
   final Group group;
@@ -3069,5 +3075,8 @@ class _GroupData {
   GroupSchedule? today;
   List<GroupMemberProgressData> members;
   Set<String> completedDateIds;
+
+  /// The reader follows their own pace overlay instead of the Group schedule.
+  bool ownPace;
   bool markLoading = false;
 }

@@ -439,6 +439,57 @@ void main() {
     return groupId;
   }
 
+  /// A Shared plan u1 is on track with: Jer 1 read yesterday, Jer 2 tomorrow.
+  /// With [ownPace] those are the reader's own overlay dates and the Group's
+  /// schedule ended 9 days ago; without it they are the Group's dates.
+  Future<void> seedOnTrackSharedPlan({required bool ownPace}) async {
+    final groupId = await groupService.createGroup(
+      ownerUid: 'naomi',
+      name: 'Jeremiah Plan',
+    );
+    await memberRef(groupId).set({'uid': 'u1', 'role': 'member'});
+    final today = DateTime.now();
+    DateTime day(int offset) =>
+        DateTime(today.year, today.month, today.day + offset);
+    final own = [
+      GroupSchedule(date: day(-1), chapters: const ['Jer 1']),
+      GroupSchedule(date: day(1), chapters: const ['Jer 2']),
+    ];
+    final groupSchedule = ownPace
+        ? [
+            GroupSchedule(date: day(-10), chapters: const ['Jer 1']),
+            GroupSchedule(date: day(-9), chapters: const ['Jer 2']),
+          ]
+        : own;
+    for (final s in groupSchedule) {
+      await groupService.updateSchedule(groupId: groupId, schedule: s);
+    }
+    if (ownPace) {
+      await PlanPaceService(firestore: firestore).applySharedPlanOverlay(
+        uid: 'u1',
+        groupId: groupId,
+        adjusted: own,
+      );
+    }
+    final readId = GroupService.dateId(day(-1));
+    await firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('progress')
+        .doc(readId)
+        .collection('entries')
+        .doc('u1')
+        .set({
+      'groupId': groupId,
+      'uid': 'u1',
+      'dateId': readId,
+      'count': 1,
+      'done': true,
+    });
+    // Leave only the Shared plan on screen.
+    await planService.leavePlan('u1', 'p1');
+  }
+
   Future<void> openMenu(WidgetTester tester) async {
     await tester.tap(find.byTooltip('More actions'));
     await tester.pumpAndSettle();
@@ -609,6 +660,26 @@ void main() {
     expect(find.text('Together'), findsOneWidget);
     expect(find.text('Due today'), findsOneWidget);
     expect(find.text('Ended'), findsNothing);
+  });
+
+  testWidgets(
+      'an on-track Shared plan on the Group schedule reads "In step with your '
+      'group"', (tester) async {
+    await seedOnTrackSharedPlan(ownPace: false);
+    await pumpPage(tester);
+
+    expect(find.text('In step with your group'), findsOneWidget);
+    expect(find.text("You're on track"), findsNothing);
+  });
+
+  testWidgets(
+      "an on-track Shared plan on the reader's own pace reads \"You're on "
+      'track"', (tester) async {
+    await seedOnTrackSharedPlan(ownPace: true);
+    await pumpPage(tester);
+
+    expect(find.text("You're on track"), findsOneWidget);
+    expect(find.text('In step with your group'), findsNothing);
   });
 
   testWidgets(
