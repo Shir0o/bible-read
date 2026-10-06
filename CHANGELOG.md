@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.34.0](https://github.com/Shir0o/bible-read/compare/v1.33.0...v1.34.0) (2026-10-06)
+
+
+### Features
+
+* **plans:** adjust pace on a Shared plan from Home, and read the pace overlay ([#946](https://github.com/Shir0o/bible-read/issues/946)) ([11c9bb0](https://github.com/Shir0o/bible-read/commit/11c9bb06e08bbfe696f6fe46e664515a3b801da4))
+* **plans:** finish an ended plan and fix the Plan ended card buttons ([#944](https://github.com/Shir0o/bible-read/issues/944)) ([#945](https://github.com/Shir0o/bible-read/issues/945)) ([f3ab228](https://github.com/Shir0o/bible-read/commit/f3ab2284d93ab7d311e5cedd14053a8bd60ca85b))
+
+
+### Bug Fixes
+
+* **ios:** refresh SwiftPM Package.resolved for recaptcha dependency ([#943](https://github.com/Shir0o/bible-read/issues/943)) ([02dad54](https://github.com/Shir0o/bible-read/commit/02dad5445c0354bc5f6a04a4d2f72db13f9241a6))
+* **plans:** say "You're on track" on a Shared plan read at your own pace ([#947](https://github.com/Shir0o/bible-read/issues/947)) ([0bbf134](https://github.com/Shir0o/bible-read/commit/0bbf134e3ed20c4149f73e5e4fd97aaf021e25fe))
+
 ## [1.33.0](https://github.com/Shir0o/bible-read/compare/v1.32.0...v1.33.0) (2026-10-02)
 
 
