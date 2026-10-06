@@ -12,6 +12,7 @@ import '../services/google_sign_in_factory.dart';
 import '../services/bible_progress_service.dart';
 import '../services/catch_up_engine.dart' hide ReadingStatus;
 import '../services/group_service.dart';
+import '../services/plan_pace_service.dart';
 import '../services/plan_completion_coordinator.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
@@ -325,6 +326,14 @@ class _HomePageState extends State<HomePage>
                   onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
                 ),
           );
+          _groupTriggerSubs.add(
+            PlanPaceService(firestore: widget.firestore)
+                .sharedPlanOverlay(uid, group.id)
+                .listen(
+                  (_) => _scheduleGroupReload(),
+                  onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+                ),
+          );
         }
 
         _scheduleGroupReload();
@@ -499,6 +508,7 @@ class _HomePageState extends State<HomePage>
       }
 
       final today = _dateOnly(widget.dateProvider());
+      final paceService = PlanPaceService(firestore: widget.firestore);
 
       // Load every group the user belongs to in parallel — each group's
       // schedule, today's member presence, and the user's per-chapter progress —
@@ -524,10 +534,17 @@ class _HomePageState extends State<HomePage>
               timeout: const Duration(seconds: 3),
               fallback: const <String, int>{},
             ),
+            paceService.getSharedPlanOverlay(uid, group.id).timeout(
+                  const Duration(seconds: 3),
+                  onTimeout: () => null,
+                ),
           ]);
 
-          final schedule = results[0] as List<GroupSchedule>;
-          final members = results[1] as List<GroupMemberProgressData>;
+          // The reader's own pace overlay, when they adjusted pace
+          // (ADR-0007), replaces the Group's dates in their view.
+          final overlay = results[3] as List<GroupSchedule>?;
+          final schedule = overlay ?? results[0] as List<GroupSchedule>;
+          var members = results[1] as List<GroupMemberProgressData>;
           final progress = results[2] as Map<String, int>;
 
           GroupSchedule? todayEntry;
@@ -536,6 +553,26 @@ class _HomePageState extends State<HomePage>
               todayEntry = s;
               break;
             }
+          }
+
+          // Presence scores today against the Group's own reading, so on the
+          // reader's own dates their read-today comes from their progress.
+          if (overlay != null) {
+            final todayCount = progress[GroupService.dateId(today)] ?? 0;
+            final readToday = todayEntry != null &&
+                todayCount > 0 &&
+                todayCount >= todayEntry.chapters.length;
+            members = [
+              for (final m in members)
+                m.uid == uid
+                    ? GroupMemberProgressData(
+                        uid: m.uid,
+                        name: m.name,
+                        photoUrl: m.photoUrl,
+                        completion: readToday ? 1.0 : 0.0,
+                      )
+                    : m,
+            ];
           }
 
           return _GroupData(
@@ -2130,35 +2167,33 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
               ),
-              if (!item.isGroup) ...[
-                const SizedBox(width: 9),
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _adjustPace(item),
-                      icon: const Icon(Icons.speed_outlined, size: 17),
-                      label: const Text(
-                        'Adjust pace',
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 9),
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _adjustPace(item),
+                    icon: const Icon(Icons.speed_outlined, size: 17),
+                    label: const Text(
+                      'Adjust pace',
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.onSurfaceVariant,
+                      side: BorderSide(
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: colorScheme.onSurfaceVariant,
-                        side: BorderSide(
-                          color: colorScheme.outlineVariant.withValues(
-                            alpha: 0.4,
-                          ),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                   ),
                 ),
-              ],
+              ),
             ],
           ),
           const SizedBox(height: 4),
@@ -2295,11 +2330,30 @@ class _HomePageState extends State<HomePage>
     return '${months[d.month - 1]} ${d.day}';
   }
 
-  /// Adjust pace on the Plan ended card's personal plan — the same flow as
-  /// Path's plan menu. A schedule rewrite doesn't touch `plan_progress`, so
-  /// the plans are reloaded to pick up the new dates.
+  /// Adjust pace on the Plan ended card — the same flow as Path's plan menu.
+  /// A personal plan's schedule is rewritten in place; a Shared plan only
+  /// gets the reader's own pace overlay (ADR-0007). A schedule rewrite
+  /// doesn't touch `plan_progress`, so the plans are reloaded afterwards.
   Future<void> _adjustPace(_ReadingItem item) async {
     final uid = widget.auth.currentUser?.uid;
+    final group = item.group;
+    if (uid != null && group != null) {
+      final data = _groups[group.id];
+      if (data == null) return;
+      final applied = await adjustSharedPace(
+        context,
+        firestore: widget.firestore,
+        uid: uid,
+        groupId: group.id,
+        schedule: data.schedule,
+        completedDateIds: data.completedDateIds,
+        daysBehind: item.status.missedCount,
+        today: widget.dateProvider(),
+        vibrationService: widget.vibrationService,
+      );
+      if (applied && !_disposed && mounted) await _loadGroup();
+      return;
+    }
     final plan = item.plan;
     final progress = item.progress;
     if (uid == null || plan == null || progress == null) return;

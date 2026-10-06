@@ -125,27 +125,44 @@ class PlanPaceService {
   /// The reader's stored overlay for [groupId], or null when they follow the
   /// Group's schedule as-is.
   Stream<List<GroupSchedule>?> sharedPlanOverlay(String uid, String groupId) {
+    return _overlayRef(uid, groupId).snapshots().map(_overlayFrom);
+  }
+
+  /// One read of [sharedPlanOverlay], for views that load their data once.
+  Future<List<GroupSchedule>?> getSharedPlanOverlay(
+    String uid,
+    String groupId,
+  ) async {
+    return _overlayFrom(await _overlayRef(uid, groupId).get());
+  }
+
+  DocumentReference<Map<String, dynamic>> _overlayRef(
+    String uid,
+    String groupId,
+  ) {
     return firestore
         .collection('users')
         .doc(uid)
         .collection('plan_pace')
-        .doc(groupId)
-        .snapshots()
-        .map((snap) {
-      if (!snap.exists) return null;
-      final raw = snap.data()?['days'] as List?;
-      if (raw == null) return null;
-      return [
-        for (final entry in raw)
-          GroupSchedule(
-            date: DateTime.tryParse(entry['date'] as String? ?? '') ??
-                DateTime.now(),
-            chapters:
-                (entry['chapters'] as List?)?.whereType<String>().toList() ??
-                    <String>[],
-          ),
-      ];
-    });
+        .doc(groupId);
+  }
+
+  static List<GroupSchedule>? _overlayFrom(
+    DocumentSnapshot<Map<String, dynamic>> snap,
+  ) {
+    if (!snap.exists) return null;
+    final raw = snap.data()?['days'] as List?;
+    if (raw == null) return null;
+    return [
+      for (final entry in raw)
+        GroupSchedule(
+          date: DateTime.tryParse(entry['date'] as String? ?? '') ??
+              DateTime.now(),
+          chapters:
+              (entry['chapters'] as List?)?.whereType<String>().toList() ??
+                  <String>[],
+        ),
+    ];
   }
 
   /// Owner-only Reschedule: rewrites the Group schedule for every member.

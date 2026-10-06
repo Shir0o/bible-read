@@ -294,10 +294,16 @@ void main() {
       expect(loaded, hasLength(1));
       expect(loaded!.single.date, DateTime(2026, 1, 5));
       expect(loaded.single.chapters, ['Gen 1', 'Gen 2']);
+
+      final read = await paceService.getSharedPlanOverlay('u1', 'g1');
+      expect(read, hasLength(1));
+      expect(read!.single.date, DateTime(2026, 1, 5));
+      expect(read.single.chapters, ['Gen 1', 'Gen 2']);
     });
 
     test('sharedPlanOverlay is null when none stored', () async {
       expect(await paceService.sharedPlanOverlay('u1', 'g1').first, isNull);
+      expect(await paceService.getSharedPlanOverlay('u1', 'g1'), isNull);
     });
 
     test('clearSharedPlanOverlay removes it', () async {

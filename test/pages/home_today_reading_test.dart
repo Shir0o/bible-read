@@ -18,6 +18,7 @@ import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/services/bible_progress_service.dart';
 import 'package:bible_read/services/group_service.dart';
+import 'package:bible_read/services/plan_pace_service.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
 import 'package:bible_read/services/user_preferences_service.dart';
 import 'package:bible_read/models/group_schedule.dart';
@@ -160,6 +161,42 @@ Future<String> _seedEndedSharedPlan(
     'done': true,
   });
   return groupId;
+}
+
+/// Adds a third Group reading (Jer 3, also past) to the ended Shared plan,
+/// then stores the reader's Adjust pace: their unread readings now fall
+/// today (Jer 2) and tomorrow (Jer 3), in their own overlay only.
+Future<void> _seedPaceOverlayToToday(
+  FakeFirebaseFirestore firestore,
+  GroupService groupService,
+  String groupId,
+) async {
+  final today = DateTime.now();
+  await groupService.updateSchedule(
+    groupId: groupId,
+    schedule: GroupSchedule(
+      date: DateTime(today.year, today.month, today.day - 8),
+      chapters: const ['Jer 3'],
+    ),
+  );
+  await PlanPaceService(firestore: firestore).applySharedPlanOverlay(
+    uid: 'u1',
+    groupId: groupId,
+    adjusted: [
+      GroupSchedule(
+        date: DateTime(today.year, today.month, today.day - 10),
+        chapters: const ['Jer 1'],
+      ),
+      GroupSchedule(
+        date: DateTime(today.year, today.month, today.day),
+        chapters: const ['Jer 2'],
+      ),
+      GroupSchedule(
+        date: DateTime(today.year, today.month, today.day + 1),
+        chapters: const ['Jer 3'],
+      ),
+    ],
+  );
 }
 
 void main() {
@@ -677,6 +714,122 @@ void main() {
             .get();
         expect(member.data()?['finishedAt'], isNotNull);
         expect(member.data()?['role'], 'member');
+      },
+    );
+
+    testWidgets(
+      'an ended Shared plan shows Keep reading and Adjust pace side by side',
+      (tester) async {
+        final firestore = FakeFirebaseFirestore();
+        final groupService = GroupService(firestore: firestore);
+        await _seedEndedSharedPlan(firestore, groupService);
+
+        await _pumpHome(tester, firestore, groupService: groupService);
+
+        expect(find.text('Keep reading'), findsOneWidget);
+        expect(find.text('Adjust pace'), findsOneWidget);
+        expect(find.text('Finish plan'), findsOneWidget);
+        expect(find.text('Reschedule'), findsNothing);
+
+        // Equal halves, each label on a single line.
+        final keep =
+            tester.getSize(find.widgetWithText(FilledButton, 'Keep reading'));
+        final adjust =
+            tester.getSize(find.widgetWithText(OutlinedButton, 'Adjust pace'));
+        expect(keep.width, adjust.width);
+        expect(tester.getSize(find.text('Adjust pace')).height, lessThan(24));
+      },
+    );
+
+    testWidgets(
+      "Adjust pace on a Shared plan writes only the reader's own overlay",
+      (tester) async {
+        final firestore = FakeFirebaseFirestore();
+        final groupService = GroupService(firestore: firestore);
+        final groupId = await _seedEndedSharedPlan(firestore, groupService);
+        final scheduleRef =
+            firestore.collection('groups').doc(groupId).collection('schedule');
+        Future<Map<String, Object?>> scheduleSnapshot() async => {
+              for (final doc in (await scheduleRef.get()).docs)
+                doc.id: doc.data(),
+            };
+        final scheduleBefore = await scheduleSnapshot();
+
+        await _pumpHome(tester, firestore, groupService: groupService);
+        await tester.tap(find.text('Adjust pace'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AdjustPacePage), findsOneWidget);
+        expect(find.textContaining('only your own schedule'), findsOneWidget);
+
+        await tester.tap(find.text('Stretch it out'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Apply'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AdjustPacePage), findsNothing);
+        final overlay = await firestore
+            .collection('users')
+            .doc('u1')
+            .collection('plan_pace')
+            .doc(groupId)
+            .get();
+        expect(overlay.exists, isTrue);
+        expect(overlay.data()?['groupId'], groupId);
+        expect(overlay.data()?['days'], isNotEmpty);
+        expect(await scheduleSnapshot(), scheduleBefore);
+      },
+    );
+
+    testWidgets(
+      "a Shared plan follows the reader's pace overlay, not the Group's dates",
+      (tester) async {
+        final firestore = FakeFirebaseFirestore();
+        final groupService = GroupService(firestore: firestore);
+        final groupId = await _seedEndedSharedPlan(firestore, groupService);
+        await _seedPaceOverlayToToday(firestore, groupService, groupId);
+
+        await _pumpHome(tester, firestore, groupService: groupService);
+
+        expect(find.text('Plan ended · finish at your pace'), findsNothing);
+        expect(
+          find.widgetWithText(FilledButton, 'Read with your group'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      "a reading done on the reader's own date shows as read, though the "
+      'Group has nothing scheduled that day',
+      (tester) async {
+        final firestore = FakeFirebaseFirestore();
+        final groupService = GroupService(firestore: firestore);
+        final groupId = await _seedEndedSharedPlan(firestore, groupService);
+        await _seedPaceOverlayToToday(firestore, groupService, groupId);
+        final todayId = GroupService.dateId(DateTime.now());
+        await firestore
+            .collection('groups')
+            .doc(groupId)
+            .collection('progress')
+            .doc(todayId)
+            .collection('entries')
+            .doc('u1')
+            .set({
+          'groupId': groupId,
+          'uid': 'u1',
+          'dateId': todayId,
+          'count': 1,
+          'done': true,
+        });
+
+        await _pumpHome(tester, firestore, groupService: groupService);
+
+        expect(find.text('Read with your group'), findsOneWidget);
+        expect(
+          find.widgetWithText(FilledButton, 'Read with your group'),
+          findsNothing,
+        );
       },
     );
 
