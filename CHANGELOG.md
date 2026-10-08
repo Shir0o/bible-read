@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.34.1](https://github.com/Shir0o/bible-read/compare/v1.34.0...v1.34.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* **ios:** resolve Xcode Cloud archive bootstrap script failure ([#952](https://github.com/Shir0o/bible-read/issues/952)) ([c7b9f98](https://github.com/Shir0o/bible-read/commit/c7b9f983c38a22171aee63e36df3e786dc869282))
+
 ## [1.34.0](https://github.com/Shir0o/bible-read/compare/v1.33.0...v1.34.0) (2026-10-06)
 
 
