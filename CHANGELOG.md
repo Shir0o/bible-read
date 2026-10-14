@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.35.0](https://github.com/Shir0o/bible-read/compare/v1.34.1...v1.35.0) (2026-10-14)
+
+
+### Features
+
+* **design:** initialize impeccable product truth and sanctuary liturgy design system ([#961](https://github.com/Shir0o/bible-read/issues/961)) ([4421ada](https://github.com/Shir0o/bible-read/commit/4421ada4918464d47d1c43ef70c4b12aafec3bb0))
+* **store-assets:** add App Store 6.3", iPad 13" and iOS 27 creative assets ([#959](https://github.com/Shir0o/bible-read/issues/959)) ([c936919](https://github.com/Shir0o/bible-read/commit/c936919df9b2cf82928dfc40cfd33ba6f0b06ff5))
+
+
+### Bug Fixes
+
+* **auth:** legible forms, readable primary buttons and accurate copy ([#969](https://github.com/Shir0o/bible-read/issues/969)) ([6646cd4](https://github.com/Shir0o/bible-read/commit/6646cd4a2bf0c93423b46961e607e576bb08953b))
+* **circle,path:** align tab gutters, card surfaces and touch targets ([#967](https://github.com/Shir0o/bible-read/issues/967)) ([d224bba](https://github.com/Shir0o/bible-read/commit/d224bbad3f51703f34b1295cef5e4bf4d89c504a))
+* **design:** unify design tokens across sheets, radii, type, and spacing ([#962](https://github.com/Shir0o/bible-read/issues/962)) ([b08cbcc](https://github.com/Shir0o/bible-read/commit/b08cbcc0c328884b7ba04089923c566713d6e765))
+* **settings:** correct version label, sign-out weight and notification states ([#968](https://github.com/Shir0o/bible-read/issues/968)) ([fb24da0](https://github.com/Shir0o/bible-read/commit/fb24da06d081d5f5b3c215b655d51d8086f1e6ff))
+* **today:** align secondary rows, section headers and meta type ([#966](https://github.com/Shir0o/bible-read/issues/966)) ([26a2a7a](https://github.com/Shir0o/bible-read/commit/26a2a7aa6a36be53108ce2c4ea90365d8837e592))
+
 ## [1.34.1](https://github.com/Shir0o/bible-read/compare/v1.34.0...v1.34.1) (2026-10-14)
 
 
