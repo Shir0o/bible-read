@@ -61,7 +61,8 @@ class _SignupPageState extends State<SignupPage> {
     _termsRecognizer = TapGestureRecognizer()
       ..onTap = () => _launchUrl('https://example.com/terms');
     _privacyRecognizer = TapGestureRecognizer()
-      ..onTap = () => _launchUrl('https://example.com/privacy');
+      ..onTap = () =>
+          _launchUrl('https://shir0o.github.io/bible-read/privacy/index.html');
   }
 
   @override
