@@ -13,6 +13,7 @@ committed — you should never have to start from scratch.
 | Update the design canvas | `python3 build_artboards.py`, then re-seed (see below) |
 | Change what a screenshot *shows* | Edit the seed in `integration_test/store_capture_test.dart` and re-capture |
 | Add a store size | Add a call in `render_store_assets.py::main()` |
+| Re-render the iOS 27 header / search-result assets | `python3 creative/render_creative.py` (artboards in `creative/canvas/`) |
 
 Only the last one needs a device. Everything else runs offline in seconds off
 the committed captures.
@@ -47,6 +48,8 @@ from these plus the scripts.
 | Asset | Size | Note |
 |---|---|---|
 | App Store 6.9" | 1290×2796 | **Confirmed accepted** by App Store Connect. Apple's docs list conflicting numbers — trust this one. |
+| App Store 6.3" | 1206×2622 | Optional — App Store Connect scales 6.9" down if omitted. Same size as the phone captures. |
+| App Store iPad 13" | 2064×2752 | Required while the app targets iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). Built from the tablet captures. |
 | Play phone | 1080×2160 | Play caps the long edge at **2× the short edge**. A raw 20:9 capture (Pixel 10 Pro is 1080×2410, 2.23:1) is rejected. |
 | Play 7" tablet | 1080×1920 | **Exactly** 16:9 or 9:16 — stricter than the phone slot. Sides 320–3840. |
 | Play 10" tablet | 1440×2560 | Exactly 9:16, and both sides must be ≥1080. |

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Product page header 16:9</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;1,400&amp;family=Hanken+Grotesk:wght@700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#6A53AD}a:hover{color:#5B449E}
+</style>
+</helmet>
+<div style="width: 1311px; height: 737.5px; position: relative; overflow: hidden; background: {{sky}}; font-family: 'Hanken Grotesk', system-ui, sans-serif; color: {{ink}}">
+
+<div aria-hidden="true" style="position: absolute; left: 405px; top: 130px; width: 500px; height: 420px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,226,150,0.55), rgba(255,226,150,0))"></div>
+
+<div style="position: absolute; left: 70px; top: 170px; width: 230px; height: 620px; box-sizing: border-box; border: 8px solid #231E2C; border-radius: 38px; overflow: hidden; background: #F4F0E8; transform: rotate(-6deg); box-shadow: 0 28px 56px rgba(35,30,44,0.26)">
+<img src="/_blob/026618fd994285d0b62fd2b16b04bf3d" alt="Home screen with today's reading and two readings to catch up on" style="width: 100%; display: block">
+</div>
+
+<div style="position: absolute; left: 1011px; top: 170px; width: 230px; height: 620px; box-sizing: border-box; border: 8px solid #231E2C; border-radius: 38px; overflow: hidden; background: #F4F0E8; transform: rotate(6deg); box-shadow: 0 28px 56px rgba(35,30,44,0.26)">
+<img src="/_blob/06da83543a9fb7acac5a63871dab5a36" alt="Community screen showing the group reading Luke 14, four of six read" style="width: 100%; display: block">
+</div>
+
+<h1 style="position: absolute; left: 0; right: 0; top: 178px; margin: 0; text-align: center; font-family: Spectral, Georgia, serif; font-weight: 400; font-size: 44px; line-height: 1.1; letter-spacing: -0.3px">Did you read <em style="font-style: italic; color: {{accent}}">today?</em></h1>
+
+<div aria-hidden="true" style="position: absolute; left: 575.5px; top: 252px; width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle at 50% 36%, #FBE3A1 0%, #F2C766 60%, #E2AE45 100%); box-shadow: 0 9px 0 {{rim}}, 0 26px 44px rgba(35,30,44,0.22); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px">
+<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#231E2C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"></path></svg>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 2.6px; color: #231E2C">I READ</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"sky":{"editor":"enum","options":["dawn","dusk"],"default":"dawn"},"$preview":{"width":1311,"height":738}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dusk = (this.props.sky ?? 'dawn') === 'dusk';
+    return dusk ? {
+      sky: 'linear-gradient(180deg, #1E1934 0%, #3A2F63 55%, #7A62BD 100%)',
+      ground: 'linear-gradient(180deg, #2A2347 0%, #1E1934 100%)',
+      horizon: 'rgba(251,248,242,0.22)', ink: '#FBF8F2', accent: '#D0BCFF', rim: '#141218'
+    } : {
+      sky: 'linear-gradient(180deg, #F7D3AE 0%, #F0BFAE 42%, #DCBEDC 70%, #C4B2EA 100%)',
+      ground: 'linear-gradient(180deg, #CDB8EA 0%, #B9A5E3 100%)',
+      horizon: 'rgba(35,30,44,0.14)', ink: '#231E2C', accent: '#5B449E', rim: '#3A2F45'
+    };
+  }
+}
+</script>
+</body>
+</html>

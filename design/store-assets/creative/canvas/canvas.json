@@ -1,0 +1,23 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-10-13T21:10:00-07:00"},
+  "title": "App Store Listing Graphics",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1311, "h": 738, "title": "Header · 16:9 · exports 5244×2950 (universal)", "guides": [{"kind": "columns", "count": 1, "align": "center", "size": 600, "color": "rgba(0,110,255,0.10)"}, {"kind": "rows", "count": 1, "align": "start", "size": 260, "offset": 170, "color": "rgba(0,110,255,0.10)"}]},
+    "HeaderWide.dc.html": {"x": 1391, "y": 0, "w": 1280, "h": 549, "title": "Header · wide · exports 3840×1646"},
+    "SearchResult.dc.html": {"x": 0, "y": 858, "w": 1200, "h": 800, "title": "Search result · 3:2 · exports 3840×2560 / 1920×1280"}
+,
+    "HeaderPath.dc.html": {"x": 0, "y": 1960, "w": 1311, "h": 738, "title": "Variation A · Paper path · 5244×2950", "guides": [{"kind": "columns", "count": 1, "align": "center", "size": 600, "color": "rgba(0,110,255,0.10)"}, {"kind": "rows", "count": 1, "align": "start", "size": 260, "offset": 170, "color": "rgba(0,110,255,0.10)"}]},
+    "HeaderNight.dc.html": {"x": 1391, "y": 1960, "w": 1311, "h": 738, "title": "Variation B · Night sky · 5244×2950", "guides": [{"kind": "columns", "count": 1, "align": "center", "size": 600, "color": "rgba(0,110,255,0.14)"}, {"kind": "rows", "count": 1, "align": "start", "size": 260, "offset": 170, "color": "rgba(0,110,255,0.14)"}]},
+    "HeaderTogether.dc.html": {"x": 2782, "y": 1960, "w": 1311, "h": 738, "title": "Variation C · Together · 5244×2950", "guides": [{"kind": "columns", "count": 1, "align": "center", "size": 600, "color": "rgba(0,110,255,0.14)"}, {"kind": "rows", "count": 1, "align": "start", "size": 260, "offset": 170, "color": "rgba(0,110,255,0.14)"}]}
+,
+    "HeaderHills.dc.html": {"x": 0, "y": 2960, "w": 1311, "h": 738, "title": "Variation D · Dawn path · 5244×2950", "guides": [{"kind": "columns", "count": 1, "align": "center", "size": 600, "color": "rgba(0,110,255,0.10)"}, {"kind": "rows", "count": 1, "align": "start", "size": 260, "offset": 170, "color": "rgba(0,110,255,0.10)"}]},
+    "HeaderWall.dc.html": {"x": 1391, "y": 2960, "w": 1311, "h": 738, "title": "Variation E · Reading wall · 5244×2950", "guides": [{"kind": "columns", "count": 1, "align": "center", "size": 600, "color": "rgba(0,110,255,0.10)"}, {"kind": "rows", "count": 1, "align": "start", "size": 260, "offset": 170, "color": "rgba(0,110,255,0.10)"}]},
+    "HeaderScreens.dc.html": {"x": 2782, "y": 2960, "w": 1311, "h": 738, "title": "Variation F · Screen wall · 5244×2950", "guides": [{"kind": "columns", "count": 1, "align": "center", "size": 600, "color": "rgba(0,110,255,0.14)"}, {"kind": "rows", "count": 1, "align": "start", "size": 260, "offset": 170, "color": "rgba(0,110,255,0.14)"}]}
+  },
+  "order": ["Main.dc.html", "HeaderWide.dc.html", "SearchResult.dc.html", "HeaderPath.dc.html", "HeaderNight.dc.html", "HeaderTogether.dc.html", "HeaderHills.dc.html", "HeaderWall.dc.html", "HeaderScreens.dc.html"],
+  "notes": {"variations": {"x": 0, "y": 1700, "text": "Header variations", "kind": "title1", "maxW": 4093}, "fullbleed": {"x": 0, "y": 2730, "text": "Full-bleed header variations", "kind": "title1", "maxW": 4093}},
+  "designSystems": []
+}

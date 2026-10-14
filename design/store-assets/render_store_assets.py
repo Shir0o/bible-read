@@ -8,6 +8,10 @@ these PNGs never drift apart. Type is drawn with the app's own bundled fonts
 Outputs, per Apple's and Google's specs:
 
   out/appstore/*.png   1290 x 2796   App Store 6.9" (confirmed accepted by ASC)
+  out/appstore_6_3/*.png
+                       1206 x 2622   App Store 6.3" (native iPhone capture size)
+  out/appstore_ipad_13/*.png
+                       2064 x 2752   App Store iPad 13" (app targets iPad too)
   out/play/*.png       1080 x 2160   Play phone (Play rejects taller than 2:1)
   out/play/feature_graphic.png
                        1024 x 500    Play feature graphic
@@ -214,6 +218,7 @@ TABLET_CAPTURES = HERE / "captures" / "tablet"
 TABLET_SIZES = {
     "play_tablet_7": (1080, 1920),   # sides 320-3840
     "play_tablet_10": (1440, 2560),  # sides must be >= 1080
+    "appstore_ipad_13": (2064, 2752),  # App Store iPad 13", 3:4
 }
 
 
@@ -332,12 +337,16 @@ def main():
     if OUT.exists():
         shutil.rmtree(OUT)
     (OUT / "appstore").mkdir(parents=True)
+    (OUT / "appstore_6_3").mkdir(parents=True)
     (OUT / "play").mkdir(parents=True)
 
     for i, (name, _title, image, headline, sub) in enumerate(ARTBOARDS, start=1):
         stem = f"{i:02d}_{name.lower()}.png"
         render_frame(
             OUT / "appstore" / stem, 1290, 2796, FRAME_W, FRAME_H, 62, image, headline, sub
+        )
+        render_frame(
+            OUT / "appstore_6_3" / stem, 1206, 2622, FRAME_W, FRAME_H, 62, image, headline, sub
         )
         render_frame(
             OUT / "play" / stem, 1080, 2160, PLAY_W, PLAY_H, 48, image, headline, sub
