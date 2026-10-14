@@ -125,7 +125,7 @@ void main() {
     await tester.tap(menuButton);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Sign Out'));
+    await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 

@@ -50,13 +50,13 @@ void main() {
     await tester.pumpAndSettle();
 
     const labels = [
-      'Amen Notifications',
-      'Nudge Notifications',
-      'Signup Alerts',
-      'Group Join Request Notifications',
-      'Group Schedule Update Notifications',
-      'Group Invite Notifications',
-      'Seasonal Challenge Notifications',
+      'Amens',
+      'Nudges',
+      'Signup alerts',
+      'Group join requests',
+      'Group schedule changes',
+      'Group invites',
+      'Seasonal challenges',
       'Vibration',
     ];
     for (final label in labels) {
@@ -64,11 +64,11 @@ void main() {
     }
 
     final likeSwitch = tester.widget<SwitchListTile>(
-      find.widgetWithText(SwitchListTile, 'Amen Notifications'),
+      find.widgetWithText(SwitchListTile, 'Amens'),
     );
     expect(likeSwitch.value, isFalse);
 
-    await tester.tap(find.widgetWithText(SwitchListTile, 'Amen Notifications'));
+    await tester.tap(find.widgetWithText(SwitchListTile, 'Amens'));
     await tester.pumpAndSettle();
 
     final doc = await firestore

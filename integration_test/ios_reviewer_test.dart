@@ -238,7 +238,7 @@ void main() {
     expect(find.byType(SettingsPage), findsOneWidget);
 
     // Apple Guideline 5.1.1(v) Check: Delete Account option must be visible
-    expect(find.text('Delete Account'), findsOneWidget);
+    expect(find.text('Delete account'), findsOneWidget);
 
     // Support check: Report a bug & Request a feature
     expect(find.text('Report a bug'), findsOneWidget);

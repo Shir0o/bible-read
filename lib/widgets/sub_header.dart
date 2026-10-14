@@ -29,8 +29,8 @@ class SubHeader extends StatelessWidget {
         children: [
           if (showBack && onBack != null)
             SizedBox(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               child: IconButton(
                 tooltip: 'Back',
                 padding: EdgeInsets.zero,

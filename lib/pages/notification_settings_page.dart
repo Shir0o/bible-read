@@ -7,6 +7,7 @@ import '../services/notification_preferences_service.dart';
 import '../services/reminder_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/sub_header.dart';
 
 /// Page to configure notification preferences.
 class NotificationSettingsPage extends StatefulWidget {
@@ -32,6 +33,7 @@ class NotificationSettingsPage extends StatefulWidget {
 class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   NotificationPreferences? _prefs;
   bool _loading = true;
+  bool _loadFailed = false;
   bool _vibrationEnabled = true;
   bool _reminderEnabled = false;
   TimeOfDay _reminderTime = const TimeOfDay(hour: 7, minute: 0);
@@ -39,27 +41,71 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   @override
   void initState() {
     super.initState();
+    _load();
+  }
+
+  /// Loads every setting the page shows. A failure ends in a retryable
+  /// error state rather than an endless spinner.
+  Future<void> _load() async {
     final user = widget.auth.currentUser;
-    if (user != null) {
-      Future.wait([
+    if (user == null) {
+      _loading = false;
+      return;
+    }
+    try {
+      final result = await Future.wait([
         widget.service.fetchPreferences(user.uid),
         widget.service.fetchVibrationEnabled(user.uid),
         ReminderService().loadSettings(),
-      ]).then((result) {
-        if (mounted) {
-          setState(() {
-            _prefs = result[0] as NotificationPreferences;
-            _vibrationEnabled = result[1] as bool;
-            final reminderSettings = result[2] as Map<String, dynamic>;
-            _reminderEnabled = reminderSettings['enabled'] as bool;
-            _reminderTime = reminderSettings['time'] as TimeOfDay;
-            _loading = false;
-          });
-        }
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _prefs = result[0] as NotificationPreferences;
+        _vibrationEnabled = result[1] as bool;
+        final reminderSettings = result[2] as Map<String, dynamic>;
+        _reminderEnabled = reminderSettings['enabled'] as bool;
+        _reminderTime = reminderSettings['time'] as TimeOfDay;
+        _loading = false;
       });
-    } else {
-      _loading = false;
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _loadFailed = true;
+      });
     }
+  }
+
+  void _retry() {
+    setState(() {
+      _loading = true;
+      _loadFailed = false;
+    });
+    _load();
+  }
+
+  Widget _buildLoadError(BuildContext context, ColorScheme colorScheme) {
+    return Center(
+      child: Padding(
+        padding: AppSpacing.horizontal,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Couldn't load your notification settings.",
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: AppSpacing.gap12),
+            TextButton(onPressed: _retry, child: const Text('Try again')),
+          ],
+        ),
+      ),
+    );
   }
 
   void _toggle(NotificationType type, bool value) {
@@ -134,38 +180,53 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    // SubHeader, like Settings, which this page is opened from.
     return Scaffold(
-      appBar: CommonStyles.buildAppBar(context, 'Notifications'),
       body: Container(
         decoration: CommonStyles.backgroundDecoration(colorScheme),
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : (_prefs == null
-                ? const Center(child: Text('Please sign in'))
-                : ListView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.hPadding,
-                      vertical: AppSpacing.gap16,
-                    ),
-                    children: [
-                      _groupedCard(context, _buildRows(context)),
-                      const SizedBox(height: AppSpacing.gap16),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(
-                          'We keep notifications quiet and few — only what '
-                          'helps you keep showing up.',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(color: colorScheme.outline),
-                        ),
-                      ),
-                    ],
-                  )),
+        child: SafeArea(
+          child: Column(
+            children: [
+              SubHeader(
+                title: 'Notifications',
+                onBack: () => Navigator.of(context).maybePop(),
+              ),
+              Expanded(child: _buildBody(context, colorScheme)),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  Widget _buildBody(BuildContext context, ColorScheme colorScheme) {
+    if (_loadFailed) return _buildLoadError(context, colorScheme);
+    return _loading
+        ? const Center(child: CircularProgressIndicator())
+        : (_prefs == null
+            ? const Center(child: Text('Please sign in'))
+            : ListView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.hPadding,
+                  vertical: AppSpacing.gap16,
+                ),
+                children: [
+                  _groupedCard(context, _buildRows(context)),
+                  const SizedBox(height: AppSpacing.gap16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'We keep notifications quiet and few — only what '
+                      'helps you keep showing up.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: colorScheme.outline),
+                    ),
+                  ),
+                ],
+              ));
   }
 
   /// Bordered card grouping all notification rows, separated by dividers.
@@ -196,7 +257,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     final rows = <Widget>[
       SwitchListTile(
         contentPadding: rowPadding,
-        title: const Text('Daily Reminder'),
+        title: const Text('Daily reminder'),
         subtitle: Text(
           _reminderEnabled
               ? 'A gentle nudge at ${_reminderTime.format(context)}'
@@ -244,21 +305,21 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   String _label(NotificationType type) {
     switch (type) {
       case NotificationType.amen:
-        return 'Amen Notifications';
+        return 'Amens';
       case NotificationType.nudge:
-        return 'Nudge Notifications';
+        return 'Nudges';
       case NotificationType.signup:
-        return 'Signup Alerts';
+        return 'Signup alerts';
       case NotificationType.groupJoinRequest:
-        return 'Group Join Request Notifications';
+        return 'Group join requests';
       case NotificationType.groupScheduleUpdate:
-        return 'Group Schedule Update Notifications';
+        return 'Group schedule changes';
       case NotificationType.groupInvite:
-        return 'Group Invite Notifications';
+        return 'Group invites';
       case NotificationType.seasonalChallenge:
-        return 'Seasonal Challenge Notifications';
+        return 'Seasonal challenges';
       case NotificationType.badge:
-        return 'Badge Notifications';
+        return 'Badges';
     }
   }
 }
