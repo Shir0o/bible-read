@@ -44,7 +44,7 @@ class CommonStyles {
           ),
       color: colorScheme.surfaceContainerLowest,
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.hPadding),
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
         child: child,
       ),
     );
@@ -76,7 +76,7 @@ class CommonStyles {
         onTap: onTap,
         borderRadius: radius,
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.hPadding),
+          padding: const EdgeInsets.all(AppSpacing.cardPadding),
           child: child,
         ),
       ),
