@@ -89,6 +89,7 @@ fastlane/report.xml
 # themselves ARE committed — they are date-stamped and cannot be reproduced.
 screenshots/*.png
 design/store-assets/out/
+design/store-assets/creative/out/
 design/store-assets/*.jpg
 design/store-assets/*.zip
 design/store-assets/bible-read-store-screenshots.html

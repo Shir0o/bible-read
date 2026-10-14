@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Search result asset</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;1,400&amp;family=Hanken+Grotesk:wght@400;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#6A53AD}a:hover{color:#5B449E}
+</style>
+</helmet>
+<div style="width: 1200px; height: 800px; position: relative; overflow: hidden; background: {{sky}}; font-family: 'Hanken Grotesk', system-ui, sans-serif; color: {{ink}}">
+
+<div style="position: absolute; left: 0; right: 0; top: 58px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center">
+<h1 style="margin: 0; font-family: Spectral, Georgia, serif; font-weight: 400; font-size: 58px; line-height: 1.05; letter-spacing: -0.5px">Read the Bible every day, <em style="font-style: italic; color: {{accent}}">together.</em></h1>
+<p style="margin: 0; font-size: 20px; line-height: 1.4; color: {{dim}}">Daily plans, an honest streak, and your group reading beside you.</p>
+</div>
+
+<div style="position: absolute; left: 205px; top: 292px; width: 240px; height: 560px; box-sizing: border-box; border: 8px solid #231E2C; border-radius: 38px; overflow: hidden; background: #231E2C; transform: rotate(-5deg); box-shadow: 0 24px 50px rgba(35,30,44,0.28)">
+<img src="/_blob/de9ab35036259508e53da509b6054eac" alt="Check-in screen asking Did you read today, with a gold I read button" style="width: 100%; display: block">
+</div>
+
+<div style="position: absolute; left: 755px; top: 292px; width: 240px; height: 560px; box-sizing: border-box; border: 8px solid #231E2C; border-radius: 38px; overflow: hidden; background: #F4F0E8; transform: rotate(5deg); box-shadow: 0 24px 50px rgba(35,30,44,0.28)">
+<img src="/_blob/06da83543a9fb7acac5a63871dab5a36" alt="Community screen showing the group reading Luke 14, four of six read" style="width: 100%; display: block">
+</div>
+
+<div style="position: absolute; left: 470px; top: 236px; width: 260px; height: 600px; box-sizing: border-box; border: 8px solid #231E2C; border-radius: 40px; overflow: hidden; background: #F4F0E8; box-shadow: 0 30px 60px rgba(35,30,44,0.34)">
+<img src="/_blob/026618fd994285d0b62fd2b16b04bf3d" alt="Home screen with today's reading and two readings to catch up on" style="width: 100%; display: block">
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"sky":{"editor":"enum","options":["dawn","dusk"],"default":"dawn"},"$preview":{"width":1200,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dusk = (this.props.sky ?? 'dawn') === 'dusk';
+    return dusk ? {
+      sky: 'linear-gradient(180deg, #1E1934 0%, #3A2F63 60%, #7A62BD 100%)',
+      ink: '#FBF8F2', dim: '#DCD4EA', accent: '#D0BCFF'
+    } : {
+      sky: 'linear-gradient(180deg, #F7D3AE 0%, #F0BFAE 50%, #CDB8EA 100%)',
+      ink: '#231E2C', dim: '#4A4356', accent: '#5B449E'
+    };
+  }
+}
+</script>
+</body>
+</html>
