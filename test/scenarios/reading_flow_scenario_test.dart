@@ -104,7 +104,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Log in'));
       await tester.pumpAndSettle();
 
       // Verify CheckInPage auto-opened on home launch

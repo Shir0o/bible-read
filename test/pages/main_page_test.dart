@@ -231,10 +231,10 @@ void main() {
     // We expect WelcomePage, then tap "Get Started", then see "Sign in with Google"
 
     // 1. Verify Welcome Page is shown (checking for Get Started button text)
-    expect(find.text('Get Started'), findsOneWidget);
+    expect(find.text('Get started'), findsOneWidget);
 
     // 2. Tap Get Started
-    await tester.tap(find.text('Get Started'));
+    await tester.tap(find.text('Get started'));
     await tester.pumpAndSettle();
 
     // 3. Now verify AuthSelectionPage is shown
@@ -281,7 +281,7 @@ void main() {
 
     // The profile page should remain visible and navigation index unchanged (default Home=0).
     expect(state.selectedIndex, 0);
-    expect(find.text('Get Started'), findsOneWidget);
+    expect(find.text('Get started'), findsOneWidget);
   });
 
   testWidgets('navigation updates selected index', (tester) async {
@@ -631,7 +631,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(NavigationDestination), findsNothing);
-    expect(find.text('Get Started'), findsOneWidget);
+    expect(find.text('Get started'), findsOneWidget);
 
     // ResponsiveScaffold is not present when unauthenticated (UserProfilePage is shown)
     expect(find.byType(ResponsiveScaffold), findsNothing);
@@ -642,7 +642,7 @@ void main() {
     state.onItemTapped(1);
     await tester.pump();
 
-    expect(find.text('Get Started'), findsOneWidget);
+    expect(find.text('Get started'), findsOneWidget);
   });
 
   testWidgets('saves FCM token to Firestore on silent sign-in', (tester) async {
@@ -788,7 +788,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     // Should now show the unauthenticated profile page
-    expect(find.text('Get Started'), findsOneWidget);
+    expect(find.text('Get started'), findsOneWidget);
 
     expect(find.byType(ResponsiveScaffold), findsNothing);
     expect(find.byType(AppNavBar), findsNothing);
@@ -803,7 +803,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Get Started'), findsOneWidget);
+    expect(find.text('Get started'), findsOneWidget);
   });
 
   testWidgets('drawer navigation updates content index', (tester) async {

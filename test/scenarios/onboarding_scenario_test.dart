@@ -96,7 +96,7 @@ void main() {
         await tester.pump();
 
         // Tap Login Button
-        await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Log in'));
         await tester.pump();
 
         // Wait for auth

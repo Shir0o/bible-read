@@ -183,7 +183,7 @@ void main() {
     await capture(tester, 'ios_03_login_filled');
 
     // 4. Submit Login
-    final submitButton = find.widgetWithText(ElevatedButton, 'Login');
+    final submitButton = find.widgetWithText(ElevatedButton, 'Log in');
     expect(submitButton, findsOneWidget);
     await tester.ensureVisible(submitButton);
     await settle(tester, frames: 4);

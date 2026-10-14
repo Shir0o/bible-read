@@ -149,7 +149,7 @@ void main() {
 
     // Enter Full Name
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Full Name'),
+      find.widgetWithText(TextFormField, 'Full name'),
       'Test User',
     );
 
@@ -166,7 +166,7 @@ void main() {
     );
 
     // Tap Create Account
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Create account'));
     await tester.pumpAndSettle();
 
     expect(auth.createCalled, isTrue);
@@ -202,7 +202,7 @@ void main() {
     );
 
     // Tap Create Account without entering anything
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Create account'));
     await tester.pump();
 
     expect(find.text('Please fill in all fields'), findsAtLeast(3));
@@ -225,7 +225,7 @@ void main() {
     );
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Full Name'),
+      find.widgetWithText(TextFormField, 'Full name'),
       'Test User',
     );
     await tester.enterText(
@@ -237,7 +237,7 @@ void main() {
       'password',
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Create account'));
     await tester.pump();
 
     expect(find.text('Please enter a valid email address'), findsAtLeast(1));
@@ -260,7 +260,7 @@ void main() {
     );
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Full Name'),
+      find.widgetWithText(TextFormField, 'Full name'),
       'Test User',
     );
     await tester.enterText(
@@ -272,7 +272,7 @@ void main() {
       '12345',
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Account'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Create account'));
     await tester.pump();
 
     expect(
@@ -297,7 +297,7 @@ void main() {
       ),
     );
 
-    final nameFieldFinder = find.widgetWithText(TextFormField, 'Full Name');
+    final nameFieldFinder = find.widgetWithText(TextFormField, 'Full name');
     final emailFieldFinder = find.byKey(const Key('signupEmailField'));
 
     // Initially no clear buttons are visible
@@ -399,38 +399,33 @@ void main() {
       ),
     );
 
-    // Find the RichText widget that contains "Terms of Service" and "Privacy Policy"
-    final richTextFinder = find.byWidgetPredicate((widget) {
-      if (widget is RichText && widget.text is TextSpan) {
-        final span = widget.text as TextSpan;
-        final children = span.children;
-        if (children == null) return false;
+    // Collect every TextSpan under a RichText, at any depth: Text.rich wraps
+    // the caller's span in one of its own.
+    List<TextSpan> spansOf(RichText widget) {
+      final spans = <TextSpan>[];
+      widget.text.visitChildren((span) {
+        if (span is TextSpan) spans.add(span);
+        return true;
+      });
+      return spans;
+    }
 
-        bool hasTerms = children.any(
-          (c) => c is TextSpan && c.text == 'Terms of Service',
-        );
-        bool hasPrivacy = children.any(
-          (c) => c is TextSpan && c.text == 'Privacy Policy',
-        );
-        return hasTerms && hasPrivacy;
-      }
-      return false;
+    final richTextFinder = find.byWidgetPredicate((widget) {
+      if (widget is! RichText) return false;
+      final texts = spansOf(widget).map((s) => s.text).toSet();
+      return texts.contains('Terms of Service') &&
+          texts.contains('Privacy Policy');
     });
 
     expect(richTextFinder, findsOneWidget);
 
-    final richText = tester.widget<RichText>(richTextFinder);
-    final textSpan = richText.text as TextSpan;
+    final spans = spansOf(tester.widget<RichText>(richTextFinder));
 
-    final termsSpan = textSpan.children!.firstWhere(
-      (c) => (c as TextSpan).text == 'Terms of Service',
-    ) as TextSpan;
+    final termsSpan = spans.firstWhere((s) => s.text == 'Terms of Service');
     expect(termsSpan.recognizer, isNotNull);
     expect(termsSpan.recognizer, isA<TapGestureRecognizer>());
 
-    final privacySpan = textSpan.children!.firstWhere(
-      (c) => (c as TextSpan).text == 'Privacy Policy',
-    ) as TextSpan;
+    final privacySpan = spans.firstWhere((s) => s.text == 'Privacy Policy');
     expect(privacySpan.recognizer, isNotNull);
     expect(privacySpan.recognizer, isA<TapGestureRecognizer>());
   });

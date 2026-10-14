@@ -115,8 +115,8 @@ void main() {
           find.byKey(const Key('loginPasswordField')),
           'pw',
         );
-        // Button text is 'Login' in new UI
-        await tester.tap(find.text('Login'));
+        // Button text is 'Log in' in new UI
+        await tester.tap(find.text('Log in'));
         await tester.pumpAndSettle();
 
         expect(auth.signInCalled, isTrue);
@@ -220,7 +220,7 @@ void main() {
           find.byKey(const Key('loginPasswordField')),
           'wrong',
         );
-        await tester.tap(find.text('Login'));
+        await tester.tap(find.text('Log in'));
         await tester.pump(); // Start future
         await tester.pump(); // Resolve future (error)
 
@@ -244,7 +244,7 @@ void main() {
         await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
 
         // Tap login without entering anything
-        await tester.tap(find.text('Login'));
+        await tester.tap(find.text('Log in'));
         await tester.pump();
         await tester.pumpAndSettle();
 
@@ -270,7 +270,7 @@ void main() {
           find.byKey(const Key('loginPasswordField')),
           'password',
         );
-        await tester.tap(find.text('Login'));
+        await tester.tap(find.text('Log in'));
         await tester.pump();
         await tester.pumpAndSettle();
 

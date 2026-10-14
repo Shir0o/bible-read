@@ -6,7 +6,18 @@ import '../../theme/app_theme.dart';
 class AuthBackground extends StatelessWidget {
   final WidgetBuilder builder;
 
-  const AuthBackground({super.key, required this.builder});
+  /// Dims the hero photograph so text and fields laid over it stay legible.
+  /// For form pages whose content overlaps the hero band.
+  final bool dimHero;
+
+  const AuthBackground({
+    super.key,
+    required this.builder,
+    this.dimHero = false,
+  });
+
+  /// Surface opacity laid over the photograph when [dimHero] is set.
+  static const double dimHeroOpacity = 0.72;
 
   /// Height of the hero photograph band as a fraction of the screen height
   /// (design: auth.jsx AuthHero — `height: "57%"`).
@@ -73,6 +84,19 @@ class AuthBackground extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (dimHero)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    height: MediaQuery.sizeOf(context).height *
+                        AuthBackground.heroBandHeightFraction,
+                    child: ColoredBox(
+                      color: colors.surface.withValues(
+                        alpha: AuthBackground.dimHeroOpacity,
+                      ),
+                    ),
+                  ),
                 SafeArea(child: builder(context)),
               ],
             ),

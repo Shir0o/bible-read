@@ -251,7 +251,7 @@ void main() {
     expect(find.byType(AuthSelectionPage), findsNothing);
 
     // 2. Tap Get Started
-    await tester.tap(find.text('Get Started'));
+    await tester.tap(find.text('Get started'));
     await tester.pumpAndSettle();
 
     // 3. UserProfilePage
