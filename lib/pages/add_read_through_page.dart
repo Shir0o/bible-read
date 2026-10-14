@@ -172,11 +172,12 @@ class _AddReadThroughPageState extends State<AddReadThroughPage> {
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.gap20,
+                    AppSpacing.gap16, AppSpacing.gap20, AppSpacing.gap24),
                 children: [
                   if (!_isEditing) ...[
                     const _FieldLabel('What did you finish?'),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.gap8),
                     for (final scope in ReadThroughScope.values) ...[
                       _ScopeOption(
                         scope: scope,
@@ -185,15 +186,15 @@ class _AddReadThroughPageState extends State<AddReadThroughPage> {
                       ),
                       const SizedBox(height: 8),
                     ],
-                    const SizedBox(height: 18),
+                    const SizedBox(height: AppSpacing.gap20),
                   ],
                   const _FieldLabel('When did you finish?'),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.gap8),
                   _PrecisionTabs(
                     value: _precision,
                     onChanged: (p) => setState(() => _precision = p),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.gap8),
                   _FieldBox(
                     icon: Icons.calendar_today_rounded,
                     onTap: _pickDate,
@@ -217,9 +218,9 @@ class _AddReadThroughPageState extends State<AddReadThroughPage> {
                     DatePrecision.day =>
                       'Pick the day you read the last chapter.',
                   }),
-                  const SizedBox(height: 26),
+                  const SizedBox(height: AppSpacing.gap24),
                   const _FieldLabel('Where were you? — optional'),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.gap8),
                   _FieldBox(
                     icon: Icons.place_outlined,
                     child: TextField(
@@ -241,11 +242,11 @@ class _AddReadThroughPageState extends State<AddReadThroughPage> {
                     'recognise later.',
                   ),
                   if (!_isEditing) ...[
-                    const SizedBox(height: 26),
+                    const SizedBox(height: AppSpacing.gap24),
                     const _PrivacyNote(),
                   ],
                   if (canDelete) ...[
-                    const SizedBox(height: 26),
+                    const SizedBox(height: AppSpacing.gap24),
                     Center(
                       child: TextButton(
                         onPressed: _delete,
@@ -321,8 +322,9 @@ class _FieldBox extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 19, color: colorScheme.onSurfaceVariant),
-          const SizedBox(width: 11),
+          Icon(icon,
+              size: AppSpacing.iconMd, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(child: child),
         ],
       ),
@@ -465,7 +467,8 @@ class _PrivacyNote extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 15),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.gap16, AppSpacing.gap16,
+          AppSpacing.gap16, AppSpacing.gap16),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -476,10 +479,10 @@ class _PrivacyNote extends StatelessWidget {
         children: [
           Icon(
             Icons.lock_outline_rounded,
-            size: 19,
+            size: AppSpacing.iconMd,
             color: colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 11),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Text(
               'Past read-throughs stay yours. They are added to your history, '

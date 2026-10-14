@@ -37,7 +37,8 @@ class StartsAtCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(color: appColors.primaryLine),
       ),
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 15),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.gap16, AppSpacing.gap16,
+          AppSpacing.gap16, AppSpacing.gap16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -48,7 +49,7 @@ class StartsAtCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('STARTS AT', style: AppTextStyles.eyebrow(context)),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: AppSpacing.gap4),
                     Text(
                       startRef.isEmpty ? 'The beginning' : startRef,
                       key: GroupPlanKeys.startRefText,
@@ -73,7 +74,8 @@ class StartsAtCard extends StatelessWidget {
                 label: const Text('Change'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(0, 44),
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.gap16),
                   backgroundColor: colorScheme.surfaceContainerLowest,
                   foregroundColor: appColors.primaryPress,
                   side: BorderSide(color: appColors.primaryLine),
@@ -84,9 +86,9 @@ class StartsAtCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 11),
+          const SizedBox(height: AppSpacing.gap12),
           Divider(height: 1, thickness: 1, color: appColors.primaryLine),
-          const SizedBox(height: 11),
+          const SizedBox(height: AppSpacing.gap12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

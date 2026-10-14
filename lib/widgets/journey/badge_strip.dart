@@ -90,7 +90,8 @@ class _Strip extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.gap20, 0, AppSpacing.gap20, AppSpacing.gap16),
           child: Text('Badges', style: textTheme.titleLarge),
         ),
         SizedBox(
@@ -154,17 +155,15 @@ class _Badge extends StatelessWidget {
                     ? (isGold ? null : appColors.primarySoft)
                     : colorScheme.surfaceContainer,
                 gradient: earned && isGold
-                    ? const LinearGradient(
+                    ? LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Color(0xFFFFE9A8), Color(0xFFFFC24D)],
+                        colors: appColors.sunGradient,
                       )
                     : null,
                 border: Border.all(
                   color: earned
-                      ? (isGold
-                          ? const Color(0xFF2A2438)
-                          : appColors.primaryLine)
+                      ? (isGold ? appColors.sunInk : appColors.primaryLine)
                       : appColors.border,
                   width: earned && isGold ? 2 : 1,
                 ),
@@ -173,12 +172,12 @@ class _Badge extends StatelessWidget {
                 child: _BadgeGlyph(
                   badge: badge,
                   color: earned
-                      ? (isGold ? const Color(0xFF2A2438) : colorScheme.primary)
-                      : colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
+                      ? (isGold ? appColors.sunInk : colorScheme.primary)
+                      : colorScheme.outline,
                 ),
               ),
             ),
-            const SizedBox(height: 9),
+            const SizedBox(height: AppSpacing.gap8),
             Text(
               badge.title,
               textAlign: TextAlign.center,
@@ -279,7 +278,8 @@ class TabletsPainter extends CustomPainter {
         ..lineTo(left * scale, 8.5 * scale)
         ..arcToPoint(
           Offset((left + 7) * scale, 8.5 * scale),
-          radius: Radius.circular(3.5 * scale),
+          radius: Radius.circular(
+              3.5 * scale), // token-exempt: icon geometry scaled with the glyph
         )
         ..lineTo((left + 7) * scale, 20.5 * scale)
         ..close();
@@ -346,7 +346,8 @@ class _NextUp extends StatelessWidget {
     final remaining = badge.remainingFor(counts)!;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap16),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -369,7 +370,7 @@ class _NextUp extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -378,7 +379,7 @@ class _NextUp extends StatelessWidget {
                   remaining <= 1 ? 'One more to go' : '$remaining more to go',
                   style: textTheme.titleSmall,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSpacing.gap4),
                 Text(
                   '${badge.title} — ${badge.requirement.toLowerCase()}.',
                   style: textTheme.bodySmall,

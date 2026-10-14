@@ -110,10 +110,10 @@ class _GentleIntroCard extends StatelessWidget {
     final appColors = AppColors.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
         color: appColors.primarySoft,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         border: Border.all(color: appColors.primaryLine),
       ),
       child: Row(
@@ -123,15 +123,15 @@ class _GentleIntroCard extends StatelessWidget {
             height: 46,
             decoration: BoxDecoration(
               color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppSpacing.rInset),
             ),
             child: Icon(
               Icons.emoji_events_outlined,
-              size: 23,
+              size: AppSpacing.iconLg,
               color: colorScheme.onPrimary,
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +139,6 @@ class _GentleIntroCard extends StatelessWidget {
                 Text(
                   'Read at your own pace',
                   style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
                 ),

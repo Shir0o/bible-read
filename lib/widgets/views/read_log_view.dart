@@ -334,7 +334,6 @@ class _ReadLogViewState extends State<ReadLogView>
                                       AppTextStyles.subtitle(context).copyWith(
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
-                                    fontWeight: FontWeight.w600,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),

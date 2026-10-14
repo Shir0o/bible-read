@@ -329,7 +329,8 @@ class _GroupPlanFormState extends State<GroupPlanForm> {
                     return Container(
                       key: GroupPlanKeys.bookChip(book),
                       height: 44,
-                      padding: const EdgeInsets.only(left: 14, right: 6),
+                      padding: const EdgeInsets.only(
+                          left: AppSpacing.gap12, right: AppSpacing.gap6),
                       decoration: BoxDecoration(
                         color: skipped
                             ? colorScheme.surfaceContainer
@@ -373,7 +374,7 @@ class _GroupPlanFormState extends State<GroupPlanForm> {
                             ),
                             icon: Icon(
                               Icons.close,
-                              size: 15,
+                              size: AppSpacing.iconSm,
                               color: skipped
                                   ? colorScheme.outline
                                   : appColors.primaryPress,
@@ -552,12 +553,12 @@ class _GroupPlanFormState extends State<GroupPlanForm> {
                       unawaited(widget.vibrationService.lightImpact());
                       _toggleWeekday(weekday);
                     },
-                    borderRadius: BorderRadius.circular(22),
+                    borderRadius: BorderRadius.circular(AppSpacing.rCard),
                     child: Container(
                       height: 44,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius: BorderRadius.circular(AppSpacing.rCard),
                         color: _draft.weekdays.contains(weekday)
                             ? colorScheme.primary
                             : colorScheme.surfaceContainerLowest,
@@ -656,7 +657,8 @@ class _GroupPlanFormState extends State<GroupPlanForm> {
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(color: appColors.border),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap16),
       child: Row(
         children: [
           Expanded(

@@ -4,8 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/navigation_menu_scope.dart';
-import '../widgets/common_styles.dart';
 
 class ProfileSummaryCard extends StatelessWidget {
   final FirebaseAuth auth;
@@ -62,17 +62,13 @@ class ProfileSummaryCard extends StatelessWidget {
                           errorWidget: (context, url, error) => Icon(
                             Icons.person_outline,
                             size: 32,
-                            color: colorScheme.onSurfaceVariant.withValues(
-                              alpha: 0.5,
-                            ),
+                            color: colorScheme.outline,
                           ),
                         )
                       : Icon(
                           Icons.person_outline,
                           size: 32,
-                          color: colorScheme.onSurfaceVariant.withValues(
-                            alpha: 0.5,
-                          ),
+                          color: colorScheme.outline,
                         ),
                 ),
               ),
@@ -81,12 +77,7 @@ class ProfileSummaryCard extends StatelessWidget {
               // Name
               Text(
                 user?.displayName ?? 'Reader',
-                style: AppTextStyles.title(context).copyWith(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w500, // Slightly softer than bold
-                  color: colorScheme.onSurface,
-                  letterSpacing: -0.5,
-                ),
+                style: Theme.of(context).textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
 
@@ -100,18 +91,16 @@ class ProfileSummaryCard extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppSpacing.rPill),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'View Profile',
-                      style: AppTextStyles.body(context).copyWith(
-                        fontSize: 12,
-                        color: colorScheme.primary.withValues(alpha: 0.8),
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: colorScheme.primary.withValues(alpha: 0.8),
+                          ),
                     ),
                     const SizedBox(width: 4),
                     Icon(

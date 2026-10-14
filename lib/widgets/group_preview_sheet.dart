@@ -9,7 +9,6 @@ import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import 'app_bottom_sheet.dart';
-import 'common_styles.dart';
 
 /// The pre-join preview for a public Group.
 ///
@@ -131,12 +130,7 @@ class _GroupPreviewSheetState extends State<GroupPreviewSheet> {
           const SizedBox(height: AppSpacing.gap12),
           Text(
             widget.group.name,
-            style: AppTextStyles.title(context).copyWith(
-              fontFamily: AppTheme.fontSerif,
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-              letterSpacing: -0.3,
-            ),
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: AppSpacing.gap20),
           _PreviewDetailRow(
@@ -166,11 +160,7 @@ class _GroupPreviewSheetState extends State<GroupPreviewSheet> {
               "Members' names and daily progress stay hidden until someone "
               'approves you - and yours becomes visible to them at the same '
               'moment.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontSize: 13,
-                height: 1.45,
-              ),
+              style: theme.textTheme.bodySmall?.copyWith(height: 1.45),
             ),
           ),
           const SizedBox(height: AppSpacing.gap24),
@@ -184,11 +174,6 @@ class _GroupPreviewSheetState extends State<GroupPreviewSheet> {
                 foregroundColor: colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppSpacing.rButton),
-                ),
-                textStyle: const TextStyle(
-                  fontFamily: AppTheme.fontUi,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
               child: _requesting
@@ -214,11 +199,6 @@ class _GroupPreviewSheetState extends State<GroupPreviewSheet> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppSpacing.rButton),
                 ),
-                textStyle: const TextStyle(
-                  fontFamily: AppTheme.fontUi,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
               ),
               child: const Text('Not now'),
             ),
@@ -238,21 +218,18 @@ class _PublicGroupBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 24,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap8),
       decoration: BoxDecoration(
         color: colorScheme.primary.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.rChip),
       ),
       alignment: Alignment.center,
       child: Text(
         'Public group',
-        style: TextStyle(
-          color: colorScheme.primary,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.2,
-          fontFamily: AppTheme.fontUi,
-        ),
+        style: Theme.of(context)
+            .textTheme
+            .labelMedium
+            ?.copyWith(color: colorScheme.primary),
       ),
     );
   }
@@ -269,14 +246,13 @@ class _PreviewDetailRow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Icon(icon, size: 19, color: colorScheme.onSurfaceVariant),
+        Icon(icon,
+            size: AppSpacing.iconMd, color: colorScheme.onSurfaceVariant),
         const SizedBox(width: AppSpacing.gap12),
         Expanded(
           child: Text(
             text,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 15,
-                ),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
       ],

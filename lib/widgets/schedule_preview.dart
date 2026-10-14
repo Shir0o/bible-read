@@ -165,7 +165,7 @@ class SchedulePreview extends StatelessWidget {
         Text(
           '${_formatDate(first)} – ${_formatDate(last)}, ${last.year}',
           style: theme.textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+            color: colorScheme.outline,
           ),
         ),
         const SizedBox(height: 6),
@@ -173,7 +173,6 @@ class SchedulePreview extends StatelessWidget {
           statusLine,
           style: theme.textTheme.labelMedium?.copyWith(
             color: statusColor,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -187,7 +186,7 @@ class SchedulePreview extends StatelessWidget {
       child: Text(
         '··· $label',
         style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+          color: theme.colorScheme.outline,
         ),
       ),
     );
@@ -214,10 +213,11 @@ class SchedulePreview extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap12, vertical: AppSpacing.gap12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         border: isCurrent
             ? Border.all(color: colorScheme.primary.withValues(alpha: 0.5))
             : null,

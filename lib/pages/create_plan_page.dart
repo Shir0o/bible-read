@@ -18,6 +18,7 @@ import '../services/reading_plan_service.dart';
 import '../services/reference_parser.dart';
 import '../services/schedule_generator.dart';
 import '../services/vibration_service.dart';
+import '../widgets/app_bottom_sheet.dart';
 import '../widgets/schedule_preview.dart';
 import '../widgets/start_chapter_sheet.dart';
 import '../services/nudge_service.dart';
@@ -592,12 +593,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
   void _showFullSchedule(BuildContext context, ReadingPlan plan) {
     final colorScheme = Theme.of(context).colorScheme;
-    showModalBottomSheet<void>(
+    showAppSheet<void>(
       context: context,
-      barrierColor: AppColors.of(context).scrim,
-      backgroundColor: colorScheme.surface,
-      showDragHandle: true,
-      isScrollControlled: true,
       builder: (context) {
         return DraggableScrollableSheet(
           expand: false,
@@ -607,7 +604,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -626,10 +623,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       final date = _startDate.add(Duration(days: day.day - 1));
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(AppSpacing.gap12),
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius:
+                              BorderRadius.circular(AppSpacing.rInset),
                         ),
                         child: Row(
                           children: [
@@ -762,12 +760,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         children: [
           Text(
             'WHO IS READING',
-            style: TextStyle(
-              color: colorScheme.primary,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(color: colorScheme.primary),
           ),
           const SizedBox(height: 12),
           SegmentedButton<PlanAudience>(
@@ -800,7 +796,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                 labelText: 'Group name',
                 hintText: 'e.g., Thursday morning group',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                  borderRadius:
+                      BorderRadius.all(Radius.circular(AppSpacing.rField)),
                 ),
               ),
             ),
@@ -856,7 +853,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   labelText: 'Plan Title',
                   hintText: 'e.g., Daily Walk',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                    borderRadius:
+                        BorderRadius.all(Radius.circular(AppSpacing.rField)),
                   ),
                 ),
               ),
@@ -866,12 +864,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                 child: Text(
                   'SELECT READING METHOD',
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelSmall
+                      ?.copyWith(color: colorScheme.primary),
                 ),
               ),
 
@@ -954,17 +950,19 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                       color: _years == 1
                                           ? colorScheme.primary
                                           : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(
+                                          AppSpacing.rPill),
                                     ),
                                     child: Text(
                                       '1 Year',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: _years == 1
-                                            ? colorScheme.onPrimary
-                                            : colorScheme.onSurfaceVariant,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelMedium
+                                          ?.copyWith(
+                                            color: _years == 1
+                                                ? colorScheme.onPrimary
+                                                : colorScheme.onSurfaceVariant,
+                                          ),
                                     ),
                                   ),
                                 ),
@@ -982,17 +980,19 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                       color: _years == 2
                                           ? colorScheme.primary
                                           : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(
+                                          AppSpacing.rPill),
                                     ),
                                     child: Text(
                                       '2 Years',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: _years == 2
-                                            ? colorScheme.onPrimary
-                                            : colorScheme.onSurfaceVariant,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelMedium
+                                          ?.copyWith(
+                                            color: _years == 2
+                                                ? colorScheme.onPrimary
+                                                : colorScheme.onSurfaceVariant,
+                                          ),
                                     ),
                                   ),
                                 ),
@@ -1283,14 +1283,17 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                         _endDate != null
                                             ? '${_months[_endDate!.month - 1]} ${_endDate!.day}, ${_endDate!.year}'
                                             : 'Select Date',
-                                        style: TextStyle(
-                                          color: _goalMethod ==
-                                                  _PlanGoalMethod.endDate
-                                              ? colorScheme.primary
-                                              : colorScheme.onSurfaceVariant,
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 14,
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: _goalMethod ==
+                                                      _PlanGoalMethod.endDate
+                                                  ? colorScheme.primary
+                                                  : colorScheme
+                                                      .onSurfaceVariant,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                       ),
                                       const Spacer(),
                                       Icon(
@@ -1387,7 +1390,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   foregroundColor: colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(32),
+                    borderRadius: BorderRadius.circular(AppSpacing.rButton),
                   ),
                 ),
                 child: _isCreating
@@ -1405,10 +1408,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                             : (_audience == PlanAudience.group
                                 ? 'Create plan together'
                                 : 'Start My Plan'),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
                       ),
               ),
             ),
@@ -1446,7 +1445,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppSpacing.rCard),
             border: Border.all(
               color: isSelected ? colorScheme.primary : Colors.transparent,
               width: 1.5,
@@ -1463,18 +1462,12 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 2),
                         Text(
                           subtitle,
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant,
-                            fontSize: 12,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ),
@@ -1500,7 +1493,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppColors.of(context).primarySoft,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppSpacing.rChip),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1514,11 +1507,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       Expanded(
                         child: Text(
                           'To complete this schedule in one year, you must read three OT chapters on six days and one NT chapter on five days. Choose another schedule type to specify days.',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: colorScheme.onSurface,
-                            height: 1.4,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurface,
+                                    height: 1.4,
+                                  ),
                         ),
                       ),
                     ],
@@ -1575,13 +1568,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             child: Center(
               child: Text(
                 label,
-                style: TextStyle(
-                  color: isSelected
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: isSelected
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurfaceVariant,
+                    ),
               ),
             ),
           ),
@@ -1633,13 +1624,12 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   Expanded(
                     child: Text(
                       label,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: isSelected
-                            ? colorScheme.onSurface
-                            : colorScheme.onSurfaceVariant,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: isSelected
+                                ? colorScheme.onSurface
+                                : colorScheme.onSurfaceVariant,
+                          ),
                     ),
                   ),
                 ],
@@ -1663,7 +1653,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       height: 48,
       decoration: BoxDecoration(
         color: enabled ? colorScheme.surface : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.rChip),
         border: Border.all(
           color: enabled ? colorScheme.outline : colorScheme.outlineVariant,
         ),
@@ -1672,11 +1662,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         enabled: enabled,
         keyboardType: TextInputType.number,
         onChanged: onChanged,
-        style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           hintText: 'Enter amount',
           hintStyle: TextStyle(
-            fontSize: 14,
             color: colorScheme.onSurfaceVariant.withAlpha(150),
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1703,7 +1691,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
         color: colorScheme.surfaceContainerHighest.withAlpha(100),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
@@ -1740,10 +1728,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
               ),
               title: Text(
                 name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: Theme.of(context).textTheme.titleSmall,
               ),
               trailing: Icon(
                 _expandedCategories.contains(name)
@@ -1797,7 +1782,13 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
               });
             },
           ),
-          title: Text(name, style: const TextStyle(fontSize: 13)),
+          title: Text(
+            name,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: colorScheme.onSurface),
+          ),
           trailing: Icon(
             _expandedCategories.contains(name)
                 ? Icons.expand_less
@@ -1850,12 +1841,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   ),
                   title: Text(
                     book,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isSelected
-                          ? colorScheme.onSurface
-                          : colorScheme.onSurfaceVariant,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isSelected
+                              ? colorScheme.onSurface
+                              : colorScheme.onSurfaceVariant,
+                        ),
                   ),
                 );
               }).toList(),

@@ -306,7 +306,7 @@ class _LoginPageState extends State<LoginPage> {
                         decoration: BoxDecoration(
                           color: colorScheme.primary,
                           borderRadius: BorderRadius.circular(
-                            16,
+                            AppSpacing.rInset,
                           ), // rounded-2xl
                           boxShadow: [
                             BoxShadow(
@@ -332,7 +332,7 @@ class _LoginPageState extends State<LoginPage> {
                         'Welcome back',
                         textAlign: TextAlign.center,
                         style: textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                           color: colorScheme.onSurface,
                           height: 1.25,
                         ),
@@ -449,7 +449,8 @@ class _LoginPageState extends State<LoginPage> {
                               child: Material(
                                 type: MaterialType.transparency,
                                 child: InkWell(
-                                  borderRadius: BorderRadius.circular(4),
+                                  borderRadius:
+                                      BorderRadius.circular(AppSpacing.rSmall),
                                   onTap: () {
                                     unawaited(
                                       widget.vibrationService.lightImpact(),
@@ -506,7 +507,7 @@ class _LoginPageState extends State<LoginPage> {
                               : Text(
                                   'Login',
                                   style: textTheme.labelLarge?.copyWith(
-                                    fontWeight: FontWeight.bold, // font-bold
+                                    fontWeight: FontWeight.w700, // font-bold
                                     letterSpacing: 0.5, // tracking-wide
                                   ),
                                 ),
@@ -532,7 +533,6 @@ class _LoginPageState extends State<LoginPage> {
                               child: Text(
                                 'OR',
                                 style: textTheme.labelSmall?.copyWith(
-                                  fontWeight: FontWeight.bold, // font-bold
                                   color: colorScheme.onSurfaceVariant,
                                   letterSpacing: 1.5, // tracking-widest
                                 ),
@@ -601,8 +601,6 @@ class _LoginPageState extends State<LoginPage> {
                                     Text(
                                       'Continue with Google',
                                       style: textTheme.labelLarge?.copyWith(
-                                        fontWeight:
-                                            FontWeight.w600, // font-semibold
                                         color: colorScheme.onSurface,
                                       ),
                                     ),
@@ -636,7 +634,8 @@ class _LoginPageState extends State<LoginPage> {
                                 child: Material(
                                   type: MaterialType.transparency,
                                   child: InkWell(
-                                    borderRadius: BorderRadius.circular(4),
+                                    borderRadius: BorderRadius.circular(
+                                        AppSpacing.rSmall),
                                     onTap: () {
                                       unawaited(
                                         widget.vibrationService.lightImpact(),
@@ -662,7 +661,7 @@ class _LoginPageState extends State<LoginPage> {
                                         'Sign up',
                                         style: textTheme.bodyMedium?.copyWith(
                                           fontWeight:
-                                              FontWeight.bold, // font-bold
+                                              FontWeight.w700, // font-bold
                                           color: colorScheme.primary,
                                         ),
                                       ),
@@ -702,7 +701,8 @@ class _LoginPageState extends State<LoginPage> {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    const radius = BorderRadius.vertical(top: Radius.circular(12));
+    const radius =
+        BorderRadius.vertical(top: Radius.circular(AppSpacing.rChip));
 
     return TextFormField(
       key: key,

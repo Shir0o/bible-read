@@ -170,7 +170,8 @@ class _AdjustDaysPageState extends State<AdjustDaysPage> {
           borderRadius: BorderRadius.circular(AppSpacing.rField),
           border: Border.all(color: appColors.border),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.gap12, vertical: AppSpacing.gap12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

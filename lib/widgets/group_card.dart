@@ -119,7 +119,8 @@ class GroupCard extends StatelessWidget {
                           const SizedBox(height: 16),
                           // Progress Bar
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.rChip),
                             child: LinearProgressIndicator(
                               value: groupCompletion,
                               minHeight: 8,
@@ -158,7 +159,6 @@ class GroupCard extends StatelessWidget {
                                   'View schedule',
                                   style: theme.textTheme.labelLarge?.copyWith(
                                     color: colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 style: TextButton.styleFrom(

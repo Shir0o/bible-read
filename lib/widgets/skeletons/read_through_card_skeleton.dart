@@ -17,7 +17,7 @@ class ReadThroughCardSkeleton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -37,13 +37,13 @@ class ReadThroughCardSkeleton extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.gap12),
             Row(
               children: const [
                 Expanded(child: _CountBox(accented: true)),
-                SizedBox(width: 10),
+                SizedBox(width: AppSpacing.gap8),
                 Expanded(child: _CountBox()),
-                SizedBox(width: 10),
+                SizedBox(width: AppSpacing.gap8),
                 Expanded(child: _CountBox()),
               ],
             ),
@@ -63,7 +63,8 @@ class _CountBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap12, vertical: AppSpacing.gap12),
       decoration: BoxDecoration(
         color: accented
             ? AppColors.of(context).accentSoft

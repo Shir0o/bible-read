@@ -307,6 +307,47 @@ class AppTheme {
           side: BorderSide(color: appColors.border, width: 1),
         ),
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: colorScheme.surfaceContainerLowest,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.rCard),
+        ),
+        titleTextStyle: themedText.titleLarge,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.rChip),
+        ),
+        backgroundColor: colorScheme.inverseSurface,
+        contentTextStyle: themedText.bodyMedium?.copyWith(
+          color: colorScheme.onInverseSurface,
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppSpacing.rSheet),
+          ),
+        ),
+        modalBarrierColor: appColors.scrim,
+        dragHandleColor: appColors.borderStrong,
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.rChip),
+        ),
+        side: BorderSide(color: appColors.border),
+        labelStyle: themedText.labelMedium,
+      ),
+      dividerTheme: DividerThemeData(
+        color: appColors.border,
+        thickness: 1,
+        space: 1,
+      ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: buttonSize,
@@ -395,6 +436,9 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.highlight,
     required this.bg2,
     required this.scrim,
+    required this.sunLight,
+    required this.sunDeep,
+    required this.sunInk,
   });
 
   /// Soft primary fill — `--primary-soft`. Selected/active chip & pill grounds.
@@ -424,7 +468,23 @@ class AppColors extends ThemeExtension<AppColors> {
   /// Modal barrier scrim — design `rgba(10,8,14,0.42)`, same in both modes.
   final Color scrim;
 
+  /// Top of the gold sun mark's gradient. An illustration color, so the same
+  /// in both modes.
+  final Color sunLight;
+
+  /// Bottom of the gold sun mark's gradient.
+  final Color sunDeep;
+
+  /// The sun mark's ink: its outline and checkmark.
+  final Color sunInk;
+
+  /// The sun mark's top-to-bottom gradient, [sunLight] to [sunDeep].
+  List<Color> get sunGradient => [sunLight, sunDeep];
+
   static const Color _scrim = Color.fromRGBO(10, 8, 14, 0.42);
+  static const Color _sunLight = Color(0xFFFFE9A8);
+  static const Color _sunDeep = Color(0xFFFFC24D);
+  static const Color _sunInk = Color(0xFF2A2438);
 
   /// Warm-paper light mode tokens (Sanctuary Liturgy).
   static const AppColors light = AppColors(
@@ -437,6 +497,9 @@ class AppColors extends ThemeExtension<AppColors> {
     highlight: Color.fromRGBO(212, 163, 89, 0.22),
     bg2: Color(0xFFEDE7DC),
     scrim: _scrim,
+    sunLight: _sunLight,
+    sunDeep: _sunDeep,
+    sunInk: _sunInk,
   );
 
   /// Deep-aubergine night mode tokens (Compline Hour).
@@ -450,6 +513,9 @@ class AppColors extends ThemeExtension<AppColors> {
     highlight: Color.fromRGBO(229, 190, 120, 0.24),
     bg2: Color(0xFF110E17),
     scrim: _scrim,
+    sunLight: _sunLight,
+    sunDeep: _sunDeep,
+    sunInk: _sunInk,
   );
 
   /// The [AppColors] for the current theme. Falls back to the brightness-
@@ -472,6 +538,9 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? highlight,
     Color? bg2,
     Color? scrim,
+    Color? sunLight,
+    Color? sunDeep,
+    Color? sunInk,
   }) {
     return AppColors(
       primarySoft: primarySoft ?? this.primarySoft,
@@ -483,6 +552,9 @@ class AppColors extends ThemeExtension<AppColors> {
       highlight: highlight ?? this.highlight,
       bg2: bg2 ?? this.bg2,
       scrim: scrim ?? this.scrim,
+      sunLight: sunLight ?? this.sunLight,
+      sunDeep: sunDeep ?? this.sunDeep,
+      sunInk: sunInk ?? this.sunInk,
     );
   }
 
@@ -499,6 +571,9 @@ class AppColors extends ThemeExtension<AppColors> {
       highlight: Color.lerp(highlight, other.highlight, t)!,
       bg2: Color.lerp(bg2, other.bg2, t)!,
       scrim: Color.lerp(scrim, other.scrim, t)!,
+      sunLight: Color.lerp(sunLight, other.sunLight, t)!,
+      sunDeep: Color.lerp(sunDeep, other.sunDeep, t)!,
+      sunInk: Color.lerp(sunInk, other.sunInk, t)!,
     );
   }
 }
@@ -511,20 +586,33 @@ class AppSpacing {
   static const double vPaddingSmall = 8;
 
   // Gap scale.
+  static const double gap2 = 2;
   static const double gap4 = 4;
+  static const double gap6 = 6;
   static const double gap8 = 8;
   static const double gap12 = 12;
   static const double gap16 = 16;
   static const double gap20 = 20;
   static const double gap24 = 24;
+  static const double gap32 = 32;
+
+  // card-surface padding, from DESIGN.md (components.card-surface.padding).
+  static const double cardPadding = 18;
+
+  // Icon size scale.
+  static const double iconSm = 16;
+  static const double iconMd = 20;
+  static const double iconLg = 24;
 
   // Corner radii (from the design).
   static const double rCard = 22;
   static const double rButton = 16;
   static const double rField = 16;
   static const double rInset = 16;
+  static const double rSmall = 8;
   static const double rChip = 12;
   static const double rSheet = 26;
+  static const double rPill = 999;
 
   // Component metrics.
   static const double buttonHeight = 52;

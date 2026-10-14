@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 
 /// A button that provides press feedback via modern Material motion and
 /// optionally shows a loading indicator.
@@ -51,7 +52,7 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
   static const double _disabledElevation = 0;
 
   static const BorderRadius _cornerRadius = BorderRadius.all(
-    Radius.circular(14),
+    Radius.circular(AppSpacing.rInset),
   );
 
   late final AnimationController _scaleController;

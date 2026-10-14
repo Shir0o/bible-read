@@ -13,6 +13,7 @@ import '../services/admin_role_service.dart';
 import '../services/feedback_service.dart';
 import '../services/vibration_service.dart';
 import 'animated_page_route.dart';
+import 'app_bottom_sheet.dart';
 import '../pages/notification_center_page.dart';
 import '../services/notification_service.dart';
 
@@ -56,11 +57,8 @@ class AppMenuSheet extends StatefulWidget {
       return Future.value();
     }
 
-    return showModalBottomSheet(
+    return showAppSheet<void>(
       context: context,
-      barrierColor: AppColors.of(context).scrim,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         return AppMenuSheet(
           onNavigate: onNavigate,
@@ -278,110 +276,83 @@ class _MenuContents extends StatelessWidget {
         theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600) ??
             const TextStyle(fontWeight: FontWeight.w600);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 20,
-            color: colorScheme.shadow.withValues(alpha: 0.16),
-            offset: const Offset(0, -4),
+    return SingleChildScrollView(
+      key: const Key('menu_scroll_view'),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.gap20, AppSpacing.gap16,
+          AppSpacing.gap20, AppSpacing.gap32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ProfileHeader(auth: auth),
+          const SizedBox(height: 16),
+          Builder(
+            builder: (context) {
+              final double availableWidth = MediaQuery.of(
+                context,
+              ).size.width;
+              final bool compact = availableWidth < 360;
+              final double horizontalPadding = 40.0; // 20 on each side
+              final double contentWidth = availableWidth - horizontalPadding;
+
+              final double baseWidth =
+                  compact ? contentWidth : (contentWidth - 9) / 2;
+              final double buttonWidth = compact
+                  ? baseWidth
+                  : baseWidth.clamp(140.0, 240.0).toDouble();
+
+              return Wrap(
+                spacing: 9,
+                runSpacing: 9,
+                alignment:
+                    compact ? WrapAlignment.center : WrapAlignment.spaceBetween,
+                children: items
+                    .map(
+                      (item) => SizedBox(
+                        width: buttonWidth, // Ensure equal width
+                        child: _MenuActionButton(
+                          item: item,
+                          onNavigate: onNavigate,
+                          vibrationService: vibrationService,
+                          textStyle: textStyle,
+                          parentContext: parentContext,
+                          auth: auth,
+                          firestore: firestore,
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
+          ),
+          const SizedBox(height: AppSpacing.gap8),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.gap12),
+                alignment: Alignment.center,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.rButton),
+                  side: BorderSide(color: AppColors.of(context).border),
+                ),
+                backgroundColor: colorScheme.surfaceContainerLow,
+                foregroundColor: colorScheme.onSurfaceVariant,
+              ),
+              onPressed: () {
+                unawaited(vibrationService.lightImpact());
+                Navigator.of(context).pop();
+                onNavigate(10);
+              },
+              icon: const Icon(Icons.logout, size: AppSpacing.iconMd),
+              label: Text(
+                'Sign Out',
+                style: textStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ),
         ],
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 34),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          key: const Key('menu_scroll_view'),
-          padding: EdgeInsets.zero,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 48,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _ProfileHeader(auth: auth),
-              const SizedBox(height: 16),
-              Builder(
-                builder: (context) {
-                  final double availableWidth = MediaQuery.of(
-                    context,
-                  ).size.width;
-                  final bool compact = availableWidth < 360;
-                  final double horizontalPadding = 40.0; // 20 on each side
-                  final double contentWidth =
-                      availableWidth - horizontalPadding;
-
-                  final double baseWidth =
-                      compact ? contentWidth : (contentWidth - 9) / 2;
-                  final double buttonWidth = compact
-                      ? baseWidth
-                      : baseWidth.clamp(140.0, 240.0).toDouble();
-
-                  return Wrap(
-                    spacing: 9,
-                    runSpacing: 9,
-                    alignment: compact
-                        ? WrapAlignment.center
-                        : WrapAlignment.spaceBetween,
-                    children: items
-                        .map(
-                          (item) => SizedBox(
-                            width: buttonWidth, // Ensure equal width
-                            child: _MenuActionButton(
-                              item: item,
-                              onNavigate: onNavigate,
-                              vibrationService: vibrationService,
-                              textStyle: textStyle,
-                              parentContext: parentContext,
-                              auth: auth,
-                              firestore: firestore,
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  );
-                },
-              ),
-              const SizedBox(height: 9),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.tonalIcon(
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    alignment: Alignment.center,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: AppColors.of(context).border),
-                    ),
-                    backgroundColor: colorScheme.surfaceContainerLow,
-                    foregroundColor: colorScheme.onSurfaceVariant,
-                  ),
-                  onPressed: () {
-                    unawaited(vibrationService.lightImpact());
-                    Navigator.of(context).pop();
-                    onNavigate(10);
-                  },
-                  icon: const Icon(Icons.logout, size: 19),
-                  label: Text(
-                    'Sign Out',
-                    style: textStyle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -400,7 +371,8 @@ class _ProfileHeader extends StatelessWidget {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 2, 2, 14),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gap2, AppSpacing.gap2, AppSpacing.gap2, AppSpacing.gap16),
       child: Row(
         children: [
           Container(
@@ -421,24 +393,22 @@ class _ProfileHeader extends StatelessWidget {
                     errorBuilder: (context, error, stackTrace) => Center(
                       child: Text(
                         initial,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.primary,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(color: colorScheme.primary),
                       ),
                     ),
                   )
                 : Text(
                     initial,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.primary,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(color: colorScheme.primary),
                   ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -447,19 +417,12 @@ class _ProfileHeader extends StatelessWidget {
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: colorScheme.onSurface,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 1),
                 Text(
                   'Keep showing up.',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
@@ -521,7 +484,8 @@ class _MenuActionButton extends StatelessWidget {
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         alignment: Alignment.centerLeft,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.rButton)),
         backgroundColor: colorScheme.secondaryContainer,
         foregroundColor: colorScheme.primary,
       ),

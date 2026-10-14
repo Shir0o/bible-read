@@ -34,7 +34,6 @@ class OfflineBanner extends StatelessWidget {
                               color: Theme.of(context)
                                   .colorScheme
                                   .onErrorContainer,
-                              fontWeight: FontWeight.bold,
                             ),
                       ),
                     ],

@@ -225,7 +225,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
                     minLines: 3,
                     maxLines: 5,
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: AppSpacing.gap24),
                   AnimatedActionButton(
                     key: ValueKey('${_formPrefix}SubmitButton'),
                     onPressed: _handleSubmit,
@@ -242,7 +242,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
                     },
                     child: const Text('Cancel'),
                   ),
-                  const SizedBox(height: 26),
+                  const SizedBox(height: AppSpacing.gap24),
                 ],
               ),
             ),
@@ -262,7 +262,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
     final colorScheme = Theme.of(context).colorScheme;
     final appColors = AppColors.of(context);
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppSpacing.rField),
       borderSide: BorderSide(
         color: appColors.borderStrong,
         width: 1,
@@ -270,14 +270,14 @@ class _FeedbackFormState extends State<FeedbackForm> {
     );
     return InputDecoration(
       hintText: label,
-      labelStyle: TextStyle(
-        fontFamily: AppTheme.fontUi,
-        fontSize: 15.5,
-        color: colorScheme.onSurfaceVariant,
-      ),
+      labelStyle: Theme.of(context)
+          .textTheme
+          .bodyLarge
+          ?.copyWith(color: colorScheme.onSurfaceVariant),
       filled: true,
       fillColor: colorScheme.surface,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap16),
       suffixIcon: suffixIcon,
       border: border,
       enabledBorder: border,
@@ -287,10 +287,6 @@ class _FeedbackFormState extends State<FeedbackForm> {
     );
   }
 
-  TextStyle _fieldStyle(BuildContext context) => TextStyle(
-        fontFamily: AppTheme.fontUi,
-        fontSize: 15.5,
-        height: 1.5,
-        color: Theme.of(context).colorScheme.onSurface,
-      );
+  TextStyle _fieldStyle(BuildContext context) =>
+      Theme.of(context).textTheme.bodyLarge!;
 }

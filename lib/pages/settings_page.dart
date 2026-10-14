@@ -413,7 +413,6 @@ class SettingsPageState extends State<SettingsPage> {
     return Text(
       title,
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w500,
             letterSpacing: -0.2,
           ),
     );
@@ -491,7 +490,7 @@ class SettingsPageState extends State<SettingsPage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.hPadding,
-                  vertical: 26,
+                  vertical: AppSpacing.gap24,
                 ),
                 child: Column(
                   children: [
@@ -521,12 +520,11 @@ class SettingsPageState extends State<SettingsPage> {
                         radius: 40,
                         child: Icon(Icons.person, size: 40),
                       ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: AppSpacing.gap12),
                     Text(
                       displayName,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w500,
                             letterSpacing: -0.2,
                           ),
                     ),
@@ -539,7 +537,7 @@ class SettingsPageState extends State<SettingsPage> {
                             ),
                       ),
                     ],
-                    const SizedBox(height: 18),
+                    const SizedBox(height: AppSpacing.gap20),
                     AnimatedActionButton(
                       onPressed: _handleSignOut,
                       isLoading: _isSigningOut,

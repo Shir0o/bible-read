@@ -31,7 +31,7 @@ class WelcomePage extends StatelessWidget {
                 textAlign: TextAlign.center,
                 text: TextSpan(
                   style: textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
                     height: 1.1,
                     color: colorScheme.onSurface,
                     shadows: [
@@ -61,7 +61,6 @@ class WelcomePage extends StatelessWidget {
                 'Experience the Bible together. Create shared schedules, discuss insights, and keep each other accountable every day.',
                 textAlign: TextAlign.center,
                 style: textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w400,
                   color: colorScheme.onSurfaceVariant,
                   height: 1.5,
                 ),
@@ -87,7 +86,7 @@ class WelcomePage extends StatelessWidget {
                   child: Text(
                     'Get Started',
                     style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -114,7 +113,7 @@ class WelcomePage extends StatelessWidget {
                   child: Text(
                     'I already have an account',
                     style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                     ),
                   ),

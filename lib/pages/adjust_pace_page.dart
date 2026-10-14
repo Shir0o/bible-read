@@ -88,7 +88,7 @@ class _OptionCard extends StatelessWidget {
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.gap8),
               Text(
                 preview,
                 style: theme.textTheme.labelMedium?.copyWith(
@@ -287,7 +287,7 @@ class _AdjustPacePageState extends State<AdjustPacePage> {
                     ],
                     if (widget.shared)
                       Container(
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(AppSpacing.gap12),
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainerLowest,
                           borderRadius:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import '../skeleton.dart';
 
 class PlansHubSkeleton extends StatelessWidget {
@@ -26,7 +27,7 @@ class PlansHubSkeleton extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSpacing.rInset),
             border: Border.all(color: colorScheme.outlineVariant),
           ),
           child: Column(

@@ -250,25 +250,23 @@ class _ReschedulePageState extends State<ReschedulePage> {
                       'Move the dates for ${widget.group.name}',
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontFamily: AppTheme.fontSerif,
-                        fontWeight: FontWeight.w500,
                         letterSpacing: -0.3,
                       ),
                     ),
                     const SizedBox(height: 16),
                     _warningCard(context, memberCount, memberLabel),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: AppSpacing.gap20),
                     for (final option in PaceOption.values) ...[
                       _optionCard(context, option),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: AppSpacing.gap8),
                     ],
                     const SizedBox(height: 12),
                     Divider(color: appColors.border),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: AppSpacing.gap12),
                     Text(
                       'Only you can do this',
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w700,
                         letterSpacing: 1.6,
                       ),
                     ),
@@ -337,12 +335,12 @@ class _ReschedulePageState extends State<ReschedulePage> {
           Row(
             children: [
               Icon(Icons.warning_amber_rounded,
-                  size: 18, color: const Color(0xFFA0702F)),
+                  size: 18, color: theme.colorScheme.onTertiaryContainer),
               const SizedBox(width: 8),
               Text(
                 'This changes everyone\'s dates',
                 style: theme.textTheme.titleSmall?.copyWith(
-                  color: const Color(0xFFA0702F),
+                  color: theme.colorScheme.onTertiaryContainer,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -408,7 +406,7 @@ class _ReschedulePageState extends State<ReschedulePage> {
           children: [
             Icon(
               selected ? Icons.radio_button_checked : Icons.radio_button_off,
-              size: 22,
+              size: AppSpacing.iconLg,
               color: selected ? colorScheme.primary : colorScheme.outline,
             ),
             const SizedBox(width: 12),
@@ -423,7 +421,7 @@ class _ReschedulePageState extends State<ReschedulePage> {
                       letterSpacing: -0.2,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: AppSpacing.gap4),
                   Text(
                     description,
                     style: theme.textTheme.bodySmall?.copyWith(

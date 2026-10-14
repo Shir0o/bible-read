@@ -7,6 +7,7 @@ import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../services/join_code_service.dart';
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/join_code_keys.dart';
 
@@ -164,7 +165,7 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppSpacing.rChip),
                   ),
                 ),
                 child: _lookingUp
@@ -200,7 +201,7 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                         Text(
                           _match!.group.name,
                           style: AppTextStyles.title(context).copyWith(
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(height: 4),

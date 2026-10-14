@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'app_bottom_sheet.dart';
 import 'common_styles.dart';
 
 /// Gentle reflection prompts — rotate day to day, never demanding.
@@ -32,11 +33,8 @@ Future<void> showReflectSheet(
   bool initialShared = false,
   VoidCallback? onSkip,
 }) {
-  return showModalBottomSheet<void>(
+  return showAppSheet<void>(
     context: context,
-    barrierColor: AppColors.of(context).scrim,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (sheetContext) => _ReflectSheet(
       initialText: initialText,
       prompt: prompt,
@@ -115,141 +113,111 @@ class _ReflectSheetState extends State<_ReflectSheet> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppSpacing.rSheet),
-          ),
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 20,
-              color: colorScheme.shadow.withValues(alpha: 0.16),
-              offset: const Offset(0, -4),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'REFLECTION',
+              style: AppTextStyles.caption(context).copyWith(
+                color: colorScheme.primary,
+                letterSpacing: 1.2,
+              ),
             ),
-          ],
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        child: SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            const SizedBox(height: 8),
+            Text(
+              widget.prompt,
+              style: AppTextStyles.title(
+                context,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _controller,
+              autofocus: !_isEditing,
+              minLines: 4,
+              maxLines: 6,
+              textCapitalization: TextCapitalization.sentences,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'A sentence is plenty…',
+                filled: true,
+                fillColor: colorScheme.surfaceContainerHighest,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.rField),
+                  borderSide: BorderSide(color: colorScheme.outlineVariant),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.rField),
+                  borderSide: BorderSide(color: colorScheme.outlineVariant),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              key: const ValueKey('reflect_sheet_share_toggle'),
               children: [
-                Center(
-                  child: Container(
-                    width: 48,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'REFLECTION',
-                  style: AppTextStyles.caption(context).copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.prompt,
-                  style: AppTextStyles.title(
-                    context,
-                  ).copyWith(fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _controller,
-                  autofocus: !_isEditing,
-                  minLines: 4,
-                  maxLines: 6,
-                  textCapitalization: TextCapitalization.sentences,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: 'A sentence is plenty…',
-                    filled: true,
-                    fillColor: colorScheme.surfaceContainerHighest,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.rField),
-                      borderSide: BorderSide(color: colorScheme.outlineVariant),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.rField),
-                      borderSide: BorderSide(color: colorScheme.outlineVariant),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  key: const ValueKey('reflect_sheet_share_toggle'),
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Share with your circle',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _share
-                                ? 'On — the people you read with can read '
-                                    'this one.'
-                                : 'Off — only you can read this. Turning it '
-                                    'on lets the people you share a group '
-                                    'with read it.',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Share with your circle',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    Switch(
-                      key: const ValueKey('reflect_sheet_share_switch'),
-                      value: _share,
-                      onChanged: _saving
-                          ? null
-                          : (value) => setState(() => _share = value),
-                      activeThumbColor: colorScheme.primary,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 50,
-                  child: FilledButton.icon(
-                    onPressed: canSave ? _save : null,
-                    icon: _saving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.check_rounded, size: 18),
-                    label: Text(_saving ? 'Saving…' : 'Save'),
+                      const SizedBox(height: 2),
+                      Text(
+                        _share
+                            ? 'On — the people you read with can read '
+                                'this one.'
+                            : 'Off — only you can read this. Turning it '
+                                'on lets the people you share a group '
+                                'with read it.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: _saving ? null : _skip,
-                  style: TextButton.styleFrom(
-                    minimumSize: const Size.fromHeight(44),
-                  ),
-                  child: Text(_isEditing ? 'Cancel' : 'Skip for today'),
+                Switch(
+                  key: const ValueKey('reflect_sheet_share_switch'),
+                  value: _share,
+                  onChanged: _saving
+                      ? null
+                      : (value) => setState(() => _share = value),
+                  activeThumbColor: colorScheme.primary,
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 50,
+              child: FilledButton.icon(
+                onPressed: canSave ? _save : null,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check_rounded, size: 18),
+                label: Text(_saving ? 'Saving…' : 'Save'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: _saving ? null : _skip,
+              style: TextButton.styleFrom(
+                minimumSize: const Size.fromHeight(44),
+              ),
+              child: Text(_isEditing ? 'Cancel' : 'Skip for today'),
+            ),
+          ],
         ),
       ),
     );

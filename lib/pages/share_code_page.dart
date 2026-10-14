@@ -189,7 +189,6 @@ class _ShareCodePageState extends State<ShareCodePage> {
                   'GROUP JOIN CODE',
                   style: theme.textTheme.labelSmall?.copyWith(
                     letterSpacing: 1.2,
-                    fontWeight: FontWeight.bold,
                     color: colorScheme.primary,
                   ),
                 ),
@@ -198,7 +197,7 @@ class _ShareCodePageState extends State<ShareCodePage> {
                   code,
                   key: JoinCodeKeys.codeText,
                   style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: 8,
                     color: colorScheme.onSurface,
                   ),

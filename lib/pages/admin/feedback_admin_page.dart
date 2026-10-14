@@ -471,12 +471,12 @@ class _StatusSelectState extends State<_StatusSelect> {
               child: Material(
                 color: colorScheme.surface,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppSpacing.rChip),
                   side: BorderSide(color: appColors.borderStrong, width: 1),
                 ),
                 child: InkWell(
                   key: widget.selectKey,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppSpacing.rChip),
                   onTap: () {
                     setState(() => _open = !_open);
                   },
@@ -515,7 +515,7 @@ class _StatusSelectState extends State<_StatusSelect> {
           Material(
             color: colorScheme.surfaceContainerLowest,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppSpacing.rInset),
               side: BorderSide(color: appColors.border, width: 1),
             ),
             child: Padding(
@@ -529,7 +529,7 @@ class _StatusSelectState extends State<_StatusSelect> {
                         setState(() => _open = false);
                         widget.onChanged(option);
                       },
-                      borderRadius: BorderRadius.circular(9),
+                      borderRadius: BorderRadius.circular(AppSpacing.rChip),
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
@@ -540,7 +540,7 @@ class _StatusSelectState extends State<_StatusSelect> {
                           color: option == widget.value
                               ? appColors.primarySoft
                               : Colors.transparent,
-                          borderRadius: BorderRadius.circular(9),
+                          borderRadius: BorderRadius.circular(AppSpacing.rChip),
                         ),
                         child: Text(
                           option,

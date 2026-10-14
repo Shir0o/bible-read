@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 /// The small gold sun mark icon — shown on the Home header next to the profile
 /// picture. Supports two states:
 ///   • Unmarked (`done: false`): clean golden sun circle disc.
@@ -9,12 +11,21 @@ class SunMark extends StatelessWidget {
   final bool done;
   final VoidCallback? onTap;
 
-  const SunMark({super.key, this.size = 32.0, required this.done, this.onTap});
+  /// Width of the ink outline. Smaller inline marks use a lighter 1.5.
+  final double borderWidth;
+
+  const SunMark({
+    super.key,
+    this.size = 32.0,
+    required this.done,
+    this.onTap,
+    this.borderWidth = 2,
+  });
 
   @override
   Widget build(BuildContext context) {
-    const borderColor = Color(0xFF2A2438);
-    const gradientColors = [Color(0xFFFFE9A8), Color(0xFFFFC24D)];
+    final appColors = AppColors.of(context);
+    final borderColor = appColors.sunInk;
 
     final sunWidget = AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -22,17 +33,17 @@ class SunMark extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: borderColor, width: 2),
-        gradient: const LinearGradient(
+        border: Border.all(color: borderColor, width: borderWidth),
+        gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: gradientColors,
+          colors: appColors.sunGradient,
         ),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x1F2A2438),
+            color: borderColor.withAlpha(0x1F),
             blurRadius: 4,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
