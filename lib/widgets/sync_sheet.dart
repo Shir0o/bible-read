@@ -61,9 +61,10 @@ class SyncSheet extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       'One question, just this once',
-                      style: AppTextStyles.caption(
-                        context,
-                      ).copyWith(color: colorScheme.onSurfaceVariant),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -102,10 +103,10 @@ class SyncSheet extends StatelessWidget {
                   child: Text(
                     'You can change this anytime in Settings › Reading '
                     'counts as showing up.',
-                    style: AppTextStyles.caption(context).copyWith(
-                      color: colorScheme.outline,
-                      height: 1.5,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.45,
+                        ),
                   ),
                 ),
               ],
