@@ -518,7 +518,7 @@ void main() {
     await shot(tester, '71_settings_account_section');
 
     // Delete Account Dialog
-    final deleteTile = find.text('Delete Account');
+    final deleteTile = find.text('Delete account');
     if (deleteTile.evaluate().isNotEmpty) {
       await tester.ensureVisible(deleteTile);
       await tester.pumpAndSettle();

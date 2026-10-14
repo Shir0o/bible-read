@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 
 import '../models/user_preferences.dart';
+import '../app_version.dart';
 import '../theme/app_theme.dart';
 import '../services/apple_sign_in_service.dart';
 import '../services/error_logger.dart';
@@ -297,7 +298,7 @@ class SettingsPageState extends State<SettingsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Account?'),
+        title: const Text('Delete account?'),
         content: const Text(
           'This action is permanent. It will permanently delete all your reading data, '
           'reflections, streaks, and remove you from any reading groups. This cannot be undone.',
@@ -538,17 +539,23 @@ class SettingsPageState extends State<SettingsPage> {
                       ),
                     ],
                     const SizedBox(height: AppSpacing.gap20),
-                    AnimatedActionButton(
-                      onPressed: _handleSignOut,
-                      isLoading: _isSigningOut,
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.logout, size: 18),
-                          SizedBox(width: 8),
-                          Text('Sign Out'),
-                        ],
-                      ),
+                    // Secondary weight: signing out is not the page's main
+                    // action, so it does not get the filled primary style.
+                    OutlinedButton.icon(
+                      onPressed: _isSigningOut
+                          ? null
+                          : () {
+                              unawaited(widget.vibrationService.lightImpact());
+                              unawaited(_handleSignOut());
+                            },
+                      icon: _isSigningOut
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.logout, size: 18),
+                      label: const Text('Sign out'),
                     ),
                   ],
                 ),
@@ -687,7 +694,7 @@ class SettingsPageState extends State<SettingsPage> {
                   color: colorScheme.error,
                 ),
                 title: Text(
-                  'Delete Account',
+                  'Delete account',
                   style: TextStyle(color: colorScheme.error),
                 ),
                 subtitle: const Text(
@@ -705,7 +712,7 @@ class SettingsPageState extends State<SettingsPage> {
             ),
             const SizedBox(height: AppSpacing.gap20),
             Text(
-              'Bible Read · v1.28.1',
+              'Bible Read · v$appVersion',
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,

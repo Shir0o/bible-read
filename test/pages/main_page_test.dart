@@ -373,7 +373,7 @@ void main() {
 
     // These usages are now checking no-op behavior for pushed items
     await selectMenuItem('Challenges', 5); // 5 is pushed
-    await selectMenuItem('Sign Out', 10);
+    await selectMenuItem('Sign out', 10);
   });
 
   testWidgets('bottom navigation visible on non-core pages', (tester) async {

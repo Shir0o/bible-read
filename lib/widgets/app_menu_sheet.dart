@@ -23,7 +23,7 @@ import '../services/google_sign_in_factory.dart';
 
 /// The hub sheet opened from the avatar — matches the design's `MenuSheet`:
 /// a profile header, a two-column grid of destinations, and a quiet full-width
-/// Sign Out row at the bottom.
+/// Sign out row at the bottom.
 class AppMenuSheet extends StatefulWidget {
   const AppMenuSheet({
     super.key,
@@ -345,7 +345,7 @@ class _MenuContents extends StatelessWidget {
               },
               icon: const Icon(Icons.logout, size: AppSpacing.iconMd),
               label: Text(
-                'Sign Out',
+                'Sign out',
                 style: textStyle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

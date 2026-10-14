@@ -114,7 +114,7 @@ void main() {
     await select('Challenges', 5);
 
     await openMenu();
-    await select('Sign Out', 10);
+    await select('Sign out', 10);
   });
 
   testWidgets('shows Inbox entry for admin users', (tester) async {
@@ -252,7 +252,7 @@ void main() {
       'Challenges',
       'Library',
       'Feedback',
-      'Sign Out',
+      'Sign out',
     ]) {
       expect(find.text(label), findsOneWidget, reason: 'missing "$label"');
     }

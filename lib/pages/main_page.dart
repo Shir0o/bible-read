@@ -239,7 +239,7 @@ class MainPageState extends State<MainPage> {
             ),
           );
           break;
-        case 10: // Sign Out
+        case 10: // Sign out
           unawaited(clearSilentSignInFlag());
           unawaited(widget.auth.signOut());
           unawaited(widget.googleSignInProvider().signOut());

@@ -255,7 +255,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Sign Out'));
+      await tester.tap(find.text('Sign out'));
       await tester.pumpAndSettle();
 
       expect(googlePlatform.signOutCalled, isTrue);
@@ -282,7 +282,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final deleteTile = find.text('Delete Account');
+      final deleteTile = find.text('Delete account');
       expect(deleteTile, findsOneWidget);
 
       await tester.ensureVisible(deleteTile);
@@ -291,7 +291,7 @@ void main() {
       await tester.tap(deleteTile);
       await tester.pumpAndSettle();
 
-      expect(find.text('Delete Account?'), findsOneWidget);
+      expect(find.text('Delete account?'), findsOneWidget);
       expect(
         find.textContaining('permanently delete all your reading data'),
         findsOneWidget,
@@ -302,7 +302,7 @@ void main() {
       // Dismissing cancel closes dialog without error
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
-      expect(find.text('Delete Account?'), findsNothing);
+      expect(find.text('Delete account?'), findsNothing);
     });
   });
 
