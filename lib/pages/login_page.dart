@@ -284,6 +284,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return AuthBackground(
+      dimHero: true,
       builder: (context) {
         final colorScheme = Theme.of(context).colorScheme;
         final textTheme = Theme.of(context).textTheme;
@@ -357,11 +358,11 @@ class _LoginPageState extends State<LoginPage> {
                         child: AutofillGroup(
                           child: Column(
                             children: [
-                              // Email or Username
+                              // Email
                               _buildStyledInput(
                                 context: context,
                                 controller: _emailController,
-                                label: 'Email or Username',
+                                label: 'Email',
                                 key: const Key('loginEmailField'),
                                 keyboardType: TextInputType.emailAddress,
                                 autofillHints: const [AutofillHints.email],
@@ -460,7 +461,7 @@ class _LoginPageState extends State<LoginPage> {
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Text(
-                                      'Forgot Password?',
+                                      'Forgot password?',
                                       style: textTheme.bodyMedium?.copyWith(
                                         fontWeight:
                                             FontWeight.w600, // font-semibold
@@ -505,8 +506,9 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 )
                               : Text(
-                                  'Login',
+                                  'Log in',
                                   style: textTheme.labelLarge?.copyWith(
+                                    color: colorScheme.onPrimary,
                                     fontWeight: FontWeight.w700, // font-bold
                                     letterSpacing: 0.5, // tracking-wide
                                   ),

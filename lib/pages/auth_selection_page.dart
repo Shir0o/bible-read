@@ -251,7 +251,11 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                       const SizedBox(width: 12),
                       Text(
                         'Sign up with email',
-                        style: textTheme.titleSmall,
+                        // The theme's titleSmall carries its own color, which
+                        // would override the button's onPrimary foreground.
+                        style: textTheme.titleSmall?.copyWith(
+                          color: colorScheme.onPrimary,
+                        ),
                       ),
                     ],
                   ),

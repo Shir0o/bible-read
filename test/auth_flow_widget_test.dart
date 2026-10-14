@@ -67,7 +67,7 @@ void main() {
     expect(find.byType(WelcomePage), findsOneWidget);
 
     // 2. Navigate to AuthSelectionPage
-    await tester.tap(find.text('Get Started'));
+    await tester.tap(find.text('Get started'));
     await tester.pumpAndSettle();
     expect(find.text('Join the Circle'), findsOneWidget);
 
@@ -77,8 +77,8 @@ void main() {
     expect(find.byType(SignupPage), findsOneWidget);
 
     // 4. Test Signup Validation
-    await tester.ensureVisible(find.text('Create Account'));
-    await tester.tap(find.text('Create Account'));
+    await tester.ensureVisible(find.text('Create account'));
+    await tester.tap(find.text('Create account'));
     await tester.pumpAndSettle();
     expect(find.text('Please fill in all fields'), findsAtLeast(1));
 
@@ -95,8 +95,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('Create Account'));
-    await tester.tap(find.text('Create Account'));
+    await tester.ensureVisible(find.text('Create account'));
+    await tester.tap(find.text('Create account'));
     // Succession animation takes some time, pump multiple times or use a longer settle
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
@@ -139,7 +139,7 @@ void main() {
     expect(find.byType(LoginPage), findsOneWidget);
 
     // 10. Test Login Validation
-    final loginButton = find.widgetWithText(ElevatedButton, 'Login');
+    final loginButton = find.widgetWithText(ElevatedButton, 'Log in');
     await tester.ensureVisible(loginButton);
     await tester.tap(loginButton);
     await tester.pumpAndSettle();

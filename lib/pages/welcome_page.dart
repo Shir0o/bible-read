@@ -73,8 +73,8 @@ class WelcomePage extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onGetStarted,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primaryContainer,
-                    foregroundColor: colorScheme.onPrimaryContainer,
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
                     elevation: 4,
                     shadowColor: colorScheme.shadow.withValues(alpha: 0.3),
                     shape: RoundedRectangleBorder(
@@ -84,8 +84,9 @@ class WelcomePage extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Get Started',
+                    'Get started',
                     style: textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onPrimary,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                     ),

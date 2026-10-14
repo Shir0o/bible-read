@@ -267,6 +267,7 @@ class _SignupPageState extends State<SignupPage> {
   @override
   Widget build(BuildContext context) {
     return AuthBackground(
+      dimHero: true,
       builder: (context) {
         final colorScheme = Theme.of(context).colorScheme;
         final textTheme = Theme.of(context).textTheme;
@@ -328,7 +329,7 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     Expanded(
                       child: Text(
-                        'Sign Up',
+                        'Sign up',
                         textAlign: TextAlign.center,
                         style: textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w500,
@@ -380,7 +381,7 @@ class _SignupPageState extends State<SignupPage> {
                                   autofillHints: const [AutofillHints.name],
                                   textInputAction: TextInputAction.next,
                                   decoration: inputDecoration.copyWith(
-                                    labelText: 'Full Name',
+                                    labelText: 'Full name',
                                     suffixIcon: value.text.isNotEmpty
                                         ? IconButton(
                                             icon: const Icon(Icons.clear),
@@ -470,9 +471,11 @@ class _SignupPageState extends State<SignupPage> {
                     const SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      child: RichText(
-                        text: TextSpan(
-                          style: textTheme.labelSmall?.copyWith(
+                      // Text.rich (not RichText) so the line follows the
+                      // system text size.
+                      child: Text.rich(
+                        TextSpan(
+                          style: textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
                           children: [
@@ -481,7 +484,7 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                             TextSpan(
                               text: 'Terms of Service',
-                              style: textTheme.labelSmall?.copyWith(
+                              style: textTheme.bodySmall?.copyWith(
                                 color: colorScheme.primary,
                                 decoration: TextDecoration.underline,
                               ),
@@ -490,7 +493,7 @@ class _SignupPageState extends State<SignupPage> {
                             const TextSpan(text: ' and '),
                             TextSpan(
                               text: 'Privacy Policy',
-                              style: textTheme.labelSmall?.copyWith(
+                              style: textTheme.bodySmall?.copyWith(
                                 color: colorScheme.primary,
                                 decoration: TextDecoration.underline,
                               ),
@@ -530,8 +533,9 @@ class _SignupPageState extends State<SignupPage> {
                                 ),
                               )
                             : Text(
-                                'Create Account',
+                                'Create account',
                                 style: textTheme.titleSmall?.copyWith(
+                                  color: colorScheme.onPrimary,
                                   letterSpacing: 0.5,
                                 ),
                               ),
