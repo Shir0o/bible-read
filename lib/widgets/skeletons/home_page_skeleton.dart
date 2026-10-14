@@ -21,7 +21,7 @@ class HomePageSkeleton extends StatelessWidget {
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.hPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

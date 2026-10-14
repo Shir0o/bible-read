@@ -1660,7 +1660,7 @@ class _HomePageState extends State<HomePage>
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.hPadding),
         // Content is top-aligned (habit hero first) and laid out at its natural
         // height; the enclosing CustomScrollView scrolls it when tall.
         child: Column(
@@ -1668,7 +1668,7 @@ class _HomePageState extends State<HomePage>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildHomeHeader(context),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.gap4),
             if (hasPlan) ...[
               _buildReadingSection(context, readingItems),
             ] else ...[
@@ -1679,7 +1679,7 @@ class _HomePageState extends State<HomePage>
               _buildReflectionSection(context),
             ],
             if (_readToday) ...[
-              const SizedBox(height: 40),
+              const SizedBox(height: AppSpacing.gap24),
               _buildConsistencyGlimpse(context),
             ],
             // The community glimpse is always present once the user's circle has
@@ -1687,7 +1687,7 @@ class _HomePageState extends State<HomePage>
             // has read yet. `_communityTotal` counts the user, so it is >0 once
             // `_loadCommunity` completes.
             if (_communityTotal > 0) ...[
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.gap20),
               _buildCommunitySection(context),
             ],
             const SizedBox(height: 24),
@@ -1710,32 +1710,29 @@ class _HomePageState extends State<HomePage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Today’s reading',
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            // Plan management moved to the Path tab (#808): with a single
-            // reading the header keeps its schedule link; with several there
-            // is no "All plans" affordance — the tab is one tap away.
-            if (others.isEmpty)
-              TextButton(
-                onPressed: () => _openPrimarySchedule(primary),
-                style: TextButton.styleFrom(
-                  foregroundColor: colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        SizedBox(
+          height: _sectionHeaderHeight,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Today’s reading',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
-                child: const Text('Schedule'),
               ),
-          ],
+              // Plan management moved to the Path tab (#808): with a single
+              // reading the header keeps its schedule link; with several there
+              // is no "All plans" affordance — the tab is one tap away.
+              if (others.isEmpty)
+                TextButton(
+                  onPressed: () => _openPrimarySchedule(primary),
+                  style: _sectionLinkStyle(colorScheme),
+                  child: const Text('Schedule'),
+                ),
+            ],
+          ),
         ),
-        const SizedBox(height: 12),
 
         // Primary hero.
         if (primary.state == PlanLifecycle.wrapup)
@@ -1763,6 +1760,20 @@ class _HomePageState extends State<HomePage>
           _buildPlanMiniRow(context, it),
         ],
       ],
+    );
+  }
+
+  /// Section header rows ("Today’s reading", "Your circle") are a fixed 44px
+  /// so their trailing link is a full touch target and the gap below the
+  /// title is the same with or without a link.
+  static const double _sectionHeaderHeight = 44;
+
+  ButtonStyle _sectionLinkStyle(ColorScheme colorScheme) {
+    return TextButton.styleFrom(
+      foregroundColor: colorScheme.primary,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap8),
+      minimumSize: const Size(44, _sectionHeaderHeight),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 
@@ -1797,9 +1808,9 @@ class _HomePageState extends State<HomePage>
         const SizedBox(width: 6),
         Text(
           'Also counts as showing up today',
-          style: AppTextStyles.caption(context).copyWith(
-            color: colorScheme.outline,
-          ),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.outline,
+              ),
         ),
       ],
     );
@@ -1883,9 +1894,8 @@ class _HomePageState extends State<HomePage>
               if (status.total > 0)
                 Text(
                   '${status.doneCount} of ${status.total} read',
-                  style: theme.textTheme.labelSmall?.copyWith(
+                  style: theme.textTheme.labelMedium?.copyWith(
                     color: colorScheme.outline,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
             ],
@@ -2091,9 +2101,8 @@ class _HomePageState extends State<HomePage>
               if (endedLabel != null)
                 Text(
                   'ended $endedLabel',
-                  style: theme.textTheme.labelSmall?.copyWith(
+                  style: theme.textTheme.labelMedium?.copyWith(
                     color: colorScheme.outline,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
             ],
@@ -2134,9 +2143,8 @@ class _HomePageState extends State<HomePage>
               const SizedBox(width: AppSpacing.gap8),
               Text(
                 '${status.doneCount}/${status.total}',
-                style: theme.textTheme.labelSmall?.copyWith(
+                style: theme.textTheme.labelMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -2225,32 +2233,32 @@ class _HomePageState extends State<HomePage>
             ? Icons.group_outlined
             : Icons.explore_outlined;
 
+    // Another plan, so it sits on the card surface; its metrics match the
+    // CatchUpStatusRow above so icons, titles and chevrons line up.
     return Material(
-      color: colorScheme.surface,
+      color: colorScheme.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.rInset),
-        side: BorderSide(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
+        side: BorderSide(color: AppColors.of(context).border),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => _openPrimarySchedule(item),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+          padding: const EdgeInsets.all(AppSpacing.gap12),
           child: Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   color: tileColor,
                   borderRadius: BorderRadius.circular(AppSpacing.rChip),
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, size: 18, color: iconColor),
+                child: Icon(icon, size: AppSpacing.iconSm, color: iconColor),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.gap12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2279,9 +2287,10 @@ class _HomePageState extends State<HomePage>
                   ],
                 ),
               ),
+              const SizedBox(width: AppSpacing.gap8),
               Icon(
                 Icons.chevron_right_rounded,
-                size: 18,
+                size: 20,
                 color: colorScheme.outline,
               ),
             ],
@@ -2761,14 +2770,17 @@ class _HomePageState extends State<HomePage>
       child: InkWell(
         onTap: widget.onOpenJourney,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.cardPadding,
+            vertical: AppSpacing.gap16,
+          ),
           child: Row(
             children: [
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   for (var i = 0; i < 7; i++) ...[
-                    if (i > 0) const SizedBox(width: 8),
+                    if (i > 0) const SizedBox(width: 6),
                     _weekDot(
                       context,
                       labels[i],
@@ -2777,7 +2789,7 @@ class _HomePageState extends State<HomePage>
                   ],
                 ],
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpacing.gap12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2867,16 +2879,19 @@ class _HomePageState extends State<HomePage>
       subtitle = 'Be the first to show up today';
     } else if (readers.length == 1) {
       subtitle = '${firstName(readers.first)} showed up — join them';
+    } else if (readers.length == 2) {
+      subtitle = '${firstName(readers[0])} & ${firstName(readers[1])} '
+          'showed up';
     } else {
       subtitle = '${firstName(readers[0])}, ${firstName(readers[1])} '
-          '& others showed up';
+          '& ${readers.length - 2} more';
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
+        SizedBox(
+          height: _sectionHeaderHeight,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -2888,12 +2903,7 @@ class _HomePageState extends State<HomePage>
               ),
               TextButton(
                 onPressed: widget.onOpenCommunity,
-                style: TextButton.styleFrom(
-                  foregroundColor: colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+                style: _sectionLinkStyle(colorScheme),
                 child: const Text('Open'),
               ),
             ],
