@@ -319,7 +319,7 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
           Icon(
             Icons.delete_outline,
             size: 56,
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+            color: colorScheme.outline,
           ),
           const SizedBox(height: 16),
           Text(
@@ -343,11 +343,11 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
     final colorScheme = theme.colorScheme;
     final days = item.daysLeft(widget.dateProvider());
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         border: Border.all(color: AppColors.of(context).border),
       ),
       child: Row(
@@ -357,7 +357,7 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
             height: 38,
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.rChip),
             ),
             child: Icon(
               item.isGroup ? Icons.group_outlined : Icons.menu_book_outlined,
@@ -365,7 +365,7 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
               color: colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -374,9 +374,7 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
                   item.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: theme.textTheme.titleSmall,
                 ),
                 const SizedBox(height: 1),
                 Text(
@@ -384,7 +382,6 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
                   maxLines: 1,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: colorScheme.tertiary,
-                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],

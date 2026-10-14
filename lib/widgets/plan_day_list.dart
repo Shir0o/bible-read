@@ -170,7 +170,8 @@ class _DayRow extends StatelessWidget {
               border: Border(top: BorderSide(color: appColors.border)),
             )
           : null,
-      padding: const EdgeInsets.fromLTRB(16, 13, 14, 13),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.gap16, AppSpacing.gap12,
+          AppSpacing.gap12, AppSpacing.gap12),
       child: Row(
         children: [
           Expanded(
@@ -196,8 +197,8 @@ class _DayRow extends StatelessWidget {
                       Container(
                         key: GroupPlanKeys.daySetTag(index),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 2,
+                          horizontal: AppSpacing.gap8,
+                          vertical: AppSpacing.gap2,
                         ),
                         decoration: BoxDecoration(
                           color: appColors.accentSoft,
@@ -206,8 +207,6 @@ class _DayRow extends StatelessWidget {
                         child: Text(
                           'SET',
                           style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: 10.5,
-                            letterSpacing: 0.6,
                             color: colorScheme.onTertiaryContainer,
                           ),
                         ),
@@ -217,14 +216,7 @@ class _DayRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   formatChapterRun(day.chapters),
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontSerif,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: -0.2,
-                    height: 1.3,
-                    color: colorScheme.onSurface,
-                  ),
+                  style: theme.textTheme.titleLarge?.copyWith(height: 1.3),
                 ),
               ],
             ),

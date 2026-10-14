@@ -17,6 +17,7 @@ import '../services/reading_status_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_bottom_sheet.dart';
 import '../widgets/burst_undo_controller.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/member_presence_stack.dart';
@@ -133,67 +134,62 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     final currentYear = now.year;
     final jan1 = DateTime(currentYear, 1, 1);
 
-    final DateTime? pickedDate = await showModalBottomSheet<DateTime>(
+    final DateTime? pickedDate = await showAppSheet<DateTime>(
       context: context,
-      barrierColor: AppColors.of(context).scrim,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      showDragHandle: true,
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'When would you like to start?',
-                  style: AppTextStyles.subtitle(context),
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'When would you like to start?',
+                style: AppTextStyles.subtitle(context),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: const Icon(Icons.today),
+                title: const Text('Start Today'),
+                subtitle: Text(_formatDate(now)),
+                onTap: () => Navigator.pop(context, now),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.rChip),
                 ),
-                const SizedBox(height: 24),
-                ListTile(
-                  leading: const Icon(Icons.today),
-                  title: const Text('Start Today'),
-                  subtitle: Text(_formatDate(now)),
-                  onTap: () => Navigator.pop(context, now),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                if (jan1.isBefore(now)) ...[
-                  const SizedBox(height: 8),
-                  ListTile(
-                    leading: const Icon(Icons.calendar_today),
-                    title: const Text('Start on January 1st'),
-                    subtitle: const Text('Catch up or join late'),
-                    onTap: () => Navigator.pop(context, jan1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ],
+              ),
+              if (jan1.isBefore(now)) ...[
                 const SizedBox(height: 8),
                 ListTile(
-                  leading: const Icon(Icons.edit_calendar),
-                  title: const Text('Pick a Date'),
-                  subtitle: const Text('Choose a custom start date'),
-                  onTap: () async {
-                    final customDate = await showDatePicker(
-                      context: context,
-                      initialDate: now,
-                      firstDate: DateTime(currentYear - 1),
-                      lastDate: DateTime(currentYear + 2),
-                    );
-                    if (context.mounted && customDate != null) {
-                      Navigator.pop(context, customDate);
-                    }
-                  },
+                  leading: const Icon(Icons.calendar_today),
+                  title: const Text('Start on January 1st'),
+                  subtitle: const Text('Catch up or join late'),
+                  onTap: () => Navigator.pop(context, jan1),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppSpacing.rChip),
                   ),
                 ),
               ],
-            ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.edit_calendar),
+                title: const Text('Pick a Date'),
+                subtitle: const Text('Choose a custom start date'),
+                onTap: () async {
+                  final customDate = await showDatePicker(
+                    context: context,
+                    initialDate: now,
+                    firstDate: DateTime(currentYear - 1),
+                    lastDate: DateTime(currentYear + 2),
+                  );
+                  if (context.mounted && customDate != null) {
+                    Navigator.pop(context, customDate);
+                  }
+                },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.rChip),
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -296,22 +292,21 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     final count = widget.group?.memberCount ?? 1;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: AppSpacing.gap16),
       child: Row(
         children: [
           Container(
             height: 24,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap8),
             decoration: BoxDecoration(
               color: colorScheme.primary.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.rChip),
             ),
             alignment: Alignment.center,
             child: Text(
               'Shared plan',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: colorScheme.primary,
-                fontWeight: FontWeight.w700,
                 letterSpacing: 0.2,
               ),
             ),
@@ -858,7 +853,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.all(16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppSpacing.rChip),
                       ),
                     ),
                   ),
@@ -946,13 +941,13 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
           color: isCompleted
               ? colorScheme.surfaceContainerHigh
               : colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppSpacing.rInset),
         ),
         child: InkWell(
           onTap: !isStarted
               ? null
               : () => widget.onToggleDay(day.day, isCompleted, completedDays),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppSpacing.rInset),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -971,9 +966,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                       Text(
                         widget.formatDayOfWeek(date),
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant.withValues(
-                            alpha: 0.6,
-                          ),
+                          color: colorScheme.outline,
                         ),
                       ),
                     ],
@@ -988,7 +981,6 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                         'Day ${day.day}',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: colorScheme.primary,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1060,7 +1052,7 @@ class _TodayAnchorCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
         color: AppColors.of(context).primarySoft,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -1076,14 +1068,13 @@ class _TodayAnchorCard extends StatelessWidget {
                 '$cadenceLabel · with your group',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
                   letterSpacing: 0.3,
                 ),
               ),
               Text(
                 dateLabel,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  color: colorScheme.outline,
                 ),
               ),
             ],
@@ -1091,11 +1082,9 @@ class _TodayAnchorCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             schedule.chapters.join(', '),
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+            style: theme.textTheme.headlineSmall,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.gap12),
           _buildPresence(context),
           const SizedBox(height: 16),
           if (isMember) _buildAction(context),
@@ -1134,14 +1123,13 @@ class _TodayAnchorCard extends StatelessWidget {
                 max: 4,
                 showDoneBadge: false,
               ),
-              const SizedBox(width: 11),
+              const SizedBox(width: AppSpacing.gap12),
             ],
             Expanded(
               child: Text(
                 label,
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -1164,11 +1152,11 @@ class _TodayAnchorCard extends StatelessWidget {
           icon: const Icon(Icons.check, size: 18),
           label: const Text(
             'I read this with the group',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.w700),
           ),
           style: FilledButton.styleFrom(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppSpacing.rInset),
             ),
           ),
         ),
@@ -1177,12 +1165,13 @@ class _TodayAnchorCard extends StatelessWidget {
 
     return InkWell(
       onTap: onToggle,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppSpacing.rInset),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.gap12, vertical: AppSpacing.gap12),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppSpacing.rInset),
           border: Border.all(
             color: colorScheme.primary.withValues(alpha: 0.25),
           ),
@@ -1196,7 +1185,8 @@ class _TodayAnchorCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: colorScheme.primary,
               ),
-              child: Icon(Icons.check, size: 17, color: colorScheme.onPrimary),
+              child: Icon(Icons.check,
+                  size: AppSpacing.iconSm, color: colorScheme.onPrimary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1210,13 +1200,13 @@ class _TodayAnchorCard extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.close, size: 13, color: colorScheme.primary),
+                Icon(Icons.close,
+                    size: AppSpacing.iconSm, color: colorScheme.primary),
                 const SizedBox(width: 4),
                 Text(
                   'Undo',
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],

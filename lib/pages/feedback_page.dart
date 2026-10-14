@@ -65,7 +65,7 @@ class FeedbackPage extends StatelessWidget {
                 ),
                 indicatorSize: TabBarIndicatorSize.label,
                 indicatorWeight: 2.5,
-                labelPadding: EdgeInsets.symmetric(vertical: 10),
+                labelPadding: EdgeInsets.symmetric(vertical: AppSpacing.gap12),
               ),
               Expanded(
                 child: TabBarView(

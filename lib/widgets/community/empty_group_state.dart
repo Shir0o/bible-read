@@ -9,7 +9,6 @@ import '../../services/group_service.dart';
 import '../../services/vibration_service.dart';
 import '../../theme/app_theme.dart';
 import '../app_bottom_sheet.dart';
-import '../common_styles.dart';
 import '../find_group_card.dart';
 import '../group_preview_sheet.dart';
 import '../nav_glyphs.dart';
@@ -114,16 +113,10 @@ class EmptyGroupState extends StatelessWidget {
               size: 32,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.gap20),
           Text(
             'No one here yet',
-            style: AppTextStyles.title(context).copyWith(
-              fontFamily: AppTheme.fontSerif,
-              fontSize: 22,
-              fontWeight: FontWeight.w500,
-              letterSpacing: -0.25,
-              color: colorScheme.onSurface,
-            ),
+            style: Theme.of(context).textTheme.headlineSmall,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
@@ -131,15 +124,11 @@ class EmptyGroupState extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 250),
             child: Text(
               'Your Circle is everyone you share a group with.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontSize: 14,
-                    height: 1.45,
-                  ),
+              style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(height: 26),
+          const SizedBox(height: AppSpacing.gap24),
           SizedBox(
             width: double.infinity,
             height: AppSpacing.buttonHeight,
@@ -151,16 +140,11 @@ class EmptyGroupState extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppSpacing.rButton),
                 ),
-                textStyle: const TextStyle(
-                  fontFamily: AppTheme.fontUi,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
               ),
               child: const Text('Have a code?'),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.gap8),
           SizedBox(
             width: double.infinity,
             height: AppSpacing.buttonHeight,
@@ -172,16 +156,11 @@ class EmptyGroupState extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppSpacing.rButton),
                 ),
-                textStyle: const TextStyle(
-                  fontFamily: AppTheme.fontUi,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
               ),
               child: const Text('Find a group'),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.gap8),
           SizedBox(
             width: double.infinity,
             height: 44,
@@ -191,11 +170,6 @@ class EmptyGroupState extends StatelessWidget {
                 foregroundColor: colorScheme.onSurfaceVariant,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppSpacing.rButton),
-                ),
-                textStyle: const TextStyle(
-                  fontFamily: AppTheme.fontUi,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
               child: const Text('Create a group'),
@@ -229,10 +203,7 @@ class _FindGroupSheetContent extends StatelessWidget {
         children: [
           Text(
             'Find a group',
-            style: AppTextStyles.title(context).copyWith(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 4),
           Text(

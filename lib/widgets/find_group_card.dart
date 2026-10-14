@@ -36,7 +36,7 @@ class FindGroupCard extends StatelessWidget {
 
     return CommonStyles.buildTappableCard(
       context: context,
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
       onTap: onTap,
       child: Row(
         children: [
@@ -51,11 +51,10 @@ class FindGroupCard extends StatelessWidget {
                   style: AppTextStyles.title(context).copyWith(
                     fontFamily: AppTheme.fontSerif,
                     fontSize: 19,
-                    fontWeight: FontWeight.w500,
                     letterSpacing: -0.2,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSpacing.gap4),
                 Text(
                   '$readingSummary / $countLabel',
                   maxLines: 1,

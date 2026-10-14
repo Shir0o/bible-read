@@ -190,9 +190,10 @@ class _GroupFilterChips extends StatelessWidget {
           showCheckmark: false,
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           padding: EdgeInsets.zero,
-          labelPadding: const EdgeInsets.symmetric(horizontal: 14),
+          labelPadding:
+              const EdgeInsets.symmetric(horizontal: AppSpacing.gap12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppSpacing.rChip),
           ),
           side: BorderSide(
             color: selected ? colors.primaryLine : colors.border,
@@ -202,7 +203,6 @@ class _GroupFilterChips extends StatelessWidget {
           labelStyle: theme.textTheme.labelMedium?.copyWith(
             color:
                 selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
           ),
           onSelected: (_) => onTap(),
         ),
@@ -301,7 +301,7 @@ class _CirclePeopleListState extends State<_CirclePeopleList> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppSpacing.rInset),
                 border: Border.all(
                   color: colorScheme.outlineVariant,
                   width: 0.5,
@@ -458,7 +458,8 @@ class _CirclePersonRowState extends State<_CirclePersonRow> {
     final isMe = person.uid == widget.myUid;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
+      padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.gap12, horizontal: AppSpacing.gap12),
       child: Row(
         children: [
           StreamBuilder<List<GroupSchedule>>(
@@ -625,11 +626,11 @@ class _RowContent extends StatelessWidget {
                     alignment: Alignment.center,
                     child: Icon(
                       Icons.workspace_premium_rounded,
-                      size: 15,
+                      size: AppSpacing.iconSm,
                       color: colorScheme.tertiary,
                     ),
                   ),
-                  const SizedBox(width: 5),
+                  const SizedBox(width: AppSpacing.gap4),
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 96),
                     child: Text(
@@ -735,12 +736,12 @@ class _NudgeChip extends StatelessWidget {
           const VibrationService().lightImpact();
           onTap();
         },
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: colorScheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppSpacing.rInset),
           ),
           child: Text(
             'Nudge',

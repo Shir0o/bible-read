@@ -8,6 +8,7 @@ import '../services/group_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/user_preferences_service.dart';
 
+import '../theme/app_theme.dart';
 import '../widgets/journey/badge_strip.dart';
 import '../widgets/journey/consistency_calendar.dart';
 import '../widgets/journey/plans_hub.dart';
@@ -170,10 +171,10 @@ class _JourneyPageState extends State<JourneyPage>
     final textTheme = Theme.of(context).textTheme;
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppSpacing.rInset),
           border: Border.all(color: colorScheme.outlineVariant),
         ),
         child: Column(
@@ -186,7 +187,6 @@ class _JourneyPageState extends State<JourneyPage>
                 Text(
                   value,
                   style: textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface,
                   ),
                 ),
@@ -203,7 +203,6 @@ class _JourneyPageState extends State<JourneyPage>
             Text(
               label,
               style: textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
               ),
             ),

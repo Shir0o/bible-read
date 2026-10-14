@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'app_bottom_sheet.dart';
 
 import '../services/nudge_service.dart';
 import '../services/vibration_service.dart';
@@ -43,11 +44,8 @@ Future<void> showNudgeSheet(
   required Future<NudgeResult> Function(String message) onSend,
   VibrationService vibrationService = const VibrationService(),
 }) {
-  return showModalBottomSheet<void>(
+  return showAppSheet<void>(
     context: context,
-    barrierColor: AppColors.of(context).scrim,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (sheetContext) => _NudgeSheet(
       person: person,
       onSend: onSend,
@@ -122,44 +120,10 @@ class _NudgeSheetState extends State<_NudgeSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 20,
-            color: colorScheme.shadow.withValues(alpha: 0.16),
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 48,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (_sent) _buildConfirmation(theme) else _buildComposer(theme),
-            ],
-          ),
-        ),
-      ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      child: _sent ? _buildConfirmation(theme) : _buildComposer(theme),
     );
   }
 
@@ -180,13 +144,11 @@ class _NudgeSheetState extends State<_NudgeSheet> {
             color: colorScheme.onPrimaryContainer,
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.gap12),
         Text(
           'Nudge sent to ${widget.person.firstName}',
           textAlign: TextAlign.center,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
+          style: theme.textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
         Text(
@@ -218,7 +180,7 @@ class _NudgeSheetState extends State<_NudgeSheet> {
         Row(
           children: [
             _Avatar(person: widget.person, size: 46),
-            const SizedBox(width: 13),
+            const SizedBox(width: AppSpacing.gap12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,10 +204,11 @@ class _NudgeSheetState extends State<_NudgeSheet> {
         ),
         const SizedBox(height: 16),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.gap12, vertical: AppSpacing.gap12),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(13),
+            borderRadius: BorderRadius.circular(AppSpacing.rChip),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,7 +231,7 @@ class _NudgeSheetState extends State<_NudgeSheet> {
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.gap12),
         if (_writing) _buildCustomField(theme) else _buildPresets(theme),
         if (_error != null) ...[
           const SizedBox(height: 12),
@@ -279,7 +242,7 @@ class _NudgeSheetState extends State<_NudgeSheet> {
             ),
           ),
         ],
-        const SizedBox(height: 18),
+        const SizedBox(height: AppSpacing.gap20),
         SizedBox(
           height: 50,
           child: FilledButton.icon(
@@ -314,14 +277,15 @@ class _NudgeSheetState extends State<_NudgeSheet> {
           ),
         OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+            padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.gap12, horizontal: AppSpacing.gap12),
             alignment: Alignment.centerLeft,
             side: BorderSide(
               color: colorScheme.outlineVariant,
               style: BorderStyle.solid,
             ),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppSpacing.rInset),
             ),
           ),
           onPressed: () => setState(() => _writing = true),
@@ -349,11 +313,11 @@ class _NudgeSheetState extends State<_NudgeSheet> {
             filled: true,
             fillColor: colorScheme.surfaceContainerHighest,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppSpacing.rField),
               borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppSpacing.rField),
               borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
           ),
@@ -388,14 +352,15 @@ class _PresetTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppSpacing.rInset),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.gap12, vertical: AppSpacing.gap12),
         decoration: BoxDecoration(
           color: selected
               ? AppColors.of(context).primarySoft
               : colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppSpacing.rInset),
           border: Border.all(
             color: selected
                 ? AppColors.of(context).primaryLine
@@ -412,7 +377,7 @@ class _PresetTile extends StatelessWidget {
               size: 20,
               color: selected ? colorScheme.primary : colorScheme.outline,
             ),
-            const SizedBox(width: 11),
+            const SizedBox(width: AppSpacing.gap12),
             Expanded(
               child: Text(
                 text,

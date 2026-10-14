@@ -11,7 +11,8 @@ class BadgeNextUpSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap16),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -20,7 +21,7 @@ class BadgeNextUpSkeleton extends StatelessWidget {
       child: const Row(
         children: [
           Skeleton(width: 38, height: 38),
-          SizedBox(width: 13),
+          SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import '../skeleton.dart';
 
 /// Two side-by-side placeholders for the Path tab's stat tiles ("Shown up"
@@ -27,10 +28,10 @@ class StatTilesSkeleton extends StatelessWidget {
 
   Widget _tile(ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: const Column(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import '../skeleton.dart';
 
 class PlanDetailSkeleton extends StatelessWidget {
@@ -51,7 +52,8 @@ class PlanDetailSkeleton extends StatelessWidget {
         color: isToday
             ? Theme.of(context).colorScheme.surfaceContainer
             : Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(isToday ? 24 : 16),
+        borderRadius: BorderRadius.circular(
+            isToday ? AppSpacing.rCard : AppSpacing.rInset),
         border: isToday
             ? Border.all(
                 color: Theme.of(

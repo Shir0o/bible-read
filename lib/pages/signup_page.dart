@@ -271,7 +271,8 @@ class _SignupPageState extends State<SignupPage> {
         final colorScheme = Theme.of(context).colorScheme;
         final textTheme = Theme.of(context).textTheme;
 
-        const inputRadius = BorderRadius.vertical(top: Radius.circular(12));
+        const inputRadius =
+            BorderRadius.vertical(top: Radius.circular(AppSpacing.rChip));
         final inputDecoration = InputDecoration(
           filled: true,
           fillColor: colorScheme.surface.withValues(alpha: 0.08),
@@ -349,7 +350,7 @@ class _SignupPageState extends State<SignupPage> {
                     Text(
                       'Create your account',
                       style: textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                         height: 1.1,
                       ),
                     ),
@@ -531,7 +532,6 @@ class _SignupPageState extends State<SignupPage> {
                             : Text(
                                 'Create Account',
                                 style: textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -595,7 +595,8 @@ class _SignupPageState extends State<SignupPage> {
                       child: Material(
                         type: MaterialType.transparency,
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius:
+                              BorderRadius.circular(AppSpacing.rSmall),
                           onTap: () {
                             unawaited(widget.vibrationService.lightImpact());
                             Navigator.of(context).push(

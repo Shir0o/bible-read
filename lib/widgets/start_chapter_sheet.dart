@@ -94,7 +94,8 @@ class _StartChapterSheetState extends State<_StartChapterSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.gap20, AppSpacing.gap16,
+              AppSpacing.gap20, AppSpacing.gap16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -109,7 +110,7 @@ class _StartChapterSheetState extends State<_StartChapterSheet> {
                         fontSize: 24,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: AppSpacing.gap4),
                     Text(
                       'Pick the chapter day one begins with. Anything before '
                       'it is left out of the plan.',
@@ -157,7 +158,7 @@ class _StartChapterSheetState extends State<_StartChapterSheet> {
             },
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.gap12),
         Divider(height: 1, thickness: 1, color: appColors.border),
         Expanded(
           child: ListView(
@@ -175,8 +176,8 @@ class _StartChapterSheetState extends State<_StartChapterSheet> {
               if (wholeBookIsBefore) ...[
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 13,
-                    vertical: 11,
+                    horizontal: AppSpacing.gap12,
+                    vertical: AppSpacing.gap12,
                   ),
                   decoration: BoxDecoration(
                     color: appColors.accentSoft,
@@ -221,7 +222,8 @@ class _StartChapterSheetState extends State<_StartChapterSheet> {
             color: colorScheme.surfaceContainerLowest,
             border: Border(top: BorderSide(color: appColors.border)),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.gap20, AppSpacing.gap16,
+              AppSpacing.gap20, AppSpacing.gap16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

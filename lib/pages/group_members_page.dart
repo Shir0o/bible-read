@@ -14,6 +14,7 @@ import '../services/error_logger.dart';
 import '../services/nudge_service.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
+import '../widgets/app_bottom_sheet.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/nudge_sheet.dart';
 import 'edit_group_page.dart';
@@ -113,10 +114,10 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   Widget _card({required Widget child}) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         border: Border.all(color: colorScheme.outlineVariant, width: 0.5),
       ),
       child: child,
@@ -162,15 +163,14 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
               children: [
                 Icon(
                   Icons.menu_book_outlined,
-                  size: 15,
+                  size: AppSpacing.iconSm,
                   color: colorScheme.primary,
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: AppSpacing.gap4),
                 Text(
                   '$readCount read today',
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -207,7 +207,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
         canManage && !isMe && !(myRole == 'admin' && member.role != 'member');
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 11),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.gap12),
       child: Row(
         children: [
           _MemberAvatar(
@@ -232,7 +232,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 7),
+                    const SizedBox(width: AppSpacing.gap8),
                     RoleBadge(role: member.role),
                   ],
                 ),
@@ -280,7 +280,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.gap8),
             _card(
               child: Column(
                 children: [
@@ -288,7 +288,8 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                     if (i > 0)
                       Divider(height: 1, color: AppColors.of(context).border),
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.gap12),
                       child: Row(
                         children: [
                           _MemberAvatar(
@@ -366,112 +367,91 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   }
 
   void _openActionSheet(GroupMemberRole member, String myRole) {
-    showModalBottomSheet<void>(
+    showAppSheet<void>(
       context: context,
-      barrierColor: AppColors.of(context).scrim,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         final colorScheme = Theme.of(sheetContext).colorScheme;
         final theme = Theme.of(sheetContext);
-        return Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 48,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(16),
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  _MemberAvatar(
+                    name: member.name,
+                    photoUrl: member.photoUrl,
+                    size: 46,
+                    read: false,
+                  ),
+                  const SizedBox(width: AppSpacing.gap12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          member.name ?? 'Member',
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        Text(
+                          _roleLabel(member.role),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    _MemberAvatar(
-                      name: member.name,
-                      photoUrl: member.photoUrl,
-                      size: 46,
-                      read: false,
-                    ),
-                    const SizedBox(width: 13),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            member.name ?? 'Member',
-                            style: theme.textTheme.titleMedium,
-                          ),
-                          Text(
-                            _roleLabel(member.role),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _ActionRow(
+                icon: Icons.waving_hand_outlined,
+                label: 'Send a nudge',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _nudge(member);
+                },
+              ),
+              if (myRole == 'owner' && member.role == 'member')
                 _ActionRow(
-                  icon: Icons.waving_hand_outlined,
-                  label: 'Send a nudge',
+                  icon: Icons.shield_outlined,
+                  label: 'Make admin',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
-                    _nudge(member);
+                    _promote(member);
                   },
                 ),
-                if (myRole == 'owner' && member.role == 'member')
-                  _ActionRow(
-                    icon: Icons.shield_outlined,
-                    label: 'Make admin',
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      _promote(member);
-                    },
-                  ),
-                if (myRole == 'owner' && member.role == 'admin')
-                  _ActionRow(
-                    icon: Icons.remove_moderator_outlined,
-                    label: 'Remove admin role',
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      _demote(member);
-                    },
-                  ),
-                if (myRole == 'owner')
-                  _ActionRow(
-                    icon: Icons.workspace_premium_outlined,
-                    label: 'Transfer ownership',
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      _confirmTransfer(member);
-                    },
-                  ),
+              if (myRole == 'owner' && member.role == 'admin')
                 _ActionRow(
-                  icon: Icons.person_remove_outlined,
-                  label: 'Remove from group',
-                  danger: true,
+                  icon: Icons.remove_moderator_outlined,
+                  label: 'Remove admin role',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
-                    _confirmRemove(member);
+                    _demote(member);
                   },
                 ),
-              ],
-            ),
+              if (myRole == 'owner')
+                _ActionRow(
+                  icon: Icons.workspace_premium_outlined,
+                  label: 'Transfer ownership',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _confirmTransfer(member);
+                  },
+                ),
+              _ActionRow(
+                icon: Icons.person_remove_outlined,
+                label: 'Remove from group',
+                danger: true,
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _confirmRemove(member);
+                },
+              ),
+            ],
           ),
         );
       },
@@ -593,12 +573,12 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
       padding: const EdgeInsets.only(top: 20),
       child: InkWell(
         onTap: _openGroupSettings,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSpacing.rInset),
             border: Border.all(color: appColors.border),
           ),
           child: Row(
@@ -611,9 +591,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                   children: [
                     Text(
                       'Group settings',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: theme.textTheme.titleSmall,
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -667,7 +645,7 @@ class RoleBadge extends StatelessWidget {
         color: isOwner
             ? colorScheme.primaryContainer
             : colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(99),
+        borderRadius: BorderRadius.circular(AppSpacing.rPill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -680,12 +658,8 @@ class RoleBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             isOwner ? 'OWNER' : 'ADMIN',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
-              color: color,
-            ),
+            style:
+                Theme.of(context).textTheme.labelSmall?.copyWith(color: color),
           ),
         ],
       ),
@@ -705,15 +679,14 @@ class _NudgeChip extends StatelessWidget {
       onPressed: onTap,
       avatar: Icon(
         Icons.waving_hand_outlined,
-        size: 15,
+        size: AppSpacing.iconSm,
         color: colorScheme.primary,
       ),
       label: const Text('Nudge'),
-      labelStyle: TextStyle(
-        fontSize: 12.5,
-        fontWeight: FontWeight.w600,
-        color: colorScheme.primary,
-      ),
+      labelStyle: Theme.of(context)
+          .textTheme
+          .labelMedium
+          ?.copyWith(color: colorScheme.primary),
       visualDensity: VisualDensity.compact,
       side: BorderSide(color: colorScheme.outlineVariant),
       backgroundColor: colorScheme.surface,
@@ -742,27 +715,27 @@ class _ActionRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppSpacing.rInset),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.gap16, vertical: AppSpacing.gap16),
             child: Row(
               children: [
                 Icon(
                   icon,
-                  size: 19,
+                  size: AppSpacing.iconMd,
                   color: danger ? colorScheme.error : colorScheme.primary,
                 ),
-                const SizedBox(width: 13),
+                const SizedBox(width: AppSpacing.gap12),
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(color: color),
                 ),
               ],
             ),

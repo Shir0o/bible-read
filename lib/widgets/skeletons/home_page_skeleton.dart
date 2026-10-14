@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import '../skeleton.dart';
 
 /// Loading placeholder for [HomePage].
@@ -48,7 +49,7 @@ class HomePageSkeleton extends StatelessWidget {
               // Habit hero card.
               const Skeleton(width: double.infinity, height: 210, radius: 28),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: AppSpacing.gap32),
               // "Today's reading" section label + card.
               const Align(
                 alignment: Alignment.centerLeft,
@@ -57,7 +58,7 @@ class HomePageSkeleton extends StatelessWidget {
               const SizedBox(height: 12),
               const Skeleton(width: double.infinity, height: 150, radius: 24),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.gap8),
               // Catch-up banner.
               const Skeleton(width: double.infinity, height: 62, radius: 14),
 

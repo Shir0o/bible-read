@@ -6,6 +6,7 @@ import '../models/read_through.dart';
 import '../services/read_through_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/sub_header.dart';
+import '../widgets/sun_mark.dart';
 import 'add_read_through_page.dart';
 
 /// The user's whole history: how many times they have finished each scope, and
@@ -78,7 +79,7 @@ class _ReadThroughsPageState extends State<ReadThroughsPage> {
                           padding: const EdgeInsets.fromLTRB(20, 6, 20, 32),
                           children: [
                             _CountRow(counts: counts),
-                            const SizedBox(height: 26),
+                            const SizedBox(height: AppSpacing.gap24),
                             if (ordered.isEmpty)
                               const _EmptyState()
                             else ...[
@@ -129,7 +130,7 @@ class _CountRow extends StatelessWidget {
               accented: true,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.gap8),
           Expanded(
             child: _CountTile(
               value: counts.oldTestament,
@@ -139,7 +140,7 @@ class _CountRow extends StatelessWidget {
               )}',
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.gap8),
           Expanded(
             child: _CountTile(
               value: counts.newTestament,
@@ -175,7 +176,8 @@ class _CountTile extends StatelessWidget {
     final appColors = AppColors.of(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 16),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap12, vertical: AppSpacing.gap16),
       decoration: BoxDecoration(
         color: accented
             ? appColors.accentSoft
@@ -199,7 +201,7 @@ class _CountTile extends StatelessWidget {
                   : colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: AppSpacing.gap4),
           Text(
             label,
             style: textTheme.labelMedium?.copyWith(
@@ -208,7 +210,7 @@ class _CountTile extends StatelessWidget {
                   : colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: AppSpacing.gap4),
           Text(
             accented ? footnote.toUpperCase() : footnote,
             style: accented
@@ -245,7 +247,8 @@ class _ReadThroughTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.gap16, vertical: AppSpacing.gap16),
           decoration: BoxDecoration(
             color: isBible
                 ? appColors.accentSoft
@@ -260,7 +263,7 @@ class _ReadThroughTile extends StatelessWidget {
           child: Row(
             children: [
               _ScopeMark(scope: readThrough.scope),
-              const SizedBox(width: 13),
+              const SizedBox(width: AppSpacing.gap12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,8 +288,8 @@ class _ReadThroughTile extends StatelessWidget {
               if (isHandEntered) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.gap8, vertical: AppSpacing.gap4),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainer,
                     borderRadius: BorderRadius.circular(AppSpacing.rChip),
@@ -317,24 +320,7 @@ class _ScopeMark extends StatelessWidget {
     final appColors = AppColors.of(context);
 
     if (scope == ReadThroughScope.wholeBible) {
-      return Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: const Color(0xFF2A2438), width: 1.5),
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFE9A8), Color(0xFFFFC24D)],
-          ),
-        ),
-        child: const Icon(
-          Icons.check_rounded,
-          size: 19,
-          color: Color(0xFF2A2438),
-        ),
-      );
+      return const SunMark(size: 38, done: true, borderWidth: 1.5);
     }
 
     return Container(
@@ -403,8 +389,9 @@ class _AddRow extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_rounded, size: 19, color: colorScheme.primary),
-            const SizedBox(width: 9),
+            Icon(Icons.add_rounded,
+                size: AppSpacing.iconMd, color: colorScheme.primary),
+            const SizedBox(width: AppSpacing.gap8),
             Text(
               'Add a past read-through',
               style: Theme.of(context)
@@ -425,7 +412,7 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 28),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.gap32),
       child: Column(
         children: [
           Text(

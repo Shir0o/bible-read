@@ -1005,7 +1005,7 @@ class PlansHubState extends State<PlansHub> {
           // The enroll CTA sits at the top of the list, right under the
           // header, so it is never below the fold and no bottom-anchored
           // toast can cover it (ADR-0005).
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.gap8),
           _enrollButton(context),
           SkeletonLoader(
             loading: _loading,
@@ -1055,15 +1055,17 @@ class PlansHubState extends State<PlansHub> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 16, 4, 10),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gap4, AppSpacing.gap16, AppSpacing.gap4, AppSpacing.gap8),
       child: Row(
         children: [
-          Icon(icon, size: 17, color: colorScheme.onSurfaceVariant),
+          Icon(icon,
+              size: AppSpacing.iconSm, color: colorScheme.onSurfaceVariant),
           const SizedBox(width: 8),
           Text(
             title,
             style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
               letterSpacing: -0.3,
             ),
           ),
@@ -1093,7 +1095,7 @@ class PlansHubState extends State<PlansHub> {
             onTrackLabel: "You're on track",
             onTap: () => _continuePlan(row),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.gap12),
           Row(
             children: [
               Expanded(
@@ -1104,7 +1106,7 @@ class PlansHubState extends State<PlansHub> {
                   onTap: () => _continuePlan(row),
                 ),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: AppSpacing.gap8),
               _pinButton(
                 context,
                 pinned: pinned,
@@ -1112,7 +1114,7 @@ class PlansHubState extends State<PlansHub> {
                   _togglePin(row.pinKey);
                 },
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: AppSpacing.gap8),
               _moreMenu(
                 context,
                 items: [
@@ -1160,11 +1162,11 @@ class PlansHubState extends State<PlansHub> {
           ),
           if (pinned) _primaryOnHomeTag(context),
           if (row.readers.isNotEmpty) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.gap12),
             Row(
               children: [
                 MemberPresenceStack(members: row.readers, size: 26, max: 4),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppSpacing.gap12),
                 Expanded(
                   child: Text(
                     _groupPresenceText(row.readers),
@@ -1172,7 +1174,6 @@ class PlansHubState extends State<PlansHub> {
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
                         ),
                   ),
                 ),
@@ -1187,7 +1188,7 @@ class PlansHubState extends State<PlansHub> {
                 row.ownPace ? "You're on track" : 'In step with your group',
             onTap: () => _reviewGroup(row),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.gap12),
           Row(
             children: [
               Expanded(
@@ -1198,7 +1199,7 @@ class PlansHubState extends State<PlansHub> {
                   onTap: () => _reviewGroup(row),
                 ),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: AppSpacing.gap8),
               _pinButton(
                 context,
                 pinned: pinned,
@@ -1206,7 +1207,7 @@ class PlansHubState extends State<PlansHub> {
                   _togglePin(row.pinKey);
                 },
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: AppSpacing.gap8),
               _moreMenu(
                 context,
                 items: [
@@ -1256,12 +1257,11 @@ class PlansHubState extends State<PlansHub> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w500,
                   letterSpacing: -0.2,
                 ),
               ),
               if (subtitle.isNotEmpty) ...[
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSpacing.gap4),
                 Text(
                   subtitle,
                   maxLines: 2,
@@ -1275,7 +1275,7 @@ class PlansHubState extends State<PlansHub> {
           ),
         ),
         if (badge != null) ...[
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.gap12),
           badge,
         ],
       ],
@@ -1285,17 +1285,17 @@ class PlansHubState extends State<PlansHub> {
   Widget _primaryOnHomeTag(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.only(top: AppSpacing.gap8),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.push_pin, size: 13, color: colorScheme.primary),
-          const SizedBox(width: 5),
+          Icon(Icons.push_pin,
+              size: AppSpacing.iconSm, color: colorScheme.primary),
+          const SizedBox(width: AppSpacing.gap4),
           Text(
             'Primary on Home',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
                 ),
           ),
         ],
@@ -1333,7 +1333,7 @@ class PlansHubState extends State<PlansHub> {
         ),
         const SizedBox(height: 8),
         ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppSpacing.rSmall),
           child: LinearProgressIndicator(
             value: pct,
             minHeight: 7,
@@ -1356,14 +1356,15 @@ class PlansHubState extends State<PlansHub> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 28, 4, 10),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.gap4, AppSpacing.gap32,
+              AppSpacing.gap4, AppSpacing.gap8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Finished',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -1416,11 +1417,11 @@ class PlansHubState extends State<PlansHub> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.2),
         ),
@@ -1432,11 +1433,11 @@ class PlansHubState extends State<PlansHub> {
             height: 38,
             decoration: BoxDecoration(
               color: AppColors.of(context).primarySoft,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.rChip),
             ),
             child: Icon(icon, size: 20, color: colorScheme.primary),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1445,9 +1446,7 @@ class PlansHubState extends State<PlansHub> {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: theme.textTheme.titleSmall,
                 ),
                 const SizedBox(height: 1),
                 Text(
@@ -1489,14 +1488,15 @@ class PlansHubState extends State<PlansHub> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 28, 4, 10),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.gap4, AppSpacing.gap32,
+              AppSpacing.gap4, AppSpacing.gap8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Archived',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -1533,11 +1533,11 @@ class PlansHubState extends State<PlansHub> {
     final uid = widget.auth.currentUser?.uid;
     final isOwner = uid != null && uid == group.ownerUid;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.1),
         ),
@@ -1549,7 +1549,7 @@ class PlansHubState extends State<PlansHub> {
             height: 38,
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.rChip),
             ),
             child: Icon(
               Icons.group_outlined,
@@ -1557,7 +1557,7 @@ class PlansHubState extends State<PlansHub> {
               color: colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1566,9 +1566,7 @@ class PlansHubState extends State<PlansHub> {
                   group.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: theme.textTheme.titleSmall,
                 ),
                 const SizedBox(height: 1),
                 Text(
@@ -1604,11 +1602,11 @@ class PlansHubState extends State<PlansHub> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.1),
         ),
@@ -1620,7 +1618,7 @@ class PlansHubState extends State<PlansHub> {
             height: 38,
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.rChip),
             ),
             child: Icon(
               Icons.archive_outlined,
@@ -1628,7 +1626,7 @@ class PlansHubState extends State<PlansHub> {
               color: colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1637,9 +1635,7 @@ class PlansHubState extends State<PlansHub> {
                   row.plan.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: theme.textTheme.titleSmall,
                 ),
                 const SizedBox(height: 1),
                 Text(
@@ -1685,11 +1681,11 @@ class PlansHubState extends State<PlansHub> {
           // From the theme so the label keeps the app font; a bare TextStyle
           // here replaces the theme's and falls back to the system font.
           textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w700,
                 fontSize: 15,
               ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSpacing.rInset),
           ),
         ),
       ),
@@ -1727,7 +1723,7 @@ class PlansHubState extends State<PlansHub> {
           Icon(
             Icons.menu_book_outlined,
             size: 56,
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+            color: colorScheme.outline,
           ),
           const SizedBox(height: 16),
           Text(
@@ -1747,7 +1743,7 @@ class PlansHubState extends State<PlansHub> {
           ),
           const SizedBox(height: 24),
           _enrollButton(context),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.gap8),
           _trashShortcut(context),
           if (_archived.isNotEmpty || _archivedGroups.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -1777,11 +1773,10 @@ class PlansHubState extends State<PlansHub> {
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
           textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppSpacing.rInset),
           ),
         ),
       ),
@@ -1840,7 +1835,7 @@ class PlansHubState extends State<PlansHub> {
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppSpacing.rInset),
             border: Border.all(color: AppColors.of(context).border),
           ),
           child: Icon(
@@ -1866,7 +1861,7 @@ class PlansHubState extends State<PlansHub> {
       child: Material(
         color: background,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppSpacing.rInset),
           side: BorderSide(color: borderColor),
         ),
         clipBehavior: Clip.antiAlias,
@@ -1900,17 +1895,17 @@ class PlansHubState extends State<PlansHub> {
         return null;
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap8, vertical: AppSpacing.gap4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(99),
+        borderRadius: BorderRadius.circular(AppSpacing.rPill),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: color,
-              fontWeight: FontWeight.w700,
               letterSpacing: 0.2,
             ),
       ),
@@ -1941,7 +1936,7 @@ class _PlanCardShell extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
           color: pinned
               ? AppColors.of(context).primaryLine

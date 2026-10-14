@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../services/catch_up_engine.dart';
+import '../theme/app_theme.dart';
 
 /// Faithful port of the design prototype's `ScheduleScreen` body
 /// (`schedule.jsx`), used by `PlanDetailPage` for both group and personal plans.
@@ -261,17 +262,17 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
           ],
           _buildSummaryCard(context),
           if (showAnchor) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.gap16),
             widget.todayAnchorBuilder!(context),
           ],
           if (missedItems.isNotEmpty) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.gap16),
             widget.isGroup
                 ? _buildCatchUpTray(context, missedItems)
                 : _buildCatchUpNote(context, missedItems.length),
           ],
           if (widget.isGroup && status.inStep && status.doneCount > 0) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.gap16),
             _buildInStepCard(context),
           ],
           const SizedBox(height: 20),
@@ -303,7 +304,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
     final showJump = status.missedCount == 0 && status.resumeIndex >= 0;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: _cardDecoration(colorScheme),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,16 +322,14 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
           const SizedBox(height: 6),
           Text(
             _paceText(),
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+            style: theme.textTheme.titleLarge,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.gap12),
           Row(
             children: [
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppSpacing.rSmall),
                   child: LinearProgressIndicator(
                     value: pct.clamp(0.0, 1.0),
                     minHeight: 7,
@@ -341,20 +340,19 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.gap8),
               Text(
                 '${status.doneCount} of $total read',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
           if (total > 0) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.gap12),
             const Divider(height: 1),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.gap12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -363,9 +361,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                     '${_fmtDate(entries.first.date)} – '
                     '${_fmtDate(entries.last.date)}',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.8,
-                      ),
+                      color: colorScheme.outline,
                     ),
                   ),
                 ),
@@ -390,7 +386,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: _cardDecoration(colorScheme),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,7 +398,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: colorScheme.tertiaryContainer,
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(AppSpacing.rChip),
                 ),
                 child: Icon(
                   Icons.eco_outlined,
@@ -410,7 +406,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                   color: colorScheme.onTertiaryContainer,
                 ),
               ),
-              const SizedBox(width: 13),
+              const SizedBox(width: AppSpacing.gap12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,7 +446,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
 
     return Padding(
       key: ValueKey('catch-up-row-${entry.index}'),
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.gap12),
       child: Row(
         children: [
           SizedBox(
@@ -466,14 +462,12 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                 ),
                 Text(
                   '${entry.date.day}',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: theme.textTheme.titleLarge,
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,7 +481,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                 Text(
                   '${_monShort(entry.date)} ${entry.date.day}',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    color: colorScheme.outline,
                   ),
                 ),
               ],
@@ -516,7 +510,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
             height: 38,
             decoration: BoxDecoration(
               color: colorScheme.tertiaryContainer,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.rChip),
             ),
             child: Icon(
               Icons.eco_outlined,
@@ -524,7 +518,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
               color: colorScheme.onTertiaryContainer,
             ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -560,12 +554,13 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         border: Border.all(color: colorScheme.primary.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
-          Icon(Icons.check_circle, size: 22, color: colorScheme.primary),
+          Icon(Icons.check_circle,
+              size: AppSpacing.iconLg, color: colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -592,15 +587,13 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
         children: [
           Text(
             'Full schedule',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: theme.textTheme.titleMedium,
           ),
           if (!widget.readOnly)
             Text(
               'Tap a day to mark it',
               style: theme.textTheme.labelSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                color: colorScheme.outline,
               ),
             ),
         ],
@@ -666,7 +659,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
           Text(
             '${_months[date.month - 1]} ${date.year}'.toUpperCase(),
             style: theme.textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+              color: colorScheme.outline,
               letterSpacing: 0.6,
             ),
           ),
@@ -676,7 +669,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
             const SizedBox(width: 8),
             InkWell(
               onTap: () => _preserveScrollAnchor(() => onMarkMonth(date)),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppSpacing.rSmall),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Text(
@@ -713,7 +706,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
         : isMissed
             ? colorScheme.tertiary
             : isDone
-                ? colorScheme.onSurfaceVariant.withValues(alpha: 0.6)
+                ? colorScheme.outline
                 : colorScheme.onSurface;
 
     final bool isResume = i == widget.status.resumeIndex;
@@ -730,7 +723,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
       captionColor = colorScheme.tertiary;
     } else if (isDone) {
       caption = 'Read';
-      captionColor = colorScheme.onSurfaceVariant.withValues(alpha: 0.7);
+      captionColor = colorScheme.outline;
     }
 
     // The whole row is the tap target (the dot is a decorative indicator), so
@@ -738,7 +731,8 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
     final interactive = !widget.readOnly && !isDone;
 
     final inner = Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gap12, AppSpacing.gap8, AppSpacing.gap8, AppSpacing.gap8),
       child: Row(
         children: [
           SizedBox(
@@ -755,14 +749,13 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                 Text(
                   '${entry.date.day}',
                   style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
                     color: dateColor,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -771,9 +764,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                   entry.readings.join(', '),
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w500,
-                    color: isDone
-                        ? colorScheme.onSurfaceVariant.withValues(alpha: 0.6)
-                        : colorScheme.onSurface,
+                    color: isDone ? colorScheme.outline : colorScheme.onSurface,
                   ),
                 ),
                 if (caption != null) ...[
@@ -805,7 +796,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
         color: isHighlighted
             ? colorScheme.primaryContainer.withValues(alpha: 0.35)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         border: Border.all(
           color: isHighlighted
               ? colorScheme.primary.withValues(alpha: 0.25)
@@ -824,7 +815,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
 
   BoxDecoration _cardDecoration(ColorScheme colorScheme) => BoxDecoration(
         color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         border: Border.all(color: colorScheme.outlineVariant, width: 0.5),
       );
 }
@@ -856,7 +847,8 @@ class _StatusToggle extends StatelessWidget {
             shape: BoxShape.circle,
             color: colorScheme.primary,
           ),
-          child: Icon(Icons.check, size: 15, color: colorScheme.onPrimary),
+          child: Icon(Icons.check,
+              size: AppSpacing.iconSm, color: colorScheme.onPrimary),
         );
         break;
       case ReadingStatus.current:
@@ -881,7 +873,8 @@ class _StatusToggle extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.all(color: colorScheme.tertiary, width: 2),
           ),
-          child: Icon(Icons.add, size: 14, color: colorScheme.tertiary),
+          child: Icon(Icons.add,
+              size: AppSpacing.iconSm, color: colorScheme.tertiary),
         );
         break;
       case ReadingStatus.upcoming:
@@ -926,24 +919,25 @@ class _Chip extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     return Material(
       color: colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(AppSpacing.rPill),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppSpacing.rPill),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 13, color: colorScheme.onSurfaceVariant),
+                Icon(icon,
+                    size: AppSpacing.iconSm,
+                    color: colorScheme.onSurfaceVariant),
                 const SizedBox(width: 6),
               ],
               Text(
                 label,
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],

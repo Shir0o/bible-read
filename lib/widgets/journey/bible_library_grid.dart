@@ -68,10 +68,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
               children: [
                 Text(
                   'Bible Library',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
                 TextButton(
                   onPressed: () {
@@ -90,7 +87,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                     'See All',
                     style: TextStyle(
                       color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -154,11 +151,10 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                               children: [
                                 Text(
                                   'Overall Progress',
-                                  style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(fontWeight: FontWeight.w500),
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
@@ -168,20 +164,17 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                   children: [
                                     Text(
                                       overallPercentText,
-                                      style: TextStyle(
-                                        fontSize: 32,
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.onSurface,
-                                        height: 1.0,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .displaySmall
+                                          ?.copyWith(height: 1.0),
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
                                       'Done',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: colorScheme.onSurfaceVariant,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
                                     ),
                                   ],
                                 ),
@@ -193,20 +186,18 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                             children: [
                               Text(
                                 '$completedBooksCount',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.primary,
-                                  height: 1.0,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall
+                                    ?.copyWith(
+                                      color: colorScheme.primary,
+                                      height: 1.0,
+                                    ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'of $totalBooks Books',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
+                                style: Theme.of(context).textTheme.bodyMedium,
                               ),
                             ],
                           ),
@@ -219,7 +210,8 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(
+                              8), // token-exempt: capsule radius = half of 16px bar height
                         ),
                         clipBehavior: Clip.hardEdge,
                         child: Stack(
@@ -229,7 +221,8 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(
+                                      8), // token-exempt: capsule radius = half of 16px bar height
                                 ),
                               ),
                             ),
@@ -264,7 +257,8 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainer,
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius:
+                                    BorderRadius.circular(AppSpacing.rInset),
                                 border: Border.all(
                                   color: colorScheme.outlineVariant.withValues(
                                     alpha: 0.2,
@@ -294,23 +288,19 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                       children: [
                                         Text(
                                           'OLD TESTAMENT',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 0.5,
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall
+                                              ?.copyWith(letterSpacing: 0.5),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
                                           '$otCompleted/39',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: colorScheme.onSurface,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall,
                                         ),
                                       ],
                                     ),
@@ -325,7 +315,8 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainer,
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius:
+                                    BorderRadius.circular(AppSpacing.rInset),
                                 border: Border.all(
                                   color: colorScheme.outlineVariant.withValues(
                                     alpha: 0.2,
@@ -355,23 +346,19 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                       children: [
                                         Text(
                                           'NEW TESTAMENT',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 0.5,
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall
+                                              ?.copyWith(letterSpacing: 0.5),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
                                           '$ntCompleted/27',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: colorScheme.onSurface,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall,
                                         ),
                                       ],
                                     ),

@@ -126,7 +126,7 @@ class MonthStreakCalendar extends StatelessWidget {
                   _monthLabel,
                   style: AppTextStyles.body(
                     context,
-                  ).copyWith(fontWeight: FontWeight.bold),
+                  ).copyWith(fontWeight: FontWeight.w700),
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -154,9 +154,14 @@ class MonthStreakCalendar extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               child: Text(
                                 d,
-                                style: AppTextStyles.body(
-                                  context,
-                                ).copyWith(fontSize: 10),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                    ),
                               ),
                             ),
                           )

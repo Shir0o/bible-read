@@ -10,14 +10,13 @@ class CommonStyles {
   static BoxDecoration backgroundDecoration(ColorScheme colorScheme) =>
       BoxDecoration(color: colorScheme.surface);
 
-  static TextStyle appBarTitleText(ColorScheme colorScheme) =>
-      AppTheme.textTheme.titleLarge!.copyWith(
-        fontFamily: AppTheme.fontSerif,
-        fontWeight: FontWeight.w500,
-        fontSize: 24,
-        letterSpacing: -0.2,
-        color: colorScheme.onSurface,
-      );
+  static TextStyle appBarTitleText(BuildContext context) =>
+      Theme.of(context).textTheme.titleLarge!.copyWith(
+            fontFamily: AppTheme.fontSerif,
+            fontSize: 24,
+            letterSpacing: -0.2,
+            color: Theme.of(context).colorScheme.onSurface,
+          );
 
   /// Builds a card with the app's standard padding and rounded corners.
   ///
@@ -126,7 +125,7 @@ class CommonStyles {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     return AppBar(
-      title: Text(title, style: appBarTitleText(colorScheme)),
+      title: Text(title, style: appBarTitleText(context)),
       backgroundColor: colorScheme.surface,
       actions: actions,
       leading: leading,
@@ -165,7 +164,6 @@ class AppTextStyles {
   static TextStyle topBarTitle(BuildContext context) =>
       Theme.of(context).textTheme.titleLarge!.copyWith(
             fontSize: 27,
-            fontWeight: FontWeight.w500,
             height: 1.05,
             letterSpacing: -0.27,
           );

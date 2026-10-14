@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/catch_up_engine.dart';
+import '../theme/app_theme.dart';
 
 /// Gentle, tappable behind/on-track status row driven by a [CatchUpStatus].
 ///
@@ -62,7 +63,7 @@ class CatchUpStatusRow extends StatelessWidget {
       height: 34,
       decoration: BoxDecoration(
         color: isBehind ? colorScheme.tertiary : colorScheme.surface,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppSpacing.rChip),
         border: isBehind
             ? null
             : Border.all(
@@ -72,7 +73,7 @@ class CatchUpStatusRow extends StatelessWidget {
       alignment: Alignment.center,
       child: Icon(
         isBehind ? Icons.eco_outlined : Icons.calendar_today_outlined,
-        size: 17,
+        size: AppSpacing.iconSm,
         color: isBehind ? colorScheme.onTertiary : colorScheme.primary,
       ),
     );
@@ -81,7 +82,7 @@ class CatchUpStatusRow extends StatelessWidget {
       color: isBehind
           ? colorScheme.tertiaryContainer.withValues(alpha: 0.35)
           : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppSpacing.rInset),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -100,7 +101,6 @@ class CatchUpStatusRow extends StatelessWidget {
                       title,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: accent,
-                        fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -121,9 +121,7 @@ class CatchUpStatusRow extends StatelessWidget {
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: isBehind
-                    ? colorScheme.tertiary
-                    : colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                color: isBehind ? colorScheme.tertiary : colorScheme.outline,
               ),
             ],
           ),

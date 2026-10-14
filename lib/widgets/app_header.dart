@@ -55,8 +55,7 @@ class AppHeader extends StatelessWidget {
                 Text(
                   eyebrow.toUpperCase(),
                   style: AppTextStyles.caption(context).copyWith(
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w700,
+                    color: colorScheme.outline,
                   ),
                 ),
                 const SizedBox(height: 4),

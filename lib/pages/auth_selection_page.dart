@@ -145,7 +145,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                 'Join the Circle',
                 textAlign: TextAlign.center,
                 style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   height: 1.1,
                   color: colorScheme.onSurface,
                   shadows: [
@@ -166,7 +166,6 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                   'Sign up to track your progress and connect with your reading group.',
                   textAlign: TextAlign.center,
                   style: textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w400,
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -210,9 +209,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                             const SizedBox(width: 12),
                             Text(
                               'Continue with Google',
-                              style: textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: textTheme.titleSmall,
                             ),
                           ],
                         ),
@@ -254,9 +251,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                       const SizedBox(width: 12),
                       Text(
                         'Sign up with email',
-                        style: textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: textTheme.titleSmall,
                       ),
                     ],
                   ),
@@ -286,7 +281,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                         ),
                       );
                     },
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(AppSpacing.rSmall),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8.0,

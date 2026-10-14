@@ -75,7 +75,7 @@ class _Card extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
         child: Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(AppSpacing.cardPadding),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -95,7 +95,7 @@ class _Card extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: AppSpacing.gap12),
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -107,14 +107,14 @@ class _Card extends StatelessWidget {
                         accented: true,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSpacing.gap8),
                     Expanded(
                       child: _Count(
                         value: counts.oldTestament,
                         label: 'Old Testament',
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSpacing.gap8),
                     Expanded(
                       child: _Count(
                         value: counts.newTestament,
@@ -159,7 +159,8 @@ class _Count extends StatelessWidget {
     final appColors = AppColors.of(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap12, vertical: AppSpacing.gap12),
       decoration: BoxDecoration(
         color:
             accented ? appColors.accentSoft : colorScheme.surfaceContainerLow,
@@ -182,7 +183,7 @@ class _Count extends StatelessWidget {
                   : colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: AppSpacing.gap4),
           // One word per line, shrunk rather than broken mid-word when a
           // large text size makes "Testament" wider than the tile.
           FittedBox(

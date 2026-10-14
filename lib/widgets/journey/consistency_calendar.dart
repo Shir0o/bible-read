@@ -140,10 +140,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
           if (widget.showTitle) ...[
             Text(
               'Showing up',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
           ],
@@ -168,10 +165,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                     children: [
                       Text(
                         '${_monthName(_currentMonth.month)} ${_currentMonth.year}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                       Row(
                         children: [
@@ -249,11 +243,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: TextStyle(
-            color: colorScheme.onSurfaceVariant,
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-          ),
+          style: Theme.of(context).textTheme.labelMedium,
         ),
       ],
     );
@@ -272,11 +262,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                 child: Center(
                   child: Text(
                     day,
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ),
               );
@@ -336,10 +322,9 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
           child: Center(
             child: Text(
               '$dayNum',
-              style: TextStyle(
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                fontSize: 12,
-              ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                  ),
             ),
           ),
         ),
@@ -375,16 +360,16 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
               child: Center(
                 child: Text(
                   '$i',
-                  style: TextStyle(
-                    color: isRead
-                        ? colorScheme.onPrimary
-                        : (isToday
-                            ? colorScheme.primary
-                            : colorScheme.onSurface),
-                    fontSize: 12,
-                    fontWeight:
-                        isRead || isToday ? FontWeight.bold : FontWeight.normal,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: isRead
+                            ? colorScheme.onPrimary
+                            : (isToday
+                                ? colorScheme.primary
+                                : colorScheme.onSurface),
+                        fontWeight: isRead || isToday
+                            ? FontWeight.w700
+                            : FontWeight.w400,
+                      ),
                 ),
               ),
             ),
@@ -404,10 +389,10 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
             child: Center(
               child: Text(
                 '$i',
-                style: TextStyle(
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                  fontSize: 12,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                    ),
               ),
             ),
           ),
@@ -426,11 +411,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
             child: Center(
               child: Text(
                 day,
-                style: TextStyle(
-                  color: colorScheme.onSurfaceVariant,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.labelMedium,
               ),
             ),
           );

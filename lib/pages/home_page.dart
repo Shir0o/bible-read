@@ -296,9 +296,8 @@ class _HomePageState extends State<HomePage>
 
   void _watchGroupsAndCommunity(String uid) {
     _groupMembershipSub?.cancel();
-    _groupMembershipSub = widget.groupService
-        .groupsForUser(uid, includeFinished: false)
-        .listen(
+    _groupMembershipSub =
+        widget.groupService.groupsForUser(uid, includeFinished: false).listen(
       (groups) {
         for (final subscription in _groupTriggerSubs) {
           subscription.cancel();
@@ -1503,8 +1502,7 @@ class _HomePageState extends State<HomePage>
                 Text(
                   eyebrow,
                   style: AppTextStyles.caption(context).copyWith(
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w700,
+                    color: colorScheme.outline,
                     letterSpacing: 1.4,
                   ),
                 ),
@@ -1522,7 +1520,7 @@ class _HomePageState extends State<HomePage>
             mainAxisSize: MainAxisSize.min,
             children: [
               SunMark(size: 34, done: _readToday, onTap: _openCheckInPage),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.gap12),
               Semantics(
                 button: true,
                 label: 'Open menu',
@@ -1551,11 +1549,10 @@ class _HomePageState extends State<HomePage>
                     child: user?.photoURL == null
                         ? Text(
                             _userInitial(user),
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.primary,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(color: colorScheme.primary),
                           )
                         : null,
                   ),
@@ -1720,7 +1717,6 @@ class _HomePageState extends State<HomePage>
               'Today’s reading',
               style: theme.textTheme.titleSmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
               ),
             ),
             // Plan management moved to the Path tab (#808): with a single
@@ -1748,7 +1744,7 @@ class _HomePageState extends State<HomePage>
           primary.isGroup
               ? _buildGroupReadingCard(context, primary)
               : _buildPersonalReadingCard(context, primary),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.gap12),
           CatchUpStatusRow(
             status: primary.status,
             // A reader on their own pace overlay is on track with their own
@@ -1763,7 +1759,7 @@ class _HomePageState extends State<HomePage>
 
         // Other active plans/groups, folded into compact rows.
         for (final it in others) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.gap12),
           _buildPlanMiniRow(context, it),
         ],
       ],
@@ -1780,7 +1776,8 @@ class _HomePageState extends State<HomePage>
       backgroundColor: colorScheme.surfaceContainerLow,
       foregroundColor: colorScheme.onSurface,
       side: BorderSide(color: AppColors.of(context).borderStrong),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.rButton)),
     );
   }
 
@@ -1794,14 +1791,14 @@ class _HomePageState extends State<HomePage>
       children: [
         Icon(
           Icons.wb_sunny_outlined,
-          size: 13,
-          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+          size: AppSpacing.iconSm,
+          color: colorScheme.outline,
         ),
         const SizedBox(width: 6),
         Text(
           'Also counts as showing up today',
           style: AppTextStyles.caption(context).copyWith(
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+            color: colorScheme.outline,
           ),
         ),
       ],
@@ -1826,14 +1823,14 @@ class _HomePageState extends State<HomePage>
             color: colorScheme.primary,
           ),
           alignment: Alignment.center,
-          child: Icon(Icons.check, size: 14, color: colorScheme.onPrimary),
+          child: Icon(Icons.check,
+              size: AppSpacing.iconSm, color: colorScheme.onPrimary),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppSpacing.gap12),
         Text(
           label,
           style: theme.textTheme.labelLarge?.copyWith(
             color: colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -1869,7 +1866,7 @@ class _HomePageState extends State<HomePage>
             children: [
               Icon(
                 Icons.explore_outlined,
-                size: 14,
+                size: AppSpacing.iconSm,
                 color: colorScheme.primary,
               ),
               const SizedBox(width: 6),
@@ -1880,7 +1877,6 @@ class _HomePageState extends State<HomePage>
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -1888,17 +1884,16 @@ class _HomePageState extends State<HomePage>
                 Text(
                   '${status.doneCount} of ${status.total} read',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                    color: colorScheme.outline,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.gap8),
           Text(
             currentRef,
             style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w500,
               color: colorScheme.onSurface,
             ),
           ),
@@ -1965,7 +1960,8 @@ class _HomePageState extends State<HomePage>
         children: [
           Row(
             children: [
-              Icon(Icons.group_outlined, size: 14, color: colorScheme.primary),
+              Icon(Icons.group_outlined,
+                  size: AppSpacing.iconSm, color: colorScheme.primary),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -1974,26 +1970,24 @@ class _HomePageState extends State<HomePage>
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.gap8),
           Text(
             refText.isEmpty ? 'Rest day' : refText,
             style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w500,
               color: colorScheme.onSurface,
             ),
           ),
           if (readers.isNotEmpty) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.gap12),
             Row(
               children: [
                 MemberPresenceStack(members: presenceMembers, size: 24, max: 4),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppSpacing.gap12),
                 Expanded(
                   child: Text(
                     _groupPresenceLabel(readers),
@@ -2001,7 +1995,6 @@ class _HomePageState extends State<HomePage>
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -2027,7 +2020,7 @@ class _HomePageState extends State<HomePage>
                         color: colorScheme.primary.withValues(alpha: 0.4),
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(AppSpacing.rButton),
                       ),
                     ),
                   )
@@ -2082,7 +2075,8 @@ class _HomePageState extends State<HomePage>
         children: [
           Row(
             children: [
-              Icon(Icons.eco_outlined, size: 14, color: colorScheme.tertiary),
+              Icon(Icons.eco_outlined,
+                  size: AppSpacing.iconSm, color: colorScheme.tertiary),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -2091,7 +2085,6 @@ class _HomePageState extends State<HomePage>
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: colorScheme.tertiary,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -2099,17 +2092,16 @@ class _HomePageState extends State<HomePage>
                 Text(
                   'ended $endedLabel',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                    color: colorScheme.outline,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.gap8),
           Text(
             item.title,
             style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w500,
               color: colorScheme.onSurface,
             ),
           ),
@@ -2123,12 +2115,12 @@ class _HomePageState extends State<HomePage>
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.gap12),
           Row(
             children: [
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppSpacing.rSmall),
                   child: LinearProgressIndicator(
                     value: pct,
                     minHeight: 7,
@@ -2139,7 +2131,7 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.gap8),
               Text(
                 '${status.doneCount}/${status.total}',
                 style: theme.textTheme.labelSmall?.copyWith(
@@ -2166,19 +2158,20 @@ class _HomePageState extends State<HomePage>
                     ),
                     style: FilledButton.styleFrom(
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(AppSpacing.rButton),
                       ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: AppSpacing.gap8),
               Expanded(
                 child: SizedBox(
                   height: 48,
                   child: OutlinedButton.icon(
                     onPressed: () => _adjustPace(item),
-                    icon: const Icon(Icons.speed_outlined, size: 17),
+                    icon: const Icon(Icons.speed_outlined,
+                        size: AppSpacing.iconSm),
                     label: const Text(
                       'Adjust pace',
                       maxLines: 1,
@@ -2193,7 +2186,7 @@ class _HomePageState extends State<HomePage>
                         ),
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(AppSpacing.rButton),
                       ),
                     ),
                   ),
@@ -2235,7 +2228,7 @@ class _HomePageState extends State<HomePage>
     return Material(
       color: colorScheme.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         side: BorderSide(
           color: colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
@@ -2252,7 +2245,7 @@ class _HomePageState extends State<HomePage>
                 height: 36,
                 decoration: BoxDecoration(
                   color: tileColor,
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(AppSpacing.rChip),
                 ),
                 alignment: Alignment.center,
                 child: Icon(icon, size: 18, color: iconColor),
@@ -2269,7 +2262,6 @@ class _HomePageState extends State<HomePage>
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 1),
@@ -2290,7 +2282,7 @@ class _HomePageState extends State<HomePage>
               Icon(
                 Icons.chevron_right_rounded,
                 size: 18,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                color: colorScheme.outline,
               ),
             ],
           ),
@@ -2496,7 +2488,7 @@ class _HomePageState extends State<HomePage>
       child: InkWell(
         onTap: () => widget.onOpenJourney?.call(),
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(AppSpacing.cardPadding),
           child: Row(
             children: [
               Container(
@@ -2504,7 +2496,7 @@ class _HomePageState extends State<HomePage>
                 height: 44,
                 decoration: BoxDecoration(
                   color: AppColors.of(context).primarySoft,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(AppSpacing.rInset),
                 ),
                 alignment: Alignment.center,
                 child: Icon(
@@ -2513,7 +2505,7 @@ class _HomePageState extends State<HomePage>
                   color: colorScheme.primary,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: AppSpacing.gap12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2523,7 +2515,6 @@ class _HomePageState extends State<HomePage>
                       'Start a reading plan',
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -2540,7 +2531,7 @@ class _HomePageState extends State<HomePage>
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                color: colorScheme.outline,
               ),
             ],
           ),
@@ -2588,7 +2579,7 @@ class _HomePageState extends State<HomePage>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -2609,7 +2600,6 @@ class _HomePageState extends State<HomePage>
                     color: _reflectionShared
                         ? colorScheme.primary
                         : colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -2625,7 +2615,7 @@ class _HomePageState extends State<HomePage>
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.gap8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2634,15 +2624,12 @@ class _HomePageState extends State<HomePage>
                 size: 20,
                 color: colorScheme.primary.withValues(alpha: 0.5),
               ),
-              const SizedBox(width: 11),
+              const SizedBox(width: AppSpacing.gap12),
               Expanded(
                 child: Text(
                   text,
-                  style: TextStyle(
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     fontFamily: AppTheme.fontSerif,
-                    fontSize: 16.5,
-                    height: 1.5,
-                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -2667,7 +2654,7 @@ class _HomePageState extends State<HomePage>
       child: InkWell(
         onTap: () => _openReflectSheet(context, initialText: null),
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(AppSpacing.cardPadding),
           child: Row(
             children: [
               Container(
@@ -2675,16 +2662,16 @@ class _HomePageState extends State<HomePage>
                 height: 44,
                 decoration: BoxDecoration(
                   color: AppColors.of(context).accentSoft,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(AppSpacing.rInset),
                 ),
                 alignment: Alignment.center,
                 child: Icon(
                   Icons.edit_note_rounded,
-                  size: 22,
+                  size: AppSpacing.iconLg,
                   color: theme.colorScheme.tertiary,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: AppSpacing.gap12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2694,7 +2681,6 @@ class _HomePageState extends State<HomePage>
                       'Take a moment',
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -2710,7 +2696,7 @@ class _HomePageState extends State<HomePage>
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                color: colorScheme.outline,
               ),
             ],
           ),
@@ -2768,7 +2754,7 @@ class _HomePageState extends State<HomePage>
     return Material(
       color: colorScheme.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
         side: BorderSide(color: AppColors.of(context).border),
       ),
       clipBehavior: Clip.antiAlias,
@@ -2801,7 +2787,6 @@ class _HomePageState extends State<HomePage>
                       'Here $_totalReadDays day${_totalReadDays == 1 ? '' : 's'} this season',
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -2817,7 +2802,7 @@ class _HomePageState extends State<HomePage>
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                color: colorScheme.outline,
               ),
             ],
           ),
@@ -2855,11 +2840,10 @@ class _HomePageState extends State<HomePage>
         const SizedBox(height: 6),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 9.5,
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-          ),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: colorScheme.outline,
+                letterSpacing: 0,
+              ),
         ),
       ],
     );
@@ -2900,7 +2884,6 @@ class _HomePageState extends State<HomePage>
                 'Your circle',
                 style: theme.textTheme.titleSmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
               TextButton(
@@ -2919,14 +2902,14 @@ class _HomePageState extends State<HomePage>
         Material(
           color: colorScheme.surfaceContainerLowest,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppSpacing.rCard),
             side: BorderSide(color: AppColors.of(context).border),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: widget.onOpenCommunity,
             child: Padding(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(AppSpacing.cardPadding),
               child: Row(
                 children: [
                   MemberPresenceStack(
@@ -2943,7 +2926,7 @@ class _HomePageState extends State<HomePage>
                     max: 5,
                     showDoneBadge: false,
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: AppSpacing.gap12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2953,7 +2936,6 @@ class _HomePageState extends State<HomePage>
                           '${readers.length} of $_communityTotal read today',
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -2971,7 +2953,7 @@ class _HomePageState extends State<HomePage>
                   Icon(
                     Icons.chevron_right_rounded,
                     size: 20,
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    color: colorScheme.outline,
                   ),
                 ],
               ),

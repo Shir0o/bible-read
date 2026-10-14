@@ -376,7 +376,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _sectionTitle(context, 'Group Settings'),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.gap8),
                     TextField(
                       key: const Key('group-settings-name'),
                       controller: _nameController,
@@ -391,12 +391,12 @@ class _EditGroupPageState extends State<EditGroupPage> {
                     if (_isOwner) ...[
                       const SizedBox(height: 24),
                       _sectionTitle(context, 'Schedule'),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: AppSpacing.gap8),
                       _rescheduleTile(context),
                     ],
-                    const SizedBox(height: 28),
+                    const SizedBox(height: AppSpacing.gap32),
                     _sectionTitle(context, 'Manage group'),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.gap8),
                     if (_isOwner) ...[
                       _lifecycleButton(
                         context,
@@ -445,7 +445,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
       title,
       style: theme.textTheme.titleMedium?.copyWith(
         color: theme.colorScheme.primary,
-        fontWeight: FontWeight.w600,
         letterSpacing: -0.2,
       ),
     );
@@ -461,7 +460,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
       ),
       child: Row(
         children: [
@@ -505,13 +504,13 @@ class _EditGroupPageState extends State<EditGroupPage> {
     final appColors = AppColors.of(context);
     return InkWell(
       onTap: _openReschedule,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppSpacing.rInset),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: colorScheme.surface,
           border: Border.all(color: appColors.border),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppSpacing.rInset),
         ),
         child: Row(
           children: [
@@ -523,11 +522,9 @@ class _EditGroupPageState extends State<EditGroupPage> {
                 children: [
                   Text(
                     'Reschedule',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: theme.textTheme.titleMedium,
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: AppSpacing.gap4),
                   Text(
                     'Move the dates for every member',
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -563,7 +560,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
           side: BorderSide(color: color.withValues(alpha: 0.3)),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSpacing.rButton),
           ),
         ),
       ),

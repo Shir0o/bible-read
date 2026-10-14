@@ -78,7 +78,7 @@ class WeekStreakCalendar extends StatelessWidget {
                 'Week of $_weekLabel',
                 style: AppTextStyles.body(
                   context,
-                ).copyWith(fontWeight: FontWeight.bold),
+                ).copyWith(fontWeight: FontWeight.w700),
               ),
               if (showNavigation)
                 IconButton(
@@ -110,9 +110,12 @@ class WeekStreakCalendar extends StatelessWidget {
                       children: [
                         Text(
                           days[i],
-                          style: AppTextStyles.body(
-                            context,
-                          ).copyWith(fontSize: 10),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                         ),
                         const SizedBox(height: 4),
                         Tooltip(

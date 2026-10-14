@@ -84,7 +84,6 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                   style: TextButton.styleFrom(
                     foregroundColor: colorScheme.primary,
                     textStyle: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
                   ),
@@ -127,8 +126,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                                 Icon(
                                   Icons.notifications_none_outlined,
                                   size: 64,
-                                  color: colorScheme.onSurfaceVariant
-                                      .withValues(alpha: 0.5),
+                                  color: colorScheme.outline,
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
@@ -153,7 +151,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                                 auth: widget.auth,
                                 vibrationService: widget.vibrationService,
                               ),
-                              const SizedBox(height: 9),
+                              const SizedBox(height: AppSpacing.gap8),
                             ],
                           ],
                         );
@@ -274,7 +272,7 @@ class _NotificationItemState extends State<_NotificationItem> {
     return Material(
       color: isUnread ? AppColors.of(context).primarySoft : colorScheme.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         side: BorderSide(
           color: isUnread
               ? AppColors.of(context).primaryLine
@@ -285,24 +283,22 @@ class _NotificationItemState extends State<_NotificationItem> {
       child: InkWell(
         onTap: () => _handleTap(context),
         child: Padding(
-          padding: const EdgeInsets.all(15),
+          padding: const EdgeInsets.all(AppSpacing.gap16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _buildAvatar(context),
-              const SizedBox(width: 13),
+              const SizedBox(width: AppSpacing.gap12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildMessage(context),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: AppSpacing.gap4),
                     Text(
                       _timeAgo(widget.notification.timestamp),
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.7,
-                        ),
+                        color: colorScheme.outline,
                       ),
                     ),
                   ],
@@ -395,7 +391,7 @@ class _NotificationItemState extends State<_NotificationItem> {
     if (name == null || name.isEmpty) return const Icon(Icons.person, size: 20);
     return Text(
       name[0].toUpperCase(),
-      style: const TextStyle(fontWeight: FontWeight.bold),
+      style: const TextStyle(fontWeight: FontWeight.w700),
     );
   }
 
@@ -493,7 +489,7 @@ class _NotificationItemState extends State<_NotificationItem> {
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     final boldStyle = TextStyle(
-      fontWeight: FontWeight.bold,
+      fontWeight: FontWeight.w700,
       color: colorScheme.onSurface,
     );
 

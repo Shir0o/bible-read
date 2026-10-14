@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 
 enum _RefreshStatus { idle, loading, success, error }
 
@@ -217,10 +216,12 @@ class _StatusRefreshIndicatorState extends State<StatusRefreshIndicator>
                                     opacity: controller.value.clamp(0.0, 1.0),
                                     child: Text(
                                       _getStatusText(controller),
-                                      style: AppTheme.textTheme.bodyMedium
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
                                           ?.copyWith(
                                         color: colorScheme.onSurface,
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.w700,
                                         shadows: [
                                           Shadow(
                                             offset: const Offset(0, 1),

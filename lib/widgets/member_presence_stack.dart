@@ -66,7 +66,7 @@ class MemberPresenceStack extends StatelessWidget {
                   '+$remainder',
                   style: TextStyle(
                     fontSize: size * 0.31,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -104,7 +104,7 @@ class MemberPresenceStack extends StatelessWidget {
                     member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
                     style: TextStyle(
                       fontSize: size * 0.375,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),

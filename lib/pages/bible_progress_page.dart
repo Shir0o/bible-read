@@ -397,7 +397,6 @@ class BibleProgressPageState extends State<BibleProgressPage> {
                               child: Text(
                                 entry.key.toUpperCase(),
                                 style: textTheme.labelSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
                                   letterSpacing: 1.0,
                                   color: colorScheme.onSurfaceVariant,
                                 ),
@@ -454,9 +453,7 @@ class BibleProgressPageState extends State<BibleProgressPage> {
                         'Read in your own Bible — mark books as you go.',
                         textAlign: TextAlign.center,
                         style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant.withValues(
-                            alpha: 0.7,
-                          ),
+                          color: colorScheme.outline,
                           height: 1.5,
                         ),
                       ),
@@ -518,7 +515,7 @@ class _BookGridItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
         // An earlier lap gets its border painted dashed on top instead.
         border: readInEarlierLap
             ? null
@@ -538,7 +535,7 @@ class _BookGridItem extends StatelessWidget {
                     alpha: readInEarlierLap ? 0.55 : 0.7,
                   ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSpacing.gap8),
           Text(
             book,
             maxLines: 1,
@@ -568,7 +565,7 @@ class _BookGridItem extends StatelessWidget {
         message: '$book ($status)',
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppSpacing.rInset),
           child: Semantics(
             label: '$book, $status',
             button: true,
@@ -601,7 +598,8 @@ class _LapBanner extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.gap20, AppSpacing.gap16,
+            AppSpacing.gap20, AppSpacing.gap20),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -655,7 +653,8 @@ class _LapBanner extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                  8), // token-exempt: capsule radius = half of 16px bar height
               child: LinearProgressIndicator(
                 value: progress.clamp(0.0, 1.0),
                 minHeight: 16,
@@ -684,13 +683,14 @@ class _LapLegend extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             swatch,
-            const SizedBox(width: 7),
+            const SizedBox(width: AppSpacing.gap8),
             Text(label, style: textTheme.bodySmall),
           ],
         );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gap16, AppSpacing.gap16, AppSpacing.gap16, 0),
       child: Row(
         children: [
           key(
@@ -699,7 +699,8 @@ class _LapLegend extends StatelessWidget {
               height: 13,
               decoration: BoxDecoration(
                 color: appColors.primarySoft,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(
+                    4), // token-exempt: legend swatch radius matches DashedRoundedBorderPainter
                 border: Border.all(color: appColors.primaryLine),
               ),
             ),
@@ -719,7 +720,8 @@ class _LapLegend extends StatelessWidget {
                 height: 13,
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainer,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(
+                      4), // token-exempt: legend swatch radius matches DashedRoundedBorderPainter
                 ),
               ),
             ),

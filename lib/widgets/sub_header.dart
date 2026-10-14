@@ -23,7 +23,8 @@ class SubHeader extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.gap12, AppSpacing.gap12,
+          AppSpacing.gap12, AppSpacing.gap8),
       child: Row(
         children: [
           if (showBack && onBack != null)
@@ -48,7 +49,6 @@ class SubHeader extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontFamily: AppTheme.fontSerif,
-                    fontWeight: FontWeight.w500,
                     fontSize: 24,
                     letterSpacing: -0.2,
                     color: colorScheme.onSurface,
