@@ -239,9 +239,12 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                             Text(
                               'An owner will approve your request before '
                               "you're in.",
-                              style: AppTextStyles.caption(context).copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
                             ),
                           ],
                         ],

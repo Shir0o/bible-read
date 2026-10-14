@@ -129,7 +129,7 @@ void main() {
     expect(find.text('Manage'), findsNothing);
   });
 
-  testWidgets('filter chips have shrinkWrap and centered label',
+  testWidgets('filter chips have a 48px target and centered label',
       (tester) async {
     await firestore.collection('groups').doc('g1').set({
       'name': 'My Group',
@@ -152,7 +152,7 @@ void main() {
     final everyoneChipFinder = find.widgetWithText(FilterChip, 'Everyone');
     expect(everyoneChipFinder, findsOneWidget);
     final filterChip = tester.widget<FilterChip>(everyoneChipFinder);
-    expect(filterChip.materialTapTargetSize, MaterialTapTargetSize.shrinkWrap);
+    expect(filterChip.materialTapTargetSize, MaterialTapTargetSize.padded);
     expect(filterChip.padding, EdgeInsets.zero);
 
     final chipBox = tester.renderObject<RenderBox>(everyoneChipFinder);

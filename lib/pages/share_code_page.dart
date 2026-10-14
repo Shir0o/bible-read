@@ -244,9 +244,9 @@ class _ShareCodePageState extends State<ShareCodePage> {
         const SizedBox(height: 8),
         Text(
           'The old code stops working.',
-          style: AppTextStyles.caption(context).copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
           textAlign: TextAlign.center,
         ),
       ],

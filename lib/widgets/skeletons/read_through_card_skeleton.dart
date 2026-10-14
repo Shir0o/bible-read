@@ -15,7 +15,7 @@ class ReadThroughCardSkeleton extends StatelessWidget {
     final appColors = AppColors.of(context);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: AppSpacing.horizontal,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.cardPadding),
         decoration: BoxDecoration(

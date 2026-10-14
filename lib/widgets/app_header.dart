@@ -7,6 +7,7 @@ import '../models/app_notification.dart';
 import '../pages/notification_center_page.dart';
 import '../services/notification_service.dart';
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 import 'common_styles.dart';
 import 'navigation_menu_scope.dart';
 
@@ -44,7 +45,13 @@ class AppHeader extends StatelessWidget {
 
     return Container(
       constraints: const BoxConstraints(minHeight: 80),
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+      // Matches the Today header's inset so titles hold still on tab switch.
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.hPadding,
+        AppSpacing.gap8,
+        AppSpacing.hPadding,
+        AppSpacing.gap16,
+      ),
       child: Row(
         children: [
           Expanded(
