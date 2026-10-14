@@ -1660,7 +1660,7 @@ class _HomePageState extends State<HomePage>
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.hPadding),
         // Content is top-aligned (habit hero first) and laid out at its natural
         // height; the enclosing CustomScrollView scrolls it when tall.
         child: Column(
