@@ -358,7 +358,9 @@ class _NextUp extends StatelessWidget {
           Container(
             width: 38,
             height: 38,
+            // Circular, like the badge medallions in the strip above.
             decoration: BoxDecoration(
+              shape: BoxShape.circle,
               color: colorScheme.surfaceContainer,
               border: Border.all(color: AppColors.of(context).border),
             ),

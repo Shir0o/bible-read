@@ -112,11 +112,12 @@ class _CommunityPageState extends State<CommunityPage>
                       showProfileIcon: false,
                     ),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 8)),
-                  if (groups.isEmpty)
+                  if (groups.isEmpty) ...[
+                    const SliverToBoxAdapter(
+                        child: SizedBox(height: AppSpacing.gap8)),
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: AppSpacing.horizontal,
                         child: EmptyGroupState(
                           auth: widget.auth,
                           firestore: widget.firestore,
@@ -124,8 +125,8 @@ class _CommunityPageState extends State<CommunityPage>
                           vibrationService: widget.vibrationService,
                         ),
                       ),
-                    )
-                  else ...[
+                    ),
+                  ] else ...[
                     SliverToBoxAdapter(
                       child: _GroupFilterChips(
                         groups: groups,
@@ -133,7 +134,8 @@ class _CommunityPageState extends State<CommunityPage>
                         onSelected: (id) => setState(() => _filterGroupId = id),
                       ),
                     ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                    const SliverToBoxAdapter(
+                        child: SizedBox(height: AppSpacing.gap8)),
                     SliverToBoxAdapter(
                       child: _CirclePeopleList(
                         auth: widget.auth,
@@ -188,7 +190,8 @@ class _GroupFilterChips extends StatelessWidget {
           label: Text(label),
           selected: selected,
           showCheckmark: false,
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          // Padded to a 48px target; the strip's gaps absorb the extra.
+          materialTapTargetSize: MaterialTapTargetSize.padded,
           padding: EdgeInsets.zero,
           labelPadding:
               const EdgeInsets.symmetric(horizontal: AppSpacing.gap12),
@@ -210,10 +213,10 @@ class _GroupFilterChips extends StatelessWidget {
     }
 
     return SizedBox(
-      height: 34,
+      height: 48,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: AppSpacing.horizontal,
         children: [
           buildChip(
             label: 'Everyone',
@@ -294,18 +297,15 @@ class _CirclePeopleListState extends State<_CirclePeopleList> {
                 .toList();
 
             final members = <_PersonStatus>[
-              _statusFor(myUid, null, true),
+              _statusFor(myUid, widget.auth.currentUser?.displayName, true),
               for (final m in circle) _statusFor(m.uid, m.name, false),
             ]..sort(_PersonStatus.ordering(myUid));
             return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
+              margin: AppSpacing.horizontal,
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(AppSpacing.rInset),
-                border: Border.all(
-                  color: colorScheme.outlineVariant,
-                  width: 0.5,
-                ),
+                color: colorScheme.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(AppSpacing.rCard),
+                border: Border.all(color: AppColors.of(context).border),
               ),
               child: Column(
                 children: [
@@ -556,111 +556,115 @@ class _RowContent extends StatelessWidget {
     }
 
     return Expanded(
-      child: Row(
-        children: [
-          _PersonAvatar(name: person.name, photoUrl: null, read: showedUp),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isMe ? 'You' : (person.name ?? 'Member'),
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  reading,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: showedUp
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                if (person.sharedReflection != null) ...[
-                  const SizedBox(height: 6),
+      // Every row is at least the Nudge target's height, so rows with and
+      // without a Nudge line up.
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 44),
+        child: Row(
+          children: [
+            _PersonAvatar(name: person.name, photoUrl: null, read: showedUp),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    person.sharedReflection!,
-                    key: const ValueKey('circle_row_reflection'),
-                    maxLines: 3,
+                    isMe ? 'You' : (person.name ?? 'Member'),
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontSerif,
-                      fontSize: 13,
-                      height: 1.4,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Shared reflection',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.primary,
+                    style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
-              ],
-            ),
-          ),
-          if (badge != null) ...[
-            const SizedBox(width: 8),
-            Semantics(
-              label: 'Latest achievement: ${badge!.title}',
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 26,
-                    height: 26,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.of(context).accentSoft,
-                      border: Border.all(
-                        color: colorScheme.tertiary.withValues(alpha: 0.45),
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Icon(
-                      Icons.workspace_premium_rounded,
-                      size: AppSpacing.iconSm,
-                      color: colorScheme.tertiary,
+                  const SizedBox(height: 1),
+                  Text(
+                    reading,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: showedUp
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.gap4),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 96),
-                    child: Text(
-                      badge!.title,
+                  if (person.sharedReflection != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      person.sharedReflection!,
+                      key: const ValueKey('circle_row_reflection'),
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: colorScheme.tertiary,
-                        fontWeight: FontWeight.w600,
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontSerif,
+                        fontSize: 13,
+                        height: 1.4,
+                        color: colorScheme.onSurface,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Shared reflection',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
+            if (badge != null) ...[
+              const SizedBox(width: 8),
+              Semantics(
+                label: 'Latest achievement: ${badge!.title}',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.of(context).accentSoft,
+                        border: Border.all(
+                          color: colorScheme.tertiary.withValues(alpha: 0.45),
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.workspace_premium_rounded,
+                        size: AppSpacing.iconSm,
+                        color: colorScheme.tertiary,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.gap4),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 96),
+                      child: Text(
+                        badge!.title,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: colorScheme.tertiary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            if (!isMe && !showedUp)
+              _NudgeChip(
+                onTap: () async {
+                  await showNudgeSheet(
+                    context,
+                    person: NudgePerson(name: person.name ?? 'Reader'),
+                    onSend: (message) => nudgeService.nudgeMember(
+                      currentUid: myUid,
+                      memberUid: person.uid,
+                      currentName: 'You',
+                    ),
+                  );
+                },
+              ),
           ],
-          if (!isMe && !showedUp)
-            _NudgeChip(
-              onTap: () async {
-                await showNudgeSheet(
-                  context,
-                  person: NudgePerson(name: person.name ?? 'Reader'),
-                  onSend: (message) => nudgeService.nudgeMember(
-                    currentUid: myUid,
-                    memberUid: person.uid,
-                    currentName: 'You',
-                  ),
-                );
-              },
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -685,7 +689,9 @@ class _PersonAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final initial = (name?.isNotEmpty ?? false) ? name![0] : '?';
+    final initial = (name?.trim().isNotEmpty ?? false)
+        ? name!.trim()[0].toUpperCase()
+        : null;
     return Container(
       width: 38,
       height: 38,
@@ -709,12 +715,18 @@ class _PersonAvatar extends StatelessWidget {
                     Icon(Icons.person, color: colorScheme.onSurfaceVariant),
               ),
             )
-          : Text(
-              initial,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-            ),
+          : initial == null
+              ? Icon(
+                  Icons.person_outline_rounded,
+                  size: AppSpacing.iconMd,
+                  color: colorScheme.onSurfaceVariant,
+                )
+              : Text(
+                  initial,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                ),
     );
   }
 }
@@ -737,18 +749,27 @@ class _NudgeChip extends StatelessWidget {
           onTap();
         },
         borderRadius: BorderRadius.circular(AppSpacing.rInset),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: colorScheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(AppSpacing.rInset),
-          ),
-          child: Text(
-            'Nudge',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSecondaryContainer,
-                  fontWeight: FontWeight.w600,
-                ),
+        // The pill stays compact; the surrounding box is the 44px target.
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          child: Center(
+            widthFactor: 1,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.gap12,
+                vertical: AppSpacing.gap6,
+              ),
+              decoration: BoxDecoration(
+                color: colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(AppSpacing.rInset),
+              ),
+              child: Text(
+                'Nudge',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSecondaryContainer,
+                    ),
+              ),
+            ),
           ),
         ),
       ),

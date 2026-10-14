@@ -175,7 +175,7 @@ class _JourneyPageState extends State<JourneyPage>
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(AppSpacing.rInset),
-          border: Border.all(color: colorScheme.outlineVariant),
+          border: Border.all(color: AppColors.of(context).border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,7 +271,7 @@ class _JourneyPageState extends State<JourneyPage>
                         minTime: const Duration(milliseconds: 1000),
                         skeleton: const StatTilesSkeleton(),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: AppSpacing.horizontal,
                           child: IntrinsicHeight(
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.stretch,

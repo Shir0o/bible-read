@@ -150,11 +150,9 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
             skeleton: const ConsistencyCalendarSkeleton(),
             child: Container(
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHigh,
+                color: colorScheme.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(AppSpacing.rCard),
-                border: Border.all(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.2),
-                ),
+                border: Border.all(color: AppColors.of(context).border),
               ),
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -217,7 +215,6 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
               ),
             ),
           ),
-          const SizedBox(height: 24), // Bottom padding
         ],
       ),
     );

@@ -998,7 +998,8 @@ class PlansHubState extends State<PlansHub> {
     if (!_loading && nothing) return _emptyState(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.hPadding, 4, AppSpacing.hPadding, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1024,7 +1025,8 @@ class PlansHubState extends State<PlansHub> {
                   for (final row in personalActive) _personalCard(context, row),
                 ],
                 if (groupActive.isNotEmpty) ...[
-                  SizedBox(height: personalActive.isNotEmpty ? 22 : 0),
+                  SizedBox(
+                      height: personalActive.isNotEmpty ? AppSpacing.gap16 : 0),
                   _sectionHeading(
                     context,
                     icon: Icons.group_outlined,
@@ -1324,9 +1326,8 @@ class PlansHubState extends State<PlansHub> {
             ),
             Text(
               '$done of $total read',
-              style: theme.textTheme.labelSmall?.copyWith(
+              style: theme.textTheme.labelMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -1370,9 +1371,8 @@ class PlansHubState extends State<PlansHub> {
               ),
               Text(
                 'done · progress kept',
-                style: theme.textTheme.labelSmall?.copyWith(
+                style: theme.textTheme.labelMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -1453,7 +1453,7 @@ class PlansHubState extends State<PlansHub> {
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -1573,7 +1573,7 @@ class PlansHubState extends State<PlansHub> {
                   isOwner ? 'Group archived' : 'Your participation archived',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -1642,7 +1642,7 @@ class PlansHubState extends State<PlansHub> {
                   'All ${row.status.total} readings kept',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -1932,10 +1932,10 @@ class _PlanCardShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(
           color: pinned

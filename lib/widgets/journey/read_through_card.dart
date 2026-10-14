@@ -70,7 +70,7 @@ class _Card extends StatelessWidget {
     final appColors = AppColors.of(context);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: AppSpacing.horizontal,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
