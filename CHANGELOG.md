@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.35.1](https://github.com/Shir0o/bible-read/compare/v1.35.0...v1.35.1) (2026-10-14)
+
+
+### Bug Fixes
+
+* pad CommonStyles cards with AppSpacing.cardPadding (closes [#965](https://github.com/Shir0o/bible-read/issues/965)) ([#972](https://github.com/Shir0o/bible-read/issues/972)) ([04bc5de](https://github.com/Shir0o/bible-read/commit/04bc5de7745aa23cd70aedcaf13d1561f7c9512e))
+
 ## [1.35.0](https://github.com/Shir0o/bible-read/compare/v1.34.1...v1.35.0) (2026-10-14)
 
 
