@@ -1,0 +1,142 @@
+{
+  "question": "Choose the visual world for the Bible Read design rehaul:",
+  "options": [
+    {
+      "id": "assigned-sanctuary",
+      "label": "The Sanctuary Liturgy & Canonical Hours",
+      "kicker": "THE ROLL",
+      "lineage": "monastic horarium & choir stalls",
+      "thesis": "Daily reading mapped to the gentle rhythm of canonical light, where presence in scripture is marked with warm beeswax gold and calm stone stillness.",
+      "palette": [
+        "#F4F0E8",
+        "#1E1A24",
+        "#6A53AD",
+        "#D4A359"
+      ],
+      "materials": [
+        "limestone grain",
+        "warm beeswax gold",
+        "uncoated paper"
+      ],
+      "viewport": "A calm mobile screen anchored by the day's ambient sky banner (shifting dawn to night), a prominent 'Today's Reading' card with serif scripture headlines, and a subtle gold thread connecting the reader to their Circle.",
+      "risk": "Requires careful contrast tuning so ambient sky tones never reduce reading legibility.",
+      "raised": [
+        {
+          "from": "notation-diagram-systems-star-atlas",
+          "raise": "Bible book coverage and testament laps visualized as illuminated magnitude rings rather than generic progress bars."
+        },
+        {
+          "from": "design-annual-s-plate-section",
+          "raise": "A circular letterpressed seal for milestone Badges and read-through celebrations."
+        }
+      ]
+    },
+    {
+      "id": "model-pick-rubricated",
+      "label": "The Rubricated Daily Office",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "1662 Book of Common Prayer & liturgical lectionaries",
+      "thesis": "The timeless dignity of a personal prayer book: deep iron-gall ink, warm linen paper, and rubricated crimson markers for daily passages.",
+      "palette": [
+        "#F7F3EB",
+        "#1C1917",
+        "#9E2A2B",
+        "#C8963E"
+      ],
+      "materials": [
+        "deckle-edge linen",
+        "rubricated red ink",
+        "gilt foil"
+      ],
+      "viewport": "Generous editorial margins with rubricated chapter numbers in red, warm linen cards, and an understated daily check-in ribbon.",
+      "risk": "Also the direction most runs in this category land on; can feel overly traditional if UI typography isn't razor-sharp."
+    },
+    {
+      "id": "challenger-star-atlas",
+      "label": "The Celestial Nocturne",
+      "verdict": "competitive",
+      "lineage": "celestial star atlas charts",
+      "thesis": "Scripture reading as navigating the heavens: deep midnight indigo, star-magnitude chapter dots, and night-vision amber accents.",
+      "palette": [
+        "#0D1117",
+        "#E6EDF3",
+        "#D29922",
+        "#58A6FF"
+      ],
+      "materials": [
+        "star chart paper",
+        "luminescent ink",
+        "sidereal coordinate grid"
+      ],
+      "viewport": "A deep dark-mode mobile screen where Bible coverage glows like constellations and daily check-in illuminates today's coordinate.",
+      "case": "Fuses beautifully with testament lap tracking and night-time reflection; brings cosmic wonder to habit tracking.",
+      "risk": "Leans heavily into dark mode; daytime reading requires an equally refined light-chart counterpart.",
+      "hero": "https://impeccable.style/worlds/cards/notation-diagram-systems-star-atlas-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/notation-diagram-systems-star-atlas.webp"
+    },
+    {
+      "id": "challenger-plate-section",
+      "label": "The Design Annual Plate Section",
+      "verdict": "declined",
+      "lineage": "uncoated design monographs & plate sections",
+      "palette": [
+        "#F5F4F6",
+        "#16181A",
+        "#DCDDF3"
+      ],
+      "materials": [
+        "uncoated near-white stock",
+        "letterpressed attribution stamp"
+      ],
+      "case": "Loses on audience identification: readers want devotional warmth, not an exhibition catalog.",
+      "kept": "Circular letterpressed seal for milestone Badges.",
+      "hero": "https://impeccable.style/worlds/cards/design-annual-s-plate-section-hero.webp"
+    },
+    {
+      "id": "challenger-ikeda",
+      "label": "Datamatics Sine Lattice",
+      "verdict": "declined",
+      "lineage": "pure black-and-white data field",
+      "palette": [
+        "#000000",
+        "#FFFFFF"
+      ],
+      "materials": [
+        "high-contrast rules",
+        "monospace columns"
+      ],
+      "case": "Loses on both axes: stroboscopic B&W frequency bands clash completely with contemplative Scripture.",
+      "kept": "Tabular schedule discipline and monospace verse metrics.",
+      "hero": "https://impeccable.style/worlds/cards/ikeda-datamatics-hero.webp"
+    }
+  ],
+  "reroll": {
+    "registers": [
+      "safer",
+      "bolder"
+    ]
+  },
+  "buildPath": {
+    "value": "code",
+    "toggle": true
+  },
+  "canon": true,
+  "canonCard": {
+    "label": "The Clean Modern Devotional",
+    "thesis": "The category standard: clean Material 3 cards, standard typography, and conventional mobile layouts.",
+    "palette": [
+      "#FFFFFF",
+      "#1C1B1F",
+      "#6750A4",
+      "#7D5260"
+    ],
+    "materials": [
+      "flat surface",
+      "subtle elevation shadows",
+      "standard material chips"
+    ],
+    "viewport": "Standard clean mobile cards with rounded corners, bottom navigation bar, and clean sans typography.",
+    "risk": "Familiar and functional, but visually indistinct from generic habit trackers."
+  },
+  "steer": true
+}

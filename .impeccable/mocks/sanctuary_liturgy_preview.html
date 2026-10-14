@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Sanctuary Liturgy & Canonical Hours — Redesign Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..700;1,300..700&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-serif: 'Spectral', Georgia, serif;
+    --font-sans: 'Hanken Grotesk', -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #121016;
+    color: #E2DED6;
+    font-family: var(--font-sans);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 80px;
+    min-height: 100vh;
+  }
+
+  header {
+    text-align: center;
+    max-width: 680px;
+    margin-bottom: 40px;
+  }
+
+  header h1 {
+    font-family: var(--font-serif);
+    font-size: 32px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: #F8F5EE;
+    margin-bottom: 8px;
+  }
+
+  header p {
+    font-size: 15px;
+    color: #9C9588;
+    line-height: 1.5;
+  }
+
+  .preview-stage {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .device-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .device-label {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: #8C8476;
+  }
+
+  /* 390x844 Mobile Frame */
+  .device-frame {
+    width: 390px;
+    height: 844px;
+    border-radius: 48px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* --- LIGHT MODE (Sanctuary Limestone) --- */
+  .theme-light {
+    background-color: #F4F0E8;
+    color: #231E2C;
+  }
+
+  .theme-light .status-bar {
+    color: #231E2C;
+  }
+
+  .theme-light .ambient-sky {
+    background: linear-gradient(180deg, rgba(255, 211, 166, 0.45) 0%, rgba(217, 189, 232, 0.25) 60%, rgba(244, 240, 232, 0) 100%);
+  }
+
+  .theme-light .card {
+    background: #FFFFFA;
+    border: 1px solid rgba(43, 33, 58, 0.08);
+    box-shadow: 0 4px 16px rgba(43, 33, 58, 0.04);
+  }
+
+  .theme-light .card-sacred {
+    border: 1px solid rgba(158, 116, 40, 0.25);
+    background: linear-gradient(180deg, #FFFFFF 0%, #FAF7F0 100%);
+    box-shadow: 0 8px 24px rgba(158, 116, 40, 0.07);
+  }
+
+  .theme-light .dim-text { color: #6C6577; }
+  .theme-light .gold-text { color: #8F6218; }
+  .theme-light .gold-pill {
+    background: #FBF3E6;
+    color: #6E490D;
+    border: 1px solid rgba(158, 116, 40, 0.22);
+  }
+
+  .theme-light .nav-bar {
+    background: rgba(244, 240, 232, 0.94);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(43, 33, 58, 0.08);
+  }
+
+  .theme-light .cta-primary {
+    background: #6A53AD;
+    color: #FFFFFF;
+  }
+  .theme-light .cta-primary:hover { background: #5B449E; }
+
+  .theme-light .cta-gold {
+    background: #9E7428;
+    color: #FFFFFF;
+    box-shadow: 0 4px 14px rgba(158, 116, 40, 0.3);
+  }
+
+  /* --- DARK MODE (Compline Aubergine) --- */
+  .theme-dark {
+    background-color: #16141D;
+    color: #ECE7F3;
+  }
+
+  .theme-dark .status-bar {
+    color: #ECE7F3;
+  }
+
+  .theme-dark .ambient-sky {
+    background: linear-gradient(180deg, rgba(70, 58, 114, 0.4) 0%, rgba(36, 31, 60, 0.25) 60%, rgba(22, 20, 29, 0) 100%);
+  }
+
+  .theme-dark .card {
+    background: #1E1A26;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  .theme-dark .card-sacred {
+    border: 1px solid rgba(229, 190, 120, 0.25);
+    background: linear-gradient(180deg, #241F2E 0%, #1E1A26 100%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .theme-dark .dim-text { color: #A39CB3; }
+  .theme-dark .gold-text { color: #E5BE78; }
+  .theme-dark .gold-pill {
+    background: #2D2316;
+    color: #E5BE78;
+    border: 1px solid rgba(229, 190, 120, 0.25);
+  }
+
+  .theme-dark .nav-bar {
+    background: rgba(22, 20, 29, 0.94);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .theme-dark .cta-primary {
+    background: #C6B4EC;
+    color: #1A1429;
+  }
+
+  .theme-dark .cta-gold {
+    background: #E5BE78;
+    color: #2D2108;
+    box-shadow: 0 4px 14px rgba(229, 190, 120, 0.25);
+  }
+
+  /* --- SHARED SCREEN SHELL --- */
+  .status-bar {
+    height: 48px;
+    padding: 12px 24px 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 10;
+  }
+
+  .scroll-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 20px 20px;
+    position: relative;
+  }
+
+  .ambient-sky {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 220px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .content-layer {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Top Liturgical Horizon */
+  .canonical-horizon {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+
+  .canonical-badge {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 700;
+    margin-bottom: 4px;
+    opacity: 0.75;
+  }
+
+  .greeting-title {
+    font-family: var(--font-serif);
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .presence-seal {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #FFE494 0%, #D8982D 100%);
+    box-shadow: 0 3px 10px rgba(158, 116, 40, 0.35);
+    border: 2px solid #231E2C;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .theme-dark .presence-seal {
+    border-color: #121016;
+  }
+
+  .presence-seal svg {
+    width: 22px;
+    height: 22px;
+    fill: #231E2C;
+  }
+
+  /* Sacred Reading Card */
+  .card {
+    border-radius: 22px;
+    padding: 22px;
+    margin-bottom: 18px;
+    position: relative;
+    transition: transform 0.2s ease;
+  }
+
+  .card-kicker {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .kicker-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #9E7428;
+  }
+
+  .theme-dark .kicker-dot { background: #E5BE78; }
+
+  .scripture-headline {
+    font-family: var(--font-serif);
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+
+  .scripture-subtitle {
+    font-size: 14px;
+    line-height: 1.4;
+    margin-bottom: 18px;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 52px;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  /* Catch-Up Banner (Grace, not shame) */
+  .grace-ribbon {
+    border-radius: 18px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .grace-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .grace-content h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .grace-content p {
+    font-size: 13px;
+    opacity: 0.85;
+    line-height: 1.35;
+  }
+
+  /* Fellowship Choir Section */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 8px 4px 12px;
+  }
+
+  .section-title {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .section-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6A53AD;
+    text-decoration: none;
+  }
+  .theme-dark .section-link { color: #C6B4EC; }
+
+  .circle-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .avatar-halo {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    padding: 2px;
+    background: transparent;
+  }
+
+  .avatar-halo.shown-up {
+    background: conic-gradient(from 180deg at 50% 50%, #9E7428 0deg, #D4A359 180deg, #9E7428 360deg);
+  }
+
+  .theme-dark .avatar-halo.shown-up {
+    background: conic-gradient(from 180deg at 50% 50%, #E5BE78 0deg, #8B7140 180deg, #E5BE78 360deg);
+  }
+
+  .avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #6A53AD;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .avatar-halo.waiting .avatar-img {
+    background: rgba(108, 101, 119, 0.2);
+    color: inherit;
+    border: 1.5px dashed rgba(108, 101, 119, 0.4);
+  }
+
+  .circle-meta {
+    flex: 1;
+  }
+
+  .circle-meta h5 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .circle-meta p {
+    font-size: 13px;
+    opacity: 0.8;
+  }
+
+  /* Bottom Navigation Bar */
+  .nav-bar {
+    height: 80px;
+    padding: 8px 24px 20px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 20;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    color: inherit;
+    opacity: 0.55;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .nav-item.active {
+    opacity: 1;
+    color: #6A53AD;
+  }
+
+  .theme-dark .nav-item.active {
+    color: #C6B4EC;
+  }
+
+  .nav-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>The Sanctuary Liturgy & Canonical Hours</h1>
+  <p>Redesign concept for the core <strong>Today</strong> screen. Compare the monastic limestone day aesthetic with the compline night watch.</p>
+</header>
+
+<div class="preview-stage">
+
+  <!-- LIGHT MODE: Morning / Sanctuary Limestone -->
+  <div class="device-wrapper">
+    <div class="device-label">Light Mode · Lauds Horizon</div>
+    <div class="device-frame theme-light">
+      <div class="status-bar">
+        <span>7:14</span>
+        <span>5G · 100%</span>
+      </div>
+
+      <div class="scroll-body">
+        <div class="ambient-sky"></div>
+
+        <div class="content-layer">
+          <div class="canonical-horizon">
+            <div>
+              <div class="canonical-badge gold-text">Lauds · Morning Hour</div>
+              <h2 class="greeting-title">Good morning</h2>
+              <div class="dim-text" style="font-size: 14px; margin-top: 2px;">Wednesday, October 14</div>
+            </div>
+            <div class="presence-seal" title="Mark today's reading">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-4-4 1.41-1.41L11 14.17l6.59-6.59L19 9l-8 8z"/></svg>
+            </div>
+          </div>
+
+          <!-- Sacred Reading Card -->
+          <div class="card card-sacred">
+            <div class="card-kicker gold-text">
+              <span class="kicker-dot"></span>
+              <span>Morning Light Fellowship</span>
+            </div>
+            <h3 class="scripture-headline">Luke 14:1–24</h3>
+            <p class="scripture-subtitle dim-text">The Great Banquet · 4 min reflection</p>
+
+            <button class="btn cta-gold">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Read with Your Circle</span>
+            </button>
+          </div>
+
+          <!-- Grace Ribbon (Gentle Catch-up) -->
+          <div class="grace-ribbon gold-pill">
+            <div class="grace-icon" style="background: rgba(158, 116, 40, 0.15);">📜</div>
+            <div class="grace-content">
+              <h4>Grace is waiting · 2 readings behind</h4>
+              <p>Catch up when you are ready — any order, no rush.</p>
+            </div>
+          </div>
+
+          <!-- Fellowship Circle Section -->
+          <div class="section-header">
+            <h4 class="section-title">Your Circle</h4>
+            <a href="#" class="section-link">View all (5)</a>
+          </div>
+
+          <div class="card" style="padding: 16px;">
+            <div class="circle-row">
+              <div class="avatar-halo shown-up">
+                <div class="avatar-img">SJ</div>
+              </div>
+              <div class="avatar-halo shown-up">
+                <div class="avatar-img" style="background: #3D6B58;">MR</div>
+              </div>
+              <div class="avatar-halo shown-up">
+                <div class="avatar-img" style="background: #8B4A62;">AL</div>
+              </div>
+              <div class="avatar-halo waiting">
+                <div class="avatar-img">DW</div>
+              </div>
+              <div class="circle-meta" style="margin-left: 6px;">
+                <h5>3 in step today</h5>
+                <p class="dim-text">Sarah, Marcus & Anna read Luke 14</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <nav class="nav-bar">
+        <a href="#" class="nav-item active">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </div>
+          <span>Today</span>
+        </a>
+        <a href="#" class="nav-item">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <span>Circle</span>
+        </a>
+        <a href="#" class="nav-item">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+          </div>
+          <span>Path</span>
+        </a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- DARK MODE: Compline / Deep Aubergine Stone -->
+  <div class="device-wrapper">
+    <div class="device-label">Dark Mode · Compline Horizon</div>
+    <div class="device-frame theme-dark">
+      <div class="status-bar">
+        <span>9:42</span>
+        <span>5G · 98%</span>
+      </div>
+
+      <div class="scroll-body">
+        <div class="ambient-sky"></div>
+
+        <div class="content-layer">
+          <div class="canonical-horizon">
+            <div>
+              <div class="canonical-badge gold-text">Compline · Night Prayer</div>
+              <h2 class="greeting-title">Good evening</h2>
+              <div class="dim-text" style="font-size: 14px; margin-top: 2px;">Wednesday, October 14</div>
+            </div>
+            <div class="presence-seal" title="Mark today's reading">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-4-4 1.41-1.41L11 14.17l6.59-6.59L19 9l-8 8z"/></svg>
+            </div>
+          </div>
+
+          <!-- Sacred Reading Card -->
+          <div class="card card-sacred">
+            <div class="card-kicker gold-text">
+              <span class="kicker-dot"></span>
+              <span>Morning Light Fellowship</span>
+            </div>
+            <h3 class="scripture-headline">Luke 14:1–24</h3>
+            <p class="scripture-subtitle dim-text">The Great Banquet · 4 min reflection</p>
+
+            <button class="btn cta-gold">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Read with Your Circle</span>
+            </button>
+          </div>
+
+          <!-- Grace Ribbon (Gentle Catch-up) -->
+          <div class="grace-ribbon gold-pill">
+            <div class="grace-icon" style="background: rgba(229, 190, 120, 0.2);">📜</div>
+            <div class="grace-content">
+              <h4>Grace is waiting · 2 readings behind</h4>
+              <p>Catch up when you are ready — any order, no rush.</p>
+            </div>
+          </div>
+
+          <!-- Fellowship Circle Section -->
+          <div class="section-header">
+            <h4 class="section-title">Your Circle</h4>
+            <a href="#" class="section-link">View all (5)</a>
+          </div>
+
+          <div class="card" style="padding: 16px;">
+            <div class="circle-row">
+              <div class="avatar-halo shown-up">
+                <div class="avatar-img">SJ</div>
+              </div>
+              <div class="avatar-halo shown-up">
+                <div class="avatar-img" style="background: #3D6B58;">MR</div>
+              </div>
+              <div class="avatar-halo shown-up">
+                <div class="avatar-img" style="background: #8B4A62;">AL</div>
+              </div>
+              <div class="avatar-halo waiting">
+                <div class="avatar-img">DW</div>
+              </div>
+              <div class="circle-meta" style="margin-left: 6px;">
+                <h5>3 in step today</h5>
+                <p class="dim-text">Sarah, Marcus & Anna read Luke 14</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <nav class="nav-bar">
+        <a href="#" class="nav-item active">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </div>
+          <span>Today</span>
+        </a>
+        <a href="#" class="nav-item">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <span>Circle</span>
+        </a>
+        <a href="#" class="nav-item">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+          </div>
+          <span>Path</span>
+        </a>
+      </nav>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
