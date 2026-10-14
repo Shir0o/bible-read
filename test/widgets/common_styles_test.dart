@@ -49,7 +49,48 @@ void main() {
     );
     expect(
       paddings.any(
-        (p) => p.padding == const EdgeInsets.all(AppSpacing.hPadding),
+        (p) => p.padding == const EdgeInsets.all(AppSpacing.cardPadding),
+      ),
+      isTrue,
+    );
+  });
+
+  testWidgets('buildTappableCard wraps child with default padding', (
+    tester,
+  ) async {
+    const child = Text('content');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) {
+            return Scaffold(
+              body: CommonStyles.buildTappableCard(
+                context: context,
+                child: child,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final card = tester.widget<Card>(find.byType(Card));
+    expect(
+      card.margin,
+      const EdgeInsets.symmetric(
+        horizontal: AppSpacing.hPadding,
+        vertical: AppSpacing.vPaddingSmall,
+      ),
+    );
+
+    final paddings = tester.widgetList<Padding>(
+      find.descendant(of: find.byType(Card), matching: find.byType(Padding)),
+    );
+    expect(
+      paddings.any(
+        (p) => p.padding == const EdgeInsets.all(AppSpacing.cardPadding),
       ),
       isTrue,
     );
