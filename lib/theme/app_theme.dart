@@ -66,28 +66,28 @@ class AppTheme {
   // surface in *both* modes (brightest paper in light, raised panel in dark).
   // ---------------------------------------------------------------------------
 
-  /// Warm-paper light mode.
+  /// Warm-paper light mode (Sanctuary Liturgy).
   static const ColorScheme designLightScheme = ColorScheme(
     brightness: Brightness.light,
-    primary: Color(0xFF6A53AD), // --primary
+    primary: Color(0xFF6A53AD), // --primary (vesper lavender)
     onPrimary: Color(0xFFFFFFFF), // --on-primary
     primaryContainer: Color(
-      0xFFF0ECF2,
+      0xFFF0ECF4,
     ), // --primary-soft flattened over --surface
     onPrimaryContainer: Color(0xFF5B449E), // --primary-press
     secondary: Color(0xFF6A53AD),
     onSecondary: Color(0xFFFFFFFF),
-    secondaryContainer: Color(0xFFF0ECF2), // --primary-soft flattened
+    secondaryContainer: Color(0xFFF0ECF4), // --primary-soft flattened
     onSecondaryContainer: Color(0xFF5B449E),
-    tertiary: Color(0xFFA0702F), // --accent (warm gold, solid)
+    tertiary: Color(0xFF9E7428), // --accent (warm beeswax gold, high contrast)
     onTertiary: Color(0xFFFFFFFF),
-    tertiaryContainer: Color(0xFFF6EDE3), // --accent-soft flattened
-    onTertiaryContainer: Color(0xFF6E4D20),
+    tertiaryContainer: Color(0xFFFBF3E6), // --accent-soft flattened
+    onTertiaryContainer: Color(0xFF5C4010),
     error: Color(0xFFB3261E),
     onError: Color(0xFFFFFFFF),
     errorContainer: Color(0xFFF9DEDC),
     onErrorContainer: Color(0xFF410E0B),
-    surface: Color(0xFFF4F0E8), // --bg
+    surface: Color(0xFFF4F0E8), // --bg (warm limestone)
     onSurface: Color(0xFF231E2C), // --text
     onSurfaceVariant: Color(0xFF6C6577), // --text-dim
     surfaceContainerLowest: Color(0xFFFFFDFA), // --surface (cards)
@@ -98,7 +98,7 @@ class AppTheme {
     surfaceDim: Color(0xFFDDD6C9),
     surfaceBright: Color(0xFFFBF8F2),
     outline: Color(0xFF8C8694), // --text-faint
-    outlineVariant: Color(0xFFEDEAEA), // --border flattened over --surface
+    outlineVariant: Color(0xFFEDE8DF), // --border flattened over --surface
     inverseSurface: Color(0xFF322C3B),
     onInverseSurface: Color(0xFFF4EFF6),
     inversePrimary: Color(0xFFC6B4EC),
@@ -107,40 +107,40 @@ class AppTheme {
     surfaceTint: Color(0xFF6A53AD),
   );
 
-  /// Deep-aubergine night mode.
+  /// Deep-aubergine night mode (Compline Hour).
   static const ColorScheme designDarkScheme = ColorScheme(
     brightness: Brightness.dark,
-    primary: Color(0xFFC6B4EC), // --primary (dark)
+    primary: Color(0xFFC6B4EC), // --primary (dark vesper lavender)
     onPrimary: Color(0xFF22153D), // --on-primary (dark)
     primaryContainer: Color(
-      0xFF342D40,
+      0xFF342D42,
     ), // --primary-soft flattened over --surface
     onPrimaryContainer: Color(0xFFE5DCF7),
     secondary: Color(0xFFC6B4EC),
     onSecondary: Color(0xFF22153D),
-    secondaryContainer: Color(0xFF342D40), // --primary-soft flattened
+    secondaryContainer: Color(0xFF342D42), // --primary-soft flattened
     onSecondaryContainer: Color(0xFFE5DCF7),
-    tertiary: Color(0xFFE1B488), // --accent (dark)
-    onTertiary: Color(0xFF3A2410),
-    tertiaryContainer: Color(0xFF3D3236), // --accent-soft flattened
-    onTertiaryContainer: Color(0xFFF5E0CC),
+    tertiary: Color(0xFFE5BE78), // --accent (luminous beeswax gold)
+    onTertiary: Color(0xFF3D2A00),
+    tertiaryContainer: Color(0xFF42341C), // --accent-soft flattened
+    onTertiaryContainer: Color(0xFFFBE7C6),
     error: Color(0xFFF2B8B5),
     onError: Color(0xFF601410),
     errorContainer: Color(0xFF8C1D18),
     onErrorContainer: Color(0xFFF9DEDC),
-    surface: Color(0xFF16121D), // --bg (dark)
+    surface: Color(0xFF16141D), // --bg (deep aubergine stone)
     onSurface: Color(0xFFECE7F3), // --text (dark)
     onSurfaceVariant: Color(0xFFA39CB3), // --text-dim (dark)
-    surfaceContainerLowest: Color(0xFF1E1926), // --surface (cards)
-    surfaceContainerLow: Color(0xFF272030), // --surface-2
-    surfaceContainer: Color(0xFF2A2333),
-    surfaceContainerHigh: Color(0xFF332B3E), // --surface-3
+    surfaceContainerLowest: Color(0xFF1E1A26), // --surface (cards)
+    surfaceContainerLow: Color(0xFF272130), // --surface-2
+    surfaceContainer: Color(0xFF2B2435),
+    surfaceContainerHigh: Color(0xFF342C40), // --surface-3
     surfaceContainerHighest: Color(0xFF3C3447),
-    surfaceDim: Color(0xFF16121D),
+    surfaceDim: Color(0xFF16141D),
     surfaceBright: Color(0xFF3C3447),
-    outline: Color(0xFF6E6781), // --text-faint (dark)
+    outline: Color(0xFF726A85), // --text-faint (dark)
     outlineVariant: Color(
-      0xFF2F2A36,
+      0xFF2E2738,
     ), // --border flattened over --surface (dark)
     inverseSurface: Color(0xFFECE7F3),
     onInverseSurface: Color(0xFF322C3B),
@@ -426,31 +426,28 @@ class AppColors extends ThemeExtension<AppColors> {
 
   static const Color _scrim = Color.fromRGBO(10, 8, 14, 0.42);
 
-  /// Warm-paper light mode tokens.
+  /// Warm-paper light mode tokens (Sanctuary Liturgy).
   static const AppColors light = AppColors(
     primarySoft: Color.fromRGBO(106, 83, 173, 0.10),
     primaryLine: Color.fromRGBO(106, 83, 173, 0.26),
     primaryPress: Color(0xFF5B449E),
-    accentSoft: Color.fromRGBO(190, 138, 82, 0.14),
+    accentSoft: Color.fromRGBO(212, 163, 89, 0.16),
     border: Color.fromRGBO(43, 33, 58, 0.085),
     borderStrong: Color.fromRGBO(43, 33, 58, 0.15),
-    highlight: Color.fromRGBO(190, 138, 82, 0.20),
+    highlight: Color.fromRGBO(212, 163, 89, 0.22),
     bg2: Color(0xFFEDE7DC),
     scrim: _scrim,
   );
 
-  /// Deep-aubergine night mode tokens.
+  /// Deep-aubergine night mode tokens (Compline Hour).
   static const AppColors dark = AppColors(
     primarySoft: Color.fromRGBO(198, 180, 236, 0.13),
     primaryLine: Color.fromRGBO(198, 180, 236, 0.30),
     primaryPress: Color(0xFFB6A1E6),
-    accentSoft: Color.fromRGBO(225, 180, 136, 0.16),
-    // Slightly stronger than the raw design tokens (0.075 / 0.14): hairline
-    // borders read as near-invisible on real OLED panels, so cards need a touch
-    // more edge to separate from the dark background (per dark-mode feedback).
+    accentSoft: Color.fromRGBO(229, 190, 120, 0.18),
     border: Color.fromRGBO(255, 255, 255, 0.11),
-    borderStrong: Color.fromRGBO(255, 255, 255, 0.2),
-    highlight: Color.fromRGBO(225, 180, 136, 0.22),
+    borderStrong: Color.fromRGBO(255, 255, 255, 0.20),
+    highlight: Color.fromRGBO(229, 190, 120, 0.24),
     bg2: Color(0xFF110E17),
     scrim: _scrim,
   );
@@ -545,12 +542,14 @@ class AppSpacing {
   );
 
   /// Standard card shadow
+  /// Standard card shadow with soft depth.
   static List<BoxShadow> cardShadow(BuildContext context) {
     final theme = Theme.of(context);
+    final isLight = theme.brightness == Brightness.light;
     return [
       BoxShadow(
-        color: theme.shadowColor.withValues(alpha: 0.1),
-        blurRadius: 10,
+        color: theme.shadowColor.withValues(alpha: isLight ? 0.05 : 0.25),
+        blurRadius: isLight ? 12 : 14,
         offset: const Offset(0, 4),
       ),
     ];
