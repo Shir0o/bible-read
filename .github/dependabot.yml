@@ -9,6 +9,9 @@ updates:
       flutter-dependencies:
         patterns:
           - "*"
+    ignore:
+      - dependency-name: flutter_local_notifications
+        update-types: ["version-update:semver-major"]
 
   # Keeps the commit-SHA pins in .github/workflows/*.yml current. Dependabot
   # understands the uses: owner/repo@<sha> # vX form and rewrites both the SHA
