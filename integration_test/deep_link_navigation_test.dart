@@ -85,7 +85,11 @@ void main() {
 
 class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {
   @override
-  Future<String?> getToken({String? vapidKey}) async => 'fake_token';
+  Future<String?> getToken({
+    String? serviceWorkerScriptPath,
+    String? vapidKey,
+  }) async =>
+      'fake_token';
 
   @override
   Future<NotificationSettings> requestPermission({
