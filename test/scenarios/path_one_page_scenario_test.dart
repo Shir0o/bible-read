@@ -3,7 +3,6 @@
 import 'package:bible_read/pages/bible_progress_page.dart';
 import 'package:bible_read/pages/challenges_page.dart';
 import 'package:bible_read/pages/journey_page.dart';
-import 'package:bible_read/pages/read_throughs_page.dart';
 import 'package:bible_read/pages/streak_history_page.dart';
 import 'package:bible_read/widgets/skeleton.dart';
 import 'package:bible_read/widgets/skeleton_loader.dart';
@@ -149,7 +148,8 @@ void main() {
     expect(find.byType(StreakHistoryPage), findsOneWidget);
   });
 
-  testWidgets('Library and All open Bible progress and read-throughs', (
+  testWidgets(
+      'Library opens Bible progress; All lists earned and unearned badges', (
     tester,
   ) async {
     await firestore
@@ -178,6 +178,44 @@ void main() {
     await tester.ensureVisible(find.text('All'));
     await tester.tap(find.text('All'));
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
-    expect(find.byType(ReadThroughsPage), findsOneWidget);
+    expect(find.text('Badges'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp(r'^First Book, earned')),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(RegExp(r'^First whole Bible, not yet earned')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Read-throughs shows Lap progress bars for each testament', (
+    tester,
+  ) async {
+    // Genesis (50 chapters) is the only finished OT book this lap.
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('read_through_state')
+        .doc('current')
+        .set({
+      'ot': {'Genesis': List.generate(50, (i) => i + 1)},
+      'nt': <String, dynamic>{},
+    });
+    await pumpPath(tester);
+
+    final ot = tester.widget<LinearProgressIndicator>(
+      find.descendant(
+        of: find
+            .ancestor(
+              of: find.text('Old\nTestament'),
+              matching: find.byType(Column),
+            )
+            .first,
+        matching: find.byType(LinearProgressIndicator),
+      ),
+    );
+    expect(ot.value, closeTo(1 / 39, 0.0001));
+    expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
   });
 }
