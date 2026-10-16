@@ -16,6 +16,7 @@ import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/app_bottom_sheet.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/sub_header.dart';
 import '../widgets/nudge_sheet.dart';
 import 'edit_group_page.dart';
 
@@ -69,43 +70,56 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CommonStyles.buildAppBar(context, 'Members'),
-      body: Container(
-        decoration: CommonStyles.backgroundDecoration(
-          Theme.of(context).colorScheme,
-        ),
-        child: StreamBuilder<List<GroupMemberRole>>(
-          stream: widget.groupService.membersWithRoles(widget.group.id),
-          builder: (context, rolesSnap) {
-            if (rolesSnap.hasError) {
-              return const Center(child: Text('Failed to load members'));
-            }
-            if (!rolesSnap.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final roster = rolesSnap.data!;
-            return StreamBuilder<List<GroupMemberProgressData>>(
-              stream: widget.groupService.memberDailyCompletion(
-                widget.group.id,
-                date: _date,
+      body: SafeArea(
+        child: Column(
+          children: [
+            SubHeader(
+              title: 'Members',
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
+            Expanded(
+              child: Container(
+                decoration: CommonStyles.backgroundDecoration(
+                  Theme.of(context).colorScheme,
+                ),
+                child: StreamBuilder<List<GroupMemberRole>>(
+                  stream: widget.groupService.membersWithRoles(widget.group.id),
+                  builder: (context, rolesSnap) {
+                    if (rolesSnap.hasError) {
+                      return const Center(
+                          child: Text('Failed to load members'));
+                    }
+                    if (!rolesSnap.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final roster = rolesSnap.data!;
+                    return StreamBuilder<List<GroupMemberProgressData>>(
+                      stream: widget.groupService.memberDailyCompletion(
+                        widget.group.id,
+                        date: _date,
+                      ),
+                      builder: (context, readSnap) {
+                        final readByUid = <String, double>{
+                          for (final m
+                              in readSnap.data ?? <GroupMemberProgressData>[])
+                            m.uid: m.completion,
+                        };
+                        return ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            _buildRoster(roster, readByUid),
+                            const SizedBox(height: 20),
+                            _buildPendingInvites(roster),
+                            _buildGroupSettingsLink(),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-              builder: (context, readSnap) {
-                final readByUid = <String, double>{
-                  for (final m in readSnap.data ?? <GroupMemberProgressData>[])
-                    m.uid: m.completion,
-                };
-                return ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    _buildRoster(roster, readByUid),
-                    const SizedBox(height: 20),
-                    _buildPendingInvites(roster),
-                    _buildGroupSettingsLink(),
-                  ],
-                );
-              },
-            );
-          },
+            ),
+          ],
         ),
       ),
     );

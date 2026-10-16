@@ -106,32 +106,6 @@ class CommonStyles {
       child: child,
     );
   }
-
-  /// Creates an [AppBar] with the application's default styling.
-  ///
-  /// [title] is displayed as the app bar's title.
-  /// [actions] are optional widgets shown on the right.
-  /// [leading] is an optional widget displayed before the title.
-  /// [automaticallyImplyLeading] determines whether to automatically include a
-  /// back button when possible.
-  ///
-  /// Returns a [PreferredSizeWidget] configured app bar.
-  static PreferredSizeWidget buildAppBar(
-    BuildContext context,
-    String title, {
-    List<Widget>? actions,
-    Widget? leading,
-    bool automaticallyImplyLeading = true,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return AppBar(
-      title: Text(title, style: appBarTitleText(context)),
-      backgroundColor: colorScheme.surface,
-      actions: actions,
-      leading: leading,
-      automaticallyImplyLeading: automaticallyImplyLeading,
-    );
-  }
 }
 
 /// Defines reusable text styles for displaying content.

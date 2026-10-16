@@ -19,6 +19,8 @@ final _rules = <String, RegExp>{
   'heavy FontWeight: use w700 or lighter': RegExp(
     r'FontWeight\.(?:bold|w800|w900)\b',
   ),
+  'raw AppBar: use SubHeader on pushed pages': RegExp(r'\bAppBar\('),
+  'buildAppBar was removed: use SubHeader': RegExp(r'\bbuildAppBar\('),
 };
 
 void main() {
@@ -33,13 +35,20 @@ void main() {
       final path = file.path.replaceAll(r'\', '/');
       if (path.startsWith('lib/theme/') ||
           path == 'lib/firebase_options.dart' ||
+          path == 'lib/widgets/sub_header.dart' ||
           _allowlistedFiles.any(path.startsWith)) {
         continue;
       }
       final lines = file.readAsLinesSync();
       for (var i = 0; i < lines.length; i++) {
         final line = lines[i];
-        if (line.contains(_lineExemptMarker)) continue;
+        // dart format moves a trailing comment after an open paren onto the
+        // next line, so the marker may sit on the following line too.
+        if (line.contains(_lineExemptMarker) ||
+            (i + 1 < lines.length &&
+                lines[i + 1].trim().startsWith(_lineExemptMarker))) {
+          continue;
+        }
         for (final entry in _rules.entries) {
           final match = entry.value.firstMatch(line);
           if (match != null) {
