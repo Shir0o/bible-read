@@ -44,41 +44,84 @@ class EmptyGroupState extends StatelessWidget {
   VibrationService get _vibrationService =>
       vibrationService ?? const VibrationService();
 
-  void _onHaveCode(BuildContext context) {
-    _vibrationService.lightImpact();
+  void _onHaveCode(BuildContext context) => openHaveCode(
+        context,
+        groupService: _groupService,
+        auth: _auth,
+        vibrationService: _vibrationService,
+      );
+
+  void _onFindGroup(BuildContext context) => openFindGroup(
+        context,
+        groupService: _groupService,
+        auth: _auth,
+        vibrationService: _vibrationService,
+      );
+
+  void _onCreateGroup(BuildContext context) => openCreateGroup(
+        context,
+        firestore: _firestore,
+        auth: _auth,
+        groupService: _groupService,
+        vibrationService: _vibrationService,
+      );
+
+  /// Opens [JoinByCodePage]. Shared with Circle's Invite sheet.
+  static void openHaveCode(
+    BuildContext context, {
+    required GroupService groupService,
+    required FirebaseAuth auth,
+    required VibrationService vibrationService,
+  }) {
+    vibrationService.lightImpact();
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => JoinByCodePage(
-          groupService: _groupService,
-          auth: _auth,
-          vibrationService: _vibrationService,
+          groupService: groupService,
+          auth: auth,
+          vibrationService: vibrationService,
         ),
       ),
     );
   }
 
-  void _onFindGroup(BuildContext context) {
-    _vibrationService.lightImpact();
+  /// Opens the public-group browse sheet. Shared with Circle's Invite sheet.
+  static void openFindGroup(
+    BuildContext context, {
+    required GroupService groupService,
+    required FirebaseAuth auth,
+    required VibrationService vibrationService,
+  }) {
+    vibrationService.lightImpact();
     showAppSheet(
       context: context,
       fullHeight: true,
       builder: (sheetContext) => _FindGroupSheetContent(
-        groupService: _groupService,
-        auth: _auth,
-        vibrationService: _vibrationService,
+        groupService: groupService,
+        auth: auth,
+        vibrationService: vibrationService,
       ),
     );
   }
 
-  void _onCreateGroup(BuildContext context) {
-    _vibrationService.lightImpact();
+  /// Opens [CreatePlanPage] on "With a group". Shared with Circle's Invite
+  /// sheet.
+  static void openCreateGroup(
+    BuildContext context, {
+    required FirebaseFirestore firestore,
+    required FirebaseAuth auth,
+    required GroupService groupService,
+    required VibrationService vibrationService,
+  }) {
+    vibrationService.lightImpact();
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => CreatePlanPage(
-          firestore: _firestore,
-          auth: _auth,
-          vibrationService: _vibrationService,
-          groupService: _groupService,
+          firestore: firestore,
+          auth: auth,
+          vibrationService: vibrationService,
+          groupService: groupService,
+          initialAudience: PlanAudience.group,
         ),
       ),
     );

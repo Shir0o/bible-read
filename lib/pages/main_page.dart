@@ -143,6 +143,15 @@ class MainPageState extends State<MainPage> {
         circleService: _circleService,
         readingStatusService: _readingStatusService,
         vibrationService: widget.vibrationService,
+        onSendLikeNotification: widget.sendLikeNotification ??
+            ({required String ownerUid, required String likerName}) async {
+              final functions = widget.functions ??
+                  FirebaseFunctions.instanceFor(region: 'us-central1');
+              await functions.httpsCallable('sendLikeNotification').call({
+                'ownerUid': ownerUid,
+                'likerName': likerName,
+              });
+            },
         dateProvider: () => DateTime.now(),
       ),
       JourneyPage(

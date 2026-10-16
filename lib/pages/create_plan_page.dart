@@ -50,6 +50,10 @@ class CreatePlanPage extends StatefulWidget {
   /// callers and tests that never touch the group branch keep working.
   final GroupService? groupService;
 
+  /// Which audience the form opens on. "Create a group" entry points open it
+  /// on [PlanAudience.group].
+  final PlanAudience initialAudience;
+
   const CreatePlanPage({
     super.key,
     required this.firestore,
@@ -58,6 +62,7 @@ class CreatePlanPage extends StatefulWidget {
     this.editingPlan,
     this.editingProgress,
     this.groupService,
+    this.initialAudience = PlanAudience.solo,
   });
 
   @override
@@ -82,7 +87,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   int? _customChaptersPerDay;
   int? _customVersesPerDay;
   _PlanGoalMethod _goalMethod = _PlanGoalMethod.endDate;
-  PlanAudience _audience = PlanAudience.solo;
+  late PlanAudience _audience = widget.initialAudience;
   final TextEditingController _groupNameController = TextEditingController();
   bool _isCreating = false;
   bool _isCustomPlanExpanded = false;
