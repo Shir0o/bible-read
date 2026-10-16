@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.35.3](https://github.com/Shir0o/bible-read/compare/v1.35.2...v1.35.3) (2026-10-16)
+
+
+### Refactoring
+
+* **architecture:** deepen habit lifecycle, reading aggregation, circle derivation, and coverage ledger ([#977](https://github.com/Shir0o/bible-read/issues/977)) ([c73a801](https://github.com/Shir0o/bible-read/commit/c73a801aa5e15982f886c75ebc5966f7f9fc5f20))
+
 ## [1.35.2](https://github.com/Shir0o/bible-read/compare/v1.35.1...v1.35.2) (2026-10-15)
 
 
